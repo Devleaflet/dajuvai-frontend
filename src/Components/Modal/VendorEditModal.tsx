@@ -211,18 +211,6 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
                 required
               />
             </div>
-            <div className="form-group">
-              <label>Status</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                required
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
           </div>
 
           <div className="add-vendor-form-row">
