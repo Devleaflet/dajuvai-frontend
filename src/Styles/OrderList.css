@@ -1,0 +1,61 @@
+/* src/Components/OrderList.css */
+
+.order-list {
+    width: 100%;
+    overflow-x: scroll;
+  }
+  
+  .order-list__table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .order-list__table th,
+  .order-list__table td {
+    padding: 12px 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+  
+  .order-list__table th {
+    background-color: #ffe6cc;
+  }
+  
+  .status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  
+  .status-badge--delivered {
+    background-color: #a5d6a7;
+    color: white;
+  }
+  
+  .status-badge--pending {
+    background-color: #ffccbc;
+    color: white;
+  }
+  
+  .status-badge--canceled {
+    background-color: #f4cccc;
+    color: white;
+  }
+  
+  .action-btn {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 4px;
+  }
+  
+  .action-btn--edit {
+    background-color: #ff7f50;
+    color: white;
+  }
+  
+  .action-btn--delete {
+    background-color: #e74c3c;
+    color: white;
+  }

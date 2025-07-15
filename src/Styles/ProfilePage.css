@@ -1,0 +1,739 @@
+.profile-page-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.dashboard {
+  flex-grow: 1;
+  background-color: #f5f7fa;
+}
+
+.dashboard__main1 {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 24px;
+}
+
+@media (min-width: 1000px) {
+  .dashboard__main1 {
+    flex-direction: row;
+    gap: 24px;
+  }
+
+  .profile-update-card,
+  .change-password-card {
+    width: 48%;
+  }
+}
+
+/* Profile Update Card */
+.profile-update-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.profile-update-card__title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 24px;
+}
+
+.profile-update-card__form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.profile-update-card__form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-update-card__form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.profile-update-card__input,
+.profile-update-card__textarea {
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #1a1a1a;
+  background-color: #ffffff;
+  transition: border-color 0.2s ease;
+}
+
+.profile-update-card__input:focus,
+.profile-update-card__textarea:focus {
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1);
+}
+
+.profile-update-card__input--disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+  color: #6b7280;
+}
+
+.profile-update-card__textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.profile-update-card__help-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.profile-update-card__error {
+  padding: 12px;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-top: 16px;
+}
+
+.profile-update-card__success {
+  padding: 12px;
+  background-color: #dcfce7;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  color: #16a34a;
+  font-size: 0.875rem;
+  margin-top: 16px;
+}
+
+.profile-update-card__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.profile-update-card__button {
+  padding: 10px 20px;
+  background-color: #f97316;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.profile-update-card__button:hover {
+  background-color: #ea580c;
+}
+
+.profile-update-card__button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2);
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .profile-update-card {
+    padding: 16px;
+    margin: 16px;
+  }
+
+  .profile-update-card__title {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+  }
+
+  .profile-update-card__form {
+    gap: 16px;
+  }
+
+  .profile-update-card__button {
+    width: 100%;
+  }
+}
+
+/* Change Password Card */
+.change-password-card {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  flex: 1;
+  transition: all 0.3s ease;
+}
+
+.change-password-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.change-password-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  position: relative;
+  padding-bottom: 12px;
+}
+
+.change-password-card__header:after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 60px;
+  height: 3px;
+  background-color: #ff7f50;
+  border-radius: 3px;
+}
+
+.change-password-card__title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.change-password-card__help-link {
+  color: #ff7f50;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s ease;
+}
+
+.change-password-card__help-link:hover {
+  color: #e66a40;
+}
+
+.help-icon {
+  font-size: 1.1rem;
+}
+
+.change-password-card__form {
+  margin-top: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.password-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  width: 100%;
+  padding: 12px 40px 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.password-input:focus {
+  border-color: #ff7f50;
+  box-shadow: 0 0 0 2px rgba(255, 127, 80, 0.2);
+  outline: none;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 16px;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.password-toggle:hover {
+  color: #333;
+}
+
+.change-password-card__forgot-link {
+  display: block;
+  margin-top: 8px;
+  color: #007bff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.change-password-card__forgot-link:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}
+
+.password-strength {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.strength-meter {
+  flex-grow: 1;
+  height: 4px;
+  background-color: #e0e0e0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.strength-meter__bar {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.strength-meter__bar--weak {
+  width: 30%;
+  background-color: #ff4d4f;
+}
+
+.strength-meter__bar--medium {
+  width: 60%;
+  background-color: #faad14;
+}
+
+.strength-meter__bar--strong {
+  width: 100%;
+  background-color: #52c41a;
+}
+
+.strength-text {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.change-password-card__save-btn {
+  width: 100%;
+  padding: 12px 20px;
+  background-color: #ff7f50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 8px rgba(255, 127, 80, 0.25);
+}
+
+.change-password-card__save-btn:hover {
+  background-color: #ff6b36;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(255, 127, 80, 0.3);
+}
+
+.change-password-card__save-btn:active {
+  transform: translateY(0);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  width: 360px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal__close-icon {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #999;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.modal__close-icon:hover {
+  color: #333;
+}
+
+.modal__title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.modal__content {
+  margin-bottom: 20px;
+}
+
+.modal--success {
+  background-color: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+
+.modal--email {
+  background-color: #e6f7ff;
+  border: 1px solid #91d5ff;
+}
+
+.modal__success-icon,
+.modal__email-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.modal__success-icon {
+  color: #52c41a;
+}
+
+.modal__email-icon {
+  color: #1890ff;
+}
+
+.modal__title {
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.modal--success .modal__title {
+  color: #52c41a;
+}
+
+.modal--email .modal__title {
+  color: #1890ff;
+}
+
+.modal p {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.modal__email-address {
+  font-weight: 600;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.modal__preview {
+  margin-bottom: 20px;
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal__preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modal__preview-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #999;
+}
+
+.modal__preview-placeholder i {
+  font-size: 3rem;
+}
+
+.custom-file-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100px;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.custom-file-upload:hover {
+  border-color: #ff7f50;
+  background-color: rgba(255, 127, 80, 0.05);
+}
+
+.custom-file-upload i {
+  font-size: 2rem;
+  color: #ff7f50;
+  margin-bottom: 8px;
+}
+
+.custom-file-upload span {
+  margin-top: 8px;
+}
+
+.custom-file-upload input[type="file"] {
+  display: none;
+}
+
+.modal__buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.modal__close-btn,
+.modal__save-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.modal__close-btn {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.modal__close-btn:hover {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.modal__save-btn {
+  background-color: #ff7f50;
+  color: white;
+  box-shadow: 0 4px 8px rgba(255, 127, 80, 0.25);
+}
+
+.modal__save-btn:hover {
+  background-color: #ff6b36;
+  box-shadow: 0 6px 12px rgba(255, 127, 80, 0.3);
+}
+
+.modal__save-btn:disabled {
+  background-color: #ffb599;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.modal__close-btn--success,
+.modal__close-btn--email {
+  background-color: white;
+  border: 1px solid #d9d9d9;
+  color: #333;
+  width: auto;
+  margin: 0 auto;
+  padding: 10px 32px;
+}
+
+.modal__close-btn--success:hover {
+  border-color: #52c41a;
+  color: #52c41a;
+}
+
+.modal__close-btn--email:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.vercel-modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.vercel-modal {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.18);
+  max-width: 400px;
+  width: 100%;
+  padding: 32px 28px 28px 28px;
+  position: relative;
+  animation: modalPop 0.2s;
+}
+
+@keyframes modalPop {
+  from { transform: translateY(40px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.vercel-modal__close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: none;
+  border: none;
+  font-size: 1.7rem;
+  color: #7b7b7b;
+  cursor: pointer;
+  transition: color 0.15s;
+  z-index: 2;
+}
+.vercel-modal__close:hover {
+  color: #222;
+}
+
+.vercel-modal__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.vercel-modal__heading {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 0.5rem;
+  margin-top: 0.5rem;
+  letter-spacing: 0.01em;
+}
+
+.vercel-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.2rem;
+}
+
+.vercel-modal__input {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #e5e7eb;
+  font-size: 1rem;
+  background: #f9fafb;
+  outline: none;
+  transition: border 0.18s;
+}
+.vercel-modal__input:focus {
+  border-color: #4f8cff;
+  background: #f3f8ff;
+}
+
+.vercel-modal__button {
+  padding: 12px 0;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #4f8cff 0%, #38b2ac 100%);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px 0 rgba(79,140,255,0.10);
+  cursor: pointer;
+  transition: background 0.18s, opacity 0.18s;
+}
+.vercel-modal__button:disabled {
+  background: #b6c2d1;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.vercel-modal__button--green {
+  background: linear-gradient(90deg, #38b2ac 0%, #4f8cff 100%);
+}
+
+.vercel-modal__msg {
+  font-size: 0.98rem;
+  font-weight: 500;
+  margin-top: 0.2rem;
+  margin-bottom: 0.2rem;
+  text-align: left;
+}
+.vercel-modal__msg--success {
+  color: #38b2ac;
+}
+.vercel-modal__msg--error {
+  color: #e53e3e;
+}
+
+.vercel-modal__divider {
+  height: 1px;
+  background: linear-gradient(90deg, #e5e7eb 0%, #f3f8ff 100%);
+  margin: 1.2rem 0 0.7rem 0;
+  border: none;
+}
+
+@media (max-width: 600px) {
+  .vercel-modal {
+    max-width: 98vw;
+    padding: 18px 6vw 18px 6vw;
+  }
+}

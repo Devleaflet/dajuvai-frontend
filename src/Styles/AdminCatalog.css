@@ -1,0 +1,568 @@
+/* Admin Catalog - Clean Minimal Design */
+.admin-catalog {
+  display: flex;
+  min-height: 100vh;
+  background-color: #fafafa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.admin-catalog__container {
+  flex: 1;
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.admin-catalog__content {
+  width: 100%;
+}
+
+.admin-catalog__header {
+  margin-bottom: 24px;
+}
+
+.admin-catalog__title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.admin-catalog__card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.admin-catalog__card-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-catalog__header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.admin-catalog__section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+
+.admin-catalog__controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.admin-catalog__search {
+  position: relative;
+  width: 240px;
+}
+
+.admin-catalog__search--modal {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.admin-catalog__search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  width: 16px;
+  height: 16px;
+}
+
+.admin-catalog__search-input {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #374151;
+  background: white;
+}
+
+.admin-catalog__search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.admin-catalog__add-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  height: 36px;
+}
+
+.admin-catalog__add-button:hover {
+  background-color: #2563eb;
+}
+
+.admin-catalog__button-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.admin-catalog__table-container {
+  padding: 0;
+}
+
+.admin-catalog__table {
+  width: 100%;
+}
+
+.admin-catalog__table-head {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  padding: 12px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.admin-catalog__table-row {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.admin-catalog__table-row:hover {
+  background-color: #f9fafb;
+}
+
+.admin-catalog__table-cell {
+  padding: 16px 24px;
+  font-size: 14px;
+  color: #374151;
+  vertical-align: middle;
+}
+
+.admin-catalog__table-cell--title {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.admin-catalog__status-toggle {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  text-transform: capitalize;
+}
+
+.admin-catalog__status-toggle--active {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.admin-catalog__status-toggle--inactive {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.admin-catalog__product-count {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.admin-catalog__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-catalog__action-button {
+  padding: 6px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.admin-catalog__action-button--edit {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.admin-catalog__action-button--edit:hover {
+  background-color: #dbeafe;
+}
+
+.admin-catalog__action-button--delete {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.admin-catalog__action-button--delete:hover {
+  background-color: #fee2e2;
+}
+
+.admin-catalog__action-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.admin-catalog__no-data {
+  text-align: center;
+  padding: 48px 24px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.admin-catalog__error {
+  text-align: center;
+  padding: 48px 24px;
+  color: #dc2626;
+  font-size: 14px;
+}
+
+.admin-catalog__loading {
+  padding: 48px 24px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* Modal Styles */
+.admin-catalog__modal-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.admin-catalog__modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  z-index: 1001;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideIn 0.15s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.admin-catalog__modal--delete {
+  max-width: 400px;
+}
+
+.admin-catalog__modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 16px;
+}
+
+.admin-catalog__modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.admin-catalog__modal-close:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.admin-catalog__modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-catalog__modal-text {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.admin-catalog__form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-catalog__form-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.admin-catalog__form-input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.admin-catalog__form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.admin-catalog__checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-catalog__checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #3b82f6;
+}
+
+.admin-catalog__checkbox-label {
+  font-size: 14px;
+  color: #374151;
+}
+
+.admin-catalog__products-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px;
+  background: #fafafa;
+}
+
+.admin-catalog__product-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: white;
+}
+
+.admin-catalog__product-item:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.admin-catalog__product-item--selected {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.admin-catalog__product-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-catalog__hidden-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.admin-catalog__custom-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #3b82f6;
+  border-radius: 3px;
+  background: white;
+  transition: all 0.15s ease;
+}
+
+.admin-catalog__product-item--selected .admin-catalog__custom-checkbox {
+  background: #3b82f6;
+  color: white;
+}
+
+.admin-catalog__checkmark {
+  width: 12px;
+  height: 12px;
+}
+
+.admin-catalog__product-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-catalog__product-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.admin-catalog__product-price {
+  font-size: 13px;
+  color: #16a34a;
+  font-weight: 500;
+}
+
+.admin-catalog__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.admin-catalog__button--cancel {
+  padding: 8px 16px;
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.admin-catalog__button--cancel:hover {
+  background-color: #f9fafb;
+}
+
+.admin-catalog__button--submit {
+  padding: 8px 16px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.admin-catalog__button--submit:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+
+.admin-catalog__button--submit:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.admin-catalog__button--danger {
+  background-color: #dc2626;
+  color: white;
+}
+
+.admin-catalog__button--danger:hover {
+  background-color: #b91c1c;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .admin-catalog__container {
+    padding: 16px;
+  }
+  
+  .admin-catalog__header-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .admin-catalog__controls {
+    justify-content: space-between;
+  }
+  
+  .admin-catalog__search {
+    width: 200px;
+  }
+  
+  .admin-catalog__modal {
+    margin: 16px;
+    width: calc(100% - 32px);
+    max-height: calc(100vh - 32px);
+  }
+  
+  .admin-catalog__modal-actions {
+    flex-direction: column;
+  }
+  
+  .admin-catalog__button--cancel,
+  .admin-catalog__button--submit,
+  .admin-catalog__button--danger {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-catalog__controls {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .admin-catalog__search {
+    width: 100%;
+  }
+  
+  .admin-catalog__add-button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .admin-catalog__table-head,
+  .admin-catalog__table-cell {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+}

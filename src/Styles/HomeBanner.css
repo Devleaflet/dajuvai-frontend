@@ -1,0 +1,160 @@
+.home-banner {
+  width: 100%;
+  position: relative;
+  background-color: #f5f5f5;
+}
+
+.home-banner__container {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+  padding: 0 1rem;
+  position: relative;
+}
+
+.home-banner__content {
+  max-width: 96%;
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.home-banner__image {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.home-banner__nav-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+.home-banner__nav-button:hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.home-banner__nav-button--prev {
+  left: 1rem;
+}
+
+.home-banner__nav-button--next {
+  right: 1rem;
+}
+
+.home-banner__indicators {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+  z-index: 2;
+}
+
+.home-banner__indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.home-banner__indicator:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.home-banner__indicator.active {
+  background: white;
+  transform: scale(1.2);
+}
+
+.home-banner__skeleton {
+  width: 100%;
+  height: 300px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 20px;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .home-banner__container {
+    margin: 1.5rem 0;
+  }
+
+  .home-banner__nav-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .home-banner__nav-button--prev {
+    left: 0.5rem;
+  }
+
+  .home-banner__nav-button--next {
+    right: 0.5rem;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .home-banner__container {
+    margin: 1rem 0;
+  }
+
+  .home-banner__content {
+    border-radius: 10px;
+  }
+
+  .home-banner__nav-button {
+    width: 28px;
+    height: 28px;
+  }
+
+  .home-banner__indicator {
+    width: 6px;
+    height: 6px;
+  }
+}
+
+.home-banner__content {
+  pointer-events: auto; /* Make sure this isn't 'none' */
+}
+
+.home-banner__content {
+  position: relative;
+  cursor: pointer;
+}
+
+.home-banner__image {
+  cursor: pointer;
+  display: block;
+  width: 100%;
+}

@@ -1,0 +1,115 @@
+.form-group {
+    margin-bottom: 16px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+  }
+  
+  .form-group textarea {
+    resize: vertical;
+  }
+  
+  .form-checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  
+  .form-checkbox-group input[type="checkbox"] {
+    width: auto;
+  }
+  
+  .form-help-text {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #6b7280;
+  }
+  
+  .form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .form-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+  }
+  
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  
+  .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .btn-primary {
+    background-color: #ff6b35;
+    color: white;
+  }
+  
+  .btn-primary:hover:not(:disabled) {
+    background-color: #e85a2a;
+  }
+  
+  .btn-secondary {
+    background-color: #f3f4f6;
+    color: #4b5563;
+  }
+  
+  .btn-secondary:hover:not(:disabled) {
+    background-color: #e5e7eb;
+  }
+  
+  .btn-danger {
+    background-color: #ef4444;
+    color: white;
+  }
+  
+  .btn-danger:hover:not(:disabled) {
+    background-color: #dc2626;
+  }
+  
+  .required-mark {
+    color: #ef4444;
+    margin-left: 2px;
+  }
+  
+  @media (max-width: 768px) {
+    .form-row {
+      flex-direction: column;
+      gap: 16px;
+    }
+  }

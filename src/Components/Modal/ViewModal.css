@@ -1,0 +1,168 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #1f2937;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0.5rem;
+  line-height: 1;
+}
+
+.close-button:hover {
+  color: #1f2937;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-section {
+  margin-bottom: 2rem;
+}
+
+.modal-section h3 {
+  color: #374151;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.order-summary {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 6px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  color: #4b5563;
+}
+
+.summary-row.total {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.label {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.value {
+  color: #1f2937;
+  font-weight: 500;
+}
+
+.address-box {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 6px;
+  color: #4b5563;
+}
+
+.local-address {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.order-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 6px;
+}
+
+.item-details h4 {
+  margin: 0 0 0.25rem 0;
+  color: #1f2937;
+}
+
+.vendor {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.item-price {
+  text-align: right;
+}
+
+.quantity {
+  display: block;
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.price {
+  color: #1f2937;
+  font-weight: 600;
+} 

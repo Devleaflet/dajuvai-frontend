@@ -1,0 +1,80 @@
+.special-offers-container {
+    max-width: 95%;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .special-offers-header {
+    margin-bottom: 24px;
+  }
+  
+  .special-offers-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111;
+    margin: 0 0 4px 0;
+  }
+  
+  .special-offers-header p {
+    font-size: 14px;
+    color: #666;
+    margin: 0;
+  }
+  
+  .offers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+  
+  .offer-card {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.3s ease;
+    position: relative; /* For absolute positioning of text */
+  }
+  
+  .offer-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .offer-image {
+    width: 100%;
+    
+    object-fit: cover; 
+  }
+  
+  .offer-details {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.8); /* Semi-transparent background for better readability */
+    text-align: center;
+  }
+  
+  .discount-text {
+    color: #ff6b00; /* Orange color for discount text */
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0 0 4px 0;
+  }
+  
+  .brand-text {
+    color: #333; /* Dark text for brand name */
+    margin: 0;
+  }
+  
+  @media (max-width: 768px) {
+    .offers-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (max-width: 500px) {
+    .offers-grid {
+      grid-template-columns: 1fr;
+    }
+  }

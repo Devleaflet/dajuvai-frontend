@@ -1,0 +1,234 @@
+.transaction-success {
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  background: linear-gradient(to bottom right, #f0fdf4, #eff6ff, #f5f3ff);
+}
+
+.transaction-success--loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.transaction-success__wrapper {
+  max-width: 1024px;
+  margin: 0 auto;
+}
+
+.transaction-success__container {
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.transaction-success__spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 2px solid transparent;
+  border-bottom-color: #16a34a;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+.transaction-success__loading-text {
+  color: #4b5563;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.transaction-success__header {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.transaction-success__header-icon {
+  width: 5rem;
+  height: 5rem;
+  background-color: #dcfce7;
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+}
+
+.transaction-success__header-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #16a34a;
+  margin-bottom: 0.5rem;
+}
+
+.transaction-success__header-text {
+  font-size: 1.125rem;
+  color: #4b5563;
+}
+
+.transaction-success__details {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.transaction-success__details-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.transaction-success__details-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .transaction-success__details-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.transaction-success__details-item {
+  background-color: #f9fafb;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.transaction-success__details-label {
+  font-size: 0.875rem;
+  color: #4b5563;
+  margin-bottom: 0.25rem;
+}
+
+.transaction-success__details-value {
+  font-family: monospace;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+  word-break: break-all;
+}
+
+.transaction-success__order {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+.transaction-success__order-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1.5rem;
+}
+
+.transaction-success__order-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .transaction-success__order-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.transaction-success__order-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.transaction-success__order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.transaction-success__order-label {
+  color: #4b5563;
+}
+
+.transaction-success__order-value {
+  font-weight: 600;
+}
+
+.transaction-success__order-value.capitalize {
+  text-transform: capitalize;
+}
+
+.transaction-success__order-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.transaction-success__status--paid {
+  color: #16a34a;
+  background-color: #dcfce7;
+}
+
+.transaction-success__status--pending {
+  color: #ca8a04;
+  background-color: #fefcbf;
+}
+
+.transaction-success__status--failed {
+  color: #dc2626;
+  background-color: #fee2e2;
+}
+
+.transaction-success__status--confirmed {
+  color: #2563eb;
+  background-color: #dbeafe;
+}
+
+.transaction-success__status--default {
+  color: #4b5563;
+  background-color: #f3f4f6;
+}
+
+.transaction-success__price {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1.5rem;
+}
+
+.transaction-success__price-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.transaction-success__price-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.transaction-success__price-item {
+  display: flex;
+  justify-content: space-between;
+  color: #4b5563;
+}
+
+.transaction-success__price-item--total {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

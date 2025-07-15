@@ -1,0 +1,67 @@
+/* Styles/SliderSkeleton.css */
+.skeleton-container {
+  position: relative;
+  width: 95%;
+  margin: 0 auto;
+  border-radius: 20px;
+  margin-top: 2rem;
+  overflow: hidden;
+}
+
+.skeleton-slider {
+  height: 16rem;
+  background-color: #e0e0e0;
+  border-radius: 20px;
+}
+
+.skeleton-slide {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+.skeleton-indicators {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.skeleton-indicator {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Responsive Styles */
+@media (min-width: 640px) {
+  .skeleton-slider {
+    height: 20rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .skeleton-slider {
+    height: 24rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .skeleton-slider {
+    height: 30rem;
+  }
+}

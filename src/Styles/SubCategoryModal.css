@@ -1,0 +1,224 @@
+/* SubCategoryModal.css */
+.subcategory-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.subcategory-modal__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  cursor: pointer;
+}
+
+.subcategory-modal__content {
+  background-color: #ffffff;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 500px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.subcategory-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.subcategory-modal__header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0;
+}
+
+.subcategory-modal__close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.subcategory-modal__close-btn:hover {
+  color: #374151;
+  background-color: #f3f4f6;
+}
+
+.subcategory-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.subcategory-modal__form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subcategory-modal__form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.subcategory-modal__form-group input[type="text"],
+.subcategory-modal__form-group input[type="file"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #374151;
+  background-color: #ffffff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.subcategory-modal__form-group input[type="text"]:focus,
+.subcategory-modal__form-group input[type="file"]:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+.subcategory-modal__form-group input[type="file"] {
+  padding: 8px 12px; /* Adjust for file input */
+}
+
+.subcategory-modal__image-preview {
+  margin-top: 12px;
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.subcategory-modal__image-preview img {
+  width: 100%;
+  height: auto;
+  max-height: 200px;
+  object-fit: contain;
+  display: block;
+}
+
+.subcategory-modal__error {
+  color: #b91c1c;
+  font-size: 13px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.subcategory-modal__error::before {
+  content: "⚠";
+  font-size: 14px;
+}
+
+.subcategory-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.subcategory-modal__cancel-btn,
+.subcategory-modal__save-btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.subcategory-modal__cancel-btn {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border: none;
+}
+
+.subcategory-modal__cancel-btn:hover {
+  background-color: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.subcategory-modal__save-btn {
+  background-color: #ff6b35;
+  color: #ffffff;
+  border: none;
+}
+
+.subcategory-modal__save-btn:hover {
+  background-color: #e05a2b;
+  transform: translateY(-1px);
+}
+
+.subcategory-modal__save-btn:active,
+.subcategory-modal__cancel-btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .subcategory-modal__content {
+    margin: 0 16px;
+    padding: 16px;
+    max-width: 100%;
+  }
+
+  .subcategory-modal__header h2 {
+    font-size: 18px;
+  }
+
+  .subcategory-modal__form-group label {
+    font-size: 13px;
+  }
+
+  .subcategory-modal__form-group input[type="text"],
+  .subcategory-modal__form-group input[type="file"] {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  .subcategory-modal__actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .subcategory-modal__cancel-btn,
+  .subcategory-modal__save-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .subcategory-modal__image-preview img {
+    max-height: 150px;
+  }
+}

@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500&display=swap');
+
+:root {
+    /* Font Settings */
+    --font-family: 'Poppins', system-ui, Avenir, Helvetica, Arial, sans-serif;
+    --font-size-base: 1em;
+    --font-size-large: 3.2em;
+    --line-height: 1.5;
+    --font-weight: 400;
+    --font-weight-bold: 500;
+
+    /* Color Palette */
+    --color-primary: #646cff;
+    --color-primary-hover: #ea5f0a;
+    --color-secondary: #888;
+    --color-text-light: rgba(255, 255, 255, 0.87);
+    --color-text-dark: #213547;
+    --color-bg-dark: #242424;
+    --color-bg-light: #ffffff;
+    --color-button-bg: #1a1a1a;
+    --color-button-hover: #646cff;
+    --color-border: transparent;
+    --color-focus-outline: -webkit-focus-ring-color;
+
+    /* Spacing */
+    --spacing-small: 0.6em;
+    --spacing-medium: 1.2em;
+    --spacing-large: 2em;
+    --spacing-xlarge: 3rem;
+
+    /* Border Radius */
+    --border-radius: 8px;
+
+    /* Transitions */
+    --transition-speed: 0.25s;
+
+    /* Box Shadow */
+    --shadow-primary: drop-shadow(0 0 2em #646cffaa);
+    --shadow-react: drop-shadow(0 0 2em #61dafbaa);
+}
+
+/* Apply font globally */
+body {
+    margin: 0px;
+    padding: 0px;
+    font-family: var(--font-family);
+}
+
+/* Links */
+a {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+    text-decoration: none;
+}
+a:hover {
+    color: var(--color-primary-hover);
+}
+
+/* Buttons */
+button {
+    border-radius: var(--border-radius);
+    border: 1px solid var(--color-border);
+    padding: var(--spacing-small) var(--spacing-medium);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-light);
+    font-family: inherit;
+    background-color: var(--color-button-bg);
+    cursor: pointer;
+    transition: border-color var(--transition-speed);
+}
+button:hover {
+    border-color: var(--color-button-hover);
+}
+button:focus,
+button:focus-visible {
+    
+}
+
+.homepage-sections-loading {
+  width: 95%;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+.homepage-sections-loading-row {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 10px 0;
+}

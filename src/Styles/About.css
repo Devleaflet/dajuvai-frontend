@@ -1,0 +1,261 @@
+/* Contact Page Styles - Ultra Responsive Version */
+.contact-container {
+    width: 95%;
+    max-width: 1800px;
+    margin: 3rem auto;
+    padding: 0 1rem;
+    box-sizing: border-box;
+  }
+  
+  .contact-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin-bottom: 3rem;
+  }
+  
+  .contact-content-left {
+    flex: 1;
+    min-width: 650px;
+  }
+  
+  .contact-content-right {
+    flex: 2;
+    min-width: 250px;
+  }
+  
+  /* Left side styles */
+  .contact-title {
+    color: #f47a42;
+    font-size: clamp(2rem, 5vw, 3rem);
+    margin-bottom: 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  
+  .contact-subtext {
+    color: #555;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+    max-width: 80%;
+    font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+  }
+  
+  .contact-info {
+    margin-bottom: 2rem;
+  }
+  
+  .contact-info-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    color: #555;
+    font-size: clamp(0.9rem, 1.5vw, 1rem);
+  }
+  
+  .contact-icon {
+    color: #f47a42;
+    margin-right: 1rem;
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    flex-shrink: 0;
+  }
+  
+  .vendor-button {
+    background-color: #f47a42;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    font-size: clamp(0.9rem, 1.5vw, 1rem);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  
+  .vendor-button:hover {
+    background-color: #e26a32;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+  
+  /* Right side styles */
+  .form-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .form-group {
+    flex: 1;
+    margin-bottom: 1.25rem;
+  }
+  
+  .full-width {
+    width: 100%;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+    font-size: clamp(0.9rem, 1.2vw, 1rem);
+  }
+  
+  .required {
+    color: #f47a42;
+  }
+  
+  input, textarea {
+    
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: clamp(0.9rem, 1.2vw, 1rem);
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+  }
+  
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: #f47a42;
+    box-shadow: 0 0 0 2px rgba(244, 122, 66, 0.2);
+  }
+  
+  textarea {
+    resize: none;
+    height: 120px;
+    min-height: 100px;
+  }
+  
+  .submit-button {
+    background-color: #f47a42;
+    color: white;
+    border: none;
+    padding: clamp(0.7rem, 1.5vw, 0.9rem) clamp(1.5rem, 3vw, 2rem);
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    margin-top: 0.75rem;
+    font-size: clamp(0.9rem, 1.5vw, 1rem);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  
+  .submit-button:hover {
+    background-color: #e26a32;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+  
+  /* Map section */
+  .find-store {
+    margin-top: 4rem;
+  }
+  
+  .store-title {
+    color: #f47a42;
+    font-size: clamp(1.5rem, 3vw, 1.8rem);
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+  }
+  
+  .map-container {
+    width: 100%;
+    height: clamp(250px, 50vw, 400px);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  /* Responsive styles - Multiple breakpoints for ultimate responsiveness */
+  @media (max-width: 1200px) {
+    .contact-container {
+      width: 95%;
+    }
+  }
+  
+  @media (max-width: 992px) {
+    .contact-content-left,
+    .contact-content-right {
+      min-width: 300px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .contact-content {
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+    
+    .contact-content-left,
+    .contact-content-right {
+      width: 100%;
+    }
+    
+    .contact-title {
+      text-align: center;
+    }
+    
+    .contact-subtext {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .contact-info {
+      max-width: 400px;
+      margin: 0 auto 2rem;
+    }
+    
+    .vendor-button {
+      display: block;
+      margin: 0 auto;
+      padding: 0.75rem 2rem;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .form-row {
+      flex-direction: column;
+      gap: 0;
+    }
+    
+    .contact-container {
+      width: 100%;
+      padding: 0 1rem;
+    }
+    
+    .find-store {
+      margin-top: 3rem;
+    }
+    
+    .store-title {
+      text-align: center;
+    }
+    
+    .map-container {
+      height: 280px;
+    }
+    
+    .submit-button {
+      width: 100%;
+    }
+  }
+  
+  @media (max-width: 400px) {
+    .contact-content {
+      gap: 2rem;
+    }
+    
+    .contact-info-item {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    
+    .contact-icon {
+      margin-right: 0;
+      margin-bottom: 0.5rem;
+      font-size: 1.5rem;
+    }
+  }
