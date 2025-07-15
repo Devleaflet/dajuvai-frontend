@@ -27,8 +27,7 @@ export const fetchReviewOf = async (id: number) => {
 export const createProduct = async (
   categoryId: number,
   subcategoryId: number,
-  formData: FormData,
-  token?: string
+  formData: FormData
 ) => {
   try {
     console.log('Creating product with formData:', Object.fromEntries(formData.entries()));
@@ -43,11 +42,7 @@ export const createProduct = async (
       'Content-Type': 'multipart/form-data',
     };
 
-    // Add authorization header if token is provided
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
+    // Do not set Authorization header manually
     const response = await axiosInstance.post(
       `/api/categories/${categoryId}/subcategories/${subcategoryId}/products`,
       formData,
@@ -56,18 +51,18 @@ export const createProduct = async (
     
     console.log('Product created successfully:', response.data);
     return response.data;
-  } catch (error: any) {
-    console.error('Error creating product:', error?.response?.data || error);
-    
-    // Handle specific error cases
-    if (error?.response?.status === 403) {
-      throw new Error('Not authorized to create product. Please check your permissions.');
-    } else if (error?.response?.status === 401) {
-      throw new Error('Authentication failed. Please login again.');
-    } else if (error?.response?.data?.message) {
-      throw new Error(error.response.data.message);
+  } catch (error: unknown) {
+    if (typeof error === 'object' && error !== null && 'response' in error) {
+      const err = error as { response?: { status?: number; data?: any } };
+      console.error('Error creating product:', err.response?.data || error);
+      if (err.response?.status === 403) {
+        throw new Error('Not authorized to create product. Please check your permissions.');
+      } else if (err.response?.status === 401) {
+        throw new Error('Authentication failed. Please login again.');
+      } else if (err.response?.data?.message) {
+        throw new Error(err.response.data.message);
+      }
     }
-    
     throw error;
   }
 };
@@ -76,8 +71,7 @@ export const updateProduct = async (
   productId: number,
   categoryId: number,
   subcategoryId: number,
-  formData: FormData,
-  token?: string
+  formData: FormData
 ) => {
   try {
     console.log(`Updating product ${productId} with formData:`, Object.fromEntries(formData.entries()));
@@ -103,11 +97,7 @@ export const updateProduct = async (
       'Content-Type': 'multipart/form-data',
     };
 
-    // Add authorization header if token is provided
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
+    // Do not set Authorization header manually
     console.log('Update request headers:', headers);
     console.log('Update URL:', `/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}`);
 
@@ -123,21 +113,21 @@ export const updateProduct = async (
     
     console.log('Product updated successfully:', response.data);
     return response.data;
-  } catch (error: any) {
-    console.error('Error updating product:', error?.response?.data || error);
-    
-    // Handle specific error cases
-    if (error?.response?.status === 403) {
-      const errorMessage = error?.response?.data?.message || 'Not authorized to update this product. You can only update products you own.';
-      throw new Error(errorMessage);
-    } else if (error?.response?.status === 401) {
-      throw new Error('Authentication failed. Please login again.');
-    } else if (error?.response?.status === 404) {
-      throw new Error('Product not found or you do not have permission to access it.');
-    } else if (error?.response?.data?.message) {
-      throw new Error(error.response.data.message);
+  } catch (error: unknown) {
+    if (typeof error === 'object' && error !== null && 'response' in error) {
+      const err = error as { response?: { status?: number; data?: any } };
+      console.error('Error updating product:', err.response?.data || error);
+      if (err.response?.status === 403) {
+        const errorMessage = err.response?.data?.message || 'Not authorized to update this product. You can only update products you own.';
+        throw new Error(errorMessage);
+      } else if (err.response?.status === 401) {
+        throw new Error('Authentication failed. Please login again.');
+      } else if (err.response?.status === 404) {
+        throw new Error('Product not found or you do not have permission to access it.');
+      } else if (err.response?.data?.message) {
+        throw new Error(err.response.data.message);
+      }
     }
-    
     throw error;
   }
 };
@@ -164,18 +154,18 @@ export const deleteProduct = async (
     
     console.log('Product deleted successfully:', response.data);
     return response.data;
-  } catch (error: any) {
-    console.error('Error deleting product:', error?.response?.data || error);
-    
-    // Handle specific error cases
-    if (error?.response?.status === 403) {
-      throw new Error('Not authorized to delete this product. You can only delete products you own.');
-    } else if (error?.response?.status === 401) {
-      throw new Error('Authentication failed. Please login again.');
-    } else if (error?.response?.status === 404) {
-      throw new Error('Product not found.');
+  } catch (error: unknown) {
+    if (typeof error === 'object' && error !== null && 'response' in error) {
+      const err = error as { response?: { status?: number; data?: any } };
+      console.error('Error deleting product:', err.response?.data || error);
+      if (err.response?.status === 403) {
+        throw new Error('Not authorized to delete this product. You can only delete products you own.');
+      } else if (err.response?.status === 401) {
+        throw new Error('Authentication failed. Please login again.');
+      } else if (err.response?.status === 404) {
+        throw new Error('Product not found.');
+      }
     }
-    
     throw error;
   }
 };
@@ -193,14 +183,18 @@ export const fetchProducts = async (
       }
     });
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error fetching products:', error);
     throw error;
   }
 };
 
 // Enhanced axios interceptor setup with better error handling
-export const setupAxiosInterceptors = (getTokenFn: () => string | null, logoutFn?: () => void) => {
+export const setupAxiosInterceptors = (
+  getTokenFn: () => string | null,
+  logoutFn?: () => void,
+  refreshTokenFn?: () => Promise<void>
+) => {
   // Request interceptor
   axiosInstance.interceptors.request.use(
     (config) => {
@@ -229,7 +223,7 @@ export const setupAxiosInterceptors = (getTokenFn: () => string | null, logoutFn
     (response) => {
       return response;
     },
-    (error) => {
+    async (error) => {
       console.error('Response interceptor error:', {
         status: error?.response?.status,
         data: error?.response?.data,
@@ -240,7 +234,30 @@ export const setupAxiosInterceptors = (getTokenFn: () => string | null, logoutFn
         }
       });
 
-      // Handle authentication errors
+      const originalRequest = error.config;
+      if (
+        error?.response?.status === 401 &&
+        refreshTokenFn &&
+        !originalRequest._retry
+      ) {
+        originalRequest._retry = true;
+        try {
+          await refreshTokenFn();
+          // After refreshing, retry the original request
+          const token = getTokenFn?.();
+          if (token) {
+            originalRequest.headers['Authorization'] = `Bearer ${token}`;
+          }
+          return axiosInstance(originalRequest);
+        } catch (refreshError) {
+          if (logoutFn) {
+            logoutFn();
+          }
+          return Promise.reject(refreshError);
+        }
+      }
+
+      // Handle authentication errors (if refreshTokenFn not provided or failed)
       if (error?.response?.status === 401) {
         console.warn('Authentication failed, logging out...');
         if (logoutFn) {

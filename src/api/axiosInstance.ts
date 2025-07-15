@@ -43,22 +43,7 @@ export const setupAxiosInterceptors = (getTokenFn: () => string | null) => {
         }
       });
       
-      if (error.response?.status === 401) {
-        // Only clear tokens and redirect if we're on a vendor route
-        const currentPath = window.location.pathname;
-        const isVendorRoute = currentPath.startsWith('/dashboard') || 
-                            currentPath.startsWith('/vendor-product') || 
-                            currentPath.startsWith('/vendor-orders') || 
-                            currentPath.startsWith('/vendor-profile');
-
-        if (isVendorRoute) {
-          // Clear vendor tokens
-          localStorage.removeItem('vendorToken');
-          localStorage.removeItem('vendorData');
-          // Redirect to vendor login only if on a vendor route
-          window.location.href = '/vendor/login';
-        }
-      }
+      // Do not handle vendor 401 redirects here; let the products.ts interceptor handle it
       return Promise.reject(error);
     }
   );

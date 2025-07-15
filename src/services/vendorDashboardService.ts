@@ -14,9 +14,11 @@ class VendorDashboardService {
   }
 
   async getVendorOrders(token: string) {
+    // Always use the latest vendorToken from localStorage if available
+    const realToken = token || localStorage.getItem('vendorToken');
     const response = await fetch(`${this.baseUrl}/vendor/dashboard/orders`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${realToken}`,
         "Content-Type": "application/json",
         accept: "application/json",
       },
@@ -26,9 +28,10 @@ class VendorDashboardService {
   }
 
   async getVendorOrdersNew(token: string) {
+    const realToken = token || localStorage.getItem('vendorToken');
     const response = await fetch(`${this.baseUrl}/order/vendor/orders`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${realToken}`,
         "Content-Type": "application/json",
         accept: "application/json",
       },
@@ -38,9 +41,10 @@ class VendorDashboardService {
   }
 
   async getVendorOrderDetail(token: string, orderId: number) {
+    const realToken = token || localStorage.getItem('vendorToken');
     const response = await fetch(`${this.baseUrl}/order/vendor/${orderId}`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${realToken}`,
         "Content-Type": "application/json",
         accept: "application/json",
       },
@@ -50,9 +54,10 @@ class VendorDashboardService {
   }
 
   async getVendorStats(token: string) {
+    const realToken = token || localStorage.getItem('vendorToken');
     const response = await fetch(`${this.baseUrl}/vendor/dashboard/stats`, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${realToken}`,
         "Content-Type": "application/json",
         accept: "application/json",
       },

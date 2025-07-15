@@ -71,7 +71,7 @@ const ProtectedVendorRoute = ({ children }: { children: ReactElement }) => {
 
   // Only redirect if not authenticated and not loading
   if (!authState.isAuthenticated) {
-    return <Navigate to="/vendor/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return children;

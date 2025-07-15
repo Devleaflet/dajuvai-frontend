@@ -12,6 +12,8 @@ import Pagination from '../Components/Pagination';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { Product } from '../Components/Types/Product';
+// Add XLSX import for Excel export
+import * as XLSX from 'xlsx';
 
 const ProductListSkeleton: React.FC = () => {
   return (
@@ -50,6 +52,9 @@ const VendorProduct: React.FC = () => {
   const [docketHeight] = useState<number>(80);
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [editingProduct, setEditingProduct] = useState<ApiProduct | null>(null);
+  // Add search and sort state
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [sortOption, setSortOption] = useState<string>("newest");
 
   // React Query for products
   const {
@@ -79,8 +84,14 @@ const VendorProduct: React.FC = () => {
           ? product.productImages.map((img: string | { url?: string }) => (typeof img === 'string' ? img : img.url || ''))
           : [];
         // Calculate discounted price
-        const basePrice = typeof product.basePrice === 'string' ? parseFloat(product.basePrice) : product.basePrice;
-        const discount = typeof product.discount === 'string' ? parseFloat(product.discount) : product.discount;
+        let basePrice = 0;
+        if (typeof product.basePrice === 'number') basePrice = product.basePrice;
+        else if (typeof product.basePrice === 'string') basePrice = parseFloat(product.basePrice);
+        else if (typeof product.basePrice === 'undefined' || product.basePrice === null) basePrice = 0;
+        let discount = 0;
+        if (typeof product.discount === 'number') discount = product.discount;
+        else if (typeof product.discount === 'string') discount = parseFloat(product.discount);
+        else if (typeof product.discount === 'undefined' || product.discount === null) discount = 0;
         const discountType = (product.discountType || '').toUpperCase();
         let price = basePrice;
         let originalPrice: string | undefined = undefined;
@@ -93,6 +104,10 @@ const VendorProduct: React.FC = () => {
             originalPrice = basePrice.toFixed(2);
           }
         }
+        // Only use allowed status values
+        let status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK' = 'AVAILABLE';
+        if (product.status === 'OUT_OF_STOCK') status = 'OUT_OF_STOCK';
+        else if (product.status === 'LOW_STOCK') status = 'LOW_STOCK';
         // Explicitly create the object with all required properties
         const mappedProduct: Product = {
           id: product.id,
@@ -106,7 +121,7 @@ const VendorProduct: React.FC = () => {
           discount: discount !== null && discount !== undefined ? discount.toString() : '0',
           discountType: (discountType === 'PERCENTAGE' ? 'PERCENTAGE' : (discountType === 'FLAT' || discountType === 'FIXED' ? 'FLAT' : undefined)) as "PERCENTAGE" | "FLAT" | undefined,
           size: product.size || [],
-          status: (product.status || 'AVAILABLE') as 'AVAILABLE' | 'OUT_OF_STOCK' | 'DISCONTINUED',
+          status: status,
           productImages: images,
           subcategory: product.subcategory,
           vendor: product.vendor?.businessName || '',
@@ -194,8 +209,7 @@ const VendorProduct: React.FC = () => {
       return createProduct(
         productData.categoryId,
         productData.subcategoryId,
-        formData,
-        authState.token
+        formData
       );
     },
     onSuccess: (data) => {
@@ -249,7 +263,7 @@ const VendorProduct: React.FC = () => {
       if (productData.inventory && Array.isArray(productData.inventory)) {
         formData.append("inventory", JSON.stringify(productData.inventory));
       }
-      return updateProduct(productId, categoryId, subcategoryId, formData, authState.token);
+      return updateProduct(productId, categoryId, subcategoryId, formData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -278,26 +292,9 @@ const VendorProduct: React.FC = () => {
 
   const handleEditProduct = (product: Product) => {
     // Convert Product to ApiProduct for editing
-    let basePrice: number | null = null;
-    
-    // Handle basePrice conversion
-    if (typeof product.basePrice === 'number') {
-      basePrice = product.basePrice;
-    } else if (product.basePrice) {
-      basePrice = parseFloat(product.basePrice.toString());
-    } else if (typeof product.price === 'number') {
-      basePrice = product.price;
-    } else if (product.price) {
-      basePrice = parseFloat(product.price.toString());
-    } else {
-      basePrice = 0;
-    }
-
-    // Ensure basePrice is never undefined
-    const finalBasePrice: number | null = basePrice !== undefined ? basePrice : 0;
-
-    // Handle discount conversion
     let discount: number | null = null;
+    
+    // Handle discount conversion
     if (product.discount) {
       if (typeof product.discount === 'number') {
         discount = product.discount;
@@ -306,33 +303,39 @@ const VendorProduct: React.FC = () => {
       }
     }
 
+    // Use a type guard for subcategory
+    type SubcategoryType = { id: number; name: string; image?: string | null; createdAt?: string; updatedAt?: string };
+    const subcategory = product.subcategory && typeof product.subcategory === 'object' && 'id' in product.subcategory && 'name' in product.subcategory
+      ? {
+          id: product.subcategory.id,
+          name: product.subcategory.name,
+          image: (product.subcategory as SubcategoryType).image || null,
+          createdAt: (product.subcategory as SubcategoryType).createdAt || new Date().toISOString(),
+          updatedAt: (product.subcategory as SubcategoryType).updatedAt || new Date().toISOString(),
+        }
+      : { id: 0, name: '', image: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     const apiProduct: ApiProduct = {
       id: product.id,
       name: product.name || '',
       description: product.description || '',
-      basePrice: finalBasePrice,
+      basePrice: typeof product.basePrice === 'number' ? product.basePrice : (product.basePrice ? parseFloat(product.basePrice.toString()) : (typeof product.price === 'string' ? parseFloat(product.price) : typeof product.price === 'number' ? product.price : 0)),
       stock: product.stock || 0,
       discount: discount,
       discountType: (product.discountType === 'PERCENTAGE' ? 'PERCENTAGE' : 'FLAT') as 'PERCENTAGE' | 'FLAT',
       size: product.size || [],
+      status: (product.status === 'OUT_OF_STOCK' ? 'OUT_OF_STOCK' : product.status === 'LOW_STOCK' ? 'LOW_STOCK' : 'AVAILABLE'),
       productImages: product.productImages || (product.image ? [product.image] : []),
-      inventory: [],
-      vendorId: 0, // Will be set by the API
+      inventory: [], // fallback empty array
+      vendorId: 0, // fallback 0
       brand_id: product.brand_id || null,
       dealId: product.dealId || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       categoryId: product.categoryId || 0,
-      subcategory: {
-        id: product.subcategoryId || 0,
-        name: product.category || '',
-        image: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      vendor: {
-        id: authState.vendor?.id || 0,
-        businessName: authState.vendor?.businessName || '',
+      subcategory: subcategory,
+      vendor: typeof product.vendor === 'object' && product.vendor !== null ? product.vendor : {
+        id: 0,
+        businessName: '',
         email: '',
         phoneNumber: '',
         districtId: 0,
@@ -343,6 +346,8 @@ const VendorProduct: React.FC = () => {
       },
       brand: null,
       deal: null,
+      price: typeof product.price === 'number' ? product.price : (product.price ? parseFloat(product.price.toString()) : 0),
+      image: product.image || '',
     };
     setEditingProduct(apiProduct);
     setShowEditModal(true);
@@ -361,10 +366,60 @@ const VendorProduct: React.FC = () => {
   };
 
   const allProducts = productData?.products || [];
-  const totalProducts = productData?.total || 0;
+  // Remove unused variable
+  // const totalProducts = productData?.total || 0;
+
+  // Filter and sort products in-memory
+  const filteredProducts = allProducts.filter((product) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      product.name?.toLowerCase().includes(query) ||
+      product.description?.toLowerCase().includes(query) ||
+      product.category?.toLowerCase().includes(query) ||
+      product.subcategory?.name?.toLowerCase().includes(query)
+    );
+  });
+
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortOption) {
+      case "price-asc":
+        return parseFloat(a.price.toString()) - parseFloat(b.price.toString());
+      case "price-desc":
+        return parseFloat(b.price.toString()) - parseFloat(a.price.toString());
+      case "name-asc":
+        return a.name?.localeCompare(b.name || '') || 0;
+      case "name-desc":
+        return b.name?.localeCompare(a.name || '') || 0;
+      case "oldest":
+        return (a.id || 0) - (b.id || 0);
+      case "newest":
+      default:
+        return (b.id || 0) - (a.id || 0);
+    }
+  });
+
+  // Paginate after filtering/sorting
+  const paginatedProducts = sortedProducts.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage);
+  const filteredTotal = sortedProducts.length;
 
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
+  };
+
+  // Export to Excel handler
+  const handleExportExcel = () => {
+    // Export the currently filtered and sorted products
+    const exportData = sortedProducts.map((product) => ({
+      'Name': product.name,
+      'Category': product.category || (typeof product.subcategory === 'object' && product.subcategory?.name) || '',
+      'Price': product.price,
+      'Stock': product.stock,
+      'Status': product.status,
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Products');
+    XLSX.writeFile(workbook, 'vendor-products.xlsx');
   };
 
   return (
@@ -372,13 +427,42 @@ const VendorProduct: React.FC = () => {
       <Sidebar />
       <div className={`dashboard ${isMobile ? "dashboard--mobile" : ""}`}>
         <Header title="Product Management" onSearch={() => {}} />
+        {/* Search and Sort Controls */}
+        <div className="dashboard__search-container" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <div className="dashboard__search" style={{ flex: 1, minWidth: 200 }}>
+            <input
+              className="dashboard__search-input"
+              type="text"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={e => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+            <span className="dashboard__search-icon" />
+          </div>
+          <select
+            className="vendor-product__sort-select"
+            value={sortOption}
+            onChange={e => setSortOption(e.target.value)}
+            style={{ minWidth: 180, height: 38, borderRadius: 20, border: '1px solid #e5e7eb', padding: '0 12px', background: '#fff', fontSize: 14 }}
+          >
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="name-asc">Name: A-Z</option>
+            <option value="name-desc">Name: Z-A</option>
+          </select>
+        </div>
         <main className="dashboard__main" style={{ paddingBottom: isMobile ? `${docketHeight + 24}px` : "24px" }}>
           <div className="vendor-product__actions">
             <button className="vendor-product__add-btn" onClick={() => setShowAddModal(true)}>
               <span className="vendor-product__add-icon">+</span>
               Add Product
             </button>
-            <button className="vendor-product__export-btn" onClick={() => {}}>
+            <button className="vendor-product__export-btn" onClick={handleExportExcel}>
               Export to Excel
             </button>
           </div>
@@ -401,19 +485,18 @@ const VendorProduct: React.FC = () => {
             <ProductListSkeleton />
           ) : isError ? (
             <div className="vendor-product__error">{(error as Error).message}</div>
-          ) : allProducts.length > 0 ? (
+          ) : paginatedProducts.length > 0 ? (
             <>
               <ProductList
-                products={allProducts}
+                products={paginatedProducts}
                 isMobile={isMobile}
                 onEdit={handleEditProduct}
-                onDelete={() => {}} // TODO: Implement delete functionality
                 showVendor={false}
               />
-              {totalProducts > productsPerPage && (
+              {filteredTotal > productsPerPage && (
                 <Pagination
                   currentPage={currentPage}
-                  totalPages={Math.ceil(totalProducts / productsPerPage)}
+                  totalPages={Math.ceil(filteredTotal / productsPerPage)}
                   onPageChange={handlePageChange}
                 />
               )}

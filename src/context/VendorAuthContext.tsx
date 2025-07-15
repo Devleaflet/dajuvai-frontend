@@ -82,7 +82,8 @@ export const VendorAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Setup axios interceptors
   useEffect(() => {
-    setupAxiosInterceptors(() => authState.token, logout);
+    // Always get the latest token from localStorage for every request
+    setupAxiosInterceptors(() => localStorage.getItem('vendorToken'), logout, refreshToken);
   }, [authState.token]);
 
   const refreshToken = async () => {
@@ -108,18 +109,13 @@ export const VendorAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setAuthState({ token, vendor, isAuthenticated: true });
     localStorage.setItem('vendorToken', token);
     localStorage.setItem('vendorData', JSON.stringify(vendor));
-    
-    // Set default header for all future requests
     axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   };
 
   const logout = () => {
     console.log("VendorAuthContext logout - using comprehensive logout");
-    
     setAuthState({ token: null, vendor: null, isAuthenticated: false });
-    
-    // Use comprehensive logout utility
-    VendorAuthService.clearAllUserData();
+    VendorAuthService.comprehensiveLogout();
   };
 
   return (

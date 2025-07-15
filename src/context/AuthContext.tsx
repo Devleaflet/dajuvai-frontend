@@ -240,11 +240,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Logout function
   const logout = useCallback(() => {
-    console.log("AuthContext logout - user only");
+    console.log("AuthContext logout - user only (full cleanse)");
     setToken(null);
     setUser(null);
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("authUser");
+    localStorage.clear();
+    sessionStorage.clear();
+    // Attempt to clear all cookies (best effort, not HttpOnly)
+    document.cookie.split(';').forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, '')
+        .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
+    });
     // Call logout API (non-blocking)
     axios
       .post(`${API_BASE_URL}/api/auth/logout`, {}, { 
@@ -252,6 +258,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         timeout: 5000 
       })
       .catch((err) => console.error("Logout API error (non-critical):", err));
+    // Reload the page to ensure all state is reset
+    window.location.href = '/';
   }, []);
 
   // Fetch user data by ID

@@ -5,7 +5,6 @@ import defaultProductImage from "../assets/logo.webp";
 interface ProductListProps {
   products: Product[];
   onEdit: (product: Product) => void;
-  onDelete: (product: Product) => void;
   isMobile: boolean;
   showVendor: boolean;
 }
@@ -13,7 +12,6 @@ interface ProductListProps {
 const ProductList: React.FC<ProductListProps> = ({
   products,
   onEdit,
-  onDelete,
   isMobile,
   showVendor,
 }) => {
@@ -99,12 +97,6 @@ const ProductList: React.FC<ProductListProps> = ({
                         onClick={() => onEdit(product)}
                       >
                         <span className="vendor-product__edit-icon"></span>
-                      </button>
-                      <button
-                        className="vendor-product__action-btn vendor-product__delete"
-                        onClick={() => onDelete(product)}
-                      >
-                        <span className="vendor-product__delete-icon"></span>
                       </button>
                     </div>
                   </td>

@@ -36,6 +36,7 @@ import axiosInstance from "../api/axiosInstance";
 import { fetchSubCategory } from "../api/subcategory";
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "../config";
+import { useVendorAuth } from "../context/VendorAuthContext";
 
 interface Category {
   id: number;
@@ -54,7 +55,8 @@ interface Subcategory {
 }
 
 const Navbar: React.FC = () => {
-  const { user, isAuthenticated, isLoading, logout, fetchUserData } = useAuth();
+  const { user, isAuthenticated, isLoading, logout: userLogout, fetchUserData } = useAuth();
+  const { authState: vendorAuthState, logout: vendorLogout } = useVendorAuth();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState<boolean>(false);
@@ -617,11 +619,14 @@ const Navbar: React.FC = () => {
         .replace(/^ +/, '')
         .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
     });
-    // Call context logout to clear state
-    logout();
-    // Redirect to home
-    navigate('/');
-    window.location.reload();
+    // Call the correct context logout to clear state
+    if (vendorAuthState.isAuthenticated && vendorAuthState.vendor) {
+      vendorLogout();
+    } else {
+      userLogout();
+    }
+    // Reload the page to ensure all state is reset
+    window.location.href = '/';
   };
 
   return (

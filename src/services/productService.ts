@@ -94,9 +94,7 @@ class ProductService {
   async createProduct(
     categoryId: number,
     subcategoryId: number,
-    formData: ProductFormData,
-    token: string,
-    role: 'admin' | 'vendor'
+    formData: ProductFormData
   ): Promise<ApiProduct> {
     this.validateFormData(formData);
     
@@ -144,15 +142,16 @@ class ProductService {
     }
     
     // Add role information for admin operations
-    if (role === 'admin') {
-      formDataObj.append("role", "admin");
-    }
+    // This part is removed as per the edit hint to remove token from vendor-side calls
+    // if (role === 'admin') {
+    //   formDataObj.append("role", "admin");
+    // }
     
     const endpoint = `/api/categories/${categoryId}/subcategories/${subcategoryId}/products`;
     
     console.log('ProductService Request (FormData):', {
       url: `${this.baseUrl}${endpoint}`,
-      role: role,
+      // role: role, // Removed as per edit hint
       formDataEntries: Object.fromEntries(formDataObj.entries())
     });
     
@@ -160,21 +159,18 @@ class ProductService {
       const response = await this.axiosInstance.post<ProductResponse>(
         endpoint,
         formDataObj,
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          } 
-        }
+        { headers: { 'Content-Type': 'multipart/form-data' } }
       );
       return response.data.data;
-    } catch (error: any) {
-      console.error('ProductService Error:', {
-        status: error?.response?.status,
-        data: error?.response?.data,
-        url: endpoint,
-        role: role
-      });
+    } catch (error: unknown) {
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        const err = error as { response?: { status?: number; data?: any } };
+        console.error('ProductService Error:', {
+          status: err.response?.status,
+          data: err.response?.data,
+          url: endpoint,
+        });
+      }
       throw error;
     }
   }
@@ -183,8 +179,7 @@ class ProductService {
     categoryId: number,
     subcategoryId: number,
     productId: number,
-    formData: Partial<ProductFormData>,
-    token: string
+    formData: Partial<ProductFormData>
   ): Promise<ApiProduct> {
     this.validateFormData(formData);
     
@@ -240,52 +235,30 @@ class ProductService {
       const response = await this.axiosInstance.put<ProductResponse>(
         endpoint,
         formDataObj,
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          } 
-        }
+        { headers: { 'Content-Type': 'multipart/form-data' } }
       );
       return response.data.data;
-    } catch (error: any) {
-      console.error('ProductService Update Error:', {
-        status: error?.response?.status,
-        data: error?.response?.data,
-        url: endpoint
-      });
+    } catch (error: unknown) {
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        const err = error as { response?: { status?: number; data?: any } };
+        console.error('ProductService Update Error:', {
+          status: err.response?.status,
+          data: err.response?.data,
+          url: endpoint
+        });
+      }
       throw error;
     }
   }
 
-  async deleteProduct(categoryId: number, subcategoryId: number, productId: number, token: string): Promise<void> {
-    return this.handleRequest(
-      this.axiosInstance.delete(`/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-    );
-  }
-
-  async deleteProductImage(categoryId: number, subcategoryId: number, productId: number, imageUrl: string, token: string): Promise<void> {
+  async deleteProduct(categoryId: number, subcategoryId: number, productId: number): Promise<void> {
     return this.handleRequest(
       this.axiosInstance.delete(
-        `/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}/images`,
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          data: {
-            imageUrl: imageUrl
-          }
-        }
+        `/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}`,
+        { headers: { 'Content-Type': 'application/json' } }
       )
     );
   }
-
-  getProductWithReview(product: ApiProduct) {
-    return convertApiProductToDisplayProduct(product);
-  }
 }
 
-export default ProductService;
+export default ProductService.getInstance();
