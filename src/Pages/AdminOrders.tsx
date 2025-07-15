@@ -1,20 +1,16 @@
-
-
 import React, { useState, useEffect } from "react";
 import { AdminSidebar } from "../Components/AdminSidebar";
 import Header from "../Components/Header";
 import Pagination from "../Components/Pagination";
 import OrderEditModal from "../Components/Modal/OrderEditModal";
 import DeleteModal from "../Components/Modal/DeleteModal";
-import profilepic from '../assets/earphones.png';
 import OrderDetailModal from '../Components/Modal/OrderDetailModal';
 import AdminOrdersSkeleton from '../skeleton/AdminOrdersSkeleton';
 import "../Styles/AdminOrders.css";
 import { OrderService } from "../services/orderService";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-hot-toast';
 
 interface DisplayOrder {
   id: string;
@@ -26,7 +22,6 @@ interface DisplayOrder {
   paymentStatus: string;
 }
 
-// Interface matching OrderDetailModal and OrderEditModal
 interface ModalOrder {
   id: string;
   firstName: string;
@@ -48,7 +43,7 @@ const AdminOrders: React.FC = () => {
   const { logout, token, isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<DisplayOrder[]>([]);
-  const [rawOrders, setRawOrders] = useState<any[]>([]); // Store raw API orders
+  const [rawOrders, setRawOrders] = useState<any[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<DisplayOrder[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [ordersPerPage] = useState(7);
@@ -77,9 +72,8 @@ const AdminOrders: React.FC = () => {
       try {
         setIsLoading(true);
         const response = await OrderService.getAllOrders(token);
-       // const apiOrders = response.data || response; // Handle both response.data and direct array
-        const apiOrders = response; // Handle both response.data and direct array
-        setRawOrders(apiOrders); // Store raw API data
+        const apiOrders = response;
+        setRawOrders(apiOrders);
         const transformedOrders: DisplayOrder[] = apiOrders.map((order: any) => ({
           id: order.id.toString(),
           customer: order.orderedBy?.username || 'Unknown',
@@ -98,6 +92,7 @@ const AdminOrders: React.FC = () => {
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load orders';
         setError(errorMessage);
+        toast.error(errorMessage);
         if (errorMessage.includes('Unauthorized') || errorMessage.includes('No authentication token')) {
           logout();
           navigate('/login');
@@ -132,13 +127,11 @@ const AdminOrders: React.FC = () => {
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
-  // Transform DisplayOrder to ModalOrder using raw API data
   const toModalOrder = (displayOrder: DisplayOrder): ModalOrder => {
     const rawOrder = rawOrders.find(o => o.id.toString() === displayOrder.id) || {};
     const orderedBy = rawOrder.orderedBy || {};
     const shippingAddress = rawOrder.shippingAddress || {};
     
-    // Get first and last name from username or set defaults
     const username = orderedBy.username || displayOrder.customer || 'Unknown User';
     const nameParts = username.split(' ');
     const firstName = nameParts[0] || 'Unknown';
@@ -158,7 +151,7 @@ const AdminOrders: React.FC = () => {
       town: shippingAddress.town || shippingAddress.city || 'N/A',
       state: shippingAddress.state || shippingAddress.province || 'N/A',
       vendorName: rawOrder.vendorName || 'N/A',
-      profileImage: undefined, // Optional field
+      profileImage: undefined,
     };
   };
 
@@ -175,14 +168,16 @@ const AdminOrders: React.FC = () => {
   const handleDeleteOrder = async () => {
     if (orderToDelete && token) {
       try {
-        // Assuming OrderService has a deleteOrder method
+        // Uncomment when OrderService.deleteOrder is implemented
         // await OrderService.deleteOrder(orderToDelete.id, token);
         const updatedOrders = orders.filter(order => order.id !== orderToDelete.id);
         setOrders(updatedOrders);
         setFilteredOrders(updatedOrders);
         setRawOrders(rawOrders.filter(o => o.id.toString() !== orderToDelete.id));
+        toast.success('Order has been successfully deleted.');
       } catch (err) {
-        setError('Failed to delete order');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to delete order';
+        toast.error(errorMessage);
       } finally {
         setOrderToDelete(null);
         setShowDeleteModal(false);
@@ -195,29 +190,21 @@ const AdminOrders: React.FC = () => {
     setShowEditModal(true);
   };
 
-  // Updated handleSaveOrder to match the OrderEditModal's onSave signature
   const handleSaveOrder = async (orderId: string, newStatus: string) => {
     try {
-      // Update the orders state with the new status
       const updatedOrders = orders.map(order =>
         order.id === orderId ? { ...order, status: newStatus } : order
       );
       setOrders(updatedOrders);
       setFilteredOrders(updatedOrders);
-
-      // Update rawOrders with the new status
       setRawOrders(rawOrders.map(o =>
         o.id.toString() === orderId
           ? { ...o, status: newStatus }
           : o
       ));
-
-      // The success toast is already shown in OrderEditModal
-      // No need to show it here as well
-      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update order status';
-      toast.error(`Failed to update order status: ${errorMessage}`);
+      toast.error(errorMessage);
     } finally {
       setShowEditModal(false);
     }
@@ -277,12 +264,7 @@ const AdminOrders: React.FC = () => {
                     <tr key={order.id} className="admin-orders__table-row">
                       <td>{order.id}</td>
                       <td className="admin-orders__name-cell">
-                        <div className="admin-orders__profile-container">
-                          <div className="admin-orders__profile-image">
-                            <img src={profilepic} alt={order.customer} />
-                          </div>
-                          <span>{order.customer}</span>
-                        </div>
+                        {order.customer}
                       </td>
                       <td>{order.email}</td>
                       <td>{order.orderDate}</td>
@@ -360,20 +342,6 @@ const AdminOrders: React.FC = () => {
         onClose={() => setShowDeleteModal(false)}
         onDelete={handleDeleteOrder}
         productName={orderToDelete?.id || "Order"}
-      />
-
-      {/* Toast Container for showing notifications */}
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
       />
     </div>
   );
