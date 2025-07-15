@@ -46,7 +46,7 @@ const AdminProduct: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const productService = ProductService.getInstance();
+  const productService = ProductService;
 
   // Fetch products
   const fetchProducts = useCallback(async () => {
@@ -58,7 +58,7 @@ const AdminProduct: React.FC = () => {
       const data = await productService.getAllProducts(token);
       setProducts(data);
       setFilteredProducts(data);
-    } catch (err: any) {
+    } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to load products";
       setError(errorMessage);
       toast.error(errorMessage);
@@ -79,66 +79,53 @@ const AdminProduct: React.FC = () => {
     categoryId: number,
     subcategoryId: number
   ) => {
-    if (!token) {
-      toast.error("No token provided. Please log in.");
-      return;
-    }
-
     setIsUpdating(true);
     try {
       const updatedProduct = await productService.updateProduct(
         categoryId,
         subcategoryId,
         productId,
-        product,
-        token
+        product
       );
-      
       setProducts(prevProducts => 
         prevProducts.map(p => p.id === updatedProduct.id ? updatedProduct : p)
       );
       setFilteredProducts(prevProducts => 
         prevProducts.map(p => p.id === updatedProduct.id ? updatedProduct : p)
       );
-      
       setShowEditModal(false);
       setProductToEdit(null);
       toast.success("Product updated successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to update product";
       toast.error(errorMessage);
       throw err;
     } finally {
       setIsUpdating(false);
     }
-  }, [token, productService]);
+  }, [productService]);
 
   // Delete product function
   const deleteProduct = useCallback(async (product: ApiProduct) => {
-    if (!token) return;
-
     setIsDeleting(true);
     try {
       await productService.deleteProduct(
         product.categoryId,
         product.subcategory.id,
-        product.id,
-        token
+        product.id
       );
-      
       setProducts(prevProducts => prevProducts.filter(p => p.id !== product.id));
       setFilteredProducts(prevProducts => prevProducts.filter(p => p.id !== product.id));
-      
       setShowDeleteModal(false);
       setProductToDelete(null);
       toast.success("Product deleted successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to delete product";
       toast.error(errorMessage);
     } finally {
       setIsDeleting(false);
     }
-  }, [token, productService]);
+  }, [productService]);
 
   // Debounced search
   const debouncedSearch = useMemo(
@@ -181,7 +168,7 @@ const AdminProduct: React.FC = () => {
   }, []);
 
   const sortedAndFilteredProducts = useMemo(() => {
-    let filtered = [...filteredProducts];
+    const filtered = [...filteredProducts];
     if (sortConfig) {
       filtered.sort((a, b) => {
         const aValue = a[sortConfig.key] ?? "";
@@ -235,7 +222,7 @@ const AdminProduct: React.FC = () => {
           subcategoryId,
         });
         await updateProduct(productId, product, categoryId, subcategoryId);
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("AdminProduct: Error updating product:", err);
         throw err; // Re-throw to let the modal handle the error
       }
@@ -247,7 +234,7 @@ const AdminProduct: React.FC = () => {
     if (!productToDelete) return;
     try {
       await deleteProduct(productToDelete);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("AdminProduct: Error deleting product:", err);
     }
   }, [productToDelete, deleteProduct]);
