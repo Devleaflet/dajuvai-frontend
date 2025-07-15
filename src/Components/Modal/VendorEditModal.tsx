@@ -42,7 +42,6 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
   const [districts, setDistricts] = useState<District[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [verifyLoading, setVerifyLoading] = useState(false);
 
   // Fetch districts when modal opens
   useEffect(() => {
@@ -138,29 +137,6 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
     }
   };
 
-  const handleSendVerification = async () => {
-    if (!formData.email) return;
-    setVerifyLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/vendors/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ email: formData.email })
-      });
-      const data = await response.json();
-      if (response.ok && data.success) {
-        toast.success(data.message || 'Verification token sent!');
-      } else {
-        toast.error(data.message || (data.errors ? data.errors.map((e: { message: string }) => e.message).join('; ') : 'Failed to send verification.'));
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Network error.';
-      toast.error(errorMessage);
-    } finally {
-      setVerifyLoading(false);
-    }
-  };
-
   if (!show) return null;
 
   return (
@@ -226,16 +202,6 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
               />
             </div>
           </div>
-
-          <button 
-            type="button" 
-            className="btn btn-secondary" 
-            style={{ marginBottom: 12, width: '100%' }} 
-            onClick={handleSendVerification} 
-            disabled={verifyLoading}
-          >
-            {verifyLoading ? 'Sending...' : 'Send Verification Email'}
-          </button>
 
           <div className="modal-actions add-vendor-actions">
             <button type="button" onClick={onClose} disabled={loading} className="btn btn-secondary">

@@ -9,8 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import { VendorAuthService } from "../services/vendorAuthService";
 import { Vendor } from "../Components/Types/vendor";
 import "../Styles/AdminVendor.css";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
 
 interface AdminVendor extends Vendor {
   status: "Active" | "Inactive";
@@ -90,11 +89,14 @@ const createVendorAPI = (token: string | null) => ({
           businessAddress: vendorData.businessAddress || "",
           phoneNumber: vendorData.phoneNumber || "",
           password: vendorData.password,
-          district: String(vendorData.district), // Convert to string
+          district: String(vendorData.district),
         },
         token
       );
       if (!response.success || !response.vendor) {
+        if (response.errors?.some((err) => err.message.includes("email already exists"))) {
+          throw new Error("A vendor with this email already exists");
+        }
         throw new Error(response.message || "Failed to create vendor");
       }
       return {
@@ -128,6 +130,9 @@ const createVendorAPI = (token: string | null) => ({
       );
 
       if (!response.success || !response.vendor) {
+        if (response.errors?.some((err) => err.message.includes("email already exists"))) {
+          throw new Error("A vendor with this email already exists");
+        }
         throw new Error(response.message || "Failed to update vendor");
       }
 
@@ -194,8 +199,6 @@ const AdminVendors: React.FC = () => {
       if (!token) {
         throw new Error("No token provided. Please log in.");
       }
-      console.log("Fetching districts from:", `${API_BASE_URL}/api/district`);
-      
       const response = await fetch(`${API_BASE_URL}/api/district`, {
         method: "GET",
         headers: {
@@ -204,20 +207,15 @@ const AdminVendors: React.FC = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      
-      console.log("Districts response status:", response.status);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("Districts API error:", errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const result: ApiResponse<District[]> = await response.json();
-      console.log("Districts loaded:", result.data?.length || 0, "districts");
       
       if (!result.data || result.data.length === 0) {
-        console.warn("No districts found in the response");
         setError("No districts available. Please contact support.");
         toast.error("No districts available. Please contact support.");
         return;
@@ -225,7 +223,6 @@ const AdminVendors: React.FC = () => {
       
       setDistricts(result.data || []);
     } catch (error) {
-      console.error("Error fetching districts:", error);
       setError("Failed to load districts");
       toast.error("Failed to load districts");
     }
@@ -263,7 +260,6 @@ const AdminVendors: React.FC = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load vendors");
       toast.error(err instanceof Error ? err.message : "Failed to load vendors");
-      console.error("Error loading vendors:", err);
     } finally {
       setLoading(false);
     }
@@ -337,29 +333,28 @@ const AdminVendors: React.FC = () => {
       setSelectedVendor(null);
       toast.success("Vendor updated successfully");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save vendor");
-      toast.error(err instanceof Error ? err.message : "Failed to save vendor");
+      const errorMessage = err instanceof Error ? err.message : "Failed to save vendor";
+      toast.error(errorMessage);
     }
   };
 
-  const handleAddVendor = async (newVendor: any) => {
+  const handleAddVendor = async (newVendor: unknown) => {
     try {
-      if (!newVendor.district) {
+      const vendor = newVendor as { [key: string]: any };
+      if (!vendor.district) {
         throw new Error("Please select a valid district");
       }
-      // Validate district exists in the list by name
-      const selectedDistrict = districts.find(d => d.name === newVendor.district);
+      const selectedDistrict = districts.find(d => d.name === vendor.district);
       if (!selectedDistrict) {
         throw new Error("Selected district is not valid. Please refresh the page and try again.");
       }
-      console.log("Creating vendor with district:", selectedDistrict);
       const savedVendor = await vendorAPI.create({
-        businessName: newVendor.businessName,
-        email: newVendor.email,
-        businessAddress: newVendor.businessAddress,
-        phoneNumber: newVendor.phoneNumber,
-        password: newVendor.password,
-        district: newVendor.district, // This is now the name
+        businessName: vendor.businessName,
+        email: vendor.email,
+        businessAddress: vendor.businessAddress,
+        phoneNumber: vendor.phoneNumber,
+        password: vendor.password,
+        district: vendor.district,
       });
       setVendors([
         ...vendors,
@@ -379,22 +374,19 @@ const AdminVendors: React.FC = () => {
       ]);
       setShowAddModal(false);
       toast.success("Vendor added successfully");
-    } catch (err) {
+    } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to add vendor";
-      setError(errorMessage);
       toast.error(errorMessage);
-      console.error("Error creating vendor:", err);
     }
   };
 
   if (!isAuthenticated || !token) {
     return (
       <div className="admin-vendors">
-        <ToastContainer position="top-right" autoClose={4000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
         <AdminSidebar />
         <div className="admin-vendors__content">
           <div className="admin-vendors__error">
-            Please log in to access vendor management.
+            Please log ۬log in to access vendor management.
           </div>
         </div>
       </div>
@@ -404,7 +396,6 @@ const AdminVendors: React.FC = () => {
   if (loading) {
     return (
       <div className="admin-vendors">
-        <ToastContainer position="top-right" autoClose={4000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
         <AdminSidebar />
         <div className="admin-vendors__content">
           <Header onSearch={handleSearch} showSearch={true} title="Vendor Management" />
@@ -440,7 +431,6 @@ const AdminVendors: React.FC = () => {
 
   return (
     <div className="admin-vendors">
-      <ToastContainer position="top-right" autoClose={4000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
       <AdminSidebar />
       <div className="admin-vendors__content">
         {error && (
