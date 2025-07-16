@@ -764,6 +764,7 @@ import khalti from '../assets/khalti1.png';
 import { Product } from '../Components/Types/Product';
 import { useAuth } from '../context/AuthContext';
 import AlertModal from '../Components/Modal/AlertModal';
+import { API_BASE_URL } from '../config';
 
 interface District {
   id: number;
@@ -976,7 +977,7 @@ const Checkout: React.FC = () => {
         'Content-Type': 'application/json',
       };
       if (token) headers['Authorization'] = `Bearer ${token}`;
-      const response = await fetch('https://leafletdv.onrender.com/api/order', {
+      const response = await fetch(`${API_BASE_URL}/api/order`, {
         method: 'POST',
         headers,
         body: JSON.stringify(orderData),
@@ -1113,7 +1114,7 @@ const Checkout: React.FC = () => {
   useEffect(() => {
     const fetchDistricts = async () => {
       try {
-        const response = await fetch('https://leafletdv.onrender.com/api/district');
+        const response = await fetch(`${API_BASE_URL}/api/district`);
         const result = await response.json();
         if (result.success) {
           setDistricts(result.data);
@@ -1125,7 +1126,7 @@ const Checkout: React.FC = () => {
 
     const fetchPromoCodes = async () => {
       try {
-        const response = await fetch('https://leafletdv.onrender.com/api/promo');
+        const response = await fetch(`${API_BASE_URL}/api/promo`);
         const result = await response.json();
         if (result.success && result.data) {
           setPromoCodes(result.data);
