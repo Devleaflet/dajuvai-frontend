@@ -9,4 +9,10 @@ export default defineConfig({
       typescript: false, // Disable TypeScript checking
     }),
   ],
+  server: {
+    allowedHosts: [
+      'dajubhai.zokchen.com.np',
+      'dajuvai.com',
+    ],
+  },
 });
