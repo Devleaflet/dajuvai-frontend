@@ -399,7 +399,7 @@ const AdminCatalog = () => {
                   <div className="admin-catalog__form-group">
                     <label className="admin-catalog__form-label">Products</label>
                     <div className="admin-catalog__search admin-catalog__search--modal">
-                      <Search className="admin-catalog__search-icon" />
+                  
                       <input
                         type="text"
                         placeholder="Search products..."
