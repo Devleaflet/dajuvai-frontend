@@ -11,6 +11,7 @@ import CategoryEditModal from "../Components/Modal/CategoryEditModal";
 import SubCategoryModal from "../Components/Modal/SubCategoryModal";
 import "../Styles/AdminCategories.css";
 import placeholder from "../assets/earphones.png";
+import { Plus } from "lucide-react";
 
 interface SubCategory {
   id: string;
@@ -100,7 +101,7 @@ const mockCategories: Category[] = [
   },
 ];
 
-const CACHE_KEY = 'admin_categories';
+const CACHE_KEY = "admin_categories";
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 // Skeleton Component
@@ -108,7 +109,10 @@ const CategorySkeleton: React.FC = () => {
   return (
     <>
       {Array.from({ length: 7 }).map((_, index) => (
-        <tr key={index} className="admin-categories__table-row admin-categories__skeleton-row">
+        <tr
+          key={index}
+          className="admin-categories__table-row admin-categories__skeleton-row"
+        >
           <td>
             <div className="admin-categories__skeleton admin-categories__skeleton-checkbox"></div>
           </td>
@@ -143,12 +147,17 @@ const AdminCategories: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [categoriesPerPage] = useState(7);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [selectedSubCategory, setSelectedSubCategory] = useState<SubCategory | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null
+  );
+  const [selectedSubCategory, setSelectedSubCategory] =
+    useState<SubCategory | null>(null);
   const [showCategoryEditModal, setShowCategoryEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+    null
+  );
   const [subCategoryToDelete, setSubCategoryToDelete] = useState<{
     categoryId: string;
     subCategoryId: string;
@@ -192,19 +201,25 @@ const AdminCategories: React.FC = () => {
             // Fetch subcategories for each category
             let subCategories: SubCategory[] = [];
             try {
-              const subResponse = await axios.get(`${API_BASE_URL}/api/categories/${category.id}/subcategories`, {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  Accept: "application/json",
-                },
-              });
+              const subResponse = await axios.get(
+                `${API_BASE_URL}/api/categories/${category.id}/subcategories`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: "application/json",
+                  },
+                }
+              );
               subCategories = subResponse.data.data.map((sub: any) => ({
                 id: sub.id.toString(),
                 name: sub.name,
                 image: sub.image || undefined,
               }));
             } catch (subErr) {
-              console.error(`Failed to fetch subcategories for category ${category.id}:`, subErr);
+              console.error(
+                `Failed to fetch subcategories for category ${category.id}:`,
+                subErr
+              );
             }
             return {
               id: category.id.toString(),
@@ -218,7 +233,10 @@ const AdminCategories: React.FC = () => {
         );
         setCategories(formattedCategories);
         setFilteredCategories(formattedCategories);
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: formattedCategories, timestamp: Date.now() }));
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({ data: formattedCategories, timestamp: Date.now() })
+        );
       } catch (err) {
         console.error("Fetch categories error:", err);
         if (axios.isAxiosError(err)) {
@@ -229,7 +247,10 @@ const AdminCategories: React.FC = () => {
           } else if (err.response?.status === 401) {
             setError("Unauthorized. Please log in as an admin.");
           } else {
-            setError((err.response?.data as ApiErrorResponse)?.message || "Failed to fetch categories");
+            setError(
+              (err.response?.data as ApiErrorResponse)?.message ||
+                "Failed to fetch categories"
+            );
             setCategories(mockCategories);
             setFilteredCategories(mockCategories);
           }
@@ -262,7 +283,10 @@ const AdminCategories: React.FC = () => {
 
   const indexOfLastCategory = currentPage * categoriesPerPage;
   const indexOfFirstCategory = indexOfLastCategory - categoriesPerPage;
-  const currentCategories = filteredCategories.slice(indexOfFirstCategory, indexOfLastCategory);
+  const currentCategories = filteredCategories.slice(
+    indexOfFirstCategory,
+    indexOfLastCategory
+  );
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
@@ -272,7 +296,10 @@ const AdminCategories: React.FC = () => {
     setShowCategoryEditModal(true);
   };
 
-  const handleSaveCategory = async (updatedCategory: Category, imageFile?: File) => {
+  const handleSaveCategory = async (
+    updatedCategory: Category,
+    imageFile?: File
+  ) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -284,12 +311,16 @@ const AdminCategories: React.FC = () => {
           formData.append("image", imageFile);
         }
 
-        const response = await axios.post(`${API_BASE_URL}/api/categories`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
+        const response = await axios.post(
+          `${API_BASE_URL}/api/categories`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
 
         const newCategory: Category = {
           id: response.data.data.id.toString(),
@@ -303,7 +334,10 @@ const AdminCategories: React.FC = () => {
         const updatedCategories = [...categories, newCategory];
         setCategories(updatedCategories);
         setFilteredCategories(updatedCategories);
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: updatedCategories, timestamp: Date.now() }));
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({ data: updatedCategories, timestamp: Date.now() })
+        );
       } else if (updatedCategory.id) {
         // Update existing category with optional image
         const formData = new FormData();
@@ -312,12 +346,16 @@ const AdminCategories: React.FC = () => {
           formData.append("image", imageFile);
         }
 
-        const response = await axios.put(`${API_BASE_URL}/api/categories/${updatedCategory.id}`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
+        const response = await axios.put(
+          `${API_BASE_URL}/api/categories/${updatedCategory.id}`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
 
         const updatedCategoryFromApi: Category = {
           id: response.data.data.id.toString(),
@@ -325,11 +363,12 @@ const AdminCategories: React.FC = () => {
           status: updatedCategory.status,
           date: updatedCategory.date,
           image: response.data.data.image || updatedCategory.image,
-          subCategories: response.data.data.subcategories?.map((sub: any) => ({
-            id: sub.id.toString(),
-            name: sub.name,
-            image: sub.image || undefined,
-          })) || updatedCategory.subCategories,
+          subCategories:
+            response.data.data.subcategories?.map((sub: any) => ({
+              id: sub.id.toString(),
+              name: sub.name,
+              image: sub.image || undefined,
+            })) || updatedCategory.subCategories,
         };
 
         const updatedCategories = categories.map((category) =>
@@ -337,13 +376,17 @@ const AdminCategories: React.FC = () => {
         );
         setCategories(updatedCategories);
         setFilteredCategories(updatedCategories);
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: updatedCategories, timestamp: Date.now() }));
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({ data: updatedCategories, timestamp: Date.now() })
+        );
       }
     } catch (err) {
       console.error("Save category error:", err);
       if (axios.isAxiosError(err)) {
         const status = err.response?.status;
-        const message = (err.response?.data as ApiErrorResponse)?.message || "Unknown error";
+        const message =
+          (err.response?.data as ApiErrorResponse)?.message || "Unknown error";
         if (status === 400) {
           setError("Invalid category name or ID. Please provide valid data.");
         } else if (status === 401) {
@@ -366,14 +409,20 @@ const AdminCategories: React.FC = () => {
           const updatedCategories = [...categories, newCategory];
           setCategories(updatedCategories);
           setFilteredCategories(updatedCategories);
-          localStorage.setItem(CACHE_KEY, JSON.stringify({ data: updatedCategories, timestamp: Date.now() }));
+          localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({ data: updatedCategories, timestamp: Date.now() })
+          );
         } else {
           const updatedCategories = categories.map((category) =>
             category.id === updatedCategory.id ? updatedCategory : category
           );
           setCategories(updatedCategories);
           setFilteredCategories(updatedCategories);
-          localStorage.setItem(CACHE_KEY, JSON.stringify({ data: updatedCategories, timestamp: Date.now() }));
+          localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({ data: updatedCategories, timestamp: Date.now() })
+          );
         }
       } else {
         setError("An unexpected error occurred while saving category");
@@ -395,7 +444,11 @@ const AdminCategories: React.FC = () => {
     }
   };
 
-  const handleSaveSubCategory = async (categoryId: string, subCategory: SubCategory, imageFile?: File) => {
+  const handleSaveSubCategory = async (
+    categoryId: string,
+    subCategory: SubCategory,
+    imageFile?: File
+  ) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -426,12 +479,18 @@ const AdminCategories: React.FC = () => {
 
         const updatedCategories = categories.map((category) =>
           category.id === categoryId
-            ? { ...category, subCategories: [...category.subCategories, newSubCategory] }
+            ? {
+                ...category,
+                subCategories: [...category.subCategories, newSubCategory],
+              }
             : category
         );
         setCategories(updatedCategories);
         setFilteredCategories(updatedCategories);
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: updatedCategories, timestamp: Date.now() }));
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({ data: updatedCategories, timestamp: Date.now() })
+        );
       } else if (subCategory.id) {
         // Update existing subcategory with optional image
         const formData = new FormData();
@@ -469,13 +528,17 @@ const AdminCategories: React.FC = () => {
         );
         setCategories(updatedCategories);
         setFilteredCategories(updatedCategories);
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: updatedCategories, timestamp: Date.now() }));
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({ data: updatedCategories, timestamp: Date.now() })
+        );
       }
     } catch (err) {
       console.error("Save subcategory error:", err);
       if (axios.isAxiosError(err)) {
         const status = err.response?.status;
-        const message = (err.response?.data as ApiErrorResponse)?.message || "Unknown error";
+        const message =
+          (err.response?.data as ApiErrorResponse)?.message || "Unknown error";
         if (status === 400) {
           setError("Invalid subcategory name or ID.");
         } else if (status === 401) {
@@ -494,13 +557,19 @@ const AdminCategories: React.FC = () => {
             category.id === categoryId
               ? {
                   ...category,
-                  subCategories: [...category.subCategories, { ...subCategory, id: newSubCategoryId }],
+                  subCategories: [
+                    ...category.subCategories,
+                    { ...subCategory, id: newSubCategoryId },
+                  ],
                 }
               : category
           );
           setCategories(updatedCategories);
           setFilteredCategories(updatedCategories);
-          localStorage.setItem(CACHE_KEY, JSON.stringify({ data: updatedCategories, timestamp: Date.now() }));
+          localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({ data: updatedCategories, timestamp: Date.now() })
+          );
         } else {
           const updatedCategories = categories.map((category) =>
             category.id === categoryId
@@ -514,7 +583,10 @@ const AdminCategories: React.FC = () => {
           );
           setCategories(updatedCategories);
           setFilteredCategories(updatedCategories);
-          localStorage.setItem(CACHE_KEY, JSON.stringify({ data: updatedCategories, timestamp: Date.now() }));
+          localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({ data: updatedCategories, timestamp: Date.now() })
+          );
         }
       } else {
         setError("An unexpected error occurred while saving subcategory");
@@ -529,7 +601,9 @@ const AdminCategories: React.FC = () => {
   const editSubCategory = (categoryId: string, subCategoryId: string) => {
     const category = categories.find((c) => c.id === categoryId);
     if (category) {
-      const subCategory = category.subCategories.find((s) => s.id === subCategoryId);
+      const subCategory = category.subCategories.find(
+        (s) => s.id === subCategoryId
+      );
       if (subCategory) {
         setSelectedCategory(category);
         setSelectedSubCategory(subCategory);
@@ -545,7 +619,10 @@ const AdminCategories: React.FC = () => {
     setShowDeleteModal(true);
   };
 
-  const confirmDeleteSubCategory = (categoryId: string, subCategoryId: string) => {
+  const confirmDeleteSubCategory = (
+    categoryId: string,
+    subCategoryId: string
+  ) => {
     setSubCategoryToDelete({ categoryId, subCategoryId });
     setCategoryToDelete(null);
     setShowDeleteModal(true);
@@ -557,12 +634,17 @@ const AdminCategories: React.FC = () => {
     try {
       if (categoryToDelete) {
         console.log("Deleting category with token:", token);
-        await axios.delete(`${API_BASE_URL}/api/categories/${categoryToDelete.id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const updatedCategories = categories.filter((category) => category.id !== categoryToDelete.id);
+        await axios.delete(
+          `${API_BASE_URL}/api/categories/${categoryToDelete.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const updatedCategories = categories.filter(
+          (category) => category.id !== categoryToDelete.id
+        );
         setCategories(updatedCategories);
         setFilteredCategories(updatedCategories);
         setCategoryToDelete(null);
@@ -594,7 +676,8 @@ const AdminCategories: React.FC = () => {
       console.error("Delete error:", err);
       if (axios.isAxiosError(err)) {
         const status = err.response?.status;
-        const message = (err.response?.data as ApiErrorResponse)?.message || "Unknown error";
+        const message =
+          (err.response?.data as ApiErrorResponse)?.message || "Unknown error";
         if (status === 400) {
           setError("Invalid category or subcategory ID.");
         } else if (status === 401) {
@@ -608,7 +691,9 @@ const AdminCategories: React.FC = () => {
         }
         // Fallback to local state update
         if (categoryToDelete) {
-          const updatedCategories = categories.filter((category) => category.id !== categoryToDelete.id);
+          const updatedCategories = categories.filter(
+            (category) => category.id !== categoryToDelete.id
+          );
           setCategories(updatedCategories);
           setFilteredCategories(updatedCategories);
           setCategoryToDelete(null);
@@ -652,11 +737,18 @@ const AdminCategories: React.FC = () => {
             <button onClick={() => setError(null)}>×</button>
           </div>
         )}
-        <Header onSearch={handleSearch} showSearch={true} title="Category Management" />
+        <Header
+          onSearch={handleSearch}
+          showSearch={true}
+          title="Category Management"
+        />
         <div className="admin-categories__list-container">
           <div className="admin-categories__header">
             <h2>Category Management</h2>
-            <button className="admin-categories__add-btn" onClick={handleAddCategory}>
+            <button
+              className="admin-categories__add-btn"
+              onClick={handleAddCategory}
+            >
               Add Category
             </button>
           </div>
@@ -678,7 +770,10 @@ const AdminCategories: React.FC = () => {
                   <CategorySkeleton />
                 ) : (
                   currentCategories.map((category) => (
-                    <tr key={category.id} className="admin-categories__table-row">
+                    <tr
+                      key={category.id}
+                      className="admin-categories__table-row"
+                    >
                       <td>
                         <input type="checkbox" />
                       </td>
@@ -686,9 +781,18 @@ const AdminCategories: React.FC = () => {
                         <div className="admin-categories__category-container">
                           <div className="admin-categories__category-image">
                             {category.image ? (
-                              <img src={category.image || placeholder || "/placeholder.svg"} alt={category.name} />
+                              <img
+                                src={
+                                  category.image ||
+                                  placeholder ||
+                                  "/placeholder.svg"
+                                }
+                                alt={category.name}
+                              />
                             ) : (
-                              <div className="admin-categories__no-image">No Image</div>
+                              <div className="admin-categories__no-image">
+                                No Image
+                              </div>
                             )}
                           </div>
                           <span>{category.name}</span>
@@ -709,7 +813,13 @@ const AdminCategories: React.FC = () => {
                           onClick={() => confirmDeleteCategory(category)}
                           aria-label="Delete category"
                         >
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
                             <path
                               d="M3 6H5H21"
                               stroke="currentColor"
@@ -731,7 +841,13 @@ const AdminCategories: React.FC = () => {
                           onClick={() => setSelectedCategory(category)}
                           aria-label="View category"
                         >
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
                             <path
                               d="M12 5C7.63636 5 4 8.63636 4 12C4 15.3636 7.63636 19 12 19C16.3636 19 20 15.3636 20 12C20 8.63636 16.3636 5 12 5Z"
                               stroke="currentColor"
@@ -753,7 +869,13 @@ const AdminCategories: React.FC = () => {
                           onClick={() => editCategory(category)}
                           aria-label="Edit category"
                         >
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
                             <path
                               d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20 20 18V13"
                               stroke="currentColor"
@@ -775,22 +897,7 @@ const AdminCategories: React.FC = () => {
                           onClick={() => handleAddSubCategory(category.id)}
                           aria-label="Add subcategory"
                         >
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path
-                              d="M12 5V19"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                            <path
-                              d="M5 12H19"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
+                          ADD
                         </button>
                       </td>
                     </tr>
@@ -818,16 +925,25 @@ const AdminCategories: React.FC = () => {
                       <td>
                         <div className="admin-categories__subcategory-image">
                           {sub.image ? (
-                            <img src={sub.image || placeholder || "/placeholder.svg"} alt={sub.name} />
+                            <img
+                              src={
+                                sub.image || placeholder || "/placeholder.svg"
+                              }
+                              alt={sub.name}
+                            />
                           ) : (
-                            <div className="admin-categories__no-image">No Image</div>
+                            <div className="admin-categories__no-image">
+                              No Image
+                            </div>
                           )}
                         </div>
                       </td>
                       <td>
                         <div className="admin-categories__actions">
                           <button
-                            onClick={() => editSubCategory(selectedCategory.id, sub.id)}
+                            onClick={() =>
+                              editSubCategory(selectedCategory.id, sub.id)
+                            }
                             className="admin-categories__action-btn admin-categories__edit-btn"
                           >
                             <svg
@@ -854,7 +970,12 @@ const AdminCategories: React.FC = () => {
                             </svg>
                           </button>
                           <button
-                            onClick={() => confirmDeleteSubCategory(selectedCategory.id, sub.id)}
+                            onClick={() =>
+                              confirmDeleteSubCategory(
+                                selectedCategory.id,
+                                sub.id
+                              )
+                            }
                             className="admin-categories__action-btn admin-categories__delete-btn"
                           >
                             <svg
@@ -891,12 +1012,15 @@ const AdminCategories: React.FC = () => {
 
           <div className="admin-categories__pagination-container">
             <div className="admin-categories__pagination-info">
-              Showing {indexOfFirstCategory + 1}-{Math.min(indexOfLastCategory, filteredCategories.length)} out of{" "}
+              Showing {indexOfFirstCategory + 1}-
+              {Math.min(indexOfLastCategory, filteredCategories.length)} out of{" "}
               {filteredCategories.length}
             </div>
             <Pagination
               currentPage={currentPage}
-              totalPages={Math.ceil(filteredCategories.length / categoriesPerPage)}
+              totalPages={Math.ceil(
+                filteredCategories.length / categoriesPerPage
+              )}
               onPageChange={paginate}
             />
           </div>
@@ -932,7 +1056,10 @@ const AdminCategories: React.FC = () => {
           categoryToDelete
             ? `Category: ${categoryToDelete.name}`
             : subCategoryToDelete
-            ? `Subcategory from ${categories.find((c) => c.id === subCategoryToDelete.categoryId)?.name || ""}`
+            ? `Subcategory from ${
+                categories.find((c) => c.id === subCategoryToDelete.categoryId)
+                  ?.name || ""
+              }`
             : "Item"
         }
       />

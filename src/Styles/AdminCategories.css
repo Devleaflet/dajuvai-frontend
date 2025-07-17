@@ -19,6 +19,8 @@
   align-items: center;
   margin-bottom: 24px;
   margin-top: 16px;
+  padding-right: 15px;
+  padding-left: 15px;
 }
 
 .admin-categories__title {
