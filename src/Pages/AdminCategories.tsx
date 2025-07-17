@@ -756,9 +756,9 @@ const AdminCategories: React.FC = () => {
             <table className="admin-categories__table">
               <thead className="admin-categories__table-head">
                 <tr>
-                  <th>
+                  {/* <th>
                     <input type="checkbox" />
-                  </th>
+                  </th> */}
                   <th>Category Name</th>
                   <th>Status</th>
                   <th>Date</th>
@@ -774,9 +774,9 @@ const AdminCategories: React.FC = () => {
                       key={category.id}
                       className="admin-categories__table-row"
                     >
-                      <td>
+                      {/* <td>
                         <input type="checkbox" />
-                      </td>
+                      </td> */}
                       <td className="admin-categories__name-cell">
                         <div className="admin-categories__category-container">
                           <div className="admin-categories__category-image">
