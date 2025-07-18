@@ -210,7 +210,7 @@
   .filter-sidebar {
     position: fixed;
     top: 0;
-    left: -100%;
+    left: -140%;
     width: 280px;
     height: 100vh;
     z-index: 999;
@@ -247,7 +247,7 @@
   }
 
   .filter-sidebar {
-    width: 100%;
+   
     left: -100%;
   }
 
