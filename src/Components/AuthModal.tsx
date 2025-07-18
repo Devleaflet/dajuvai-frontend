@@ -8,6 +8,7 @@ import { API_BASE_URL } from "../config";
 import "../Styles/AuthModal.css";
 import popup from "../assets/popup.png";
 import close from "../assets/close.png";
+import { Toaster, toast } from 'react-hot-toast';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -145,14 +146,28 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (!password.trim()) errors.push("Password is required");
     if (password.length < 8)
       errors.push("Password must be at least 8 characters");
+    if (!/[a-z]/.test(password))
+      errors.push("Password must contain at least one lowercase letter");
+    if (!/[A-Z]/.test(password))
+      errors.push("Password must contain at least one uppercase letter");
+    if (!/[^a-zA-Z0-9]/.test(password))
+      errors.push("Password must contain at least one special character");
     if (password.length > 128) errors.push("Password is too long");
 
     // Confirm password validation
     if (!confirmPassword.trim()) errors.push("Please confirm your password");
     if (password !== confirmPassword) errors.push("Passwords do not match");
+    if (!/[a-z]/.test(confirmPassword))
+      errors.push("Confirm password must contain at least one lowercase letter");
+    if (!/[A-Z]/.test(confirmPassword))
+      errors.push("Confirm password must contain at least one uppercase letter");
+    if (!/[^a-zA-Z0-9]/.test(confirmPassword))
+      errors.push("Confirm password must contain at least one special character");
 
     if (errors.length > 0) {
-      setError(errors.join("\n"));
+      // Show all errors as toasts
+      errors.forEach((err) => toast.error(err));
+      setError(errors[0]); // Only show the first error in the error box
       return false;
     }
     return true;
@@ -525,6 +540,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <div className={`auth-modal${isOpen ? " auth-modal--open" : ""}`}>
+      <Toaster position="top-center" />
       <div className="auth-modal__overlay"></div>
       <div className="auth-modal__content" ref={modalRef}>
         <button className="auth-modal__close" onClick={onClose}>
@@ -566,9 +582,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
         {error && (
           <div className="auth-modal__message auth-modal__message--error">
-            {error.split("\n").map((line, i) => (
-              <div key={i}>{line}</div>
-            ))}
+            {error}
           </div>
         )}
         {success && (
@@ -731,6 +745,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   required
                   disabled={isLoading}
                 />
+                {/* Password hint for signup mode */}
+                {!isLoginMode && (
+                  <div className="auth-modal__hint" style={{ color: '#888', fontSize: '0.9em', marginTop: '4px' }}>
+                    Password must be at least 8 characters and contain at least one lowercase, one uppercase letter, and one special character
+                  </div>
+                )}
               </div>
 
               {/* Move Forgot Password link here, only in login mode and not in verification mode */}
