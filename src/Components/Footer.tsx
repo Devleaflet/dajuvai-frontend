@@ -132,7 +132,7 @@ const Footer: React.FC = () => {
               <div className="footer__section footer__payment-section">
                 <h3 className="footer__section-title">Payment Methods</h3>
                 <div className="footer__payment-icons">
-                  <img src={khalti} alt="Khalti Payment" className="footer__payment-image" />
+               
                   <img src={esewa} alt="eSewa Payment" className="footer__payment-image" />
                   
                 </div>
