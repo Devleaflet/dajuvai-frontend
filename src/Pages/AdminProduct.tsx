@@ -25,7 +25,7 @@ const SkeletonRow: React.FC = () => (
 );
 
 const AdminProduct: React.FC = () => {
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, user } = useAuth();
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<ApiProduct[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -80,12 +80,15 @@ const AdminProduct: React.FC = () => {
     subcategoryId: number
   ) => {
     setIsUpdating(true);
+    console.log("AdminProduct: updateProduct called with token:", token ? "Present" : "Missing");
+    console.log("AdminProduct: User role:", user?.role);
     try {
       const updatedProduct = await productService.updateProduct(
         categoryId,
         subcategoryId,
         productId,
-        product
+        product,
+        token // <-- pass the token here!
       );
       setProducts(prevProducts => 
         prevProducts.map(p => p.id === updatedProduct.id ? updatedProduct : p)
@@ -103,7 +106,7 @@ const AdminProduct: React.FC = () => {
     } finally {
       setIsUpdating(false);
     }
-  }, [productService]);
+  }, [productService, token, user?.role]);
 
   // Delete product function
   const deleteProduct = useCallback(async (product: ApiProduct) => {
