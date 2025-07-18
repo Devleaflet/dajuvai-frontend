@@ -1464,17 +1464,7 @@ const Checkout: React.FC = () => {
                 />
                 Cash on delivery
               </label>
-              <label className="checkout-container__payment-methods-label">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="KHALTI"
-                  className="checkout-container__payment-methods-input"
-                  checked={selectedPaymentMethod === 'KHALTI'}
-                  onChange={handlePaymentMethodChange}
-                />
-                <img src={khalti} alt="Khalti" className="checkout-container__payment-methods-img" />
-              </label>
+            
               <label className="checkout-container__payment-methods-label">
                 <input
                   type="radio"
