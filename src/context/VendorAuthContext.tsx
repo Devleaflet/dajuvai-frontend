@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axiosInstance from '../api/axiosInstance';
-import { setupAxiosInterceptors } from '../api/products';
-import { VendorAuthService } from '../services/vendorAuthService';
+import { setupAxiosInterceptors } from '../api/axiosInstance';
+import { axiosInstance } from '../api/axiosInstance';
+import VendorAuthService from '../services/vendorAuthService';
 
 interface Vendor {
   id: number;

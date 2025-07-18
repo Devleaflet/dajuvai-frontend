@@ -1,5 +1,4 @@
-import axiosInstance from '../api/axiosInstance';
-import { AxiosError } from 'axios';
+import axios, { AxiosError } from 'axios';
 import { API_BASE_URL } from '../config';
 import { ApiProduct, convertApiProductToDisplayProduct } from '../Components/Types/ApiProduct';
 import { ProductFormData } from '../types/product';
@@ -19,6 +18,10 @@ interface ProductsResponse {
 class ProductService {
   private static instance: ProductService;
   private baseUrl: string;
+  private axiosInstance = axios.create({
+    baseURL: API_BASE_URL,
+    headers: { 'Content-Type': 'application/json' },
+  });
 
   private constructor() {
     this.baseUrl = API_BASE_URL;
@@ -59,7 +62,7 @@ class ProductService {
 
   async getAllProducts(token: string): Promise<ApiProduct[]> {
     return this.handleRequest(
-      axiosInstance.get<ProductsResponse>('/api/categories/all/products', {
+      this.axiosInstance.get<ProductsResponse>('/api/categories/all/products', {
         headers: { Authorization: `Bearer ${token}` },
       }).then((res) => res.data.data)
     );
@@ -72,7 +75,7 @@ class ProductService {
     token: string
   ): Promise<ApiProduct[]> {
     return this.handleRequest(
-      axiosInstance.get<ProductsResponse>(`/api/categories/${categoryId}/subcategories/${subcategoryId}/products`, {
+      this.axiosInstance.get<ProductsResponse>(`/api/categories/${categoryId}/subcategories/${subcategoryId}/products`, {
         headers: { Authorization: `Bearer ${token}` },
         params,
       }).then((res) => res.data.data)
@@ -81,7 +84,7 @@ class ProductService {
 
   async getProductById(categoryId: number, subcategoryId: number, productId: number, token: string): Promise<ApiProduct> {
     return this.handleRequest(
-      axiosInstance.get<ProductResponse>(
+      this.axiosInstance.get<ProductResponse>(
         `/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       ).then((res) => res.data.data)
@@ -153,7 +156,7 @@ class ProductService {
     });
     
     try {
-      const response = await axiosInstance.post<ProductResponse>(
+      const response = await this.axiosInstance.post<ProductResponse>(
         endpoint,
         formDataObj,
         { headers: { 'Content-Type': 'multipart/form-data' } }
@@ -173,15 +176,12 @@ class ProductService {
   }
 
   async updateProduct(
-    categoryId: number,
-    subcategoryId: number,
-    productId: number,
-    formData: Partial<ProductFormData>,
-    token?: string // <-- add token as optional for backward compatibility
-  ): Promise<ApiProduct> {
+categoryId: number, subcategoryId: number, productId: number, formData: Partial<ProductFormData>, token: string  ): Promise<ApiProduct> {
     this.validateFormData(formData);
+    
     // Always use FormData as required by the API
     const formDataObj = new FormData();
+    
     // Add all form fields
     if (formData.name) formDataObj.append("name", String(formData.name));
     if (formData.description) formDataObj.append("description", String(formData.description));
@@ -189,6 +189,7 @@ class ProductService {
     if (formData.stock != null) formDataObj.append("stock", formData.stock.toString());
     if (formData.quantity != null) formDataObj.append("quantity", String(formData.quantity));
     if (formData.vendorId) formDataObj.append("vendorId", String(formData.vendorId));
+    
     if (formData.discount && Number(formData.discount) > 0) {
       formDataObj.append("discount", Number(formData.discount).toFixed(2));
       formDataObj.append("discountType", String(formData.discountType || 'PERCENTAGE'));
@@ -218,18 +219,19 @@ class ProductService {
     if (formData.inventory && Array.isArray(formData.inventory)) {
       formDataObj.append("inventory", JSON.stringify(formData.inventory));
     }
+    
     const endpoint = `/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}`;
+    
     console.log('ProductService Update Request (FormData):', {
       url: `${this.baseUrl}${endpoint}`,
-      formDataEntries: Object.fromEntries(formDataObj.entries()),
-      token: token,
-      vendorId: formData.vendorId
+      formDataEntries: Object.fromEntries(formDataObj.entries())
     });
+    
     try {
-      // Do NOT set Authorization header manually; let axiosInstance interceptor handle it
-      const response = await axiosInstance.put<ProductResponse>(
+      const response = await this.axiosInstance.put<ProductResponse>(
         endpoint,
-        formDataObj
+        formDataObj,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
       );
       return response.data.data;
     } catch (error: unknown) {
@@ -247,7 +249,7 @@ class ProductService {
 
   async deleteProduct(categoryId: number, subcategoryId: number, productId: number): Promise<void> {
     return this.handleRequest(
-      axiosInstance.delete(
+      this.axiosInstance.delete(
         `/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}`,
         { headers: { 'Content-Type': 'application/json' } }
       )

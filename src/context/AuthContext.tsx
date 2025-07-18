@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "../config";
-import { setupAxiosInterceptors } from "../api/products";
+import { setupAxiosInterceptors } from "../api/axiosInstance";
 
 // Define types for user data
 interface UserData {
