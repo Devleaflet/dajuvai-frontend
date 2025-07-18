@@ -214,16 +214,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
-  const handleVendorChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const vendorId = Number(e.target.value);
-    setSelectedVendorId(vendorId);
-    setFormData((prev) => ({
-      ...prev,
-      vendorId: String(vendorId),
-    }));
-    setErrors((prev) => ({ ...prev, vendorId: "" }));
-  };
-
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
@@ -487,30 +477,20 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
             className="product-modal__form"
             id="edit-product-form"
           >
-            {/* Only show vendor selection for admin context */}
+            {/* Admin cannot change vendor when editing a product */}
             {!isVendorContext && (
               <div className="product-modal__section">
                 <div className="product-modal__field">
-                  <label className="product-modal__label">Vendor *</label>
-                  <select
-                    name="vendorId"
-                    value={selectedVendorId || ""}
-                    onChange={handleVendorChange}
-                    required
-                    className="product-modal__select"
-                  >
-                    <option value="">Select a vendor</option>
-                    {vendors.map((vendor) => (
-                      <option key={vendor.id} value={vendor.id}>
-                        {vendor.businessName}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.vendorId && (
-                    <span className="product-modal__error">
-                      {errors.vendorId}
-                    </span>
-                  )}
+                  <label className="product-modal__label">Vendor</label>
+                  <input
+                    type="text"
+                    value={vendors.find(v => v.id === Number(formData.vendorId))?.businessName || "Unknown Vendor"}
+                    disabled
+                    className="product-modal__input product-modal__input--disabled"
+                  />
+                  <small className="product-modal__help-text">
+                    Vendor cannot be changed when editing a product.
+                  </small>
                 </div>
               </div>
             )}
@@ -654,20 +634,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                       {errors.quantity}
                     </span>
                   )}
-                </div>
-
-                <div className="product-modal__field">
-                  <label className="product-modal__label">Status</label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                    className="product-modal__select"
-                  >
-                    <option value={InventoryStatus.AVAILABLE}>Available</option>
-                    <option value={InventoryStatus.OUT_OF_STOCK}>Out of Stock</option>
-                    <option value={InventoryStatus.LOW_STOCK}>Low Stock</option>
-                  </select>
                 </div>
               </div>
             </div>
