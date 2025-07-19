@@ -6,6 +6,7 @@ import Footer from "../Components/Footer";
 import Navbar from "../Components/Navbar";
 import "../Styles/UserProfile.css";
 import { useAuth } from "../context/AuthContext";
+import axiosInstance from "../api/axiosInstance";
 import axios from "axios";
 import { API_BASE_URL } from "../config";
 
@@ -15,6 +16,12 @@ interface UserDetails {
   email: string;
   role: string;
   isVerified: boolean;
+}
+
+interface Product {
+  id: number;
+  name: string;
+  productImages?: string[];
 }
 
 interface FormState {
@@ -106,8 +113,6 @@ const UserProfile: React.FC = () => {
 
   const { user, isLoading: isAuthLoading, login, token } = useAuth();
   const userId = user?.id;
-  // For cookie-based auth, we don't need a token in the frontend
-  const authToken = null;
 
   const getAvatarColor = (username: string) => {
     const colors = ["#4285F4", "#DB4437", "#F4B400", "#0F9D58", "#673AB7", "#0097A7"];
@@ -122,7 +127,7 @@ const UserProfile: React.FC = () => {
 
   const validateUsername = (username: string) => username.trim().length >= 3 && /^[a-zA-Z0-9_]+$/.test(username);
 
-  const handleError = (error: any, defaultMsg: string) => {
+  const handleError = (error: unknown, defaultMsg: string) => {
     if (!axios.isAxiosError(error)) return showPopup("error", defaultMsg);
     const { status, data } = error.response || {};
     const messages: { [key: number]: string } = {
@@ -169,18 +174,41 @@ const UserProfile: React.FC = () => {
       return;
     }
     const fetchUserDetails = async () => {
+      console.log("[UserProfile] fetchUserDetails - Starting fetch");
+      console.log("[UserProfile] fetchUserDetails - User ID:", userId);
+      console.log("[UserProfile] fetchUserDetails - Token:", token);
+      console.log("[UserProfile] fetchUserDetails - Document cookie:", document.cookie);
+      
       setIsLoading((prev) => ({ ...prev, fetchUser: true }));
       try {
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const response = await axios.get(`${API_BASE_URL}/api/auth/users/${userId}`, {
+        // Try to use token if available, otherwise rely on cookies
+        const headers: Record<string, string> = {};
+        
+        // Try to get token from context or localStorage
+        const authToken = token || localStorage.getItem("authToken");
+        
+        if (authToken) {
+          headers.Authorization = `Bearer ${authToken}`;
+          console.log("[UserProfile] fetchUserDetails - Using token-based auth");
+        } else {
+          console.log("[UserProfile] fetchUserDetails - Using cookie-based auth");
+        }
+        
+        console.log("[UserProfile] fetchUserDetails - Request headers:", headers);
+        
+        const response = await axiosInstance.get(`/api/auth/users/${userId}`, {
           headers,
-          withCredentials: true, // Use cookies for authentication
+          withCredentials: true, // Always include cookies
           timeout: 5000,
         });
+        
+        console.log("[UserProfile] fetchUserDetails - Response:", response.data);
+        
         setUserDetails(response.data.data);
         setOriginalDetails(response.data.data);
         setFormState((prev) => ({ ...prev, email: response.data.data.email }));
       } catch (error) {
+        console.error("[UserProfile] fetchUserDetails - Error:", error);
         handleError(error, "Failed to load user details");
         setUserDetails(null);
       } finally {
@@ -280,21 +308,57 @@ const UserProfile: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!userDetails || !authToken) return showPopup("error", "User details or token missing.");
+    if (!userDetails) return showPopup("error", "User details missing.");
     if (!validateUsername(userDetails.username)) return showPopup("error", "Username must be 3+ characters and alphanumeric.");
+
+    console.log("[UserProfile] handleSave - Starting username update");
+    console.log("[UserProfile] handleSave - User details:", userDetails);
+    console.log("[UserProfile] handleSave - User ID:", userId);
+    console.log("[UserProfile] handleSave - Token from context:", token);
+    console.log("[UserProfile] handleSave - Token from localStorage:", localStorage.getItem("authToken"));
+    console.log("[UserProfile] handleSave - Document cookie:", document.cookie);
+    console.log("[UserProfile] handleSave - User authenticated:", !!user);
+    console.log("[UserProfile] handleSave - User ID from context:", user?.id);
 
     setIsLoading((prev) => ({ ...prev, saveUser: true }));
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/api/auth/users/${userId}`,
+      // Try to use token if available, otherwise rely on cookies
+      const headers: Record<string, string> = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      };
+      
+      // Try to get token from context or localStorage
+      const authToken = token || localStorage.getItem("authToken");
+      
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+        console.log("[UserProfile] handleSave - Using token-based auth");
+      } else {
+        console.log("[UserProfile] handleSave - Using cookie-based auth");
+      }
+      
+      const response = await axiosInstance.put(
+        `/api/auth/users/${userId}`,
         { username: userDetails.username },
-        { headers: { Authorization: `Bearer ${authToken}` } }
+        { 
+          withCredentials: true, // Always include cookies
+          headers
+        }
       );
-      setUserDetails(response.data.user);
-      setOriginalDetails(response.data.user);
-      setIsEditing(false);
-      showPopup("success", response.data.message || "Profile updated successfully!");
+      
+      console.log("[UserProfile] handleSave - Response:", response.data);
+      
+      if (response.data.success) {
+        setUserDetails(response.data.data || response.data.user);
+        setOriginalDetails(response.data.data || response.data.user);
+        setIsEditing(false);
+        showPopup("success", "Username updated successfully! Changes will apply the next time you login.");
+      } else {
+        showPopup("error", response.data.message || "Failed to update profile");
+      }
     } catch (error) {
+      console.error("[UserProfile] handleSave - Error:", error);
       handleError(error, "Failed to update profile");
     } finally {
       setIsLoading((prev) => ({ ...prev, saveUser: false }));
@@ -305,7 +369,7 @@ const UserProfile: React.FC = () => {
     if (!formState.email) return showPopup("error", "Please enter your email address");
     setIsLoading((prev) => ({ ...prev, forgot: true }));
     try {
-      await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email: formState.email });
+      await axiosInstance.post(`/api/auth/forgot-password`, { email: formState.email });
       showPopup("success", "Password reset email sent! Check your inbox.");
       setCredentialsMode("reset");
     } catch (error) {
@@ -320,7 +384,7 @@ const UserProfile: React.FC = () => {
     if (!formState.token) return showPopup("error", "Please enter the reset token");
     setIsLoading((prev) => ({ ...prev, reset: true }));
     try {
-      await axios.post(`${API_BASE_URL}/api/auth/reset-password`, {
+      await axiosInstance.post(`/api/auth/reset-password`, {
         newPass: formState.newPassword,
         confirmPass: formState.confirmPassword,
         token: formState.token,
@@ -591,7 +655,7 @@ const UserProfile: React.FC = () => {
                     {order.orderItems && order.orderItems.length > 0 ? (
                       <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
                         {order.orderItems.slice(0, 2).map((item) => {
-                          const product = item.product as any;
+                          const product = item.product as Product;
                           return (
                             <li key={item.id} style={{ fontSize: 14, color: '#1f2937', display: 'flex', alignItems: 'center', gap: 8 }}>
                               {product && product.productImages && product.productImages.length > 0 ? (

@@ -292,17 +292,22 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     if (typeof imageToRemove === 'string' && product) {
       setDeletingImageIndex(index);
       try {
-        const productService = ProductService.getInstance();
         const categoryId = product.categoryId || 1;
         const subcategoryId = product.subcategory?.id || 1;
+        const productId = product.id;
+        const imageUrl = product.productImages[index];
         const authToken = isVendorContext ? vendorAuthState.token : token;
-        
         if (!authToken) {
           setError("Authentication token is missing");
           return;
         }
-        
-        await productService.deleteProductImage(categoryId, subcategoryId, product.id, imageToRemove, authToken);
+        console.log("Auth token being sent:", authToken);
+        console.log("Requesting delete for imageUrl:", imageUrl, "productId:", productId, "categoryId:", categoryId, "subcategoryId:", subcategoryId);
+        console.log("deleteProductImage headers:", {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        });
+        await ProductService.deleteProductImage(categoryId, subcategoryId, productId, imageUrl, authToken);
         
         // Remove from local state after successful deletion
         const newImages = currentImages.filter((_, i) => i !== index);

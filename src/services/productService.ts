@@ -255,6 +255,33 @@ categoryId: number, subcategoryId: number, productId: number, formData: Partial<
       )
     );
   }
+
+  async deleteProductImage(categoryId: number, subcategoryId: number, productId: number, imageUrl: string): Promise<ApiProduct> {
+    const endpoint = `/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}/images`;
+    try {
+      const response = await this.axiosInstance.delete<ProductResponse>(
+        endpoint,
+        {
+          headers: { 'Content-Type': 'application/json' },
+          data: { imageUrl },
+        }
+      );
+      return response.data.data;
+    } catch (error) {
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        const err = error as { response?: { status?: number; data?: unknown } };
+        console.error('ProductService Delete Image Error:', {
+          status: err.response?.status,
+          data: err.response?.data,
+          url: endpoint,
+        });
+      }
+      throw error;
+    }
+  }
 }
 
+// Export the singleton instance. Import as:
+// import ProductService from '.../productService';
+// Do NOT use ProductService.getInstance() in your code.
 export default ProductService.getInstance();
