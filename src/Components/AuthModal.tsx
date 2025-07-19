@@ -428,15 +428,32 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  // Google OAuth login handler - Using existing backend endpoints
+  // Google OAuth login handler - Using popup and frontend fetch flow
   const handleGoogleLogin = () => {
-    // Use your existing backend endpoint with frontend callback URL
     const callbackUrl = `${window.location.origin}/auth/google/callback`;
     const redirectUrl = `${API_BASE_URL}/api/auth/google?redirect_uri=${encodeURIComponent(callbackUrl)}`;
-    
-    console.log('Redirecting to backend Google OAuth:', redirectUrl);
-    window.location.href = redirectUrl;
+    // Open in a popup window
+    window.open(redirectUrl, 'google-oauth', 'width=500,height=600');
   };
+
+  // Listen for Google OAuth result from popup
+  useEffect(() => {
+    function handleMessage(event: MessageEvent) {
+      if (event.origin !== window.location.origin) return;
+      if (event.data.type === 'google-auth-success') {
+        // Optionally: login(event.data.data.token, event.data.data.user)
+        if (typeof fetchUserData === 'function') {
+          fetchUserData(); // Refresh user state
+        }
+        onClose(); // Close modal
+      }
+      if (event.data.type === 'google-auth-failure') {
+        setError('Google authentication failed.');
+      }
+    }
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [fetchUserData, onClose]);
 
   // Removed unused handleFacebookLogin function
 
