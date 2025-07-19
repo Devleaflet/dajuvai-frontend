@@ -992,7 +992,7 @@ const Checkout: React.FC = () => {
           setShowAlert(true);
         }
         setTimeout(() => {
-          if (selectedPaymentMethod !== 'CASH_ON_DELIVERY') {
+          if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod!=='ESEWA') {
             navigate('/order-page', {
               state: {
                 orderDetails: {
