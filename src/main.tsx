@@ -9,6 +9,11 @@ import { AuthProvider } from "./context/AuthContext.tsx";
 import CartContextProvider from "./context/CartContext.tsx";
 import CategoryContextProvider from "./context/Category.tsx";
 import { VendorAuthProvider } from "./context/VendorAuthContext.tsx";
+import { setupAxiosInterceptors } from './api/axiosInstance';
+
+setupAxiosInterceptors(() => localStorage.getItem('authToken'));
+console.log('[EntryPoint] Axios interceptor set up with token from localStorage');
+
 
 const queryClient = new QueryClient({
   defaultOptions: {

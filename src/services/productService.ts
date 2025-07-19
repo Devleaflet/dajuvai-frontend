@@ -1,7 +1,8 @@
-import axios, { AxiosError } from 'axios';
+import axiosInstance from '../api/axiosInstance';
 import { API_BASE_URL } from '../config';
 import { ApiProduct, convertApiProductToDisplayProduct } from '../Components/Types/ApiProduct';
 import { ProductFormData } from '../types/product';
+import { AxiosError } from 'axios';
 
 interface ProductResponse {
   success: boolean;
@@ -18,10 +19,8 @@ interface ProductsResponse {
 class ProductService {
   private static instance: ProductService;
   private baseUrl: string;
-  private axiosInstance = axios.create({
-    baseURL: API_BASE_URL,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  // Use the shared axiosInstance with interceptor
+  private axiosInstance = axiosInstance;
 
   private constructor() {
     this.baseUrl = API_BASE_URL;
@@ -97,19 +96,13 @@ class ProductService {
     formData: ProductFormData
   ): Promise<ApiProduct> {
     this.validateFormData(formData);
-    
-    // Always use FormData as required by the API
     const formDataObj = new FormData();
-    
-    // Add all required fields
     formDataObj.append("name", String(formData.name));
     formDataObj.append("description", String(formData.description));
     formDataObj.append("basePrice", formData.basePrice != null ? String(formData.basePrice) : "0");
     formDataObj.append("stock", formData.stock.toString());
     formDataObj.append("quantity", String(formData.quantity));
     formDataObj.append("vendorId", String(formData.vendorId));
-    
-    // Add optional fields
     if (formData.discount && Number(formData.discount) > 0) {
       formDataObj.append("discount", Number(formData.discount).toFixed(2));
       formDataObj.append("discountType", String(formData.discountType || 'PERCENTAGE'));
@@ -126,8 +119,6 @@ class ProductService {
     if (formData.dealId != null) {
       formDataObj.append("dealId", String(formData.dealId));
     }
-    
-    // Add images if present
     if (formData.productImages && Array.isArray(formData.productImages)) {
       formData.productImages.forEach((image, index) => {
         if (index < 5 && image instanceof File) {
@@ -135,26 +126,10 @@ class ProductService {
         }
       });
     }
-    
-    // Add inventory if present
     if (formData.inventory && Array.isArray(formData.inventory)) {
       formDataObj.append("inventory", JSON.stringify(formData.inventory));
     }
-    
-    // Add role information for admin operations
-    // This part is removed as per the edit hint to remove token from vendor-side calls
-    // if (role === 'admin') {
-    //   formDataObj.append("role", "admin");
-    // }
-    
     const endpoint = `/api/categories/${categoryId}/subcategories/${subcategoryId}/products`;
-    
-    console.log('ProductService Request (FormData):', {
-      url: `${this.baseUrl}${endpoint}`,
-      // role: role, // Removed as per edit hint
-      formDataEntries: Object.fromEntries(formDataObj.entries())
-    });
-    
     try {
       const response = await this.axiosInstance.post<ProductResponse>(
         endpoint,
@@ -176,20 +151,19 @@ class ProductService {
   }
 
   async updateProduct(
-categoryId: number, subcategoryId: number, productId: number, formData: Partial<ProductFormData>, token: string  ): Promise<ApiProduct> {
+    categoryId: number,
+    subcategoryId: number,
+    productId: number,
+    formData: Partial<ProductFormData>
+  ): Promise<ApiProduct> {
     this.validateFormData(formData);
-    
-    // Always use FormData as required by the API
     const formDataObj = new FormData();
-    
-    // Add all form fields
     if (formData.name) formDataObj.append("name", String(formData.name));
     if (formData.description) formDataObj.append("description", String(formData.description));
     if (formData.basePrice != null) formDataObj.append("basePrice", String(formData.basePrice));
     if (formData.stock != null) formDataObj.append("stock", formData.stock.toString());
     if (formData.quantity != null) formDataObj.append("quantity", String(formData.quantity));
     if (formData.vendorId) formDataObj.append("vendorId", String(formData.vendorId));
-    
     if (formData.discount && Number(formData.discount) > 0) {
       formDataObj.append("discount", Number(formData.discount).toFixed(2));
       formDataObj.append("discountType", String(formData.discountType || 'PERCENTAGE'));
@@ -198,10 +172,7 @@ categoryId: number, subcategoryId: number, productId: number, formData: Partial<
       formDataObj.append("size", formData.size.join(","));
     }
     if (formData.status) {
-      console.log('ProductService: Adding status field:', formData.status);
       formDataObj.append("status", String(formData.status));
-    } else {
-      console.log('ProductService: No status field in formData:', formData);
     }
     if (formData.brand_id != null) {
       formDataObj.append("brand_id", String(formData.brand_id));
@@ -219,14 +190,7 @@ categoryId: number, subcategoryId: number, productId: number, formData: Partial<
     if (formData.inventory && Array.isArray(formData.inventory)) {
       formDataObj.append("inventory", JSON.stringify(formData.inventory));
     }
-    
     const endpoint = `/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}`;
-    
-    console.log('ProductService Update Request (FormData):', {
-      url: `${this.baseUrl}${endpoint}`,
-      formDataEntries: Object.fromEntries(formDataObj.entries())
-    });
-    
     try {
       const response = await this.axiosInstance.put<ProductResponse>(
         endpoint,
@@ -256,13 +220,16 @@ categoryId: number, subcategoryId: number, productId: number, formData: Partial<
     );
   }
 
-  async deleteProductImage(categoryId: number, subcategoryId: number, productId: number, imageUrl: string): Promise<ApiProduct> {
+  async deleteProductImage(categoryId: number, subcategoryId: number, productId: number, imageUrl: string, token: string): Promise<ApiProduct> {
     const endpoint = `/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}/images`;
     try {
       const response = await this.axiosInstance.delete<ProductResponse>(
         endpoint,
         {
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
           data: { imageUrl },
         }
       );
