@@ -14,7 +14,11 @@ const GoogleAuthCallback: React.FC = () => {
     const fetchUser = async () => {
       try {
         console.log('[GoogleAuthCallback] Attempting to fetch user data, attempt:', retryCount + 1);
-        
+        console.log('[GoogleAuthCallback] Document cookies:', document.cookie);
+        // Extra debug: warn if no cookies
+        if (!document.cookie) {
+          console.warn('[GoogleAuthCallback] No cookies present in browser after Google login! This usually means the backend did not set the cookie, or SameSite/cors/https is wrong.');
+        }
         const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
           credentials: 'include', // Important: send cookies!
           headers: {
@@ -22,16 +26,12 @@ const GoogleAuthCallback: React.FC = () => {
             'Content-Type': 'application/json',
           },
         });
-        
         console.log('[GoogleAuthCallback] Response status:', response.status);
-        
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
         const data = await response.json();
         console.log('[GoogleAuthCallback] Response data:', data);
-        
         if (data.success && data.data) {
           const userData = {
             id: data.data.userId,
@@ -50,7 +50,6 @@ const GoogleAuthCallback: React.FC = () => {
         }
       } catch (err) {
         console.error('[GoogleAuthCallback] Error fetching user:', err);
-        
         // Retry logic for network issues
         if (retryCount < 2) {
           console.log('[GoogleAuthCallback] Retrying in 1 second...');
@@ -59,10 +58,8 @@ const GoogleAuthCallback: React.FC = () => {
           }, 1000);
           return;
         }
-        
         // If all retries failed, show error but still try to redirect
         setError(`Failed to fetch user info: ${err instanceof Error ? err.message : 'Unknown error'}`);
-        
         // Fallback: redirect to home anyway after a delay
         setTimeout(() => {
           console.log('[GoogleAuthCallback] Fallback redirect to home');
@@ -72,7 +69,6 @@ const GoogleAuthCallback: React.FC = () => {
         setIsProcessing(false);
       }
     };
-    
     fetchUser();
   }, [login, navigate, retryCount]);
 
@@ -109,7 +105,6 @@ const GoogleAuthCallback: React.FC = () => {
       </div>
     );
   }
-  
   if (error) {
     return (
       <div style={{ 
@@ -144,7 +139,6 @@ const GoogleAuthCallback: React.FC = () => {
       </div>
     );
   }
-  
   return null;
 };
 
