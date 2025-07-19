@@ -64,6 +64,25 @@ const GoogleAuthCallback: React.FC = () => {
         addDebugLog(`Document referrer: ${referrer}`);
         addDebugLog(`Is from Google: ${referrer.includes('google.com') || referrer.includes('accounts.google.com')}`);
 
+        // CRITICAL: Test the backend cookie test endpoint first
+        addDebugLog('Testing backend cookie setting capability...');
+        try {
+          const testResponse = await fetch(`${API_BASE_URL}/api/auth/test-cookie`, {
+            credentials: 'include',
+            method: 'GET'
+          });
+          addDebugLog(`Test cookie response status: ${testResponse.status}`);
+          const testData = await testResponse.json();
+          addDebugLog(`Test cookie response: ${JSON.stringify(testData)}`);
+          
+          // Check if test cookie was set
+          const cookiesAfterTest = document.cookie;
+          addDebugLog(`Cookies after test: "${cookiesAfterTest}"`);
+          
+        } catch (testError) {
+          addDebugLog(`Test cookie failed: ${testError}`);
+        }
+
         // Debug: Log request details before making it
         const requestUrl = `${API_BASE_URL}/api/auth/me`;
         addDebugLog(`Making request to: ${requestUrl}`);
