@@ -26,11 +26,30 @@ const GoogleAuthCallback: React.FC = () => {
     if (token) {
       localStorage.setItem('authToken', token);
       addDebugLog('Token found in URL parameter and saved to localStorage.authToken');
-      // Optionally, fetch user info or log in
-      // You may want to call your login function here if it expects a token
-      login(token, null); // If your login function needs user data, fetch it here
-      addDebugLog('Login called with token from URL parameter');
-      navigate('/', { replace: true });
+      // Fetch user info with the token
+      fetch(`${API_BASE_URL}/api/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.data) {
+            addDebugLog('Fetched user info successfully with token from URL');
+            login(token, data.data);
+            addDebugLog('Login called with token and user data from /api/auth/me');
+            navigate('/', { replace: true });
+          } else {
+            addDebugLog('Failed to fetch user info with token from URL');
+            setError('Failed to fetch user info after Google login.');
+          }
+        })
+        .catch(err => {
+          addDebugLog('Error fetching user info with token from URL: ' + err.message);
+          setError('Error fetching user info after Google login.');
+        });
       return;
     }
 
