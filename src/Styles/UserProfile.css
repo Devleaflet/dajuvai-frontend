@@ -118,16 +118,10 @@
 
 .profile-form__group {
   margin-bottom: 24px;
-  background: #f9fafb;
+  background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   padding: 20px;
-  transition: all 0.3s ease;
-}
-
-.profile-form__group:hover {
-  border-color: #f97316;
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.1);
 }
 
 .profile-form__group label {
@@ -215,38 +209,7 @@
   100% { transform: rotate(360deg); }
 }
 
-.profile-form__input {
-  width: 100%;
-  padding: 12px 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: all 0.2s ease;
-}
-
-.profile-form__input:focus {
-  outline: none;
-  border-color: #f97316;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
-}
-
-.profile-form__input-wrapper {
-  position: relative;
-}
-
-.profile-form__input-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #6b7280;
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.profile-form__input-icon:hover {
-  color: #f97316;
-}
+/* Input field styling removed to fix focus issues */
 
 .profile-form__static-text {
   color: #4b5563;

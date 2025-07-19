@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, memo } from "react";
+import React, { useState, useEffect } from "react";
 import type { OrderDetail } from "../Components/Types/Order";
 import Popup from "reactjs-popup";
 import "reactjs-popup/dist/index.css";
@@ -35,67 +35,9 @@ interface FormState {
 type Tab = "details" | "credentials" | "orders";
 type CredentialsMode = "change" | "forgot" | "reset";
 
-interface InputFieldProps {
-  label: string;
-  name: string;
-  type?: string;
-  placeholder: string;
-  value: string;
-  section: keyof FormState | keyof UserDetails;
-  icon?: React.ReactNode;
-}
 
-const lockIcon = (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-5 w-5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274-4.057 5.064-7 0-7z"
-    />
-  </svg>
-);
 
-const emailIcon = (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-5 w-5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.207a8.959 8.959 0 01-4.5 1.207"
-    />
-  </svg>
-);
 
-const tokenIcon = (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-5 w-5"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M15 7a2 2 0 012 2m4 4-7.743 7.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-    />
-  </svg>
-);
 
 const UserProfile: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>("details");
@@ -277,23 +219,10 @@ const UserProfile: React.FC = () => {
     section: keyof FormState | keyof UserDetails
   ) => {
     const value = e.target.value;
-    console.log(`Input changed: section=${section}, value=${value}`);
     if (section === "username") {
-      setUserDetails((prev) => {
-        if (!prev) return prev;
-        if (prev.username !== value) {
-          return { ...prev, username: value };
-        }
-        return prev;
-      });
+      setUserDetails((prev) => prev ? { ...prev, username: value } : null);
     } else {
-      setFormState((prev) => {
-        const key = section as keyof FormState;
-        if (prev[key] !== value) {
-          return { ...prev, [key]: value };
-        }
-        return prev;
-      });
+      setFormState((prev) => ({ ...prev, [section]: value }));
     }
   };
 
@@ -399,30 +328,7 @@ const UserProfile: React.FC = () => {
     }
   };
 
-  const InputField = memo(({ label, name, type = "text", placeholder, value, section, icon }: InputFieldProps) => {
-    const localRef = useRef<HTMLInputElement>(null);
 
-    console.log(`Rendering InputField: ${name}, value: ${value}`);
-    return (
-      <div className="profile-form__group">
-        <label className="profile-form__label">{label}</label>
-        <div className="profile-form__input-wrapper">
-          <input
-            type={type}
-            name={name}
-            placeholder={placeholder}
-            value={value ?? ""}
-            onChange={(e) => handleInputChange(e, section)}
-            onFocus={() => console.log(`Input focused: ${name}`)}
-            onBlur={() => console.log(`Input blurred: ${name}`)}
-            className="profile-form__input"
-            ref={localRef}
-          />
-          {icon && <span className="profile-form__input-icon">{icon}</span>}
-        </div>
-      </div>
-    );
-  });
 
   const renderUserDetails = () => {
     if (isLoading.fetchUser) {
@@ -528,15 +434,21 @@ const UserProfile: React.FC = () => {
           <div className="credentials__section">
             <h3>Reset Password</h3>
             <p>Enter your email address to receive a reset token.</p>
-            <InputField
-              label="Email Address"
-              name="email"
-              type="email"
-              placeholder="Enter your email"
-              value={formState.email ?? ""}
-              section="email"
-              icon={emailIcon}
-            />
+            <div className="profile-form__group">
+              <label className="profile-form__label">Email Address</label>
+              <div style={{ 
+                padding: '12px 16px', 
+                border: '1px solid #d1d5db', 
+                borderRadius: '8px', 
+                backgroundColor: '#f9fafb', 
+                color: '#374151',
+                fontSize: '16px',
+                minHeight: '20px',
+                wordBreak: 'break-all'
+              }}>
+                {formState.email || userDetails?.email || "No email available"}
+              </div>
+            </div>
             <button
               className="btn btn--primary"
               onClick={handleForgotPassword}
@@ -552,32 +464,36 @@ const UserProfile: React.FC = () => {
           <div className="credentials__section">
             <h3>Enter Reset Token</h3>
             <p>Check your email for the reset token and enter your new password.</p>
-            <InputField
-              label="Reset Token"
-              name="token"
-              placeholder="Enter reset token"
-              value={formState.token ?? ""}
-              section="token"
-              icon={tokenIcon}
-            />
-            <InputField
-              label="New Password"
-              name="newPassword"
-              type="password"
-              placeholder="Enter new password"
-              value={formState.newPassword ?? ""}
-              section="newPassword"
-              icon={lockIcon}
-            />
-            <InputField
-              label="Confirm Password"
-              name="confirmPassword"
-              type="password"
-              placeholder="Confirm new password"
-              value={formState.confirmPassword ?? ""}
-              section="confirmPassword"
-              icon={lockIcon}
-            />
+            <div className="profile-form__group">
+              <label className="profile-form__label">Reset Token</label>
+              <input
+                type="text"
+                name="token"
+                placeholder="Enter reset token"
+                value={formState.token ?? ""}
+                onChange={(e) => handleInputChange(e, "token")}
+              />
+            </div>
+            <div className="profile-form__group">
+              <label className="profile-form__label">New Password</label>
+              <input
+                type="password"
+                name="newPassword"
+                placeholder="Enter new password"
+                value={formState.newPassword ?? ""}
+                onChange={(e) => handleInputChange(e, "newPassword")}
+              />
+            </div>
+            <div className="profile-form__group">
+              <label className="profile-form__label">Confirm Password</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                placeholder="Confirm new password"
+                value={formState.confirmPassword ?? ""}
+                onChange={(e) => handleInputChange(e, "confirmPassword")}
+              />
+            </div>
             <div
               className="credentials__actions-row"
               tabIndex={-1}
