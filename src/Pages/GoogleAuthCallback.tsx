@@ -20,6 +20,20 @@ const GoogleAuthCallback: React.FC = () => {
   };
 
   useEffect(() => {
+    // --- URL PARAMETER METHOD ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    if (token) {
+      localStorage.setItem('authToken', token);
+      addDebugLog('Token found in URL parameter and saved to localStorage.authToken');
+      // Optionally, fetch user info or log in
+      // You may want to call your login function here if it expects a token
+      login(token, null); // If your login function needs user data, fetch it here
+      addDebugLog('Login called with token from URL parameter');
+      navigate('/', { replace: true });
+      return;
+    }
+
     const fetchUser = async () => {
       try {
         addDebugLog(`[GoogleAuthCallback] Starting attempt ${retryCount + 1}`);
