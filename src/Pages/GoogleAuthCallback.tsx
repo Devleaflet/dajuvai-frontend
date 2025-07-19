@@ -150,8 +150,8 @@ const GoogleAuthCallback: React.FC = () => {
           addDebugLog(`Extracted user data: ${JSON.stringify(userData, null, 2)}`);
           addDebugLog(`Token present: ${token ? 'yes' : 'no'}`);
           login(token, userData);
-          addDebugLog('Login successful, navigating to home');
-          navigate('/', { replace: true });
+          addDebugLog('Login successful, staying on callback page');
+          // navigate('/', { replace: true }); // REMOVE AUTO-REDIRECT
         } else {
           addDebugLog(`Invalid response structure: success=${data.success}, data present=${!!data.data}`);
           throw new Error(data.message || 'Invalid response from server');
@@ -171,14 +171,13 @@ const GoogleAuthCallback: React.FC = () => {
         }
         
         // If all retries failed, show error but still try to redirect
-        addDebugLog('All retries exhausted, showing error and will redirect');
+        addDebugLog('All retries exhausted, showing error and will NOT auto-redirect');
         setError(`Failed to fetch user info: ${errorMessage}`);
-        
-        // Fallback: redirect to home anyway after a delay
-        setTimeout(() => {
-          addDebugLog('Fallback redirect to home');
-          navigate('/', { replace: true });
-        }, 3000);
+        // Fallback: do NOT redirect to home automatically
+        // setTimeout(() => {
+        //   addDebugLog('Fallback redirect to home');
+        //   navigate('/', { replace: true });
+        // }, 3000);
       } finally {
         setIsProcessing(false);
       }
