@@ -6,7 +6,7 @@ import { useVendorAuth } from "../context/VendorAuthContext";
 import VendorService from "../services/vendorService";
 import { API_BASE_URL } from "../config";
 import "../Styles/AuthModal.css";
-import popup from "../assets/popup.png";
+import popup from "../assets/auth.jpg";
 import close from "../assets/close.png";
 import { Toaster, toast } from 'react-hot-toast';
 
