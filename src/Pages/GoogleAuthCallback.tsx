@@ -58,6 +58,8 @@ const GoogleAuthCallback: React.FC = () => {
         addDebugLog(`API_BASE_URL: ${API_BASE_URL}`);
         addDebugLog(`Is HTTPS: ${window.location.protocol === 'https:'}`);
         addDebugLog(`Document domain: ${document.domain}`);
+        // Debug: Show localStorage token
+        addDebugLog(`localStorage.authToken: ${localStorage.getItem('authToken') || 'null'}`);
 
         // Debug: Check if this is coming from Google
         const referrer = document.referrer;
@@ -93,6 +95,8 @@ const GoogleAuthCallback: React.FC = () => {
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
+            // Fallback: Attach token if present
+            ...(localStorage.getItem('authToken') ? { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` } : {})
           },
         });
 
@@ -128,7 +132,11 @@ const GoogleAuthCallback: React.FC = () => {
 
         const data = await response.json();
         addDebugLog(`Response data: ${JSON.stringify(data, null, 2)}`);
-
+        // Fallback: If token is present in response, store in localStorage
+        if (data.token) {
+          localStorage.setItem('authToken', data.token);
+          addDebugLog('Token found in response body and saved to localStorage.authToken');
+        }
         if (data.success && data.data) {
           const userData = {
             id: data.data.userId,
@@ -138,10 +146,9 @@ const GoogleAuthCallback: React.FC = () => {
             isVerified: true,
           };
           // If backend provides a token, use it. Otherwise fallback to null.
-          const token = data.data.token || null;
+          const token = data.data.token || data.token || null;
           addDebugLog(`Extracted user data: ${JSON.stringify(userData, null, 2)}`);
           addDebugLog(`Token present: ${token ? 'yes' : 'no'}`);
-          
           login(token, userData);
           addDebugLog('Login successful, navigating to home');
           navigate('/', { replace: true });
@@ -182,6 +189,22 @@ const GoogleAuthCallback: React.FC = () => {
     fetchUser();
   }, [login, navigate, retryCount]);
 
+  // Debug panel for cookies, localStorage, and network info
+  const DebugPanel = () => (
+    <details style={{ marginTop: '20px', maxWidth: '800px', textAlign: 'left' }}>
+      <summary style={{ cursor: 'pointer', marginBottom: '10px' }}>Show Debug Info (Frontend)</summary>
+      <div style={{ backgroundColor: '#f5f5f5', padding: '10px', borderRadius: '5px', maxHeight: '300px', overflowY: 'auto', fontSize: '12px', fontFamily: 'monospace' }}>
+        <div><b>Cookies:</b> {document.cookie || 'None'}</div>
+        <div><b>localStorage.authToken:</b> {localStorage.getItem('authToken') || 'None'}</div>
+        <div><b>Current URL:</b> {window.location.href}</div>
+        <div><b>User Agent:</b> {navigator.userAgent}</div>
+        <div><b>API_BASE_URL:</b> {API_BASE_URL}</div>
+        <div><b>Origin:</b> {window.location.origin}</div>
+        <div><b>Referrer:</b> {document.referrer}</div>
+      </div>
+    </details>
+  );
+
   if (isProcessing) {
     return (
       <div style={{ 
@@ -206,7 +229,6 @@ const GoogleAuthCallback: React.FC = () => {
           <p>Processing Google authentication...</p>
           {retryCount > 0 && <p style={{ fontSize: '14px', color: '#666' }}>Retry attempt: {retryCount}</p>}
         </div>
-
         {/* Debug logs display */}
         <details style={{ marginTop: '20px', maxWidth: '800px', textAlign: 'left' }}>
           <summary style={{ cursor: 'pointer', marginBottom: '10px' }}>Show Debug Logs</summary>
@@ -224,7 +246,7 @@ const GoogleAuthCallback: React.FC = () => {
             ))}
           </div>
         </details>
-
+        <DebugPanel />
         <style>{`
           @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -253,7 +275,6 @@ const GoogleAuthCallback: React.FC = () => {
             Redirecting to home page in a few seconds...
           </p>
         </div>
-
         {/* Debug logs display for error case */}
         <details style={{ marginTop: '20px', maxWidth: '800px', textAlign: 'left' }}>
           <summary style={{ cursor: 'pointer', marginBottom: '10px' }}>Show Debug Logs</summary>
@@ -271,7 +292,7 @@ const GoogleAuthCallback: React.FC = () => {
             ))}
           </div>
         </details>
-
+        <DebugPanel />
         <button 
           onClick={() => navigate('/', { replace: true })}
           style={{
