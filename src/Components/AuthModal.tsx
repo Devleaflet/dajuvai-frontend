@@ -60,6 +60,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmNewPassword, setConfirmNewPassword] = useState<string>("");
   const [showForgotPopup, setShowForgotPopup] = useState(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const modalRef = useRef<HTMLDivElement | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
 
@@ -119,6 +121,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       setResetToken("");
       setNewPassword("");
       setConfirmNewPassword("");
+      setShowPassword(false);
+      setShowConfirmPassword(false);
     }
   }, [isOpen]);
 
@@ -165,9 +169,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       errors.push("Confirm password must contain at least one special character");
 
     if (errors.length > 0) {
-      // Show all errors as toasts
       errors.forEach((err) => toast.error(err));
-      setError(errors[0]); // Only show the first error in the error box
+      setError(errors[0]);
       return false;
     }
     return true;
@@ -340,7 +343,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       setError("");
       setSuccess("");
 
-      // First try vendor authentication
       try {
         const vendorService = VendorService.getInstance();
         const vendorResponse = await vendorService.login(userData);
@@ -353,12 +355,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           return;
         }
       } catch {
-        console.log(
-          "Vendor login failed, trying regular user authentication:"
-        );
+        console.log("Vendor login failed, trying regular user authentication:");
       }
 
-      // Try regular user authentication
       const response = await axios.post<LoginResponse>(
         `${API_BASE_URL}/api/auth/login`,
         userData,
@@ -376,7 +375,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           id: response.data.data.userId,
           email: response.data.data.email,
           role: response.data.data.role,
-          username: response.data.data.email.split("@")[0], // Use email username as default
+          username: response.data.data.email.split("@")[0],
           isVerified: true,
         };
 
@@ -428,17 +427,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  // Google OAuth login handler - Using existing backend endpoints
   const handleGoogleLogin = () => {
-    // Use your existing backend endpoint with frontend callback URL
     const callbackUrl = `${window.location.origin}/auth/google/callback`;
     const redirectUrl = `${API_BASE_URL}/api/auth/google?redirect_uri=${encodeURIComponent(callbackUrl)}`;
     
     console.log('Redirecting to backend Google OAuth:', redirectUrl);
     window.location.href = redirectUrl;
   };
-
-  // Removed unused handleFacebookLogin function
 
   const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>
@@ -478,7 +473,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  // Forgot Password Handlers
   const handleForgotPasswordRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -536,6 +530,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -591,7 +593,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </div>
         )}
 
-        {/* Social Login Buttons - Only show when not in verification mode */}
         {!showVerification && (
           <div className="auth-modal__social-login">
             <button
@@ -626,29 +627,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               Continue with Google
             </button>
 
-            {/* <button
-              type="button"
-              className="auth-modal__facebook-button"
-              onClick={() => {
-                // Just redirect to the backend's Facebook auth endpoint
-                window.location.href = `${API_BASE_URL}/api/auth/facebook`;
-              }}
-              disabled={isLoading}
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                className="auth-modal__facebook-icon"
-              >
-                <path
-                  fill="#1877F2"
-                  d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"
-                />
-              </svg>
-              Continue with Facebook
-            </button>
-             */}
             <div className="auth-modal__divider">
               <span>OR</span>
             </div>
@@ -735,17 +713,39 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 />
               </div>
 
-              <div className="auth-modal__form-group">
+              <div className="auth-modal__form-group" style={{ position: 'relative' }}>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   className="auth-modal__input"
                   placeholder="Please enter password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
+                  style={{ paddingRight: '40px' }}
                 />
-                {/* Password hint for signup mode */}
+                <span style={{ position: 'absolute', right: '10px', top: isLoginMode ? '50%' : '25%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', height: '100%' }}>
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '0',
+                      fontSize: '16px',
+                      lineHeight: 1
+                    }}
+                    tabIndex={-1}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
+                    )}
+                  </button>
+                </span>
                 {!isLoginMode && (
                   <div className="auth-modal__hint" style={{ color: '#888', fontSize: '0.9em', marginTop: '4px' }}>
                     Password must be at least 8 characters and contain at least one lowercase, one uppercase letter, and one special character
@@ -753,7 +753,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 )}
               </div>
 
-              {/* Move Forgot Password link here, only in login mode and not in verification mode */}
               {isLoginMode && !showVerification && (
                 <button
                   type="button"
@@ -768,16 +767,39 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               )}
 
               {!isLoginMode && (
-                <div className="auth-modal__form-group">
+                <div className="auth-modal__form-group" style={{ position: 'relative' }}>
                   <input
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     className="auth-modal__input"
                     placeholder="Confirm password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     disabled={isLoading}
+                    style={{ paddingRight: '40px' }}
                   />
+                  <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', height: '100%' }}>
+                    <button
+                      type="button"
+                      onClick={toggleConfirmPasswordVisibility}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '0',
+                        fontSize: '16px',
+                        lineHeight: 1
+                      }}
+                      tabIndex={-1}
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showConfirmPassword ? (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
+                      ) : (
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
+                      )}
+                    </button>
+                  </span>
                 </div>
               )}
 
@@ -838,7 +860,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         )}
       </div>
 
-      {/* Forgot Password Popup Overlay */}
       {showForgotPopup && (
         <div className="auth-modal__popup-overlay">
           <div className="auth-modal__popup" ref={popupRef}>
@@ -898,22 +919,72 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   onChange={(e) => setResetToken(e.target.value)}
                   required
                 />
-                <input
-                  type="password"
-                  className="auth-modal__input"
-                  placeholder="New Password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                />
-                <input
-                  type="password"
-                  className="auth-modal__input"
-                  placeholder="Confirm New Password"
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  required
-                />
+                <div className="auth-modal__form-group" style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="auth-modal__input"
+                    placeholder="New Password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '0',
+                      fontSize: '16px'
+                    }}
+                  >
+                    {showPassword ? (
+                      // Open eye SVG
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
+                    ) : (
+                      // Slashed eye SVG
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
+                    )}
+                  </button>
+                </div>
+                <div className="auth-modal__form-group" style={{ position: 'relative' }}>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    className="auth-modal__input"
+                    placeholder="Confirm New Password"
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={toggleConfirmPasswordVisibility}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '0',
+                      fontSize: '16px'
+                    }}
+                  >
+                    {showConfirmPassword ? (
+                      // Open eye SVG
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
+                    ) : (
+                      // Slashed eye SVG
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
+                    )}
+                  </button>
+                </div>
                 {error && <div className="auth-modal__error">{error}</div>}
                 {success && (
                   <div className="auth-modal__success">{success}</div>
