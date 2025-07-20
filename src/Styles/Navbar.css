@@ -903,7 +903,30 @@
 }
 
 .navbar__cart-item-remove:hover {
-    color: #ff6600;
+    background-color: #ff4444;
+    color: white;
+}
+
+.navbar__cart-item-remove:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.navbar__cart-item-remove-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.navbar__cart-item-remove-loading .spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid #ffffff;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
 .navbar__cart-subtotal {
