@@ -374,27 +374,29 @@ const UserProfile: React.FC = () => {
             {userDetails.isVerified ? "✓ Verified" : "⚠ Not Verified"}
           </div>
         </div>
-        {isEditing ? (
-          <div className="profile-form__actions">
-            <button className="btn btn--primary" onClick={handleSave} disabled={isLoading.saveUser}>
-              {isLoading.saveUser ? "Saving..." : "Save Changes"}
+        {!isGoogleUser && (
+          isEditing ? (
+            <div className="profile-form__actions">
+              <button className="btn btn--primary" onClick={handleSave} disabled={isLoading.saveUser}>
+                {isLoading.saveUser ? "Saving..." : "Save Changes"}
+              </button>
+              <button
+                className="btn btn--secondary"
+                onClick={() => {
+                  setUserDetails(originalDetails);
+                  setIsEditing(false);
+                }}
+                onFocus={() => console.log("Cancel button focused")}
+                tabIndex={-1}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button className="btn btn--primary" onClick={() => setIsEditing(true)}>
+              Edit Profile
             </button>
-            <button
-              className="btn btn--secondary"
-              onClick={() => {
-                setUserDetails(originalDetails);
-                setIsEditing(false);
-              }}
-              onFocus={() => console.log("Cancel button focused")}
-              tabIndex={-1}
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button className="btn btn--primary" onClick={() => setIsEditing(true)}>
-            Edit Profile
-          </button>
+          )
         )}
       </div>
     );
@@ -680,15 +682,26 @@ const UserProfile: React.FC = () => {
                   {userDetails?.username?.[0]?.toUpperCase() || "?"}
                 </div>
                 {isGoogleUser ? (
-                  <button
-                    key="details"
-                    onClick={() => handleTabChange("details")}
-                    className={`profile-sidebar__button ${activeTab === "details" ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
-                    onFocus={() => console.log(`details sidebar button focused`)}
-                    tabIndex={-1}
-                  >
-                    Manage Details
-                  </button>
+                  <>
+                    <button
+                      key="details"
+                      onClick={() => handleTabChange("details")}
+                      className={`profile-sidebar__button ${activeTab === "details" ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
+                      onFocus={() => console.log(`details sidebar button focused`)}
+                      tabIndex={-1}
+                    >
+                      Manage Details
+                    </button>
+                    <button
+                      key="orders"
+                      onClick={() => handleTabChange("orders")}
+                      className={`profile-sidebar__button ${activeTab === "orders" ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
+                      onFocus={() => console.log(`orders sidebar button focused`)}
+                      tabIndex={-1}
+                    >
+                      Orders
+                    </button>
+                  </>
                 ) : (
                   (["details", "credentials", "orders"] as Tab[]).map((tab) => (
                     <button
