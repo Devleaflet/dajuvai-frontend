@@ -3,7 +3,6 @@ import { AdminSidebar } from "../Components/AdminSidebar";
 import Header from "../Components/Header";
 import Pagination from "../Components/Pagination";
 import OrderEditModal from "../Components/Modal/OrderEditModal";
-import DeleteModal from "../Components/Modal/DeleteModal";
 import OrderDetailModal from '../Components/Modal/OrderDetailModal';
 import AdminOrdersSkeleton from '../skeleton/AdminOrdersSkeleton';
 import "../Styles/AdminOrders.css";
@@ -51,8 +50,6 @@ const AdminOrders: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<ModalOrder | null>(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [orderToDelete, setOrderToDelete] = useState<DisplayOrder | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -160,31 +157,6 @@ const AdminOrders: React.FC = () => {
     setShowOrderDetails(true);
   };
 
-  const confirmDeleteOrder = (order: DisplayOrder) => {
-    setOrderToDelete(order);
-    setShowDeleteModal(true);
-  };
-
-  const handleDeleteOrder = async () => {
-    if (orderToDelete && token) {
-      try {
-        // Uncomment when OrderService.deleteOrder is implemented
-        // await OrderService.deleteOrder(orderToDelete.id, token);
-        const updatedOrders = orders.filter(order => order.id !== orderToDelete.id);
-        setOrders(updatedOrders);
-        setFilteredOrders(updatedOrders);
-        setRawOrders(rawOrders.filter(o => o.id.toString() !== orderToDelete.id));
-        toast.success('Order has been successfully deleted.');
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to delete order';
-        toast.error(errorMessage);
-      } finally {
-        setOrderToDelete(null);
-        setShowDeleteModal(false);
-      }
-    }
-  };
-
   const editOrder = (order: DisplayOrder) => {
     setSelectedOrder(toModalOrder(order));
     setShowEditModal(true);
@@ -283,16 +255,6 @@ const AdminOrders: React.FC = () => {
                           </svg>
                         </button>
                         <button 
-                          className="admin-orders__action-btn admin-orders__delete-btn"
-                          onClick={() => confirmDeleteOrder(order)}
-                          aria-label="Delete order"
-                        >
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M3 6H5H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M8 6V4C8 2.96957 8.21071 2.46086 8.58579 2.08579C8.96086 1.71071 9.46957 1.5 10 1.5H14C14.5304 1.5 15.0391 1.71071 15.4142 2.08579C15.7893 2.46086 16 2.96957 16 3.5V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </button>
-                        <button 
                           className="admin-orders__action-btn admin-orders__edit-btn"
                           onClick={() => editOrder(order)}
                           aria-label="Edit order"
@@ -337,12 +299,7 @@ const AdminOrders: React.FC = () => {
         order={selectedOrder}
       />
 
-      <DeleteModal
-        show={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onDelete={handleDeleteOrder}
-        productName={orderToDelete?.id || "Order"}
-      />
+      
     </div>
   );
 };
