@@ -919,14 +919,12 @@ const Navbar: React.FC = () => {
             {!isLoading && isAuthenticated ? (
               <>
                 <Link to="/user-profile" className="navbar__side-menu-link">
-                  My Account
+                  My Profile
                 </Link>
                 <Link to="/wishlist" className="navbar__side-menu-link">
                   Wishlist
                 </Link>
-                <Link to="/orders" className="navbar__side-menu-link">
-                  My Orders
-                </Link>
+                
                 <a
                   href="/logout"
                   className="navbar__side-menu-link"
