@@ -9,6 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../api/axiosInstance";
 import axios from "axios";
 import { API_BASE_URL } from "../config";
+import { useLocation } from "react-router-dom";
 
 interface UserDetails {
   id: number;
@@ -40,7 +41,16 @@ type CredentialsMode = "change" | "forgot" | "reset";
 
 
 const UserProfile: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<Tab>("details");
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    if (location.state && typeof location.state.activeTab === 'string') {
+      const tab = location.state.activeTab;
+      if (["details", "credentials", "orders"].includes(tab)) {
+        return tab as Tab;
+      }
+    }
+    return "details";
+  });
   const [isEditing, setIsEditing] = useState(false);
   const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
   const [originalDetails, setOriginalDetails] = useState<UserDetails | null>(null);
@@ -214,6 +224,16 @@ const UserProfile: React.FC = () => {
       .finally(() => setOrdersLoading(false));
   }, [user, token]);
 
+  // Update activeTab if navigation state changes (e.g., user navigates again with a different tab)
+  useEffect(() => {
+    if (location.state && typeof location.state.activeTab === 'string') {
+      const tab = location.state.activeTab;
+      if (["details", "credentials", "orders"].includes(tab)) {
+        setActiveTab(tab as Tab);
+      }
+    }
+  }, [location.state]);
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
     section: keyof FormState | keyof UserDetails
@@ -374,29 +394,27 @@ const UserProfile: React.FC = () => {
             {userDetails.isVerified ? "✓ Verified" : "⚠ Not Verified"}
           </div>
         </div>
-        {!isGoogleUser && (
-          isEditing ? (
-            <div className="profile-form__actions">
-              <button className="btn btn--primary" onClick={handleSave} disabled={isLoading.saveUser}>
-                {isLoading.saveUser ? "Saving..." : "Save Changes"}
-              </button>
-              <button
-                className="btn btn--secondary"
-                onClick={() => {
-                  setUserDetails(originalDetails);
-                  setIsEditing(false);
-                }}
-                onFocus={() => console.log("Cancel button focused")}
-                tabIndex={-1}
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button className="btn btn--primary" onClick={() => setIsEditing(true)}>
-              Edit Profile
+        {isEditing ? (
+          <div className="profile-form__actions">
+            <button className="btn btn--primary" onClick={handleSave} disabled={isLoading.saveUser}>
+              {isLoading.saveUser ? "Saving..." : "Save Changes"}
             </button>
-          )
+            <button
+              className="btn btn--secondary"
+              onClick={() => {
+                setUserDetails(originalDetails);
+                setIsEditing(false);
+              }}
+              onFocus={() => console.log("Cancel button focused")}
+              tabIndex={-1}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button className="btn btn--primary" onClick={() => setIsEditing(true)}>
+            Edit Profile
+          </button>
         )}
       </div>
     );
@@ -412,16 +430,7 @@ const UserProfile: React.FC = () => {
         </div>
       );
     }
-    if (isGoogleUser) {
-      return (
-        <div className="credentials">
-          <div className="credentials__header">
-            <h3 className="credentials__title">Account Security</h3>
-            <p>Google account users manage credentials via Google.</p>
-          </div>
-        </div>
-      );
-    }
+
     return (
       <div className="credentials">
         <div className="credentials__header">
@@ -625,8 +634,6 @@ const UserProfile: React.FC = () => {
     );
   };
 
-  const isGoogleUser = userDetails?.email?.toLowerCase().endsWith('@gmail.com'); // crude check, replace with provider if available
-
   return (
     <>
       <Navbar />
@@ -681,46 +688,23 @@ const UserProfile: React.FC = () => {
                 <div className="profile-sidebar__avatar" style={{ backgroundColor: userDetails?.username ? getAvatarColor(userDetails.username) : "#f97316" }}>
                   {userDetails?.username?.[0]?.toUpperCase() || "?"}
                 </div>
-                {isGoogleUser ? (
-                  <>
-                    <button
-                      key="details"
-                      onClick={() => handleTabChange("details")}
-                      className={`profile-sidebar__button ${activeTab === "details" ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
-                      onFocus={() => console.log(`details sidebar button focused`)}
-                      tabIndex={-1}
-                    >
-                      Manage Details
-                    </button>
-                    <button
-                      key="orders"
-                      onClick={() => handleTabChange("orders")}
-                      className={`profile-sidebar__button ${activeTab === "orders" ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
-                      onFocus={() => console.log(`orders sidebar button focused`)}
-                      tabIndex={-1}
-                    >
-                      Orders
-                    </button>
-                  </>
-                ) : (
-                  (["details", "credentials", "orders"] as Tab[]).map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => handleTabChange(tab)}
-                      className={`profile-sidebar__button ${activeTab === tab ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
-                      onFocus={() => console.log(`${tab} sidebar button focused`)}
-                      tabIndex={-1}
-                    >
-                      {tab === "details" ? "Manage Details" : tab === "credentials" ? "Change Credentials" : "Order"}
-                    </button>
-                  ))
-                )}
+                {(["details", "credentials", "orders"] as Tab[]).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => handleTabChange(tab)}
+                    className={`profile-sidebar__button ${activeTab === tab ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
+                    onFocus={() => console.log(`${tab} sidebar button focused`)}
+                    tabIndex={-1}
+                  >
+                    {tab === "details" ? "Manage Details" : tab === "credentials" ? "Change Credentials" : "Order"}
+                  </button>
+                ))}
               </>
             )}
           </div>
           <div className="profile-content">
             {activeTab === "details" && renderUserDetails()}
-            {!isGoogleUser && activeTab === "credentials" && renderCredentials()}
+            {activeTab === "credentials" && renderCredentials()}
             {activeTab === "orders" && renderOrders()}
           </div>
         </div>

@@ -1026,7 +1026,7 @@ const Checkout: React.FC = () => {
             });
           } else {
             // Optionally clear cart or redirect for COD
-            navigate('/user-profile');
+            navigate('/user-profile', { state: { activeTab: 'orders' } });
           }
         }, 1500);
       } else {
