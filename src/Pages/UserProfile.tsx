@@ -721,7 +721,7 @@ const UserProfile: React.FC = () => {
           <div className="profile-content">
             {activeTab === "details" && renderUserDetails()}
             {!isGoogleUser && activeTab === "credentials" && renderCredentials()}
-            {!isGoogleUser && activeTab === "orders" && renderOrders()}
+            {activeTab === "orders" && renderOrders()}
           </div>
         </div>
       </div>
