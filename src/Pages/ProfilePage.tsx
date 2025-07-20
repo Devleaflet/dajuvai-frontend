@@ -7,7 +7,7 @@ import VendorHeader from "../Components/VendorHeader";
 import "../Styles/ProfilePage.css";
 
 const ProfilePage: React.FC = () => {
-  const { authState, logout } = useVendorAuth();
+  const { authState } = useVendorAuth();
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -129,13 +129,15 @@ const ProfilePage: React.FC = () => {
                 >
                   Logout
                 </button>
-                <button
-                  type="button"
-                  className="profile-update-card__button profile-update-card__button--forgot"
-                  onClick={() => setShowForgotModal(true)}
-                >
-                  Forgot Password?
-                </button>
+                {!authState.vendor?.email?.toLowerCase().endsWith('@gmail.com') && (
+                  <button
+                    type="button"
+                    className="profile-update-card__button profile-update-card__button--forgot"
+                    onClick={() => setShowForgotModal(true)}
+                  >
+                    Forgot Password?
+                  </button>
+                )}
               </div>
             </div>
           </section>

@@ -410,7 +410,16 @@ const UserProfile: React.FC = () => {
         </div>
       );
     }
-
+    if (isGoogleUser) {
+      return (
+        <div className="credentials">
+          <div className="credentials__header">
+            <h3 className="credentials__title">Account Security</h3>
+            <p>Google account users manage credentials via Google.</p>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="credentials">
         <div className="credentials__header">
@@ -614,6 +623,8 @@ const UserProfile: React.FC = () => {
     );
   };
 
+  const isGoogleUser = userDetails?.email?.toLowerCase().endsWith('@gmail.com'); // crude check, replace with provider if available
+
   return (
     <>
       <Navbar />
@@ -668,24 +679,36 @@ const UserProfile: React.FC = () => {
                 <div className="profile-sidebar__avatar" style={{ backgroundColor: userDetails?.username ? getAvatarColor(userDetails.username) : "#f97316" }}>
                   {userDetails?.username?.[0]?.toUpperCase() || "?"}
                 </div>
-                {(["details", "credentials", "orders"] as Tab[]).map((tab) => (
+                {isGoogleUser ? (
                   <button
-                    key={tab}
-                    onClick={() => handleTabChange(tab)}
-                    className={`profile-sidebar__button ${activeTab === tab ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
-                    onFocus={() => console.log(`${tab} sidebar button focused`)}
+                    key="details"
+                    onClick={() => handleTabChange("details")}
+                    className={`profile-sidebar__button ${activeTab === "details" ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
+                    onFocus={() => console.log(`details sidebar button focused`)}
                     tabIndex={-1}
                   >
-                    {tab === "details" ? "Manage Details" : tab === "credentials" ? "Change Credentials" : "Order"}
+                    Manage Details
                   </button>
-                ))}
+                ) : (
+                  (["details", "credentials", "orders"] as Tab[]).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => handleTabChange(tab)}
+                      className={`profile-sidebar__button ${activeTab === tab ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
+                      onFocus={() => console.log(`${tab} sidebar button focused`)}
+                      tabIndex={-1}
+                    >
+                      {tab === "details" ? "Manage Details" : tab === "credentials" ? "Change Credentials" : "Order"}
+                    </button>
+                  ))
+                )}
               </>
             )}
           </div>
           <div className="profile-content">
             {activeTab === "details" && renderUserDetails()}
-            {activeTab === "credentials" && renderCredentials()}
-            {activeTab === "orders" && renderOrders()}
+            {!isGoogleUser && activeTab === "credentials" && renderCredentials()}
+            {!isGoogleUser && activeTab === "orders" && renderOrders()}
           </div>
         </div>
       </div>
