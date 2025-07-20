@@ -1,5 +1,5 @@
 // API Configuration in file named config.ts
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://leafletdv.onrender.com";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://api.dajuvai.com";
 
 // Frontend URL - update this based on your environment
 export const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173";

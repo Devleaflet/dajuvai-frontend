@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import '../Styles/ProductPage.css';
@@ -12,6 +12,7 @@ import Preloader from '../Components/Preloader';
 import AuthModal from '../Components/AuthModal';
 import defaultProductImage from '../assets/logo.webp';
 import Reviews from '../Components/Reviews';
+import React from 'react';
 
 const CACHE_KEY_REVIEWS = 'productReviewsData';
 
@@ -45,6 +46,13 @@ const ProductPage = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [imageError, setImageError] = useState<boolean[]>([]);
+
+  // Magnifier state
+  const [isMagnifierVisible, setIsMagnifierVisible] = useState(false);
+  const [magnifierPos, setMagnifierPos] = useState({ x: 0, y: 0 });
+  const magnifierSize = 180; // px
+  const zoomLevel = 2.2;
+  const mainImageRef = useRef<HTMLDivElement>(null);
 
   const { handleCartOnAdd } = useCart();
   const { token, isAuthenticated } = useAuth();
@@ -204,7 +212,21 @@ const ProductPage = () => {
           <div className="product-page__content">
             <div className="product-gallery">
               <div className="product-gallery__images">
-                <div className="product-gallery__main-image">
+                <div className="product-gallery__main-image"
+                  ref={mainImageRef}
+                  onMouseEnter={() => setIsMagnifierVisible(true)}
+                  onMouseLeave={() => setIsMagnifierVisible(false)}
+                  onMouseMove={e => {
+                    const { left, top, width, height } = mainImageRef.current!.getBoundingClientRect();
+                    const x = e.clientX - left;
+                    const y = e.clientY - top;
+                    setMagnifierPos({
+                      x: Math.max(Math.min(x, width), 0),
+                      y: Math.max(Math.min(y, height), 0)
+                    });
+                  }}
+                  style={isMagnifierVisible ? { cursor: 'none', position: 'relative' } : { position: 'relative' }}
+                >
                   <img
                     src={
                       imageError[selectedImageIndex]
@@ -214,6 +236,42 @@ const ProductPage = () => {
                     alt={product.name}
                     onError={() => handleImageError(selectedImageIndex)}
                   />
+                 {/* Magnifier lens overlay */}
+                 {isMagnifierVisible && (
+                   <div
+                     style={{
+                       position: 'absolute',
+                       pointerEvents: 'none',
+                       left: magnifierPos.x - magnifierSize / 2,
+                       top: magnifierPos.y - magnifierSize / 2,
+                       width: magnifierSize,
+                       height: magnifierSize,
+                       borderRadius: '50%',
+                       boxShadow: '0 2px 8px #0002',
+                       border: '2px solid #ff9800',
+                       background: `url(${imageError[selectedImageIndex] ? defaultProductImage : product.productImages?.[selectedImageIndex] || defaultProductImage}) no-repeat`,
+                       backgroundSize: `${mainImageRef.current ? mainImageRef.current.offsetWidth * zoomLevel : 0}px ${mainImageRef.current ? mainImageRef.current.offsetHeight * zoomLevel : 0}px`,
+                       backgroundPosition: `-${(magnifierPos.x * zoomLevel) - magnifierSize / 2}px -${(magnifierPos.y * zoomLevel) - magnifierSize / 2}px`,
+                       zIndex: 10,
+                       borderColor: '#ff9800',
+                       transition: 'border-color 0.2s',
+                     }}
+                   >
+                     {/* Optional: center dot for cursor */}
+                     <div style={{
+                       position: 'absolute',
+                       left: '50%',
+                       top: '50%',
+                       width: 8,
+                       height: 8,
+                       background: '#ff9800',
+                       borderRadius: '50%',
+                       transform: 'translate(-50%, -50%)',
+                       pointerEvents: 'none',
+                       boxShadow: '0 0 2px #fff, 0 0 6px #ff9800'
+                     }} />
+                   </div>
+                 )}
                 </div>
                 {product.productImages && product.productImages.length > 1 && (
                   <div className="product-gallery__thumbnails">

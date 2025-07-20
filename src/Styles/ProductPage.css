@@ -49,6 +49,13 @@
   height: 100%;
   object-fit: contain;
   padding: 1rem;
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+.product-gallery__main-image:hover img {
+  transform: scale(1.15);
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.12);
+  z-index: 2;
 }
 
 .product-gallery__thumbnails {
