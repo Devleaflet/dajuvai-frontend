@@ -794,7 +794,7 @@ const Navbar: React.FC = () => {
                 Shop
               </NavLink>
               <NavLink to="/contact" className={({ isActive }) => "navbar__link" + (isActive ? " active" : "") }>
-                Support <span className="navbar__link-icon">🎧</span>
+                Contact <span className="navbar__link-icon">🎧</span>
               </NavLink>
             </div>
 

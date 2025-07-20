@@ -68,11 +68,16 @@ const About = () => {
         subject: '',
         message: ''
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      let errorMessage = "Oops! Something went wrong. Please try again later.";
+      if (err && typeof err === 'object' && 'response' in err && err.response && typeof err.response === 'object' && 'data' in err.response && err.response.data && typeof err.response.data === 'object' && 'message' in err.response.data) {
+        // @ts-expect-error: dynamic error shape from axios
+        errorMessage = err.response.data.message || errorMessage;
+      }
       toast.error(
         <div className="flex items-center">
           <FaExclamationCircle size={24} className="mr-2 text-red-500" />
-          <span>{err?.response?.data?.message || "Oops! Something went wrong. Please try again later."}</span>
+          <span>{errorMessage}</span>
         </div>,
         {
           position: "top-right",
@@ -111,7 +116,12 @@ const About = () => {
                 <span>Kathmandu, Nepal</span>
               </div>
             </div>
-            <button className="vendor-button">Become A Vendor</button>
+            <div style={{ marginTop: '1.5rem', background: '#f8f8f8', padding: '1.2rem', borderRadius: '8px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Want to Become a Vendor?</h3>
+              <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.98rem', color: '#444' }}>
+                If you are interested in selling your products on our platform, please contact us at <b>support@dajuvai.com</b> or call <b>+977-9708555024</b>. Our team will guide you through the process and help you get started as a vendor!
+              </p>
+            </div>
           </div>
           <div className="contact-content-right">
             <form onSubmit={handleSubmit}>
