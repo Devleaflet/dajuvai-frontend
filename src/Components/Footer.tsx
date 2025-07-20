@@ -7,6 +7,7 @@ import khalti from '../assets/khalti1.png';
 import esewa from '../assets/esewa.png';
 import logo from '../assets/logo.webp';
 import { Link } from "react-router-dom";
+import npx from '../assets/npx.png'
 
 const Footer: React.FC = () => {
   return (
@@ -134,6 +135,7 @@ const Footer: React.FC = () => {
                 <div className="footer__payment-icons">
                
                   <img src={esewa} alt="eSewa Payment" className="footer__payment-image" />
+                     <img src={npx} alt="eSewa Payment" className="footer__payment-image" />
                   
                 </div>
               </div>
