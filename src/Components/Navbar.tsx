@@ -31,7 +31,7 @@ import { useCart } from "../context/CartContext";
 import { fetchCategory } from "../api/category";
 import { useCategory } from "../context/Category";
 import iphone from "../assets/iphone.jpg"; // Import fallback image
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import { fetchSubCategory } from "../api/subcategory";
 import { useQuery } from "@tanstack/react-query";
@@ -787,15 +787,15 @@ const Navbar: React.FC = () => {
 
           <div className="navbar__desktop-links">
             <div className="navbar__links">
-              <Link to="/" className="navbar__link">
+              <NavLink to="/" className={({ isActive }) => "navbar__link" + (isActive ? " active" : "") } end>
                 Home
-              </Link>
-              <Link to="/shop" className="navbar__link">
+              </NavLink>
+              <NavLink to="/shop" className={({ isActive }) => "navbar__link" + (isActive ? " active" : "") }>
                 Shop
-              </Link>
-              <Link to="/contact" className="navbar__link">
+              </NavLink>
+              <NavLink to="/contact" className={({ isActive }) => "navbar__link" + (isActive ? " active" : "") }>
                 Support <span className="navbar__link-icon">🎧</span>
-              </Link>
+              </NavLink>
             </div>
 
             <div className="navbar__account">
