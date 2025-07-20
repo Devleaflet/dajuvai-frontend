@@ -7,7 +7,7 @@ interface Category {
   status: "Visible" | "Hidden";
   date: string;
   image?: string;
-  subCategories: any[];
+  subCategories: unknown[];
 }
 
 interface CategoryEditModalProps {
@@ -119,19 +119,6 @@ const CategoryEditModal: React.FC<CategoryEditModalProps> = ({
               required
               placeholder="Enter category name"
             />
-          </div>
-
-          <div className="category-modal__form-group">
-            <label htmlFor="status">Status</label>
-            <select
-              id="status"
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-            >
-              <option value="Visible">Visible</option>
-              <option value="Hidden">Hidden</option>
-            </select>
           </div>
 
           <div className="category-modal__form-group">

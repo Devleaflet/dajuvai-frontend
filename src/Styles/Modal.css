@@ -15,8 +15,10 @@
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    overflow: hidden;
+    overflow-y: auto; /* Only allow vertical scrolling */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
     width: 90%;
+    max-height: 90vh; /* Add max-height for modal */
   }
   
   .modal-small {
@@ -55,8 +57,7 @@
   
   .modal-body {
     padding: 24px;
-    max-height: 70vh;
-    overflow-y: auto;
+    /* Remove max-height and overflow-y to prevent double scroll bar */
   }
   
   .modal-footer {
