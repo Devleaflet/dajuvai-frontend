@@ -754,7 +754,7 @@ import { v4 as uuidv4 } from 'uuid';
 import CryptoJS from 'crypto-js';
 import '../Styles/CheckOut.css';
 import { useCart } from '../context/CartContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../Components/Navbar';
 import Footer from '../Components/Footer';
 import logo from '../assets/logo.webp';
@@ -808,7 +808,30 @@ interface ShippingGroup {
 }
 
 const Checkout: React.FC = () => {
-  const { cartItems, handleIncreaseQuantity, handleDecreaseQuantity } = useCart();
+  const location = useLocation();
+  const { cartItems: contextCartItems, handleIncreaseQuantity, handleDecreaseQuantity } = useCart();
+  let cartItems = contextCartItems;
+  // If coming from Buy Now, override cartItems with the single product from state
+  if (location.state && location.state.buyNow && location.state.product) {
+    const p = location.state.product;
+    cartItems = [{
+      id: p.id,
+      quantity: p.quantity,
+      price: p.price,
+      name: p.name,
+      image: p.image || null,
+      product: {
+        id: p.id,
+        name: p.name,
+        vendor: p.vendor?.businessName || undefined,
+        description: p.description || '',
+        price: Number(p.price),
+        rating: p.rating || 0,
+        ratingCount: p.ratingCount || '0',
+        image: p.image || '',
+      },
+    }];
+  }
   const navigate = useNavigate();
   
   const [billingDetails, setBillingDetails] = useState({

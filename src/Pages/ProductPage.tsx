@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import '../Styles/ProductPage.css';
 import Navbar from '../Components/Navbar';
@@ -56,6 +56,7 @@ const ProductPage = () => {
 
   const { handleCartOnAdd } = useCart();
   const { token, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   // Fetch product data using React Query
   const { data: productData, isLoading: isProductLoading } = useQuery({
@@ -175,6 +176,26 @@ const ProductPage = () => {
     } catch {
       showNotification('Failed to add to wishlist');
     }
+  };
+
+  const handleBuyNow = () => {
+    if (!isAuthenticated) {
+      setAuthModalOpen(true);
+      return;
+    }
+    if (!product) return;
+    // Pass product info to checkout page via state
+    navigate('/checkout', {
+      state: {
+        buyNow: true,
+        product: {
+          ...product,
+          selectedColor,
+          selectedMemory,
+          quantity
+        }
+      }
+    });
   };
 
   const handleQuantityChange = (increment: boolean) => {
@@ -404,12 +425,21 @@ const ProductPage = () => {
                 <div className="product-actions">
                   <button
                     className="product-actions__button product-actions__button--primary"
+                    style={{ order: 1 }}
+                    onClick={handleBuyNow}
+                  >
+                    Buy Now
+                  </button>
+                  <button
+                    className="product-actions__button product-actions__button--primary"
+                    style={{ order: 2 }}
                     onClick={handleAddToCart}
                   >
                     Add to Cart
                   </button>
                   <button
                     className="product-actions__button product-actions__button--secondary"
+                    style={{ order: 3 }}
                     onClick={handleAddToWishlist}
                   >
                     Add to Wishlist
