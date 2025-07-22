@@ -762,3 +762,26 @@
   position: relative;
   overflow: hidden;
 }
+
+.product-gallery__zoom-box {
+  position: absolute;
+  left: calc(100% + 24px);
+  top: 0;
+  width: 260px;
+  height: 260px;
+  border: 2px solid #ff9800;
+  border-radius: 8px;
+  box-shadow: 0 2px 16px #0002;
+  background: #fff;
+  z-index: 20;
+  pointer-events: none;
+  display: block;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+@media (max-width: 900px) {
+  .product-gallery__zoom-box {
+    display: none !important;
+  }
+}

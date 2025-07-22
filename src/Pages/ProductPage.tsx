@@ -47,12 +47,14 @@ const ProductPage = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [imageError, setImageError] = useState<boolean[]>([]);
 
-  // Magnifier state
-  const [isMagnifierVisible, setIsMagnifierVisible] = useState(false);
-  const [magnifierPos, setMagnifierPos] = useState({ x: 0, y: 0 });
-  const magnifierSize = 180; // px
-  const zoomLevel = 2.2;
+  // Enhanced Amazon-style zoom state
+  const [isZoomActive, setIsZoomActive] = useState(false);
+  const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
   const mainImageRef = useRef<HTMLDivElement>(null);
+  
+  // Amazon-like zoom configuration
+  const ZOOM_LEVEL = 2.5;
+  const ZOOM_BOX_SIZE = 200; // Size of the zoomed-in box
 
   const { handleCartOnAdd } = useCart();
   const { token, isAuthenticated } = useAuth();
@@ -149,6 +151,32 @@ const ProductPage = () => {
     }
   }, [product]);
 
+  // Enhanced Amazon-style zoom handlers
+  const handleMouseEnter = () => {
+    setIsZoomActive(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsZoomActive(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!mainImageRef.current) return;
+
+    const rect = mainImageRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Constrain mouse position within image bounds
+    const constrainedX = Math.max(0, Math.min(x, rect.width));
+    const constrainedY = Math.max(0, Math.min(y, rect.height));
+
+    // Calculate percent position for transform-origin
+    const percentX = (constrainedX / rect.width) * 100;
+    const percentY = (constrainedY / rect.height) * 100;
+    setZoomPosition({ x: percentX, y: percentY });
+  };
+
   const showNotification = (message: string) => {
     setToastMessage(message);
     setShowToast(true);
@@ -225,6 +253,10 @@ const ProductPage = () => {
     );
   }
 
+  const currentImage = imageError[selectedImageIndex]
+    ? defaultProductImage
+    : product.productImages?.[selectedImageIndex] || defaultProductImage;
+
   return (
     <>
       <Navbar />
@@ -233,67 +265,62 @@ const ProductPage = () => {
           <div className="product-page__content">
             <div className="product-gallery">
               <div className="product-gallery__images">
-                <div className="product-gallery__main-image"
+                <div 
+                  className="product-gallery__main-image"
                   ref={mainImageRef}
-                  onMouseEnter={() => setIsMagnifierVisible(true)}
-                  onMouseLeave={() => setIsMagnifierVisible(false)}
-                  onMouseMove={e => {
-                    const { left, top, width, height } = mainImageRef.current!.getBoundingClientRect();
-                    const x = e.clientX - left;
-                    const y = e.clientY - top;
-                    setMagnifierPos({
-                      x: Math.max(Math.min(x, width), 0),
-                      y: Math.max(Math.min(y, height), 0)
-                    });
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                  onMouseMove={handleMouseMove}
+                  style={{ 
+                    position: 'relative', 
+                    overflow: 'hidden',
+                    cursor: isZoomActive ? 'crosshair' : 'zoom-in',
                   }}
-                  style={isMagnifierVisible ? { cursor: 'none', position: 'relative' } : { position: 'relative' }}
                 >
                   <img
-                    src={
-                      imageError[selectedImageIndex]
-                        ? defaultProductImage
-                        : product.productImages?.[selectedImageIndex] || defaultProductImage
-                    }
+                    src={currentImage}
                     alt={product.name}
                     onError={() => handleImageError(selectedImageIndex)}
+                    style={{ 
+                      width: '100%',
+                      height: 'auto',
+                      display: 'block',
+                      userSelect: 'none',
+                      transition: 'transform 0.2s cubic-bezier(0.4,0,0.2,1)',
+                      // Remove in-place zoom
+                      transform: 'scale(1)',
+                      transformOrigin: 'center center',
+                    }}
                   />
-                 {/* Magnifier lens overlay */}
-                 {isMagnifierVisible && (
-                   <div
-                     style={{
-                       position: 'absolute',
-                       pointerEvents: 'none',
-                       left: magnifierPos.x - magnifierSize / 2,
-                       top: magnifierPos.y - magnifierSize / 2,
-                       width: magnifierSize,
-                       height: magnifierSize,
-                       borderRadius: '50%',
-                       boxShadow: '0 2px 8px #0002',
-                       border: '2px solid #ff9800',
-                       background: `url(${imageError[selectedImageIndex] ? defaultProductImage : product.productImages?.[selectedImageIndex] || defaultProductImage}) no-repeat`,
-                       backgroundSize: `${mainImageRef.current ? mainImageRef.current.offsetWidth * zoomLevel : 0}px ${mainImageRef.current ? mainImageRef.current.offsetHeight * zoomLevel : 0}px`,
-                       backgroundPosition: `-${(magnifierPos.x * zoomLevel) - magnifierSize / 2}px -${(magnifierPos.y * zoomLevel) - magnifierSize / 2}px`,
-                       zIndex: 10,
-                       borderColor: '#ff9800',
-                       transition: 'border-color 0.2s',
-                     }}
-                   >
-                     {/* Optional: center dot for cursor */}
-                     <div style={{
-                       position: 'absolute',
-                       left: '50%',
-                       top: '50%',
-                       width: 8,
-                       height: 8,
-                       background: '#ff9800',
-                       borderRadius: '50%',
-                       transform: 'translate(-50%, -50%)',
-                       pointerEvents: 'none',
-                       boxShadow: '0 0 2px #fff, 0 0 6px #ff9800'
-                     }} />
-                   </div>
-                 )}
+                  {/* Zoom box overlay on the right, over product info */}
+                  {isZoomActive && (
+                    <div
+                      style={{
+                        position: 'fixed', // Use fixed to overlay anywhere
+                        left: mainImageRef.current ? mainImageRef.current.getBoundingClientRect().right + 32 : '60%',
+                        top: mainImageRef.current ? mainImageRef.current.getBoundingClientRect().top : 100,
+                        width: `${ZOOM_BOX_SIZE}px`,
+                        height: `${ZOOM_BOX_SIZE}px`,
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        zIndex: 2000,
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1), 0 6px 20px rgba(0,0,0,0.15)',
+                        backgroundColor: '#fff',
+                        backgroundImage: `url(${currentImage})`,
+                        backgroundSize: `${ZOOM_LEVEL * 100}%`,
+                        backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                        backgroundRepeat: 'no-repeat',
+                        pointerEvents: 'none',
+                        opacity: 1,
+                        transition: 'opacity 0.2s ease-out',
+                      }}
+                    />
+                  )}
                 </div>
+
+                {/* Clean up: Remove always-false blocks */}
+
                 {product.productImages && product.productImages.length > 1 && (
                   <div className="product-gallery__thumbnails">
                     {product.productImages.map((image: string, index: number) => (
@@ -314,6 +341,7 @@ const ProductPage = () => {
                   </div>
                 )}
               </div>
+              
               <div className="product-info">
                 <div className="product-info__badges">
                   {product.isBestSeller && (
@@ -423,13 +451,13 @@ const ProductPage = () => {
                   <div className="product-quantity__stock">In stock: {product.stock}</div>
                 </div>
                 <div className="product-actions">
-                  <button
+                  {/* <button
                     className="product-actions__button product-actions__button--primary"
                     style={{ order: 1 }}
                     onClick={handleBuyNow}
                   >
                     Buy Now
-                  </button>
+                  </button> */}
                   <button
                     className="product-actions__button product-actions__button--primary"
                     style={{ order: 2 }}
