@@ -388,12 +388,12 @@ const UserProfile: React.FC = () => {
           <label>Account Role</label>
           <div>{userDetails.role}</div>
         </div>
-        <div className="profile-form__group">
+        {/* <div className="profile-form__group">
           <label>Account Status</label>
           <div className={userDetails.isVerified ? "verified-yes" : "verified-no"}>
             {userDetails.isVerified ? "✓ Verified" : "⚠ Not Verified"}
           </div>
-        </div>
+        </div> */}
         {isEditing ? (
           <div className="profile-form__actions">
             <button className="btn btn--primary" onClick={handleSave} disabled={isLoading.saveUser}>
