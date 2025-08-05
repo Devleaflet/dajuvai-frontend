@@ -10,6 +10,7 @@ import CartContextProvider from "./context/CartContext.tsx";
 import CategoryContextProvider from "./context/Category.tsx";
 import { VendorAuthProvider } from "./context/VendorAuthContext.tsx";
 import { setupAxiosInterceptors } from './api/axiosInstance';
+import PasswordProtectedRoute from "./Components/SiteProtection/PasswordProtectedRoute.tsx";
 
 setupAxiosInterceptors(() => localStorage.getItem('authToken'));
 console.log('[EntryPoint] Axios interceptor set up with token from localStorage');
@@ -36,18 +37,20 @@ const queryClient = new QueryClient({
 
 createRoot(document.getElementById("root")!).render(
   <VendorAuthProvider>
-  <AuthProvider>
-    <BrowserRouter>
-      <StrictMode>
-        <QueryClientProvider client={queryClient}>
-          <CartContextProvider>
-            <CategoryContextProvider>
-              <App />
-            </CategoryContextProvider>
-          </CartContextProvider>
-        </QueryClientProvider>
-      </StrictMode>
-    </BrowserRouter>
-  </AuthProvider>
+    <AuthProvider>
+      <BrowserRouter>
+        <StrictMode>
+          <QueryClientProvider client={queryClient}>
+            <CartContextProvider>
+              <CategoryContextProvider>
+                <PasswordProtectedRoute>
+                  <App />
+                </PasswordProtectedRoute>
+              </CategoryContextProvider>
+            </CartContextProvider>
+          </QueryClientProvider>
+        </StrictMode>
+      </BrowserRouter>
+    </AuthProvider>
   </VendorAuthProvider>
 );
