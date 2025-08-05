@@ -103,6 +103,30 @@ export interface ProductFormData {
     status: string;
   }[];
   vendorId: string;
+  // New fields for variant support
+  hasVariants: boolean;
+  variants?: ProductVariant[];
+  bannerId?: number | null;
+  brandId?: number | null;
+}
+
+// New interfaces for the updated API
+export interface Attribute {
+  attributeType: string;
+  attributeValues: string[];
+}
+
+export interface ProductVariant {
+  sku: string;
+  price: number;
+  stock: number;
+  status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
+  attributes?: Attribute[];
+  images?: (File | string)[];
+}
+
+export interface Image {
+  url: string;
 }
 
 export interface ApiProduct {

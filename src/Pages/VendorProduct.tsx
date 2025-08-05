@@ -155,10 +155,12 @@ const VendorProduct: React.FC = () => {
   // Mutation for adding a product
   const addProductMutation = useMutation({
     mutationFn: async (productData: ProductFormData) => {
+      console.log('=== VENDOR PRODUCT CREATION START ===');
       console.log('VendorProduct: token exists:', !!authState.token);
       console.log('VendorProduct: vendor exists:', !!authState.vendor);
       console.log('VendorProduct: vendor ID:', authState.vendor?.id);
       console.log('VendorProduct: vendor verified:', authState.vendor?.isVerified);
+      console.log('VendorProduct: Product data received:', productData);
       
       if (!authState.token) {
         throw new Error('No authentication token found');
@@ -170,47 +172,105 @@ const VendorProduct: React.FC = () => {
 
       // Convert ProductFormData to FormData
       const formData = new FormData();
-      formData.append("name", String(productData.name));
-      formData.append("description", String(productData.description));
-      formData.append("basePrice", productData.basePrice != null ? String(productData.basePrice) : "0");
-      formData.append("stock", productData.stock.toString());
-      formData.append("quantity", String(productData.quantity));
-      formData.append("vendorId", String(authState.vendor.id));
       
+      // Required fields
+      formData.append("name", String(productData.name));
+      formData.append("subcategoryId", String(productData.subcategoryId));
+      formData.append("hasVariants", String(productData.hasVariants));
+      
+      // Optional fields
+      if (productData.description) {
+        formData.append("description", String(productData.description));
+      }
+      
+      // Handle variant vs non-variant products
+      if (!productData.hasVariants) {
+        console.log('VendorProduct: Creating non-variant product');
+        
+        // Non-variant product fields
+        if (productData.basePrice != null) {
+          formData.append("basePrice", String(productData.basePrice));
+        }
+        if (productData.stock != null) {
+          formData.append("stock", String(productData.stock));
+        }
+        if (productData.status) {
+          formData.append("status", String(productData.status));
+        }
+        
+        // Non-variant product images
+        if (productData.productImages && Array.isArray(productData.productImages)) {
+          productData.productImages.forEach((image, index) => {
+            if (index < 5 && image instanceof File) {
+              formData.append("productImages", image);
+            }
+          });
+        }
+      } else {
+        console.log('VendorProduct: Creating variant product');
+        
+        // Variant product - variants data
+        if (productData.variants && Array.isArray(productData.variants)) {
+          console.log('VendorProduct: Adding variants data:', productData.variants);
+          formData.append("variants", JSON.stringify(productData.variants));
+          
+          // Handle variant images
+          productData.variants.forEach((variant, variantIndex) => {
+            console.log(`VendorProduct: Processing variant ${variantIndex + 1} (${variant.sku}):`, variant);
+            if (variant.images && Array.isArray(variant.images)) {
+              console.log(`VendorProduct: Variant ${variant.sku} has ${variant.images.length} images`);
+              variant.images.forEach((image, imageIndex) => {
+                console.log(`VendorProduct: Processing image ${imageIndex + 1} for variant ${variant.sku}:`, image);
+                if (image instanceof File) {
+                  const imageKey = `variantImages${variantIndex + 1}`;
+                  formData.append(imageKey, image);
+                  console.log(`VendorProduct: Added image to FormData with key: ${imageKey}`);
+                } else {
+                  console.warn(`VendorProduct: Image ${imageIndex + 1} for variant ${variant.sku} is not a File:`, image);
+                }
+              });
+            } else {
+              console.error(`VendorProduct: Variant ${variant.sku} has no images or images is not an array:`, variant.images);
+            }
+          });
+        }
+      }
+      
+      // Common optional fields
       if (productData.discount && Number(productData.discount) > 0) {
         formData.append("discount", Number(productData.discount).toFixed(2));
-        formData.append("discountType", String(productData.discountType));
+        formData.append("discountType", String(productData.discountType || 'PERCENTAGE'));
       }
-      if (Array.isArray(productData.size) && productData.size.length > 0) {
-        formData.append("size", productData.size.join(","));
-      }
-      if (productData.status) formData.append("status", String(productData.status));
-      if (productData.brand_id != null) {
-        formData.append("brand_id", String(productData.brand_id));
-      }
+      
       if (productData.dealId != null) {
         formData.append("dealId", String(productData.dealId));
       }
-      if (productData.productImages && Array.isArray(productData.productImages)) {
-        productData.productImages.forEach((image, index) => {
-          if (index < 5 && image instanceof File) {
-            formData.append("images", image);
-          }
-        });
+      
+      if (productData.bannerId != null) {
+        formData.append("bannerId", String(productData.bannerId));
       }
-      if (productData.inventory && Array.isArray(productData.inventory)) {
-        formData.append("inventory", JSON.stringify(productData.inventory));
+      
+      if (productData.brandId != null) {
+        formData.append("brandId", String(productData.brandId));
       }
 
       // Log formData contents for debugging
-      console.log('VendorProduct: FormData vendorId:', formData.get('vendorId'));
-      console.log('VendorProduct: FormData entries:', Object.fromEntries(formData.entries()));
+      console.log('VendorProduct: Final FormData entries:');
+      for (const [key, value] of formData.entries()) {
+        console.log(`  ${key}:`, value);
+      }
 
-      return createProduct(
+      console.log('VendorProduct: Making API call to createProduct');
+      const result = await createProduct(
         productData.categoryId,
         productData.subcategoryId,
         formData
       );
+      
+      console.log('VendorProduct: API call completed successfully');
+      console.log('=== VENDOR PRODUCT CREATION END ===');
+      
+      return result;
     },
     onSuccess: (data) => {
       console.log('Product created successfully:', data);

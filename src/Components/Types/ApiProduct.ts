@@ -1,3 +1,5 @@
+import { ProductVariant, Attribute } from "../../types/product";
+
 export interface ApiProduct {
   id: number;
   name: string;
@@ -49,6 +51,11 @@ export interface ApiProduct {
     id: number;
     title: string;
   } | null;
+  // New fields for variant support
+  hasVariants: boolean;
+  variants?: ProductVariant[];
+  bannerId?: number | null;
+  brandId?: number | null;
 }
 
 // Helper function to convert API product to display product

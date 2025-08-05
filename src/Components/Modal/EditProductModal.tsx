@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ProductFormData } from "../../types/product";
+import { ProductFormData, ProductVariant, Attribute } from "../../types/product";
 import "../../Styles/ProductModal.css";
 import "../../Styles/Modal.css";
 import { useAuth } from "../../context/AuthContext";
@@ -61,6 +61,10 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     quantity: 0,
     vendorId: "",
     inventory: [],
+    hasVariants: false,
+    variants: [],
+    bannerId: null,
+    brandId: null,
   });
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -76,6 +80,24 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   const [deals, setDeals] = useState<Deal[]>([]);
   const [dealsLoading, setDealsLoading] = useState(false);
   const [dealsError, setDealsError] = useState<string | null>(null);
+
+  // Variant management state
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [currentVariant, setCurrentVariant] = useState<Partial<ProductVariant>>({
+    sku: "",
+    price: 0,
+    stock: 0,
+    status: "AVAILABLE" as const,
+    attributes: [],
+    images: [],
+  });
+  
+  // Attribute management for variants
+  const [currentAttribute, setCurrentAttribute] = useState<Partial<Attribute>>({
+    attributeType: "",
+    attributeValues: [],
+  });
+  const [currentAttributeValue, setCurrentAttributeValue] = useState<string>("");
 
   // Check if we're in vendor context
   const isVendorContext = vendorAuthState.isAuthenticated && vendorAuthState.vendor;
@@ -103,9 +125,20 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         vendorId: isVendorContext 
           ? String(vendorAuthState.vendor?.id || "")
           : (product.vendorId ? String(product.vendorId) : ""),
+        hasVariants: product.hasVariants || false,
+        variants: product.variants || [],
+        bannerId: product.bannerId || null,
+        brandId: product.brandId || null,
       };
 
       setFormData(initialFormData);
+      
+      // Initialize variants state if product has variants
+      if (product.hasVariants && product.variants) {
+        setVariants(product.variants);
+      } else {
+        setVariants([]);
+      }
       
       // Set vendor ID based on context
       if (isVendorContext) {
@@ -359,13 +392,44 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     if (!formData.name?.trim()) newErrors.name = "Product name is required";
     if (!formData.description?.trim())
       newErrors.description = "Product description is required";
-    const price = parseFloat(formData.basePrice?.toString() || "0");
-    if (isNaN(price) || price <= 0)
-      newErrors.basePrice = "Base price must be a valid positive number";
-    if (typeof formData.stock !== "number" || formData.stock < 0)
-      newErrors.stock = "Stock must be a valid non-negative number";
-    if (typeof formData.quantity !== "number" || formData.quantity <= 0)
-      newErrors.quantity = "Quantity must be a valid positive number";
+    
+    // Validate based on whether product has variants
+    if (!formData.hasVariants) {
+      // Non-variant product validation
+      const price = parseFloat(formData.basePrice?.toString() || "0");
+      if (isNaN(price) || price <= 0)
+        newErrors.basePrice = "Base price must be a valid positive number";
+      if (typeof formData.stock !== "number" || formData.stock < 0)
+        newErrors.stock = "Stock must be a valid non-negative number";
+      if (typeof formData.quantity !== "number" || formData.quantity <= 0)
+        newErrors.quantity = "Quantity must be a valid positive number";
+    } else {
+      // Variant product validation
+      if (variants.length === 0) {
+        newErrors.variants = "At least one variant is required for variant products";
+      } else {
+        // Validate each variant
+        for (let i = 0; i < variants.length; i++) {
+          const variant = variants[i];
+          if (!variant.sku) {
+            newErrors.variants = `Variant ${i + 1} missing SKU`;
+            break;
+          }
+          if (!variant.price || variant.price <= 0) {
+            newErrors.variants = `Variant ${i + 1} must have a valid positive price`;
+            break;
+          }
+          if (!variant.stock || variant.stock < 0) {
+            newErrors.variants = `Variant ${i + 1} must have a valid non-negative stock`;
+            break;
+          }
+          if (!variant.status) {
+            newErrors.variants = `Variant ${i + 1} must have a valid status`;
+            break;
+          }
+        }
+      }
+    }
     
     // Only validate vendor selection for admin context
     if (!isVendorContext && !formData.vendorId) {
@@ -404,15 +468,23 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
       const subcategoryId = product.subcategory?.id || 1;
 
+      // Prepare final form data with variants
+      const finalFormData = {
+        ...formData,
+        variants: formData.hasVariants ? variants : undefined,
+      };
+
       console.log('EditProductModal: Submitting form data:', {
         productId: product.id,
-        formData: formData,
+        formData: finalFormData,
         categoryId: categoryId,
         subcategoryId: subcategoryId,
-        status: formData.status
+        status: formData.status,
+        hasVariants: formData.hasVariants,
+        variantsCount: variants.length
       });
 
-      await onSave(product.id, formData, categoryId, subcategoryId);
+      await onSave(product.id, finalFormData, categoryId, subcategoryId);
       onClose();
     } catch (err) {
       const errorMessage =
@@ -444,6 +516,97 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         : (selectedVendorId ? String(selectedVendorId) : ""),
       inventory: prev.inventory || [],
     }));
+  };
+
+  // Variant management functions
+  const handleVariantChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setCurrentVariant((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAttributeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setCurrentAttribute((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAttributeValueAdd = () => {
+    if (currentAttributeValue.trim()) {
+      setCurrentAttribute((prev) => ({
+        ...prev,
+        attributeValues: [...(prev.attributeValues || []), currentAttributeValue.trim()]
+      }));
+      setCurrentAttributeValue("");
+    }
+  };
+
+  const handleAttributeValueRemove = (valueToRemove: string) => {
+    setCurrentAttribute((prev) => ({
+      ...prev,
+      attributeValues: (prev.attributeValues || []).filter(v => v !== valueToRemove)
+    }));
+  };
+
+  const handleAttributeAdd = () => {
+    if (currentAttribute.attributeType && currentAttribute.attributeValues && currentAttribute.attributeValues.length > 0) {
+      setCurrentVariant((prev) => ({
+        ...prev,
+        attributes: [...(prev.attributes || []), currentAttribute as Attribute]
+      }));
+      setCurrentAttribute({ attributeType: "", attributeValues: [] });
+    }
+  };
+
+  const handleAttributeRemove = (indexToRemove: number) => {
+    setCurrentVariant((prev) => ({
+      ...prev,
+      attributes: (prev.attributes || []).filter((_, index) => index !== indexToRemove)
+    }));
+  };
+
+  const handleVariantAdd = () => {
+    console.log("EditProductModal: Adding variant:", currentVariant);
+    
+    if (!currentVariant.sku) {
+      toast.error("SKU is required for variant");
+      return;
+    }
+    if (!currentVariant.price || currentVariant.price <= 0) {
+      toast.error("Valid price is required for variant");
+      return;
+    }
+    if (!currentVariant.stock || currentVariant.stock < 0) {
+      toast.error("Valid stock is required for variant");
+      return;
+    }
+    if (!currentVariant.status) {
+      toast.error("Status is required for variant");
+      return;
+    }
+
+    const newVariant: ProductVariant = {
+      sku: currentVariant.sku,
+      price: currentVariant.price,
+      stock: currentVariant.stock,
+      status: currentVariant.status,
+      attributes: currentVariant.attributes || [],
+      images: currentVariant.images || [],
+    };
+
+    setVariants((prev) => [...prev, newVariant]);
+    setCurrentVariant({
+      sku: "",
+      price: 0,
+      stock: 0,
+      status: "AVAILABLE" as const,
+      attributes: [],
+      images: [],
+    });
+    
+    console.log("EditProductModal: Variants after adding:", [...variants, newVariant]);
+  };
+
+  const handleVariantRemove = (skuToRemove: string) => {
+    setVariants((prev) => prev.filter(v => v.sku !== skuToRemove));
   };
 
   if (!show) return null;
@@ -734,6 +897,359 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                       </div>
                     ))}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Has Variants Toggle */}
+            <div className="product-modal__section">
+              <div className="product-modal__field">
+                <label className="product-modal__label">
+                  <input
+                    type="checkbox"
+                    name="hasVariants"
+                    checked={formData.hasVariants}
+                    onChange={(e) => setFormData(prev => ({ ...prev, hasVariants: e.target.checked }))}
+                    style={{ marginRight: "8px" }}
+                  />
+                  Product has variants (e.g., different sizes, colors)
+                </label>
+              </div>
+            </div>
+
+            {/* Conditional Fields for Non-Variant Products */}
+            {!formData.hasVariants && (
+              <div className="product-modal__section">
+                <div className="product-modal__row">
+                  <div className="product-modal__field">
+                    <label className="product-modal__label">Base Price *</label>
+                    <input
+                      type="number"
+                      name="basePrice"
+                      value={formData.basePrice?.toString() || ""}
+                      onChange={handleNumberInputChange}
+                      required
+                      min="0"
+                      step="0.01"
+                      className="product-modal__input"
+                    />
+                    {errors.basePrice && (
+                      <span className="product-modal__error">{errors.basePrice}</span>
+                    )}
+                  </div>
+
+                  <div className="product-modal__field">
+                    <label className="product-modal__label">Stock *</label>
+                    <input
+                      type="number"
+                      name="stock"
+                      value={formData.stock?.toString() || ""}
+                      onChange={handleNumberInputChange}
+                      required
+                      min="0"
+                      className="product-modal__input"
+                    />
+                    {errors.stock && (
+                      <span className="product-modal__error">{errors.stock}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="product-modal__field">
+                  <label className="product-modal__label">Status *</label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    required
+                    className="product-modal__select"
+                  >
+                    <option value="AVAILABLE">Available</option>
+                    <option value="OUT_OF_STOCK">Out of Stock</option>
+                    <option value="LOW_STOCK">Low Stock</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Variant Management Section */}
+            {formData.hasVariants && (
+              <div className="product-modal__section">
+                <div className="product-modal__field">
+                  <label className="product-modal__label" style={{ fontWeight: 'bold', marginBottom: '10px' }}>
+                    Product Variants *
+                  </label>
+                  
+                  {/* Current Variants List */}
+                  {variants.length > 0 && (
+                    <div style={{ marginBottom: '15px' }}>
+                      <h4>Added Variants:</h4>
+                      {variants.map((variant, index) => (
+                        <div key={variant.sku} style={{ 
+                          border: '1px solid #ddd', 
+                          padding: '10px', 
+                          marginBottom: '10px', 
+                          borderRadius: '4px',
+                          backgroundColor: '#f9f9f9'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <strong>SKU: {variant.sku}</strong>
+                            <button
+                              type="button"
+                              onClick={() => handleVariantRemove(variant.sku)}
+                              style={{
+                                background: 'red',
+                                color: 'white',
+                                border: 'none',
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          <div>Price: ${variant.price}</div>
+                          <div>Stock: {variant.stock}</div>
+                          <div>Status: {variant.status}</div>
+                          {variant.attributes && variant.attributes.length > 0 && (
+                            <div>
+                              <strong>Attributes:</strong>
+                              {variant.attributes.map((attr, attrIndex) => (
+                                <div key={attrIndex} style={{ marginLeft: '10px' }}>
+                                  {attr.attributeType}: {attr.attributeValues.join(', ')}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Add New Variant Form */}
+                  <div style={{ 
+                    border: '2px dashed #ccc', 
+                    padding: '15px', 
+                    borderRadius: '4px',
+                    backgroundColor: '#fafafa'
+                  }}>
+                    <h4>Add New Variant:</h4>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <input
+                        type="text"
+                        name="sku"
+                        placeholder="SKU (e.g., TSHIRT-RED-M)"
+                        value={currentVariant.sku}
+                        onChange={handleVariantChange}
+                        style={{
+                          padding: '8px',
+                          borderRadius: '4px',
+                          border: '1px solid #ccc'
+                        }}
+                      />
+                      
+                      <input
+                        type="number"
+                        name="price"
+                        placeholder="Price"
+                        value={currentVariant.price}
+                        onChange={handleVariantChange}
+                        step="0.01"
+                        min="0"
+                        style={{
+                          padding: '8px',
+                          borderRadius: '4px',
+                          border: '1px solid #ccc'
+                        }}
+                      />
+                      
+                      <input
+                        type="number"
+                        name="stock"
+                        placeholder="Stock Quantity"
+                        value={currentVariant.stock}
+                        onChange={handleVariantChange}
+                        min="0"
+                        style={{
+                          padding: '8px',
+                          borderRadius: '4px',
+                          border: '1px solid #ccc'
+                        }}
+                      />
+                      
+                      <select
+                        name="status"
+                        value={currentVariant.status}
+                        onChange={handleVariantChange}
+                        style={{
+                          padding: '8px',
+                          borderRadius: '4px',
+                          border: '1px solid #ccc'
+                        }}
+                      >
+                        <option value="AVAILABLE">Available</option>
+                        <option value="OUT_OF_STOCK">Out of Stock</option>
+                        <option value="LOW_STOCK">Low Stock</option>
+                      </select>
+                      
+                      {/* Attribute Management */}
+                      <div style={{ marginTop: '10px' }}>
+                        <h5>Attributes (Optional):</h5>
+                        
+                        {/* Current Attributes for this variant */}
+                        {currentVariant.attributes && currentVariant.attributes.length > 0 && (
+                          <div style={{ marginBottom: '10px' }}>
+                            {currentVariant.attributes.map((attr, index) => (
+                              <div key={index} style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center',
+                                padding: '5px',
+                                backgroundColor: '#e9ecef',
+                                marginBottom: '5px',
+                                borderRadius: '4px'
+                              }}>
+                                <span>{attr.attributeType}: {attr.attributeValues.join(', ')}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleAttributeRemove(index)}
+                                  style={{
+                                    background: 'orange',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '2px 6px',
+                                    borderRadius: '3px',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Add New Attribute */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                          <input
+                            type="text"
+                            name="attributeType"
+                            placeholder="Attribute Type (e.g., Color, Size)"
+                            value={currentAttribute.attributeType}
+                            onChange={handleAttributeChange}
+                            style={{
+                              padding: '6px',
+                              borderRadius: '4px',
+                              border: '1px solid #ccc'
+                            }}
+                          />
+                          
+                          <div style={{ display: 'flex', gap: '5px' }}>
+                            <input
+                              type="text"
+                              placeholder="Attribute Value"
+                              value={currentAttributeValue}
+                              onChange={(e) => setCurrentAttributeValue(e.target.value)}
+                              style={{
+                                padding: '6px',
+                                borderRadius: '4px',
+                                border: '1px solid #ccc',
+                                flex: 1
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={handleAttributeValueAdd}
+                              style={{
+                                padding: '6px 12px',
+                                backgroundColor: '#007bff',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Add Value
+                            </button>
+                          </div>
+                          
+                          {/* Current attribute values */}
+                          {currentAttribute.attributeValues && currentAttribute.attributeValues.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                              {currentAttribute.attributeValues.map((value, index) => (
+                                <span key={index} style={{
+                                  backgroundColor: '#007bff',
+                                  color: 'white',
+                                  padding: '2px 8px',
+                                  borderRadius: '12px',
+                                  fontSize: '12px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '5px'
+                                }}>
+                                  {value}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAttributeValueRemove(value)}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      color: 'white',
+                                      cursor: 'pointer',
+                                      fontSize: '14px'
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          
+                          <button
+                            type="button"
+                            onClick={handleAttributeAdd}
+                            disabled={!currentAttribute.attributeType || !currentAttribute.attributeValues || currentAttribute.attributeValues.length === 0}
+                            style={{
+                              padding: '6px 12px',
+                              backgroundColor: '#28a745',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              opacity: (!currentAttribute.attributeType || !currentAttribute.attributeValues || currentAttribute.attributeValues.length === 0) ? 0.5 : 1
+                            }}
+                          >
+                            Add Attribute
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={handleVariantAdd}
+                        disabled={!currentVariant.sku || !currentVariant.price || currentVariant.price <= 0 || !currentVariant.stock || currentVariant.stock < 0}
+                        style={{
+                          padding: '10px',
+                          backgroundColor: '#28a745',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          marginTop: '10px',
+                          opacity: (!currentVariant.sku || !currentVariant.price || currentVariant.price <= 0 || !currentVariant.stock || currentVariant.stock < 0) ? 0.5 : 1
+                        }}
+                      >
+                        Add Variant
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {errors.variants && (
+                    <span className="product-modal__error">{errors.variants}</span>
+                  )}
                 </div>
               </div>
             )}
