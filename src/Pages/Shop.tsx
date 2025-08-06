@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import Navbar from "../Components/Navbar";
 import ProductBanner from "../Components/ProductBanner";
 import CategorySlider from "../Components/CategorySlider";
@@ -32,6 +32,63 @@ interface ProductFilters {
   brandId?: string | undefined;
   dealId?: string | undefined;
   sort?: string | undefined;
+}
+
+interface ApiProduct {
+  id: number;
+  name: string;
+  description: string;
+  basePrice: number | null;
+  stock: number;
+  discount: number | null;
+  discountType: 'PERCENTAGE' | 'FLAT' | null;
+  size: string[];
+  status: 'AVAILABLE' | 'UNAVAILABLE';
+  productImages: string[];
+  inventory: {
+    sku: string;
+    quantity: number;
+    status: string;
+  }[];
+  vendorId: number;
+  brand_id: number | null;
+  dealId: number | null;
+  created_at: string;
+  updated_at: string;
+  categoryId: number;
+  subcategory: {
+    id: number;
+    name: string;
+    image: string | null;
+    createdAt: string;
+    updatedAt: string;
+    category?: {
+      id: number;
+      name: string;
+    };
+  };
+  vendor: {
+    id: number;
+    businessName: string;
+    email: string;
+    phoneNumber: string;
+    districtId: number;
+    isVerified: boolean;
+    createdAt: string;
+    updatedAt: string;
+    district: {
+      id: number;
+      name: string;
+    };
+  };
+  brand: {
+    id: number;
+    name: string;
+  } | null;
+  deal: {
+    id: number;
+    title: string;
+  } | null;
 }
 
 // Unified API fetch function
@@ -67,19 +124,19 @@ const apiRequest = async (endpoint: string, token: string | null | undefined = u
 // Build query parameters for the API
 const buildQueryParams = (filters: ProductFilters): string => {
   const params = new URLSearchParams();
-  if (filters.categoryId !== undefined) {
+  if (filters.categoryId !== undefined && filters.categoryId !== null) {
     params.append('categoryId', filters.categoryId.toString());
   }
-  if (filters.subcategoryId !== undefined) {
+  if (filters.subcategoryId !== undefined && filters.subcategoryId !== null) {
     params.append('subcategoryId', filters.subcategoryId.toString());
   }
-  if (filters.brandId !== undefined) {
+  if (filters.brandId !== undefined && filters.brandId !== null) {
     params.append('brandId', filters.brandId);
   }
-  if (filters.dealId !== undefined) {
+  if (filters.dealId !== undefined && filters.dealId !== null) {
     params.append('dealId', filters.dealId);
   }
-  if (filters.sort !== undefined && filters.sort !== 'all') {
+  if (filters.sort !== undefined && filters.sort !== null && filters.sort !== 'all') {
     params.append('sort', filters.sort);
   }
   return params.toString();
@@ -89,14 +146,34 @@ const buildQueryParams = (filters: ProductFilters): string => {
 const fetchProductsWithFilters = async (filters: ProductFilters, token: string | null | undefined = undefined) => {
   const queryParams = buildQueryParams(filters);
   const endpoint = `/api/categories/all/products${queryParams ? `?${queryParams}` : ''}`;
-  return await apiRequest(endpoint, token);
+  
+  console.log('🔍 Fetching products with filters:', {
+    filters,
+    queryParams,
+    endpoint,
+    fullUrl: `${API_BASE_URL}${endpoint}`,
+    token: token ? 'Present' : 'Not present'
+  });
+  
+  try {
+    const response = await apiRequest(endpoint, token);
+    console.log('✅ Products API response:', response);
+    return response;
+  } catch (error) {
+    console.error('❌ Error fetching products:', error);
+    console.error('❌ Request details:', {
+      endpoint,
+      fullUrl: `${API_BASE_URL}${endpoint}`,
+      filters,
+      queryParams
+    });
+    throw error;
+  }
 };
 
 const Shop: React.FC = () => {
   const { token } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const location = useLocation();
-  const navigate = useNavigate();
   
   const [selectedCategory, setSelectedCategory] = useState<number | undefined>(undefined);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | undefined>(undefined);
@@ -218,7 +295,7 @@ const Shop: React.FC = () => {
         if (response?.success && Array.isArray(response.data)) return response.data;
         if (response?.data) return Array.isArray(response.data) ? response.data : [];
         return [];
-      } catch (error) {
+      } catch {
         const categoryService = CategoryService.getInstance();
         return await categoryService.getAllCategories(token || undefined);
       }
@@ -235,13 +312,13 @@ const Shop: React.FC = () => {
       try {
         const response = await apiRequest(`/api/categories/${selectedCategory}/subcategories`, token);
         if (response?.success && Array.isArray(response.data)) {
-          return response.data.map((item: any) => ({
+          return response.data.map((item: { id: number; name: string }) => ({
             id: item.id,
             name: item.name
           })).filter((item: Subcategory) => item.id && item.name);
         }
         return [];
-      } catch (error) {
+      } catch {
         return [];
       }
     },
@@ -258,24 +335,182 @@ const Shop: React.FC = () => {
   } = useQuery({
     queryKey: ["products", currentFilters],
     queryFn: async () => {
-      const response = await fetchProductsWithFilters(currentFilters, token);
-      let productsArray: any[] = [];
+      console.log('🔄 Starting products query with filters:', currentFilters);
       
-      if (response?.success && Array.isArray(response.data)) {
-        productsArray = response.data;
-      } else if (Array.isArray(response)) {
-        productsArray = response;
-      }
+      try {
+        const response = await fetchProductsWithFilters(currentFilters, token);
+        let productsArray: ApiProduct[] = [];
+        
+        console.log('📦 Processing products response:', {
+          hasResponse: !!response,
+          responseType: typeof response,
+          hasSuccess: response?.success,
+          hasData: !!response?.data,
+          dataIsArray: Array.isArray(response?.data),
+          responseKeys: response ? Object.keys(response) : []
+        });
+        
+        if (response?.success && Array.isArray(response.data)) {
+          productsArray = response.data;
+          console.log('✅ Using response.data array, length:', productsArray.length);
+        } else if (Array.isArray(response)) {
+          productsArray = response;
+          console.log('✅ Using response as array, length:', productsArray.length);
+        } else {
+          console.warn('⚠️ Unexpected response format:', response);
+          productsArray = [];
+        }
 
-      // Process products with review data
-      return await Promise.all(productsArray.map(async (item) => {
-        return await processProductWithReview(item);
-      }));
+        // Process products with review data
+        console.log('🔄 Processing products with reviews, count:', productsArray.length);
+        const processedProducts = await Promise.all(productsArray.map(async (item, index) => {
+          try {
+            const processed = await processProductWithReview(item);
+            console.log(`✅ Processed product ${index + 1}/${productsArray.length}:`, item.name);
+            return processed;
+          } catch (error) {
+            console.error(`❌ Error processing product ${index + 1}:`, item.name, error);
+            // Return a fallback product
+            return {
+              id: item.id,
+              title: item.name || 'Unknown Product',
+              description: item.description || 'No description available',
+              originalPrice: item.basePrice?.toString() || '0',
+              discountPercentage: '0%',
+              price: item.basePrice?.toString() || '0',
+              rating: 0,
+              ratingCount: "0",
+              isBestSeller: false,
+              freeDelivery: true,
+              image: phone,
+              category: "Misc",
+              brand: "Unknown",
+            };
+          }
+        }));
+        
+        console.log('✅ Successfully processed all products, final count:', processedProducts.length);
+        return processedProducts;
+      } catch (error) {
+        console.error('❌ Fatal error in products query:', error);
+        
+        // Debug the fallback condition
+        console.log('🔍 Fallback condition check:', {
+          hasCategoryId: !!currentFilters.categoryId,
+          hasSubcategoryId: !!currentFilters.subcategoryId,
+          hasBrandId: !!currentFilters.brandId,
+          hasDealId: !!currentFilters.dealId,
+          hasSort: !!currentFilters.sort,
+          currentFilters
+        });
+        
+        // If we have any filters and the request failed, try without filters as fallback
+        if (currentFilters.categoryId || currentFilters.subcategoryId || currentFilters.brandId || currentFilters.dealId || currentFilters.sort) {
+          console.log('🔄 Trying fallback: fetching all products without filters');
+          try {
+            const fallbackResponse = await fetchProductsWithFilters({}, token);
+            let fallbackProductsArray: ApiProduct[] = [];
+            
+            if (fallbackResponse?.success && Array.isArray(fallbackResponse.data)) {
+              fallbackProductsArray = fallbackResponse.data;
+            } else if (Array.isArray(fallbackResponse)) {
+              fallbackProductsArray = fallbackResponse;
+            }
+            
+            console.log('✅ Fallback successful, got products:', fallbackProductsArray.length);
+            
+            // Process fallback products
+            const processedFallbackProducts = await Promise.all(fallbackProductsArray.map(async (item) => {
+              try {
+                const processed = await processProductWithReview(item);
+                return processed;
+              } catch {
+                return {
+                  id: item.id,
+                  title: item.name || 'Unknown Product',
+                  description: item.description || 'No description available',
+                  originalPrice: item.basePrice?.toString() || '0',
+                  discountPercentage: '0%',
+                  price: item.basePrice?.toString() || '0',
+                  rating: 0,
+                  ratingCount: "0",
+                  isBestSeller: false,
+                  freeDelivery: true,
+                  image: phone,
+                  category: "Misc",
+                  brand: "Unknown",
+                };
+              }
+            }));
+            
+            return processedFallbackProducts;
+          } catch (fallbackError) {
+            console.error('❌ Fallback also failed:', fallbackError);
+            
+            // Try one more fallback - just category without subcategory
+            if (currentFilters.categoryId && currentFilters.subcategoryId) {
+              console.log('🔄 Trying second fallback: category only without subcategory');
+              try {
+                const secondFallbackResponse = await fetchProductsWithFilters({
+                  categoryId: currentFilters.categoryId
+                }, token);
+                let secondFallbackProductsArray: ApiProduct[] = [];
+                
+                if (secondFallbackResponse?.success && Array.isArray(secondFallbackResponse.data)) {
+                  secondFallbackProductsArray = secondFallbackResponse.data;
+                } else if (Array.isArray(secondFallbackResponse)) {
+                  secondFallbackProductsArray = secondFallbackResponse;
+                }
+                
+                console.log('✅ Second fallback successful, got products:', secondFallbackProductsArray.length);
+                
+                // Process second fallback products
+                const processedSecondFallbackProducts = await Promise.all(secondFallbackProductsArray.map(async (item) => {
+                  try {
+                    const processed = await processProductWithReview(item);
+                    return processed;
+                  } catch {
+                    return {
+                      id: item.id,
+                      title: item.name || 'Unknown Product',
+                      description: item.description || 'No description available',
+                      originalPrice: item.basePrice?.toString() || '0',
+                      discountPercentage: '0%',
+                      price: item.basePrice?.toString() || '0',
+                      rating: 0,
+                      ratingCount: "0",
+                      isBestSeller: false,
+                      freeDelivery: true,
+                      image: phone,
+                      category: "Misc",
+                      brand: "Unknown",
+                    };
+                  }
+                }));
+                
+                return processedSecondFallbackProducts;
+              } catch (secondFallbackError) {
+                console.error('❌ Second fallback also failed:', secondFallbackError);
+              }
+            }
+            
+            throw error; // Throw the original error
+          }
+        } else {
+          console.log('⚠️ No filters detected, not attempting fallback');
+        }
+        
+        throw error;
+      }
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
-    retry: 2,
+    retry: (failureCount, error) => {
+      console.log(`🔄 Retrying products query (attempt ${failureCount + 1}/3):`, error);
+      return failureCount < 2; // Retry up to 2 times (3 total attempts)
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 
   // Client-side filtering for price and search
@@ -423,7 +658,7 @@ const Shop: React.FC = () => {
                          searchQuery.trim() !== '';
 
   // Update the product processing
-  const processProductWithReview = async (item: any): Promise<Product> => {
+  const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
     try {
       const { averageRating, reviews } = await fetchReviewOf(item.id);
       
@@ -431,33 +666,37 @@ const Shop: React.FC = () => {
         id: item.id,
         title: item.name,
         description: item.description,
-        originalPrice: item.basePrice.toString(),
-        discountPercentage: `${item.discount}%`,
-        price: (item.basePrice * (1 - item.discount / 100)).toFixed(2),
+        originalPrice: item.basePrice?.toString() || '0',
+        discountPercentage: item.discount ? `${item.discount}%` : '0%',
+        price: item.basePrice && item.discount 
+          ? (item.basePrice * (1 - item.discount / 100)).toFixed(2)
+          : item.basePrice?.toString() || '0',
         rating: Number(averageRating) || 0,
         ratingCount: reviews?.length?.toString() || "0",
         isBestSeller: item.stock > 20,
         freeDelivery: true,
         image: item.productImages?.[0] || phone,
-        category: item.subcategory?.category?.name || item.category || "Misc",
-        brand: item.brand?.name || item.brand || "Unknown",
+        category: item.subcategory?.category?.name || "Misc",
+        brand: item.brand?.name || "Unknown",
       };
-    } catch (error) {
+    } catch {
       // Fallback product data without reviews
       return {
         id: item.id,
         title: item.name,
         description: item.description,
-        originalPrice: item.basePrice.toString(),
-        discountPercentage: `${item.discount}%`,
-        price: (item.basePrice * (1 - item.discount / 100)).toFixed(2),
+        originalPrice: item.basePrice?.toString() || '0',
+        discountPercentage: item.discount ? `${item.discount}%` : '0%',
+        price: item.basePrice && item.discount 
+          ? (item.basePrice * (1 - item.discount / 100)).toFixed(2)
+          : item.basePrice?.toString() || '0',
         rating: 0,
         ratingCount: "0",
         isBestSeller: item.stock > 20,
         freeDelivery: true,
         image: item.productImages?.[0] || phone,
-        category: item.subcategory?.category?.name || item.category || "Misc",
-        brand: item.brand?.name || item.brand || "Unknown",
+        category: item.subcategory?.category?.name || "Misc",
+        brand: item.brand?.name || "Unknown",
       };
     }
   };
