@@ -39,7 +39,7 @@ interface ReviewsResponse {
 const ProductPage = () => {
   const { id } = useParams<{ id: string }>();
   const [selectedColor, setSelectedColor] = useState('');
-  const [selectedMemory, setSelectedMemory] = useState('');
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showToast, setShowToast] = useState(false);
@@ -73,7 +73,9 @@ const ProductPage = () => {
         throw new Error('Product not found');
       }
 
-      const basePrice = parseFloat(apiProduct.basePrice) || 0;
+      // Handle variants - use first variant for pricing if basePrice is null
+      const firstVariant = apiProduct.variants?.[0];
+      const basePrice = parseFloat(apiProduct.basePrice) || parseFloat(firstVariant?.price) || 0;
       const discount = parseFloat(apiProduct.discount) || 0;
       let price = basePrice;
       let savings = '0';
@@ -86,6 +88,16 @@ const ProductPage = () => {
         price = basePrice - discount;
       }
 
+      // Extract images from variants and productImages
+      const variantImages = firstVariant?.images?.map(img => img.imageUrl) || [];
+      const productImages = apiProduct.productImages?.map(img => img.imageUrl) || [];
+      const allImages = [...variantImages, ...productImages];
+
+      // Extract size options from variants
+      const sizeOptions = apiProduct.variants?.map(variant => 
+        variant.attributes?.find(attr => attr.name === 'size')?.value || variant.sku
+      ).filter(Boolean) || [];
+
       return {
         product: {
           id: apiProduct.id,
@@ -95,16 +107,18 @@ const ProductPage = () => {
           originalPrice: basePrice > price ? basePrice.toFixed(2) : undefined,
           rating: 0,
           ratingCount: '0',
-          image: apiProduct.productImages?.[0] || '',
+          image: allImages[0] || '',
           brand: apiProduct.brand?.name || 'Unknown Brand',
-          category: { id: 0, name: 'update testing subcategory' },
-          subcategory: { id: 0, name: 'update testing subcategory' },
-          vendor: apiProduct.vendor?.businessName || 'Himalayan Crafts',
-          productImages: apiProduct.productImages || [],
+          category: { id: apiProduct.subcategory?.id || 0, name: apiProduct.subcategory?.name || 'Category' },
+          subcategory: { id: apiProduct.subcategory?.id || 0, name: apiProduct.subcategory?.name || 'Subcategory' },
+          vendor: apiProduct.vendor?.businessName || 'Unknown Vendor',
+          productImages: allImages,
           colors: [] as { name: string; img: string }[],
-          memoryOptions: apiProduct.size || [],
-          stock: apiProduct.stock || 10,
+          memoryOptions: sizeOptions,
+          stock: apiProduct.stock || firstVariant?.stock || 0,
           isBestSeller: false,
+          variants: apiProduct.variants || [],
+          hasVariants: apiProduct.hasVariants || false,
         },
         vendorId: apiProduct.vendorId || null
       };
@@ -146,10 +160,23 @@ const ProductPage = () => {
   useEffect(() => {
     if (product) {
       setSelectedColor(product.colors && product.colors.length > 0 ? product.colors[0].name : '');
-      setSelectedMemory(product.memoryOptions && product.memoryOptions.length > 0 ? product.memoryOptions[0] : '');
       setImageError(new Array(product.productImages?.length || 1).fill(false));
+      
+      // Set default variant if product has variants
+      if (product.hasVariants && product.variants && product.variants.length > 0) {
+        setSelectedVariant(product.variants[0]);
+      }
     }
   }, [product]);
+
+  // Handle variant selection
+  const handleVariantSelect = (variant: any) => {
+    setSelectedVariant(variant);
+    // Update images when variant changes
+    if (variant.images && variant.images.length > 0) {
+      setSelectedImageIndex(0);
+    }
+  };
 
   // Enhanced Amazon-style zoom handlers
   const handleMouseEnter = () => {
@@ -219,7 +246,6 @@ const ProductPage = () => {
         product: {
           ...product,
           selectedColor,
-          selectedMemory,
           quantity
         }
       }
@@ -368,24 +394,40 @@ const ProductPage = () => {
                   <span className="product-rating__count">({ratingCount} ratings)</span>
                 </div>
                 <div className="product-price">
-                  <span className="product-price__current">Rs.{product.price}</span>
+                  <span className="product-price__current">Rs.{selectedVariant?.price || product.price}</span>
                   {product.originalPrice && (
                     <>
                       <span className="product-price__original">Rs.{product.originalPrice}</span>
                       <span className="product-price__savings">
-                        Save Rs.{(parseFloat(String(product.originalPrice)) - parseFloat(String(product.price))).toFixed(2)}
+                        Save Rs.{(parseFloat(String(product.originalPrice)) - parseFloat(String(selectedVariant?.price || product.price))).toFixed(2)}
                       </span>
                     </>
                   )}
                   <span className="product-price__vat">Inclusive of all taxes</span>
                 </div>
-                {product.memoryOptions && product.memoryOptions.length > 0 && (
-                  <div className="product-storage">
-                    <div className="product-storage__label">Storage:</div>
-                    <div className="product-storage__value">{product.memoryOptions[0]}</div>
-                  </div>
-                )}
                 <div className="product-options">
+                  {/* Variant Selection */}
+                  {product.hasVariants && product.variants && product.variants.length > 0 && (
+                    <div className="product-options__group">
+                      <label className="product-options__label">Variants:</label>
+                      <div className="product-options__variants">
+                        {product.variants.map((variant: any) => (
+                          <button
+                            key={variant.id}
+                            className={`product-options__variant ${
+                              selectedVariant?.id === variant.id ? 'product-options__variant--active' : ''
+                            }`}
+                            onClick={() => handleVariantSelect(variant)}
+                          >
+                            <div className="product-options__variant-info">
+                              <span className="product-options__variant-sku">{variant.sku}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
                   {product.colors && product.colors.length > 0 && (
                     <div className="product-options__group">
                       <label className="product-options__label">Color: {selectedColor}</label>
@@ -399,24 +441,6 @@ const ProductPage = () => {
                             onClick={() => setSelectedColor(color.name)}
                           >
                             <img src={color.img} alt={color.name} />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {product.memoryOptions && product.memoryOptions.length > 0 && (
-                    <div className="product-options__group">
-                      <label className="product-options__label">Storage: {selectedMemory}</label>
-                      <div className="product-options__memory">
-                        {product.memoryOptions.map((memory: string) => (
-                          <button
-                            key={memory}
-                            className={`product-options__memory-item ${
-                              selectedMemory === memory ? 'product-options__memory-item--active' : ''
-                            }`}
-                            onClick={() => setSelectedMemory(memory)}
-                          >
-                            {memory}
                           </button>
                         ))}
                       </div>
@@ -437,18 +461,21 @@ const ProductPage = () => {
                     <button
                       className="product-quantity__button"
                       onClick={() => {
-                        if (quantity >= (product.stock || 10)) {
-                          showNotification(`Only ${product.stock} item${product.stock > 1 ? 's' : ''} in stock`);
+                        const currentStock = selectedVariant?.stock || product.stock || 10;
+                        if (quantity >= currentStock) {
+                          showNotification(`Only ${currentStock} item${currentStock > 1 ? 's' : ''} in stock`);
                           return;
                         }
                         handleQuantityChange(true);
                       }}
-                      disabled={quantity >= Math.min(product.stock || 10, 10)}
+                      disabled={quantity >= Math.min(selectedVariant?.stock || product.stock || 10, 10)}
                     >
                       +
                     </button>
                   </div>
-                  <div className="product-quantity__stock">In stock: {product.stock}</div>
+                  <div className="product-quantity__stock">
+                    In stock: {selectedVariant?.stock || product.stock}
+                  </div>
                 </div>
                 <div className="product-actions">
                   {/* <button
