@@ -17,7 +17,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ show, onClose, onSave, prod
   const [stock, setStock] = useState<number | null>(typeof product?.piece === 'number' ? product.piece : product?.piece ? parseFloat(product.piece as string) : null);
   const [discount, setDiscount] = useState<number | null>(null);
   const [discountType, setDiscountType] = useState<string>("percentage");
-  const [quantity, setQuantity] = useState<number | null>(null);
+
   const [status, setStatus] = useState<string>(product?.status || "active");
 
   // Handle file upload for product image
@@ -37,7 +37,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ show, onClose, onSave, prod
       description,
       price: basePrice || 0,
       piece: stock || 0,
-      quantity: quantity || 0,
+
       status,
       rating: product?.rating ?? 0,
       ratingCount: product?.ratingCount ?? 0,
@@ -144,17 +144,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ show, onClose, onSave, prod
           {/* Inventory */}
           <div className="product-modal__section">
             <h3>Inventory</h3>
-            <div className="product-modal__row">
-              <div>
-                <label htmlFor="quantity">Quantity</label>
-                <input
-                  type="number"
-                  id="quantity"
-                  value={quantity ?? ""}
-                  onChange={(e) => setQuantity(Number(e.target.value))}
-                />
-              </div>
-            </div>
+
             <div className="product-modal__row">
               <div>
                 <label htmlFor="status">Status</label>

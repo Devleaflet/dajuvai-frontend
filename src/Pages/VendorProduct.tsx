@@ -130,7 +130,7 @@ const VendorProduct: React.FC = () => {
           subcategoryId: product.subcategory?.id || 0,
           brand_id: product.brand_id,
           dealId: product.dealId,
-          quantity: product.inventory?.[0]?.quantity || 0,
+
           rating: 0,
           ratingCount: 0,
           image: images.length > 0 && typeof images[0] === 'string' ? images[0] : '',
@@ -174,7 +174,7 @@ const VendorProduct: React.FC = () => {
       formData.append("description", String(productData.description));
       formData.append("basePrice", productData.basePrice != null ? String(productData.basePrice) : "0");
       formData.append("stock", productData.stock.toString());
-      formData.append("quantity", String(productData.quantity));
+
       formData.append("vendorId", String(authState.vendor.id));
       
       if (productData.discount && Number(productData.discount) > 0) {
@@ -237,7 +237,7 @@ const VendorProduct: React.FC = () => {
       formData.append("description", String(productData.description));
       formData.append("basePrice", productData.basePrice != null ? String(productData.basePrice) : "0");
       formData.append("stock", productData.stock.toString());
-      formData.append("quantity", String(productData.quantity));
+      
       formData.append("vendorId", String(authState.vendor.id));
       if (productData.discount && Number(productData.discount) > 0) {
         formData.append("discount", Number(productData.discount).toFixed(2));
