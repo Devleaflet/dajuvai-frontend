@@ -99,7 +99,6 @@ export interface ProductFormData {
   dealId?: number | null;
   inventory: {
     sku: string;
-    quantity: number;
     status: string;
   }[];
   vendorId: string;

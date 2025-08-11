@@ -34,9 +34,9 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
     subcategoryId: 0,
     brand_id: null as number | null,
     dealId: null as number | null,
-    quantity: 0,
+
     vendorId: '',
-    inventory: [] as { sku: string; quantity: number; status: string }[],
+    inventory: [] as { sku: string; status: string }[],
   });
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -190,9 +190,7 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
     if (typeof formData.stock !== 'number' || formData.stock < 0) {
       newErrors.stock = 'Stock must be a valid non-negative number';
     }
-    if (typeof formData.quantity !== 'number' || formData.quantity <= 0) {
-      newErrors.quantity = 'Quantity must be a valid positive number';
-    }
+
     if (!formData.categoryId) {
       newErrors.categoryId = 'Category is required';
     }
@@ -237,7 +235,7 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
         productImages: formData.productImages,
         categoryId: formData.categoryId,
         subcategoryId: formData.subcategoryId,
-        quantity: formData.quantity || 0,
+  
         brand_id: formData.brand_id || null,
         dealId: formData.dealId || null,
         inventory: formData.inventory || [],
@@ -410,21 +408,7 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
             </div>
           </div>
 
-          <div className="product-modal__section">
-            <div className="product-modal__row">
-              <div className="product-modal__field">
-                <label className="product-modal__label">Quantity *</label>
-                <input
-                  type="number"
-                  name="quantity"
-                  value={formData.quantity}
-                  onChange={handleNumberInputChange}
-                  required
-                  min="1"
-                  className="product-modal__input"
-                />
-                {errors.quantity && <span className="product-modal__error">{errors.quantity}</span>}
-              </div>
+
 
               <div className="product-modal__field">
                 <label className="product-modal__label">Brand ID</label>
