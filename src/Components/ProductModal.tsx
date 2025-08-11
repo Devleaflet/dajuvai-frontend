@@ -45,6 +45,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
     subcategoryId: 0,
     brand_id: null,
     dealId: null,
+    bannerId: null,
     vendorId: authState.vendor?.id ? String(authState.vendor.id) : "",
     inventory: [],
   });
@@ -74,6 +75,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
         subcategoryId: initialData.subcategoryId || 0,
         brand_id: initialData.brand_id || null,
         dealId: initialData.dealId || null,
+        bannerId: initialData.bannerId || null,
         vendorId: authState.vendor?.id ? String(authState.vendor.id) : "",
         inventory: initialData.inventory || [],
       });

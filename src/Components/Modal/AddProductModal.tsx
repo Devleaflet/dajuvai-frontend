@@ -61,6 +61,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     categoryId: 0,
     subcategoryId: 0,
     size: [],
+    bannerId: null,
   });
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
@@ -282,6 +283,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
         productImages: [],
         categoryId: 0,
         subcategoryId: 0,
+        bannerId: null,
       });
       setSelectedCategoryId(null);
       setSelectedSubcategoryId(null);

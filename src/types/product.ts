@@ -36,6 +36,7 @@ export interface Product {
   quantity?: number;
   brand_id?: number | null;
   dealId?: number | null;
+  bannerId?: number | null;
   // Computed fields for display
   image: string;
   brand?: { id: number; name: string } | null;
@@ -97,6 +98,7 @@ export interface ProductFormData {
   quantity?: number;
   brand_id?: number | null;
   dealId?: number | null;
+  bannerId?: number | null;
   inventory: {
     sku: string;
     status: string;
@@ -123,6 +125,7 @@ export interface ApiProduct {
   vendorId: number;
   brand_id: number | null;
   dealId: number | null;
+  bannerId: number | null;
   created_at: string;
   updated_at: string;
   categoryId: number;

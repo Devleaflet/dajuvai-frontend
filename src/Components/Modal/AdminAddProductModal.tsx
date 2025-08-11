@@ -34,6 +34,7 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
     subcategoryId: 0,
     brand_id: null as number | null,
     dealId: null as number | null,
+    bannerId: null as number | null,
 
     vendorId: '',
     inventory: [] as { sku: string; status: string }[],

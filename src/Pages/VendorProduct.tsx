@@ -191,10 +191,13 @@ const VendorProduct: React.FC = () => {
       if (productData.dealId != null) {
         formData.append("dealId", String(productData.dealId));
       }
+      if (productData.bannerId != null) {
+        formData.append("bannerId", String(productData.bannerId));
+      }
       if (productData.productImages && Array.isArray(productData.productImages)) {
         productData.productImages.forEach((image, index) => {
           if (index < 5 && image instanceof File) {
-            formData.append("images", image);
+            formData.append("productImages", image);
           }
         });
       }
@@ -253,10 +256,13 @@ const VendorProduct: React.FC = () => {
       if (productData.dealId != null) {
         formData.append("dealId", String(productData.dealId));
       }
+      if (productData.bannerId != null) {
+        formData.append("bannerId", String(productData.bannerId));
+      }
       if (productData.productImages && Array.isArray(productData.productImages)) {
         productData.productImages.forEach((image, index) => {
           if (index < 5 && image instanceof File) {
-            formData.append("images", image);
+            formData.append("productImages", image);
           }
         });
       }

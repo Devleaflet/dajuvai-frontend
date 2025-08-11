@@ -58,6 +58,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     subcategoryId: 0,
     brand_id: null,
     dealId: null,
+    bannerId: null,
     vendorId: "",
     inventory: [],
   });
@@ -97,6 +98,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         subcategoryId: product.subcategory?.id || 0,
         brand_id: product.brand_id || null,
         dealId: product.dealId || null,
+        bannerId: product.bannerId || null,
         inventory: product.inventory || [],
         vendorId: isVendorContext 
           ? String(vendorAuthState.vendor?.id || "")
