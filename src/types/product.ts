@@ -94,7 +94,7 @@ export interface ProductFormData {
   productImages: (File | string)[];
   categoryId: number;
   subcategoryId: number;
-  quantity: number;
+  quantity?: number;
   brand_id?: number | null;
   dealId?: number | null;
   inventory: {
