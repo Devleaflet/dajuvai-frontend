@@ -460,4 +460,43 @@ export const OrderService = {
       throw new Error('An unexpected error occurred');
     }
   },
+
+  trackOrder: async (orderId: number, token: string): Promise<{ success: boolean; orderStatus: string }> => {
+    if (!token) {
+      throw new Error('No authentication token provided');
+    }
+    
+    console.log('Attempting GET request to track order:', orderId);
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/api/order/user/track/${orderId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          timeout: 10000,
+        }
+      );
+      if (response.data.success) {
+        return response.data;
+      } else {
+        throw new Error(response.data.message || 'Failed to track order');
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          throw new Error('Unauthorized: Invalid or expired token');
+        }
+        if (error.response?.status === 404) {
+          throw new Error('Order does not exist or does not belong to the user');
+        }
+        if (error.response?.status === 400) {
+          throw new Error('Order ID is required or invalid');
+        }
+        throw new Error(error.response?.data.message || 'Network error');
+      }
+      throw new Error('An unexpected error occurred');
+    }
+  },
 };

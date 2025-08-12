@@ -7,9 +7,60 @@ import khalti from '../assets/khalti1.png';
 import esewa from '../assets/esewa.png';
 import logo from '../assets/logo.webp';
 import { Link } from "react-router-dom";
-import npx from '../assets/npx.png'
+import npx from '../assets/npx.png';
+import { useState } from 'react';
+import OrderTrackingModal from './Modal/OrderTrackingModal';
+import { OrderService } from '../services/orderService';
+import { useAuth } from '../context/AuthContext';
 
 const Footer: React.FC = () => {
+  const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
+  const [orderId, setOrderId] = useState('');
+  const [email, setEmail] = useState('');
+  const [trackingResult, setTrackingResult] = useState<{
+    success: boolean;
+    orderStatus?: string;
+    message?: string;
+  } | null>(null);
+  
+  const { token } = useAuth();
+
+  const handleTrackOrder = async () => {
+    if (!orderId.trim()) {
+      setTrackingResult({
+        success: false,
+        message: 'Please enter an Order ID'
+      });
+      setIsTrackingModalOpen(true);
+      return;
+    }
+
+    if (!token) {
+      setTrackingResult({
+        success: false,
+        message: 'Please log in to track your order'
+      });
+      setIsTrackingModalOpen(true);
+      return;
+    }
+
+    try {
+      const result = await OrderService.trackOrder(parseInt(orderId), token);
+      setTrackingResult({
+        success: true,
+        orderStatus: result.orderStatus
+      });
+      setIsTrackingModalOpen(true);
+    } catch (error) {
+      console.error('Order tracking error:', error);
+      setTrackingResult({
+        success: false,
+        message: error instanceof Error ? error.message : 'An error occurred while tracking the order'
+      });
+      setIsTrackingModalOpen(true);
+    }
+  };
+
   return (
     <footer className="footer">
       <div className="footer__container">
@@ -28,17 +79,36 @@ const Footer: React.FC = () => {
                 <div className="footer__form-group">
                   <label className="footer__label">Order ID</label>
                   <p className="footer__hint">Found in your order confirmation email</p>
-                  <input type="text" className="footer__input" placeholder="" />
+                                     <input 
+                     type="text" 
+                     className="footer__input" 
+                     placeholder="Enter your Order ID" 
+                     value={orderId}
+                     onChange={(e) => setOrderId(e.target.value)}
+                   />
                 </div>
 
                 <div className="footer__form-group">
                   <label className="footer__label">Billing email</label>
                   <p className="footer__hint">Email you used check out.</p>
-                  <input type="email" className="footer__input" placeholder="" />
+                                     <input 
+                     type="email" 
+                     className="footer__input" 
+                     placeholder="Enter your email" 
+                     value={email}
+                     onChange={(e) => setEmail(e.target.value)}
+                   />
                 </div>
               </div>
 
-              <button className="footer__track-button">Track</button>
+                             <button 
+                 className="footer__track-button"
+                 onClick={handleTrackOrder}
+                 disabled={!orderId.trim()}
+               >
+                 <span className="button-icon">📦</span>
+                 Track Order
+               </button>
             </div>
           </div>
 
@@ -155,6 +225,13 @@ const Footer: React.FC = () => {
           <a href="#" className="footer__bottom-link">Site Map</a>
         </div>
       </div>
+
+             {/* Order Tracking Modal */}
+       <OrderTrackingModal
+         isOpen={isTrackingModalOpen}
+         onClose={() => setIsTrackingModalOpen(false)}
+         trackingResult={trackingResult}
+       />
     </footer>
   );
 };
