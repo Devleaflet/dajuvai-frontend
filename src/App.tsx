@@ -24,6 +24,7 @@ import ScrollToTop from "./Components/ScrollToTop";
 import type { ReactElement } from 'react';
 import AdminDistrict from './Pages/AdminDistrict';
 import DealAdmin from './Pages/DealAdmin';
+import AdminPromo from './Pages/AdminPromo';
 import Shop from "./Pages/Shop";
 import VendorStore from "./Pages/VendorStore";
 import Checkout from "./Pages/CheckOut";
@@ -218,6 +219,14 @@ function App() {
           element={
             <ProtectedRoute>
               <DealAdmin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin-promo"
+          element={
+            <ProtectedRoute>
+              <AdminPromo />
             </ProtectedRoute>
           }
         />
