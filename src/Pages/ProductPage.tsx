@@ -53,8 +53,8 @@ const ProductPage = () => {
   const mainImageRef = useRef<HTMLDivElement>(null);
   
   // Amazon-like zoom configuration
-  const ZOOM_LEVEL = 2.5;
-  const ZOOM_BOX_SIZE = 200; // Size of the zoomed-in box
+  const ZOOM_LEVEL = 3.0; // Increased zoom level for better detail
+  const ZOOM_BOX_SIZE = 450; // Size of the zoomed-in box (increased from 350)
 
   const { handleCartOnAdd } = useCart();
   const { token, isAuthenticated } = useAuth();
@@ -327,11 +327,11 @@ const ProductPage = () => {
                         top: mainImageRef.current ? mainImageRef.current.getBoundingClientRect().top : 100,
                         width: `${ZOOM_BOX_SIZE}px`,
                         height: `${ZOOM_BOX_SIZE}px`,
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
+                        border: '2px solid #ddd',
+                        borderRadius: '8px',
                         overflow: 'hidden',
                         zIndex: 2000,
-                        boxShadow: '0 4px 8px rgba(0,0,0,0.1), 0 6px 20px rgba(0,0,0,0.15)',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.1)',
                         backgroundColor: '#fff',
                         backgroundImage: `url(${currentImage})`,
                         backgroundSize: `${ZOOM_LEVEL * 100}%`,
