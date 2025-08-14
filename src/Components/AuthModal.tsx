@@ -844,20 +844,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </div>
         )}
 
-        {!showVerification && (
-          <div className="auth-modal__footer">
-            <p className="auth-modal__footer-text">
-              This site is protected by reCAPTCHA and the{" "}
-              <Link to="/privacy" className="auth-modal__link">
-                Privacy Policy
-              </Link>{" "}
-              and{" "}
-              <Link to="/terms" className="auth-modal__link">
-                Terms of Service
-              </Link>
-            </p>
-          </div>
-        )}
+       
       </div>
 
       {showForgotPopup && (
