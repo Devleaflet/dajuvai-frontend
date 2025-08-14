@@ -177,6 +177,17 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLDivElement>)
         >
           Districts
         </NavItem>
+        <NavItem 
+          to="/admin/staff" 
+          active={location.pathname === "/admin/staff"}
+          icon={
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17 20H22V18C22 16.1362 19.5 15 18 15C16.5 15 16 16 15 16C14 16 13.5 15 12 15C10.5 15 9.5 16 9 16M1 20H14M12 15C12 15 13 14 13 12C13 10 12 7 9 7C6 7 5 10 5 12C5 14 6 15 6 15M18 15C18 15 19 14 19 12C19 10 18 7 15 7C15.5 8 15.5 10 15 11.5M9 7C9 4.79086 10.3431 3 12 3C13.6569 3 15 4.79086 15 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          }
+        >
+          Staff
+        </NavItem>
       </nav>
     </div>
   );

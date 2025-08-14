@@ -25,6 +25,7 @@ import type { ReactElement } from 'react';
 import AdminDistrict from './Pages/AdminDistrict';
 import DealAdmin from './Pages/DealAdmin';
 import AdminPromo from './Pages/AdminPromo';
+import AdminStaff from './Pages/AdminStaff';
 import Shop from "./Pages/Shop";
 import VendorStore from "./Pages/VendorStore";
 import Checkout from "./Pages/CheckOut";
@@ -227,6 +228,14 @@ function App() {
           element={
             <ProtectedRoute>
               <AdminPromo />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/staff"
+          element={
+            <ProtectedRoute>
+              <AdminStaff />
             </ProtectedRoute>
           }
         />
