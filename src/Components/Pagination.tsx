@@ -51,6 +51,10 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
 
   return (
     <div className="vendor-product__pagination">
+      <div className="vendor-product__pagination-info">
+        Page {currentPage} of {totalPages}
+      </div>
+      
       <button
         className="vendor-product__pagination-btn vendor-product__pagination-prev"
         onClick={() => onPageChange(currentPage - 1)}
@@ -72,7 +76,9 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
           ) : (
             <button
               key={page}
-              className="vendor-product__pagination-page"
+              className={`vendor-product__pagination-page ${
+                page === currentPage ? 'vendor-product__pagination-page--active' : ''
+              }`}
               onClick={() => onPageChange(page as number)}
             >
               {page}

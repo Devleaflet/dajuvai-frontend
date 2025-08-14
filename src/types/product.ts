@@ -36,6 +36,7 @@ export interface Product {
   quantity?: number;
   brand_id?: number | null;
   dealId?: number | null;
+  bannerId?: number | null;
   // Computed fields for display
   image: string;
   brand?: { id: number; name: string } | null;
@@ -94,12 +95,12 @@ export interface ProductFormData {
   productImages: (File | string)[];
   categoryId: number;
   subcategoryId: number;
-  quantity: number;
+  quantity?: number;
   brand_id?: number | null;
   dealId?: number | null;
+  bannerId?: number | null;
   inventory: {
     sku: string;
-    quantity: number;
     status: string;
   }[];
   vendorId: string;
@@ -124,6 +125,7 @@ export interface ApiProduct {
   vendorId: number;
   brand_id: number | null;
   dealId: number | null;
+  bannerId: number | null;
   created_at: string;
   updated_at: string;
   categoryId: number;

@@ -45,7 +45,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
     subcategoryId: 0,
     brand_id: null,
     dealId: null,
-    quantity: 0,
+    bannerId: null,
     vendorId: authState.vendor?.id ? String(authState.vendor.id) : "",
     inventory: [],
   });
@@ -75,7 +75,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
         subcategoryId: initialData.subcategoryId || 0,
         brand_id: initialData.brand_id || null,
         dealId: initialData.dealId || null,
-        quantity: initialData.quantity || 0,
+        bannerId: initialData.bannerId || null,
         vendorId: authState.vendor?.id ? String(authState.vendor.id) : "",
         inventory: initialData.inventory || [],
       });
@@ -236,9 +236,6 @@ const ProductModal: React.FC<ProductModalProps> = ({
     }
     if (typeof formData.stock !== "number" || formData.stock < 0) {
       newErrors.stock = "Stock must be a valid non-negative number";
-    }
-    if (typeof formData.quantity !== "number" || formData.quantity <= 0) {
-      newErrors.quantity = "Quantity must be a valid positive number";
     }
     if (!formData.categoryId) {
       newErrors.categoryId = "Category is required";
@@ -437,23 +434,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
 
           <div className="product-modal__section">
             <div className="product-modal__row">
-              <div className="product-modal__field">
-                <label className="product-modal__label">Quantity*</label>
-                <input
-                  type="number"
-                  name="quantity"
-                  value={formData.quantity}
-                  onChange={handleNumberInputChange}
-                  required
-                  min="1"
-                  className="product-modal__input"
-                />
-                {errors.quantity && (
-                  <span className="product-modal__error">
-                    {errors.quantity}
-                  </span>
-                )}
-              </div>
+
 
               {/* REPLACE Deal ID input with dropdown */}
               <div className="product-modal__field">

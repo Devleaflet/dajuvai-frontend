@@ -54,7 +54,7 @@ const ProductPage = () => {
   
   // Amazon-like zoom configuration
   const ZOOM_LEVEL = 2.5;
-  const ZOOM_BOX_SIZE = 200; // Size of the zoomed-in box
+  const ZOOM_BOX_SIZE = 400; // Size of the zoomed-in box (doubled from 200)
 
   const { handleCartOnAdd } = useCart();
   const { token, isAuthenticated } = useAuth();

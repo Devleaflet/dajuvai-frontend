@@ -72,11 +72,19 @@ const VendorProduct: React.FC = () => {
     ],
     queryFn: async () => {
       if (!authState.vendor?.id || !authState.token) throw new Error('Missing vendor or token');
+      
+      console.log('Fetching vendor products for vendor ID:', authState.vendor.id);
+      console.log('Current page:', currentPage, 'Products per page:', productsPerPage);
+      
       const response = await fetchProducts(
         Number(authState.vendor.id),
         currentPage,
         productsPerPage
       );
+      
+      console.log('Vendor products response:', response);
+      console.log('Response data:', response.data);
+      
       if (!response.data || typeof response.data !== 'object') throw new Error('Invalid response');
       if (!response.data.success || !response.data.data || !Array.isArray(response.data.data.products)) throw new Error('Invalid response format');
       const products: Product[] = response.data.data.products.map((product: ApiProduct): Product => {
@@ -130,7 +138,7 @@ const VendorProduct: React.FC = () => {
           subcategoryId: product.subcategory?.id || 0,
           brand_id: product.brand_id,
           dealId: product.dealId,
-          quantity: product.inventory?.[0]?.quantity || 0,
+
           rating: 0,
           ratingCount: 0,
           image: images.length > 0 && typeof images[0] === 'string' ? images[0] : '',
@@ -174,7 +182,7 @@ const VendorProduct: React.FC = () => {
       formData.append("description", String(productData.description));
       formData.append("basePrice", productData.basePrice != null ? String(productData.basePrice) : "0");
       formData.append("stock", productData.stock.toString());
-      formData.append("quantity", String(productData.quantity));
+
       formData.append("vendorId", String(authState.vendor.id));
       
       if (productData.discount && Number(productData.discount) > 0) {
@@ -191,10 +199,13 @@ const VendorProduct: React.FC = () => {
       if (productData.dealId != null) {
         formData.append("dealId", String(productData.dealId));
       }
+      if (productData.bannerId != null) {
+        formData.append("bannerId", String(productData.bannerId));
+      }
       if (productData.productImages && Array.isArray(productData.productImages)) {
         productData.productImages.forEach((image, index) => {
           if (index < 5 && image instanceof File) {
-            formData.append("images", image);
+            formData.append("productImages", image);
           }
         });
       }
@@ -214,8 +225,20 @@ const VendorProduct: React.FC = () => {
     },
     onSuccess: (data) => {
       console.log('Product created successfully:', data);
+      console.log('Created product data:', data);
       toast.success('Product created successfully!');
-      queryClient.invalidateQueries({ queryKey: ['vendorProducts', authState.vendor?.id] });
+      
+      // Invalidate all vendor-products queries to ensure fresh data
+      queryClient.invalidateQueries({ 
+        queryKey: ['vendor-products'] 
+      });
+      
+      // Force refetch the current page
+      queryClient.refetchQueries({
+        queryKey: ['vendor-products', authState.vendor?.id, currentPage, productsPerPage, authState.token]
+      });
+      
+      console.log('Cache invalidated and refetch triggered');
       setShowAddModal(false);
     },
     onError: (error: Error) => {
@@ -237,7 +260,7 @@ const VendorProduct: React.FC = () => {
       formData.append("description", String(productData.description));
       formData.append("basePrice", productData.basePrice != null ? String(productData.basePrice) : "0");
       formData.append("stock", productData.stock.toString());
-      formData.append("quantity", String(productData.quantity));
+      
       formData.append("vendorId", String(authState.vendor.id));
       if (productData.discount && Number(productData.discount) > 0) {
         formData.append("discount", Number(productData.discount).toFixed(2));
@@ -253,10 +276,13 @@ const VendorProduct: React.FC = () => {
       if (productData.dealId != null) {
         formData.append("dealId", String(productData.dealId));
       }
+      if (productData.bannerId != null) {
+        formData.append("bannerId", String(productData.bannerId));
+      }
       if (productData.productImages && Array.isArray(productData.productImages)) {
         productData.productImages.forEach((image, index) => {
           if (index < 5 && image instanceof File) {
-            formData.append("images", image);
+            formData.append("productImages", image);
           }
         });
       }
@@ -366,10 +392,9 @@ const VendorProduct: React.FC = () => {
   };
 
   const allProducts = productData?.products || [];
-  // Remove unused variable
-  // const totalProducts = productData?.total || 0;
+  const totalProducts = productData?.total || 0;
 
-  // Filter and sort products in-memory
+  // Filter and sort products in-memory (only for search and sort, not pagination)
   const filteredProducts = allProducts.filter((product) => {
     const query = searchQuery.toLowerCase();
     return (
@@ -398,9 +423,8 @@ const VendorProduct: React.FC = () => {
     }
   });
 
-  // Paginate after filtering/sorting
-  const paginatedProducts = sortedProducts.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage);
-  const filteredTotal = sortedProducts.length;
+  // Use the sorted products directly (no client-side pagination)
+  const displayProducts = sortedProducts;
 
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
@@ -485,18 +509,18 @@ const VendorProduct: React.FC = () => {
             <ProductListSkeleton />
           ) : isError ? (
             <div className="vendor-product__error">{(error as Error).message}</div>
-          ) : paginatedProducts.length > 0 ? (
+          ) : displayProducts.length > 0 ? (
             <>
               <ProductList
-                products={paginatedProducts}
+                products={displayProducts}
                 isMobile={isMobile}
                 onEdit={handleEditProduct}
                 showVendor={false}
               />
-              {filteredTotal > productsPerPage && (
+              {totalProducts > productsPerPage && (
                 <Pagination
                   currentPage={currentPage}
-                  totalPages={Math.ceil(filteredTotal / productsPerPage)}
+                  totalPages={Math.ceil(totalProducts / productsPerPage)}
                   onPageChange={handlePageChange}
                 />
               )}

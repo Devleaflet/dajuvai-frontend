@@ -79,7 +79,7 @@ const Contact: React.FC = () => {
           <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 600 }}>Interested in Becoming a Vendor?</h2>
           <p style={{ margin: '0.5rem 0 0 0', fontSize: '1rem', color: '#444' }}>
             We are always looking to partner with passionate and reliable vendors who want to grow their business with us. If you are interested in selling your products on our platform, please reach out to us! Our team will guide you through the onboarding process, answer your questions, and help you get started. <br /><br />
-            To become a vendor, simply contact us at <b>support@dajuvai.com</b> or call us at <b>+977-9708555024</b>. We look forward to working with you and helping your business reach new customers across Nepal.
+            To become a vendor, simply contact us at <b>Dajuvai106@gmail.com</b> or call us at <b>+977-9700620004</b>. We look forward to working with you and helping your business reach new customers across Nepal.
           </p>
         </div>
         <div className="contact-content">

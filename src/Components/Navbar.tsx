@@ -506,57 +506,56 @@ const Navbar: React.FC = () => {
       <div className="navbar__side-menu-categories">
         {showLoading
           ? Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="navbar__side-menu-category skeleton">
-                <div className="skeleton__category"></div>
-              </div>
-            ))
+            <div key={index} className="navbar__side-menu-category skeleton">
+              <div className="skeleton__category"></div>
+            </div>
+          ))
           : categories.map((category: Category) => (
-              <div key={category.id} className="navbar__side-menu-category">
-                <button
-                  className="navbar__side-menu-category-button"
-                  onClick={() => handleExpandSideMenuCategory(category.id)}
-                >
-                  <span>{category.name}</span>
-                  <FaChevronDown
-                    size={20}
-                    className={`navbar__side-menu-category-icon ${
-                      selectedCategory === category.id
-                        ? "navbar__side-menu-category-icon--open"
-                        : ""
+            <div key={category.id} className="navbar__side-menu-category">
+              <button
+                className="navbar__side-menu-category-button"
+                onClick={() => handleExpandSideMenuCategory(category.id)}
+              >
+                <span>{category.name}</span>
+                <FaChevronDown
+                  size={20}
+                  className={`navbar__side-menu-category-icon ${selectedCategory === category.id
+                    ? "navbar__side-menu-category-icon--open"
+                    : ""
                     }`}
-                  />
-                </button>
-                {selectedCategory === category.id && (
-                  <div className="navbar__side-menu-subcategories">
-                    {sideMenuLoading[category.id] ? (
-                      <div style={{ padding: 12, color: "#888" }}>
-                        Loading...
-                      </div>
-                    ) : (
-                      (sideMenuSubcategories[category.id] || []).map(
-                        (subcategory: Subcategory) => (
-                          <Link
-                            key={subcategory.id}
-                            to={`/shop?categoryId=${category.id}&subcategoryId=${subcategory.id}`}
-                            className="navbar__side-menu-subcategory"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleSubcategoryClick(
-                                category.id,
-                                subcategory.id
-                              );
-                              setSideMenuOpen(false);
-                            }}
-                          >
-                            {subcategory.name}
-                          </Link>
-                        )
+                />
+              </button>
+              {selectedCategory === category.id && (
+                <div className="navbar__side-menu-subcategories">
+                  {sideMenuLoading[category.id] ? (
+                    <div style={{ padding: 12, color: "#888" }}>
+                      Loading...
+                    </div>
+                  ) : (
+                    (sideMenuSubcategories[category.id] || []).map(
+                      (subcategory: Subcategory) => (
+                        <Link
+                          key={subcategory.id}
+                          to={`/shop?categoryId=${category.id}&subcategoryId=${subcategory.id}`}
+                          className="navbar__side-menu-subcategory"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleSubcategoryClick(
+                              category.id,
+                              subcategory.id
+                            );
+                            setSideMenuOpen(false);
+                          }}
+                        >
+                          {subcategory.name}
+                        </Link>
                       )
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+                    )
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
       </div>
     );
   };
@@ -609,8 +608,8 @@ const Navbar: React.FC = () => {
             </div>
 
             <div className="navbar__mobile-actions">
-              <NavLink 
-                to="/wishlist" 
+              <NavLink
+                to="/wishlist"
                 className="navbar__account-icon-link"
                 style={({ isActive }) => ({
                   color: isActive ? '#f97316' : 'inherit'
@@ -650,8 +649,8 @@ const Navbar: React.FC = () => {
                       (e.key === "Enter" || e.key === " ")
                     ) {
                       toggleAuthModal({
-                        preventDefault: () => {},
-                        stopPropagation: () => {},
+                        preventDefault: () => { },
+                        stopPropagation: () => { },
                       } as unknown as React.MouseEvent);
                     }
                   }}
@@ -784,13 +783,15 @@ const Navbar: React.FC = () => {
             </div>
           </div>
 
+
+          {/* Nav bar desktop link  */}
           <div className="navbar__desktop-links">
             <div className="navbar__links">
-              <NavLink 
-                to="/" 
-                className={({ isActive }) => 
+              <NavLink
+                to="/"
+                className={({ isActive }) =>
                   `navbar__link${isActive ? " active" : ""}`
-                } 
+                }
                 end
                 style={({ isActive }) => ({
                   color: isActive ? '#f97316' : 'inherit'
@@ -798,9 +799,9 @@ const Navbar: React.FC = () => {
               >
                 Home
               </NavLink>
-              <NavLink 
-                to="/shop" 
-                className={({ isActive }) => 
+              <NavLink
+                to="/shop"
+                className={({ isActive }) =>
                   `navbar__link${isActive ? " active" : ""}`
                 }
                 style={({ isActive }) => ({
@@ -809,9 +810,9 @@ const Navbar: React.FC = () => {
               >
                 Shop
               </NavLink>
-              <NavLink 
-                to="/contact" 
-                className={({ isActive }) => 
+              <NavLink
+                to="/contact"
+                className={({ isActive }) =>
                   `navbar__link${isActive ? " active" : ""}`
                 }
                 style={({ isActive }) => ({
@@ -860,8 +861,8 @@ const Navbar: React.FC = () => {
                       (e.key === "Enter" || e.key === " ")
                     ) {
                       toggleAuthModal({
-                        preventDefault: () => {},
-                        stopPropagation: () => {},
+                        preventDefault: () => { },
+                        stopPropagation: () => { },
                       } as unknown as React.MouseEvent);
                     }
                   }}
@@ -933,8 +934,8 @@ const Navbar: React.FC = () => {
                   </div>
                 )}
               </div>
-              <NavLink 
-                to="/wishlist" 
+              <NavLink
+                to="/wishlist"
                 className="navbar__account-icon-link"
                 style={({ isActive }) => ({
                   color: isActive ? '#f97316' : 'inherit'
@@ -942,14 +943,27 @@ const Navbar: React.FC = () => {
               >
                 <FaHeart />
               </NavLink>
+
             </div>
+          </div>
+
+          <div className="nepal-flag">
+            <a
+              href="/nepal"
+              className="navbar__social-link navbar__social-link--nepal"
+            >
+              <img
+                src={nepal}
+                alt="Nepal Flag"
+                className="navbar__nepal-flag"
+              />
+            </a>
           </div>
         </div>
 
         <div
-          className={`navbar__side-menu ${
-            sideMenuOpen ? "navbar__side-menu--open" : ""
-          }`}
+          className={`navbar__side-menu ${sideMenuOpen ? "navbar__side-menu--open" : ""
+            }`}
           ref={sideMenuRef}
         >
           <div className="navbar__side-menu-header">
@@ -964,8 +978,8 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="navbar__side-menu-links">
-            <NavLink 
-              to="/" 
+            <NavLink
+              to="/"
               className="navbar__side-menu-link"
               end
               style={({ isActive }) => ({
@@ -974,8 +988,8 @@ const Navbar: React.FC = () => {
             >
               Home
             </NavLink>
-            <NavLink 
-              to="/shop" 
+            <NavLink
+              to="/shop"
               className="navbar__side-menu-link"
               style={({ isActive }) => ({
                 color: isActive ? '#f97316' : 'inherit'
@@ -984,8 +998,8 @@ const Navbar: React.FC = () => {
               Shop
             </NavLink>
             {!isLoading && isAuthenticated && user?.role === 'admin' && (
-              <NavLink 
-                to="/admin-dashboard" 
+              <NavLink
+                to="/admin-dashboard"
                 className="navbar__side-menu-link"
                 style={({ isActive }) => ({
                   color: isActive ? '#f97316' : 'inherit'
@@ -995,8 +1009,8 @@ const Navbar: React.FC = () => {
               </NavLink>
             )}
             {!isLoading && vendorAuthState.isAuthenticated && vendorAuthState.vendor && (
-              <NavLink 
-                to="/dashboard" 
+              <NavLink
+                to="/dashboard"
                 className="navbar__side-menu-link"
                 style={({ isActive }) => ({
                   color: isActive ? '#f97316' : 'inherit'
@@ -1007,8 +1021,8 @@ const Navbar: React.FC = () => {
             )}
             {!isLoading && isAuthenticated ? (
               <>
-                <NavLink 
-                  to="/user-profile" 
+                <NavLink
+                  to="/user-profile"
                   className="navbar__side-menu-link"
                   style={({ isActive }) => ({
                     color: isActive ? '#f97316' : 'inherit'
@@ -1016,8 +1030,8 @@ const Navbar: React.FC = () => {
                 >
                   My Profile
                 </NavLink>
-                <NavLink 
-                  to="/wishlist" 
+                <NavLink
+                  to="/wishlist"
                   className="navbar__side-menu-link"
                   style={({ isActive }) => ({
                     color: isActive ? '#f97316' : 'inherit'
@@ -1025,8 +1039,8 @@ const Navbar: React.FC = () => {
                 >
                   Wishlist
                 </NavLink>
-                <NavLink 
-                  to="/orders" 
+                <NavLink
+                  to="/orders"
                   className="navbar__side-menu-link"
                   style={({ isActive }) => ({
                     color: isActive ? '#f97316' : 'inherit'
@@ -1063,55 +1077,30 @@ const Navbar: React.FC = () => {
             <h3 className="navbar__side-menu-subtitle">Follow Us</h3>
             <div className="navbar__side-menu-social-icons">
               <a
-                href="/facebook"
+                href="https://www.facebook.com/"
                 className="navbar__social-link navbar__social-link--facebook"
               >
                 <FaFacebook />
               </a>
               <a
-                href="/instagram"
+                href="https://www.instagram.com/dajuvai_/"
                 className="navbar__social-link navbar__social-link--instagram"
               >
                 <FaInstagram />
               </a>
               <a
-                href="/tiktok"
+                href="https://www.tiktok.com/@www.dajuvai.com"
                 className="navbar__social-link navbar__social-link--tiktok"
               >
                 <FaTiktok />
-              </a>
-              <a
-                href="/youtube"
-                className="navbar__social-link navbar__social-link--youtube"
-              >
-                <FaYoutube />
-              </a>
-              <a
-                href="/whatsapp"
-                className="navbar__social-link navbar__social-link--whatsapp"
-              >
-                <FaWhatsapp />
-              </a>
-              <a
-                href="/viber"
-                className="navbar__social-link navbar__social-link--viber"
-              >
-                <FaViber />
-              </a>
-              <a
-                href="/telegram"
-                className="navbar__social-link navbar__social-link--telegram"
-              >
-                <FaTelegram />
               </a>
             </div>
           </div>
         </div>
 
         <div
-          className={`navbar__side-cart ${
-            cartOpen ? "navbar__side-cart--open" : ""
-          }`}
+          className={`navbar__side-cart ${cartOpen ? "navbar__side-cart--open" : ""
+            }`}
           ref={sideCartRef}
         >
           <div className="navbar__side-cart-header">
@@ -1195,9 +1184,8 @@ const Navbar: React.FC = () => {
         </div>
 
         <div
-          className={`navbar__overlay ${
-            sideMenuOpen || cartOpen ? "navbar__overlay--visible" : ""
-          }`}
+          className={`navbar__overlay ${sideMenuOpen || cartOpen ? "navbar__overlay--visible" : ""
+            }`}
           onClick={() => {
             setSideMenuOpen(false);
             setCartOpen(false);
@@ -1210,9 +1198,8 @@ const Navbar: React.FC = () => {
             {categories.map((category: any) => (
               <div
                 key={category.id}
-                className={`navbar__category${
-                  activeDropdown === category.id ? " active" : ""
-                }`}
+                className={`navbar__category${activeDropdown === category.id ? " active" : ""
+                  }`}
                 onMouseEnter={() => setActiveDropdown(category.id)}
                 onMouseLeave={() => setActiveDropdown(null)}
               >
@@ -1220,11 +1207,10 @@ const Navbar: React.FC = () => {
                   {category.name}
                   <FaChevronDown
                     size={16}
-                    className={`navbar__category-icon ${
-                      activeDropdown === category.id
-                        ? "navbar__category-icon--active"
-                        : ""
-                    }`}
+                    className={`navbar__category-icon ${activeDropdown === category.id
+                      ? "navbar__category-icon--active"
+                      : ""
+                      }`}
                   />
                 </div>
                 {activeDropdown === category.id &&
@@ -1235,64 +1221,30 @@ const Navbar: React.FC = () => {
 
           <div className="navbar__social navbar__social--desktop">
             <a
-              href="/facebook"
+              href="https://www.facebook.com/"
               className="navbar__social-link navbar__social-link--facebook"
             >
               <FaFacebook />
             </a>
             <a
-              href="/instagram"
+              href="https://www.instagram.com/dajuvai_/"
               className="navbar__social-link navbar__social-link--instagram"
             >
               <FaInstagram />
             </a>
             <a
-              href="/tiktok"
+              href="https://www.tiktok.com/@www.dajuvai.com"
               className="navbar__social-link navbar__social-link--tiktok"
             >
               <FaTiktok />
-            </a>
-            <a
-              href="/youtube"
-              className="navbar__social-link navbar__social-link--youtube"
-            >
-              <FaYoutube />
-            </a>
-            <a
-              href="/whatsapp"
-              className="navbar__social-link navbar__social-link--whatsapp"
-            >
-              <FaWhatsapp />
-            </a>
-            <a
-              href="/viber"
-              className="navbar__social-link navbar__social-link--viber"
-            >
-              <FaViber />
-            </a>
-            <a
-              href="/telegram"
-              className="navbar__social-link navbar__social-link--telegram"
-            >
-              <FaTelegram />
-            </a>
-            <a
-              href="/nepal"
-              className="navbar__social-link navbar__social-link--nepal"
-            >
-              <img
-                src={nepal}
-                alt="Nepal Flag"
-                className="navbar__nepal-flag"
-              />
             </a>
           </div>
         </div>
       </div>
 
       <div className="navbar__mobile-dock">
-        <NavLink 
-          to="/" 
+        <NavLink
+          to="/"
           className="navbar__mobile-dock-item"
           end
           style={({ isActive }) => ({
@@ -1304,8 +1256,8 @@ const Navbar: React.FC = () => {
           </span>
           <span className="navbar__mobile-dock-text">Home</span>
         </NavLink>
-        <NavLink 
-          to="/shop" 
+        <NavLink
+          to="/shop"
           className="navbar__mobile-dock-item"
           style={({ isActive }) => ({
             color: isActive ? '#f97316' : 'inherit'
@@ -1316,8 +1268,8 @@ const Navbar: React.FC = () => {
           </span>
           <span className="navbar__mobile-dock-text">Shop</span>
         </NavLink>
-        <NavLink 
-          to="/contact" 
+        <NavLink
+          to="/contact"
           className="navbar__mobile-dock-item"
           style={({ isActive }) => ({
             color: isActive ? '#f97316' : 'inherit'
@@ -1328,8 +1280,8 @@ const Navbar: React.FC = () => {
           </span>
           <span className="navbar__mobile-dock-text">Contact</span>
         </NavLink>
-        <NavLink 
-          to="/wishlist" 
+        <NavLink
+          to="/wishlist"
           className="navbar__mobile-dock-item"
           style={({ isActive }) => ({
             color: isActive ? '#f97316' : 'inherit'

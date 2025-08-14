@@ -23,7 +23,6 @@ interface Subcategory {
 
 interface InventoryItem {
   sku: string;
-  quantity: number;
   status: string;
 }
 
@@ -61,8 +60,8 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     productImages: [],
     categoryId: 0,
     subcategoryId: 0,
-    quantity: 0,
     size: [],
+    bannerId: null,
   });
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
@@ -74,7 +73,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
   >(null);
   const [inventoryInput, setInventoryInput] = useState({
     selectedSize: "",
-    quantity: "",
     status: InventoryStatus.AVAILABLE,
   });
   const [error, setError] = useState<string | null>(null);
@@ -164,11 +162,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     try {
       if (!inventoryInput.selectedSize)
         throw new Error("Please select a size for the inventory");
-      if (!inventoryInput.quantity ||
-        isNaN(parseInt(inventoryInput.quantity)) ||
-        parseInt(inventoryInput.quantity) < 0
-      )
-        throw new Error("Valid quantity is required");
       if (
         !inventoryInput.status ||
         !statusOptions.includes(inventoryInput.status)
@@ -185,14 +178,12 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
           ...prev.inventory,
           {
             sku,
-            quantity: parseInt(inventoryInput.quantity),
             status: inventoryInput.status,
           },
         ],
       }));
       setInventoryInput({
         selectedSize: "",
-        quantity: "",
         status: InventoryStatus.AVAILABLE,
       });
       setError(null);
@@ -229,14 +220,12 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     if (!formData.inventory.length) return "At least one inventory entry is required";
     if (
       formData.inventory.some(
-        (inv: { sku: string; quantity: number; status: string }) =>
+        (inv: { sku: string; status: string }) =>
           !inv.sku ||
-          isNaN(inv.quantity) ||
-          inv.quantity < 0 ||
           !statusOptions.includes(inv.status as InventoryStatus)
       )
     ) {
-      return "Invalid inventory entries: ensure SKUs are valid, quantities are non-negative, and statuses are valid";
+      return "Invalid inventory entries: ensure SKUs are valid and statuses are valid";
     }
     return null;
   };
@@ -294,13 +283,12 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
         productImages: [],
         categoryId: 0,
         subcategoryId: 0,
-        quantity: 0,
+        bannerId: null,
       });
       setSelectedCategoryId(null);
       setSelectedSubcategoryId(null);
       setInventoryInput({
         selectedSize: "",
-        quantity: "",
         status: InventoryStatus.AVAILABLE,
       });
       setError(null);
@@ -555,19 +543,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <option value="">Select Size for Inventory</option>
                   {/* Sizes are now hardcoded or removed, so this will be empty */}
                 </select>
-                <input
-                  type="text"
-                  name="quantity"
-                  value={inventoryInput.quantity}
-                  onChange={handleInventoryChange}
-                  placeholder="Quantity"
-                  pattern="\d+"
-                  style={{
-                    padding: "8px",
-                    borderRadius: "4px",
-                    border: "1px solid #ccc",
-                  }}
-                />
+
                 <select
                   name="status"
                   value={inventoryInput.status}
@@ -589,9 +565,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   onClick={handleInventoryAdd}
                   disabled={
                     !inventoryInput.selectedSize ||
-                    !inventoryInput.quantity ||
-                    isNaN(parseInt(inventoryInput.quantity)) ||
-                    parseInt(inventoryInput.quantity) < 0 ||
                     !inventoryInput.status
                   }
                   style={{
@@ -620,7 +593,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                           marginBottom: "5px",
                         }}
                       >
-                        {`${inv.sku} - ${inv.quantity} - ${inv.status}`}
+                        {`${inv.sku} - ${inv.status}`}
                         <button
                           type="button"
                           onClick={() => handleInventoryRemove(inv.sku)}

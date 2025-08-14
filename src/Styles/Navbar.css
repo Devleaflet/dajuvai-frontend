@@ -603,6 +603,7 @@
     color: #25d366;
 }
 
+
 .navbar__social-link--viber {
     color: #7360f2;
 }
@@ -612,8 +613,20 @@
 }
 
 .navbar__nepal-flag {
-    height: 20px;
+    height: 40px;
     width: auto;
+}
+
+/* Hide Nepal flag by default (mobile first) */
+.nepal-flag {
+    display: none;
+}
+
+/* Show Nepal flag on desktop screens only */
+@media (min-width: 1100px) {
+    .nepal-flag {
+        display: block;
+    }
 }
 
 /* Mobile dock */

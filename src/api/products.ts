@@ -176,12 +176,19 @@ export const fetchProducts = async (
   limit: number = 10
 ) => {
   try {
+    console.log('fetchProducts called with vendorId:', vendorId, 'page:', page, 'limit:', limit);
+    console.log('Making request to:', `/api/vendors/${vendorId}/products`);
+    
     const response = await axiosInstance.get(`/api/vendors/${vendorId}/products`, {
       params: {
         page,
         limit
       }
     });
+    
+    console.log('fetchProducts response:', response);
+    console.log('fetchProducts response.data:', response.data);
+    
     return response;
   } catch (error: unknown) {
     console.error('Error fetching products:', error);

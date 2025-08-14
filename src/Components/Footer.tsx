@@ -7,9 +7,60 @@ import khalti from '../assets/khalti1.png';
 import esewa from '../assets/esewa.png';
 import logo from '../assets/logo.webp';
 import { Link } from "react-router-dom";
-import npx from '../assets/npx.png'
+import npx from '../assets/npx.png';
+import { useState } from 'react';
+import OrderTrackingModal from './Modal/OrderTrackingModal';
+import { OrderService } from '../services/orderService';
+import { useAuth } from '../context/AuthContext';
 
 const Footer: React.FC = () => {
+  const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
+  const [orderId, setOrderId] = useState('');
+  const [email, setEmail] = useState('');
+  const [trackingResult, setTrackingResult] = useState<{
+    success: boolean;
+    orderStatus?: string;
+    message?: string;
+  } | null>(null);
+
+  const { token } = useAuth();
+
+  const handleTrackOrder = async () => {
+    if (!orderId.trim()) {
+      setTrackingResult({
+        success: false,
+        message: 'Please enter an Order ID'
+      });
+      setIsTrackingModalOpen(true);
+      return;
+    }
+
+    if (!token) {
+      setTrackingResult({
+        success: false,
+        message: 'Please log in to track your order'
+      });
+      setIsTrackingModalOpen(true);
+      return;
+    }
+
+    try {
+      const result = await OrderService.trackOrder(parseInt(orderId), token);
+      setTrackingResult({
+        success: true,
+        orderStatus: result.orderStatus
+      });
+      setIsTrackingModalOpen(true);
+    } catch (error) {
+      console.error('Order tracking error:', error);
+      setTrackingResult({
+        success: false,
+        message: error instanceof Error ? error.message : 'An error occurred while tracking the order'
+      });
+      setIsTrackingModalOpen(true);
+    }
+  };
+
   return (
     <footer className="footer">
       <div className="footer__container">
@@ -28,17 +79,36 @@ const Footer: React.FC = () => {
                 <div className="footer__form-group">
                   <label className="footer__label">Order ID</label>
                   <p className="footer__hint">Found in your order confirmation email</p>
-                  <input type="text" className="footer__input" placeholder="" />
+                  <input
+                    type="text"
+                    className="footer__input"
+                    placeholder="Enter your Order ID"
+                    value={orderId}
+                    onChange={(e) => setOrderId(e.target.value)}
+                  />
                 </div>
 
                 <div className="footer__form-group">
                   <label className="footer__label">Billing email</label>
                   <p className="footer__hint">Email you used check out.</p>
-                  <input type="email" className="footer__input" placeholder="" />
+                  <input
+                    type="email"
+                    className="footer__input"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
               </div>
 
-              <button className="footer__track-button">Track</button>
+              <button
+                className="footer__track-button"
+                onClick={handleTrackOrder}
+                disabled={!orderId.trim()}
+              >
+                <span className="button-icon">📦</span>
+                Track Order
+              </button>
             </div>
           </div>
 
@@ -50,11 +120,10 @@ const Footer: React.FC = () => {
               <div className="footer__section footer__links-section">
                 <h3 className="footer__section-title">Useful Links</h3>
                 <ul className="footer__list">
-                  <li><Link to="#" className="footer__link">Careers</Link></li>
-                  <li><Link to="#" className="footer__link">Help Center</Link></li>
-                  <li><Link to="#" className="footer__link">Shop List</Link></li>
-                  <li><Link to="#" className="footer__link">Track Order</Link></li>
-                  <li><Link to="#" className="footer__link">Contact Us</Link></li>
+                  {/* <li><Link to="#" className="footer__link">Careers</Link></li> */}
+                  <li><Link to="/contact" className="footer__link">Help Center</Link></li>
+                  <li><Link to="/shop" className="footer__link">Shop</Link></li>
+                  <li><Link to="/contact" className="footer__link">Contact Us</Link></li>
                   <li><Link to="#" className="footer__link">FAQ</Link></li>
                 </ul>
               </div>
@@ -63,13 +132,12 @@ const Footer: React.FC = () => {
               <div className="footer__section footer__account-section">
                 <h3 className="footer__section-title">Account</h3>
                 <ul className="footer__list">
-                  <li><Link to="#" className="footer__link">User Dashboard</Link></li>
-                  <li><Link to="#" className="footer__link">Wishlist</Link></li>
-                  <li><Link to="#" className="footer__link">Downloads</Link></li>
-                  <li><Link to="#" className="footer__link">Orders</Link></li>
-                  <li><Link to="#" className="footer__link">Complain</Link></li>
-                  <li><Link to="#" className="footer__link">Delivery Detail</Link></li>
-                  <li><Link to="#" className="footer__link">Support</Link></li>
+                  <li><Link to="/wishlist" className="footer__link">Wishlist</Link></li>
+                  {/* <li><Link to="#" className="footer__link">Downloads</Link></li> */}
+                  {/* <li><Link to="#" className="footer__link">Orders</Link></li> */}
+                  <li><Link to="/contact" className="footer__link">Complain</Link></li>
+                  {/* <li><Link to="#" className="footer__link">Delivery Detail</Link></li> */}
+                  {/* <li><Link to="#" className="footer__link">Support</Link></li> */}
                 </ul>
               </div>
 
@@ -83,7 +151,7 @@ const Footer: React.FC = () => {
                     </div>
                     <div className="footer__service-text">
                       <span className="footer__service-label">Delivery:</span>
-                      <span>Kathmandu, Bhaktapur, Lalitpur</span>
+                      <span>All over Nepal</span>
                     </div>
                   </li>
                   <li className="footer__service-item">
@@ -92,7 +160,16 @@ const Footer: React.FC = () => {
                     </div>
                     <div className="footer__service-text">
                       <span className="footer__service-label">Phone:</span>
-                      <span>+977 - 9708555024</span>
+                      <span>9700620004</span>
+                    </div>
+                  </li>
+                  <li className="footer__service-item">
+                    <div className="footer__service-icon">
+                      <FaPhoneVolume />
+                    </div>
+                    <div className="footer__service-text">
+                      <span className="footer__service-label">Landline number:</span>
+                      <span>01 -4720234</span>
                     </div>
                   </li>
                   <li className="footer__service-item">
@@ -114,16 +191,30 @@ const Footer: React.FC = () => {
               <div className="footer__section footer__contact-section">
                 <h3 className="footer__section-title">Contact With Us</h3>
                 <div className="footer__social-icons">
-                  <a href="#" className="footer__social-link">
+                  <a href="https://www.facebook.com/" className="footer__social-link"
+                    target="_blank"
+                  >
                     <FaFacebookF />
                   </a>
-                  <a href="#" className="footer__social-link">
+                  <a
+                    href="mailto:Dajuvai106@gmail.com"
+                    className="footer__social-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <MdEmail />
                   </a>
-                  <a href="#" className="footer__social-link">
+                  <a
+                    href="https://wa.me/+9779700620004"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer__social-link"
+                  >
                     <IoLogoWhatsapp />
                   </a>
-                  <a href="#" className="footer__social-link">
+                  <a href="https://www.instagram.com/dajuvai_/" className="footer__social-link"
+                    target="_blank"
+                  >
                     <FaInstagram />
                   </a>
                 </div>
@@ -133,10 +224,10 @@ const Footer: React.FC = () => {
               <div className="footer__section footer__payment-section">
                 <h3 className="footer__section-title">Payment Methods</h3>
                 <div className="footer__payment-icons">
-               
+
                   <img src={esewa} alt="eSewa Payment" className="footer__payment-image" />
-                     <img src={npx} alt="eSewa Payment" className="footer__payment-image" />
-                  
+                  <img src={npx} alt="eSewa Payment" className="footer__payment-image" />
+
                 </div>
               </div>
             </div>
@@ -155,6 +246,13 @@ const Footer: React.FC = () => {
           <a href="#" className="footer__bottom-link">Site Map</a>
         </div>
       </div>
+
+      {/* Order Tracking Modal */}
+      <OrderTrackingModal
+        isOpen={isTrackingModalOpen}
+        onClose={() => setIsTrackingModalOpen(false)}
+        trackingResult={trackingResult}
+      />
     </footer>
   );
 };

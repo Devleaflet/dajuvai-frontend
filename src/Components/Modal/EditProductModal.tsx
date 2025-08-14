@@ -58,7 +58,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     subcategoryId: 0,
     brand_id: null,
     dealId: null,
-    quantity: 0,
+    bannerId: null,
     vendorId: "",
     inventory: [],
   });
@@ -96,9 +96,9 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         productImages: product.productImages || [],
         categoryId: product.categoryId || 0,
         subcategoryId: product.subcategory?.id || 0,
-        quantity: product.stock || 1,
         brand_id: product.brand_id || null,
         dealId: product.dealId || null,
+        bannerId: product.bannerId || null,
         inventory: product.inventory || [],
         vendorId: isVendorContext 
           ? String(vendorAuthState.vendor?.id || "")
@@ -364,8 +364,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       newErrors.basePrice = "Base price must be a valid positive number";
     if (typeof formData.stock !== "number" || formData.stock < 0)
       newErrors.stock = "Stock must be a valid non-negative number";
-    if (typeof formData.quantity !== "number" || formData.quantity <= 0)
-      newErrors.quantity = "Quantity must be a valid positive number";
     
     // Only validate vendor selection for admin context
     if (!isVendorContext && !formData.vendorId) {
@@ -641,27 +639,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
               </div>
             </div>
 
-            <div className="product-modal__section">
-              <div className="product-modal__row">
-                <div className="product-modal__field">
-                  <label className="product-modal__label">Quantity *</label>
-                  <input
-                    type="number"
-                    name="quantity"
-                    value={formData.quantity}
-                    onChange={handleNumberInputChange}
-                    required
-                    min="1"
-                    className="product-modal__input"
-                  />
-                  {errors.quantity && (
-                    <span className="product-modal__error">
-                      {errors.quantity}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
+
 
             <div className="product-modal__section">
               <div className="product-modal__field">
