@@ -381,22 +381,26 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
         login(response.data.token, userData);
 
+        // Optionally hydrate full user profile
         if (response.data.data.userId) {
-          console.log("Fetching complete user data after login...");
-          await fetchUserData(response.data.data.userId);
+          try {
+            await fetchUserData(response.data.data.userId);
+          } catch {
+            // Non-fatal if this fails; continue navigation
+          }
         }
 
-        if (response.data.data.role === "admin") {
+        // Redirect by role: admin and staff -> admin dashboard; vendor -> vendor dashboard
+        const role = response.data.data.role;
+        if (role === "admin" || role === "staff") {
           navigate("/admin-dashboard");
-        } else if (response.data.data.role === "vendor") {
+        } else if (role === "vendor") {
           navigate("/dashboard");
         } else {
           navigate("/");
         }
 
         onClose();
-      } else {
-        setError("Login failed: Invalid response from server");
       }
     } catch (err) {
       if (axios.isAxiosError(err)) {

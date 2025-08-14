@@ -43,22 +43,24 @@ import FacebookAuthCallback from "./Pages/FacebookAuthCallback";
 import PrivacyPolicy from "./Pages/PrivacyPolicy";
 import DataDeletion from "./Pages/DataDeletion";
 
-// ProtectedRoute component for admin routes
-const ProtectedRoute = ({ children }: { children: ReactElement }) => {
+// Admin route guards
+// Allows both admin and staff to access admin area
+const AdminOrStaffRoute = ({ children }: { children: ReactElement }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
 
-  if (isLoading) {
-    return <div>Loading...</div>; // You can replace with a proper loading component
-  }
+  if (isLoading) return <div>Loading...</div>;
+  if (!isAuthenticated || !user) return <Navigate to="/" replace />;
+  if (user.role !== 'admin' && user.role !== 'staff') return <Navigate to="/" replace />;
+  return children;
+};
 
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/" replace />;
-  }
+// Admin-only guard (e.g., Staff management page)
+const AdminOnlyRoute = ({ children }: { children: ReactElement }) => {
+  const { user, isAuthenticated, isLoading } = useAuth();
 
-  if (user.role !== "admin") {
-    return <Navigate to="/" replace />; // Redirect non-admin users to home
-  }
-
+  if (isLoading) return <div>Loading...</div>;
+  if (!isAuthenticated || !user) return <Navigate to="/" replace />;
+  if (user.role !== 'admin') return <Navigate to="/" replace />;
   return children;
 };
 
@@ -146,97 +148,97 @@ function App() {
         <Route
           path="/admin-dashboard"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminDashboard />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-products"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminProduct />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-orders"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <OrdersList />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-customers"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminCustomers />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-categories"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminCategories />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-vendors"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminVendors />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-banner"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminBannerWithTabs />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-catalog"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminCatalog />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin/district"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminDistrict />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-deals"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <DealAdmin />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-promo"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminPromo />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin/staff"
           element={
-            <ProtectedRoute>
+            <AdminOnlyRoute>
               <AdminStaff />
-            </ProtectedRoute>
+            </AdminOnlyRoute>
           }
         />
 
