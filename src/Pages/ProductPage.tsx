@@ -75,7 +75,7 @@ const ProductPage = () => {
 
       // Handle variants - use first variant for pricing if basePrice is null
       const firstVariant = apiProduct.variants?.[0];
-      const basePrice = parseFloat(apiProduct.basePrice) || parseFloat(firstVariant?.price) || 0;
+      const basePrice = parseFloat(apiProduct.basePrice) || parseFloat(firstVariant?.basePrice) || parseFloat(firstVariant?.price) || 0;
       const discount = parseFloat(apiProduct.discount) || 0;
       let price = basePrice;
       let savings = '0';
@@ -90,9 +90,31 @@ const ProductPage = () => {
 
       // Extract images from variants and productImages
       // Handle both string arrays and object arrays for backward compatibility
-      const variantImages = firstVariant?.images?.map(img => 
-        typeof img === 'string' ? img : img.imageUrl || img.url || ''
-      ).filter(Boolean) || [];
+      const variantImages: string[] = [];
+      
+      // Extract images from all variants (not just first variant)
+      if (apiProduct.variants && Array.isArray(apiProduct.variants)) {
+        apiProduct.variants.forEach((variant: any) => {
+          // Check for variantImages field (new format)
+          if (variant.variantImages && Array.isArray(variant.variantImages)) {
+            variant.variantImages.forEach((img: string | { url?: string; imageUrl?: string }) => {
+              const imageUrl = typeof img === 'string' ? img : img.imageUrl || img.url || '';
+              if (imageUrl && !variantImages.includes(imageUrl)) {
+                variantImages.push(imageUrl);
+              }
+            });
+          }
+          // Also check for legacy images field
+          if (variant.images && Array.isArray(variant.images)) {
+            variant.images.forEach((img: string | { url?: string; imageUrl?: string }) => {
+              const imageUrl = typeof img === 'string' ? img : img.imageUrl || img.url || '';
+              if (imageUrl && !variantImages.includes(imageUrl)) {
+                variantImages.push(imageUrl);
+              }
+            });
+          }
+        });
+      }
       
       const productImages = apiProduct.productImages?.map(img => 
         typeof img === 'string' ? img : img.imageUrl || img.url || ''

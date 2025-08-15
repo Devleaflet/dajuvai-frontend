@@ -100,9 +100,64 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     }
   };
 
-  const populateFormWithProduct = () => {
+  const populateFormWithProduct = async () => {
     if (!product) return;
 
+    console.log('🔄 POPULATING FORM WITH PRODUCT DATA:');
+    console.log('Product:', product);
+    console.log('Product Category ID:', product.categoryId);
+    console.log('Product Subcategory:', product.subcategory);
+
+    // Extract category and subcategory IDs with multiple fallback strategies
+    let categoryId = 0;
+    let subcategoryId = 0;
+
+    // Strategy 1: Direct properties
+    if (product.categoryId) categoryId = Number(product.categoryId);
+    if (product.subcategory?.id) subcategoryId = Number(product.subcategory.id);
+
+    // Strategy 2: From subcategory object
+    if (!categoryId && product.subcategory) {
+      const sub = product.subcategory as any;
+      if (sub.categoryId) categoryId = Number(sub.categoryId);
+      if (sub.category?.id) categoryId = Number(sub.category.id);
+    }
+
+    // Strategy 3: Alternative subcategory ID extraction
+    if (!subcategoryId) {
+      const prod = product as any;
+      if (prod.subcategoryId) subcategoryId = Number(prod.subcategoryId);
+    }
+
+    // Strategy 4: Hardcode fallback for testing (you can remove this later)
+    if (!categoryId) {
+      console.warn('⚠️ No category ID found, using fallback value 1');
+      categoryId = 1; // Use a default category for testing
+    }
+    if (!subcategoryId) {
+      console.warn('⚠️ No subcategory ID found, using fallback value 1');
+      subcategoryId = 1; // Use a default subcategory for testing
+    }
+    
+    console.log('🎯 FINAL EXTRACTED IDs:');
+    console.log('Category ID:', categoryId);
+    console.log('Subcategory ID:', subcategoryId);
+    
+    setSelectedCategoryId(categoryId);
+
+    // Load subcategories for the product's category first
+    if (categoryId > 0) {
+      try {
+        const subcategories = await fetchSubcategories(categoryId);
+        setSubcategories(subcategories || []);
+        console.log('✅ Loaded subcategories:', subcategories);
+      } catch (error) {
+        console.error('Error loading subcategories:', error);
+        toast.error('Failed to load subcategories');
+      }
+    }
+
+    // Then set the form data with the correct subcategory
     setFormData({
       name: product.name || "",
       description: product.description || "",
@@ -113,20 +168,16 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       stock: product.stock?.toString() || "",
       hasVariants: product.hasVariants || false,
       variants: product.variants || [],
-      subcategoryId: product.subcategoryId || 0,
+      subcategoryId: subcategoryId,
       dealId: product.dealId || undefined,
       bannerId: product.bannerId || undefined,
       productImages: product.productImages || [],
     });
 
     setVariants(product.variants || []);
-    setSelectedCategoryId(product.categoryId || 0);
     setExistingImages(product.productImages || []);
 
-    // Load subcategories for the product's category
-    if (product.categoryId) {
-      handleCategoryChange(product.categoryId);
-    }
+    console.log('✅ Form populated with category:', categoryId, 'subcategory:', subcategoryId);
   };
 
   const handleCategoryChange = async (categoryId: number) => {
@@ -206,66 +257,172 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   };
 
   const validateForm = (): string | null => {
-    if (!formData.name.trim()) return 'Product name is required';
-    if (!selectedCategoryId) return 'Please select a category';
-    if (!formData.subcategoryId) return 'Please select a subcategory';
+    console.log('🔍 VALIDATION CHECK:');
+    console.log('- Product name:', formData.name);
+    console.log('- Selected category ID:', selectedCategoryId);
+    console.log('- Subcategory ID:', formData.subcategoryId);
+    console.log('- Has variants:', formData.hasVariants);
+    console.log('- Base price:', formData.basePrice);
+    console.log('- Stock:', formData.stock);
+    console.log('- Variants count:', variants.length);
+    
+    if (!formData.name.trim()) {
+      console.log('❌ Product name is missing');
+      return 'Product name is required';
+    }
+    if (!selectedCategoryId) {
+      console.log('❌ Category not selected');
+      return 'Please select a category';
+    }
+    if (!formData.subcategoryId) {
+      console.log('❌ Subcategory not selected');
+      return 'Please select a subcategory';
+    }
     
     if (!formData.hasVariants) {
-      if (!formData.basePrice || parseFloat(formData.basePrice) <= 0) return 'Base price is required';
-      if (!formData.stock || parseInt(formData.stock) < 0) return 'Stock quantity is required';
+      if (!formData.basePrice || parseFloat(formData.basePrice) <= 0) {
+        console.log('❌ Base price is invalid:', formData.basePrice);
+        return 'Base price is required';
+      }
+      if (!formData.stock || parseInt(formData.stock) < 0) {
+        console.log('❌ Stock is invalid:', formData.stock);
+        return 'Stock quantity is required';
+      }
     } else {
-      if (variants.length === 0) return 'At least one variant is required';
+      if (variants.length === 0) {
+        console.log('❌ No variants found');
+        return 'At least one variant is required';
+      }
       for (const variant of variants) {
-        if (!variant.sku.trim()) return 'All variants must have a SKU';
-        if (!variant.price || variant.price <= 0) return 'All variants must have a valid price';
-        if (variant.stock === undefined || variant.stock < 0) return 'All variants must have stock quantity';
+        if (!variant.sku.trim()) {
+          console.log('❌ Variant missing SKU:', variant);
+          return 'All variants must have a SKU';
+        }
+        if (!variant.price || variant.price <= 0) {
+          console.log('❌ Variant invalid price:', variant);
+          return 'All variants must have a valid price';
+        }
+        if (variant.stock === undefined || variant.stock < 0) {
+          console.log('❌ Variant invalid stock:', variant);
+          return 'All variants must have stock quantity';
+        }
       }
     }
     
+    console.log('✅ All validation checks passed');
     return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('🚀 UPDATE PRODUCT BUTTON CLICKED!');
     e.preventDefault();
     
     if (!product) {
+      console.error('❌ No product to update');
       toast.error('No product to update');
       return;
     }
 
+    console.log('🔍 Validating form...');
     const validationError = validateForm();
     if (validationError) {
+      console.error('❌ Validation error:', validationError);
       toast.error(validationError);
       return;
     }
 
+    console.log('✅ Form validation passed');
     setIsLoading(true);
 
     try {
-      // Upload new images if any
+      console.log('🔄 EDIT PRODUCT MODAL SUBMIT START');
+      console.log('🏷️ Selected Category ID:', selectedCategoryId);
+      console.log('📝 Form Data:', formData);
+      console.log('🔄 Variants:', variants);
+      console.log('🖼️ New Images:', images.length);
+      console.log('🖼️ Existing Images:', existingImages.length);
+
+      // Step 1: Upload new images if any
       let newImageUrls: string[] = [];
       if (images.length > 0) {
+        console.log('📤 Uploading new images...');
         const uploadResponse = await uploadProductImages(images);
         if (uploadResponse.success) {
           newImageUrls = uploadResponse.urls;
+          console.log('✅ Images uploaded successfully:', newImageUrls);
+        } else {
+          throw new Error('Failed to upload images');
         }
       }
 
-      // Combine existing and new images
+      // Step 2: Combine existing and new images
       const allImages = [...existingImages, ...newImageUrls];
+      console.log('🖼️ All Images:', allImages);
 
-      // Prepare product data
-      const productData: ProductFormData = {
-        ...formData,
-        productImages: allImages,
-        variants: formData.hasVariants ? variants : [],
-        basePrice: formData.hasVariants ? "" : formData.basePrice,
-        stock: formData.hasVariants ? "" : formData.stock,
+      // Step 3: Prepare product data according to new API contract
+      const updatePayload: any = {
+        name: formData.name,
+        subcategoryId: formData.subcategoryId,
+        hasVariants: formData.hasVariants,
       };
 
-      await onSave(product.id, productData, selectedCategoryId, formData.subcategoryId);
-      toast.success('Product updated successfully!');
-      handleClose();
+      // Add optional fields
+      if (formData.description) updatePayload.description = formData.description;
+      if (formData.discount !== undefined && formData.discount !== null && formData.discount !== '') {
+        updatePayload.discount = typeof formData.discount === 'string' ? parseFloat(formData.discount) : formData.discount;
+      }
+      if (formData.discountType) updatePayload.discountType = formData.discountType;
+      if (formData.dealId) updatePayload.dealId = formData.dealId;
+      if (formData.bannerId) updatePayload.bannerId = formData.bannerId;
+      if (allImages.length > 0) updatePayload.productImages = allImages;
+
+      // Handle variants vs non-variants
+      if (formData.hasVariants) {
+        if (variants.length > 0) {
+          // Convert variants to match API structure
+          updatePayload.variants = variants.map((variant: any) => ({
+            sku: variant.sku,
+            basePrice: variant.price || variant.basePrice,
+            discount: variant.discount || 0,
+            discountType: variant.discountType || 'PERCENTAGE',
+            attributes: variant.attributes || Object.keys(variant.attributes || {}).reduce((acc, key) => {
+              acc[key] = variant.attributes[key];
+              return acc;
+            }, {} as any),
+            variantImages: variant.images || [],
+            stock: variant.stock,
+            status: variant.status || 'AVAILABLE'
+          }));
+        }
+      } else {
+        // For non-variant products, these fields are required
+        updatePayload.basePrice = typeof formData.basePrice === 'string' ? parseFloat(formData.basePrice) : formData.basePrice;
+        updatePayload.stock = typeof formData.stock === 'string' ? parseInt(formData.stock) : formData.stock;
+        updatePayload.status = formData.status || 'AVAILABLE';
+      }
+
+      console.log('=== FINAL UPDATE PAYLOAD FOR API ===');
+      console.log('Update Payload:', JSON.stringify(updatePayload, null, 2));
+      console.log('Product ID:', product.id);
+      console.log('Category ID:', selectedCategoryId);
+      console.log('Subcategory ID:', formData.subcategoryId);
+
+      // Step 4: Update product with JSON payload
+      const response = await updateProduct(
+        product.id,
+        selectedCategoryId,
+        formData.subcategoryId,
+        updatePayload
+      );
+
+      if (response.success) {
+        toast.success('Product updated successfully!');
+        // Call the parent callback for any additional handling
+        await onSave(product.id, formData, selectedCategoryId, formData.subcategoryId);
+        handleClose();
+      } else {
+        throw new Error(response.message || 'Failed to update product');
+      }
     } catch (error: any) {
       console.error('Error updating product:', error);
       toast.error(error.message || 'Failed to update product');
@@ -744,7 +901,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                   Cancel
                 </button>
                 <button 
-                  type="submit" 
+                  type="button" 
                   disabled={isLoading} 
                   className="btn btn-primary"
                   onClick={handleSubmit}

@@ -80,9 +80,28 @@ const VendorProduct: React.FC = () => {
       if (!response.data || typeof response.data !== 'object') throw new Error('Invalid response');
       if (!response.data.success || !response.data.data || !Array.isArray(response.data.data.products)) throw new Error('Invalid response format');
       const products: Product[] = response.data.data.products.map((product: ApiProduct): Product => {
-        const images = Array.isArray(product.productImages)
+        // Extract images from both productImages and variant images
+        const productImages = Array.isArray(product.productImages)
           ? product.productImages.map((img: string | { url?: string }) => (typeof img === 'string' ? img : img.url || ''))
           : [];
+        
+        // Extract images from variants if product has variants
+        const variantImages: string[] = [];
+        if ((product as any).hasVariants && (product as any).variants && Array.isArray((product as any).variants)) {
+          (product as any).variants.forEach((variant: any) => {
+            if (variant.variantImages && Array.isArray(variant.variantImages)) {
+              variant.variantImages.forEach((img: string | { url?: string }) => {
+                const imageUrl = typeof img === 'string' ? img : img.url || '';
+                if (imageUrl && !variantImages.includes(imageUrl)) {
+                  variantImages.push(imageUrl);
+                }
+              });
+            }
+          });
+        }
+        
+        // Combine all images (product images first, then variant images)
+        const images = [...productImages, ...variantImages].filter(Boolean);
         // Calculate discounted price
         let basePrice = 0;
         if (typeof product.basePrice === 'number') basePrice = product.basePrice;
@@ -288,58 +307,62 @@ const VendorProduct: React.FC = () => {
   // Mutation for editing a product
   const editProductMutation = useMutation({
     mutationFn: async ({ productId, productData, categoryId, subcategoryId }: { productId: number, productData: ProductFormData, categoryId: number, subcategoryId: number }) => {
+      console.log('🔄 EDIT PRODUCT MUTATION START');
+      console.log('Product ID:', productId);
+      console.log('Category ID:', categoryId);
+      console.log('Subcategory ID:', subcategoryId);
+      console.log('Product Data:', productData);
+
       if (!authState.token) throw new Error("Authentication token is missing");
       if (!authState.vendor?.id) throw new Error("Vendor ID is missing");
       if (!categoryId || !subcategoryId) {
         throw new Error("Category and subcategory are required");
       }
-      const formData = new FormData();
-      formData.append("name", String(productData.name));
-      formData.append("description", String(productData.description));
-      formData.append("basePrice", productData.basePrice != null ? String(productData.basePrice) : "0");
-      formData.append("stock", productData.stock.toString());
-      formData.append("quantity", String(productData.quantity));
-      formData.append("vendorId", String(authState.vendor.id));
-      if (productData.discount && Number(productData.discount) > 0) {
-        formData.append("discount", Number(productData.discount).toFixed(2));
-        formData.append("discountType", String(productData.discountType));
-      }
-      if (Array.isArray(productData.size) && productData.size.length > 0) {
-        formData.append("size", productData.size.join(","));
-      }
-      if (productData.status) formData.append("status", String(productData.status));
-      if (productData.brand_id != null) {
-        formData.append("brand_id", String(productData.brand_id));
-      }
-      if (productData.dealId != null) {
-        formData.append("dealId", String(productData.dealId));
-      }
-      if (productData.productImages && Array.isArray(productData.productImages)) {
-        productData.productImages.forEach((image, index) => {
-          if (index < 5 && image instanceof File) {
-            formData.append("images", image);
-          }
-        });
-      }
-      if (productData.inventory && Array.isArray(productData.inventory)) {
-        formData.append("inventory", JSON.stringify(productData.inventory));
-      }
-      // Convert to new API format
-      const newProductData = {
-        name: String(productData.name),
-        description: String(productData.description),
-        basePrice: productData.basePrice ? (typeof productData.basePrice === 'string' ? parseFloat(productData.basePrice) : productData.basePrice) : undefined,
-        discount: productData.discount ? (typeof productData.discount === 'string' ? parseFloat(productData.discount) : productData.discount) : undefined,
-        discountType: productData.discountType || undefined,
-        status: productData.status,
-        stock: productData.stock,
-        hasVariants: productData.hasVariants,
-        variants: productData.variants,
-        dealId: productData.dealId || undefined,
-        bannerId: productData.bannerId || undefined,
+
+      // Prepare JSON payload according to new API contract
+      const updatePayload: any = {
+        name: productData.name,
+        subcategoryId: subcategoryId,
+        hasVariants: productData.hasVariants || false,
       };
+
+      // Add optional fields
+      if (productData.description) updatePayload.description = productData.description;
+      if (productData.discount !== undefined && productData.discount !== null && productData.discount !== '') {
+        updatePayload.discount = typeof productData.discount === 'string' ? parseFloat(productData.discount) : productData.discount;
+      }
+      if (productData.discountType) updatePayload.discountType = productData.discountType;
+      if (productData.dealId) updatePayload.dealId = productData.dealId;
+      if (productData.bannerId) updatePayload.bannerId = productData.bannerId;
+      if (productData.productImages && productData.productImages.length > 0) {
+        updatePayload.productImages = productData.productImages;
+      }
+
+      // Handle variants vs non-variants
+      if (productData.hasVariants) {
+        if (productData.variants && productData.variants.length > 0) {
+          // Convert variants to match API structure
+          updatePayload.variants = productData.variants.map((variant: any) => ({
+            sku: variant.sku,
+            basePrice: variant.price || variant.basePrice,
+            discount: variant.discount || 0,
+            discountType: variant.discountType || 'PERCENTAGE',
+            attributes: variant.attributes || {},
+            variantImages: variant.images || variant.variantImages || [],
+            stock: variant.stock,
+            status: variant.status || 'AVAILABLE'
+          }));
+        }
+      } else {
+        // For non-variant products, these fields are required
+        updatePayload.basePrice = typeof productData.basePrice === 'string' ? parseFloat(productData.basePrice) : productData.basePrice;
+        updatePayload.stock = typeof productData.stock === 'string' ? parseInt(productData.stock) : productData.stock;
+        updatePayload.status = productData.status || 'AVAILABLE';
+      }
+
+      console.log('📤 Final Update Payload:', JSON.stringify(updatePayload, null, 2));
       
-      return updateProduct(productId, categoryId, subcategoryId, newProductData);
+      return updateProduct(productId, categoryId, subcategoryId, updatePayload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -367,6 +390,17 @@ const VendorProduct: React.FC = () => {
   };
 
   const handleEditProduct = (product: Product) => {
+    console.log('🚀 EDIT BUTTON CLICKED!');
+    console.log('=== ORIGINAL PRODUCT DATA ===');
+    console.log('Full Product Object:', JSON.stringify(product, null, 2));
+    console.log('Product ID:', product.id);
+    console.log('Product Name:', product.name);
+    console.log('Product CategoryId:', product.categoryId);
+    console.log('Product SubcategoryId:', product.subcategoryId);
+    console.log('Product Subcategory Object:', product.subcategory);
+    console.log('Product Category Object:', product.category);
+    console.log('=== END PRODUCT DATA ===');
+    
     // Convert Product to ApiProduct for editing
     let discount: number | null = null;
     
@@ -390,8 +424,25 @@ const VendorProduct: React.FC = () => {
           updatedAt: (product.subcategory as SubcategoryType).updatedAt || new Date().toISOString(),
         }
       : { id: 0, name: '', image: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    console.log('🔄 CONVERTING PRODUCT FOR EDITING:');
+    console.log('Original Product:', product);
+    console.log('Product Category ID:', product.categoryId);
+    console.log('Product Subcategory:', product.subcategory);
+
+    // Extract category ID from subcategory if available
+    let categoryId = product.categoryId || 0;
+    if (!categoryId && product.subcategory && typeof product.subcategory === 'object') {
+      // Try to get categoryId from subcategory object
+      if ('categoryId' in product.subcategory) {
+        categoryId = (product.subcategory as any).categoryId;
+      } else if ('category' in product.subcategory && product.subcategory.category && typeof product.subcategory.category === 'object' && 'id' in product.subcategory.category) {
+        categoryId = (product.subcategory.category as any).id;
+      }
+    }
+
     const apiProduct: ApiProduct = {
-      ...product,
+      ...(product as any),
+      categoryId: categoryId,
       basePrice: typeof product.basePrice === 'number' ? product.basePrice : (product.basePrice ? parseFloat(product.basePrice.toString()) : (typeof product.price === 'string' ? parseFloat(product.price) : typeof product.price === 'number' ? product.price : 0)),
       discount: discount,
       discountType: (product.discountType === 'PERCENTAGE' ? 'PERCENTAGE' : 'FLAT') as 'PERCENTAGE' | 'FLAT',
@@ -415,11 +466,19 @@ const VendorProduct: React.FC = () => {
       },
       brand: null,
       deal: null,
-      hasVariants: false, // Default to false for existing products
-      variants: [], // Default empty array
+      hasVariants: (product as any).hasVariants || false,
+      variants: (product as any).variants || [],
       price: typeof product.price === 'number' ? product.price : (product.price ? parseFloat(product.price.toString()) : 0),
       image: product.image || '',
+      // Ensure all required ApiProduct fields are present
+      brand_id: product.brand_id || null,
+      bannerId: (product as any).bannerId || null,
+      brandId: (product as any).brandId || null,
     } as ApiProduct;
+
+    console.log('✅ Converted ApiProduct:', apiProduct);
+    console.log('ApiProduct Category ID:', apiProduct.categoryId);
+    console.log('ApiProduct Subcategory:', apiProduct.subcategory);
     setEditingProduct(apiProduct);
     setShowEditModal(true);
   };
