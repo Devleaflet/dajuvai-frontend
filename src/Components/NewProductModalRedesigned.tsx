@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { NewProductFormData, ProductVariant, Attribute } from "../types/product";
 import { fetchCategories, fetchSubcategories, Category, Subcategory } from '../api/categories';
-import { createProduct, uploadProductImages, testProductAPI } from '../api/products';
+import { createProduct, uploadProductImages } from '../api/products';
 import "../Styles/NewProductModal.css";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import { dealApiService } from '../services/apiDeals';
@@ -197,18 +197,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     console.log('🔄 Variants:', variants);
     console.log('🖼️ Images:', images);
       
-    // Add a simple test first to isolate the 500 error
-    console.log('🧪 Testing API endpoint first...');
-    try {
-      await testProductAPI(selectedCategoryId, formData.subcategoryId);
-      console.log('✅ Test API call succeeded, proceeding with full creation...');
-    } catch (testError: any) {
-      console.error('❌ Test API call failed:', testError);
-      toast.error('API endpoint test failed: ' + (testError.message || 'Unknown error'));
-      setIsLoading(false);
-      return;
-    }
-      
     if (!selectedCategoryId || !formData.subcategoryId) {
       console.error('Missing category or subcategory:', { selectedCategoryId, subcategoryId: formData.subcategoryId });
       toast.error('Please select category and subcategory');
@@ -224,40 +212,69 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     setIsLoading(true);
 
     try {
-      // Upload images first if any
-      let imageUrls: string[] = [];
+      // Step 1: Upload images first to get URLs
+      let productImageUrls: string[] = [];
       if (images.length > 0) {
+        console.log('📤 Uploading product images...');
         const uploadResponse = await uploadProductImages(images);
         if (uploadResponse.success) {
-          imageUrls = uploadResponse.urls;
+          productImageUrls = uploadResponse.urls;
+          console.log('✅ Images uploaded successfully:', productImageUrls);
+        } else {
+          throw new Error(uploadResponse.message || 'Failed to upload images');
         }
       }
 
-      // Prepare product data
-      const productData = {
+      // Step 2: Prepare product data according to new API specification
+      const productData: any = {
         name: formData.name,
-        description: formData.description || undefined,
+        description: formData.description || '',
         hasVariants: formData.hasVariants,
-        dealId: formData.dealId || undefined,
-        bannerId: formData.bannerId || undefined,
-        ...(formData.hasVariants 
-          ? { variants: variants }
-          : {
-              basePrice: formData.basePrice!,
-              stock: formData.stock!,
-              status: formData.status!,
-              discount: formData.discount || undefined,
-              discountType: formData.discountType || undefined,
-            }
-        )
+        productImages: productImageUrls,
+        dealId: formData.dealId || 0,
+        bannerId: formData.bannerId || 0
       };
 
-      console.log('=== PREPARED PRODUCT DATA FOR API ===');
+      if (formData.hasVariants) {
+        // For variant products, structure variants according to API spec
+        productData.variants = variants.map((variant) => ({
+          sku: variant.sku,
+          basePrice: variant.price, // API expects basePrice on variant
+          discount: 0,
+          discountType: 'PERCENTAGE',
+          attributes: variant.attributes ? 
+            variant.attributes.reduce((acc: any, attr: any) => {
+              // Convert attributes array to object format
+              acc[attr.attributeType] = attr.attributeValues[0] || attr.attributeValues.join(', ');
+              return acc;
+            }, {}) : {},
+          variantImages: variant.images || [], // URLs from separate upload
+          stock: variant.stock,
+          status: variant.status
+        }));
+        
+        // Set base product fields for variant products
+        productData.basePrice = 0;
+        productData.stock = 0;
+        productData.status = 'AVAILABLE';
+        productData.discount = 0;
+        productData.discountType = 'PERCENTAGE';
+      } else {
+        // For non-variant products
+        productData.basePrice = parseFloat(formData.basePrice?.toString() || '0');
+        productData.stock = parseInt(formData.stock?.toString() || '0');
+        productData.status = formData.status || 'AVAILABLE';
+        productData.discount = parseFloat(formData.discount?.toString() || '0');
+        productData.discountType = formData.discountType || 'PERCENTAGE';
+        productData.variants = [];
+      }
+
+      console.log('=== FINAL PRODUCT DATA FOR API ===');
       console.log('Product Data:', JSON.stringify(productData, null, 2));
       console.log('Category ID:', selectedCategoryId);
       console.log('Subcategory ID:', formData.subcategoryId);
 
-      // Create product
+      // Step 3: Create product with JSON payload
       const response = await createProduct(
         selectedCategoryId,
         formData.subcategoryId,

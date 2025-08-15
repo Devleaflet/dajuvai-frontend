@@ -89,9 +89,16 @@ const ProductPage = () => {
       }
 
       // Extract images from variants and productImages
-      const variantImages = firstVariant?.images?.map(img => img.imageUrl) || [];
-      const productImages = apiProduct.productImages?.map(img => img.imageUrl) || [];
-      const allImages = [...variantImages, ...productImages];
+      // Handle both string arrays and object arrays for backward compatibility
+      const variantImages = firstVariant?.images?.map(img => 
+        typeof img === 'string' ? img : img.imageUrl || img.url || ''
+      ).filter(Boolean) || [];
+      
+      const productImages = apiProduct.productImages?.map(img => 
+        typeof img === 'string' ? img : img.imageUrl || img.url || ''
+      ).filter(Boolean) || [];
+      
+      const allImages = [...productImages, ...variantImages].filter(Boolean);
 
       // Extract size options from variants
       const sizeOptions = apiProduct.variants?.map(variant => 

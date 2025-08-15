@@ -146,8 +146,9 @@ const VendorProduct: React.FC = () => {
 
       return {
         products,
-        total: response.data.data.total || products.length
-      } as { products: Product[]; total: number };
+        total: response.data.data.total || products.length,
+        serverTotal: response.data.data.total || products.length
+      } as { products: Product[]; total: number; serverTotal: number };
     },
     enabled: !!authState.vendor?.id && !!authState.token
   });
@@ -435,42 +436,30 @@ const VendorProduct: React.FC = () => {
     });
   };
 
-  const allProducts = productData?.products || [];
-  // Remove unused variable
-  // const totalProducts = productData?.total || 0;
+  // Extract products and total from the query data
+  const products: Product[] = productData?.products || [];
+  const totalProducts = productData?.serverTotal || productData?.total || 0;
 
-  // Filter and sort products in-memory
-  const filteredProducts = allProducts.filter((product) => {
-    const query = searchQuery.toLowerCase();
+  // For server-side pagination, we use the products directly from the API
+  // The API already handles pagination, so we don't need to slice again
+  const displayProducts = products;
+
+  // Apply client-side filtering only for search (this will require refetching from server)
+  const filteredProducts = products.filter((product) => {
+    if (!searchQuery) return true;
+    const searchLower = searchQuery.toLowerCase();
     return (
-      product.name?.toLowerCase().includes(query) ||
-      product.description?.toLowerCase().includes(query) ||
-      product.category?.toLowerCase().includes(query) ||
-      product.subcategory?.name?.toLowerCase().includes(query)
+      product.name?.toLowerCase().includes(searchLower) ||
+      product.description?.toLowerCase().includes(searchLower) ||
+      (typeof product.subcategory === 'object' && product.subcategory?.name?.toLowerCase().includes(searchLower)) ||
+      product.category?.toLowerCase().includes(searchLower)
     );
   });
 
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    switch (sortOption) {
-      case "price-asc":
-        return parseFloat(a.price.toString()) - parseFloat(b.price.toString());
-      case "price-desc":
-        return parseFloat(b.price.toString()) - parseFloat(a.price.toString());
-      case "name-asc":
-        return a.name?.localeCompare(b.name || '') || 0;
-      case "name-desc":
-        return b.name?.localeCompare(a.name || '') || 0;
-      case "oldest":
-        return (a.id || 0) - (b.id || 0);
-      case "newest":
-      default:
-        return (b.id || 0) - (a.id || 0);
-    }
-  });
-
-  // Paginate after filtering/sorting
-  const paginatedProducts = sortedProducts.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage);
-  const filteredTotal = sortedProducts.length;
+  // If there's a search query, we need to handle pagination differently
+  const isSearching = searchQuery.trim().length > 0;
+  const finalProducts = isSearching ? filteredProducts : displayProducts;
+  const finalTotal = isSearching ? filteredProducts.length : totalProducts;
 
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
@@ -478,8 +467,8 @@ const VendorProduct: React.FC = () => {
 
   // Export to Excel handler
   const handleExportExcel = () => {
-    // Export the currently filtered and sorted products
-    const exportData = sortedProducts.map((product) => ({
+    // Export the currently displayed products
+    const exportData = finalProducts.map((product) => ({
       'Name': product.name,
       'Category': product.category || (typeof product.subcategory === 'object' && product.subcategory?.name) || '',
       'Price': product.price,
@@ -555,18 +544,18 @@ const VendorProduct: React.FC = () => {
             <ProductListSkeleton />
           ) : isError ? (
             <div className="vendor-product__error">{(error as Error).message}</div>
-          ) : paginatedProducts.length > 0 ? (
+          ) : finalProducts.length > 0 ? (
             <>
               <ProductList
-                products={paginatedProducts}
+                products={finalProducts}
                 isMobile={isMobile}
                 onEdit={handleEditProduct}
                 showVendor={false}
               />
-              {filteredTotal > productsPerPage && (
+              {finalTotal > productsPerPage && (
                 <Pagination
                   currentPage={currentPage}
-                  totalPages={Math.ceil(filteredTotal / productsPerPage)}
+                  totalPages={Math.ceil(finalTotal / productsPerPage)}
                   onPageChange={handlePageChange}
                 />
               )}
