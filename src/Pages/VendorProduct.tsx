@@ -3,7 +3,7 @@ import { Sidebar } from '../Components/Sidebar';
 import Header from '../Components/Header';
 import ProductList from '../Components/ProductList';
 import NewProductModal from '../Components/NewProductModalRedesigned';
-import EditProductModal from '../Components/Modal/EditProductModal';
+import EditProductModal from '../Components/Modal/EditProductModalRedesigned';
 import '../Styles/VendorProduct.css';
 import { Product as ApiProduct, NewProductFormData, ProductFormData } from '../types/product';
 import { fetchProducts, createProduct, updateProduct } from '../api/products';
