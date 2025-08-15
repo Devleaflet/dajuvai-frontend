@@ -1,5 +1,39 @@
 import axiosInstance from "./axiosInstance";
 
+// Simple test function to debug API endpoint
+export const testProductAPI = async (categoryId: number, subcategoryId: number) => {
+  console.log('🧪 TESTING PRODUCT API ENDPOINT');
+  console.log('Category ID:', categoryId);
+  console.log('Subcategory ID:', subcategoryId);
+  
+  const testData = new FormData();
+  testData.append('name', 'TEST_PRODUCT');
+  testData.append('subcategoryId', subcategoryId.toString());
+  testData.append('hasVariants', 'false');
+  testData.append('basePrice', '10');
+  testData.append('stock', '1');
+  testData.append('status', 'AVAILABLE');
+  
+  const apiUrl = `/api/categories/${categoryId}/subcategories/${subcategoryId}/products`;
+  console.log('🎯 Test API URL:', apiUrl);
+  
+  try {
+    const response = await axiosInstance.post(apiUrl, testData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    console.log('✅ Test API Success:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Test API Error:', error);
+    console.error('Error Response:', error.response?.data);
+    throw error;
+  }
+};
+
+export interface Product {
+  // Add product properties here
+}
+
 export const fetchProduct = async (url: string) => {
   const response = await axiosInstance.get(url);
   return response.data.data;
@@ -24,166 +58,246 @@ export const fetchReviewOf = async (id: number) => {
   return data;
 };
 
+export const uploadProductImages = async (files: File[]) => {
+  try {
+    console.log('=== IMAGE UPLOAD START ===');
+    console.log('Files to upload:', files.length);
+    
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+    
+    const response = await axiosInstance.post(
+      '/api/product/image/upload',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    
+    console.log('=== IMAGE UPLOAD SUCCESS ===');
+    console.log('Response:', response.data);
+    
+    return response.data;
+  } catch (error: any) {
+    console.error('=== IMAGE UPLOAD ERROR ===');
+    console.error('Error:', error);
+    
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    }
+    throw new Error('Image upload failed');
+  }
+};
+
 export const createProduct = async (
   categoryId: number,
   subcategoryId: number,
-  formData: FormData
+  productData: {
+    name: string;
+    description?: string;
+    basePrice?: number;
+    discount?: number;
+    discountType?: 'PERCENTAGE' | 'FLAT';
+    status?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
+    stock?: number;
+    hasVariants: boolean;
+    variants?: any[];
+    dealId?: number;
+    bannerId?: number;
+  }
 ) => {
+  console.log('🔥 CREATEPRODUCT FUNCTION CALLED');
+  console.log('🔥 Raw params:', { categoryId, subcategoryId, productData });
+  
   try {
     console.log('=== PRODUCT CREATION START ===');
-    console.log('Category ID:', categoryId);
-    console.log('Subcategory ID:', subcategoryId);
-    console.log('FormData entries:', Object.fromEntries(formData.entries()));
+    console.log('Category ID:', categoryId, 'Type:', typeof categoryId);
+    console.log('Subcategory ID:', subcategoryId, 'Type:', typeof subcategoryId);
+    console.log('Product Data:', JSON.stringify(productData, null, 2));
+    console.log('Product Data Keys:', Object.keys(productData));
+    console.log('Has Variants:', productData.hasVariants);
     
-    // Log all form data entries for debugging
-    for (const [key, value] of formData.entries()) {
-      console.log(`FormData ${key}:`, value);
+    if (productData.hasVariants && productData.variants) {
+      console.log('Variants Count:', productData.variants.length);
+      console.log('Variants Data:', JSON.stringify(productData.variants, null, 2));
     }
-
-    // Validate required fields based on hasVariants
-    const hasVariants = formData.get('hasVariants');
-    const name = formData.get('name');
-    const variants = formData.get('variants');
     
-    console.log('Has Variants:', hasVariants);
-    console.log('Product Name:', name);
-    console.log('Variants Data:', variants);
-
-    // Validation for required fields
-    if (!name) {
-      console.error('Validation Error: Product name is required');
+    // Validate required fields
+    if (!productData.name) {
       throw new Error('Product name is required');
     }
-
-    if (!hasVariants) {
-      console.log('Non-variant product validation');
-      const basePrice = formData.get('basePrice');
-      const stock = formData.get('stock');
-      const status = formData.get('status');
-      
-      console.log('Base Price:', basePrice);
-      console.log('Stock:', stock);
-      console.log('Status:', status);
-
-      if (!basePrice || parseFloat(basePrice.toString()) <= 0) {
-        console.error('Validation Error: Base price must be a valid positive number for non-variant products');
-        throw new Error('Base price must be a valid positive number for non-variant products');
+    
+    // Check if categoryId and subcategoryId are valid numbers
+    if (!categoryId || categoryId <= 0) {
+      console.error('❌ Invalid categoryId:', categoryId);
+      throw new Error('Valid category ID is required');
+    }
+    
+    if (!subcategoryId || subcategoryId <= 0) {
+      console.error('❌ Invalid subcategoryId:', subcategoryId);
+      throw new Error('Valid subcategory ID is required');
+    }
+    
+    if (!productData.hasVariants) {
+      // Non-variant product validation
+      if (!productData.basePrice || productData.basePrice <= 0) {
+        throw new Error('Base price is required for non-variant products');
       }
-
-      if (!stock || parseInt(stock.toString()) < 0) {
-        console.error('Validation Error: Stock must be a valid non-negative number for non-variant products');
-        throw new Error('Stock must be a valid non-negative number for non-variant products');
+      if (productData.stock === undefined || productData.stock < 0) {
+        throw new Error('Stock is required for non-variant products');
       }
-
-      if (!status) {
-        console.error('Validation Error: Status is required for non-variant products');
+      if (!productData.status) {
         throw new Error('Status is required for non-variant products');
       }
     } else {
-      console.log('Variant product validation');
-      if (!variants) {
-        console.error('Validation Error: Variants data is required for variant products');
-        throw new Error('Variants data is required for variant products');
-      }
-
-      try {
-        const variantsData = JSON.parse(variants.toString());
-        console.log('Parsed variants data:', variantsData);
-        
-        if (!Array.isArray(variantsData) || variantsData.length === 0) {
-          console.error('Validation Error: Variants must be a non-empty array');
-          throw new Error('Variants must be a non-empty array');
-        }
-
-        // Validate each variant
-        variantsData.forEach((variant: any, index: number) => {
-          console.log(`Validating variant ${index}:`, variant);
-          
-          if (!variant.sku) {
-            console.error(`Validation Error: Variant ${index} missing SKU`);
-            throw new Error(`Variant ${index} missing SKU`);
-          }
-          
-          if (!variant.price || variant.price <= 0) {
-            console.error(`Validation Error: Variant ${index} must have a valid positive price`);
-            throw new Error(`Variant ${index} must have a valid positive price`);
-          }
-          
-          if (!variant.stock || variant.stock < 0) {
-            console.error(`Validation Error: Variant ${index} must have a valid non-negative stock`);
-            throw new Error(`Variant ${index} must have a valid non-negative stock`);
-          }
-          
-          if (!variant.status || !['AVAILABLE', 'OUT_OF_STOCK', 'LOW_STOCK'].includes(variant.status)) {
-            console.error(`Validation Error: Variant ${index} must have a valid status`);
-            throw new Error(`Variant ${index} must have a valid status`);
-          }
-          
-          // Check if variant images are provided in FormData
-          const variantImageKey = `variantImages${index + 1}`;
-          const hasVariantImages = Array.from(formData.entries()).some(([key]) => key === variantImageKey);
-          
-          if (!hasVariantImages) {
-            console.error(`Validation Error: No images provided for variant ${variant.sku}`);
-            throw new Error(`No images provided for variant ${variant.sku}`);
-          }
-        });
-      } catch (parseError) {
-        console.error('Validation Error: Invalid JSON format for variants data:', parseError);
-        throw new Error('Invalid JSON format for variants data');
+      // Variant product validation
+      if (!productData.variants || productData.variants.length === 0) {
+        throw new Error('Variants are required for variant products');
       }
     }
-
-    // Prepare headers
-    const headers: any = {
-      'Content-Type': 'multipart/form-data',
-    };
-
-    console.log('Making API request to:', `/api/categories/${categoryId}/subcategories/${subcategoryId}/products`);
-    console.log('Request headers:', headers);
-
+    
+    // Prepare form data
+    const formData = new FormData();
+    formData.append('name', productData.name);
+    formData.append('subcategoryId', subcategoryId.toString());
+    formData.append('hasVariants', productData.hasVariants.toString());
+    
+    if (productData.description) {
+      formData.append('description', productData.description);
+    }
+    
+    if (!productData.hasVariants) {
+      // Non-variant product fields
+      if (productData.basePrice) {
+        formData.append('basePrice', productData.basePrice.toString());
+      }
+      if (productData.stock !== undefined) {
+        formData.append('stock', productData.stock.toString());
+      }
+      if (productData.status) {
+        formData.append('status', productData.status);
+      }
+      if (productData.discount) {
+        formData.append('discount', productData.discount.toString());
+      }
+      if (productData.discountType) {
+        formData.append('discountType', productData.discountType);
+      }
+    } else {
+      // Variant product fields
+      formData.append('variants', JSON.stringify(productData.variants));
+    }
+    
+    if (productData.dealId) {
+      formData.append('dealId', productData.dealId.toString());
+    }
+    
+    if (productData.bannerId) {
+      formData.append('bannerId', productData.bannerId.toString());
+    }
+    
+    // Log all FormData entries
+    console.log('=== FINAL FORM DATA ENTRIES ===');
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
+    }
+    
+    const apiUrl = `/api/categories/${categoryId}/subcategories/${subcategoryId}/products`;
+    console.log('=== MAKING API REQUEST ===');
+    console.log('API URL:', apiUrl);
+    console.log('Request Method: POST');
+    console.log('Content-Type: multipart/form-data');
+    console.log('FormData size:', Array.from(formData.entries()).length, 'entries');
+    
+    // Test if the endpoint exists first
+    console.log('🧪 Testing API endpoint accessibility...');
+    
+    // Try a simple test first to see if the endpoint is reachable
+    try {
+      console.log('🔍 Testing with minimal data...');
+      const testFormData = new FormData();
+      testFormData.append('name', 'TEST_PRODUCT');
+      testFormData.append('subcategoryId', subcategoryId.toString());
+      testFormData.append('hasVariants', 'false');
+      testFormData.append('basePrice', '10');
+      testFormData.append('stock', '1');
+      testFormData.append('status', 'AVAILABLE');
+      
+      console.log('🧪 Test FormData entries:');
+      for (const [key, value] of testFormData.entries()) {
+        console.log(`  ${key}: ${value}`);
+      }
+      
+      // Use the test data instead of the full form data for now
+      console.log('🚀 Making test API call...');
+    } catch (testError) {
+      console.error('❌ Test setup failed:', testError);
+    }
+    
     // Make the API call
     const response = await axiosInstance.post(
-      `/api/categories/${categoryId}/subcategories/${subcategoryId}/products`,
+      apiUrl,
       formData,
-      { headers }
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 30000, // 30 second timeout
+      }
     );
     
     console.log('=== PRODUCT CREATION SUCCESS ===');
-    console.log('Response status:', response.status);
-    console.log('Response data:', response.data);
-    console.log('=== PRODUCT CREATION END ===');
+    console.log('Response Status:', response.status);
+    console.log('Response Headers:', response.headers);
+    console.log('Response Data:', JSON.stringify(response.data, null, 2));
     
     return response.data;
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('=== PRODUCT CREATION ERROR ===');
-    console.error('Error type:', typeof error);
-    console.error('Error object:', error);
+    console.error('Error Type:', typeof error);
+    console.error('Error Name:', error.name);
+    console.error('Error Message:', error.message);
+    console.error('Full Error Object:', error);
     
-    if (typeof error === 'object' && error !== null && 'response' in error) {
-      const err = error as { response?: { status?: number; data?: any } };
-      console.error('Response status:', err.response?.status);
-      console.error('Response data:', err.response?.data);
+    if (error.response) {
+      console.error('=== ERROR RESPONSE DETAILS ===');
+      console.error('Status:', error.response.status);
+      console.error('Status Text:', error.response.statusText);
+      console.error('Headers:', error.response.headers);
+      console.error('Data:', error.response.data);
+      console.error('Config:', error.response.config);
       
-      if (err.response?.status === 403) {
-        console.error('Authorization Error: Not authorized to create product');
-        throw new Error('Not authorized to create product. Please check your permissions.');
-      } else if (err.response?.status === 401) {
-        console.error('Authentication Error: Authentication failed');
-        throw new Error('Authentication failed. Please login again.');
-      } else if (err.response?.status === 400) {
-        console.error('Bad Request Error:', err.response?.data?.message);
-        throw new Error(err.response?.data?.message || 'Bad request - please check your input data');
-      } else if (err.response?.status === 404) {
-        console.error('Not Found Error:', err.response?.data?.message);
-        throw new Error(err.response?.data?.message || 'Category or subcategory not found');
-      } else if (err.response?.data?.message) {
-        console.error('API Error:', err.response.data.message);
-        throw new Error(err.response.data.message);
+      if (error.response.status === 401) {
+        throw new Error('Unauthorized: Please login again');
+      } else if (error.response.status === 400) {
+        const errorMsg = error.response?.data?.message || 'Bad request - please check your input data';
+        console.error('400 Error Message:', errorMsg);
+        throw new Error(errorMsg);
+      } else if (error.response.status === 404) {
+        const errorMsg = error.response?.data?.message || 'Category or subcategory not found';
+        console.error('404 Error Message:', errorMsg);
+        throw new Error(errorMsg);
+      } else if (error.response.status === 500) {
+        const errorMsg = error.response?.data?.message || 'Internal Server Error';
+        console.error('500 Error Message:', errorMsg);
+        throw new Error(errorMsg);
+      } else if (error.response?.data?.message) {
+        console.error('API Error Message:', error.response.data.message);
+        throw new Error(error.response.data.message);
       }
+    } else if (error.request) {
+      console.error('=== REQUEST ERROR (No Response) ===');
+      console.error('Request:', error.request);
+      throw new Error('Network error: No response from server');
+    } else {
+      console.error('=== SETUP ERROR ===');
+      console.error('Error setting up request:', error.message);
     }
     
-    console.error('Unexpected error:', error);
     throw error;
   }
 };
@@ -192,44 +306,73 @@ export const updateProduct = async (
   productId: number,
   categoryId: number,
   subcategoryId: number,
-  formData: FormData
+  productData: {
+    name: string;
+    description?: string;
+    basePrice?: number;
+    discount?: number;
+    discountType?: 'PERCENTAGE' | 'FLAT';
+    status?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
+    stock?: number;
+    hasVariants: boolean;
+    variants?: any[];
+    dealId?: number;
+    bannerId?: number;
+  }
 ) => {
   try {
-    console.log(`Updating product ${productId} with formData:`, Object.fromEntries(formData.entries()));
+    console.log(`Updating product ${productId} with data:`, productData);
     
-    const basePrice = formData.get('basePrice');
-    if (!basePrice || parseFloat(basePrice.toString()) <= 0) {
-      throw new Error('Base price must be a valid positive number');
+    // Prepare form data
+    const formData = new FormData();
+    formData.append('name', productData.name);
+    formData.append('subcategoryId', subcategoryId.toString());
+    formData.append('hasVariants', productData.hasVariants.toString());
+    
+    if (productData.description) {
+      formData.append('description', productData.description);
     }
-
-    // Debug formData contents
-    for (const [key, value] of formData.entries()) {
-      console.log(`formData ${key}: ${value}`);
+    
+    if (!productData.hasVariants) {
+      // Non-variant product fields
+      if (productData.basePrice) {
+        formData.append('basePrice', productData.basePrice.toString());
+      }
+      if (productData.stock !== undefined) {
+        formData.append('stock', productData.stock.toString());
+      }
+      if (productData.status) {
+        formData.append('status', productData.status);
+      }
+      if (productData.discount) {
+        formData.append('discount', productData.discount.toString());
+      }
+      if (productData.discountType) {
+        formData.append('discountType', productData.discountType);
+      }
+    } else {
+      // Variant product fields
+      formData.append('variants', JSON.stringify(productData.variants));
     }
-
-    // Ensure vendorId is included and matches the authenticated vendor
-    const vendorId = formData.get('vendorId');
-    if (!vendorId) {
-      throw new Error('Vendor ID is required for product update');
+    
+    if (productData.dealId) {
+      formData.append('dealId', productData.dealId.toString());
     }
-
-    // Prepare headers
-    const headers: any = {
-      'Content-Type': 'multipart/form-data',
-    };
-
-    // Do not set Authorization header manually
-    console.log('Update request headers:', headers);
-    console.log('Update URL:', `/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}`);
-
-    // Fetch product details before editing
-    const product = await fetchProduct(`/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}`);
-    console.log(product.vendorId); // Should be 7 for your vendor
+    
+    if (productData.bannerId) {
+      formData.append('bannerId', productData.bannerId.toString());
+    }
+    
+    console.log('Making API request to update product:', `/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}`);
 
     const response = await axiosInstance.put(
       `/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}`,
       formData,
-      { headers }
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
     );
     
     console.log('Product updated successfully:', response.data);

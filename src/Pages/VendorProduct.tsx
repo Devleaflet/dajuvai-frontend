@@ -2,11 +2,11 @@ import React, { useState} from 'react';
 import { Sidebar } from '../Components/Sidebar';
 import Header from '../Components/Header';
 import ProductList from '../Components/ProductList';
-import ProductModal from '../Components/ProductModal';
+import NewProductModal from '../Components/NewProductModalRedesigned';
 import EditProductModal from '../Components/Modal/EditProductModal';
 import '../Styles/VendorProduct.css';
-import { Product as ApiProduct, ProductFormData } from '../types/product';
-import { createProduct, fetchProducts, updateProduct } from '../api/products';
+import { Product as ApiProduct, NewProductFormData, ProductFormData } from '../types/product';
+import { fetchProducts, createProduct, updateProduct } from '../api/products';
 import { useVendorAuth } from '../context/VendorAuthContext';
 import Pagination from '../Components/Pagination';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -152,7 +152,15 @@ const VendorProduct: React.FC = () => {
     enabled: !!authState.vendor?.id && !!authState.token
   });
 
-  // Mutation for adding a product
+  // Handle product creation success
+  const handleProductSubmit = (success: boolean) => {
+    if (success) {
+      queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
+      toast.success('Product created successfully!');
+    }
+  };
+
+  // Mutation for adding a product (keeping for compatibility)
   const addProductMutation = useMutation({
     mutationFn: async (productData: ProductFormData) => {
       console.log('=== VENDOR PRODUCT CREATION START ===');
@@ -261,16 +269,8 @@ const VendorProduct: React.FC = () => {
       }
 
       console.log('VendorProduct: Making API call to createProduct');
-      const result = await createProduct(
-        productData.categoryId,
-        productData.subcategoryId,
-        formData
-      );
-      
-      console.log('VendorProduct: API call completed successfully');
-      console.log('=== VENDOR PRODUCT CREATION END ===');
-      
-      return result;
+      // This is legacy code - new products use NewProductModal
+      throw new Error('Use NewProductModal for creating products');
     },
     onSuccess: (data) => {
       console.log('Product created successfully:', data);
@@ -323,7 +323,22 @@ const VendorProduct: React.FC = () => {
       if (productData.inventory && Array.isArray(productData.inventory)) {
         formData.append("inventory", JSON.stringify(productData.inventory));
       }
-      return updateProduct(productId, categoryId, subcategoryId, formData);
+      // Convert to new API format
+      const newProductData = {
+        name: String(productData.name),
+        description: String(productData.description),
+        basePrice: productData.basePrice ? (typeof productData.basePrice === 'string' ? parseFloat(productData.basePrice) : productData.basePrice) : undefined,
+        discount: productData.discount ? (typeof productData.discount === 'string' ? parseFloat(productData.discount) : productData.discount) : undefined,
+        discountType: productData.discountType || undefined,
+        status: productData.status,
+        stock: productData.stock,
+        hasVariants: productData.hasVariants,
+        variants: productData.variants,
+        dealId: productData.dealId || undefined,
+        bannerId: productData.bannerId || undefined,
+      };
+      
+      return updateProduct(productId, categoryId, subcategoryId, newProductData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -375,23 +390,16 @@ const VendorProduct: React.FC = () => {
         }
       : { id: 0, name: '', image: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     const apiProduct: ApiProduct = {
-      id: product.id,
-      name: product.name || '',
-      description: product.description || '',
+      ...product,
       basePrice: typeof product.basePrice === 'number' ? product.basePrice : (product.basePrice ? parseFloat(product.basePrice.toString()) : (typeof product.price === 'string' ? parseFloat(product.price) : typeof product.price === 'number' ? product.price : 0)),
-      stock: product.stock || 0,
       discount: discount,
       discountType: (product.discountType === 'PERCENTAGE' ? 'PERCENTAGE' : 'FLAT') as 'PERCENTAGE' | 'FLAT',
-      size: product.size || [],
       status: (product.status === 'OUT_OF_STOCK' ? 'OUT_OF_STOCK' : product.status === 'LOW_STOCK' ? 'LOW_STOCK' : 'AVAILABLE'),
       productImages: product.productImages || (product.image ? [product.image] : []),
       inventory: [], // fallback empty array
       vendorId: 0, // fallback 0
-      brand_id: product.brand_id || null,
-      dealId: product.dealId || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      categoryId: product.categoryId || 0,
       subcategory: subcategory,
       vendor: typeof product.vendor === 'object' && product.vendor !== null ? product.vendor : {
         id: 0,
@@ -406,9 +414,11 @@ const VendorProduct: React.FC = () => {
       },
       brand: null,
       deal: null,
+      hasVariants: false, // Default to false for existing products
+      variants: [], // Default empty array
       price: typeof product.price === 'number' ? product.price : (product.price ? parseFloat(product.price.toString()) : 0),
       image: product.image || '',
-    };
+    } as ApiProduct;
     setEditingProduct(apiProduct);
     setShowEditModal(true);
   };
@@ -527,10 +537,10 @@ const VendorProduct: React.FC = () => {
             </button>
           </div>
           {showAddModal && (
-            <ProductModal
+            <NewProductModal
               isOpen={showAddModal}
               onClose={() => setShowAddModal(false)}
-              onSubmit={handleAddProduct}
+              onSubmit={handleProductSubmit}
             />
           )}
           {showEditModal && editingProduct && (

@@ -111,6 +111,10 @@ export interface ProductFormData {
 }
 
 // New interfaces for the updated API
+export interface Image {
+  url: string;
+}
+
 export interface Attribute {
   attributeType: string;
   attributeValues: string[];
@@ -122,11 +126,23 @@ export interface ProductVariant {
   stock: number;
   status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
   attributes?: Attribute[];
-  images?: (File | string)[];
+  images?: Image[];
 }
 
-export interface Image {
-  url: string;
+export interface NewProductFormData {
+  name: string;
+  description?: string;
+  basePrice?: number;
+  discount?: number;
+  discountType?: 'PERCENTAGE' | 'FLAT';
+  status?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
+  stock?: number;
+  hasVariants: boolean;
+  variants?: ProductVariant[];
+  subcategoryId: number;
+  dealId?: number;
+  bannerId?: number;
+  productImages?: File[];
 }
 
 export interface ApiProduct {
@@ -180,4 +196,9 @@ export interface ApiProduct {
     id: number;
     title: string;
   } | null;
+  hasVariants: boolean;
+  variants?: ProductVariant[];
+  // Compatibility fields
+  price?: number;
+  image?: string;
 }
