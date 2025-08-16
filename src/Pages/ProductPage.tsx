@@ -1,6 +1,25 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+
+interface Category {
+  id: number;
+  name: string;
+  createdBy?: {
+    id: number;
+    username: string;
+  };
+  subcategories?: Array<{
+    id: number;
+    name: string;
+  }>;
+}
+
+interface Subcategory {
+  id: number;
+  name: string;
+  category?: Category;
+}
 import '../Styles/ProductPage.css';
 import Navbar from '../Components/Navbar';
 import Footer from '../Components/Footer';
@@ -37,7 +56,13 @@ interface ReviewsResponse {
 }
 
 const ProductPage = () => {
-  const { id } = useParams<{ id: string }>();
+  // Extract productId, categoryId, and subcategoryId from URL
+  const { id: productId, categoryId, subcategoryId } = useParams<{ 
+    id: string; 
+    categoryId?: string; 
+    subcategoryId?: string 
+  }>();
+  const id = productId; // For backward compatibility
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
@@ -60,7 +85,8 @@ const ProductPage = () => {
   const { token, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Fetch product data using React Query
+  // Fetch product data using React Query with the new API structure
+  // Fetch product data
   const { data: productData, isLoading: isProductLoading } = useQuery({
     queryKey: ['product', id],
     queryFn: async () => {
@@ -73,81 +99,149 @@ const ProductPage = () => {
         throw new Error('Product not found');
       }
 
-      // Handle variants - use first variant for pricing if basePrice is null
-      const firstVariant = apiProduct.variants?.[0];
-      const basePrice = parseFloat(apiProduct.basePrice) || parseFloat(firstVariant?.basePrice) || parseFloat(firstVariant?.price) || 0;
-      const discount = parseFloat(apiProduct.discount) || 0;
-      let price = basePrice;
-      let savings = '0';
-      
-      if (apiProduct.discountType === 'PERCENTAGE') {
-        savings = (basePrice * (discount / 100)).toFixed(2);
-        price = basePrice - parseFloat(savings);
-      } else if (apiProduct.discountType === 'FLAT') {
-        savings = discount.toFixed(2);
-        price = basePrice - discount;
-      }
-
-      // Extract images from variants and productImages
-      // Handle both string arrays and object arrays for backward compatibility
+      // Process variants and images
       const variantImages: string[] = [];
+      let allVariants = [];
+      let defaultVariant = null;
       
-      // Extract images from all variants (not just first variant)
+      // Process each variant
       if (apiProduct.variants && Array.isArray(apiProduct.variants)) {
-        apiProduct.variants.forEach((variant: any) => {
-          // Check for variantImages field (new format)
+        allVariants = apiProduct.variants.map((variant: any) => {
+          // Parse variant images
+          const variantImgUrls: string[] = [];
           if (variant.variantImages && Array.isArray(variant.variantImages)) {
-            variant.variantImages.forEach((img: string | { url?: string; imageUrl?: string }) => {
-              const imageUrl = typeof img === 'string' ? img : img.imageUrl || img.url || '';
-              if (imageUrl && !variantImages.includes(imageUrl)) {
-                variantImages.push(imageUrl);
+            variant.variantImages.forEach((img: string) => {
+              try {
+                const parsedImg = typeof img === 'string' ? JSON.parse(img) : img;
+                const imgUrl = parsedImg.url || parsedImg.imageUrl || '';
+                if (imgUrl) {
+                  variantImgUrls.push(imgUrl);
+                  if (!variantImages.includes(imgUrl)) {
+                    variantImages.push(imgUrl);
+                  }
+                }
+              } catch (e) {
+                console.error('Error parsing variant image:', e);
               }
             });
           }
-          // Also check for legacy images field
-          if (variant.images && Array.isArray(variant.images)) {
-            variant.images.forEach((img: string | { url?: string; imageUrl?: string }) => {
-              const imageUrl = typeof img === 'string' ? img : img.imageUrl || img.url || '';
-              if (imageUrl && !variantImages.includes(imageUrl)) {
-                variantImages.push(imageUrl);
-              }
-            });
+
+          // Calculate variant pricing
+          const basePrice = parseFloat(variant.basePrice) || 0;
+          const discount = parseFloat(variant.discount) || 0;
+          let price = basePrice;
+          let savings = 0;
+          
+          if (variant.discountType === 'PERCENTAGE') {
+            savings = basePrice * (discount / 100);
+            price = basePrice - savings;
+          } else if (variant.discountType === 'FLAT') {
+            savings = discount;
+            price = basePrice - discount;
           }
+
+          const variantData = {
+            ...variant,
+            variantImgUrls,
+            calculatedPrice: price,
+            calculatedSavings: savings,
+            originalPrice: basePrice,
+            stock: variant.stock || 0,
+            status: variant.status || 'AVAILABLE'
+          };
+
+          // Set first variant as default
+          if (!defaultVariant) {
+            defaultVariant = variantData;
+          }
+
+          return variantData;
         });
       }
       
-      const productImages = apiProduct.productImages?.map(img => 
-        typeof img === 'string' ? img : img.imageUrl || img.url || ''
-      ).filter(Boolean) || [];
+      // Process product images
+      const productImages = Array.isArray(apiProduct.productImages) 
+        ? apiProduct.productImages.map((img: any) => 
+            typeof img === 'string' ? img : img.url || img.imageUrl || ''
+          ).filter(Boolean)
+        : [];
       
-      const allImages = [...productImages, ...variantImages].filter(Boolean);
+      const allImages = [...new Set([...productImages, ...variantImages])].filter(Boolean);
 
-      // Extract size options from variants
-      const sizeOptions = apiProduct.variants?.map(variant => 
-        variant.attributes?.find(attr => attr.name === 'size')?.value || variant.sku
-      ).filter(Boolean) || [];
+      // Calculate product-level pricing if no variants
+      let productPrice = 0;
+      let productOriginalPrice = 0;
+      
+      if (apiProduct.hasVariants) {
+        // Use default variant for pricing if available
+        if (defaultVariant) {
+          productPrice = defaultVariant.calculatedPrice;
+          productOriginalPrice = defaultVariant.originalPrice;
+        }
+      } else {
+        // Use product-level pricing
+        const basePrice = parseFloat(apiProduct.basePrice) || 0;
+        const discount = parseFloat(apiProduct.discount) || 0;
+        
+        productOriginalPrice = basePrice;
+        productPrice = basePrice;
+        
+        if (apiProduct.discountType === 'PERCENTAGE') {
+          productPrice = basePrice - (basePrice * (discount / 100));
+        } else if (apiProduct.discountType === 'FLAT') {
+          productPrice = basePrice - discount;
+        }
+      }
+
+      // Extract size and color options from variants
+      const sizeOptions = new Set<string>();
+      const colorOptions = new Set<{name: string, img: string}>();
+      
+      allVariants.forEach((variant: any) => {
+        if (variant.attributes) {
+          Object.entries(variant.attributes).forEach(([key, value]) => {
+            if (typeof value === 'string') {
+              if (key.toLowerCase().includes('size')) {
+                sizeOptions.add(value);
+              } else if (key.toLowerCase().includes('color')) {
+                colorOptions.add({
+                  name: value,
+                  img: variant.variantImgUrls?.[0] || ''
+                });
+              }
+            }
+          });
+        }
+      });
 
       return {
         product: {
           id: apiProduct.id,
           name: apiProduct.name,
           description: apiProduct.description,
-          price: price.toFixed(2),
-          originalPrice: basePrice > price ? basePrice.toFixed(2) : undefined,
-          rating: 0,
-          ratingCount: '0',
-          image: allImages[0] || '',
+          price: productPrice.toFixed(2),
+          originalPrice: productOriginalPrice > productPrice ? productOriginalPrice.toFixed(2) : undefined,
+          rating: 0, // Will be populated from reviews
+          ratingCount: '0', // Will be populated from reviews
+          image: allImages[0] || defaultProductImage,
           brand: apiProduct.brand?.name || 'Unknown Brand',
-          category: { id: apiProduct.subcategory?.id || 0, name: apiProduct.subcategory?.name || 'Category' },
-          subcategory: { id: apiProduct.subcategory?.id || 0, name: apiProduct.subcategory?.name || 'Subcategory' },
+          category: { 
+            id: apiProduct.category?.id || 0, 
+            name: apiProduct.category?.name || 'Category' 
+          },
+          subcategory: { 
+            id: apiProduct.subcategory?.id || 0, 
+            name: apiProduct.subcategory?.name || 'Subcategory' 
+          },
           vendor: apiProduct.vendor?.businessName || 'Unknown Vendor',
           productImages: allImages,
-          colors: [] as { name: string; img: string }[],
-          memoryOptions: sizeOptions,
-          stock: apiProduct.stock || firstVariant?.stock || 0,
+          colors: Array.from(colorOptions),
+          memoryOptions: Array.from(sizeOptions),
+          stock: apiProduct.stock || defaultVariant?.stock || 0,
           isBestSeller: false,
-          variants: apiProduct.variants || [],
+          variants: allVariants,
           hasVariants: apiProduct.hasVariants || false,
+          selectedVariant: defaultVariant
         },
         vendorId: apiProduct.vendorId || null
       };
@@ -179,6 +273,32 @@ const ProductPage = () => {
 
   const product = productData?.product;
   const vendorId = productData?.vendorId;
+
+  // Fetch category data
+  const { data: categoryData } = useQuery<{ data: Category }>({
+    queryKey: ['category', categoryId],
+    queryFn: async () => {
+      if (!categoryId) return null;
+      try {
+        const response = await axiosInstance.get(`/api/categories/${categoryId}`);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching category:', error);
+        return null;
+      }
+    },
+    enabled: !!categoryId,
+    staleTime: 5 * 60 * 1000
+  });
+
+  // Find the subcategory from the category data if available
+  const subcategory = categoryData?.data?.subcategories?.find(
+    (sub: any) => sub.id === Number(subcategoryId)
+  );
+
+  // Fallback to product data if URL params are not available
+  const displayCategory = categoryData?.data || product?.category;
+  const displaySubcategory = subcategory || product?.subcategory;
   const reviews = (reviewsData?.reviews || []).map((review: Review) => ({
     ...review,
     userName: review.user?.username || review.user?.email?.split('@')[0] || 'Anonymous',
@@ -198,11 +318,50 @@ const ProductPage = () => {
     }
   }, [product]);
 
+  // Handle image selection
+  const handleImageSelect = (index: number) => {
+    setSelectedImageIndex(index);
+  };
+
+  // Get current images to display (variant images or product images)
+  const getCurrentImages = () => {
+    if (selectedVariant?.variantImgUrls?.length > 0) {
+      return selectedVariant.variantImgUrls;
+    }
+    return product?.productImages || [];
+  };
+
+  // Get current stock based on selected variant or product
+  const getCurrentStock = () => {
+    if (selectedVariant) {
+      return selectedVariant.stock || 0;
+    }
+    return product?.stock || 0;
+  };
+
+  // Get current price based on selected variant or product
+  const getCurrentPrice = () => {
+    if (selectedVariant) {
+      return selectedVariant.calculatedPrice || 0;
+    }
+    return parseFloat(product?.price || '0');
+  };
+
+  // Get original price based on selected variant or product
+  const getOriginalPrice = () => {
+    if (selectedVariant) {
+      return selectedVariant.originalPrice || selectedVariant.calculatedPrice || 0;
+    }
+    return parseFloat(product?.originalPrice || product?.price || '0');
+  };
+
   // Handle variant selection
   const handleVariantSelect = (variant: any) => {
     setSelectedVariant(variant);
-    // Update images when variant changes
-    if (variant.images && variant.images.length > 0) {
+    // Reset to first image when variant changes
+    if (variant.variantImgUrls && variant.variantImgUrls.length > 0) {
+      setSelectedImageIndex(0);
+    } else if (product?.productImages?.length > 0) {
       setSelectedImageIndex(0);
     }
   };
@@ -313,13 +472,13 @@ const ProductPage = () => {
     : product.productImages?.[selectedImageIndex] || defaultProductImage;
 
   return (
-    <>
+    <div className="app">
       <Navbar />
-      <div className="product-page">
+      <main className="product-page">
         <div className="product-page__container">
           <div className="product-page__content">
-            <div className="product-gallery">
-              <div className="product-gallery__images">
+            <div className="product-gallery" style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
+              <div className="product-gallery__images" style={{ flex: 1 }}>
                 <div 
                   className="product-gallery__main-image"
                   ref={mainImageRef}
@@ -342,16 +501,14 @@ const ProductPage = () => {
                       display: 'block',
                       userSelect: 'none',
                       transition: 'transform 0.2s cubic-bezier(0.4,0,0.2,1)',
-                      // Remove in-place zoom
                       transform: 'scale(1)',
                       transformOrigin: 'center center',
                     }}
                   />
-                  {/* Zoom box overlay on the right, over product info */}
                   {isZoomActive && (
                     <div
                       style={{
-                        position: 'fixed', // Use fixed to overlay anywhere
+                        position: 'fixed',
                         left: mainImageRef.current ? mainImageRef.current.getBoundingClientRect().right + 32 : '60%',
                         top: mainImageRef.current ? mainImageRef.current.getBoundingClientRect().top : 100,
                         width: `${ZOOM_BOX_SIZE}px`,
@@ -374,8 +531,6 @@ const ProductPage = () => {
                   )}
                 </div>
 
-                {/* Clean up: Remove always-false blocks */}
-
                 {product.productImages && product.productImages.length > 1 && (
                   <div className="product-gallery__thumbnails">
                     {product.productImages.map((image: string, index: number) => (
@@ -396,198 +551,305 @@ const ProductPage = () => {
                   </div>
                 )}
               </div>
+            </div>
+            
+            <div className="product-info" style={{ 
+              flex: 1,
+              padding: '0 20px',
+              maxWidth: '600px'
+            }}>
+              <h1 style={{
+                fontSize: '40px',
+                fontWeight: '700',
+                marginBottom: '20px',
+                color: '#1a1a1a',
+                lineHeight: '1.3',
+                letterSpacing: '-0.3px'
+              }}>
+                {product.name}
+              </h1>
               
-              <div className="product-info">
-                <div className="product-info__badges">
-                  {product.isBestSeller && (
-                    <span className="product-info__badge product-info__badge--bestseller">
-                      Best Seller
-                    </span>
-                  )}
-                  <span className="product-info__badge product-info__badge--category">
-                    {product.category?.name || 'Category'}
-                  </span>
+              {product.description && (
+                <div style={{
+                  marginBottom: '25px',
+                  fontSize: '16px',
+                  lineHeight: '1.6',
+                  color: '#4a4a4a'
+                }}>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    marginBottom: '10px',
+                    color: '#333'
+                  }}>Description</h3>
+                  <p style={{ margin: 0 }}>{product.description}</p>
                 </div>
-                <h1 className="product-info__brand">{product.brand || 'Unknown Brand'}</h1>
-                <h2 className="product-info__title">{product.name}</h2>
-                <p className="product-info__description">{product.description}</p>
-                <div className="product-rating">
-                  <span className="product-rating__score">{averageRating.toFixed(1)}</span>
-                  <div className="product-rating__stars">
-                    {Array(5).fill('★').map((star, i) => (
-                      <span key={i} style={{ color: i < Math.round(averageRating) ? '#fbbf24' : '#d1d5db' }}>
-                        {star}
-                      </span>
-                    ))}
-                  </div>
-                  <span className="product-rating__count">({ratingCount} ratings)</span>
-                </div>
-                <div className="product-price">
-                  <span className="product-price__current">Rs.{selectedVariant?.price || product.price}</span>
-                  {product.originalPrice && (
-                    <>
-                      <span className="product-price__original">Rs.{product.originalPrice}</span>
-                      <span className="product-price__savings">
-                        Save Rs.{(parseFloat(String(product.originalPrice)) - parseFloat(String(selectedVariant?.price || product.price))).toFixed(2)}
-                      </span>
-                    </>
-                  )}
-                  <span className="product-price__vat">Inclusive of all taxes</span>
-                </div>
-                <div className="product-options">
-                  {/* Variant Selection */}
-                  {product.hasVariants && product.variants && product.variants.length > 0 && (
-                    <div className="product-options__group">
-                      <label className="product-options__label">Variants:</label>
-                      <div className="product-options__variants">
-                        {product.variants.map((variant: any) => (
-                          <button
-                            key={variant.id}
-                            className={`product-options__variant ${
-                              selectedVariant?.id === variant.id ? 'product-options__variant--active' : ''
-                            }`}
-                            onClick={() => handleVariantSelect(variant)}
-                          >
-                            <div className="product-options__variant-info">
-                              <span className="product-options__variant-sku">{variant.sku}</span>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {product.colors && product.colors.length > 0 && (
-                    <div className="product-options__group">
-                      <label className="product-options__label">Color: {selectedColor}</label>
-                      <div className="product-options__colors">
-                        {product.colors.map((color: { name: string; img: string }) => (
-                          <button
-                            key={color.name}
-                            className={`product-options__color ${
-                              selectedColor === color.name ? 'product-options__color--active' : ''
-                            }`}
-                            onClick={() => setSelectedColor(color.name)}
-                          >
-                            <img src={color.img} alt={color.name} />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="product-quantity">
-                  <label className="product-quantity__label">Quantity:</label>
-                  <div className="product-quantity__selector">
-                    <button
-                      className="product-quantity__button"
-                      onClick={() => handleQuantityChange(false)}
-                      disabled={quantity <= 1}
-                    >
-                      −
-                    </button>
-                    <span className="product-quantity__value">{quantity}</span>
-                    <button
-                      className="product-quantity__button"
-                      onClick={() => {
-                        const currentStock = selectedVariant?.stock || product.stock || 10;
-                        if (quantity >= currentStock) {
-                          showNotification(`Only ${currentStock} item${currentStock > 1 ? 's' : ''} in stock`);
-                          return;
+              )}
+              
+              <div style={{
+                marginBottom: '20px',
+                fontSize: '14px',
+                color: '#666',
+                display: 'flex',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '8px'
+              }}>
+                <span>Category: </span>
+                <Link 
+                  to={`/category/${displayCategory?.id}`}
+                  style={{
+                    color: '#0066cc',
+                    textDecoration: 'none',
+                    ':hover': {
+                      textDecoration: 'underline'
+                    }
+                  } as React.CSSProperties}
+                >
+                  {displayCategory?.name || 'Uncategorized'}
+                </Link>
+                {displaySubcategory && (
+                  <>
+                    <span>›</span>
+                    <Link 
+                      to={`/category/${displayCategory?.id}?subcategory=${displaySubcategory.id}`}
+                      style={{
+                        color: '#0066cc',
+                        textDecoration: 'none',
+                        ':hover': {
+                          textDecoration: 'underline'
                         }
-                        handleQuantityChange(true);
-                      }}
-                      disabled={quantity >= Math.min(selectedVariant?.stock || product.stock || 10, 10)}
+                      } as React.CSSProperties}
                     >
-                      +
-                    </button>
-                  </div>
-                  <div className="product-quantity__stock">
-                    In stock: {selectedVariant?.stock || product.stock}
-                  </div>
-                </div>
-                <div className="product-actions">
-                  {/* <button
-                    className="product-actions__button product-actions__button--primary"
-                    style={{ order: 1 }}
-                    onClick={handleBuyNow}
-                  >
-                    Buy Now
-                  </button> */}
-                  <button
-                    className="product-actions__button product-actions__button--primary"
-                    style={{ order: 2 }}
-                    onClick={handleAddToCart}
-                  >
-                    Add to Cart
-                  </button>
-                  <button
-                    className="product-actions__button product-actions__button--secondary"
-                    style={{ order: 3 }}
-                    onClick={handleAddToWishlist}
-                  >
-                    Add to Wishlist
-                  </button>
-                </div>
-                <div className="seller-info">
-                  <h3 className="seller-info__title">Seller Information</h3>
-                  <div className="seller-info__identity">
-                    <div className="seller-info__icon">
-                      {(product.vendor || 'Unknown Vendor').charAt(0)}
-                    </div>
-                    <h4 className="seller-info__name">
-                      {vendorId !== null ? (
-                        <Link to={`/vendor/${vendorId.toString()}`} className="seller-info__link">
-                          {product.vendor || 'Unknown Vendor'}
-                        </Link>
-                      ) : (
-                        <span>{product.vendor || 'Unknown Vendor'}</span>
-                      )}
-                    </h4>
-                  </div>
-                  <div className="seller-info__details">
-                    <div className="seller-info__detail">
-                      <span className="seller-info__checkmark">✓</span>
-                      <span>Partner Since 4+ Years</span>
-                    </div>
-                    <div className="seller-info__detail">
-                      <span className="seller-info__checkmark">✓</span>
-                      <span>Great Recent Rating</span>
-                    </div>
-                    <div className="seller-info__detail">
-                      <span className="seller-info__checkmark">✓</span>
-                      <span>Ships on Time</span>
-                    </div>
-                  </div>
+                      {displaySubcategory.name}
+                    </Link>
+                  </>
+                )}
+              </div>
+              
+              {product.hasVariants && product.variants && product.variants.length > 1 && (
+                <div className="product-info__variants" >
+                  <h4 style={{ marginBottom: '10px', fontSize: '16px', fontWeight: '600' }}>Available Options:</h4>
+                  <div className="product-info__variant-options" style={{ 
+                    display: 'flex', 
+                    flexDirection: 'row',
+                    gap: '10px',
+                    marginBottom: '20px'
+                  }}>
+                    {product.variants.map((variant: any) => (
+                      <div key={variant.id} style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        gap: '5px',
+                        padding: '10px',
+                        border: selectedVariant?.id === variant.id ? '1px solid #007bff' : '1px solid #ddd',
+                        borderRadius: '4px',
+                        backgroundColor: variant.stock <= 0 ? '#f8f9fa' : '#fff',
+                        opacity: variant.stock <= 0 ? 0.7 : 1,
+                        cursor: variant.stock <= 0 ? 'not-allowed' : 'pointer'
+                      }}
+                      onClick={() => variant.stock > 0 && handleVariantSelect(variant)}
+                      >
+                        <div style={{ fontWeight: '500' }}>
+                          {Object.entries(variant.attributes || {})
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join(', ')}
+                        </div>
+                        <div style={{ color: '#28a745', fontWeight: '600' }}>
+                          ${variant.calculatedPrice?.toFixed(2) || '0.00'}
+                        </div>
+                        {variant.stock <= 0 && (
+                          <div style={{ color: '#dc3545', fontSize: '14px' }}>Out of Stock</div>
+                        )}
+                      </div>
+                  ))}
                 </div>
               </div>
+            )}
+
+            <div className="product-info__quantity" style={{ margin: '20px 0' }}>
+              <h4 style={{ marginBottom: '10px', fontSize: '16px', fontWeight: '600' }}>Quantity:</h4>
+              <div className="product-info__quantity-selector" style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '10px',
+                marginBottom: '10px'
+              }}>
+                <button
+                  style={{
+                    padding: '5px 15px',
+                    border: '1px solid #ddd',
+                    background: '#fff',
+                    borderRadius: '4px',
+                    cursor: quantity <= 1 ? 'not-allowed' : 'pointer',
+                    opacity: quantity <= 1 ? 0.5 : 1
+                  }}
+                  onClick={() => handleQuantityChange(false)}
+                  disabled={quantity <= 1}
+                >
+                  -
+                </button>
+                <span style={{ 
+                  minWidth: '30px', 
+                  textAlign: 'center',
+                  fontWeight: '600'
+                }}>
+                  {quantity}
+                </span>
+                <button
+                  style={{
+                    padding: '5px 15px',
+                    border: '1px solid #ddd',
+                    background: '#fff',
+                    borderRadius: '4px',
+                    cursor: quantity >= Math.min(getCurrentStock(), 10) ? 'not-allowed' : 'pointer',
+                    opacity: quantity >= Math.min(getCurrentStock(), 10) ? 0.5 : 1
+                  }}
+                  onClick={() => handleQuantityChange(true)}
+                  disabled={quantity >= Math.min(getCurrentStock(), 10)}
+                >
+                  +
+                </button>
+              </div>
+              <div style={{ 
+                color: getCurrentStock() <= 5 ? '#dc3545' : '#28a745',
+                fontWeight: '500',
+                marginBottom: '20px'
+              }}>
+                {getCurrentStock()} in stock
+                {getCurrentStock() <= 5 && ' - Order soon!'}
+              </div>
+            </div>
+
+            <div className="product-info__actions" style={{ display: 'flex', gap: '15px', marginTop: '20px',width:'100%' }}>
+              <button 
+                className="product-info__add-to-cart"
+                onClick={handleAddToCart}
+                disabled={getCurrentStock() <= 0}
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#fff',
+                  backgroundColor:'#ff6b35',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: getCurrentStock() <= 0 ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  ...(getCurrentStock() > 0 && {
+                    ':hover': {
+                      backgroundColor: '#0069d9',
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
+                    },
+                    ':active': {
+                      transform: 'translateY(0)',
+                      boxShadow: 'none'
+                    }
+                  })
+                } as React.CSSProperties}
+              >
+                <span></span>
+                {getCurrentStock() > 0 ? 'Add to Cart' : 'Out of Stock'}
+              </button>
+              <button 
+                className="product-info__wishlist"
+                onClick={handleAddToWishlist}
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#fff',
+                  backgroundColor: 'transparent',
+                  border: '2px solid orange',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  ':hover': {
+                    backgroundColor: '#5a32a3',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
+                  },
+                  ':active': {
+                    transform: 'translateY(0)',
+                    boxShadow: 'none'
+                  }
+                } as React.CSSProperties}
+              >
+                <span></span>
+                Add to Wishlist
+              </button>
             </div>
           </div>
         </div>
-        <div className="product-page__reviews">
-          <Reviews
-            productId={Number(id)}
-            initialReviews={reviews}
-            initialAverageRating={averageRating}
-            onReviewUpdate={async () => {
-              localStorage.removeItem(`${CACHE_KEY_REVIEWS}_${id}`);
-            }}
-          />
-        </div>
-        {showToast && (
-          <div className="toast">
-            <div className="toast__content">
-              <span className="toast__icon">✓</span>
-              <span className="toast__message">{toastMessage}</span>
-            </div>
-          </div>
-        )}
-        {authModalOpen && (
-          <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
-        )}
       </div>
+      
+      {/* Reviews Section */}
+      <div className="product-page__reviews">
+        <Reviews
+          productId={Number(id)}
+          initialReviews={reviews}
+          initialAverageRating={averageRating}
+          onReviewUpdate={async () => {
+            localStorage.removeItem(`${CACHE_KEY_REVIEWS}_${id}`);
+          }}
+        />
+      </div>
+      
+      {/* Seller Information */}
+      <div className="seller-info">
+        <h3 className="seller-info__title">Seller Information</h3>
+        <div className="seller-info__identity">
+          <div className="seller-info__icon">
+            {(product.vendor || 'UV').charAt(0).toUpperCase()}
+          </div>
+          <h4 className="seller-info__name">
+            {product.vendor || 'Unknown Vendor'}
+          </h4>
+        </div>
+        <div className="seller-info__details">
+          <div className="seller-info__detail">
+            <span className="seller-info__checkmark">✓</span>
+            <span>Partner Since 4+ Years</span>
+          </div>
+          <div className="seller-info__detail">
+            <span className="seller-info__checkmark">✓</span>
+            <span>Great Recent Rating</span>
+          </div>
+          <div className="seller-info__detail">
+            <span className="seller-info__checkmark">✓</span>
+            <span>Ships on Time</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="toast">
+          <div className="toast__content">
+            <span className="toast__icon">✓</span>
+            <span className="toast__message">{toastMessage}</span>
+          </div>
+        </div>
+      )}
+      
+      {/* Auth Modal */}
+      {authModalOpen && (
+        <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      )}
+      </main>
       <Footer />
-    </>
+    </div>
   );
 };
 
