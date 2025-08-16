@@ -56,6 +56,18 @@ interface ApiProduct {
   created_at: string;
   updated_at: string;
   categoryId: number;
+  variants?: Array<{
+    id?: number;
+    name?: string;
+    price?: number | string;
+    originalPrice?: number | string;
+    stock?: number;
+    sku?: string;
+    image?: string;
+    images?: string[];
+    attributes?: Record<string, any>;
+    [key: string]: any;
+  }>;
   subcategory: {
     id: number;
     name: string;
@@ -662,25 +674,92 @@ const Shop: React.FC = () => {
     try {
       const { averageRating, reviews } = await fetchReviewOf(item.id);
       
+      // Helper function to get the first available image from variants or fall back to product images
+      const getProductImage = () => {
+        // Check if there are variants with images
+        if (item.variants?.length > 0) {
+          // Find the first variant with an image
+          const variantWithImage = item.variants.find(v => v.image || (v.images && v.images.length > 0));
+          if (variantWithImage) {
+            // Return the variant's image or the first image from variant's images array
+            return variantWithImage.image || variantWithImage.images?.[0];
+          }
+        }
+        // Fall back to product images or default phone image
+        return item.productImages?.[0] || phone;
+      };
+      
+      // Ensure we have proper image URLs - handle both relative and absolute URLs
+      const processImageUrl = (imgUrl: string | undefined): string => {
+        if (!imgUrl) return '';
+        // If it's already a full URL or starts with /, return as is
+        if (imgUrl.startsWith('http') || imgUrl.startsWith('/')) {
+          return imgUrl;
+        }
+        // Otherwise, assume it's a relative path from the API
+        return `${API_BASE_URL.replace('/api', '')}${imgUrl.startsWith('/') ? '' : '/'}${imgUrl}`;
+      };
+
+      // Process all images to ensure they have proper URLs
+      const processedProductImages = (item.productImages || []).map(processImageUrl);
+      const processedVariants = (item.variants || []).map(variant => ({
+        ...variant,
+        image: variant.image ? processImageUrl(variant.image) : undefined,
+        images: variant.images ? variant.images.map(processImageUrl) : []
+      }));
+
+      // Get the display image - prioritize variant images
+      const displayImage = (() => {
+        // Check variants first
+        const variantWithImage = processedVariants.find(v => v.image || v.images?.length > 0);
+        if (variantWithImage) {
+          return variantWithImage.image || variantWithImage.images?.[0];
+        }
+        // Then check product images
+        if (processedProductImages.length > 0) {
+          return processedProductImages[0];
+        }
+        // Fallback to default phone image if no images found
+        return phone;
+      })();
+
       return {
         id: item.id,
         title: item.name,
         description: item.description,
         originalPrice: item.basePrice?.toString() || '0',
+        discount: item.discount ? `${item.discount}` : undefined,
         discountPercentage: item.discount ? `${item.discount}%` : '0%',
         price: item.basePrice && item.discount 
-          ? (item.basePrice * (1 - item.discount / 100)).toFixed(2)
+          ? (Number(item.basePrice) * (1 - Number(item.discount) / 100)).toFixed(2)
           : item.basePrice?.toString() || '0',
         rating: Number(averageRating) || 0,
         ratingCount: reviews?.length?.toString() || "0",
         isBestSeller: item.stock > 20,
         freeDelivery: true,
-        image: item.productImages?.[0] || phone,
-        category: item.subcategory?.category?.name || "Misc",
+        image: displayImage,
+        productImages: processedProductImages,
+        variants: processedVariants,
+        category: item.subcategory?.category || { id: 1, name: item.subcategory?.category?.name || "Misc" },
+        subcategory: item.subcategory,
         brand: item.brand?.name || "Unknown",
+        brand_id: item.brand?.id || null,
+        status: item.status === 'UNAVAILABLE' ? 'OUT_OF_STOCK' : 'AVAILABLE',
+        stock: item.stock || 0
       };
     } catch {
       // Fallback product data without reviews
+      // Use the same image selection logic in the fallback
+      const getFallbackImage = () => {
+        if (item.variants?.length > 0) {
+          const variantWithImage = item.variants.find(v => v.image || (v.images && v.images.length > 0));
+          if (variantWithImage) {
+            return variantWithImage.image || variantWithImage.images?.[0] || phone;
+          }
+        }
+        return item.productImages?.[0] || phone;
+      };
+      
       return {
         id: item.id,
         title: item.name,
@@ -694,7 +773,9 @@ const Shop: React.FC = () => {
         ratingCount: "0",
         isBestSeller: item.stock > 20,
         freeDelivery: true,
-        image: item.productImages?.[0] || phone,
+        image: getFallbackImage(),
+        productImages: item.productImages || [],
+        variants: item.variants,
         category: item.subcategory?.category?.name || "Misc",
         brand: item.brand?.name || "Unknown",
       };

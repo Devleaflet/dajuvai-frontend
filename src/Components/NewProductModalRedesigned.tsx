@@ -21,7 +21,7 @@ interface NewProductModalProps {
 }
 
 const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSubmit }) => {
-  const { vendor } = useVendorAuth();
+  const { authState } = useVendorAuth();
   
   // Form state
   const [formData, setFormData] = useState<NewProductFormData>({
@@ -123,7 +123,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       stock: 0,
       status: InventoryStatus.AVAILABLE,
       attributes: [],
-      images: []
+      images: [],
+      variantImages: []
     };
     setVariants([...variants, newVariant]);
   };
@@ -168,6 +169,33 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     setImages(images.filter((_, i) => i !== index));
   };
 
+  const handleVariantImageUpload = (e: React.ChangeEvent<HTMLInputElement>, variantIndex: number) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newImages = Array.from(e.target.files);
+      setVariants(prev => prev.map((v, i) => 
+        i === variantIndex 
+          ? { 
+              ...v, 
+              variantImages: [...(v.variantImages || []), ...newImages] as (File | string)[] 
+            } 
+          : v
+      ));
+      // Reset the input value to allow selecting the same file again
+      e.target.value = '';
+    }
+  };
+
+  const removeVariantImage = (variantIndex: number, imageIndex: number) => {
+    setVariants(prev => prev.map((v, i) => 
+      i === variantIndex 
+        ? { 
+            ...v, 
+            variantImages: (v.variantImages || []).filter((_, idx) => idx !== imageIndex)
+          } 
+        : v
+    ));
+  };
+
   const validateForm = (): string | null => {
     if (!formData.name.trim()) return 'Product name is required';
     if (!selectedCategoryId) return 'Please select a category';
@@ -191,11 +219,11 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('🚀 NEW PRODUCT MODAL SUBMIT START');
-    console.log('🏷️ Selected Category ID:', selectedCategoryId);
-    console.log('📝 Form Data:', formData);
-    console.log('🔄 Variants:', variants);
-    console.log('🖼️ Images:', images);
+    console.log(' NEW PRODUCT MODAL SUBMIT START');
+    console.log(' Selected Category ID:', selectedCategoryId);
+    console.log(' Form Data:', formData);
+    console.log(' Variants:', variants);
+    console.log(' Images:', images);
       
     if (!selectedCategoryId || !formData.subcategoryId) {
       console.error('Missing category or subcategory:', { selectedCategoryId, subcategoryId: formData.subcategoryId });
@@ -212,20 +240,47 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     setIsLoading(true);
 
     try {
-      // Step 1: Upload images first to get URLs
+      // Step 1: Upload main product images first to get URLs
       let productImageUrls: string[] = [];
       if (images.length > 0) {
-        console.log('📤 Uploading product images...');
+        console.log(' Uploading product images...');
         const uploadResponse = await uploadProductImages(images);
         if (uploadResponse.success) {
           productImageUrls = uploadResponse.urls;
-          console.log('✅ Images uploaded successfully:', productImageUrls);
+          console.log(' Product images uploaded successfully:', productImageUrls);
         } else {
-          throw new Error(uploadResponse.message || 'Failed to upload images');
+          throw new Error(uploadResponse.message || 'Failed to upload product images');
         }
       }
 
-      // Step 2: Prepare product data according to new API specification
+      // Step 2: Upload variant images and collect their URLs
+      const variantsWithImageUrls = await Promise.all(
+        variants.map(async (variant) => {
+          const variantImages = variant.variantImages || [];
+          const variantImageFiles = variantImages.filter(img => img instanceof File) as File[];
+          let variantImageUrls = variantImages.filter(img => typeof img === 'string') as string[];
+
+          // Upload any new variant images
+          if (variantImageFiles.length > 0) {
+            console.log(` Uploading ${variantImageFiles.length} images for variant ${variant.sku}`);
+            const uploadResponse = await uploadProductImages(variantImageFiles);
+            if (uploadResponse.success) {
+              variantImageUrls = [...variantImageUrls, ...uploadResponse.urls];
+              console.log(` Variant ${variant.sku} images uploaded:`, uploadResponse.urls);
+            } else {
+              console.error(`Failed to upload images for variant ${variant.sku}:`, uploadResponse.message);
+              // Continue with existing URLs even if new uploads fail
+            }
+          }
+
+          return {
+            ...variant,
+            variantImages: variantImageUrls
+          };
+        })
+      );
+
+      // Step 3: Prepare product data according to new API specification
       const productData: any = {
         name: formData.name,
         description: formData.description || '',
@@ -237,7 +292,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
 
       if (formData.hasVariants) {
         // For variant products, structure variants according to API spec
-        productData.variants = variants.map((variant) => ({
+        productData.variants = variantsWithImageUrls.map((variant) => ({
           sku: variant.sku,
           basePrice: variant.price, // API expects basePrice on variant
           discount: 0,
@@ -248,7 +303,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
               acc[attr.attributeType] = attr.attributeValues[0] || attr.attributeValues.join(', ');
               return acc;
             }, {}) : {},
-          variantImages: variant.images || [], // URLs from separate upload
+          variantImages: variant.variantImages, // Now contains all uploaded image URLs
           stock: variant.stock,
           status: variant.status
         }));
@@ -674,20 +729,67 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                           ))}
                         </div>
                       </div>
+
+                      {/* Variant Images */}
+                      <div className="form-group full-width">
+                        <label className="form-label">Variant Images</label>
+                        <div className="image-upload-container" 
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               document.getElementById(`variant-image-${index}`)?.click();
+                             }}>
+                          <div className="upload-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                            </svg>
+                          </div>
+                          <div className="upload-text">Click to add images for this variant</div>
+                          <input
+                            id={`variant-image-${index}`}
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={(e) => handleVariantImageUpload(e, index)}
+                            style={{ display: 'none' }}
+                          />
+                        </div>
+                        {variant.variantImages && variant.variantImages.length > 0 && (
+                          <div className="image-preview-grid">
+                            {variant.variantImages.map((img, imgIndex) => (
+                              <div key={imgIndex} className="image-preview">
+                                <img 
+                                  src={img instanceof File ? URL.createObjectURL(img) : img} 
+                                  alt={`Variant ${index + 1} - ${imgIndex + 1}`} 
+                                />
+                                <button
+                                  type="button"
+                                  className="image-remove"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeVariantImage(index, imgIndex);
+                                  }}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
-
-                  <button
-                    type="button"
-                    className="btn btn-add"
-                    onClick={addVariant}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2C13.1 2 14 2.9 14 4V10H20C21.1 10 22 10.9 22 12C22 13.1 21.1 14 20 14H14V20C14 21.1 13.1 22 12 22C10.9 22 10 21.1 10 20V14H4C2.9 14 2 13.1 2 12C2 10.9 2.9 10 4 10H10V4C10 2.9 10.9 2 12 2Z"/>
-                    </svg>
-                    Add Another Variant
-                  </button>
                 </div>
+
+                <button
+                  type="button"
+                  className="btn btn-add"
+                  onClick={addVariant}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C13.1 2 14 2.9 14 4V10H20C21.1 10 22 10.9 22 12C22 13.1 21.1 14 20 14H14V20C14 21.1 13.1 22 12 22C10.9 22 10 21.1 10 20V14H4C2.9 14 2 13.1 2 12C2 10.9 2.9 10 4 10H10V4C10 2.9 10.9 2 12 2Z"/>
+                  </svg>
+                  Add Another Variant
+                </button>
               </div>
             )}
 

@@ -127,6 +127,7 @@ export interface ProductVariant {
   status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
   attributes?: Attribute[];
   images?: Image[];
+  variantImages: (File | string)[];
 }
 
 export interface NewProductFormData {

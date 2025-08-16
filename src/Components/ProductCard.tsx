@@ -34,8 +34,46 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     freeDelivery,
     image,
     productImages,
+    variants,
     id,
   } = product;
+
+  // Enhanced image handling with debugging
+  const getDisplayImage = () => {
+    console.log('Product data:', { 
+      id: product.id, 
+      title: product.title,
+      hasVariants: !!variants?.length,
+      variantImages: variants?.map(v => ({
+        hasImage: !!v.image,
+        hasImages: v.images?.length > 0,
+        image: v.image,
+        images: v.images
+      })),
+      mainImage: image,
+      productImages: productImages
+    });
+
+    // Check if there are variants with images
+    if (variants?.length > 0) {
+      // Find first variant with an image
+      const variantWithImage = variants.find(v => v.image || v.images?.length > 0);
+      
+      if (variantWithImage) {
+        const variantImage = variantWithImage.image || variantWithImage.images?.[0];
+        console.log('Using variant image:', variantImage);
+        return variantImage;
+      }
+    }
+    
+    // Fall back to product images or default
+    const fallbackImage = productImages?.[0] || image || defaultProductImage;
+    console.log('Using fallback image:', fallbackImage);
+    return imageError ? defaultProductImage : fallbackImage;
+  };
+
+  const displayImage = getDisplayImage();
+  console.log('Final display image:', displayImage);
 
   const handleImageError = () => {
     setImageError(true);
@@ -83,7 +121,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </div>
         <div className="product-card__image">
           <img 
-            src={imageError ? defaultProductImage : (productImages?.[0] || image || defaultProductImage)} 
+            src={displayImage}
             alt={title || "Product image"} 
             onError={handleImageError}
             loading="lazy"

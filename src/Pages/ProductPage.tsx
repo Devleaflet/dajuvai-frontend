@@ -110,18 +110,34 @@ const ProductPage = () => {
           // Parse variant images
           const variantImgUrls: string[] = [];
           if (variant.variantImages && Array.isArray(variant.variantImages)) {
-            variant.variantImages.forEach((img: string) => {
+            variant.variantImages.forEach((img: any) => {
               try {
-                const parsedImg = typeof img === 'string' ? JSON.parse(img) : img;
-                const imgUrl = parsedImg.url || parsedImg.imageUrl || '';
+                // Handle both string URLs and object formats
+                let imgUrl = '';
+                if (typeof img === 'string') {
+                  // If it's a string, it might be a direct URL or a JSON string
+                  try {
+                    const parsed = JSON.parse(img);
+                    imgUrl = parsed.url || parsed.imageUrl || img;
+                  } catch {
+                    imgUrl = img; // It's already a URL string
+                  }
+                } else if (img && typeof img === 'object') {
+                  // Handle image object
+                  imgUrl = img.url || img.imageUrl || '';
+                }
+                
                 if (imgUrl) {
-                  variantImgUrls.push(imgUrl);
-                  if (!variantImages.includes(imgUrl)) {
-                    variantImages.push(imgUrl);
+                  // Ensure we have a full URL
+                  const fullUrl = imgUrl.startsWith('http') ? imgUrl : 
+                                 `${window.location.origin}${imgUrl.startsWith('/') ? '' : '/'}${imgUrl}`;
+                  variantImgUrls.push(fullUrl);
+                  if (!variantImages.includes(fullUrl)) {
+                    variantImages.push(fullUrl);
                   }
                 }
               } catch (e) {
-                console.error('Error parsing variant image:', e);
+                console.error('Error parsing variant image:', e, img);
               }
             });
           }
@@ -233,7 +249,7 @@ const ProductPage = () => {
             id: apiProduct.subcategory?.id || 0, 
             name: apiProduct.subcategory?.name || 'Subcategory' 
           },
-          vendor: apiProduct.vendor?.businessName || 'Unknown Vendor',
+          vendor: apiProduct.vendor || { id: null, businessName: 'Unknown Vendor' },
           productImages: allImages,
           colors: Array.from(colorOptions),
           memoryOptions: Array.from(sizeOptions),
@@ -327,6 +343,10 @@ const ProductPage = () => {
   const getCurrentImages = () => {
     if (selectedVariant?.variantImgUrls?.length > 0) {
       return selectedVariant.variantImgUrls;
+    }
+    // If no variant selected but product has variants with images, show first variant's images
+    if (product?.hasVariants && product?.variants?.[0]?.variantImgUrls?.length > 0) {
+      return product.variants[0].variantImgUrls;
     }
     return product?.productImages || [];
   };
@@ -467,9 +487,10 @@ const ProductPage = () => {
     );
   }
 
-  const currentImage = imageError[selectedImageIndex]
+  const currentImages = getCurrentImages();
+  const currentImage = imageError[selectedImageIndex] || !currentImages[selectedImageIndex]
     ? defaultProductImage
-    : product.productImages?.[selectedImageIndex] || defaultProductImage;
+    : currentImages[selectedImageIndex];
 
   return (
     <div className="app">
@@ -533,22 +554,28 @@ const ProductPage = () => {
 
                 {product.productImages && product.productImages.length > 1 && (
                   <div className="product-gallery__thumbnails">
-                    {product.productImages.map((image: string, index: number) => (
-                      <button
-                        key={index}
-                        className={`product-gallery__thumbnail ${
-                          selectedImageIndex === index ? 'product-gallery__thumbnail--active' : ''
-                        }`}
-                        onClick={() => setSelectedImageIndex(index)}
-                      >
-                        <img
-                          src={imageError[index] ? defaultProductImage : image}
-                          alt={`Product view ${index + 1}`}
-                          onError={() => handleImageError(index)}
-                        />
-                      </button>
-                    ))}
-                  </div>
+                  {currentImages.map((image: string, index: number) => (
+                    <button
+                      key={index}
+                      className={`product-gallery__thumbnail ${
+                        selectedImageIndex === index ? 'product-gallery__thumbnail--active' : ''
+                      }`}
+                      onClick={() => setSelectedImageIndex(index)}
+                    >
+                      <img
+                        src={imageError[index] ? defaultProductImage : image}
+                        alt={`Product view ${index + 1}`}
+                        onError={() => handleImageError(index)}
+                        style={{
+                          width: '60px',
+                          height: '60px',
+                          objectFit: 'cover',
+                          borderRadius: '4px'
+                        }}
+                      />
+                    </button>
+                  ))}
+                </div>
                 )}
               </div>
             </div>
@@ -720,8 +747,73 @@ const ProductPage = () => {
                 {getCurrentStock() <= 5 && ' - Order soon!'}
               </div>
             </div>
+          
 
-            <div className="product-info__actions" style={{ display: 'flex', gap: '15px', marginTop: '20px',width:'100%' }}>
+      {/* Vendor Information */}
+      <div 
+        className="seller-info" 
+        onClick={async () => {
+          const vendorId = product.vendor?.id;
+          if (!vendorId) {
+            console.warn('Vendor ID not found in product data');
+            return;
+          }
+          
+          try {
+            const response = await fetch(`/api/vendors/${vendorId}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                // Add authentication token if required
+                // 'Authorization': `Bearer ${yourAuthToken}`
+              }
+            });
+            
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            if (data.success) {
+              // Navigate to the vendor page with the vendor ID
+              window.location.href = `/vendor/${vendorId}`;
+            } else {
+              console.error('Failed to fetch vendor details:', data.message);
+            }
+          } catch (error) {
+            console.error('Error fetching vendor details:', error);
+            // Fallback to the vendor page with just the ID if the API call fails
+            window.location.href = `/vendor/${vendorId}`;
+          }
+        }}
+        style={{ 
+          margin: '15px 0',
+          padding: '10px 0',
+          cursor: 'pointer',
+          borderBottom: '1px solid #eee'
+        }}
+      >
+        <div className="seller-info__identity" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="seller-info__icon" style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            backgroundColor: '#f0f0f0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 'bold',
+            color: '#666'
+          }}>
+            {product.vendor?.businessName?.charAt(0).toUpperCase() || 'U'}
+          </div>
+          <h4 className="seller-info__name" style={{ margin: 0, fontSize: '15px' }}>
+            Sold by: {product.vendor?.businessName || 'Unknown Vendor'}
+          </h4>
+        </div>
+      </div>
+
+      <div className="product-info__actions" style={{ display: 'flex', gap: '15px', marginTop: '20px', width: '100%' }}>
               <button 
                 className="product-info__add-to-cart"
                 onClick={handleAddToCart}
@@ -765,7 +857,7 @@ const ProductPage = () => {
                   padding: '12px 24px',
                   fontSize: '16px',
                   fontWeight: '600',
-                  color: '#fff',
+                  color: 'orange',
                   backgroundColor: 'transparent',
                   border: '2px solid orange',
                   borderRadius: '4px',
@@ -806,33 +898,7 @@ const ProductPage = () => {
         />
       </div>
       
-      {/* Seller Information */}
-      <div className="seller-info">
-        <h3 className="seller-info__title">Seller Information</h3>
-        <div className="seller-info__identity">
-          <div className="seller-info__icon">
-            {(product.vendor || 'UV').charAt(0).toUpperCase()}
-          </div>
-          <h4 className="seller-info__name">
-            {product.vendor || 'Unknown Vendor'}
-          </h4>
-        </div>
-        <div className="seller-info__details">
-          <div className="seller-info__detail">
-            <span className="seller-info__checkmark">✓</span>
-            <span>Partner Since 4+ Years</span>
-          </div>
-          <div className="seller-info__detail">
-            <span className="seller-info__checkmark">✓</span>
-            <span>Great Recent Rating</span>
-          </div>
-          <div className="seller-info__detail">
-            <span className="seller-info__checkmark">✓</span>
-            <span>Ships on Time</span>
-          </div>
-        </div>
-      </div>
-      
+     
       {/* Toast Notification */}
       {showToast && (
         <div className="toast">

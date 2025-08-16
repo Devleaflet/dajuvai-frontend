@@ -38,4 +38,16 @@ export interface Product {
   status?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
   discountType?: "PERCENTAGE" | "FLAT";
   size?: string[];
+  variants?: Array<{
+    id?: number;
+    name?: string;
+    price?: number | string;
+    originalPrice?: number | string;
+    stock?: number;
+    sku?: string;
+    image?: string;
+    images?: string[];
+    attributes?: Record<string, any>;
+    [key: string]: any;
+  }>;
 }
