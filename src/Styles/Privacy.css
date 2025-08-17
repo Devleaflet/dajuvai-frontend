@@ -1,16 +1,14 @@
 body {
-  background-color: #f9f9f9;
+
   font-family: 'Arial', sans-serif;
-    margin: 2rem auto;
-  padding: 2rem;
+  
 }
 
-.terms-content {
-  
+.privacy-container {
+
   margin-left: auto;
   margin-right: auto;
   padding: 40px 20px;
-
   
 }
 
@@ -30,22 +28,7 @@ h2 {
   color: #4a5568;
 }
 
-h3 {
-  font-size: 1.5em;
-  font-weight: bold;
-  margin-top: 1.5em;
-  margin-bottom: 0.75em;
-  color: #718096;
-}
-
-p {
-  font-size: 1.1em;
-  line-height: 1.75;
-  margin-bottom: 1.25em;
-  color: #4a5568;
-}
-
-ul {
+ol, ul {
   font-size: 1.1em;
   line-height: 1.75;
   margin-left: 2em;
@@ -55,4 +38,11 @@ ul {
 
 li {
   margin-bottom: 0.75em;
+}
+
+p {
+  font-size: 1.1em;
+  line-height: 1.75;
+  margin-bottom: 1.25em;
+  color: #4a5568;
 }

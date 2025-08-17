@@ -33,7 +33,7 @@ import { useVendorAuth } from "./context/VendorAuthContext"; // Import useVendor
 import NepalPaymentGateway from "./Pages/Payment";
 import TransactionSuccess from "./Pages/Transaction";
 import OrdersList from "./Pages/AdminOrders";
-
+import Privacy from "./Pages/Privacy"
 import PaymentSuccess from "./Pages/EsewaPaymentSuccess";
 import GoogleAuthCallback from "./Pages/GoogleAuthCallback";
 import GoogleAuthDirect from "./Pages/GoogleAuthDirect";
@@ -92,6 +92,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/contact" element={<About />} />
           <Route path="/terms" element={<TermsAndConditions />} />
+            <Route path="/privacy" element={<Privacy />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/product-page/:categoryId/:subcategoryId/:id" element={<ProductPage />} />

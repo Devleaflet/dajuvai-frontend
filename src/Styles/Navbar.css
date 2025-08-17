@@ -10,7 +10,7 @@
 .navbar__container {
     max-width: 1800px;
     margin: 0 auto;
-    padding: 0 15px;
+    padding: 0px;
 }
 
 /* Top navbar styles */
@@ -30,7 +30,7 @@
     top: 0;
     background-color: #ffffff;
     z-index: 100;
-    padding: 15px 0;
+    padding:  0;
 }
 
 .navbar__search-row {
@@ -38,7 +38,7 @@
     width: 100%;
     position: relative;
     z-index: 99;
-    padding: 15px 0;
+    padding:  0;
     background-color: #ffffff;
 }
 
@@ -647,22 +647,22 @@
   flex-wrap: wrap;
   gap: 15px;
   align-items: center;
-  justify-content: flex-start; /* Align icons nicely in mobile view */
+  justify-content: flex-start; 
 }
 
-/* Ensure the social section in the side menu is responsive */
+
 @media (max-width: 576px) {
   .navbar__side-menu-social-icons {
-    gap: 12px; /* Slightly reduce gap for smaller screens */
+    gap: 12px; 
   }
   .navbar__social-link--nepal img.navbar__nepal-flag {
-    height: 20px; /* Further reduce flag size for very small screens */
+    height: 20px; 
   }
   .navbar__social-link {
-    font-size: 16px; /* Slightly smaller icons for very small screens */
+    font-size: 16px; 
   }
 }
-/* Mobile dock */
+
 .navbar__mobile-dock {
     display: none;
     position: fixed;

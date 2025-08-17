@@ -1,5 +1,5 @@
 import '../Styles/Footer.css';
-import { TbTruckDelivery } from "react-icons/tb";
+import { TbDeviceLandlinePhone, TbTruckDelivery } from "react-icons/tb";
 import { FaPhoneVolume, FaLocationDot, FaFacebookF, FaInstagram } from "react-icons/fa6";
 import { MdEmail } from "react-icons/md";
 import { IoLogoWhatsapp } from "react-icons/io";
@@ -120,11 +120,9 @@ const Footer: React.FC = () => {
               <div className="footer__section footer__links-section">
                 <h3 className="footer__section-title">Useful Links</h3>
                 <ul className="footer__list">
-                  <li><Link to="#" className="footer__link">Careers</Link></li>
-                  <li><Link to="#" className="footer__link">Help Center</Link></li>
-                  <li><Link to="#" className="footer__link">Shop List</Link></li>
-                  <li><Link to="#" className="footer__link">Track Order</Link></li>
-                  <li><Link to="#" className="footer__link">Contact Us</Link></li>
+                
+                  <li><Link to="/contact" className="footer__link">Contact Us</Link></li>
+                          <li><Link to="#" className="footer__link">About Us</Link></li>
                   <li><Link to="#" className="footer__link">FAQ</Link></li>
                 </ul>
               </div>
@@ -133,13 +131,9 @@ const Footer: React.FC = () => {
               <div className="footer__section footer__account-section">
                 <h3 className="footer__section-title">Account</h3>
                 <ul className="footer__list">
-                  <li><Link to="#" className="footer__link">User Dashboard</Link></li>
-                  <li><Link to="#" className="footer__link">Wishlist</Link></li>
-                  <li><Link to="#" className="footer__link">Downloads</Link></li>
-                  <li><Link to="#" className="footer__link">Orders</Link></li>
-                  <li><Link to="#" className="footer__link">Complain</Link></li>
-                  <li><Link to="#" className="footer__link">Delivery Detail</Link></li>
-                  <li><Link to="#" className="footer__link">Support</Link></li>
+                  <li><Link to="/terms" className="footer__link">Terms and Policy</Link></li>
+                  <li><Link to="/privacy" className="footer__link">Privacy Policy</Link></li>
+               
                 </ul>
               </div>
 
@@ -161,10 +155,25 @@ const Footer: React.FC = () => {
                       <FaPhoneVolume />
                     </div>
                     <div className="footer__service-text">
-                      <span className="footer__service-label">Phone:</span>
-                      <span>+977 - 9708555024</span>
+                      <span className="footer__service-label">Mobile:</span>
+                      <span>+977 - 9700620004</span>
                     </div>
+                    
+                  
                   </li>
+                    <li className="footer__service-item">
+                    <div className="footer__service-icon">
+                      <TbDeviceLandlinePhone />
+                    </div>
+                      <div className="footer__service-text">
+                      <span className="footer__service-label">Phone:</span>
+                      <span>01 -720234</span>
+                    </div>
+                    
+                  
+                  </li>
+
+                
                   <li className="footer__service-item">
                     <div className="footer__service-icon">
                       <FaLocationDot />
@@ -184,16 +193,20 @@ const Footer: React.FC = () => {
               <div className="footer__section footer__contact-section">
                 <h3 className="footer__section-title">Contact With Us</h3>
                 <div className="footer__social-icons">
-                  <a href="#" className="footer__social-link">
+                  <a href="https://www.facebook.com/" className="footer__social-link">
                     <FaFacebookF />
                   </a>
-                  <a href="#" className="footer__social-link">
+                  <a href="Dajuvai106@gmail.com" className="footer__social-link">
                     <MdEmail />
                   </a>
-                  <a href="#" className="footer__social-link">
+                  <a  
+                  href="https://wa.me/9779700620004"
+      target="_blank"
+      rel="noopener noreferrer"
+     className="footer__social-link">
                     <IoLogoWhatsapp />
                   </a>
-                  <a href="#" className="footer__social-link">
+                  <a href="https://www.instagram.com/dajuvai_/" className="footer__social-link">
                     <FaInstagram />
                   </a>
                 </div>
@@ -218,7 +231,7 @@ const Footer: React.FC = () => {
           Copyright Dajuvai © 2025 - <a href="#" className="footer__copyright-link">Leaflet Digital Soultions Pvt Ltd.</a>
         </div>
         <div className="footer__bottom-links">
-          <a href="#" className="footer__bottom-link">Privacy Policy</a>
+          <a href="/privacy" className="footer__bottom-link">Privacy Policy</a>
           <a href="/terms" className="footer__bottom-link">Terms & Condition</a>
           <a href="#" className="footer__bottom-link">Site Map</a>
         </div>
