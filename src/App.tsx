@@ -42,6 +42,7 @@ import GoogleAuthBackend from "./Pages/GoogleAuthBackend";
 import FacebookAuthCallback from "./Pages/FacebookAuthCallback";
 import PrivacyPolicy from "./Pages/PrivacyPolicy";
 import DataDeletion from "./Pages/DataDeletion";
+import TermsAndConditions from "./Pages/TermsAndConditions";
 
 // Admin route guards
 // Allows both admin and staff to access admin area
@@ -90,6 +91,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/contact" element={<About />} />
+          <Route path="/terms" element={<TermsAndConditions />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/product-page/:categoryId/:subcategoryId/:id" element={<ProductPage />} />

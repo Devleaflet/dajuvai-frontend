@@ -219,7 +219,7 @@ const Footer: React.FC = () => {
         </div>
         <div className="footer__bottom-links">
           <a href="#" className="footer__bottom-link">Privacy Policy</a>
-          <a href="#" className="footer__bottom-link">Terms & Condition</a>
+          <a href="/terms" className="footer__bottom-link">Terms & Condition</a>
           <a href="#" className="footer__bottom-link">Site Map</a>
         </div>
       </div>
