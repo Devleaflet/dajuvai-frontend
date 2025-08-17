@@ -325,12 +325,15 @@ const ProductPage = () => {
   useEffect(() => {
     if (product) {
       setSelectedColor(product.colors && product.colors.length > 0 ? product.colors[0].name : '');
-      setImageError(new Array(product.productImages?.length || 1).fill(false));
-      
-      // Set default variant if product has variants
-      if (product.hasVariants && product.variants && product.variants.length > 0) {
-        setSelectedVariant(product.variants[0]);
-      }
+      // Determine default variant and current images at mount
+      const defaultVar = product.hasVariants && product.variants && product.variants.length > 0
+        ? product.variants[0]
+        : null;
+      setSelectedVariant(defaultVar);
+      const imgs = (defaultVar && defaultVar.variantImgUrls && defaultVar.variantImgUrls.length > 0)
+        ? defaultVar.variantImgUrls
+        : (product.productImages || []);
+      setImageError(new Array((imgs && imgs.length) ? imgs.length : 1).fill(false));
     }
   }, [product]);
 
@@ -350,6 +353,15 @@ const ProductPage = () => {
     }
     return product?.productImages || [];
   };
+
+  // Keep error-state array and selected image index in sync with current images
+  useEffect(() => {
+    const imgs = getCurrentImages();
+    setImageError(new Array((imgs && imgs.length) ? imgs.length : 1).fill(false));
+    if (selectedImageIndex >= (imgs?.length || 0)) {
+      setSelectedImageIndex(0);
+    }
+  }, [selectedVariant, product]);
 
   // Get current stock based on selected variant or product
   const getCurrentStock = () => {
@@ -552,7 +564,7 @@ const ProductPage = () => {
                   )}
                 </div>
 
-                {product.productImages && product.productImages.length > 1 && (
+                {currentImages && currentImages.length > 1 && (
                   <div className="product-gallery__thumbnails">
                   {currentImages.map((image: string, index: number) => (
                     <button

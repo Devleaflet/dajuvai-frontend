@@ -4,6 +4,7 @@ import "../../Styles/NewProductModal.css";
 import { useVendorAuth } from "../../context/VendorAuthContext";
 import { fetchCategories, fetchSubcategories, Category, Subcategory } from '../../api/categories';
 import { updateProduct, uploadProductImages } from '../../api/products';
+import axiosInstance from '../../api/axiosInstance';
 import { ApiProduct } from "../Types/ApiProduct";
 import { toast } from 'react-toastify';
 import { dealApiService } from '../../services/apiDeals';
@@ -37,17 +38,24 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
     description: "",
-    basePrice: "",
-    discount: "",
-    discountType: undefined,
+    basePrice: null,
+    stock: 0,
+    discount: null,
+    discountType: null,
+    size: [],
     status: InventoryStatus.AVAILABLE,
-    stock: "",
+    productImages: [],
+    categoryId: 0,
+    subcategoryId: 0,
+    quantity: 0,
+    brand_id: null,
+    dealId: null,
+    inventory: [],
+    vendorId: "",
     hasVariants: false,
     variants: [],
-    subcategoryId: 0,
-    dealId: undefined,
-    bannerId: undefined,
-    productImages: [],
+    bannerId: null,
+    brandId: null,
   });
 
   // UI state
@@ -62,8 +70,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   // Variant state
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [newAttribute, setNewAttribute] = useState<Attribute>({
-    attributeType: '',
-    attributeValues: ['']
+    type: '',
+    values: [{ value: '', nestedAttributes: [] }]
   });
   
   // Image state
@@ -102,33 +110,33 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
   const populateFormWithProduct = async () => {
     if (!product) return;
-
+  
     console.log('🔄 POPULATING FORM WITH PRODUCT DATA:');
-    console.log('Product:', product);
+    console.log('Product (prop):', product);
     console.log('Product Category ID:', product.categoryId);
     console.log('Product Subcategory:', product.subcategory);
-
+  
     // Extract category and subcategory IDs with multiple fallback strategies
     let categoryId = 0;
     let subcategoryId = 0;
-
+  
     // Strategy 1: Direct properties
     if (product.categoryId) categoryId = Number(product.categoryId);
     if (product.subcategory?.id) subcategoryId = Number(product.subcategory.id);
-
+  
     // Strategy 2: From subcategory object
     if (!categoryId && product.subcategory) {
       const sub = product.subcategory as any;
       if (sub.categoryId) categoryId = Number(sub.categoryId);
       if (sub.category?.id) categoryId = Number(sub.category.id);
     }
-
+  
     // Strategy 3: Alternative subcategory ID extraction
     if (!subcategoryId) {
       const prod = product as any;
       if (prod.subcategoryId) subcategoryId = Number(prod.subcategoryId);
     }
-
+  
     // Strategy 4: Hardcode fallback for testing (you can remove this later)
     if (!categoryId) {
       console.warn('⚠️ No category ID found, using fallback value 1');
@@ -138,14 +146,14 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       console.warn('⚠️ No subcategory ID found, using fallback value 1');
       subcategoryId = 1; // Use a default subcategory for testing
     }
-    
+  
     console.log('🎯 FINAL EXTRACTED IDs:');
     console.log('Category ID:', categoryId);
     console.log('Subcategory ID:', subcategoryId);
-    
+  
     setSelectedCategoryId(categoryId);
-
-    // Load subcategories for the product's category first
+  
+    // Load subcategories for the product's category
     if (categoryId > 0) {
       try {
         const subcategories = await fetchSubcategories(categoryId);
@@ -156,28 +164,71 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         toast.error('Failed to load subcategories');
       }
     }
+  
+    // Fetch freshest product by ID to ensure all variants are present
+    let fullProduct: any = product;
+    try {
+      console.log('📥 Fetching latest product by ID for full variants:', product.id);
+      const resp = await axiosInstance.get(`/api/product/${product.id}`);
+      if (resp?.data?.product) {
+        fullProduct = resp.data.product;
+      }
+    } catch (e) {
+      console.warn('⚠️ Failed to fetch latest product by ID. Falling back to provided product. Error:', e);
+    }
 
-    // Then set the form data with the correct subcategory
+    // Compute hasVariants based on the presence of variants in the fresh product
+    const hasVariants = fullProduct.variants && fullProduct.variants.length > 0;
+
+    // Map API variants to ProductVariant interface
+    const mappedVariants: ProductVariant[] = fullProduct.variants && fullProduct.variants.length > 0
+      ? fullProduct.variants.map((v: any) => ({
+          sku: v.sku || '',
+          price: Number(v.basePrice || 0),
+          stock: Number(v.stock || 0),
+          status: v.status || InventoryStatus.AVAILABLE,
+          attributes: v.attributes
+            ? Object.entries(v.attributes).map(([key, value]) => ({
+                type: String(key),
+                values: (Array.isArray(value) ? value : [value]).map((val: any) => ({
+                  value: String(val),
+                  nestedAttributes: []
+                })),
+              }))
+            : [],
+          images: v.variantImages || [],
+          variantImages: v.variantImages || [],
+        }))
+      : [];
+  
+    // Set form data with all required fields
     setFormData({
-      name: product.name || "",
-      description: product.description || "",
-      basePrice: product.basePrice?.toString() || "",
-      discount: product.discount?.toString() || "",
-      discountType: product.discountType || undefined,
-      status: product.status || InventoryStatus.AVAILABLE,
-      stock: product.stock?.toString() || "",
-      hasVariants: product.hasVariants || false,
-      variants: product.variants || [],
-      subcategoryId: subcategoryId,
-      dealId: product.dealId || undefined,
-      bannerId: product.bannerId || undefined,
-      productImages: product.productImages || [],
+      name: fullProduct.name || "",
+      description: fullProduct.description || "",
+      basePrice: fullProduct.basePrice ?? null,
+      stock: Number(fullProduct.stock ?? 0),
+      discount: fullProduct.discount ?? null,
+      discountType: fullProduct.discountType ?? null,
+      size: Array.isArray(fullProduct.size) ? fullProduct.size : [],
+      status: fullProduct.status || InventoryStatus.AVAILABLE,
+      productImages: (fullProduct.productImages || []) as (File | string)[],
+      categoryId: Number(fullProduct.categoryId || selectedCategoryId || 0),
+      subcategoryId: Number(subcategoryId || fullProduct.subcategory?.id || 0),
+      quantity: Number(fullProduct.quantity ?? fullProduct.stock ?? 0),
+      brand_id: fullProduct.brand_id ?? null,
+      dealId: fullProduct.dealId ?? null,
+      inventory: Array.isArray(fullProduct.inventory) ? fullProduct.inventory : [],
+      vendorId: String(fullProduct.vendorId ?? fullProduct.vendor?.id ?? ''),
+      hasVariants: hasVariants,
+      variants: mappedVariants,
+      bannerId: fullProduct.bannerId ?? null,
+      brandId: fullProduct.brand?.id ?? null,
     });
-
-    setVariants(product.variants || []);
-    setExistingImages(product.productImages || []);
-
-    console.log('✅ Form populated with category:', categoryId, 'subcategory:', subcategoryId);
+  
+    setVariants(mappedVariants);
+    setExistingImages((fullProduct.productImages || []) as string[]);
+  
+    console.log('✅ Form populated with category:', categoryId, 'subcategory:', subcategoryId, 'variants:', mappedVariants);
   };
 
   const handleCategoryChange = async (categoryId: number) => {
@@ -208,7 +259,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       stock: 0,
       status: InventoryStatus.AVAILABLE,
       attributes: [],
-      images: []
+      images: [],
+      variantImages: []
     };
     setVariants([...variants, newVariant]);
   };
@@ -224,14 +276,19 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   };
 
   const addAttribute = (variantIndex: number) => {
-    if (newAttribute.attributeType && newAttribute.attributeValues[0]) {
+    if (newAttribute.type && newAttribute.values[0]?.value) {
       const updatedVariants = [...variants];
       if (!updatedVariants[variantIndex].attributes) {
         updatedVariants[variantIndex].attributes = [];
       }
-      updatedVariants[variantIndex].attributes!.push({ ...newAttribute });
+      // normalize empty nestedAttributes
+      const normalized: Attribute = {
+        type: newAttribute.type,
+        values: newAttribute.values.map(v => ({ value: v.value, nestedAttributes: v.nestedAttributes || [] }))
+      };
+      updatedVariants[variantIndex].attributes!.push(normalized);
       setVariants(updatedVariants);
-      setNewAttribute({ attributeType: '', attributeValues: [''] });
+      setNewAttribute({ type: '', values: [{ value: '', nestedAttributes: [] }] });
     }
   };
 
@@ -280,11 +337,11 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     }
     
     if (!formData.hasVariants) {
-      if (!formData.basePrice || parseFloat(formData.basePrice) <= 0) {
+      if (formData.basePrice == null || Number(formData.basePrice) <= 0) {
         console.log('❌ Base price is invalid:', formData.basePrice);
         return 'Base price is required';
       }
-      if (!formData.stock || parseInt(formData.stock) < 0) {
+      if (formData.stock == null || Number(formData.stock) < 0) {
         console.log('❌ Stock is invalid:', formData.stock);
         return 'Stock quantity is required';
       }
@@ -379,17 +436,19 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       // Handle variants vs non-variants
       if (formData.hasVariants) {
         if (variants.length > 0) {
-          // Convert variants to match API structure
-          updatePayload.variants = variants.map((variant: any) => ({
+          // Convert variants to match API structure (flatten attributes and map images)
+          updatePayload.variants = variants.map((variant: ProductVariant) => ({
             sku: variant.sku,
-            basePrice: variant.price || variant.basePrice,
-            discount: variant.discount || 0,
-            discountType: variant.discountType || 'PERCENTAGE',
-            attributes: variant.attributes || Object.keys(variant.attributes || {}).reduce((acc, key) => {
-              acc[key] = variant.attributes[key];
+            basePrice: variant.price,
+            discount: 0,
+            discountType: 'PERCENTAGE',
+            attributes: (variant.attributes || []).reduce((acc, attr) => {
+              const key = attr.type?.trim().toLowerCase();
+              const firstVal = attr.values && attr.values[0] ? attr.values[0].value : '';
+              if (key && firstVal) (acc as any)[key] = firstVal;
               return acc;
-            }, {} as any),
-            variantImages: variant.images || [],
+            }, {} as Record<string, string>),
+            variantImages: (variant.images || variant.variantImages || []),
             stock: variant.stock,
             status: variant.status || 'AVAILABLE'
           }));
@@ -774,15 +833,15 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                             type="text"
                             className="form-input"
                             placeholder="Attribute type (e.g., Color)"
-                            value={newAttribute.attributeType}
-                            onChange={(e) => setNewAttribute({...newAttribute, attributeType: e.target.value})}
+                            value={newAttribute.type}
+                            onChange={(e) => setNewAttribute({...newAttribute, type: e.target.value})}
                           />
                           <input
                             type="text"
                             className="form-input"
                             placeholder="Value (e.g., Red)"
-                            value={newAttribute.attributeValues[0] || ''}
-                            onChange={(e) => setNewAttribute({...newAttribute, attributeValues: [e.target.value]})}
+                            value={newAttribute.values[0]?.value || ''}
+                            onChange={(e) => setNewAttribute({...newAttribute, values: [{ value: e.target.value, nestedAttributes: [] }]})}
                           />
                           <button
                             type="button"
@@ -795,7 +854,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                         <div className="attribute-tags">
                           {variant.attributes?.map((attr, attrIndex) => (
                             <div key={attrIndex} className="attribute-tag">
-                              {attr.attributeType}: {attr.attributeValues.join(', ')}
+                              {attr.type}: {attr.values.map(v => v.value).join(', ')}
                               <button
                                 type="button"
                                 onClick={() => removeAttribute(index, attrIndex)}
