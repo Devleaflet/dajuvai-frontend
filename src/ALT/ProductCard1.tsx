@@ -33,9 +33,26 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
     isBestSeller,
     freeDelivery,
     image,
-    productImages,
+    productImages = [],
     id,
   } = product;
+
+  // Helper function to get the first available image from variants or fall back to product images
+  const getProductImage = () => {
+    // Check if there are variants with images
+    if (product.variants?.length > 0) {
+      // Find the first variant with an image
+      const variantWithImage = product.variants.find(v => v.image || (v.images && v.images.length > 0));
+      if (variantWithImage) {
+        // Return the variant's image or the first image from variant's images array
+        return variantWithImage.image || variantWithImage.images?.[0];
+      }
+    }
+    // Fall back to product images or default image
+    return productImages?.[0] || image || defaultProductImage;
+  };
+
+  const displayImage = getProductImage();
 
   const handleImageError = () => {
     setImageError(true);
@@ -83,10 +100,17 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
         </div>
         <div className="product1__image">
           <img 
-            src={imageError ? defaultProductImage : (productImages?.[0] || image || defaultProductImage)} 
-            alt={title || "Product image"} 
+            src={displayImage}
+            alt={title || "Product image"}
             onError={handleImageError}
             loading="lazy"
+            style={{ 
+              width: '100%', 
+              height: '200px',
+              objectFit: 'contain',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '8px'
+            }}
           />
         </div>
         <div className="product1__rating">
