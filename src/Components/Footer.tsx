@@ -122,7 +122,7 @@ const Footer: React.FC = () => {
                 <ul className="footer__list">
                 
                   <li><Link to="/contact" className="footer__link">Contact Us</Link></li>
-                          <li><Link to="#" className="footer__link">About Us</Link></li>
+                          <li><Link to="/about" className="footer__link">About Us</Link></li>
                   <li><Link to="#" className="footer__link">FAQ</Link></li>
                 </ul>
               </div>
@@ -166,7 +166,7 @@ const Footer: React.FC = () => {
                       <TbDeviceLandlinePhone />
                     </div>
                       <div className="footer__service-text">
-                      <span className="footer__service-label">Phone:</span>
+                      <span className="footer__service-label">Landline:</span>
                       <span>01 -720234</span>
                     </div>
                     

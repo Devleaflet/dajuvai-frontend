@@ -202,21 +202,23 @@ const About = () => {
           </div>
         </div>
         <div className="find-store">
-          <h2 className="store-title">Find our store</h2>
-          <div className="map-container">
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d56516.31625952881!2d85.29111349649788!3d27.70895594444538!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb198a307baabf%3A0xb5137c1bf18db1ea!2sKathmandu%2044600%2C%20Nepal!5e0!3m2!1sen!2sus!4v1715125639033!5m2!1sen!2sus"
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              title="Kathmandu Map"
-              aria-label="Store location map"
-            ></iframe>
+          
+  <h2 className="store-title">Find our store</h2>
+  <div className="map-container">
+    <iframe
+      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3531.671688837276!2d85.3281763150625!3d27.7364789827758!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb193854e20abb%3A0x8ff36d1f00e10346!2sMaharajgunj%2C%20Kathmandu%2044600!5e0!3m2!1sen!2snp!4v1698765432100!5m2!1sen!2snp"
+      width="100%"
+      height="100%"
+      style={{ border: 0 }}
+      loading="lazy"
+      referrerPolicy="no-referrer-when-downgrade"
+      title="Kathmandu Map"
+      aria-label="Store location map"
+    ></iframe>
+  </div>
+</div>
           </div>
-        </div>
-      </div>
+       
       <ToastContainer />
       <Footer />
     </>

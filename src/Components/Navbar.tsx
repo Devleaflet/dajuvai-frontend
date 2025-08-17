@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useRef } from "react";
 import "../Styles/Navbar.css";
 import {
@@ -21,10 +18,7 @@ import {
   FaFacebook,
   FaInstagram,
   FaTiktok,
-
   FaWhatsapp,
-
-
 } from "react-icons/fa6";
 import logo from "../assets/logo.webp";
 import nepal from "../assets/nepal.gif";
@@ -40,6 +34,7 @@ import { fetchSubCategory } from "../api/subcategory";
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "../config";
 import { useVendorAuth } from "../context/VendorAuthContext";
+import VendorAuthModal from "./AuthVendorModal";
 
 interface Category {
   id: number;
@@ -67,6 +62,7 @@ const Navbar: React.FC = () => {
   const [cartOpen, setCartOpen] = useState<boolean>(false);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
+  const [vendorAuthModalOpen, setVendorAuthModalOpen] = useState<boolean>(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState<boolean>(false);
   const [isCategoriesReady, setIsCategoriesReady] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -89,7 +85,6 @@ const Navbar: React.FC = () => {
   const {
     cartItems,
     handleCartItemOnDelete,
-    
   } = useCart();
   const categoryContext = useCategory();
   const updateCategoriesWithSubcategories =
@@ -185,6 +180,15 @@ const Navbar: React.FC = () => {
   const toggleAuthModal = (e?: React.MouseEvent): void => {
     e?.preventDefault();
     setAuthModalOpen(!authModalOpen);
+    if (sideMenuOpen) {
+      setSideMenuOpen(false);
+      document.body.classList.remove("navbar--menu-open");
+    }
+  };
+
+  const toggleVendorAuthModal = (e?: React.MouseEvent): void => {
+    e?.preventDefault();
+    setVendorAuthModalOpen(!vendorAuthModalOpen);
     if (sideMenuOpen) {
       setSideMenuOpen(false);
       document.body.classList.remove("navbar--menu-open");
@@ -609,139 +613,149 @@ const Navbar: React.FC = () => {
               </Link>
             </div>
 
-          <div className="navbar__mobile-actions">
-  <NavLink
-    to="/wishlist"
-    className="navbar__account-icon-link"
-    style={({ isActive }) => ({
-      color: isActive ? '#f97316' : 'inherit'
-    })}
-  >
-    <FaHeart />
-  </NavLink>
-  <a
-    href="/cart"
-    className="navbar__account-icon-link"
-    onClick={toggleCart}
-    ref={cartButtonRef}
-  >
-    <FaShoppingCart />
-    {cartItems.length > 0 && (
-      <span className="navbar__cart-count navbar__cart-count--mobile">
-        {cartItems.length}
-      </span>
-    )}
-  </a>
-  <div className="navbar__mobile-user" ref={dropdownTriggerRef}>
-    <div
-      className="navbar__mobile-avatar"
-      tabIndex={0}
-      role="button"
-      aria-label="Profile"
-      onClick={
-        isAuthenticated
-          ? () => setProfileDropdownOpen((v) => !v)
-          : toggleAuthModal
-      }
-      onKeyDown={(e) => {
-        if (isAuthenticated && (e.key === "Enter" || e.key === " "))
-          setProfileDropdownOpen((v) => !v);
-        if (
-          !isAuthenticated &&
-          (e.key === "Enter" || e.key === " ")
-        ) {
-          toggleAuthModal({
-            preventDefault: () => { },
-            stopPropagation: () => { },
-          } as unknown as React.MouseEvent);
-        }
-      }}
-      aria-haspopup="true"
-      aria-expanded={profileDropdownOpen}
-    >
-      {getUserAvatar()}
-    </div>
-    {isAuthenticated && profileDropdownOpen && (
-      <div
-        className="navbar__profile-dropdown-card"
-        ref={profileRef}
-      >
-        <div className="navbar__profile-card-header">
-          {getUserAvatar()}
-          <div className="navbar__profile-card-info">
-            <div className="navbar__profile-card-name">
-              {user?.username || user?.email}
-            </div>
-            {user?.email && (
-              <div className="navbar__profile-card-email">
-                {user.email}
+            <div className="navbar__mobile-actions">
+              <NavLink
+                to="/wishlist"
+                className="navbar__account-icon-link"
+                style={({ isActive }) => ({
+                  color: isActive ? '#f97316' : 'inherit'
+                })}
+              >
+                <FaHeart />
+              </NavLink>
+              <a
+                href="/cart"
+                className="navbar__account-icon-link"
+                onClick={toggleCart}
+                ref={cartButtonRef}
+              >
+                <FaShoppingCart />
+                {cartItems.length > 0 && (
+                  <span className="navbar__cart-count navbar__cart-count--mobile">
+                    {cartItems.length}
+                  </span>
+                )}
+              </a>
+              <div className="navbar__mobile-user" ref={dropdownTriggerRef}>
+                <div
+                  className="navbar__mobile-avatar"
+                  tabIndex={0}
+                  role="button"
+                  aria-label="Profile"
+                  onClick={
+                    isAuthenticated
+                      ? () => setProfileDropdownOpen((v) => !v)
+                      : toggleAuthModal
+                  }
+                  onKeyDown={(e) => {
+                    if (isAuthenticated && (e.key === "Enter" || e.key === " "))
+                      setProfileDropdownOpen((v) => !v);
+                    if (
+                      !isAuthenticated &&
+                      (e.key === "Enter" || e.key === " ")
+                    ) {
+                      toggleAuthModal({
+                        preventDefault: () => { },
+                        stopPropagation: () => { },
+                      } as unknown as React.MouseEvent);
+                    }
+                  }}
+                  aria-haspopup="true"
+                  aria-expanded={profileDropdownOpen}
+                >
+                  {getUserAvatar()}
+                </div>
+                {isAuthenticated && profileDropdownOpen && (
+                  <div
+                    className="navbar__profile-dropdown-card"
+                    ref={profileRef}
+                  >
+                    <div className="navbar__profile-card-header">
+                      {getUserAvatar()}
+                      <div className="navbar__profile-card-info">
+                        <div className="navbar__profile-card-name">
+                          {user?.username || user?.email}
+                        </div>
+                        {user?.email && (
+                          <div className="navbar__profile-card-email">
+                            {user.email}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="navbar__profile-card-divider" />
+                    {user?.role === 'admin' && (
+                      <NavLink
+                        to="/admin-dashboard"
+                        className="navbar__profile-card-link"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        style={({ isActive }) => ({
+                          color: isActive ? '#f97316' : 'inherit'
+                        })}
+                      >
+                        <FaHome className="navbar__profile-card-icon" /> Admin Dashboard
+                      </NavLink>
+                    )}
+                    {vendorAuthState.isAuthenticated && vendorAuthState.vendor && (
+                      <NavLink
+                        to="/dashboard"
+                        className="navbar__profile-card-link"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        style={({ isActive }) => ({
+                          color: isActive ? '#f97316' : 'inherit'
+                        })}
+                      >
+                        <FaHome className="navbar__profile-card-icon" /> Vendor Dashboard
+                      </NavLink>
+                    )}
+                    <NavLink
+                      to="/user-profile"
+                      className="navbar__profile-card-link"
+                      style={({ isActive }) => ({
+                        color: isActive ? '#f97316' : 'inherit'
+                      })}
+                    >
+                      <FaCog className="navbar__profile-card-icon" /> Settings
+                    </NavLink>
+                    <button
+                      className="navbar__profile-card-link navbar__profile-card-link--logout"
+                      onClick={handleFullLogout}
+                    >
+                      <FaSignOutAlt className="navbar__profile-card-icon" /> Log Out
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
-        <div className="navbar__profile-card-divider" />
-        {user?.role === 'admin' && (
-          <NavLink
-            to="/admin-dashboard"
-            className="navbar__profile-card-link"
-            onClick={() => setProfileDropdownOpen(false)}
-            style={({ isActive }) => ({
-              color: isActive ? '#f97316' : 'inherit'
-            })}
-          >
-            <FaHome className="navbar__profile-card-icon" /> Admin Dashboard
-          </NavLink>
-        )}
-        {vendorAuthState.isAuthenticated && vendorAuthState.vendor && (
-          <NavLink
-            to="/dashboard"
-            className="navbar__profile-card-link"
-            onClick={() => setProfileDropdownOpen(false)}
-            style={({ isActive }) => ({
-              color: isActive ? '#f97316' : 'inherit'
-            })}
-          >
-            <FaHome className="navbar__profile-card-icon" /> Vendor Dashboard
-          </NavLink>
-        )}
-        <NavLink
-          to="/user-profile"
-          className="navbar__profile-card-link"
-          style={({ isActive }) => ({
-            color: isActive ? '#f97316' : 'inherit'
-          })}
-        >
-          <FaCog className="navbar__profile-card-icon" /> Settings
-        </NavLink>
-        <button
-          className="navbar__profile-card-link navbar__profile-card-link--logout"
-          onClick={handleFullLogout}
-        >
-          <FaSignOutAlt className="navbar__profile-card-icon" /> Log Out
-        </button>
-      </div>
-    )}
-  </div>
-  <a
-    href="/nepal"
-    className="navbar__social-link navbar__social-link--nepal"
-  >
-    <img
-      src={nepal}
-      alt="Nepal Flag"
-      className="navbar__nepal-flag"
-    />
-  </a>
-  <button
-    className="navbar__hamburger"
-    onClick={toggleSideMenu}
-    aria-label="Toggle menu"
-    aria-expanded={sideMenuOpen}
-    ref={hamburgerRef}
-  >
-    {sideMenuOpen ? <FaTimes /> : <FaBars />}
-  </button>
-</div>
+              <a
+                href="/nepal"
+                className="navbar__social-link navbar__social-link--nepal"
+              >
+                <img
+                  src={nepal}
+                  alt="Nepal Flag"
+                  className="navbar__nepal-flag"
+                />
+              </a>
+              <button
+                className="navbar__hamburger"
+                onClick={toggleSideMenu}
+                aria-label="Toggle menu"
+                aria-expanded={sideMenuOpen}
+                ref={hamburgerRef}
+              >
+                {sideMenuOpen ? <FaTimes /> : <FaBars />}
+              </button>
+              {!isLoading && !isAuthenticated && (
+                <a
+                  href="/vendor-login"
+                  className="navbar__account-icon-link"
+                  onClick={toggleVendorAuthModal}
+                  aria-label="Become a Vendor"
+                >
+                  <FaShoppingBag />
+                </a>
+              )}
+            </div>
           </div>
 
           <div className="navbar__search-row">
@@ -795,8 +809,6 @@ const Navbar: React.FC = () => {
             </div>
           </div>
 
-
-          {/* Nav bar desktop link  */}
           <div className="navbar__desktop-links">
             <div className="navbar__links">
               <NavLink
@@ -955,7 +967,17 @@ const Navbar: React.FC = () => {
               >
                 <FaHeart />
               </NavLink>
-
+              {!isLoading && !isAuthenticated && (
+                <a
+                  href="/vendor-login"
+                  className="navbar__account-link"
+                  onClick={toggleVendorAuthModal}
+                  aria-label="Become a Vendor"
+                >
+                  <span className="navbar__account-text">Become a Vendor</span>
+                  
+                </a>
+              )}
             </div>
           </div>
 
@@ -1081,42 +1103,50 @@ const Navbar: React.FC = () => {
                 Login
               </a>
             )}
+            {!isLoading && !isAuthenticated && (
+              <a
+                href="/vendor-login"
+                className="navbar__side-menu-link"
+                onClick={toggleVendorAuthModal}
+              >
+                Become a Vendor
+              </a>
+            )}
           </div>
 
           {renderSideMenuCategories()}
 
-<div className="navbar__side-menu-social">
-  <h3 className="navbar__side-menu-subtitle">Follow Us</h3>
-  <div className="navbar__side-menu-social-icons">
-  
-    <a
-      href="https://www.facebook.com/"
-      className="navbar__social-link navbar__social-link--facebook"
-    >
-      <FaFacebook />
-    </a>
-    <a
-      href="https://www.instagram.com/dajuvai_/"
-      className="navbar__social-link navbar__social-link--instagram"
-    >
-      <FaInstagram />
-    </a>
-    <a
-      href="https://www.tiktok.com/@www.dajuvai.com"
-      className="navbar__social-link navbar__social-link--tiktok"
-    >
-      <FaTiktok />
-    </a>
-    <a
-      href="https://wa.me/9779700620004"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="navbar__social-link navbar__social-link--whatsapp"
-    >
-      <FaWhatsapp />
-    </a>
-  </div>
-</div>
+          <div className="navbar__side-menu-social">
+            <h3 className="navbar__side-menu-subtitle">Follow Us</h3>
+            <div className="navbar__side-menu-social-icons">
+              <a
+                href="https://www.facebook.com/"
+                className="navbar__social-link navbar__social-link--facebook"
+              >
+                <FaFacebook />
+              </a>
+              <a
+                href="https://www.instagram.com/dajuvai_/"
+                className="navbar__social-link navbar__social-link--instagram"
+              >
+                <FaInstagram />
+              </a>
+              <a
+                href="https://www.tiktok.com/@www.dajuvai.com"
+                className="navbar__social-link navbar__social-link--tiktok"
+              >
+                <FaTiktok />
+              </a>
+              <a
+                href="https://wa.me/9779700620004"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="navbar__social-link navbar__social-link--whatsapp"
+              >
+                <FaWhatsapp />
+              </a>
+            </div>
+          </div>
         </div>
 
         <div
@@ -1259,15 +1289,14 @@ const Navbar: React.FC = () => {
             >
               <FaTiktok />
             </a>
-              <a
-  href="https://wa.me/9779700620004"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="navbar__social-link navbar__social-link--whatsapp"
->
-  <FaWhatsapp />
-</a>
-
+            <a
+              href="https://wa.me/9779700620004"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="navbar__social-link navbar__social-link--whatsapp"
+            >
+              <FaWhatsapp />
+            </a>
           </div>
         </div>
       </div>
@@ -1327,6 +1356,10 @@ const Navbar: React.FC = () => {
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
+      />
+      <VendorAuthModal
+        isOpen={vendorAuthModalOpen}
+        onClose={() => setVendorAuthModalOpen(false)}
       />
     </nav>
   );

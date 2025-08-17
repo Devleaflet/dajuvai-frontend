@@ -102,7 +102,7 @@ const Contact: React.FC = () => {
             {!mapLoaded && <div className="map-skeleton" style={{ height: MAP_HEIGHT }} />}
             <iframe
               title="Our Location"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3532.123456789!2d85.3240!3d27.7172!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb190a1234567%3A0xabcdef123456789!2sKathmandu!5e0!3m2!1sen!2snp!4v1680000000000!5m2!1sen!2snp"
+              src="https://www.google.com/maps/place/Maharajgunj,+Kathmandu+44600/@27.7353473,85.3263044,16z/data=!3m1!4b1!4m6!3m5!1s0x39eb193854e20abb:0x8ff36d1f00e10346!8m2!3d27.7364789!4d85.3304212!16s%2Fg%2F1ym_k499k?entry=ttu&g_ep=EgoyMDI1MDgxMy4wIKXMDSoASAFQAw%3D%3D"
               width="100%"
               height={MAP_HEIGHT}
               style={{ border: 0, display: mapLoaded ? "block" : "none" }}

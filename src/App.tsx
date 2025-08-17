@@ -43,6 +43,7 @@ import FacebookAuthCallback from "./Pages/FacebookAuthCallback";
 import PrivacyPolicy from "./Pages/PrivacyPolicy";
 import DataDeletion from "./Pages/DataDeletion";
 import TermsAndConditions from "./Pages/TermsAndConditions";
+import AboutUs from "./Pages/AboutUs";
 
 // Admin route guards
 // Allows both admin and staff to access admin area
@@ -93,6 +94,7 @@ function App() {
         <Route path="/contact" element={<About />} />
           <Route path="/terms" element={<TermsAndConditions />} />
             <Route path="/privacy" element={<Privacy />} />
+              <Route path="/about" element={<AboutUs />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/product-page/:categoryId/:subcategoryId/:id" element={<ProductPage />} />
@@ -114,6 +116,7 @@ function App() {
         {/* Vendor Routes (protected) */}
         <Route path="/vendor/login" element={<VendorLogin />} />
         <Route path="/vendor/signup" element={<VendorSignup />} />
+        
         <Route
           path="/dashboard"
           element={
