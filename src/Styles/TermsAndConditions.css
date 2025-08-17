@@ -1,58 +1,106 @@
-body {
-  background-color: #f9f9f9;
-  font-family: 'Arial', sans-serif;
-    margin: 2rem auto;
-  padding: 2rem;
-}
-
-.terms-content {
-  
-  margin-left: auto;
-  margin-right: auto;
-  padding: 40px 20px;
+/* Container */
+.container {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 30px 20px;
 
   
 }
 
-h1 {
-  font-size: 2.5em;
-  font-weight: bold;
+/* Header */
+.header {
   text-align: center;
-  margin-bottom: 1.5em;
-  color: #2d3748;
+  padding: 40px 20px;
+  margin-bottom: 50px;
+  border-bottom: 3px solid #FF6B00;
+  background: linear-gradient(to right, #FF6B00, #FF914D);
+  border-radius: 12px 12px 0 0;
+  color: #ffffff;
 }
 
-h2 {
-  font-size: 1.75em;
+.header__title {
+  font-size: 2.5rem;
   font-weight: bold;
-  margin-top: 1.5em;
-  margin-bottom: 0.75em;
-  color: #4a5568;
+  margin-bottom: 10px;
 }
 
-h3 {
-  font-size: 1.5em;
+.header__subtitle {
+  font-size: 1.2rem;
+  font-style: italic;
+  opacity: 0.9;
+}
+
+/* Section */
+.section {
+  margin-bottom: 40px;
+  padding: 20px;
+  background-color: #F9FAFB;
+  border-left: 4px solid #FF6B00;
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+}
+
+.section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.section__title {
+  font-size: 1.6rem;
+  color: #111111;
+  margin-bottom: 15px;
   font-weight: bold;
-  margin-top: 1.5em;
-  margin-bottom: 0.75em;
-  color: #718096;
+  border-bottom: 2px solid #FF6B00;
+  padding-bottom: 5px;
 }
 
-p {
-  font-size: 1.1em;
-  line-height: 1.75;
-  margin-bottom: 1.25em;
-  color: #4a5568;
+.section__text {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #555555;
+  margin-bottom: 15px;
+  text-align: left;
 }
 
-ul {
-  font-size: 1.1em;
-  line-height: 1.75;
-  margin-left: 2em;
-  margin-bottom: 1.25em;
-  color: #4a5568;
+/* Lists */
+.list--vision {
+  list-style: none;
+  margin: 10px 0;
+  padding-left: 20px;
 }
 
-li {
-  margin-bottom: 0.75em;
+.list__item {
+  font-size: 1.05rem;
+  color: #333333;
+  margin-bottom: 8px;
+  position: relative;
+  padding-left: 20px;
+}
+
+.list__item::before {
+  content: '⬤';
+  color: #FF6B00; /* Orange bullet */
+  font-size: 0.7rem;
+  position: absolute;
+  left: 0;
+  top: 6px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+
+  .header__title {
+    font-size: 2rem;
+  }
+
+  .section__title {
+    font-size: 1.4rem;
+  }
+
+  .section__text, .list__item {
+    font-size: 1rem;
+  }
 }

@@ -1,4 +1,3 @@
-// components/HeroSlider.tsx
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -26,7 +25,6 @@ const fetchHeroBanners = async (): Promise<Slide[]> => {
     throw new Error(`Failed to fetch banners: ${response.statusText}`);
   }
   const data = await response.json();
-  // Filter only active hero banners that are not expired
   return data.data.filter((banner: Slide & { type: string; status: string; startDate?: string; endDate?: string }) => 
     banner.type === 'HERO' && 
     banner.status === 'ACTIVE' &&
@@ -44,17 +42,15 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   const { data: slides = [], isLoading, error } = useQuery<Slide[], Error>({
     queryKey: ['heroBanners'],
     queryFn: fetchHeroBanners,
-    staleTime: 5 * 60 * 1000, // 5 minutes stale time
-    gcTime: 10 * 60 * 1000, // 10 minutes garbage collection time
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     retry: (failureCount, error) => {
-      // Don't retry for 404 or 400 errors
       if (error.message.includes('404') || error.message.includes('400')) {
         return false;
       }
-      // Retry up to 3 times for other errors
       return failureCount < 3;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   useEffect(() => {
@@ -67,7 +63,6 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   }, [slides]);
 
   useEffect(() => {
-    // Call onLoad when the component is mounted and ready
     onLoad?.();
   }, [onLoad]);
 
@@ -103,24 +98,21 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   const handleImageClick = (slide: Slide): void => {
     console.log('🎯 HeroSlider banner clicked:', slide);
     if (slide && slide.name) {
-      // Navigate to shop page with banner name as search parameter
       const searchQuery = encodeURIComponent(slide.name);
       console.log('🔍 Navigating to shop with search:', {
         bannerName: slide.name,
         encodedSearch: searchQuery,
-        fullUrl: `/shop?search=${searchQuery}`
+        fullUrl: `/shop?search=${searchQuery}`,
       });
       try {
         navigate(`/shop?search=${searchQuery}`);
         console.log('✅ Navigation successful');
       } catch (error) {
         console.error('❌ Navigation failed:', error);
-        // Fallback: try window.location
         window.location.href = `/shop?search=${searchQuery}`;
       }
     } else {
       console.log('⚠️ No slide name found, navigating to shop without search');
-      // Fallback: navigate to shop without search
       try {
         navigate('/shop');
       } catch (error) {
@@ -136,7 +128,7 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
 
   return (
     <div className="hero-slider">
-      <div 
+      <div
         className="hero-slider__track"
         style={{ transform: `translateX(-${activeSlide * 100}%)` }}
         onTouchStart={handleTouchStart}
@@ -145,31 +137,41 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
       >
         {slides.map((slide) => (
           <div key={slide.id} className="hero-slider__slide">
-            <img 
-              src={slide.image} 
-              alt={slide.name}
-              className="hero-slider__image"
-              loading="lazy"
-              onClick={() => handleImageClick(slide)}
-              style={{ cursor: 'pointer' }}
-            />
+            <div className="hero-slider__image-container">
+              <img
+                src={slide.image}
+                alt={slide.name}
+                className="hero-slider__image"
+                loading="lazy"
+                onClick={() => handleImageClick(slide)}
+                style={{ cursor: 'pointer' }}
+              />
+              {/* Navigation buttons inside the slide */}
+              <button
+                className="hero-slider__nav-button hero-slider__nav-button--prev"
+                onClick={goToPrevSlide}
+              >
+                <ArrowLeft size={24} color="white" />
+              </button>
+              <button
+                className="hero-slider__nav-button hero-slider__nav-button--next"
+                onClick={goToNextSlide}
+              >
+                <ArrowRight size={24} color="white" />
+              </button>
+            </div>
           </div>
         ))}
       </div>
-
-      <button className="hero-slider__nav-button hero-slider__nav-button--prev" onClick={goToPrevSlide}>
-        <ArrowLeft size={24} color="white" />
-      </button>
-      <button className="hero-slider__nav-button hero-slider__nav-button--next" onClick={goToNextSlide}>
-        <ArrowRight size={24} color="white" />
-      </button>
 
       <div className="hero-slider__indicators">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            className={`hero-slider__indicator ${activeSlide === index ? 'hero-slider__indicator--active' : ''}`}
+            className={`hero-slider__indicator ${
+              activeSlide === index ? 'hero-slider__indicator--active' : ''
+            }`}
           />
         ))}
       </div>

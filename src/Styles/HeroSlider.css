@@ -20,6 +20,12 @@
   position: relative;
 }
 
+.hero-slider__image-container {
+  position: relative; /* Positioning context for nav buttons */
+  width: 100%;
+  height: 100%;
+}
+
 .hero-slider__image {
   width: 100%;
   height: 100%;
@@ -29,7 +35,6 @@
 
 /* Navigation Buttons */
 .hero-slider__nav-button {
-  display: none;
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
@@ -37,13 +42,14 @@
   height: 2.5rem;
   background-color: rgba(0, 0, 0, 0.6);
   border-radius: 50%;
-  display: flex;
+  display: flex; /* Always visible */
   align-items: center;
   justify-content: center;
   z-index: 10;
   border: none;
   cursor: pointer;
   padding: 0.5rem;
+  transition: background-color 0.3s ease;
 }
 
 .hero-slider__nav-button:hover {
@@ -51,12 +57,10 @@
 }
 
 .hero-slider__nav-button--prev {
-  display: none;
   left: 1rem;
 }
 
 .hero-slider__nav-button--next {
-  display: none;
   right: 1rem;
 }
 
