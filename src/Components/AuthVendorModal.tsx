@@ -377,7 +377,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({ isOpen, onClose }) =>
         </div>
 
         <div className="auth-modal__title">
-          {showVerification ? "Verify Your Email" : "Become a Vendor"}
+          {showVerification ? "Verify Your Email" : " Vendor Login"}
         </div>
 
         {!showVerification && (
@@ -598,7 +598,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({ isOpen, onClose }) =>
         {!showVerification && (
           <div className="auth-modal__footer">
             <p className="auth-modal__footer-text">
-              {isLoginMode ? "Don't have an account? " : "Already have an account? "}
+              {isLoginMode ? "Don't have a vendor account? " : "Already have a vendor account? "}
               <button
                 type="button"
                 className="auth-modal__link-button"

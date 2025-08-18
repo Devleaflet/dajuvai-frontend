@@ -1,5 +1,5 @@
 import '../Styles/Footer.css';
-import { TbDeviceLandlinePhone, TbTruckDelivery } from "react-icons/tb";
+import { TbTruckDelivery } from "react-icons/tb";
 import { FaPhoneVolume, FaLocationDot, FaFacebookF, FaInstagram } from "react-icons/fa6";
 import { MdEmail } from "react-icons/md";
 import { IoLogoWhatsapp } from "react-icons/io";
@@ -22,7 +22,7 @@ const Footer: React.FC = () => {
     orderStatus?: string;
     message?: string;
   } | null>(null);
-  
+
   const { token } = useAuth();
 
   const handleTrackOrder = async () => {
@@ -79,10 +79,10 @@ const Footer: React.FC = () => {
                 <div className="footer__form-group">
                   <label className="footer__label">Order ID</label>
                   <p className="footer__hint">Found in your order confirmation email</p>
-                  <input 
-                    type="text" 
-                    className="footer__input" 
-                    placeholder="Enter your Order ID" 
+                  <input
+                    type="text"
+                    className="footer__input"
+                    placeholder="Enter your Order ID"
                     value={orderId}
                     onChange={(e) => setOrderId(e.target.value)}
                   />
@@ -91,17 +91,17 @@ const Footer: React.FC = () => {
                 <div className="footer__form-group">
                   <label className="footer__label">Billing email</label>
                   <p className="footer__hint">Email you used check out.</p>
-                  <input 
-                    type="email" 
-                    className="footer__input" 
-                    placeholder="Enter your email" 
+                  <input
+                    type="email"
+                    className="footer__input"
+                    placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               </div>
 
-              <button 
+              <button
                 className="footer__track-button"
                 onClick={handleTrackOrder}
                 disabled={!orderId.trim()}
@@ -120,10 +120,10 @@ const Footer: React.FC = () => {
               <div className="footer__section footer__links-section">
                 <h3 className="footer__section-title">Useful Links</h3>
                 <ul className="footer__list">
-                
+
+                  <li><Link to="/shop" className="footer__link">Shop</Link></li>
                   <li><Link to="/contact" className="footer__link">Contact Us</Link></li>
-                          <li><Link to="/about" className="footer__link">About Us</Link></li>
-                  <li><Link to="#" className="footer__link">FAQ</Link></li>
+                  <li><Link to="/faq" className="footer__link">FAQ</Link></li>
                 </ul>
               </div>
 
@@ -131,82 +131,90 @@ const Footer: React.FC = () => {
               <div className="footer__section footer__account-section">
                 <h3 className="footer__section-title">Account</h3>
                 <ul className="footer__list">
-                  <li><Link to="/terms" className="footer__link">Terms and Policy</Link></li>
-                  <li><Link to="/privacy" className="footer__link">Privacy Policy</Link></li>
-               
+                  <li><Link to="/wishlist" className="footer__link">Wishlist</Link></li>
+                  <li><Link to="/contact" className="footer__link">Complain</Link></li>
                 </ul>
               </div>
 
-              {/* Services Section */}
+              {/* Services Section - Improved Structure */}
               <div className="footer__section footer__services-section">
                 <h3 className="footer__section-title">Services</h3>
-                <ul className="footer__list">
-                  <li className="footer__service-item">
+                <div className="footer__services-list">
+                  <div className="footer__service-item">
                     <div className="footer__service-icon">
                       <TbTruckDelivery />
                     </div>
                     <div className="footer__service-text">
-                      <span className="footer__service-label">Delivery:</span>
-                      <span>Kathmandu, Bhaktapur, Lalitpur</span>
+                      <div className="footer__service-label">Delivery</div>
+                      <div className="footer__service-value">All over Nepal</div>
                     </div>
-                  </li>
-                  <li className="footer__service-item">
+                  </div>
+                  
+                  <div className="footer__service-item">
                     <div className="footer__service-icon">
                       <FaPhoneVolume />
                     </div>
                     <div className="footer__service-text">
-                      <span className="footer__service-label">Mobile:</span>
-                      <span>+977 - 9700620004</span>
+                      <div className="footer__service-label">Phone</div>
+                      <div className="footer__service-value">9700620004</div>
                     </div>
-                    
+                  </div>
                   
-                  </li>
-                    <li className="footer__service-item">
+                  <div className="footer__service-item">
                     <div className="footer__service-icon">
-                      <TbDeviceLandlinePhone />
+                      <FaPhoneVolume />
                     </div>
-                      <div className="footer__service-text">
-                      <span className="footer__service-label">Landline:</span>
-                      <span>01 -720234</span>
+                    <div className="footer__service-text">
+                      <div className="footer__service-label">Landline</div>
+                      <div className="footer__service-value">01-4720234</div>
                     </div>
-                    
+                  </div>
                   
-                  </li>
-
-                
-                  <li className="footer__service-item">
+                  <div className="footer__service-item">
                     <div className="footer__service-icon">
                       <FaLocationDot />
                     </div>
                     <div className="footer__service-text">
-                      <span className="footer__service-label">Address:</span>
-                      <span>Kathmandu, Nepal</span>
+                      <div className="footer__service-label">Address</div>
+                      <div className="footer__service-value">Kathmandu, Nepal</div>
                     </div>
-                  </li>
-                </ul>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Bottom Row with Contact and Payment */}
-            <div className="footer__bottom-links">
+            <div className="footer__bottom-links-section">
               {/* Contact With Us Section */}
               <div className="footer__section footer__contact-section">
                 <h3 className="footer__section-title">Contact With Us</h3>
                 <div className="footer__social-icons">
-                  <a href="https://www.facebook.com/" className="footer__social-link">
+                  <a href="https://www.facebook.com/" className="footer__social-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <FaFacebookF />
                   </a>
-                  <a href="Dajuvai106@gmail.com" className="footer__social-link">
+                  <a
+                    href="mailto:Dajuvai106@gmail.com"
+                    className="footer__social-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <MdEmail />
                   </a>
-                  <a  
-                  href="https://wa.me/9779700620004"
-      target="_blank"
-      rel="noopener noreferrer"
-     className="footer__social-link">
+                  <a
+                    href="https://wa.me/+9779700620004"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer__social-link"
+                  >
                     <IoLogoWhatsapp />
                   </a>
-                  <a href="https://www.instagram.com/dajuvai_/" className="footer__social-link">
+                  <a href="https://www.instagram.com/dajuvai_/" className="footer__social-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <FaInstagram />
                   </a>
                 </div>
@@ -217,7 +225,7 @@ const Footer: React.FC = () => {
                 <h3 className="footer__section-title">Payment Methods</h3>
                 <div className="footer__payment-icons">
                   <img src={esewa} alt="eSewa Payment" className="footer__payment-image" />
-                  <img src={npx} alt="eSewa Payment" className="footer__payment-image" />
+                  <img src={npx} alt="NPX Payment" className="footer__payment-image" />
                 </div>
               </div>
             </div>
@@ -228,12 +236,12 @@ const Footer: React.FC = () => {
       {/* Footer Bottom */}
       <div className="footer__bottom">
         <div className="footer__copyright">
-          Copyright Dajuvai © 2025 - <a href="#" className="footer__copyright-link">Leaflet Digital Soultions Pvt Ltd.</a>
+          Copyright Dajuvai © 2025 - <a href="#" className="footer__copyright-link">Leaflet Digital Solutions Pvt Ltd.</a>
         </div>
         <div className="footer__bottom-links">
           <a href="/privacy" className="footer__bottom-link">Privacy Policy</a>
           <a href="/terms" className="footer__bottom-link">Terms & Condition</a>
-          <a href="#" className="footer__bottom-link">Site Map</a>
+          <a href="/contact" className="footer__bottom-link">Site Map</a>
         </div>
       </div>
 

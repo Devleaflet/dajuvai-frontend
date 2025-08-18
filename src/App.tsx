@@ -45,6 +45,7 @@ import DataDeletion from "./Pages/DataDeletion";
 import TermsAndConditions from "./Pages/TermsAndConditions";
 import AboutUs from "./Pages/AboutUs";
 import EcommerceFAQ from "./Pages/Faq";
+import BecomeVendor from "./Pages/BecomeVendor";
 
 // Admin route guards
 // Allows both admin and staff to access admin area
@@ -96,6 +97,7 @@ function App() {
         <Route path="/faq" element={<EcommerceFAQ />} />
         <Route path="/terms" element={<TermsAndConditions />} />
         <Route path="/privacy" element={<Privacy />} />
+                <Route path="/becomevendor" element={<BecomeVendor />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/checkout" element={<Checkout />} />

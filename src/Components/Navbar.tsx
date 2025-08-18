@@ -13,7 +13,6 @@ import {
   FaHome,
   FaShoppingBag,
   FaInfoCircle,
-  FaQuestionCircle,
 } from "react-icons/fa";
 import {
   FaFacebook,
@@ -65,6 +64,8 @@ const Navbar: React.FC = () => {
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [vendorAuthModalOpen, setVendorAuthModalOpen] = useState<boolean>(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState<boolean>(false);
+  const [moreDropdownOpen, setMoreDropdownOpen] = useState<boolean>(false);
+  const [showComingSoonPopup, setShowComingSoonPopup] = useState<boolean>(false);
   const [isCategoriesReady, setIsCategoriesReady] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [dropdownSubcategories, setDropdownSubcategories] = useState([]);
@@ -82,6 +83,7 @@ const Navbar: React.FC = () => {
   const profileRef = useRef<HTMLDivElement>(null);
   const dropdownTriggerRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const moreDropdownRef = useRef<HTMLDivElement>(null);
 
   const {
     cartItems,
@@ -120,11 +122,22 @@ const Navbar: React.FC = () => {
       ) {
         setProfileDropdownOpen(false);
       }
+
+      if (
+        moreDropdownOpen &&
+        moreDropdownRef.current &&
+        !moreDropdownRef.current.contains(event.target as Node)
+      ) {
+        setMoreDropdownOpen(false);
+      }
     }
     function handleEsc(event: KeyboardEvent) {
-      if (event.key === "Escape") setProfileDropdownOpen(false);
+      if (event.key === "Escape") {
+        setProfileDropdownOpen(false);
+        setMoreDropdownOpen(false);
+      }
     }
-    if (profileDropdownOpen) {
+    if (profileDropdownOpen || moreDropdownOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("keydown", handleEsc);
     }
@@ -132,7 +145,7 @@ const Navbar: React.FC = () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEsc);
     };
-  }, [profileDropdownOpen]);
+  }, [profileDropdownOpen, moreDropdownOpen]);
 
   const getUserAvatar = () => {
     if (isLoading) return <div className="navbar__avatar-loading"></div>;
@@ -194,6 +207,12 @@ const Navbar: React.FC = () => {
       setSideMenuOpen(false);
       document.body.classList.remove("navbar--menu-open");
     }
+  };
+
+  const showComingSoon = () => {
+    setShowComingSoonPopup(true);
+    setMoreDropdownOpen(false);
+    setTimeout(() => setShowComingSoonPopup(false), 3000);
   };
 
   useEffect(() => {
@@ -727,6 +746,16 @@ const Navbar: React.FC = () => {
                   </div>
                 )}
               </div>
+              {!isLoading && !isAuthenticated && (
+                <a
+                  href="/vendor-login"
+                  className="navbar__account-icon-link"
+                  onClick={toggleVendorAuthModal}
+                  aria-label="Vendor Login"
+                >
+                  <FaShoppingBag />
+                </a>
+              )}
               <a
                 href="/nepal"
                 className="navbar__social-link navbar__social-link--nepal"
@@ -746,16 +775,6 @@ const Navbar: React.FC = () => {
               >
                 {sideMenuOpen ? <FaTimes /> : <FaBars />}
               </button>
-              {!isLoading && !isAuthenticated && (
-                <a
-                  href="/vendor-login"
-                  className="navbar__account-icon-link"
-                  onClick={toggleVendorAuthModal}
-                  aria-label="Become a Vendor"
-                >
-                  <FaShoppingBag />
-                </a>
-              )}
             </div>
           </div>
 
@@ -836,6 +855,17 @@ const Navbar: React.FC = () => {
                 Shop
               </NavLink>
               <NavLink
+                to="/about"
+                className={({ isActive }) =>
+                  `navbar__link${isActive ? " active" : ""}`
+                }
+                style={({ isActive }) => ({
+                  color: isActive ? '#f97316' : 'inherit'
+                })}
+              >
+                About Us
+              </NavLink>
+               <NavLink
                 to="/contact"
                 className={({ isActive }) =>
                   `navbar__link${isActive ? " active" : ""}`
@@ -844,18 +874,44 @@ const Navbar: React.FC = () => {
                   color: isActive ? '#f97316' : 'inherit'
                 })}
               >
-                Contact <span className="navbar__link-icon">🎧</span>
+                Contact <span className="navbar__link-icon"></span>
               </NavLink>
-
-              <NavLink
-                to="/faq"
-                className="navbar__mobile-dock-item"
-                style={({ isActive }) => ({
-                  color: isActive ? "#f97316" : "inherit",
-                })}
-              >
-                <span>FAQ</span>
-              </NavLink>
+        
+              <div className="navbar__more-dropdown" ref={moreDropdownRef}>
+                <button
+                  className="navbar__link navbar__more-trigger"
+                  onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    color: '#42504b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px'
+                  }}
+                >
+                  More <FaChevronDown size={12} />
+                </button>
+                {moreDropdownOpen && (
+                  <div className="navbar__more-dropdown-content">
+                    <button
+                      className="navbar__more-dropdown-link"
+                      onClick={showComingSoon}
+                    >
+                      DajuVai Rental
+                    </button>
+                    <button
+                      className="navbar__more-dropdown-link"
+                      onClick={showComingSoon}
+                    >
+                      DajuVai Services
+                    </button>
+                  </div>
+                )}
+              </div>
+           
             </div>
 
             <div className="navbar__account">
@@ -969,6 +1025,16 @@ const Navbar: React.FC = () => {
                   </div>
                 )}
               </div>
+                 {!isLoading && !isAuthenticated && (
+                <a
+                  href="/vendor-login"
+                  className="navbar__account-link"
+                  onClick={toggleVendorAuthModal}
+                  aria-label="Vendor Login"
+                >
+                  <span className="navbar__account-text">Vendor Login</span>
+                </a>
+              )}
               <NavLink
                 to="/wishlist"
                 className="navbar__account-icon-link"
@@ -978,17 +1044,7 @@ const Navbar: React.FC = () => {
               >
                 <FaHeart />
               </NavLink>
-              {!isLoading && !isAuthenticated && (
-                <a
-                  href="/vendor-login"
-                  className="navbar__account-link"
-                  onClick={toggleVendorAuthModal}
-                  aria-label="Become a Vendor"
-                >
-                  <span className="navbar__account-text">Become a Vendor</span>
-
-                </a>
-              )}
+            
             </div>
           </div>
 
@@ -1042,6 +1098,29 @@ const Navbar: React.FC = () => {
             >
               Shop
             </NavLink>
+            <NavLink
+              to="/about"
+              className="navbar__side-menu-link"
+              style={({ isActive }) => ({
+                color: isActive ? '#f97316' : 'inherit'
+              })}
+            >
+              About Us
+            </NavLink>
+            <button
+              className="navbar__side-menu-link"
+              onClick={showComingSoon}
+              style={{ background: 'none', border: 'none', textAlign: 'left', width: '100%' }}
+            >
+              DajuVai Rental
+            </button>
+            <button
+              className="navbar__side-menu-link"
+              onClick={showComingSoon}
+              style={{ background: 'none', border: 'none', textAlign: 'left', width: '100%' }}
+            >
+              DajuVai Services
+            </button>
             {!isLoading && isAuthenticated && user?.role === 'admin' && (
               <NavLink
                 to="/admin-dashboard"
@@ -1120,7 +1199,7 @@ const Navbar: React.FC = () => {
                 className="navbar__side-menu-link"
                 onClick={toggleVendorAuthModal}
               >
-                Become a Vendor
+                Vendor Login
               </a>
             )}
           </div>
@@ -1128,6 +1207,16 @@ const Navbar: React.FC = () => {
           {renderSideMenuCategories()}
 
           <div className="navbar__side-menu-social">
+          <NavLink
+              to="/becomevendor"
+              className="navbar__side-menu-link"
+              end
+              style={({ isActive }) => ({
+                color: isActive ? '#f97316' : 'inherit'
+              })}
+            >
+              Become a vendor 
+            </NavLink>
             <h3 className="navbar__side-menu-subtitle">Follow Us</h3>
             <div className="navbar__side-menu-social-icons">
               <a
@@ -1280,8 +1369,19 @@ const Navbar: React.FC = () => {
               </div>
             ))}
           </div>
-
+   
           <div className="navbar__social navbar__social--desktop">
+            <NavLink
+                to="/becomevendor"
+                className={({ isActive }) =>
+                  `navbar__link${isActive ? " active" : ""}`
+                }
+                style={({ isActive }) => ({
+                  color: isActive ? '#f97316' : 'inherit'
+                })}
+              >
+                Become a vendor
+              </NavLink>
             <a
               href="https://www.facebook.com/"
               className="navbar__social-link navbar__social-link--facebook"
@@ -1350,20 +1450,6 @@ const Navbar: React.FC = () => {
           </span>
           <span className="navbar__mobile-dock-text">Contact</span>
         </NavLink>
-
-        <NavLink
-          to="/faq"
-          className="navbar__mobile-dock-item"
-          style={({ isActive }) => ({
-            color: isActive ? "#f97316" : "inherit",
-          })}
-        >
-          <span className="navbar__mobile-dock-icon">
-            <FaQuestionCircle />
-          </span>
-          <span className="navbar__mobile-dock-text">FAQ</span>
-        </NavLink>
-
         <NavLink
           to="/wishlist"
           className="navbar__mobile-dock-item"
@@ -1377,6 +1463,16 @@ const Navbar: React.FC = () => {
           <span className="navbar__mobile-dock-text">Wishlist</span>
         </NavLink>
       </div>
+
+      {/* Coming Soon Popup */}
+      {showComingSoonPopup && (
+        <div className="navbar__coming-soon-popup">
+          <div className="navbar__coming-soon-content">
+            <h3>🚀 Coming Soon!</h3>
+            <p>This feature is under development and will be available soon.</p>
+          </div>
+        </div>
+      )}
 
       <AuthModal
         isOpen={authModalOpen}

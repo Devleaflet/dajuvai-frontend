@@ -31,22 +31,27 @@
 }
 
 /* Search container - below the header */
+/* Search container - below the header */
 .dashboard__search-container {
   padding: 16px 24px;
   background-color: white;
   border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 /* Updated search styles */
 .dashboard__search {
-  width: 100%;
-  max-width: 600px;
+  width: 800px; /* Allow it to take natural width */
+  min-width: 200px; /* Ensure it has a minimum width */
   position: relative;
-  margin: 0 auto;
+  flex-grow: 1; /* Allow it to expand but not dominate */
 }
 
 .dashboard__search-input {
-  width: 80%;
+  width: 500px; /* Full width within its container */
   padding: 10px 16px 10px 40px;
   border: 1px solid #e5e7eb;
   border-radius: 24px;
@@ -65,6 +70,31 @@
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
+}
+
+/* Ensure sort select stays on the right or wraps below on smaller screens */
+.vendor-product__sort-select {
+  border-radius: 7px;
+  height: 25px;
+  border: 1px solid rgba(128, 128, 128, 0.321);
+  min-width: 180px; /* Consistent minimum width */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dashboard__search-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .dashboard__search {
+    width: 100%; /* Full width on mobile */
+  }
+
+  .vendor-product__sort-select {
+    width: 100%; /* Full width on mobile */
+  }
 }
 
 /* Product specific action button */

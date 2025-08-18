@@ -1,6 +1,6 @@
-import React, { useState} from 'react';
+import React, { useState } from 'react';
 import { Sidebar } from '../Components/Sidebar';
-import Header from '../Components/Header';
+import VendorHeader from '../Components/VendorHeader'; // Add this import
 import ProductList from '../Components/ProductList';
 import NewProductModal from '../Components/NewProductModalRedesigned';
 import EditProductModal from '../Components/Modal/EditProductModalRedesigned';
@@ -12,7 +12,6 @@ import Pagination from '../Components/Pagination';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { Product } from '../Components/Types/Product';
-// Add XLSX import for Excel export
 import * as XLSX from 'xlsx';
 
 const ProductListSkeleton: React.FC = () => {
@@ -52,9 +51,14 @@ const VendorProduct: React.FC = () => {
   const [docketHeight] = useState<number>(80);
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [editingProduct, setEditingProduct] = useState<ApiProduct | null>(null);
-  // Add search and sort state
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortOption, setSortOption] = useState<string>("newest");
+
+  // Add handleSearch function to sync with VendorHeader
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
 
   // React Query for products
   const {
@@ -80,12 +84,9 @@ const VendorProduct: React.FC = () => {
       if (!response.data || typeof response.data !== 'object') throw new Error('Invalid response');
       if (!response.data.success || !response.data.data || !Array.isArray(response.data.data.products)) throw new Error('Invalid response format');
       const products: Product[] = response.data.data.products.map((product: ApiProduct): Product => {
-        // Extract images from both productImages and variant images
         const productImages = Array.isArray(product.productImages)
           ? product.productImages.map((img: string | { url?: string }) => (typeof img === 'string' ? img : img.url || ''))
           : [];
-        
-        // Extract images from variants if product has variants
         const variantImages: string[] = [];
         if ((product as any).hasVariants && (product as any).variants && Array.isArray((product as any).variants)) {
           (product as any).variants.forEach((variant: any) => {
@@ -99,10 +100,7 @@ const VendorProduct: React.FC = () => {
             }
           });
         }
-        
-        // Combine all images (product images first, then variant images)
         const images = [...productImages, ...variantImages].filter(Boolean);
-        // Calculate discounted price
         let basePrice = 0;
         if (typeof product.basePrice === 'number') basePrice = product.basePrice;
         else if (typeof product.basePrice === 'string') basePrice = parseFloat(product.basePrice);
@@ -123,11 +121,9 @@ const VendorProduct: React.FC = () => {
             originalPrice = basePrice.toFixed(2);
           }
         }
-        // Only use allowed status values
         let status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK' = 'AVAILABLE';
         if (product.status === 'OUT_OF_STOCK') status = 'OUT_OF_STOCK';
         else if (product.status === 'LOW_STOCK') status = 'LOW_STOCK';
-        // Explicitly create the object with all required properties
         const mappedProduct: Product = {
           id: product.id,
           name: product.name,
@@ -172,7 +168,6 @@ const VendorProduct: React.FC = () => {
     enabled: !!authState.vendor?.id && !!authState.token
   });
 
-  // Handle product creation success
   const handleProductSubmit = (success: boolean) => {
     if (success) {
       queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
@@ -180,7 +175,6 @@ const VendorProduct: React.FC = () => {
     }
   };
 
-  // Mutation for adding a product (keeping for compatibility)
   const addProductMutation = useMutation({
     mutationFn: async (productData: ProductFormData) => {
       console.log('=== VENDOR PRODUCT CREATION START ===');
@@ -198,24 +192,17 @@ const VendorProduct: React.FC = () => {
         throw new Error('No vendor data found');
       }
 
-      // Convert ProductFormData to FormData
       const formData = new FormData();
-      
-      // Required fields
       formData.append("name", String(productData.name));
       formData.append("subcategoryId", String(productData.subcategoryId));
       formData.append("hasVariants", String(productData.hasVariants));
       
-      // Optional fields
       if (productData.description) {
         formData.append("description", String(productData.description));
       }
       
-      // Handle variant vs non-variant products
       if (!productData.hasVariants) {
         console.log('VendorProduct: Creating non-variant product');
-        
-        // Non-variant product fields
         if (productData.basePrice != null) {
           formData.append("basePrice", String(productData.basePrice));
         }
@@ -226,7 +213,6 @@ const VendorProduct: React.FC = () => {
           formData.append("status", String(productData.status));
         }
         
-        // Non-variant product images
         if (productData.productImages && Array.isArray(productData.productImages)) {
           productData.productImages.forEach((image, index) => {
             if (index < 5 && image instanceof File) {
@@ -236,13 +222,9 @@ const VendorProduct: React.FC = () => {
         }
       } else {
         console.log('VendorProduct: Creating variant product');
-        
-        // Variant product - variants data
         if (productData.variants && Array.isArray(productData.variants)) {
           console.log('VendorProduct: Adding variants data:', productData.variants);
           formData.append("variants", JSON.stringify(productData.variants));
-          
-          // Handle variant images
           productData.variants.forEach((variant, variantIndex) => {
             console.log(`VendorProduct: Processing variant ${variantIndex + 1} (${variant.sku}):`, variant);
             if (variant.images && Array.isArray(variant.images)) {
@@ -264,7 +246,6 @@ const VendorProduct: React.FC = () => {
         }
       }
       
-      // Common optional fields
       if (productData.discount && Number(productData.discount) > 0) {
         formData.append("discount", Number(productData.discount).toFixed(2));
         formData.append("discountType", String(productData.discountType || 'PERCENTAGE'));
@@ -282,14 +263,12 @@ const VendorProduct: React.FC = () => {
         formData.append("brandId", String(productData.brandId));
       }
 
-      // Log formData contents for debugging
       console.log('VendorProduct: Final FormData entries:');
       for (const [key, value] of formData.entries()) {
         console.log(`  ${key}:`, value);
       }
 
       console.log('VendorProduct: Making API call to createProduct');
-      // This is legacy code - new products use NewProductModal
       throw new Error('Use NewProductModal for creating products');
     },
     onSuccess: (data) => {
@@ -304,7 +283,6 @@ const VendorProduct: React.FC = () => {
     },
   });
 
-  // Mutation for editing a product
   const editProductMutation = useMutation({
     mutationFn: async ({ productId, productData, categoryId, subcategoryId }: { productId: number, productData: ProductFormData, categoryId: number, subcategoryId: number }) => {
       console.log('🔄 EDIT PRODUCT MUTATION START');
@@ -319,14 +297,12 @@ const VendorProduct: React.FC = () => {
         throw new Error("Category and subcategory are required");
       }
 
-      // Prepare JSON payload according to new API contract
       const updatePayload: any = {
         name: productData.name,
         subcategoryId: subcategoryId,
         hasVariants: productData.hasVariants || false,
       };
 
-      // Add optional fields
       if (productData.description) updatePayload.description = productData.description;
       if (productData.discount !== undefined && productData.discount !== null && productData.discount !== '') {
         updatePayload.discount = typeof productData.discount === 'string' ? parseFloat(productData.discount) : productData.discount;
@@ -338,10 +314,8 @@ const VendorProduct: React.FC = () => {
         updatePayload.productImages = productData.productImages;
       }
 
-      // Handle variants vs non-variants
       if (productData.hasVariants) {
         if (productData.variants && productData.variants.length > 0) {
-          // Convert variants to match API structure
           updatePayload.variants = productData.variants.map((variant: any) => ({
             sku: variant.sku,
             basePrice: variant.price || variant.basePrice,
@@ -354,7 +328,6 @@ const VendorProduct: React.FC = () => {
           }));
         }
       } else {
-        // For non-variant products, these fields are required
         updatePayload.basePrice = typeof productData.basePrice === 'string' ? parseFloat(productData.basePrice) : productData.basePrice;
         updatePayload.stock = typeof productData.stock === 'string' ? parseInt(productData.stock) : productData.stock;
         updatePayload.status = productData.status || 'AVAILABLE';
@@ -377,7 +350,6 @@ const VendorProduct: React.FC = () => {
     },
   });
 
-  // Handler for Add Product
   const handleAddProduct = (productData: ProductFormData) => {
     addProductMutation.mutate(productData, {
       onSuccess: () => {
@@ -401,10 +373,7 @@ const VendorProduct: React.FC = () => {
     console.log('Product Category Object:', product.category);
     console.log('=== END PRODUCT DATA ===');
     
-    // Convert Product to ApiProduct for editing
     let discount: number | null = null;
-    
-    // Handle discount conversion
     if (product.discount) {
       if (typeof product.discount === 'number') {
         discount = product.discount;
@@ -413,7 +382,6 @@ const VendorProduct: React.FC = () => {
       }
     }
 
-    // Use a type guard for subcategory
     type SubcategoryType = { id: number; name: string; image?: string | null; createdAt?: string; updatedAt?: string };
     const subcategory = product.subcategory && typeof product.subcategory === 'object' && 'id' in product.subcategory && 'name' in product.subcategory
       ? {
@@ -429,10 +397,8 @@ const VendorProduct: React.FC = () => {
     console.log('Product Category ID:', product.categoryId);
     console.log('Product Subcategory:', product.subcategory);
 
-    // Extract category ID from subcategory if available
     let categoryId = product.categoryId || 0;
     if (!categoryId && product.subcategory && typeof product.subcategory === 'object') {
-      // Try to get categoryId from subcategory object
       if ('categoryId' in product.subcategory) {
         categoryId = (product.subcategory as any).categoryId;
       } else if ('category' in product.subcategory && product.subcategory.category && typeof product.subcategory.category === 'object' && 'id' in product.subcategory.category) {
@@ -470,7 +436,6 @@ const VendorProduct: React.FC = () => {
       variants: (product as any).variants || [],
       price: typeof product.price === 'number' ? product.price : (product.price ? parseFloat(product.price.toString()) : 0),
       image: product.image || '',
-      // Ensure all required ApiProduct fields are present
       brand_id: product.brand_id || null,
       bannerId: (product as any).bannerId || null,
       brandId: (product as any).brandId || null,
@@ -495,15 +460,11 @@ const VendorProduct: React.FC = () => {
     });
   };
 
-  // Extract products and total from the query data
   const products: Product[] = productData?.products || [];
   const totalProducts = productData?.serverTotal || productData?.total || 0;
 
-  // For server-side pagination, we use the products directly from the API
-  // The API already handles pagination, so we don't need to slice again
   const displayProducts = products;
 
-  // Apply client-side filtering only for search (this will require refetching from server)
   const filteredProducts = products.filter((product) => {
     if (!searchQuery) return true;
     const searchLower = searchQuery.toLowerCase();
@@ -515,7 +476,6 @@ const VendorProduct: React.FC = () => {
     );
   });
 
-  // If there's a search query, we need to handle pagination differently
   const isSearching = searchQuery.trim().length > 0;
   const finalProducts = isSearching ? filteredProducts : displayProducts;
   const finalTotal = isSearching ? filteredProducts.length : totalProducts;
@@ -524,9 +484,7 @@ const VendorProduct: React.FC = () => {
     setCurrentPage(pageNumber);
   };
 
-  // Export to Excel handler
   const handleExportExcel = () => {
-    // Export the currently displayed products
     const exportData = finalProducts.map((product) => ({
       'Name': product.name,
       'Category': product.category || (typeof product.subcategory === 'object' && product.subcategory?.name) || '',
@@ -544,8 +502,7 @@ const VendorProduct: React.FC = () => {
     <div className="vendor-dash-container">
       <Sidebar />
       <div className={`dashboard ${isMobile ? "dashboard--mobile" : ""}`}>
-        <Header title="Product Management" onSearch={() => {}} />
-        {/* Search and Sort Controls */}
+        <VendorHeader title="Product Management" onSearch={handleSearch} showSearch={false} />
         <div className="dashboard__search-container" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <div className="dashboard__search" style={{ flex: 1, minWidth: 200 }}>
             <input

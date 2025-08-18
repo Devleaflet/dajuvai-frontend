@@ -166,7 +166,7 @@ const AboutUs = () => {
               </ul>
               <div className="about__ctas">
                 <a
-                  href="/vendor-login"
+                  href="/becomevendor"
                   className="btn btn--primary"
                   aria-label="Become a Vendor"
                 >
