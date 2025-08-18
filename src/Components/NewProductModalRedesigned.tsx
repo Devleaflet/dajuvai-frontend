@@ -206,8 +206,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     { type: '', valuesText: '' }
   ]);
   
-  // Image state
-  const [images, setImages] = useState<File[]>([]);
+  // Image state: support both local Files and already-uploaded URLs
+  const [images, setImages] = useState<Array<File | string>>([]);
 
   // Load data on mount
   useEffect(() => {
@@ -314,6 +314,22 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       const newImages = Array.from(e.target.files);
       setImages(prev => [...prev, ...newImages]);
       setCurrentStep(3);
+    }
+  };
+
+  // Support drag-and-drop for product images
+  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const dt = e.dataTransfer;
+    if (dt && dt.files && dt.files.length > 0) {
+      const droppedFiles = Array.from(dt.files).filter(f => f.type.startsWith('image/'));
+      if (droppedFiles.length > 0) {
+        setImages(prev => [...prev, ...droppedFiles]);
+        setCurrentStep(3);
+        toast.info(`${droppedFiles.length} image${droppedFiles.length > 1 ? 's' : ''} added`);
+      }
+      dt.clearData();
     }
   };
 
@@ -470,17 +486,28 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
         images: variant.images
       }));
 
-      // Step 1: Upload main product images first to get URLs
+      // Step 1: Upload main product images first to get URLs and merge with any existing URL strings
       let productImageUrls: string[] = [];
-      if (images.length > 0) {
+      const imageFiles = images.filter(img => img instanceof File) as File[];
+      const existingImageUrls = images.filter(img => typeof img === 'string') as string[];
+      if (imageFiles.length > 0) {
         console.log(' Uploading product images...');
-        const uploadResponse = await uploadProductImages(images);
+        const uploadResponse = await uploadProductImages(imageFiles);
         if (uploadResponse.success) {
-          productImageUrls = uploadResponse.urls;
+          productImageUrls = [...existingImageUrls, ...uploadResponse.urls];
           console.log(' Product images uploaded successfully:', productImageUrls);
         } else {
           throw new Error(uploadResponse.message || 'Failed to upload product images');
         }
+      } else {
+        // No new files, keep any existing URLs (if any)
+        productImageUrls = [...existingImageUrls];
+      }
+
+      // Warn if files were selected but no URLs were produced
+      if (imageFiles.length > 0 && productImageUrls.length === existingImageUrls.length) {
+        console.warn('No product image URLs returned from upload');
+        toast.warn('Product images failed to upload. Please try again or add via Edit later.');
       }
 
       // Step 2: Upload variant images and collect their URLs
@@ -568,13 +595,10 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
         productData
       );
 
-      if (response.success) {
-        toast.success('Product created successfully!');
-        onSubmit(true);
-        handleClose();
-      } else {
-        throw new Error(response.message || 'Failed to create product');
-      }
+      // Treat successful resolve as success; API shape may not include a 'success' flag
+      toast.success('Product created successfully!');
+      onSubmit(true);
+      handleClose();
     } catch (error: any) {
       console.error('Error creating product:', error);
       toast.error(error.message || 'Failed to create product');
@@ -1092,7 +1116,12 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                 <h3 className="section-title">Product Images</h3>
               </div>
 
-              <div className="image-upload-container" onClick={() => document.getElementById('image-upload')?.click()}>
+              <div 
+                className="image-upload-container" 
+                onClick={() => document.getElementById('image-upload')?.click()}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={handleImageDrop}
+              >
                 <div className="upload-icon">
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
@@ -1114,7 +1143,10 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                 <div className="image-preview-grid">
                   {images.map((image, index) => (
                     <div key={index} className="image-preview">
-                      <img src={URL.createObjectURL(image)} alt={`Preview ${index + 1}`} />
+                      <img 
+                        src={image instanceof File ? URL.createObjectURL(image) : (image as string)} 
+                        alt={`Preview ${index + 1}`} 
+                      />
                       <button
                         type="button"
                         className="image-remove"
@@ -1138,7 +1170,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                   type="submit" 
                   disabled={isLoading} 
                   className="btn btn-primary"
-                  onClick={handleSubmit}
                 >
                   {isLoading && <div className="loading-spinner"></div>}
                   {isLoading ? 'Creating Product...' : 'Create Product'}

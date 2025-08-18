@@ -56,6 +56,13 @@ interface ReviewsResponse {
 }
 
 const ProductPage = () => {
+  // Helper to normalize any relative URL to an absolute URL
+  const toFullUrl = (imgUrl: string): string => {
+    if (!imgUrl) return '';
+    return imgUrl.startsWith('http')
+      ? imgUrl
+      : `${window.location.origin}${imgUrl.startsWith('/') ? '' : '/'}${imgUrl}`;
+  };
   // Extract productId, categoryId, and subcategoryId from URL
   const { id: productId, categoryId, subcategoryId } = useParams<{ 
     id: string; 
@@ -175,11 +182,30 @@ const ProductPage = () => {
         });
       }
       
-      // Process product images
-      const productImages = Array.isArray(apiProduct.productImages) 
-        ? apiProduct.productImages.map((img: any) => 
-            typeof img === 'string' ? img : img.url || img.imageUrl || ''
-          ).filter(Boolean)
+      // Process product images (normalize to absolute URLs; handle strings/objects/JSON strings)
+      const productImages = Array.isArray(apiProduct.productImages)
+        ? apiProduct.productImages
+            .map((img: any) => {
+              try {
+                let imgUrl = '';
+                if (typeof img === 'string') {
+                  // Could be a direct URL or a JSON string
+                  try {
+                    const parsed = JSON.parse(img);
+                    imgUrl = parsed.url || parsed.imageUrl || img;
+                  } catch {
+                    imgUrl = img; // already a URL string
+                  }
+                } else if (img && typeof img === 'object') {
+                  imgUrl = img.url || img.imageUrl || '';
+                }
+                return imgUrl ? toFullUrl(imgUrl) : '';
+              } catch (e) {
+                console.error('Error parsing product image:', e, img);
+                return '';
+              }
+            })
+            .filter(Boolean)
         : [];
       
       const allImages = [...new Set([...productImages, ...variantImages])].filter(Boolean);
