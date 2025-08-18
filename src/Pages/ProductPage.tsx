@@ -540,10 +540,31 @@ const ProductPage = () => {
 
   const handleQuantityChange = (increment: boolean) => {
     if (!product) return;
-    if (increment && quantity < Math.min(product.stock || 10, 10)) {
-      setQuantity(quantity + 1);
+    if (increment && quantity < Math.min(getCurrentStock(), 10)) {
+      setQuantity(prev => prev + 1);
     } else if (!increment && quantity > 1) {
-      setQuantity(quantity - 1);
+      setQuantity(prev => prev - 1);
+    }
+  };
+
+  const handleQuantityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow empty input (for backspace/delete) or numeric input
+    if (value === '') {
+      setQuantity(1);
+      return;
+    }
+    
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) && numValue > 0 && numValue <= Math.min(getCurrentStock(), 10)) {
+      setQuantity(numValue);
+    }
+  };
+
+  const handleQuantityBlur = () => {
+    // Ensure quantity is at least 1
+    if (quantity < 1) {
+      setQuantity(1);
     }
   };
 
@@ -792,13 +813,31 @@ const ProductPage = () => {
                 >
                   -
                 </button>
-                <span style={{ 
-                  minWidth: '30px', 
-                  textAlign: 'center',
-                  fontWeight: '600'
-                }}>
-                  {quantity}
-                </span>
+                <input
+                  type="number"
+                  min="1"
+                  max={Math.min(getCurrentStock(), 10)}
+                  value={quantity}
+                  onChange={handleQuantityInputChange}
+                  onBlur={handleQuantityBlur}
+                  style={{
+                    width: '50px',
+                    textAlign: 'center',
+                    padding: '5px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    fontWeight: '600',
+                    MozAppearance: 'textfield',
+                    WebkitAppearance: 'none',
+                    margin: '0 5px'
+                  }}
+                  onKeyDown={(e) => {
+                    // Prevent typing 'e', '+', '-', '.'
+                    if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
                 <button
                   style={{
                     padding: '5px 15px',
