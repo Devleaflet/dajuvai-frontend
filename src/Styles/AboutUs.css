@@ -1,4 +1,4 @@
-/* Existing styles remain unchanged unless specified below */
+
 
 .about {
   color: #000000;
@@ -18,7 +18,7 @@
   overflow: hidden;
 }
 
-/* Enhanced hero layout */
+
 .about__hero-content {
   display: grid;
   grid-template-columns: 1.2fr 1fr;

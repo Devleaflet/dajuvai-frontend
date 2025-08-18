@@ -3,9 +3,9 @@ import { TbDeviceLandlinePhone, TbTruckDelivery } from "react-icons/tb";
 import { FaPhoneVolume, FaLocationDot, FaFacebookF, FaInstagram } from "react-icons/fa6";
 import { MdEmail } from "react-icons/md";
 import { IoLogoWhatsapp } from "react-icons/io";
-import khalti from '../assets/khalti1.png';
+
 import esewa from '../assets/esewa.png';
-import logo from '../assets/logo.webp';
+
 import { Link } from "react-router-dom";
 import npx from '../assets/npx.png';
 import { useState } from 'react';

@@ -1,4 +1,4 @@
-import "../styles/AboutUs.css";
+import "../Styles/AboutUs.css";
 import Navbar from "../Components/Navbar";
 import Footer from "../Components/Footer";
 import aboutHead from "../assets/aboutHead.png";
