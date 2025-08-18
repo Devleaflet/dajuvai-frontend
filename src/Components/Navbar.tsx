@@ -1221,18 +1221,21 @@ const Navbar: React.FC = () => {
             <div className="navbar__side-menu-social-icons">
               <a
                 href="https://www.facebook.com/"
+                         target="_blank"
                 className="navbar__social-link navbar__social-link--facebook"
               >
                 <FaFacebook />
               </a>
               <a
                 href="https://www.instagram.com/dajuvai_/"
+                         target="_blank"
                 className="navbar__social-link navbar__social-link--instagram"
               >
                 <FaInstagram />
               </a>
               <a
                 href="https://www.tiktok.com/@www.dajuvai.com"
+                         target="_blank"
                 className="navbar__social-link navbar__social-link--tiktok"
               >
                 <FaTiktok />
@@ -1384,18 +1387,21 @@ const Navbar: React.FC = () => {
               </NavLink>
             <a
               href="https://www.facebook.com/"
+                       target="_blank"
               className="navbar__social-link navbar__social-link--facebook"
             >
               <FaFacebook />
             </a>
             <a
               href="https://www.instagram.com/dajuvai_/"
+                       target="_blank"
               className="navbar__social-link navbar__social-link--instagram"
             >
               <FaInstagram />
             </a>
             <a
               href="https://www.tiktok.com/@www.dajuvai.com"
+                       target="_blank"
               className="navbar__social-link navbar__social-link--tiktok"
             >
               <FaTiktok />

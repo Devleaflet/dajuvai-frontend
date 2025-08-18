@@ -3,11 +3,9 @@ import { TbTruckDelivery } from "react-icons/tb";
 import { FaPhoneVolume, FaLocationDot, FaFacebookF, FaInstagram } from "react-icons/fa6";
 import { MdEmail } from "react-icons/md";
 import { IoLogoWhatsapp } from "react-icons/io";
-
 import esewa from '../assets/esewa.png';
-
-import { Link } from "react-router-dom";
 import npx from '../assets/npx.png';
+import { Link } from "react-router-dom";
 import { useState } from 'react';
 import OrderTrackingModal from './Modal/OrderTrackingModal';
 import { OrderService } from '../services/orderService';
@@ -64,6 +62,7 @@ const Footer: React.FC = () => {
   return (
     <footer className="footer">
       <div className="footer__container">
+        {/* First Div: Track Order, Useful Links, Account, Quick Access */}
         <div className="footer__main-content">
           {/* Track Order Section */}
           <div className="footer__section footer__track-section">
@@ -73,7 +72,6 @@ const Footer: React.FC = () => {
               button. This was given to you on your receipt and in the confirmation email you
               should have received.
             </p>
-
             <div className="footer__form">
               <div className="footer__form-row">
                 <div className="footer__form-group">
@@ -87,7 +85,6 @@ const Footer: React.FC = () => {
                     onChange={(e) => setOrderId(e.target.value)}
                   />
                 </div>
-
                 <div className="footer__form-group">
                   <label className="footer__label">Billing email</label>
                   <p className="footer__hint">Email you used check out.</p>
@@ -100,7 +97,6 @@ const Footer: React.FC = () => {
                   />
                 </div>
               </div>
-
               <button
                 className="footer__track-button"
                 onClick={handleTrackOrder}
@@ -112,15 +108,23 @@ const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Links Sections Container */}
+          {/* Links Sections */}
           <div className="footer__links-wrapper">
-            {/* Top Row with Main Categories */}
             <div className="footer__top-links">
               {/* Useful Links Section */}
               <div className="footer__section footer__links-section">
                 <h3 className="footer__section-title">Useful Links</h3>
                 <ul className="footer__list">
+                  <li><Link to="/privacy" className="footer__link">Privacy Policy</Link></li>
+                  <li><Link to="/terms" className="footer__link">Terms & Condition</Link></li>
+                  <li><Link to="/contact" className="footer__link">Site Map</Link></li>
+                </ul>
+              </div>
 
+              {/* Quick Access Section */}
+              <div className="footer__section footer__links-section">
+                <h3 className="footer__section-title">Quick Access</h3>
+                <ul className="footer__list">
                   <li><Link to="/shop" className="footer__link">Shop</Link></li>
                   <li><Link to="/contact" className="footer__link">Contact Us</Link></li>
                   <li><Link to="/faq" className="footer__link">FAQ</Link></li>
@@ -135,113 +139,89 @@ const Footer: React.FC = () => {
                   <li><Link to="/contact" className="footer__link">Complain</Link></li>
                 </ul>
               </div>
+            </div>
+          </div>
+        </div>
 
-              {/* Services Section - Improved Structure */}
-              <div className="footer__section footer__services-section">
-                <h3 className="footer__section-title">Services</h3>
-                <div className="footer__services-list">
-                  <div className="footer__service-item">
-                    <div className="footer__service-icon">
-                      <TbTruckDelivery />
-                    </div>
-                    <div className="footer__service-text">
-                      <div className="footer__service-label">Delivery</div>
-                      <div className="footer__service-value">All over Nepal</div>
-                    </div>
-                  </div>
-                  
-                  <div className="footer__service-item">
-                    <div className="footer__service-icon">
-                      <FaPhoneVolume />
-                    </div>
-                    <div className="footer__service-text">
-                      <div className="footer__service-label">Phone</div>
-                      <div className="footer__service-value">9700620004</div>
-                    </div>
-                  </div>
-                  
-                  <div className="footer__service-item">
-                    <div className="footer__service-icon">
-                      <FaPhoneVolume />
-                    </div>
-                    <div className="footer__service-text">
-                      <div className="footer__service-label">Landline</div>
-                      <div className="footer__service-value">01-4720234</div>
-                    </div>
-                  </div>
-                  
-                  <div className="footer__service-item">
-                    <div className="footer__service-icon">
-                      <FaLocationDot />
-                    </div>
-                    <div className="footer__service-text">
-                      <div className="footer__service-label">Address</div>
-                      <div className="footer__service-value">Kathmandu, Nepal</div>
-                    </div>
-                  </div>
+        {/* Second Div: Three Cards in a Row */}
+        <div className="footer__bottom-links-section">
+          {/* Services Section */}
+          <div className="footer__section footer__services-section">
+            <h3 className="footer__section-title">Services</h3>
+            <div className="footer__services-list">
+              <div className="footer__service-item">
+                <div className="footer__service-icon">
+                  <TbTruckDelivery />
+                </div>
+                <div className="footer__service-text">
+                  <div className="footer__service-label">Delivery</div>
+                  <div className="footer__service-value">All over Nepal</div>
+                </div>
+              </div>
+              <div className="footer__service-item">
+                <div className="footer__service-icon">
+                  <FaPhoneVolume />
+                </div>
+                <div className="footer__service-text">
+                  <div className="footer__service-label">Phone</div>
+                  <div className="footer__service-value">9700620004</div>
+                </div>
+              </div>
+              <div className="footer__service-item">
+                <div className="footer__service-icon">
+                  <FaPhoneVolume />
+                </div>
+                <div className="footer__service-text">
+                  <div className="footer__service-label">Landline</div>
+                  <div className="footer__service-value">01-4720234</div>
+                </div>
+              </div>
+              <div className="footer__service-item">
+                <div className="footer__service-icon">
+                  <FaLocationDot />
+                </div>
+                <div className="footer__service-text">
+                  <div className="footer__service-label">Address</div>
+                  <div className="footer__service-value">Kathmandu, Nepal</div>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Bottom Row with Contact and Payment */}
-            <div className="footer__bottom-links-section">
-              {/* Contact With Us Section */}
-              <div className="footer__section footer__contact-section">
-                <h3 className="footer__section-title">Contact With Us</h3>
-                <div className="footer__social-icons">
-                  <a href="https://www.facebook.com/" className="footer__social-link"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <FaFacebookF />
-                  </a>
-                  <a
-                    href="mailto:Dajuvai106@gmail.com"
-                    className="footer__social-link"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <MdEmail />
-                  </a>
-                  <a
-                    href="https://wa.me/+9779700620004"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="footer__social-link"
-                  >
-                    <IoLogoWhatsapp />
-                  </a>
-                  <a href="https://www.instagram.com/dajuvai_/" className="footer__social-link"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <FaInstagram />
-                  </a>
-                </div>
-              </div>
+          {/* Contact With Us Section */}
+          <div className="footer__section footer__contact-section">
+            <h3 className="footer__section-title">Contact With Us</h3>
+            <div className="footer__social-icons">
+              <a href="https://www.facebook.com/" className="footer__social-link" target="_blank" rel="noopener noreferrer">
+                <FaFacebookF />
+              </a>
+              <a href="mailto:Dajuvai106@gmail.com" className="footer__social-link" target="_blank" rel="noopener noreferrer">
+                <MdEmail />
+              </a>
+              <a href="https://wa.me/+9779700620004" className="footer__social-link" target="_blank" rel="noopener noreferrer">
+                <IoLogoWhatsapp />
+              </a>
+              <a href="https://www.instagram.com/dajuvai_/" className="footer__social-link" target="_blank" rel="noopener noreferrer">
+                <FaInstagram />
+              </a>
+            </div>
+          </div>
 
-              {/* Payment Methods Section */}
-              <div className="footer__section footer__payment-section">
-                <h3 className="footer__section-title">Payment Methods</h3>
-                <div className="footer__payment-icons">
-                  <img src={esewa} alt="eSewa Payment" className="footer__payment-image" />
-                  <img src={npx} alt="NPX Payment" className="footer__payment-image" />
-                </div>
-              </div>
+          {/* Payment Methods Section */}
+          <div className="footer__section footer__payment-section">
+            <h3 className="footer__section-title">Payment Methods</h3>
+            <div className="footer__payment-icons">
+              <img src={esewa} alt="eSewa Payment" className="footer__payment-image" />
+              <img src={npx} alt="NPX Payment" className="footer__payment-image" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Footer Bottom */}
+      {/* Copyright Section */}
       <div className="footer__bottom">
         <div className="footer__copyright">
           Copyright Dajuvai © 2025 - <a href="#" className="footer__copyright-link">Leaflet Digital Solutions Pvt Ltd.</a>
-        </div>
-        <div className="footer__bottom-links">
-          <a href="/privacy" className="footer__bottom-link">Privacy Policy</a>
-          <a href="/terms" className="footer__bottom-link">Terms & Condition</a>
-          <a href="/contact" className="footer__bottom-link">Site Map</a>
         </div>
       </div>
 

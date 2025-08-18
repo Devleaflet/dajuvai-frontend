@@ -101,27 +101,22 @@ const About = () => {
         <div className="contact-content">
           <div className="contact-content-left">
             <h2 className="contact-title">Contact Us</h2>
-            <p className="contact-subtext">We will Contact you as soon as you fill up the details or text us on +977- 9708555024 | support@dajuvai.com</p>
+            <p className="contact-subtext">We’re here to help! Have questions, feedback, or need assistance? Reach out via email, phone, or by filling out the form , and our team will respond promptly.</p>
             <div className="contact-info">
               <div className="contact-info-item">
                 <FaPhone className="contact-icon" />
-                <span>+977- 9708555024</span>
+                <span>+977- 9700620004</span>
               </div>
               <div className="contact-info-item">
                 <FaEnvelope className="contact-icon" />
-                <span>support@dajuvai.com</span>
+                <span>Dajuvai106@gmail.com</span>
               </div>
               <div className="contact-info-item">
                 <FaMapMarkerAlt className="contact-icon" />
                 <span>Kathmandu, Nepal</span>
               </div>
             </div>
-            <div style={{ marginTop: '1.5rem', background: '#f8f8f8', padding: '1.2rem', borderRadius: '8px' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Want to Become a Vendor?</h3>
-              <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.98rem', color: '#444' }}>
-                If you are interested in selling your products on our platform, please contact us at <b>support@dajuvai.com</b> or call <b>+977-9708555024</b>. Our team will guide you through the process and help you get started as a vendor!
-              </p>
-            </div>
+       
           </div>
           <div className="contact-content-right">
             <form onSubmit={handleSubmit}>
