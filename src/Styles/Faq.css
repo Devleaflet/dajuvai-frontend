@@ -187,6 +187,9 @@
     color: #fff;
     border: none;
 }
+.faq_chat_support_btn a{
+    text-decoration: none;
+}
 
 .faq__cta-btn--secondary {
     border: 1px solid #d4d4d8;

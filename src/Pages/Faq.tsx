@@ -219,13 +219,21 @@ export default function EcommerceFAQ() {
                         <p className="faq__cta-sub">Can’t find what you’re looking for?</p>
                         <h3 className="faq__cta-title">We’re here to help—contact support.</h3>
                     </div>
-                    <div className="faq__cta-actions">
-                        <button className="faq__cta-btn faq__cta-btn--primary">
+                    <div className="faq__cta-actions  faq_chat_support_btn">
+                        <a
+                            href="https://wa.me/9779700620004"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="faq__cta-btn faq__cta-btn--primary"
+                        >
                             Chat with Support
-                        </button>
-                        <button className="faq__cta-btn faq__cta-btn--secondary">
+                        </a>
+                        <a
+                            href="mailto:Dajuvai106@gmail.com"
+                            className="faq__cta-btn faq__cta-btn--secondary"
+                        >
                             Email Us
-                        </button>
+                        </a>
                     </div>
                 </div>
             </section>
