@@ -58,6 +58,43 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
     setImageError(true);
   };
 
+  // Compute display price: if product price is null/0, fall back to first variant's price
+  const toNumber = (v: any): number => {
+    if (v === undefined || v === null) return 0;
+    const n = typeof v === 'string' ? parseFloat(v) : Number(v);
+    return isFinite(n) ? n : 0;
+  };
+
+  const calculatePrice = (base: any, disc?: any, discType?: string): number => {
+    const baseNum = toNumber(base);
+    if (!disc || !discType) return baseNum;
+    const d = typeof disc === 'string' ? parseFloat(disc) : Number(disc);
+    if (!isFinite(d)) return baseNum;
+    if (discType === 'PERCENTAGE') return baseNum * (1 - d / 100);
+    if (discType === 'FIXED' || discType === 'FLAT') return baseNum - d;
+    return baseNum;
+  };
+
+  let displayPriceNum = 0;
+  const productPriceNum = toNumber(price as any);
+  if ((price === null || price === undefined || productPriceNum === 0) && (product.variants?.length || 0) > 0) {
+    const first = product.variants![0] as any;
+    const variantBase = first?.price ?? first?.originalPrice ?? first?.basePrice ?? product.basePrice ?? product.price;
+    if (typeof first?.calculatedPrice === 'number' && isFinite(first.calculatedPrice)) {
+      displayPriceNum = first.calculatedPrice as number;
+    } else if (first?.discount && first?.discountType) {
+      displayPriceNum = calculatePrice(variantBase, first.discount, String(first.discountType));
+    } else if (product.discount && product.discountType) {
+      displayPriceNum = calculatePrice(variantBase, product.discount as any, String(product.discountType));
+    } else {
+      displayPriceNum = toNumber(variantBase);
+    }
+  } else {
+    // product price already includes discount mapping from Shop.tsx when applicable
+    displayPriceNum = productPriceNum;
+  }
+  const displayPrice = `Rs. ${displayPriceNum.toFixed(2)}`;
+
   const handleWishlist = async () => {
     if (!token) {
       setToast("Please log in to add to wishlist");
@@ -149,7 +186,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
           <h3 className="product1__title">{title}</h3>
           <p className="product1__description">{description}</p>
           <div className="product1__price">
-            <span className="product1__current-price">{price}</span>
+            <span className="product1__current-price">{displayPrice}</span>
             <div className="product1__price-details">
               {originalPrice && (
                 <span className="product1__original-price">

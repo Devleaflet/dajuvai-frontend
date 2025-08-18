@@ -711,16 +711,34 @@ const Shop: React.FC = () => {
         .map(processImageUrl)
         .filter(Boolean);
 
-      const processedVariants = (item.variants || []).map(variant => ({
-        ...variant,
-        image: variant.image && typeof variant.image === 'string' ? processImageUrl(variant.image) : undefined,
-        images: variant.images 
-          ? variant.images
-              .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
-              .map(processImageUrl)
-              .filter(Boolean)
-          : []
-      }));
+      const processedVariants = (item.variants || []).map(variant => {
+        // Normalize images from either variant.images or variant.variantImages
+        const rawImages = Array.isArray((variant as any).images)
+          ? (variant as any).images
+          : Array.isArray((variant as any).variantImages)
+            ? (variant as any).variantImages
+            : [];
+
+        const normalizedImages = rawImages
+          .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
+          .map(processImageUrl)
+          .filter(Boolean);
+
+        const primaryImage = (typeof (variant as any).image === 'string' && (variant as any).image.trim())
+          ? processImageUrl((variant as any).image)
+          : (normalizedImages[0] || undefined);
+
+        return {
+          ...variant,
+          image: primaryImage,
+          images: normalizedImages
+        };
+      });
+
+      // Flatten variant images for thumbnail/productImages fallback
+      const variantImagePool = processedVariants
+        .flatMap(v => [v.image, ...(v.images || [])])
+        .filter((x): x is string => typeof x === 'string' && x.length > 0);
 
       // Get the display image - prioritize product images first, then variants
       const getDisplayImage = () => {
@@ -756,9 +774,11 @@ const Shop: React.FC = () => {
         isBestSeller: item.stock > 20,
         freeDelivery: true,
         image: displayImage,
-        productImages: processedProductImages.length > 0 ? processedProductImages : [phone],
+        productImages: processedProductImages.length > 0
+          ? processedProductImages
+          : (variantImagePool.length > 0 ? variantImagePool : [phone]),
         variants: processedVariants,
-        category: item.subcategory?.category || { id: 1, name: item.subcategory?.category?.name || "Misc" },
+        category: item.subcategory?.category?.name || "Misc",
         subcategory: item.subcategory,
         brand: item.brand?.name || "Unknown",
         brand_id: item.brand?.id || null,
@@ -789,17 +809,34 @@ const Shop: React.FC = () => {
         .map(processImageUrl)
         .filter(Boolean);
         
-      // Process variants
-      const processedVariants = (item.variants || []).map(variant => ({
-        ...variant,
-        image: variant.image && typeof variant.image === 'string' ? processImageUrl(variant.image) : undefined,
-        images: variant.images 
-          ? variant.images
-              .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
-              .map(processImageUrl)
-              .filter(Boolean)
-          : []
-      }));
+      // Process variants (normalize variantImages/images and derive primary image)
+      const processedVariants = (item.variants || []).map(variant => {
+        const rawImages = Array.isArray((variant as any).images)
+          ? (variant as any).images
+          : Array.isArray((variant as any).variantImages)
+            ? (variant as any).variantImages
+            : [];
+
+        const normalizedImages = rawImages
+          .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
+          .map(processImageUrl)
+          .filter(Boolean);
+
+        const primaryImage = (typeof (variant as any).image === 'string' && (variant as any).image.trim())
+          ? processImageUrl((variant as any).image)
+          : (normalizedImages[0] || undefined);
+
+        return {
+          ...variant,
+          image: primaryImage,
+          images: normalizedImages
+        };
+      });
+
+      // Flatten variant images for thumbnail/productImages fallback
+      const variantImagePool = processedVariants
+        .flatMap(v => [v.image, ...(v.images || [])])
+        .filter((x): x is string => typeof x === 'string' && x.length > 0);
 
       // Get display image using the same logic as in the try block
       const getFallbackImage = () => {
@@ -832,9 +869,11 @@ const Shop: React.FC = () => {
         isBestSeller: item.stock > 20,
         freeDelivery: true,
         image: displayImage,
-        productImages: processedProductImages.length > 0 ? processedProductImages : [phone],
+        productImages: processedProductImages.length > 0
+          ? processedProductImages
+          : (variantImagePool.length > 0 ? variantImagePool : [phone]),
         variants: processedVariants,
-        category: item.subcategory?.category || { id: 1, name: item.subcategory?.category?.name || "Misc" },
+        category: item.subcategory?.category?.name || "Misc",
         subcategory: item.subcategory,
         brand: item.brand?.name || "Unknown",
         brand_id: item.brand?.id || null,
