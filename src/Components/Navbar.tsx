@@ -13,6 +13,7 @@ import {
   FaHome,
   FaShoppingBag,
   FaInfoCircle,
+  FaQuestionCircle,
 } from "react-icons/fa";
 import {
   FaFacebook,
@@ -845,6 +846,16 @@ const Navbar: React.FC = () => {
               >
                 Contact <span className="navbar__link-icon">🎧</span>
               </NavLink>
+
+              <NavLink
+                to="/faq"
+                className="navbar__mobile-dock-item"
+                style={({ isActive }) => ({
+                  color: isActive ? "#f97316" : "inherit",
+                })}
+              >
+                <span>FAQ</span>
+              </NavLink>
             </div>
 
             <div className="navbar__account">
@@ -975,7 +986,7 @@ const Navbar: React.FC = () => {
                   aria-label="Become a Vendor"
                 >
                   <span className="navbar__account-text">Become a Vendor</span>
-                  
+
                 </a>
               )}
             </div>
@@ -1339,6 +1350,20 @@ const Navbar: React.FC = () => {
           </span>
           <span className="navbar__mobile-dock-text">Contact</span>
         </NavLink>
+
+        <NavLink
+          to="/faq"
+          className="navbar__mobile-dock-item"
+          style={({ isActive }) => ({
+            color: isActive ? "#f97316" : "inherit",
+          })}
+        >
+          <span className="navbar__mobile-dock-icon">
+            <FaQuestionCircle />
+          </span>
+          <span className="navbar__mobile-dock-text">FAQ</span>
+        </NavLink>
+
         <NavLink
           to="/wishlist"
           className="navbar__mobile-dock-item"

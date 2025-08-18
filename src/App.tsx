@@ -44,6 +44,7 @@ import PrivacyPolicy from "./Pages/PrivacyPolicy";
 import DataDeletion from "./Pages/DataDeletion";
 import TermsAndConditions from "./Pages/TermsAndConditions";
 import AboutUs from "./Pages/AboutUs";
+import EcommerceFAQ from "./Pages/Faq";
 
 // Admin route guards
 // Allows both admin and staff to access admin area
@@ -92,18 +93,19 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/contact" element={<About />} />
-          <Route path="/terms" element={<TermsAndConditions />} />
-            <Route path="/privacy" element={<Privacy />} />
-              <Route path="/about" element={<AboutUs />} />
+        <Route path="/faq" element={<EcommerceFAQ />} />
+        <Route path="/terms" element={<TermsAndConditions />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/about" element={<AboutUs />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/product-page/:categoryId/:subcategoryId/:id" element={<ProductPage />} />
         <Route path="/user-profile" element={<UserProfile />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/vendor/:vendorId" element={<VendorStore />} />
-        <Route path="/order-page" element={<NepalPaymentGateway/>}/>
-        <Route path="/order/payment-response" element={<TransactionSuccess/>}/>
-        <Route path="/order/esewa-payment-success" element={<PaymentSuccess/>}/>
+        <Route path="/order-page" element={<NepalPaymentGateway />} />
+        <Route path="/order/payment-response" element={<TransactionSuccess />} />
+        <Route path="/order/esewa-payment-success" element={<PaymentSuccess />} />
         <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
         <Route path="/auth/google/direct" element={<GoogleAuthDirect />} />
         <Route path="/auth/google/json" element={<GoogleAuthJson />} />
@@ -116,7 +118,7 @@ function App() {
         {/* Vendor Routes (protected) */}
         <Route path="/vendor/login" element={<VendorLogin />} />
         <Route path="/vendor/signup" element={<VendorSignup />} />
-        
+
         <Route
           path="/dashboard"
           element={
