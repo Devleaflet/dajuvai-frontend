@@ -1,62 +1,7 @@
-import { ProductVariant, Attribute } from "../../types/product";
+import { ApiProduct, ProductVariant, Attribute } from "../../types/product";
 
-export interface ApiProduct {
-  id: number;
-  name: string;
-  description: string;
-  basePrice: number | null;
-  stock: number;
-  discount: number | null;
-  discountType: 'PERCENTAGE' | 'FLAT' | null;
-  size: string[];
-  status: 'AVAILABLE' | 'UNAVAILABLE';
-  productImages: string[];
-  inventory: {
-    sku: string;
-    quantity: number;
-    status: string;
-  }[];
-  vendorId: number;
-  brand_id: number | null;
-  dealId: number | null;
-  created_at: string;
-  updated_at: string;
-  categoryId: number; // Added for API path parameter
-  subcategory: {
-    id: number;
-    name: string;
-    image: string | null;
-    createdAt: string;
-    updatedAt: string;
-  };
-  vendor: {
-    id: number;
-    businessName: string;
-    email: string;
-    phoneNumber: string;
-    districtId: number;
-    isVerified: boolean;
-    createdAt: string;
-    updatedAt: string;
-    district: {
-      id: number;
-      name: string;
-    };
-  };
-  brand: {
-    id: number;
-    name: string;
-  } | null;
-  deal: {
-    id: number;
-    title: string;
-  } | null;
-  // New fields for variant support
-  hasVariants: boolean;
-  variants?: ProductVariant[];
-  bannerId?: number | null;
-  brandId?: number | null;
-}
+// Re-export the unified ApiProduct type for backward compatibility
+export type { ApiProduct };
 
 // Helper function to convert API product to display product
 export const convertApiProductToDisplayProduct = (apiProduct: ApiProduct) => {

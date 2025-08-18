@@ -5,7 +5,7 @@ import { useVendorAuth } from "../../context/VendorAuthContext";
 import { fetchCategories, fetchSubcategories, Category, Subcategory } from '../../api/categories';
 import { updateProduct, uploadProductImages } from '../../api/products';
 import axiosInstance from '../../api/axiosInstance';
-import { ApiProduct } from "../Types/ApiProduct";
+import { ApiProduct } from "../../types/product";
 import { API_BASE_URL } from "../../config";
 import { toast } from 'react-toastify';
 import { dealApiService } from '../../services/apiDeals';

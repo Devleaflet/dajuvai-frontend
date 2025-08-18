@@ -5,7 +5,7 @@ import ProductList from '../Components/ProductList';
 import NewProductModal from '../Components/NewProductModalRedesigned';
 import EditProductModal from '../Components/Modal/EditProductModalRedesigned';
 import '../Styles/VendorProduct.css';
-import { Product as ApiProduct, NewProductFormData, ProductFormData } from '../types/product';
+import { ApiProduct, NewProductFormData, ProductFormData } from '../types/product';
 import { fetchProducts, createProduct, updateProduct } from '../api/products';
 import { useVendorAuth } from '../context/VendorAuthContext';
 import Pagination from '../Components/Pagination';
@@ -121,6 +121,28 @@ const VendorProduct: React.FC = () => {
             originalPrice = basePrice.toFixed(2);
           }
         }
+        // Normalize variants and compute calculatedPrice for each variant
+        const normalizedVariants = Array.isArray((product as any).variants)
+          ? (product as any).variants.map((v: any) => {
+              const rawBase =
+                (typeof v?.price !== 'undefined' ? v.price :
+                typeof v?.basePrice !== 'undefined' ? v.basePrice :
+                typeof v?.originalPrice !== 'undefined' ? v.originalPrice :
+                typeof product.basePrice !== 'undefined' ? product.basePrice :
+                (product as any).price);
+              const baseNum = typeof rawBase === 'string' ? parseFloat(rawBase) : (Number(rawBase) || 0);
+              let calc = baseNum;
+              if (discount > 0 && (discountType === 'PERCENTAGE' || discountType === 'FLAT' || discountType === 'FIXED')) {
+                if (discountType === 'PERCENTAGE') {
+                  calc = baseNum - (baseNum * discount / 100);
+                } else {
+                  calc = baseNum - discount;
+                }
+              }
+              return { ...v, calculatedPrice: calc };
+            })
+          : undefined;
+
         let status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK' = 'AVAILABLE';
         if (product.status === 'OUT_OF_STOCK') status = 'OUT_OF_STOCK';
         else if (product.status === 'LOW_STOCK') status = 'LOW_STOCK';
@@ -138,6 +160,7 @@ const VendorProduct: React.FC = () => {
           size: product.size || [],
           status: status,
           productImages: images,
+          variants: normalizedVariants,
           subcategory: product.subcategory,
           vendor: product.vendor?.businessName || '',
           category: product.subcategory?.name || '',
@@ -156,6 +179,7 @@ const VendorProduct: React.FC = () => {
           isBestSeller: false,
           freeDelivery: false,
         };
+
         return mappedProduct;
       });
 

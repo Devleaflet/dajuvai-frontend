@@ -22,7 +22,7 @@ const ProductList: React.FC<ProductListProps> = ({
     const discountValue = parseFloat(discount) || 0;
     if (discountType === "PERCENTAGE") {
       return base * (1 - discountValue / 100);
-    } else if (discountType === "FIXED") {
+    } else if (discountType === "FIXED" || discountType === "FLAT") {
       return base - discountValue;
     }
     return base;
@@ -52,11 +52,33 @@ const ProductList: React.FC<ProductListProps> = ({
             </tr>
           ) : (
             products.map((product) => {
-              // Safely convert stock to a number
-              const numericStock = product.stock ?? 0;
+              // Handle variant products
+              let numericStock = 0;
+              let displayPrice = 0;
+              
+              if (product.variants && product.variants.length > 0) {
+                // Use first variant's price and stock
+                const firstVariant = product.variants[0] as any;
+                numericStock = (firstVariant?.stock ?? product.stock ?? 0) as number;
 
-              // Compute display price
-              const displayPrice = calculatePrice(product.price, product.discount, product.discountType);
+                // Prefer precomputed calculatedPrice from mapping when available
+                const variantBase = (firstVariant?.price ?? firstVariant?.originalPrice ?? firstVariant?.basePrice ?? product.basePrice ?? product.price) as number | string | undefined;
+                const hasCalculated = typeof firstVariant?.calculatedPrice === 'number' && isFinite(firstVariant.calculatedPrice);
+
+                if (hasCalculated) {
+                  displayPrice = firstVariant.calculatedPrice as number;
+                } else if (firstVariant?.discount && firstVariant?.discountType) {
+                  displayPrice = calculatePrice(variantBase ?? 0, String(firstVariant.discount), String(firstVariant.discountType));
+                } else if (product.discount && product.discountType) {
+                  displayPrice = calculatePrice(variantBase ?? 0, String(product.discount), String(product.discountType));
+                } else {
+                  displayPrice = typeof variantBase === 'string' ? parseFloat(variantBase) : (Number(variantBase) || 0);
+                }
+              } else {
+                // For non-variant products
+                numericStock = product.stock ?? 0;
+                displayPrice = calculatePrice(product.price, product.discount as any, product.discountType as any);
+              }
 
               // Determine status display
               const statusDisplay = (() => {
