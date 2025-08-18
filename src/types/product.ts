@@ -115,9 +115,16 @@ export interface Image {
   url: string;
 }
 
+// Unified complex attribute structure used by both New and Edit modals
 export interface Attribute {
-  attributeType: string;
-  attributeValues: string[];
+  type: string;
+  values: Array<{
+    value: string;
+    nestedAttributes?: Array<{
+      type: string;
+      values: string[];
+    }>;
+  }>;
 }
 
 export interface ProductVariant {
@@ -125,9 +132,12 @@ export interface ProductVariant {
   price: number;
   stock: number;
   status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
-  attributes?: Attribute[];
-  images?: Image[];
+  // Use unified complex attributes shape
+  attributes: Attribute[];
+  // Keep both images fields to support UI and API payload compatibility
+  images: (File | string)[];
   variantImages: (File | string)[];
+  imagePreviews?: string[]; // For client-side preview URLs
 }
 
 export interface NewProductFormData {

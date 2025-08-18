@@ -673,55 +673,73 @@ const Shop: React.FC = () => {
   const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
     try {
       const { averageRating, reviews } = await fetchReviewOf(item.id);
-      
-      // Helper function to get the first available image from variants or fall back to product images
-      const getProductImage = () => {
-        // Check if there are variants with images
-        if (item.variants?.length > 0) {
-          // Find the first variant with an image
-          const variantWithImage = item.variants.find(v => v.image || (v.images && v.images.length > 0));
-          if (variantWithImage) {
-            // Return the variant's image or the first image from variant's images array
-            return variantWithImage.image || variantWithImage.images?.[0];
-          }
-        }
-        // Fall back to product images or default phone image
-        return item.productImages?.[0] || phone;
-      };
-      
-      // Ensure we have proper image URLs - handle both relative and absolute URLs
-      const processImageUrl = (imgUrl: string | undefined): string => {
+
+      const isDev = Boolean((import.meta as any)?.env?.DEV);
+      if (isDev) console.log('Processing product:', {
+        id: item.id,
+        name: item.name,
+        hasVariants: !!item.variants?.length,
+        productImages: item.productImages,
+        variants: item.variants?.map(v => ({
+          id: v.id,
+          variantImages: v.images,
+          variantImage: v.image
+        }))
+      });
+
+      // Helper function to process image URLs
+      const processImageUrl = (imgUrl: string): string => {
         if (!imgUrl) return '';
-        // If it's already a full URL or starts with /, return as is
-        if (imgUrl.startsWith('http') || imgUrl.startsWith('/')) {
-          return imgUrl;
+        const trimmed = imgUrl.trim();
+        if (!trimmed) return '';
+        // Protocol-relative URL
+        if (trimmed.startsWith('//')) return `https:${trimmed}`;
+        // Already absolute or root-relative
+        if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
+          return trimmed;
         }
-        // Otherwise, assume it's a relative path from the API
-        return `${API_BASE_URL.replace('/api', '')}${imgUrl.startsWith('/') ? '' : '/'}${imgUrl}`;
+        // Normalize joining base without /api and ensure single slash
+        const base = API_BASE_URL.replace(/\/?api\/?$/, '');
+        const needsSlash = !trimmed.startsWith('/');
+        const url = `${base}${needsSlash ? '/' : ''}${trimmed}`;
+        return url.replace(/([^:]\/)\/+/g, '$1/');
       };
 
       // Process all images to ensure they have proper URLs
-      const processedProductImages = (item.productImages || []).map(processImageUrl);
+      const processedProductImages = (item.productImages || [])
+        .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
+        .map(processImageUrl)
+        .filter(Boolean);
+
       const processedVariants = (item.variants || []).map(variant => ({
         ...variant,
-        image: variant.image ? processImageUrl(variant.image) : undefined,
-        images: variant.images ? variant.images.map(processImageUrl) : []
+        image: variant.image && typeof variant.image === 'string' ? processImageUrl(variant.image) : undefined,
+        images: variant.images 
+          ? variant.images
+              .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
+              .map(processImageUrl)
+              .filter(Boolean)
+          : []
       }));
 
-      // Get the display image - prioritize variant images
-      const displayImage = (() => {
-        // Check variants first
-        const variantWithImage = processedVariants.find(v => v.image || v.images?.length > 0);
-        if (variantWithImage) {
-          return variantWithImage.image || variantWithImage.images?.[0];
-        }
-        // Then check product images
+      // Get the display image - prioritize product images first, then variants
+      const getDisplayImage = () => {
+        // 1. Check product images first
         if (processedProductImages.length > 0) {
           return processedProductImages[0];
         }
-        // Fallback to default phone image if no images found
+
+        // 2. Flatten all variant images (image + images[]), pick first valid
+        const allVariantImages = processedVariants.flatMap(v => [v.image, ...(v.images || [])])
+          .filter((x): x is string => typeof x === 'string' && x.length > 0);
+        if (allVariantImages.length > 0) return allVariantImages[0];
+
+        // 3. Fallback to default image if no valid images found
+        if (isDev) console.log('No valid images found for product, using default image');
         return phone;
-      })();
+      };
+
+      const displayImage = getDisplayImage();
 
       return {
         id: item.id,
@@ -738,7 +756,7 @@ const Shop: React.FC = () => {
         isBestSeller: item.stock > 20,
         freeDelivery: true,
         image: displayImage,
-        productImages: processedProductImages,
+        productImages: processedProductImages.length > 0 ? processedProductImages : [phone],
         variants: processedVariants,
         category: item.subcategory?.category || { id: 1, name: item.subcategory?.category?.name || "Misc" },
         subcategory: item.subcategory,
@@ -747,37 +765,81 @@ const Shop: React.FC = () => {
         status: item.status === 'UNAVAILABLE' ? 'OUT_OF_STOCK' : 'AVAILABLE',
         stock: item.stock || 0
       };
-    } catch {
+    } catch (error) {
+      const isDev = Boolean((import.meta as any)?.env?.DEV);
+      if (isDev) console.error('Error processing product:', error);
       // Fallback product data without reviews
-      // Use the same image selection logic in the fallback
-      const getFallbackImage = () => {
-        if (item.variants?.length > 0) {
-          const variantWithImage = item.variants.find(v => v.image || (v.images && v.images.length > 0));
-          if (variantWithImage) {
-            return variantWithImage.image || variantWithImage.images?.[0] || phone;
-          }
+      const processImageUrl = (imgUrl: string): string => {
+        if (!imgUrl) return '';
+        const trimmed = imgUrl.trim();
+        if (!trimmed) return '';
+        if (trimmed.startsWith('//')) return `https:${trimmed}`;
+        if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
+          return trimmed;
         }
-        return item.productImages?.[0] || phone;
+        const base = API_BASE_URL.replace(/\/?api\/?$/, '');
+        const needsSlash = !trimmed.startsWith('/');
+        const url = `${base}${needsSlash ? '/' : ''}${trimmed}`;
+        return url.replace(/([^:]\/)\/+/g, '$1/');
       };
-      
+
+      // Process product images
+      const processedProductImages = (item.productImages || [])
+        .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
+        .map(processImageUrl)
+        .filter(Boolean);
+        
+      // Process variants
+      const processedVariants = (item.variants || []).map(variant => ({
+        ...variant,
+        image: variant.image && typeof variant.image === 'string' ? processImageUrl(variant.image) : undefined,
+        images: variant.images 
+          ? variant.images
+              .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
+              .map(processImageUrl)
+              .filter(Boolean)
+          : []
+      }));
+
+      // Get display image using the same logic as in the try block
+      const getFallbackImage = () => {
+        // 1. Check product images first
+        if (processedProductImages.length > 0) {
+          return processedProductImages[0];
+        }
+
+        // 2. Flatten variant images
+        const allVariantImages = processedVariants.flatMap(v => [v.image, ...(v.images || [])])
+          .filter((x): x is string => typeof x === 'string' && x.length > 0);
+        if (allVariantImages.length > 0) return allVariantImages[0];
+        // 3. Fallback to default image
+        return phone;
+      };
+      const displayImage = getFallbackImage();
+
       return {
         id: item.id,
-        title: item.name,
-        description: item.description,
+        title: item.name || 'Unknown Product',
+        description: item.description || 'No description available',
         originalPrice: item.basePrice?.toString() || '0',
+        discount: item.discount ? `${item.discount}` : undefined,
         discountPercentage: item.discount ? `${item.discount}%` : '0%',
-        price: item.basePrice && item.discount 
-          ? (item.basePrice * (1 - item.discount / 100)).toFixed(2)
+        price: item.basePrice && item.discount
+          ? (Number(item.basePrice) * (1 - Number(item.discount) / 100)).toFixed(2)
           : item.basePrice?.toString() || '0',
         rating: 0,
         ratingCount: "0",
         isBestSeller: item.stock > 20,
         freeDelivery: true,
-        image: getFallbackImage(),
-        productImages: item.productImages || [],
-        variants: item.variants,
-        category: item.subcategory?.category?.name || "Misc",
+        image: displayImage,
+        productImages: processedProductImages.length > 0 ? processedProductImages : [phone],
+        variants: processedVariants,
+        category: item.subcategory?.category || { id: 1, name: item.subcategory?.category?.name || "Misc" },
+        subcategory: item.subcategory,
         brand: item.brand?.name || "Unknown",
+        brand_id: item.brand?.id || null,
+        status: item.status === 'UNAVAILABLE' ? 'OUT_OF_STOCK' : 'AVAILABLE',
+        stock: item.stock || 0
       };
     }
   };

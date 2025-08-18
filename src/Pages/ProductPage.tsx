@@ -290,6 +290,46 @@ const ProductPage = () => {
   const product = productData?.product;
   const vendorId = productData?.vendorId;
 
+  // Safely format variant attributes coming from different API shapes
+  const formatVariantAttributes = (attributes: any): string => {
+    if (!attributes) return '';
+    // New shape: Array<{ type: string; values: { value: string }[] }>
+    if (Array.isArray(attributes)) {
+      return attributes
+        .map((attr: any) => {
+          const label = String(attr?.type ?? attr?.attributeType ?? '');
+          const vals = Array.isArray(attr?.values)
+            ? attr.values.map((v: any) => String(v?.value ?? v)).filter(Boolean)
+            : Array.isArray(attr?.attributeValues)
+              ? attr.attributeValues.map((v: any) => String(v?.value ?? v)).filter(Boolean)
+              : [];
+          return label && vals.length ? `${label}: ${vals.join(', ')}` : '';
+        })
+        .filter(Boolean)
+        .join(', ');
+    }
+    // Legacy/object shape: { color: 'Red', size: 'M' } or values as arrays/objects
+    if (typeof attributes === 'object') {
+      return Object.entries(attributes)
+        .map(([key, value]) => {
+          if (value == null) return '';
+          if (Array.isArray(value)) {
+            const vals = value.map((v: any) => String(v?.value ?? v)).filter(Boolean);
+            return `${key}: ${vals.join(', ')}`;
+          }
+          if (typeof value === 'object') {
+            // Try common fields; fallback to JSON
+            const val = (value as any).value ?? (value as any).name ?? '';
+            return val ? `${key}: ${String(val)}` : `${key}: ${JSON.stringify(value)}`;
+          }
+          return `${key}: ${String(value)}`;
+        })
+        .filter(Boolean)
+        .join(', ');
+    }
+    return String(attributes);
+  };
+
   // Fetch category data
   const { data: categoryData } = useQuery<{ data: Category }>({
     queryKey: ['category', categoryId],
@@ -325,12 +365,15 @@ const ProductPage = () => {
   useEffect(() => {
     if (product) {
       setSelectedColor(product.colors && product.colors.length > 0 ? product.colors[0].name : '');
-      setImageError(new Array(product.productImages?.length || 1).fill(false));
-      
-      // Set default variant if product has variants
-      if (product.hasVariants && product.variants && product.variants.length > 0) {
-        setSelectedVariant(product.variants[0]);
-      }
+      // Determine default variant and current images at mount
+      const defaultVar = product.hasVariants && product.variants && product.variants.length > 0
+        ? product.variants[0]
+        : null;
+      setSelectedVariant(defaultVar);
+      const imgs = (defaultVar && defaultVar.variantImgUrls && defaultVar.variantImgUrls.length > 0)
+        ? defaultVar.variantImgUrls
+        : (product.productImages || []);
+      setImageError(new Array((imgs && imgs.length) ? imgs.length : 1).fill(false));
     }
   }, [product]);
 
@@ -350,6 +393,15 @@ const ProductPage = () => {
     }
     return product?.productImages || [];
   };
+
+  // Keep error-state array and selected image index in sync with current images
+  useEffect(() => {
+    const imgs = getCurrentImages();
+    setImageError(new Array((imgs && imgs.length) ? imgs.length : 1).fill(false));
+    if (selectedImageIndex >= (imgs?.length || 0)) {
+      setSelectedImageIndex(0);
+    }
+  }, [selectedVariant, product]);
 
   // Get current stock based on selected variant or product
   const getCurrentStock = () => {
@@ -552,7 +604,7 @@ const ProductPage = () => {
                   )}
                 </div>
 
-                {product.productImages && product.productImages.length > 1 && (
+                {currentImages && currentImages.length > 1 && (
                   <div className="product-gallery__thumbnails">
                   {currentImages.map((image: string, index: number) => (
                     <button
@@ -678,9 +730,7 @@ const ProductPage = () => {
                       onClick={() => variant.stock > 0 && handleVariantSelect(variant)}
                       >
                         <div style={{ fontWeight: '500' }}>
-                          {Object.entries(variant.attributes || {})
-                            .map(([key, value]) => `${key}: ${value}`)
-                            .join(', ')}
+                          {formatVariantAttributes(variant.attributes)}
                         </div>
                         <div style={{ color: '#28a745', fontWeight: '600' }}>
                           ${variant.calculatedPrice?.toFixed(2) || '0.00'}

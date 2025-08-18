@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { NewProductFormData, ProductVariant, Attribute } from "../types/product";
 import { fetchCategories, fetchSubcategories, Category, Subcategory } from '../api/categories';
 import { createProduct, uploadProductImages } from '../api/products';
 import "../Styles/NewProductModal.css";
@@ -20,6 +19,147 @@ interface NewProductModalProps {
   onSubmit: (success: boolean) => void;
 }
 
+type ProductVariant = {
+  sku: string;
+  price: number;
+  stock: number;
+  status: InventoryStatus;
+  attributes: {
+    type: string;
+    values: {
+      value: string;
+      nestedAttributes?: {
+        type: string;
+        values: string[];
+      }[];
+    }[];
+  }[];
+  images: (File | string)[];
+};
+
+type NewProductFormData = {
+  name: string;
+  description: string;
+  basePrice?: number;
+  stock?: number;
+  discount?: number;
+  discountType?: string;
+  status: InventoryStatus;
+  productImages: (File | string)[];
+  categoryId?: number;
+  subcategoryId?: number;
+  brand_id?: number | null;
+  dealId?: number | null;
+  hasVariants: boolean;
+  variants: ProductVariant[];
+};
+
+const AttributeManager = ({ 
+  attributes, 
+  onUpdate 
+}: {
+  attributes: ProductVariant['attributes'];
+  onUpdate: (updated: ProductVariant['attributes']) => void;
+}) => {
+  const addAttributeType = () => {
+    onUpdate([...attributes, { type: '', values: [] }]);
+  };
+
+  const addNestedAttribute = (attrIndex: number) => {
+    const updated = [...attributes];
+    updated[attrIndex].values.push({ 
+      value: '', 
+      nestedAttributes: [] 
+    });
+    onUpdate(updated);
+  };
+
+  return (
+    <div className="attribute-manager">
+      {attributes.map((attr, attrIndex) => (
+        <div key={attrIndex} className="attribute-type">
+          <input
+            value={attr.type}
+            onChange={(e) => {
+              const updated = [...attributes];
+              updated[attrIndex].type = e.target.value;
+              onUpdate(updated);
+            }}
+            placeholder="Attribute type (e.g. Color)"
+          />
+          
+          <div className="attribute-values">
+            {attr.values.map((val, valIndex) => (
+              <div key={valIndex} className="attribute-value">
+                <input
+                  value={val.value}
+                  onChange={(e) => {
+                    const updated = [...attributes];
+                    updated[attrIndex].values[valIndex].value = e.target.value;
+                    onUpdate(updated);
+                  }}
+                  placeholder="Value (e.g. Red)"
+                />
+                
+                {/* Nested attributes */}
+                {val.nestedAttributes?.map((nested, nestedIndex) => (
+                  <div key={nestedIndex} className="nested-attribute">
+                    <input
+                      value={nested.type}
+                      onChange={(e) => {
+                        const updated = [...attributes];
+                        updated[attrIndex].values[valIndex].nestedAttributes![nestedIndex].type = e.target.value;
+                        onUpdate(updated);
+                      }}
+                      placeholder="Nested type (e.g. Size)"
+                    />
+                    
+                    <input
+                      value={nested.values.join(',')}
+                      onChange={(e) => {
+                        const updated = [...attributes];
+                        updated[attrIndex].values[valIndex].nestedAttributes![nestedIndex].values = 
+                          e.target.value.split(',');
+                        onUpdate(updated);
+                      }}
+                      placeholder="Comma-separated values (e.g. S,M,L)"
+                    />
+                  </div>
+                ))}
+                
+                <button 
+                  type="button"
+                  onClick={() => {
+                    const updated = [...attributes];
+                    updated[attrIndex].values[valIndex].nestedAttributes = [
+                      ...(updated[attrIndex].values[valIndex].nestedAttributes || []),
+                      { type: '', values: [] }
+                    ];
+                    onUpdate(updated);
+                  }}
+                >
+                  Add Nested Attribute
+                </button>
+              </div>
+            ))}
+            
+            <button 
+              type="button"
+              onClick={() => addNestedAttribute(attrIndex)}
+            >
+              Add Value
+            </button>
+          </div>
+        </div>
+      ))}
+      
+      <button type="button" onClick={addAttributeType}>
+        Add Attribute Type
+      </button>
+    </div>
+  );
+};
+
 const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const { authState } = useVendorAuth();
   
@@ -28,16 +168,17 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     name: "",
     description: "",
     basePrice: undefined,
+    stock: undefined,
     discount: undefined,
     discountType: undefined,
     status: InventoryStatus.AVAILABLE,
-    stock: undefined,
+    productImages: [],
+    categoryId: undefined,
+    subcategoryId: undefined,
+    brand_id: undefined,
+    dealId: undefined,
     hasVariants: false,
     variants: [],
-    subcategoryId: 0,
-    dealId: undefined,
-    bannerId: undefined,
-    productImages: [],
   });
 
   // UI state
@@ -52,10 +193,18 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   
   // Variant state
   const [variants, setVariants] = useState<ProductVariant[]>([]);
-  const [newAttribute, setNewAttribute] = useState<Attribute>({
+  const [newAttribute, setNewAttribute] = useState<{
+    attributeType: string;
+    attributeValues: string[];
+  }>({
     attributeType: '',
     attributeValues: ['']
   });
+  
+  // Global attribute specs for generating combinations
+  const [attributeSpecs, setAttributeSpecs] = useState<Array<{ type: string; valuesText: string }>>([
+    { type: '', valuesText: '' }
+  ]);
   
   // Image state
   const [images, setImages] = useState<File[]>([]);
@@ -124,7 +273,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       status: InventoryStatus.AVAILABLE,
       attributes: [],
       images: [],
-      variantImages: []
     };
     setVariants([...variants, newVariant]);
   };
@@ -140,20 +288,24 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   };
 
   const addAttribute = (variantIndex: number) => {
-    if (newAttribute.attributeType && newAttribute.attributeValues[0]) {
-      const updatedVariants = [...variants];
-      if (!updatedVariants[variantIndex].attributes) {
-        updatedVariants[variantIndex].attributes = [];
+    const updatedVariants = [...variants];
+    updatedVariants[variantIndex].attributes = [
+      ...(updatedVariants[variantIndex].attributes || []),
+      { 
+        type: newAttribute.attributeType, 
+        values: newAttribute.attributeValues.map(value => ({
+          value,
+          nestedAttributes: []
+        }))
       }
-      updatedVariants[variantIndex].attributes!.push({ ...newAttribute });
-      setVariants(updatedVariants);
-      setNewAttribute({ attributeType: '', attributeValues: [''] });
-    }
+    ];
+    setVariants(updatedVariants);
+    setNewAttribute({ attributeType: '', attributeValues: [''] });
   };
 
   const removeAttribute = (variantIndex: number, attributeIndex: number) => {
     const updatedVariants = [...variants];
-    updatedVariants[variantIndex].attributes!.splice(attributeIndex, 1);
+    updatedVariants[variantIndex].attributes.splice(attributeIndex, 1);
     setVariants(updatedVariants);
   };
 
@@ -174,14 +326,9 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       const newImages = Array.from(e.target.files);
       setVariants(prev => prev.map((v, i) => 
         i === variantIndex 
-          ? { 
-              ...v, 
-              variantImages: [...(v.variantImages || []), ...newImages] as (File | string)[] 
-            } 
+          ? { ...v, images: [...(v.images || []), ...newImages] }
           : v
       ));
-      // Reset the input value to allow selecting the same file again
-      e.target.value = '';
     }
   };
 
@@ -190,10 +337,74 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       i === variantIndex 
         ? { 
             ...v, 
-            variantImages: (v.variantImages || []).filter((_, idx) => idx !== imageIndex)
+            images: (v.images || []).filter((_, idx) => idx !== imageIndex)
           } 
         : v
     ));
+  };
+
+  // Helper: compute cartesian product of attribute values
+  const cartesian = (arrays: string[][]): string[][] => {
+    return arrays.reduce<string[][]>((acc, curr) => {
+      if (acc.length === 0) return curr.map(v => [v]);
+      const next: string[][] = [];
+      for (const a of acc) {
+        for (const b of curr) {
+          next.push([...a, b]);
+        }
+      }
+      return next;
+    }, []);
+  };
+
+  // Helpers: parse and dedupe values from comma-separated text
+  const parseValues = (text: string): string[] => {
+    const raw = text.split(',');
+    const trimmed = raw.map(v => v.trim()).filter(Boolean);
+    const seen = new Set<string>();
+    const unique: string[] = [];
+    for (const v of trimmed) {
+      const key = v.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(v);
+      }
+    }
+    return unique;
+  };
+
+  // Generate variants from global attribute specs
+  const generateVariants = () => {
+    // Sanitize input
+    const cleanSpecs = attributeSpecs
+      .map(s => ({ type: s.type.trim(), values: parseValues(s.valuesText) }))
+      .filter(s => s.type && s.values.length > 0);
+
+    if (cleanSpecs.length === 0) {
+      toast.error('Add at least one attribute with values');
+      return;
+    }
+
+    const valuesArrays = cleanSpecs.map(s => s.values);
+    const combos = cartesian(valuesArrays);
+
+    const newVariants: ProductVariant[] = combos.map((combo, idx) => {
+      const titleParts: string[] = combo;
+      const skuParts: string[] = combo.map(p => p.replace(/\s+/g, '-').toUpperCase());
+      return {
+        sku: `SKU-${skuParts.join('-')}`,
+        price: 0,
+        stock: 0,
+        status: InventoryStatus.AVAILABLE,
+        attributes: cleanSpecs.map((spec, i) => ({
+          type: spec.type,
+          values: [{ value: combo[i] }]
+        })),
+        images: []
+      } as ProductVariant;
+    });
+
+    setVariants(newVariants);
   };
 
   const validateForm = (): string | null => {
@@ -240,6 +451,25 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     setIsLoading(true);
 
     try {
+      // Prepare variants data
+      const variantsData = variants.map(variant => ({
+        sku: variant.sku,
+        price: variant.price,
+        stock: variant.stock,
+        status: variant.status,
+        attributes: variant.attributes.map(attr => ({
+          type: attr.type,
+          values: attr.values.map(val => ({
+            value: val.value,
+            nestedAttributes: val.nestedAttributes?.map(nested => ({
+              type: nested.type,
+              values: nested.values
+            })) || []
+          }))
+        })),
+        images: variant.images
+      }));
+
       // Step 1: Upload main product images first to get URLs
       let productImageUrls: string[] = [];
       if (images.length > 0) {
@@ -255,8 +485,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
 
       // Step 2: Upload variant images and collect their URLs
       const variantsWithImageUrls = await Promise.all(
-        variants.map(async (variant) => {
-          const variantImages = variant.variantImages || [];
+        variantsData.map(async (variant) => {
+          const variantImages = variant.images || [];
           const variantImageFiles = variantImages.filter(img => img instanceof File) as File[];
           let variantImageUrls = variantImages.filter(img => typeof img === 'string') as string[];
 
@@ -275,7 +505,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
 
           return {
             ...variant,
-            variantImages: variantImageUrls
+            images: variantImageUrls
           };
         })
       );
@@ -287,7 +517,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
         hasVariants: formData.hasVariants,
         productImages: productImageUrls,
         dealId: formData.dealId || 0,
-        bannerId: formData.bannerId || 0
+        bannerId: 0
       };
 
       if (formData.hasVariants) {
@@ -297,13 +527,15 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
           basePrice: variant.price, // API expects basePrice on variant
           discount: 0,
           discountType: 'PERCENTAGE',
-          attributes: variant.attributes ? 
+          // Flatten attributes to key -> single value (string)
+          attributes: variant.attributes ?
             variant.attributes.reduce((acc: any, attr: any) => {
-              // Convert attributes array to object format
-              acc[attr.attributeType] = attr.attributeValues[0] || attr.attributeValues.join(', ');
+              const key = (attr.type || '').toString().trim().toLowerCase();
+              const firstVal = attr.values && attr.values[0] ? attr.values[0].value : '';
+              if (key && firstVal) acc[key] = firstVal;
               return acc;
             }, {}) : {},
-          variantImages: variant.variantImages, // Now contains all uploaded image URLs
+          variantImages: variant.images, // API expects 'variantImages'
           stock: variant.stock,
           status: variant.status
         }));
@@ -358,16 +590,17 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       name: "",
       description: "",
       basePrice: undefined,
+      stock: undefined,
       discount: undefined,
       discountType: undefined,
       status: InventoryStatus.AVAILABLE,
-      stock: undefined,
+      productImages: [],
+      categoryId: undefined,
+      subcategoryId: undefined,
+      brand_id: undefined,
+      dealId: undefined,
       hasVariants: false,
       variants: [],
-      subcategoryId: 0,
-      dealId: undefined,
-      bannerId: undefined,
-      productImages: [],
     });
     setVariants([]);
     setSelectedCategoryId(0);
@@ -389,6 +622,21 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       addVariant();
     }
   }, [formData.hasVariants]);
+
+  const handleAttributeChange = (variantIndex: number, attributes: Array<{
+    type: string;
+    values: Array<{
+      value: string;
+      nestedAttributes?: Array<{
+        type: string;
+        values: string[];
+      }>;
+    }>;
+  }>) => {
+    const updatedVariants = [...formData.variants];
+    updatedVariants[variantIndex].attributes = attributes;
+    setFormData({...formData, variants: updatedVariants});
+  };
 
   if (!isOpen) return null;
 
@@ -526,7 +774,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                 <div className="section-header">
                   <div className="section-icon">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z"/>
+                      <path d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z"/>
                     </svg>
                   </div>
                   <h3 className="section-title">Pricing & Inventory</h3>
@@ -615,13 +863,78 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                   <h3 className="section-title">Product Variants</h3>
                 </div>
 
+                {/* Attribute specs builder */}
+                <div className="form-grid two-columns" style={{ marginBottom: 12 }}>
+                  {attributeSpecs.map((spec, i) => (
+                    <React.Fragment key={i}>
+                      <div className="form-group">
+                        <label className="form-label required">Attribute Name</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder="e.g. Color, Size"
+                          value={spec.type}
+                          onChange={(e) => {
+                            const next = [...attributeSpecs];
+                            next[i].type = e.target.value;
+                            setAttributeSpecs(next);
+                          }}
+                        />
+                        <div className="label-hint">Examples: Color, Size, Material</div>
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label required">Values (comma-separated)</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder="e.g. Red, Blue or M, L"
+                          value={spec.valuesText}
+                          onChange={(e) => {
+                            const next = [...attributeSpecs];
+                            next[i].valuesText = e.target.value;
+                            setAttributeSpecs(next);
+                          }}
+                        />
+                        <div className="label-hint">Tip: press comma to separate values. Duplicates are ignored.</div>
+                        {/* Values preview as chips */}
+                        {parseValues(spec.valuesText).length > 0 && (
+                          <div className="attribute-tags">
+                            {parseValues(spec.valuesText).map((v, idx) => (
+                              <span key={idx} className="attribute-tag">{v}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </React.Fragment>
+                  ))}
+                  <div className="form-group full-width" style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setAttributeSpecs(prev => [...prev, { type: '', valuesText: '' }])}
+                    >
+                      + Add Attribute
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={generateVariants}
+                      disabled={!attributeSpecs.some(s => s.type.trim() && parseValues(s.valuesText).length > 0)}
+                    >
+                      Generate Variants
+                    </button>
+                  </div>
+                </div>
+
                 <div className="variants-section">
                   {variants.map((variant, index) => (
                     <div key={index} className="variant-card">
                       <div className="variant-header">
                         <div className="variant-title">
                           <span className="variant-number">{index + 1}</span>
-                          Variant {index + 1}
+                          {(variant.attributes && variant.attributes.length > 0)
+                            ? variant.attributes.map(a => (a.values?.[0]?.value || '')).filter(Boolean).join(' - ')
+                            : `Variant ${index + 1}`}
                         </div>
                         {variants.length > 1 && (
                           <button
@@ -689,47 +1002,22 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                         </div>
                       </div>
 
-                      {/* Attributes */}
-                      <div className="attribute-container">
-                        <label className="form-label">Attributes</label>
-                        <div className="attribute-input-group">
-                          <input
-                            type="text"
-                            className="form-input"
-                            placeholder="Attribute type (e.g., Color)"
-                            value={newAttribute.attributeType}
-                            onChange={(e) => setNewAttribute({...newAttribute, attributeType: e.target.value})}
-                          />
-                          <input
-                            type="text"
-                            className="form-input"
-                            placeholder="Value (e.g., Red)"
-                            value={newAttribute.attributeValues[0] || ''}
-                            onChange={(e) => setNewAttribute({...newAttribute, attributeValues: [e.target.value]})}
-                          />
-                          <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={() => addAttribute(index)}
-                          >
-                            Add
-                          </button>
+                      {/* Attributes (read-only summary) */}
+                      {variant.attributes && variant.attributes.length > 0 && (
+                        <div className="attribute-container">
+                          <div className="label-hint">Attributes</div>
+                          <div className="attribute-tags">
+                            {variant.attributes.flatMap((attr, aIdx) =>
+                              (attr.values || []).map((val, vIdx) => (
+                                <span key={`${aIdx}-${vIdx}`} className="attribute-tag">
+                                  {attr.type}: {val.value}
+                                </span>
+                              ))
+                            )}
+                          </div>
                         </div>
-                        <div className="attribute-tags">
-                          {variant.attributes?.map((attr, attrIndex) => (
-                            <div key={attrIndex} className="attribute-tag">
-                              {attr.attributeType}: {attr.attributeValues.join(', ')}
-                              <button
-                                type="button"
-                                onClick={() => removeAttribute(index, attrIndex)}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
+                      )}
+                      
                       {/* Variant Images */}
                       <div className="form-group full-width">
                         <label className="form-label">Variant Images</label>
@@ -753,9 +1041,9 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                             style={{ display: 'none' }}
                           />
                         </div>
-                        {variant.variantImages && variant.variantImages.length > 0 && (
+                        {variant.images && variant.images.length > 0 && (
                           <div className="image-preview-grid">
-                            {variant.variantImages.map((img, imgIndex) => (
+                            {variant.images.map((img, imgIndex) => (
                               <div key={imgIndex} className="image-preview">
                                 <img 
                                   src={img instanceof File ? URL.createObjectURL(img) : img} 
@@ -786,7 +1074,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                   onClick={addVariant}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C13.1 2 14 2.9 14 4V10H20C21.1 10 22 10.9 22 12C22 13.1 21.1 14 20 14H14V20C14 21.1 13.1 22 12 22C10.9 22 10 21.1 10 20V14H4C2.9 14 2 13.1 2 12C2 10.9 2.9 10 4 10H10V4C10 2.9 10.9 2 12 2Z"/>
+                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z"/>
                   </svg>
                   Add Another Variant
                 </button>

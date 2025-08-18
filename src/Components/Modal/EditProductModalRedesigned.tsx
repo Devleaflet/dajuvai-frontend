@@ -4,7 +4,9 @@ import "../../Styles/NewProductModal.css";
 import { useVendorAuth } from "../../context/VendorAuthContext";
 import { fetchCategories, fetchSubcategories, Category, Subcategory } from '../../api/categories';
 import { updateProduct, uploadProductImages } from '../../api/products';
+import axiosInstance from '../../api/axiosInstance';
 import { ApiProduct } from "../Types/ApiProduct";
+import { API_BASE_URL } from "../../config";
 import { toast } from 'react-toastify';
 import { dealApiService } from '../../services/apiDeals';
 import { Deal } from '../Types/Deal';
@@ -37,17 +39,24 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
     description: "",
-    basePrice: "",
-    discount: "",
-    discountType: undefined,
+    basePrice: null,
+    stock: 0,
+    discount: null,
+    discountType: null,
+    size: [],
     status: InventoryStatus.AVAILABLE,
-    stock: "",
+    productImages: [],
+    categoryId: 0,
+    subcategoryId: 0,
+    quantity: 0,
+    brand_id: null,
+    dealId: null,
+    inventory: [],
+    vendorId: "",
     hasVariants: false,
     variants: [],
-    subcategoryId: 0,
-    dealId: undefined,
-    bannerId: undefined,
-    productImages: [],
+    bannerId: null,
+    brandId: null,
   });
 
   // UI state
@@ -62,13 +71,117 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   // Variant state
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [newAttribute, setNewAttribute] = useState<Attribute>({
-    attributeType: '',
-    attributeValues: ['']
+    type: '',
+    values: [{ value: '', nestedAttributes: [] }]
   });
+  // Global attribute specs for generating combinations (ported from NewProductModal)
+  const [attributeSpecs, setAttributeSpecs] = useState<Array<{ type: string; valuesText: string }>>([
+    { type: '', valuesText: '' }
+  ]);
   
   // Image state
   const [images, setImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
+
+  // Helpers: parse and dedupe values from comma-separated text (ported)
+  const parseValues = (text: string): string[] => {
+    const raw = text.split(',');
+    const trimmed = raw.map(v => v.trim()).filter(Boolean);
+    const seen = new Set<string>();
+    const unique: string[] = [];
+    for (const v of trimmed) {
+      const key = v.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(v);
+      }
+    }
+    return unique;
+  };
+
+  // Format attributes safely for display to avoid [object Object]
+  const formatVariantAttributes = (attributes: any): string => {
+    if (!attributes) return '';
+    if (Array.isArray(attributes)) {
+      return attributes
+        .map((attr: any) => {
+          const label = String(attr?.type ?? attr?.attributeType ?? '').trim();
+          const valuesSrc = attr?.values ?? attr?.attributeValues ?? [];
+          const vals = (Array.isArray(valuesSrc) ? valuesSrc : [valuesSrc])
+            .map((v: any) => {
+              if (v == null) return '';
+              if (typeof v === 'object') return String(v.value ?? v.name ?? v.label ?? JSON.stringify(v));
+              return String(v);
+            })
+            .filter(Boolean);
+          return label && vals.length ? `${label}: ${vals.join(', ')}` : vals.join(', ');
+        })
+        .filter(Boolean)
+        .join(', ');
+    }
+    if (typeof attributes === 'object') {
+      return Object.entries(attributes)
+        .map(([key, value]) => {
+          if (value == null) return '';
+          if (Array.isArray(value)) {
+            const vals = value.map((v: any) => String(v?.value ?? v)).filter(Boolean);
+            return `${key}: ${vals.join(', ')}`;
+          }
+          if (typeof value === 'object') {
+            const val = (value as any).value ?? (value as any).name ?? '';
+            return val ? `${key}: ${String(val)}` : `${key}: ${JSON.stringify(value)}`;
+          }
+          return `${key}: ${String(value)}`;
+        })
+        .filter(Boolean)
+        .join(', ');
+    }
+    return String(attributes);
+  };
+
+  // Helper: compute cartesian product of attribute values (ported)
+  const cartesian = (arrays: string[][]): string[][] => {
+    return arrays.reduce<string[][]>((acc, curr) => {
+      if (acc.length === 0) return curr.map(v => [v]);
+      const next: string[][] = [];
+      for (const a of acc) {
+        for (const b of curr) {
+          next.push([...a, b]);
+        }
+      }
+      return next;
+    }, []);
+  };
+
+  // Generate variants from global attribute specs (ported)
+  const generateVariants = () => {
+    const cleanSpecs = attributeSpecs
+      .map(s => ({ type: s.type.trim(), values: parseValues(s.valuesText) }))
+      .filter(s => s.type && s.values.length > 0);
+
+    if (cleanSpecs.length === 0) {
+      toast.error('Add at least one attribute with values');
+      return;
+    }
+
+    const valuesArrays = cleanSpecs.map(s => s.values);
+    const combos = cartesian(valuesArrays);
+
+    const newVariants: ProductVariant[] = combos.map((combo) => ({
+      sku: `SKU-${combo.map(p => p.replace(/\s+/g, '-').toUpperCase()).join('-')}`,
+      price: 0,
+      stock: 0,
+      status: InventoryStatus.AVAILABLE,
+      attributes: cleanSpecs.map((spec, i) => ({
+        type: spec.type,
+        values: [{ value: combo[i], nestedAttributes: [] }]
+      })),
+      images: [],
+      variantImages: []
+    }));
+
+    setVariants(newVariants);
+  };
 
   // Load data on mount and when product changes
   useEffect(() => {
@@ -102,33 +215,33 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
   const populateFormWithProduct = async () => {
     if (!product) return;
-
+  
     console.log('🔄 POPULATING FORM WITH PRODUCT DATA:');
-    console.log('Product:', product);
+    console.log('Product (prop):', product);
     console.log('Product Category ID:', product.categoryId);
     console.log('Product Subcategory:', product.subcategory);
-
+  
     // Extract category and subcategory IDs with multiple fallback strategies
     let categoryId = 0;
     let subcategoryId = 0;
-
+  
     // Strategy 1: Direct properties
     if (product.categoryId) categoryId = Number(product.categoryId);
     if (product.subcategory?.id) subcategoryId = Number(product.subcategory.id);
-
+  
     // Strategy 2: From subcategory object
     if (!categoryId && product.subcategory) {
       const sub = product.subcategory as any;
       if (sub.categoryId) categoryId = Number(sub.categoryId);
       if (sub.category?.id) categoryId = Number(sub.category.id);
     }
-
+  
     // Strategy 3: Alternative subcategory ID extraction
     if (!subcategoryId) {
       const prod = product as any;
       if (prod.subcategoryId) subcategoryId = Number(prod.subcategoryId);
     }
-
+  
     // Strategy 4: Hardcode fallback for testing (you can remove this later)
     if (!categoryId) {
       console.warn('⚠️ No category ID found, using fallback value 1');
@@ -138,14 +251,14 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       console.warn('⚠️ No subcategory ID found, using fallback value 1');
       subcategoryId = 1; // Use a default subcategory for testing
     }
-    
+  
     console.log('🎯 FINAL EXTRACTED IDs:');
     console.log('Category ID:', categoryId);
     console.log('Subcategory ID:', subcategoryId);
-    
+  
     setSelectedCategoryId(categoryId);
-
-    // Load subcategories for the product's category first
+  
+    // Load subcategories for the product's category
     if (categoryId > 0) {
       try {
         const subcategories = await fetchSubcategories(categoryId);
@@ -156,28 +269,125 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         toast.error('Failed to load subcategories');
       }
     }
+  
+    // Fetch freshest product by ID to ensure all variants are present
+    let fullProduct: any = product;
+    try {
+      console.log('📥 Fetching latest product by ID for full variants:', product.id);
+      const resp = await axiosInstance.get(`/api/product/${product.id}`);
+      if (resp?.data?.product) {
+        fullProduct = resp.data.product;
+      }
+    } catch (e) {
+      console.warn('⚠️ Failed to fetch latest product by ID. Falling back to provided product. Error:', e);
+    }
 
-    // Then set the form data with the correct subcategory
+    // Compute hasVariants based on the presence of variants in the fresh product
+    const hasVariants = fullProduct.variants && fullProduct.variants.length > 0;
+
+    // Helper: normalize various backend attribute shapes to Attribute[]
+    const normalizeVariantAttributes = (raw: any): Attribute[] => {
+      if (!raw) return [];
+      // Case 1: object map like { color: 'Red', size: 'M' | ['M','L'] }
+      if (typeof raw === 'object' && !Array.isArray(raw)) {
+        return Object.entries(raw).map(([key, value]) => ({
+          type: String(key),
+          values: (Array.isArray(value) ? value : [value]).map((val: any) => ({
+            value: String((val && typeof val === 'object') ? (val.value ?? val.name ?? JSON.stringify(val)) : val),
+            nestedAttributes: []
+          }))
+        }));
+      }
+      // Case 2: array of attribute objects
+      if (Array.isArray(raw)) {
+        return (raw as any[]).map((attr) => {
+          const type = String(attr?.type ?? attr?.attributeType ?? '');
+          const valsSrc = attr?.values ?? attr?.attributeValues ?? [];
+          const valsArr = Array.isArray(valsSrc) ? valsSrc : [valsSrc];
+          const values = valsArr
+            .map((v: any) => {
+              if (v == null) return null;
+              if (typeof v === 'object') {
+                const val = v.value ?? v.name ?? v.label ?? undefined;
+                return val != null ? String(val) : JSON.stringify(v);
+              }
+              return String(v);
+            })
+            .filter(Boolean)
+            .map((s: any) => ({ value: String(s), nestedAttributes: [] }));
+          return { type, values } as Attribute;
+        }).filter((a: Attribute) => a.type && a.values && a.values.length > 0);
+      }
+      return [];
+    };
+
+    // Map API variants to ProductVariant interface
+    const mappedVariants: ProductVariant[] = fullProduct.variants && fullProduct.variants.length > 0
+      ? fullProduct.variants.map((v: any) => {
+          const imgs = v.variantImages || v.images || [];
+          return ({
+          sku: v.sku || '',
+          price: Number(v.basePrice || 0),
+          stock: Number(v.stock || 0),
+          status: v.status || InventoryStatus.AVAILABLE,
+          attributes: normalizeVariantAttributes(v.attributes),
+          images: imgs,
+          variantImages: imgs,
+        });
+        })
+      : [];
+  
+    // Resolve main product images into string[] for UI and payload
+    const ensureAbsolute = (u: string) => {
+      if (!u) return '';
+      if (/^https?:\/\//i.test(u)) return u;
+      if (u.startsWith('//')) return `${window.location.protocol}${u}`;
+      if (u.startsWith('/')) return `${API_BASE_URL.replace(/\/$/, '')}${u}`;
+      return u;
+    };
+    const pickUrl = (img: any) => ensureAbsolute(typeof img === 'string' ? img : (img?.url || img?.secure_url || img?.imageUrl || img?.path || img?.src || ''));
+    let resolvedProductImages: string[] = [];
+    if (Array.isArray(fullProduct.productImages)) {
+      resolvedProductImages = (fullProduct.productImages as any[]).map(pickUrl).filter(Boolean);
+    } else if (Array.isArray(fullProduct.images)) {
+      resolvedProductImages = (fullProduct.images as any[]).map(pickUrl).filter(Boolean);
+    } else if (Array.isArray(fullProduct.gallery)) {
+      resolvedProductImages = (fullProduct.gallery as any[]).map(pickUrl).filter(Boolean);
+    } else if (Array.isArray(fullProduct.media)) {
+      resolvedProductImages = (fullProduct.media as any[]).map(pickUrl).filter(Boolean);
+    } else if (fullProduct.image) {
+      resolvedProductImages = [pickUrl(fullProduct.image)].filter(Boolean);
+    }
+    console.log('🖼️ Resolved main product images:', resolvedProductImages);
+
+    // Set form data with all required fields
     setFormData({
-      name: product.name || "",
-      description: product.description || "",
-      basePrice: product.basePrice?.toString() || "",
-      discount: product.discount?.toString() || "",
-      discountType: product.discountType || undefined,
-      status: product.status || InventoryStatus.AVAILABLE,
-      stock: product.stock?.toString() || "",
-      hasVariants: product.hasVariants || false,
-      variants: product.variants || [],
-      subcategoryId: subcategoryId,
-      dealId: product.dealId || undefined,
-      bannerId: product.bannerId || undefined,
-      productImages: product.productImages || [],
+      name: fullProduct.name || "",
+      description: fullProduct.description || "",
+      basePrice: fullProduct.basePrice ?? null,
+      stock: Number(fullProduct.stock ?? 0),
+      discount: fullProduct.discount ?? null,
+      discountType: fullProduct.discountType ?? null,
+      size: Array.isArray(fullProduct.size) ? fullProduct.size : [],
+      status: fullProduct.status || InventoryStatus.AVAILABLE,
+      productImages: resolvedProductImages as (File | string)[],
+      categoryId: Number(fullProduct.categoryId || selectedCategoryId || 0),
+      subcategoryId: Number(subcategoryId || fullProduct.subcategory?.id || 0),
+      quantity: Number(fullProduct.quantity ?? fullProduct.stock ?? 0),
+      brand_id: fullProduct.brand_id ?? null,
+      dealId: fullProduct.dealId ?? null,
+      inventory: Array.isArray(fullProduct.inventory) ? fullProduct.inventory : [],
+      vendorId: String(fullProduct.vendorId ?? fullProduct.vendor?.id ?? ''),
+      hasVariants: hasVariants,
+      variants: mappedVariants,
+      bannerId: fullProduct.bannerId ?? null,
+      brandId: fullProduct.brand?.id ?? null,
     });
-
-    setVariants(product.variants || []);
-    setExistingImages(product.productImages || []);
-
-    console.log('✅ Form populated with category:', categoryId, 'subcategory:', subcategoryId);
+  
+    setVariants(mappedVariants);
+    setExistingImages(resolvedProductImages);
+  
+    console.log('✅ Form populated with category:', categoryId, 'subcategory:', subcategoryId, 'variants:', mappedVariants);
   };
 
   const handleCategoryChange = async (categoryId: number) => {
@@ -208,7 +418,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       stock: 0,
       status: InventoryStatus.AVAILABLE,
       attributes: [],
-      images: []
+      images: [],
+      variantImages: []
     };
     setVariants([...variants, newVariant]);
   };
@@ -224,14 +435,19 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   };
 
   const addAttribute = (variantIndex: number) => {
-    if (newAttribute.attributeType && newAttribute.attributeValues[0]) {
+    if (newAttribute.type && newAttribute.values[0]?.value) {
       const updatedVariants = [...variants];
       if (!updatedVariants[variantIndex].attributes) {
         updatedVariants[variantIndex].attributes = [];
       }
-      updatedVariants[variantIndex].attributes!.push({ ...newAttribute });
+      // normalize empty nestedAttributes
+      const normalized: Attribute = {
+        type: newAttribute.type,
+        values: newAttribute.values.map(v => ({ value: v.value, nestedAttributes: v.nestedAttributes || [] }))
+      };
+      updatedVariants[variantIndex].attributes!.push(normalized);
       setVariants(updatedVariants);
-      setNewAttribute({ attributeType: '', attributeValues: [''] });
+      setNewAttribute({ type: '', values: [{ value: '', nestedAttributes: [] }] });
     }
   };
 
@@ -246,6 +462,26 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       const newImages = Array.from(e.target.files);
       setImages(prev => [...prev, ...newImages]);
     }
+  };
+
+  // Variant image handlers (ported)
+  const handleVariantImageUpload = (e: React.ChangeEvent<HTMLInputElement>, variantIndex: number) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newImages = Array.from(e.target.files);
+      setVariants(prev => prev.map((v, i) =>
+        i === variantIndex
+          ? { ...v, images: [...(v.images || []), ...newImages] }
+          : v
+      ));
+    }
+  };
+
+  const removeVariantImage = (variantIndex: number, imageIndex: number) => {
+    setVariants(prev => prev.map((v, i) =>
+      i === variantIndex
+        ? { ...v, images: (v.images || []).filter((_, idx) => idx !== imageIndex) }
+        : v
+    ));
   };
 
   const removeImage = (index: number) => {
@@ -280,11 +516,11 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     }
     
     if (!formData.hasVariants) {
-      if (!formData.basePrice || parseFloat(formData.basePrice) <= 0) {
+      if (formData.basePrice == null || Number(formData.basePrice) <= 0) {
         console.log('❌ Base price is invalid:', formData.basePrice);
         return 'Base price is required';
       }
-      if (!formData.stock || parseInt(formData.stock) < 0) {
+      if (formData.stock == null || Number(formData.stock) < 0) {
         console.log('❌ Stock is invalid:', formData.stock);
         return 'Stock quantity is required';
       }
@@ -379,17 +615,43 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       // Handle variants vs non-variants
       if (formData.hasVariants) {
         if (variants.length > 0) {
-          // Convert variants to match API structure
-          updatePayload.variants = variants.map((variant: any) => ({
+          // Upload new variant images and merge with existing URLs
+          const variantsWithImageUrls = await Promise.all(
+            variants.map(async (variant) => {
+              const variantImages = (variant.images || variant.variantImages || []) as (File | string)[];
+              const variantImageFiles = variantImages.filter(img => img instanceof File) as File[];
+              let variantImageUrls = variantImages.filter(img => typeof img === 'string') as string[];
+
+              if (variantImageFiles.length > 0) {
+                try {
+                  const uploadResponse = await uploadProductImages(variantImageFiles);
+                  if (uploadResponse.success) {
+                    variantImageUrls = [...variantImageUrls, ...uploadResponse.urls];
+                  } else {
+                    console.error('Failed to upload some variant images:', uploadResponse.message);
+                  }
+                } catch (err) {
+                  console.error('Variant image upload error:', err);
+                }
+              }
+
+              return { ...variant, images: variantImageUrls };
+            })
+          );
+
+          // Convert variants to match API structure (flatten attributes and map images)
+          updatePayload.variants = variantsWithImageUrls.map((variant: ProductVariant) => ({
             sku: variant.sku,
-            basePrice: variant.price || variant.basePrice,
-            discount: variant.discount || 0,
-            discountType: variant.discountType || 'PERCENTAGE',
-            attributes: variant.attributes || Object.keys(variant.attributes || {}).reduce((acc, key) => {
-              acc[key] = variant.attributes[key];
+            basePrice: variant.price,
+            discount: 0,
+            discountType: 'PERCENTAGE',
+            attributes: (variant.attributes || []).reduce((acc, attr) => {
+              const key = attr.type?.trim().toLowerCase();
+              const firstVal = attr.values && attr.values[0] ? attr.values[0].value : '';
+              if (key && firstVal) (acc as any)[key] = firstVal;
               return acc;
-            }, {} as any),
-            variantImages: variant.images || [],
+            }, {} as Record<string, string>),
+            variantImages: (variant.images || []) as string[],
             stock: variant.stock,
             status: variant.status || 'AVAILABLE'
           }));
@@ -436,17 +698,24 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     setFormData({
       name: "",
       description: "",
-      basePrice: "",
-      discount: "",
-      discountType: undefined,
+      basePrice: null,
+      stock: 0,
+      discount: null,
+      discountType: null,
+      size: [],
       status: InventoryStatus.AVAILABLE,
-      stock: "",
+      productImages: [],
+      categoryId: 0,
+      subcategoryId: 0,
+      quantity: 0,
+      brand_id: null,
+      dealId: null,
+      inventory: [],
+      vendorId: "",
       hasVariants: false,
       variants: [],
-      subcategoryId: 0,
-      dealId: undefined,
-      bannerId: undefined,
-      productImages: [],
+      bannerId: null,
+      brandId: null,
     });
     setVariants([]);
     setSelectedCategoryId(0);
@@ -615,8 +884,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     <input
                       type="number"
                       className="form-input"
-                      value={formData.basePrice}
-                      onChange={(e) => handleInputChange('basePrice', e.target.value)}
+                      value={formData.basePrice ?? 0}
+                      onChange={(e) => handleInputChange('basePrice', e.target.value === '' ? null : Number(e.target.value))}
                       placeholder="0.00"
                       min="0"
                       step="0.01"
@@ -630,7 +899,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                       type="number"
                       className="form-input"
                       value={formData.stock}
-                      onChange={(e) => handleInputChange('stock', e.target.value)}
+                      onChange={(e) => handleInputChange('stock', e.target.value === '' ? 0 : Number(e.target.value))}
                       placeholder="0"
                       min="0"
                       required
@@ -656,8 +925,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     <input
                       type="number"
                       className="form-input"
-                      value={formData.discount}
-                      onChange={(e) => handleInputChange('discount', e.target.value)}
+                      value={formData.discount ?? 0}
+                      onChange={(e) => handleInputChange('discount', e.target.value === '' ? null : Number(e.target.value))}
                       placeholder="0.00"
                       min="0"
                       step="0.01"
@@ -692,13 +961,75 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                   <h3 className="section-title">Product Variants</h3>
                 </div>
 
+                {/* Attribute specs builder (from NewProductModal) */}
+                <div className="form-grid two-columns" style={{ marginBottom: 12 }}>
+                  {attributeSpecs.map((spec, i) => (
+                    <React.Fragment key={i}>
+                      <div className="form-group">
+                        <label className="form-label required">Attribute Name</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder="e.g. Color, Size"
+                          value={spec.type}
+                          onChange={(e) => {
+                            const next = [...attributeSpecs];
+                            next[i].type = e.target.value;
+                            setAttributeSpecs(next);
+                          }}
+                        />
+                        <div className="label-hint">Examples: Color, Size, Material</div>
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label required">Values (comma-separated)</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder="e.g. Red, Blue or M, L"
+                          value={spec.valuesText}
+                          onChange={(e) => {
+                            const next = [...attributeSpecs];
+                            next[i].valuesText = e.target.value;
+                            setAttributeSpecs(next);
+                          }}
+                        />
+                        {/* Values preview as chips */}
+                        {parseValues(spec.valuesText).length > 0 && (
+                          <div className="attribute-tags">
+                            {parseValues(spec.valuesText).map((v, idx) => (
+                              <span key={idx} className="attribute-tag">{v}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </React.Fragment>
+                  ))}
+                  <div className="form-group full-width" style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setAttributeSpecs(prev => [...prev, { type: '', valuesText: '' }])}
+                    >
+                      + Add Attribute
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={generateVariants}
+                      disabled={!attributeSpecs.some(s => s.type.trim() && parseValues(s.valuesText).length > 0)}
+                    >
+                      Generate Variants
+                    </button>
+                  </div>
+                </div>
+
                 <div className="variants-section">
                   {variants.map((variant, index) => (
                     <div key={index} className="variant-card">
                       <div className="variant-header">
                         <div className="variant-title">
                           <span className="variant-number">{index + 1}</span>
-                          Variant {index + 1}
+                          {formatVariantAttributes(variant.attributes) || `Variant ${index + 1}`}
                         </div>
                         {variants.length > 1 && (
                           <button
@@ -774,15 +1105,15 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                             type="text"
                             className="form-input"
                             placeholder="Attribute type (e.g., Color)"
-                            value={newAttribute.attributeType}
-                            onChange={(e) => setNewAttribute({...newAttribute, attributeType: e.target.value})}
+                            value={newAttribute.type}
+                            onChange={(e) => setNewAttribute({...newAttribute, type: e.target.value})}
                           />
                           <input
                             type="text"
                             className="form-input"
                             placeholder="Value (e.g., Red)"
-                            value={newAttribute.attributeValues[0] || ''}
-                            onChange={(e) => setNewAttribute({...newAttribute, attributeValues: [e.target.value]})}
+                            value={newAttribute.values[0]?.value || ''}
+                            onChange={(e) => setNewAttribute({...newAttribute, values: [{ value: e.target.value, nestedAttributes: [] }]})}
                           />
                           <button
                             type="button"
@@ -793,18 +1124,73 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                           </button>
                         </div>
                         <div className="attribute-tags">
-                          {variant.attributes?.map((attr, attrIndex) => (
-                            <div key={attrIndex} className="attribute-tag">
-                              {attr.attributeType}: {attr.attributeValues.join(', ')}
-                              <button
-                                type="button"
-                                onClick={() => removeAttribute(index, attrIndex)}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
+                          {variant.attributes?.map((attr, attrIndex) => {
+                            const label = String((attr as any)?.type ?? (attr as any)?.attributeType ?? '').trim() || String(attrIndex);
+                            const valuesSrc: any = (attr as any)?.values ?? (attr as any)?.attributeValues ?? [];
+                            const vals = (Array.isArray(valuesSrc) ? valuesSrc : [valuesSrc])
+                              .map((v: any) => String((v && typeof v === 'object') ? (v.value ?? v.name ?? JSON.stringify(v)) : v))
+                              .filter(Boolean)
+                              .join(', ');
+                            return (
+                              <div key={attrIndex} className="attribute-tag">
+                                {label}: {vals}
+                                <button
+                                  type="button"
+                                  onClick={() => removeAttribute(index, attrIndex)}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
+                      </div>
+
+                      {/* Variant Images: upload + preview */}
+                      <div className="form-group full-width">
+                        <label className="form-label">Variant Images</label>
+                        <div className="image-upload-container"
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               document.getElementById(`variant-image-${index}`)?.click();
+                             }}>
+                          <div className="upload-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                            </svg>
+                          </div>
+                          <div className="upload-text">Click to add images for this variant</div>
+                          <input
+                            id={`variant-image-${index}`}
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={(e) => handleVariantImageUpload(e, index)}
+                            style={{ display: 'none' }}
+                          />
+                        </div>
+                        {(variant.images && variant.images.length > 0) && (
+                          <div className="image-preview-grid">
+                            {variant.images.map((img: any, imgIndex: number) => (
+                              <div key={imgIndex} className="image-preview">
+                                <img 
+                                  src={img instanceof File ? URL.createObjectURL(img) : img}
+                                  alt={`Variant ${index + 1} - ${imgIndex + 1}`}
+                                />
+                                <button
+                                  type="button"
+                                  className="image-remove"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeVariantImage(index, imgIndex);
+                                  }}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
