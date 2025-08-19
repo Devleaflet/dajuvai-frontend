@@ -1,7 +1,6 @@
 /* VendorStore.css - Optimized for consistent gaps, logo letter, and styled vendor details */
 .vendor-store {
   padding: 2.5rem 1.5rem 2rem 1.5rem;
-  max-width: 1440px;
   margin: 0 auto;
   min-height: 100vh;
   box-sizing: border-box;
@@ -13,26 +12,31 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 2rem;
-  background: #2c3e50;
-  color: white;
-  padding: 2rem 2rem 1.5rem 2rem;
+  justify-content: space-between;
+  gap: 1.2rem;
+  background: #ffffff;
+  color: #2c3e50;
+  padding: 1.25rem 1.25rem;
   border-radius: 0.7rem;
-  margin-bottom: 2.2rem;
+  margin-bottom: 1.6rem;
+  border: 1px solid #eee;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
 
 .vendor-store__logo {
-  width: 4.5rem;
-  height: 4.5rem;
+  width: 4.25rem;
+  height: 4.25rem;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.2rem;
-  font-weight: bold;
-  color: white;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ea5f0a;
   text-transform: uppercase;
-  background: #f26925;
+  background: #fff3e9;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border: 1px solid #ffe1cc;
 }
 
 .vendor-store__logo-letter {
@@ -48,16 +52,60 @@
 }
 
 .vendor-store__info h1 {
-  margin: 0 0 0.3rem 0;
-  font-size: 1.5rem;
-  line-height: 1.3;
+  margin: 0 0 0.35rem 0;
+  font-size: 1.6rem;
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: #222;
+  position: relative;
+}
+.vendor-store__info h1::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  width: 56px;
+  height: 3px;
+  border-radius: 2px;
+  background: #ea5f0a;
 }
 
 .vendor-store__description {
-  margin: 0;
-  font-size: 1rem;
-  opacity: 0.9;
-  line-height: 1.4;
+  margin: 0.4rem 0 0 0;
+  font-size: 0.98rem;
+  color: #555;
+  line-height: 1.5;
+}
+
+/* Header chips (right side) */
+.vendor-hero__chips {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+.vendor-hero__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.6rem;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 999px;
+  color: #444;
+  font-size: 0.9rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  max-width: 220px;
+}
+.chip-icon {
+  color: #ea5f0a;
+}
+.chip-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Main content layout */
@@ -119,13 +167,146 @@
 }
 
 .products-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   margin-bottom: 1.5rem;
+  background: #ffffff;
+  padding: 0.75rem 1rem;
+  border-radius: 0.6rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .products-title {
   margin: 0;
   font-size: 1.35rem;
   color: #2c3e50;
+}
+
+/* Controls row: search pill + standalone sort */
+.products-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.2rem;
+}
+.products-controls .products-toolbar {
+  flex: 1 1 320px;
+}
+.products-controls .vendor-sort {
+  margin-left: auto;
+}
+
+/* Unified products toolbar (pill) */
+.products-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 999px;
+  padding: 0.35rem 0.5rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+}
+.products-toolbar .vendor-search {
+  margin-left: 0;
+  flex: 1 1 260px;
+}
+.products-toolbar .vendor-search__input {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  padding-left: 2.2rem;
+}
+.products-toolbar .vendor-search__icon {
+  color: #888;
+}
+/* vendor-sort now sits outside the pill; keep its own card-like styling below */
+
+/* Vendor details with icons */
+.vendor-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.vendor-detail-icon {
+  color: #ea5f0a;
+  font-size: 1.1rem;
+  flex: 0 0 auto;
+}
+
+/* Search input */
+.vendor-search {
+  margin-left: auto;
+}
+
+.vendor-search__input-wrapper {
+  position: relative;
+  max-width: 420px;
+}
+
+.vendor-search__icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  pointer-events: none;
+}
+
+.vendor-search__input {
+  width: 100%;
+  padding: 0.65rem 0.9rem 0.65rem 2.2rem;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  outline: none;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.vendor-search__input:focus {
+  border-color: #ea5f0a;
+  box-shadow: 0 0 0 3px rgba(234,95,10,0.12);
+}
+
+/* Sort dropdown */
+.vendor-sort {
+  flex: 0 0 auto;
+}
+
+.vendor-sort__select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: #fff url('data:image/svg+xml;utf8,<svg fill="%23888" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 0.6rem center;
+  background-size: 16px 16px;
+  padding: 0.6rem 2rem 0.6rem 0.9rem;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  color: #2c3e50;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.vendor-sort__select:focus {
+  outline: none;
+  border-color: #ea5f0a;
+  box-shadow: 0 0 0 3px rgba(234,95,10,0.12);
+}
+
+@media (max-width: 576px) {
+  .vendor-search__input-wrapper {
+    max-width: 100%;
+  }
+  .vendor-sort__select {
+    width: 100%;
+  }
 }
 
 /* Product grid - Consistent 1.2rem gap */
@@ -218,7 +399,7 @@
     padding: 2.5rem 2rem 2rem 2rem;
   }
   .vendor-store__header {
-    padding: 2.2rem 2.5rem 1.7rem 2.5rem;
+    padding: 2.2rem 2.5rem 1.9rem 2.5rem;
   }
   .vendor-store__logo {
     width: 5rem;
@@ -226,10 +407,10 @@
     font-size: 2.5rem;
   }
   .vendor-store__info h1 {
-    font-size: 1.7rem;
+    font-size: 1.9rem;
   }
   .vendor-store__description {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
   }
   .vendor-store__product-grid {
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
