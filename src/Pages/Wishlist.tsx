@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import '../Styles/Wishlist.css';
-import { FaTrash, FaShoppingCart, FaMinus, FaPlus } from 'react-icons/fa';
+import { FaTrash, FaShoppingCart, FaMinus, FaPlus, FaUser } from 'react-icons/fa';
 import Footer from '../Components/Footer';
 import Navbar from '../Components/Navbar';
 import { API_BASE_URL } from '../config';
@@ -387,14 +387,17 @@ const Wishlist: React.FC = () => {
             </div>
           ) : error ? (
             <div className="wishlist__error">
-              <p>{error}</p>
               {error.includes('Please log in') ? (
-                <button 
-                  className="wishlist__retry-button"
-                  onClick={() => setShowAuthModal(true)}
-                >
-                  Log In
-                </button>
+                <div className="wishlist__login-container">
+                  <p className="wishlist__login-message">Please log in to view and manage your wishlist items</p>
+                  <button 
+                    className="wishlist__login-button"
+                    onClick={() => setShowAuthModal(true)}
+                  >
+                    <FaUser className="wishlist__login-icon" />
+                    Log In to Continue
+                  </button>
+                </div>
               ) : (
                 <button 
                   className="wishlist__retry-button"
