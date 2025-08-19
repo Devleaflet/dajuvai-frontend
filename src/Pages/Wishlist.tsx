@@ -23,21 +23,32 @@ interface Product {
   image?: string; // Fallback image
 }
 
+interface Variant {
+  id: number;
+  basePrice?: number | string;
+  discount?: number | string;
+  discountType?: 'PERCENTAGE' | 'FLAT' | string;
+  attributes?: Record<string, any> | Array<any>;
+  variantImages?: Array<any>;
+}
+
 interface WishlistItem {
   id: number;
   productId: number;
   product: Product;
+  variantId?: number;
+  variant?: Variant;
   quantity?: number;
+}
+
+interface WishlistData {
+  items: WishlistItem[];
 }
 
 interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
-}
-
-interface WishlistData {
-  items: WishlistItem[];
 }
 
 // Skeleton component for loading state
@@ -83,6 +94,103 @@ const Wishlist: React.FC = () => {
       'Content-Type': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     };
+  };
+
+  // Helpers
+  const toFullUrl = (imgUrl: string): string => {
+    if (!imgUrl) return '';
+    return imgUrl.startsWith('http')
+      ? imgUrl
+      : `${window.location.origin}${imgUrl.startsWith('/') ? '' : '/'}${imgUrl}`;
+  };
+
+  const parseImageEntry = (img: any): string => {
+    try {
+      if (!img) return '';
+      if (typeof img === 'string') {
+        // Could be URL or JSON string
+        try {
+          const parsed = JSON.parse(img);
+          const url = parsed?.url || parsed?.imageUrl || img;
+          return toFullUrl(url);
+        } catch {
+          return toFullUrl(img);
+        }
+      }
+      if (typeof img === 'object') {
+        const url = img.url || img.imageUrl || '';
+        return toFullUrl(url);
+      }
+      return '';
+    } catch {
+      return '';
+    }
+  };
+
+  const getItemImage = (item: WishlistItem): string => {
+    // Prefer variant image if present
+    const vImgs = (item.variant?.variantImages || []) as any[];
+    if (vImgs.length > 0) {
+      const first = parseImageEntry(vImgs[0]);
+      if (first) return first;
+    }
+    const pImgs = item.product.productImages || [];
+    if (pImgs.length > 0) {
+      const first = parseImageEntry(pImgs[0]);
+      if (first) return first;
+    }
+    return item.product.image || defaultProductImage;
+  };
+
+  const formatVariantAttributes = (attributes: any): string => {
+    if (!attributes) return '';
+    if (Array.isArray(attributes)) {
+      return attributes
+        .map((attr: any) => {
+          const label = String(attr?.type ?? attr?.attributeType ?? '');
+          const vals = Array.isArray(attr?.values)
+            ? attr.values.map((v: any) => String(v?.value ?? v)).filter(Boolean)
+            : Array.isArray(attr?.attributeValues)
+              ? attr.attributeValues.map((v: any) => String(v?.value ?? v)).filter(Boolean)
+              : [];
+          return label && vals.length ? `${label}: ${vals.join(', ')}` : '';
+        })
+        .filter(Boolean)
+        .join(', ');
+    }
+    if (typeof attributes === 'object') {
+      return Object.entries(attributes)
+        .map(([key, value]) => {
+          if (value == null) return '';
+          if (Array.isArray(value)) {
+            const vals = value.map((v: any) => String(v?.value ?? v)).filter(Boolean);
+            return `${key}: ${vals.join(', ')}`;
+          }
+          if (typeof value === 'object') {
+            const val = (value as any).value ?? (value as any).name ?? '';
+            return val ? `${key}: ${String(val)}` : `${key}: ${JSON.stringify(value)}`;
+          }
+          return `${key}: ${String(value)}`;
+        })
+        .filter(Boolean)
+        .join(', ');
+    }
+    return String(attributes);
+  };
+
+  const getItemPrice = (item: WishlistItem): number => {
+    if (item.variant) {
+      const base = Number(item.variant.basePrice) || 0;
+      const disc = Number(item.variant.discount) || 0;
+      if (item.variant.discountType === 'PERCENTAGE') {
+        return Math.max(0, base - base * (disc / 100));
+      }
+      if (item.variant.discountType === 'FLAT') {
+        return Math.max(0, base - disc);
+      }
+      return base;
+    }
+    return Number(item.product.basePrice) || 0;
   };
 
   const fetchWishlist = async () => {
@@ -253,9 +361,10 @@ const Wishlist: React.FC = () => {
   }, []);
 
   // Calculate total price of all items
-  const totalPrice = wishlistItems.reduce((sum, item) => 
-    sum + (item.product.basePrice * (item.quantity || 1)), 0
-  );
+  const totalPrice = wishlistItems.reduce((sum, item) => {
+    const price = getItemPrice(item);
+    return sum + price * (item.quantity || 1);
+  }, 0);
 
   // Handle retry
   const handleRetry = () => {
@@ -309,7 +418,7 @@ const Wishlist: React.FC = () => {
                   <div key={item.id} className="wishlist__item">
                     <div className="wishlist__item-image">
                       <img 
-                        src={item.product.productImages?.[0] || item.product.image || defaultProductImage}
+                        src={getItemImage(item)}
                         alt={item.product.name}
                         onError={e => { e.currentTarget.src = defaultProductImage; }}
                         style={{ objectFit: 'cover', width: 80, height: 80, borderRadius: 8, border: '1px solid #eee' }}
@@ -318,11 +427,16 @@ const Wishlist: React.FC = () => {
                     
                     <div className="wishlist__item-details">
                       <h3 className="wishlist__item-name">{item.product.name}</h3>
+                      {item.variant && (
+                        <div className="wishlist__item-variant" style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+                          Variant: {formatVariantAttributes(item.variant.attributes)}
+                        </div>
+                      )}
                       <p className="wishlist__item-specs">{item.product.description}</p>
                     </div>
                     
                     <div className="wishlist__item-price">
-                      Rs. {item.product.basePrice.toLocaleString('en-IN')}
+                      Rs. {getItemPrice(item).toLocaleString('en-IN')}
                     </div>
                     
                     <div className="wishlist__item-quantity">

@@ -9,10 +9,27 @@ interface Product {
   basePrice: number;
 }
 
+interface Variant {
+  id: number;
+  sku?: string;
+  basePrice?: string | number;
+  discount?: string | number;
+  discountType?: 'PERCENTAGE' | 'FLAT' | string;
+  attributes?: Record<string, any> | Array<any>;
+  variantImages?: string[];
+  stock?: number;
+  status?: string;
+  productId?: number | string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 interface WishlistItem {
   id: number;
   productId: number;
   product: Product;
+  variantId?: number;
+  variant?: Variant;
 }
 
 interface ApiResponse<T> {
@@ -28,7 +45,7 @@ interface UseWishlistApiReturn {
   loading: boolean;
   error: string | null;
   fetchWishlist: () => Promise<WishlistItem[]>;
-  addToWishlist: (productId: number) => Promise<boolean>;
+  addToWishlist: (productId: number, variantId?: number) => Promise<boolean>;
   removeFromWishlist: (wishlistItemId: number) => Promise<boolean>;
   moveToCart: (wishlistItemId: number, quantity: number) => Promise<boolean>;
   clearError: () => void;
@@ -99,7 +116,7 @@ export const useWishlistApi = (): UseWishlistApiReturn => {
   }, [API_BASE_URL, getHeaders, handleApiError]);
 
   // Add product to wishlist
-  const addToWishlist = useCallback(async (productId: number): Promise<boolean> => {
+  const addToWishlist = useCallback(async (productId: number, variantId?: number): Promise<boolean> => {
     try {
       setLoading(true);
       setError(null);
@@ -107,7 +124,7 @@ export const useWishlistApi = (): UseWishlistApiReturn => {
       const response = await fetch(`${API_BASE_URL}/api/wishlist`, {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ productId }),
+        body: JSON.stringify(variantId ? { productId, variantId } : { productId }),
         credentials: 'include',
       });
 

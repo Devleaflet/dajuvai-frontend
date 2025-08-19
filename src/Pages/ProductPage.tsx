@@ -514,7 +514,8 @@ const ProductPage = () => {
       return;
     }
     try {
-      await addToWishlist(product.id, token);
+      const variantId = selectedVariant?.id;
+      await addToWishlist(product.id, variantId, token);
       showNotification('Product added to wishlist!');
     } catch {
       showNotification('Failed to add to wishlist');

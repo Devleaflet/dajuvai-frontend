@@ -103,7 +103,9 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
     }
     setWishlistLoading(true);
     try {
-      await addToWishlist(id, token);
+      // If there's exactly one variant, pass its id; otherwise leave undefined
+      const variantId = product.variants?.length === 1 ? product.variants[0].id : undefined;
+      await addToWishlist(id, variantId, token);
       setToast("Added to wishlist!");
     } catch (e) {
       setToast("Failed to add to wishlist");
