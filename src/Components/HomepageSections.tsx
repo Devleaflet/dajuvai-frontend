@@ -4,6 +4,7 @@ import ProductCarousel from './ProductCarousel';
 import ProductCardSkeleton from '../skeleton/ProductCardSkeleton';
 import '../Styles/Home.css';
 import type { Product as DisplayProduct } from './Types/Product';
+import { getProductPrimaryImage } from '../utils/getProductPrimaryImage';
 
 const HomepageSections: React.FC = () => {
   const { data: sections, isLoading, error } = useHomepageSections();
@@ -36,26 +37,31 @@ const HomepageSections: React.FC = () => {
   return (
     <div className="homepage-sections">
       {sections.filter(section => section.isActive).map(section => {
-        const mappedProducts: DisplayProduct[] = section.products.map(product => ({
-          id: product.id,
-          title: product.name,
-          description: product.description,
-          price: product.basePrice,
-          basePrice: product.basePrice,
-          originalPrice: undefined,
-          discount: product.discount,
-          discountType: (product.discountType === 'PERCENTAGE' || product.discountType === 'FLAT'
-            ? product.discountType
-            : undefined) as DisplayProduct['discountType'],
-          rating: 0,
-          ratingCount: '0',
-          isBestSeller: false,
-          freeDelivery: true,
-          image: product.productImages?.[0] || '',
-          stock: product.stock,
-          productImages: product.productImages,
-          variants: (product as any).variants,
-        }));
+        const mappedProducts: DisplayProduct[] = section.products.map(product => {
+          const primaryImage = getProductPrimaryImage(product, '');
+          const productImages = Array.isArray(product.productImages) ? product.productImages : [];
+
+          return {
+            id: product.id,
+            title: product.name,
+            description: product.description,
+            price: product.basePrice,
+            basePrice: product.basePrice,
+            originalPrice: undefined,
+            discount: product.discount,
+            discountType: (product.discountType === 'PERCENTAGE' || product.discountType === 'FLAT'
+              ? product.discountType
+              : undefined) as DisplayProduct['discountType'],
+            rating: 0,
+            ratingCount: '0',
+            isBestSeller: false,
+            freeDelivery: true,
+            image: primaryImage,
+            stock: product.stock,
+            productImages,
+            variants: (product as any).variants,
+          } as DisplayProduct;
+        });
         return (
           <ProductCarousel
             key={section.id}

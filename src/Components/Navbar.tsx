@@ -430,9 +430,11 @@ const Navbar: React.FC = () => {
         .map((product: any) => ({
           id: product.id,
           name: product.name,
-          price: product.basePrice * (1 - (product.discount || 0) / 100),
-          image: product.productImages?.[0] || iphone,
-          discount: product.discount || 0,
+          image:
+            product.productImages?.[0] ||
+            product.variants?.find((v: any) => v?.variantImages?.[0])
+              ?.variantImages?.[0] ||
+            iphone,
           matchScore: calculateMatchScore(product, searchTerm),
         }))
         .sort((a: any, b: any) => b.matchScore - a.matchScore)
@@ -899,15 +901,6 @@ const Navbar: React.FC = () => {
                         <h4 className="navbar__search-result-title">
                           {result.name}
                         </h4>
-                        <p className="navbar__search-result-price">
-                          Rs. {result.price.toFixed(2)}
-                          {result.discount > 0 && (
-                            <span className="navbar__search-result-discount">
-                              {" "}
-                              ({result.discount}% off)
-                            </span>
-                          )}
-                        </p>
                       </div>
                     </div>
                   ))}
@@ -1152,138 +1145,12 @@ const Navbar: React.FC = () => {
             <h3 className="navbar__side-menu-title">Menu</h3>
           </div>
 
-          <div className="navbar__side-menu-links">
-            <NavLink
-              to="/"
-              className="navbar__side-menu-link"
-              end
-              style={({ isActive }) => ({
-                color: isActive ? '#f97316' : 'inherit'
-              })}
-            >
-              Home
-            </NavLink>
-            <NavLink
-              to="/shop"
-              className="navbar__side-menu-link"
-              style={({ isActive }) => ({
-                color: isActive ? '#f97316' : 'inherit'
-              })}
-            >
-              Shop
-            </NavLink>
-            <NavLink
-              to="/about"
-              className="navbar__side-menu-link"
-              style={({ isActive }) => ({
-                color: isActive ? '#f97316' : 'inherit'
-              })}
-            >
-              About Us
-            </NavLink>
-              <NavLink
-                  to="/contact"
-                  className="navbar__side-menu-link"
-                  style={({ isActive }) => ({
-                    color: isActive ? '#f97316' : 'inherit'
-                  })}
-                >
-                  Contact Us
-                </NavLink>
-            <button
-              className="navbar__side-menu-link"
-              onClick={showComingSoon}
-              style={{ background: 'none', border: 'none', textAlign: 'left', width: '100%' }}
-            >
-              DajuVai Rental
-            </button>
-            <button
-              className="navbar__side-menu-link"
-              onClick={showComingSoon}
-              style={{ background: 'none', border: 'none', textAlign: 'left', width: '100%' }}
-            >
-              DajuVai Services
-            </button>
-            {!isLoading && isAuthenticated && user?.role === 'admin' && (
-              <NavLink
-                to="/admin-dashboard"
-                className="navbar__side-menu-link"
-                style={({ isActive }) => ({
-                  color: isActive ? '#f97316' : 'inherit'
-                })}
-              >
-                Admin Dashboard
-              </NavLink>
-            )}
-            {!isLoading && vendorAuthState.isAuthenticated && vendorAuthState.vendor && (
-              <NavLink
-                to="/dashboard"
-                className="navbar__side-menu-link"
-                style={({ isActive }) => ({
-                  color: isActive ? '#f97316' : 'inherit'
-                })}
-              >
-                Vendor Dashboard
-              </NavLink>
-            )}
-            {!isLoading && isAuthenticated ? (
-              <>
-                <NavLink
-                  to="/user-profile"
-                  className="navbar__side-menu-link"
-                  style={({ isActive }) => ({
-                    color: isActive ? '#f97316' : 'inherit'
-                  })}
-                >
-                  My Profile
-                </NavLink>
-                <NavLink
-                  to="/wishlist"
-                  className="navbar__side-menu-link"
-                  style={({ isActive }) => ({
-                    color: isActive ? '#f97316' : 'inherit'
-                  })}
-                >
-                  Wishlist
-                </NavLink>
-               <NavLink
-                  to="/faq"
-                  className="navbar__side-menu-link"
-                  style={({ isActive }) => ({
-                    color: isActive ? '#f97316' : 'inherit'
-                  })}
-                >
-                  FAQ
-                </NavLink>
-                 
-                <a
-                  href="/logout"
-                  className="navbar__side-menu-link"
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    await handleFullLogout();
-                    setAuthModalOpen(false);
-                  }}
-                >
-                  Logout
-                </a>
-              </>
-            ) : (
-              <a
-                href="/login"
-                className="navbar__side-menu-link"
-                onClick={toggleAuthModal}
-              >
-                Login
-              </a>
-            )}
          
-          </div>
 
           {renderSideMenuCategories()}
 
           <div className="navbar__side-menu-social">
-          
+         
             <h3 className="navbar__side-menu-subtitle">Follow Us</h3>
             <div className="navbar__side-menu-social-icons">
               <a

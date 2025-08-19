@@ -211,22 +211,6 @@
     overflow: hidden;
 }
 
-.navbar__search-result-discount {
-    color: #666;
-    font-size: 12px;
-    font-weight: normal;
-    margin-left: 4px;
-}
-
-.navbar__search-result-price {
-    margin: 0;
-    font-size: 14px;
-    color: #ff6b00;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-}
-
 .navbar__search-category {
     border-left: 1px solid #ccc;
     border-right: 1px solid #ccc;

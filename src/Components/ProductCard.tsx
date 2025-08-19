@@ -9,7 +9,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import AuthModal from "./AuthModal";
 import defaultProductImage from "../assets/logo.webp";
-import { API_BASE_URL } from "../config";
+import { getProductPrimaryImage } from "../utils/getProductPrimaryImage";
 // Removed VariantSelectModal to directly add the displayed variant on cards
 
 interface ProductCardProps {
@@ -34,55 +34,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     ratingCount,
     isBestSeller,
     freeDelivery,
-    image,
-    productImages,
     variants,
     id,
   } = product;
 
-  // Normalize/complete image URLs similar to Shop/ProductList
-  const processImageUrl = (imgUrl: string): string => {
-    if (!imgUrl) return "";
-    const trimmed = imgUrl.trim();
-    if (!trimmed) return "";
-    if (trimmed.startsWith("//")) return `https:${trimmed}`;
-    if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/")) {
-      return trimmed;
-    }
-    const base = API_BASE_URL.replace(/\/?api\/?$/, "");
-    const needsSlash = !trimmed.startsWith("/");
-    const url = `${base}${needsSlash ? "/" : ""}${trimmed}`;
-    return url.replace(/([^:]\/)\/+/, "$1/");
-  };
-
-  // Robust image fallback: productImages -> image -> variant images -> default
-  const getDisplayImage = (): string => {
-    const imgs = (productImages || [])
-      .filter((u): u is string => !!u && typeof u === "string" && u.trim() !== "")
-      .map(processImageUrl)
-      .filter(Boolean);
-    if (imgs.length > 0) return imgs[0];
-
-    if (typeof image === "string" && image.trim()) {
-      const p = processImageUrl(image);
-      if (p) return p;
-    }
-
-    const vImgs: string[] = (variants || [])
-      .flatMap((v: any) => [
-        v?.image,
-        ...(Array.isArray(v?.images) ? v.images : []),
-        ...(Array.isArray(v?.variantImages) ? v.variantImages : []),
-      ])
-      .filter((u): u is string => !!u && typeof u === "string" && u.trim() !== "")
-      .map(processImageUrl)
-      .filter(Boolean);
-    if (vImgs.length > 0) return vImgs[0];
-
-    return defaultProductImage;
-  };
-
-  const displayImage = imageError ? defaultProductImage : getDisplayImage();
+  const displayImage = imageError ? defaultProductImage : getProductPrimaryImage(product, defaultProductImage);
 
   const handleImageError = () => {
     setImageError(true);

@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext'; // Added for token
 import defaultProductImage from '../assets/default-product.png';
 import { convertApiProductToDisplayProduct } from '../Components/Types/ApiProduct';
+import { getProductPrimaryImage } from '../utils/getProductPrimaryImage';
 import '../Styles/Catalog.css';
 
 const Catalog: React.FC = () => {
@@ -15,6 +16,8 @@ const Catalog: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const navigate = useNavigate();
+
+  // Using shared helper for consistent variant-first image selection across app
 
   const productService = ProductService.getInstance();
 
@@ -101,7 +104,7 @@ const Catalog: React.FC = () => {
           >
             <div className="catalog__product-image">
               <img
-                src={product.productImages?.[0] || product.image || defaultProductImage}
+                src={getProductPrimaryImage(product, defaultProductImage)}
                 alt={product.title || product.name || 'Product'}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
