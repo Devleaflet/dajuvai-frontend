@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import "../Styles/Navbar.css";
 import {
   FaSearch,
@@ -88,7 +88,38 @@ const Navbar: React.FC = () => {
   const {
     cartItems,
     handleCartItemOnDelete,
+    handleIncreaseQuantity,
+    handleDecreaseQuantity,
+    updatingItems,
   } = useCart();
+
+  // Maintain a stable render order for cart items to avoid reordering on refresh
+  const cartOrderRef = useRef<Map<number, number>>(new Map());
+  const nextOrderIndexRef = useRef(0);
+
+  useEffect(() => {
+    // Assign stable order indices for any new cart items
+    cartItems.forEach((item) => {
+      if (!cartOrderRef.current.has(item.id)) {
+        cartOrderRef.current.set(item.id, nextOrderIndexRef.current++);
+      }
+    });
+    // Cleanup removed items from the order map
+    for (const id of Array.from(cartOrderRef.current.keys())) {
+      if (!cartItems.some((ci) => ci.id === id)) {
+        cartOrderRef.current.delete(id);
+      }
+    }
+  }, [cartItems]);
+
+  const stableCartItems = useMemo(() => {
+    return [...cartItems].sort((a, b) => {
+      const ai = cartOrderRef.current.get(a.id) ?? 0;
+      const bi = cartOrderRef.current.get(b.id) ?? 0;
+      return ai - bi;
+    });
+  }, [cartItems]);
+
   const categoryContext = useCategory();
   const updateCategoriesWithSubcategories =
     categoryContext?.updateCategoriesWithSubcategories;
@@ -1328,7 +1359,7 @@ const Navbar: React.FC = () => {
             ) : (
               <>
                 <div className="navbar__cart-items">
-                  {cartItems.map((item) => (
+                  {stableCartItems.map((item) => (
                     <div key={item.id} className="navbar__cart-item">
                       <div className="navbar__cart-item-image">
                         <img
@@ -1351,8 +1382,28 @@ const Navbar: React.FC = () => {
                           <span className="navbar__cart-item-price">
                             Rs. {item.price.toLocaleString("en-IN")}
                           </span>
-                          <div className="navbar__cart-item-quantity">
+                          <div className="navbar__cart-item-quantity" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <button
+                              type="button"
+                              aria-label="Decrease quantity"
+                              className="navbar__qty-btn navbar__qty-btn--dec"
+                              onClick={() => handleDecreaseQuantity(item.id, 1)}
+                              disabled={!!updatingItems?.has?.(item.id)}
+                              style={{ width: 28, height: 28, borderRadius: 4, border: '1px solid #ddd' }}
+                            >
+                              −
+                            </button>
                             <span>{item.quantity}</span>
+                            <button
+                              type="button"
+                              aria-label="Increase quantity"
+                              className="navbar__qty-btn navbar__qty-btn--inc"
+                              onClick={() => handleIncreaseQuantity(item.id, 1)}
+                              disabled={!!updatingItems?.has?.(item.id)}
+                              style={{ width: 28, height: 28, borderRadius: 4, border: '1px solid #ddd' }}
+                            >
+                              +
+                            </button>
                           </div>
                         </div>
                       </div>
