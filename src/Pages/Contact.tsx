@@ -29,10 +29,10 @@ const Contact: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axiosInstance.post("/api/contacts", form);
+      await axiosInstance.post("/api/contact", form);
       toast.success(
         <div className="flex items-center">
-          <FaCheckCircle size={24} className="mr-2" />
+        
           <span>Your message has been sent successfully! We'll get back to you soon.</span>
         </div>,
         {

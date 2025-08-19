@@ -44,10 +44,10 @@ const About = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axiosInstance.post('/api/contacts', formData);
+      await axiosInstance.post('/api/contact', formData);
       toast.success(
         <div className="flex items-center">
-          <FaCheckCircle size={24} className="mr-2 text-green-500" />
+       
           <span>Your message has been sent successfully! We'll get back to you soon.</span>
         </div>,
         {

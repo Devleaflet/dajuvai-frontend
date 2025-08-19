@@ -33,6 +33,7 @@
 .footer__section {
   margin-bottom: 30px;
   width: 100%;
+  text-align: left;
 }
 
 .footer__track-section {
