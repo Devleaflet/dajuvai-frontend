@@ -429,9 +429,11 @@ const Navbar: React.FC = () => {
         .map((product: any) => ({
           id: product.id,
           name: product.name,
-          price: product.basePrice * (1 - (product.discount || 0) / 100),
-          image: product.productImages?.[0] || iphone,
-          discount: product.discount || 0,
+          image:
+            product.productImages?.[0] ||
+            product.variants?.find((v: any) => v?.variantImages?.[0])
+              ?.variantImages?.[0] ||
+            iphone,
           matchScore: calculateMatchScore(product, searchTerm),
         }))
         .sort((a: any, b: any) => b.matchScore - a.matchScore)
@@ -891,15 +893,6 @@ const Navbar: React.FC = () => {
                         <h4 className="navbar__search-result-title">
                           {result.name}
                         </h4>
-                        <p className="navbar__search-result-price">
-                          Rs. {result.price.toFixed(2)}
-                          {result.discount > 0 && (
-                            <span className="navbar__search-result-discount">
-                              {" "}
-                              ({result.discount}% off)
-                            </span>
-                          )}
-                        </p>
                       </div>
                     </div>
                   ))}
