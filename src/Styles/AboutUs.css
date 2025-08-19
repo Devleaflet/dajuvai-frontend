@@ -25,10 +25,12 @@
   gap: 48px;
   align-items: center;
   margin-bottom: 32px;
+  
 }
 
 .about__hero-text {
   z-index: 2;
+     
 }
 
 .about__hero-image {
@@ -102,6 +104,7 @@
   line-height: 1.7;
   margin: 0 0 32px;
   max-width: 65ch;
+      text-align: justify;
 }
 
 .about__stats {
@@ -183,6 +186,7 @@
   font-size: clamp(2.2rem, 4vw + 1rem, 3rem); /* Larger heading */
   margin: 0 0 24px;
   font-weight: 700;
+      text-align: justify;
 }
 
 .about__text {
@@ -191,6 +195,7 @@
   line-height: 1.7;
   margin: 0 0 40px; /* Increased margin for spacing */
   font-size: 1.15rem; /* Larger text */
+      text-align: justify;
 }
 
 .about__featurelist {

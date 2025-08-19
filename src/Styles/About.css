@@ -1,4 +1,3 @@
-/* Contact Page Styles - Ultra Responsive Version */
 .contact-container {
     width: 95%;
     max-width: 1800px;
@@ -12,6 +11,7 @@
     flex-wrap: wrap;
     gap: 2rem;
     margin-bottom: 3rem;
+    align-items: flex-start;
   }
   
   .contact-content-left {
@@ -22,15 +22,17 @@
   .contact-content-right {
     flex: 2;
     min-width: 250px;
+    margin-top: 0;
   }
   
   /* Left side styles */
   .contact-title {
     color: #f47a42;
-    font-size: clamp(2rem, 5vw, 3rem);
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
     margin-bottom: 1rem;
     font-weight: 600;
     line-height: 1.2;
+    text-align: justify;
   }
   
   .contact-subtext {
@@ -39,10 +41,12 @@
     line-height: 1.5;
     max-width: 80%;
     font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+    text-align: justify;
   }
   
   .contact-info {
     margin-bottom: 2rem;
+    text-align: justify;
   }
   
   .contact-info-item {
@@ -60,25 +64,57 @@
     flex-shrink: 0;
   }
   
-  .vendor-button {
+  /* Vendor section styles */
+  .vendor-section {
+    margin-top: 2rem;
+  }
+  
+  .vendor-title {
+    color: #f47a42;
+    font-size: clamp(1.5rem, 3vw, 1.8rem);
+    margin-bottom: 1rem;
+    font-weight: 600;
+    text-align: justify;
+  }
+  
+  .vendor-subtext {
+    color: #555;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+    max-width: 80%;
+    font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+    text-align: justify;
+  }
+  
+  .about__ctas {
+    display: flex;
+    justify-content: flex-start;
+  }
+  
+  .btn.btn--primary {
     background-color: #f47a42;
     color: white;
     border: none;
-    padding: 0.75rem 1.5rem;
+    padding: clamp(0.7rem, 1.5vw, 0.9rem) clamp(1.5rem, 3vw, 2rem);
     border-radius: 4px;
     cursor: pointer;
     font-weight: 500;
     transition: all 0.3s ease;
+    margin-top: 0.75rem;
     font-size: clamp(0.9rem, 1.5vw, 1rem);
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   }
   
-  .vendor-button:hover {
+  .btn.btn--primary:hover {
     background-color: #e26a32;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
   }
-  
+
+  .btn:active {
+    transform: translateY(1px);
+  }
+
   /* Right side styles */
   .form-row {
     display: flex;
@@ -101,6 +137,7 @@
     font-weight: 500;
     color: #333;
     font-size: clamp(0.9rem, 1.2vw, 1rem);
+    text-align: justify;
   }
   
   .required {
@@ -108,12 +145,12 @@
   }
   
   input, textarea {
-    
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: clamp(0.9rem, 1.2vw, 1rem);
     transition: border-color 0.3s;
     box-sizing: border-box;
+    text-align: justify;
   }
   
   input:focus, textarea:focus {
@@ -126,26 +163,7 @@
     resize: none;
     height: 120px;
     min-height: 100px;
-  }
-  
-  .submit-button {
-    background-color: #f47a42;
-    color: white;
-    border: none;
-    padding: clamp(0.7rem, 1.5vw, 0.9rem) clamp(1.5rem, 3vw, 2rem);
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    margin-top: 0.75rem;
-    font-size: clamp(0.9rem, 1.5vw, 1rem);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  }
-  
-  .submit-button:hover {
-    background-color: #e26a32;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    text-align: justify;
   }
   
   /* Map section */
@@ -158,6 +176,7 @@
     font-size: clamp(1.5rem, 3vw, 1.8rem);
     margin-bottom: 1.5rem;
     font-weight: 600;
+    text-align: justify;
   }
   
   .map-container {
@@ -194,22 +213,35 @@
     }
     
     .contact-title {
-      text-align: center;
+      text-align: justify;
     }
     
     .contact-subtext {
-      text-align: center;
+      text-align: justify;
       margin-bottom: 1.5rem;
     }
     
     .contact-info {
       max-width: 400px;
       margin: 0 auto 2rem;
+      text-align: justify;
     }
     
-    .vendor-button {
-      display: block;
-      margin: 0 auto;
+    .vendor-section {
+      text-align: justify;
+    }
+    
+    .vendor-subtext {
+      max-width: 100%;
+      margin: 0 auto 1.5rem;
+      text-align: justify;
+    }
+    
+    .about__ctas {
+      justify-content: center;
+    }
+    
+    .btn.btn--primary {
       padding: 0.75rem 2rem;
     }
   }
@@ -230,15 +262,11 @@
     }
     
     .store-title {
-      text-align: center;
+      text-align: justify;
     }
     
     .map-container {
       height: 280px;
-    }
-    
-    .submit-button {
-      width: 100%;
     }
   }
   
@@ -250,7 +278,7 @@
     .contact-info-item {
       flex-direction: column;
       align-items: center;
-      text-align: center;
+      text-align: justify;
     }
     
     .contact-icon {

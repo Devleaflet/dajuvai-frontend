@@ -46,6 +46,7 @@ import TermsAndConditions from "./Pages/TermsAndConditions";
 import AboutUs from "./Pages/AboutUs";
 import EcommerceFAQ from "./Pages/Faq";
 import BecomeVendor from "./Pages/BecomeVendor";
+import UnapprovedVendors from "./Components/UnapprovedVendors";
 
 // Admin route guards
 // Allows both admin and staff to access admin area
@@ -200,6 +201,14 @@ function App() {
           element={
             <AdminOrStaffRoute>
               <AdminVendors />
+            </AdminOrStaffRoute>
+          }
+        />
+          <Route
+          path="/admin-vendors/unapproved"
+          element={
+            <AdminOrStaffRoute>
+              <UnapprovedVendors />
             </AdminOrStaffRoute>
           }
         />

@@ -231,7 +231,7 @@ const Navbar: React.FC = () => {
     }
   };
 
-  const toggleVendorAuthModal = (e?: React.MouseEvent): void => {
+ const toggleVendorAuthModal = (e?: React.MouseEvent): void => {
     e?.preventDefault();
     setVendorAuthModalOpen(!vendorAuthModalOpen);
     if (sideMenuOpen) {
@@ -239,7 +239,6 @@ const Navbar: React.FC = () => {
       document.body.classList.remove("navbar--menu-open");
     }
   };
-
   const showComingSoon = () => {
     setShowComingSoonPopup(true);
     setMoreDropdownOpen(false);
@@ -945,7 +944,7 @@ const Navbar: React.FC = () => {
               >
                 About Us
               </NavLink>
-               <NavLink
+              <NavLink
                 to="/contact"
                 className={({ isActive }) =>
                   `navbar__link${isActive ? " active" : ""}`
@@ -956,7 +955,6 @@ const Navbar: React.FC = () => {
               >
                 Contact <span className="navbar__link-icon"></span>
               </NavLink>
-        
               <div className="navbar__more-dropdown" ref={moreDropdownRef}>
                 <button
                   className="navbar__link navbar__more-trigger"
@@ -991,7 +989,6 @@ const Navbar: React.FC = () => {
                   </div>
                 )}
               </div>
-           
             </div>
 
             <div className="navbar__account">
@@ -1105,7 +1102,7 @@ const Navbar: React.FC = () => {
                   </div>
                 )}
               </div>
-                 {!isLoading && !isAuthenticated && (
+              {!isLoading && !isAuthenticated && (
                 <a
                   href="/vendor-login"
                   className="navbar__account-link"
@@ -1124,7 +1121,6 @@ const Navbar: React.FC = () => {
               >
                 <FaHeart />
               </NavLink>
-            
             </div>
           </div>
 
@@ -1143,8 +1139,7 @@ const Navbar: React.FC = () => {
         </div>
 
         <div
-          className={`navbar__side-menu ${sideMenuOpen ? "navbar__side-menu--open" : ""
-            }`}
+          className={`navbar__side-menu ${sideMenuOpen ? "navbar__side-menu--open" : ""}`}
           ref={sideMenuRef}
         >
           <div className="navbar__side-menu-header">
@@ -1287,7 +1282,7 @@ const Navbar: React.FC = () => {
           {renderSideMenuCategories()}
 
           <div className="navbar__side-menu-social">
-          <NavLink
+            <NavLink
               to="/becomevendor"
               className="navbar__side-menu-link"
               end
@@ -1295,27 +1290,27 @@ const Navbar: React.FC = () => {
                 color: isActive ? '#f97316' : 'inherit'
               })}
             >
-              Become a vendor 
+              Become a Vendor
             </NavLink>
             <h3 className="navbar__side-menu-subtitle">Follow Us</h3>
             <div className="navbar__side-menu-social-icons">
               <a
                 href="https://www.facebook.com/"
-                         target="_blank"
+                target="_blank"
                 className="navbar__social-link navbar__social-link--facebook"
               >
                 <FaFacebook />
               </a>
               <a
                 href="https://www.instagram.com/dajuvai_/"
-                         target="_blank"
+                target="_blank"
                 className="navbar__social-link navbar__social-link--instagram"
               >
                 <FaInstagram />
               </a>
               <a
                 href="https://www.tiktok.com/@www.dajuvai.com"
-                         target="_blank"
+                target="_blank"
                 className="navbar__social-link navbar__social-link--tiktok"
               >
                 <FaTiktok />
@@ -1331,7 +1326,6 @@ const Navbar: React.FC = () => {
             </div>
           </div>
         </div>
-
         <div
           className={`navbar__side-cart ${cartOpen ? "navbar__side-cart--open" : ""
             }`}
@@ -1458,8 +1452,7 @@ const Navbar: React.FC = () => {
             {categories.map((category: any) => (
               <div
                 key={category.id}
-                className={`navbar__category${activeDropdown === category.id ? " active" : ""
-                  }`}
+                className={`navbar__category${activeDropdown === category.id ? " active" : ""}`}
                 onMouseEnter={() => setActiveDropdown(category.id)}
                 onMouseLeave={() => setActiveDropdown(null)}
               >
@@ -1478,36 +1471,36 @@ const Navbar: React.FC = () => {
               </div>
             ))}
           </div>
-   
+
           <div className="navbar__social navbar__social--desktop">
             <NavLink
-                to="/becomevendor"
-                className={({ isActive }) =>
-                  `navbar__link${isActive ? " active" : ""}`
-                }
-                style={({ isActive }) => ({
-                  color: isActive ? '#f97316' : 'inherit'
-                })}
-              >
-                Become a vendor
-              </NavLink>
+              to="/becomevendor"
+              className={({ isActive }) =>
+                `navbar__link${isActive ? " active" : ""}`
+              }
+              style={({ isActive }) => ({
+                color: isActive ? '#f97316' : 'inherit'
+              })}
+            >
+              Become a Vendor
+            </NavLink>
             <a
               href="https://www.facebook.com/"
-                       target="_blank"
+              target="_blank"
               className="navbar__social-link navbar__social-link--facebook"
             >
               <FaFacebook />
             </a>
             <a
               href="https://www.instagram.com/dajuvai_/"
-                       target="_blank"
+              target="_blank"
               className="navbar__social-link navbar__social-link--instagram"
             >
               <FaInstagram />
             </a>
             <a
               href="https://www.tiktok.com/@www.dajuvai.com"
-                       target="_blank"
+              target="_blank"
               className="navbar__social-link navbar__social-link--tiktok"
             >
               <FaTiktok />
@@ -1593,6 +1586,7 @@ const Navbar: React.FC = () => {
       <VendorAuthModal
         isOpen={vendorAuthModalOpen}
         onClose={() => setVendorAuthModalOpen(false)}
+        forceLoginMode={true} // Force login mode for Vendor Login links
       />
     </nav>
   );

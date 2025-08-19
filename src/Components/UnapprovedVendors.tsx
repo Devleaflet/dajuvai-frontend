@@ -1,37 +1,30 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { AdminSidebar } from "../Components/AdminSidebar";
-import Header from "../Components/Header";
-import Pagination from "../Components/Pagination";
-import VendorEditModal from "../Components/Modal/VendorEditModal";
-import AddVendorModal from "../Components/Modal/AddVendorModal";
+import { AdminSidebar } from "./AdminSidebar";
+import Header from "./Header";
+import Pagination from "./Pagination";
 import { API_BASE_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
-import { VendorAuthService } from "../services/vendorAuthService";
-import { Vendor } from "../Components/Types/vendor";
 import "../Styles/AdminVendor.css";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
-interface AdminVendor extends Vendor {
-  status: "Active" | "Inactive";
+interface AdminVendor {
+  id: number;
+  businessName: string;
+  email: string;
+  phoneNumber?: string;
   district?: {
     id: number;
     name: string;
   };
-}
-
-interface District {
-  id: number;
-  name: string;
+  status: "Inactive";
 }
 
 interface ApiResponse<T> {
   success: boolean;
   data?: T;
-  vendor?: T;
   message?: string;
   errors?: { path: string[]; message: string }[];
-  token?: string;
 }
 
 const SkeletonRow: React.FC = () => {
@@ -47,37 +40,6 @@ const SkeletonRow: React.FC = () => {
 };
 
 const createVendorAPI = (token: string | null) => ({
-  async getAll(): Promise<AdminVendor[]> {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      };
-
-      const response = await fetch(`${API_BASE_URL}/api/vendors`, {
-        method: "GET",
-        headers,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result: ApiResponse<Vendor[]> = await response.json();
-      return (result.data || []).map((vendor) => ({
-        ...vendor,
-        status: vendor.isVerified ? "Active" : "Inactive",
-      }));
-    } catch (error) {
-      console.error("Error fetching vendors:", error);
-      throw error;
-    }
-  },
-
   async getUnapproved(): Promise<AdminVendor[]> {
     try {
       if (!token) {
@@ -95,10 +57,11 @@ const createVendorAPI = (token: string | null) => ({
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
 
-      const result: ApiResponse<Vendor[]> = await response.json();
+      const result: ApiResponse<AdminVendor[]> = await response.json();
       return (result.data || []).map((vendor) => ({
         ...vendor,
         status: "Inactive",
@@ -152,79 +115,7 @@ const createVendorAPI = (token: string | null) => ({
     }
   },
 
-  async create(vendorData: any): Promise<AdminVendor> {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const response = await VendorAuthService.signup(
-        {
-          businessName: vendorData.businessName || "",
-          email: vendorData.email || "",
-          businessAddress: vendorData.businessAddress || "",
-          phoneNumber: vendorData.phoneNumber || "",
-          password: vendorData.password,
-          district: String(vendorData.district),
-        },
-        token
-      );
-      if (!response.success || !response.vendor) {
-        if (response.errors?.some((err) => err.message.includes("email already exists"))) {
-          throw new Error("A vendor with this email already exists");
-        }
-        throw new Error(response.message || "Failed to create vendor");
-      }
-      return {
-        ...response.vendor,
-        phoneNumber: response.vendor.phoneNumber || "",
-        businessAddress: response.vendor.businessAddress || "",
-        isVerified: !!response.vendor.isVerified,
-        status: response.vendor.isVerified ? "Active" : "Inactive",
-      };
-    } catch (error) {
-      console.error("Error creating vendor:", error);
-      throw error;
-    }
-  },
-
-  async update(id: number, vendorData: Partial<AdminVendor>): Promise<AdminVendor> {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const response = await VendorAuthService.updateVendor(
-        id,
-        {
-          id,
-          businessName: vendorData.businessName || "",
-          email: vendorData.email || "",
-          phoneNumber: vendorData.phoneNumber || "",
-          district: vendorData.district?.name,
-        },
-        token
-      );
-
-      if (!response.success || !response.vendor) {
-        if (response.errors?.some((err) => err.message.includes("email already exists"))) {
-          throw new Error("A vendor with this email already exists");
-        }
-        throw new Error(response.message || "Failed to update vendor");
-      }
-
-      return {
-        ...response.vendor,
-        phoneNumber: response.vendor.phoneNumber || "",
-        businessAddress: response.vendor.businessAddress || "",
-        isVerified: !!response.vendor.isVerified,
-        status: response.vendor.isVerified ? "Active" : "Inactive",
-      };
-    } catch (error) {
-      console.error("Error updating vendor:", error);
-      throw error;
-    }
-  },
-
-  async delete(id: number): Promise<void> {
+  async reject(id: number): Promise<void> {
     try {
       if (!token) {
         throw new Error("No token provided. Please log in.");
@@ -258,67 +149,45 @@ const createVendorAPI = (token: string | null) => ({
       if (response.status !== 204) {
         const result = await response.json();
         if (!result.success) {
-          throw new Error(result.message || "Failed to delete vendor");
+          throw new Error(result.message || "Failed to reject vendor");
         }
       }
     } catch (error) {
-      console.error("Error deleting vendor:", error);
+      console.error("Error rejecting vendor:", error);
       throw error;
     }
   },
 });
 
-const AdminVendors: React.FC = () => {
+const UnapprovedVendors: React.FC = () => {
   const { token, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [vendors, setVendors] = useState<AdminVendor[]>([]);
   const [filteredVendors, setFilteredVendors] = useState<AdminVendor[]>([]);
-  const [districts, setDistricts] = useState<District[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [vendorsPerPage] = useState(7);
-  const [selectedVendor, setSelectedVendor] = useState<AdminVendor | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: keyof AdminVendor; direction: "asc" | "desc" } | null>(null);
 
   const vendorAPI = createVendorAPI(token);
 
-  const CACHE_KEY = "admin_vendors";
+  const CACHE_KEY = "unapproved_vendors";
   const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
-  const fetchDistricts = useCallback(async () => {
+  const loadUnapprovedVendors = useCallback(async () => {
     try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const response = await fetch(`${API_BASE_URL}/api/district`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result: ApiResponse<District[]> = await response.json();
-      
-      if (!result.data || result.data.length === 0) {
-        setError("No districts available. Please contact support.");
-        toast.error("No districts available. Please contact support.");
-        return;
-      }
-      
-      setDistricts(result.data || []);
-    } catch (error) {
-      setError("Failed to load districts");
-      toast.error("Failed to load districts");
+      setLoading(true);
+      setError(null);
+      const fetchedVendors = await vendorAPI.getUnapproved();
+      setVendors(fetchedVendors);
+      setFilteredVendors(fetchedVendors);
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ data: fetchedVendors, timestamp: Date.now() }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load unapproved vendors");
+      toast.error(err instanceof Error ? err.message : "Failed to load unapproved vendors");
+    } finally {
+      setLoading(false);
     }
   }, [token]);
 
@@ -335,29 +204,12 @@ const AdminVendors: React.FC = () => {
           }
         } catch {}
       }
-      loadVendors();
-      fetchDistricts();
+      loadUnapprovedVendors();
     } else {
       setLoading(false);
-      setError("Please log in to access vendor management.");
+      setError("Please log in to access unapproved vendor management.");
     }
-  }, [isAuthenticated, token, fetchDistricts]);
-
-  const loadVendors = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const fetchedVendors = await vendorAPI.getAll();
-      setVendors(fetchedVendors);
-      setFilteredVendors(fetchedVendors);
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ data: fetchedVendors, timestamp: Date.now() }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load vendors");
-      toast.error(err instanceof Error ? err.message : "Failed to load vendors");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [isAuthenticated, token, loadUnapprovedVendors]);
 
   const handleSearch = (query: string) => {
     setCurrentPage(1);
@@ -404,87 +256,34 @@ const AdminVendors: React.FC = () => {
     return filtered;
   };
 
+  const handleApproveVendor = async (id: number) => {
+    try {
+      await vendorAPI.approve(id);
+      setVendors(vendors.filter((vendor) => vendor.id !== id));
+      setFilteredVendors(filteredVendors.filter((vendor) => vendor.id !== id));
+      toast.success("Vendor approved successfully");
+      navigate('/admin-vendors');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to approve vendor";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleRejectVendor = async (id: number) => {
+    try {
+      await vendorAPI.reject(id);
+      setVendors(vendors.filter((vendor) => vendor.id !== id));
+      setFilteredVendors(filteredVendors.filter((vendor) => vendor.id !== id));
+      toast.success("Vendor rejected successfully");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to reject vendor";
+      toast.error(errorMessage);
+    }
+  };
+
   const indexOfLastVendor = currentPage * vendorsPerPage;
   const indexOfFirstVendor = indexOfLastVendor - vendorsPerPage;
   const currentVendors = getSortedAndFilteredVendors().slice(indexOfFirstVendor, indexOfLastVendor);
-
-  const editVendor = (vendor: AdminVendor) => {
-    setSelectedVendor({ ...vendor });
-    setShowEditModal(true);
-  };
-
-  const handleSaveVendor = async (updatedVendor: AdminVendor) => {
-    try {
-      const savedVendor = await vendorAPI.update(updatedVendor.id, {
-        businessName: updatedVendor.businessName,
-        email: updatedVendor.email,
-        phoneNumber: updatedVendor.phoneNumber,
-        district: updatedVendor.district,
-      });
-      setVendors(vendors.map((v) => (v.id === savedVendor.id ? savedVendor : v)));
-      setFilteredVendors(filteredVendors.map((v) => (v.id === savedVendor.id ? savedVendor : v)));
-      setShowEditModal(false);
-      setSelectedVendor(null);
-      toast.success("Vendor updated successfully");
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to save vendor";
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleAddVendor = async (newVendor: unknown) => {
-    try {
-      const vendor = newVendor as { [key: string]: any };
-      if (!vendor.district) {
-        throw new Error("Please select a valid district");
-      }
-      const selectedDistrict = districts.find(d => d.name === vendor.district);
-      if (!selectedDistrict) {
-        throw new Error("Selected district is not valid. Please refresh the page and try again.");
-      }
-      const savedVendor = await vendorAPI.create({
-        businessName: vendor.businessName,
-        email: vendor.email,
-        businessAddress: vendor.businessAddress,
-        phoneNumber: vendor.phoneNumber,
-        password: vendor.password,
-        district: vendor.district,
-      });
-      setVendors([
-        ...vendors,
-        {
-          ...savedVendor,
-          phoneNumber: savedVendor.phoneNumber || "",
-          isVerified: !!savedVendor.isVerified,
-        },
-      ]);
-      setFilteredVendors([
-        ...filteredVendors,
-        {
-          ...savedVendor,
-          phoneNumber: savedVendor.phoneNumber || "",
-          isVerified: !!savedVendor.isVerified,
-        },
-      ]);
-      setShowAddModal(false);
-      toast.success("Vendor added successfully");
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to add vendor";
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleDeleteVendor = async (id: number) => {
-    try {
-      await vendorAPI.delete(id);
-      setVendors(vendors.filter((vendor) => vendor.id !== id));
-      setFilteredVendors(filteredVendors.filter((vendor) => vendor.id !== id));
-      toast.success("Vendor deleted successfully");
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to delete vendor";
-      toast.error(errorMessage);
-    }
-  };
 
   if (!isAuthenticated || !token) {
     return (
@@ -492,7 +291,7 @@ const AdminVendors: React.FC = () => {
         <AdminSidebar />
         <div className="admin-vendors__content">
           <div className="admin-vendors__error">
-            Please log in to access vendor management.
+            Please log in to access unapproved vendor management.
           </div>
         </div>
       </div>
@@ -504,19 +303,16 @@ const AdminVendors: React.FC = () => {
       <div className="admin-vendors">
         <AdminSidebar />
         <div className="admin-vendors__content">
-          <Header onSearch={handleSearch} showSearch={true} title="Vendor Management" />
+          <Header onSearch={handleSearch} showSearch={true} title="Unapproved Vendors" />
           <div className="admin-vendors__list-container">
             <div className="admin-vendors__header">
-              <h2>Vendor Management</h2>
+              <h2>Unapproved Vendors</h2>
               <div className="admin-vendors__header-buttons">
-                <button className="admin-vendors__add-btn" onClick={() => setShowAddModal(true)}>
-                  Add Vendor
-                </button>
-                <button 
+                <button
                   className="admin-vendors__unapproved-btn"
-                  onClick={() => navigate('/admin-vendors/unapproved')}
+                  onClick={() => navigate('/admin-vendors')}
                 >
-                  Unapproved Vendors
+                  Back to Vendor Page
                 </button>
               </div>
             </div>
@@ -555,22 +351,16 @@ const AdminVendors: React.FC = () => {
             <button onClick={() => setError(null)}>×</button>
           </div>
         )}
-        <Header onSearch={handleSearch} showSearch={true} title="Vendor Management" />
+        <Header onSearch={handleSearch} showSearch={true} title="Unapproved Vendors" />
         <div className="admin-vendors__list-container">
           <div className="admin-vendors__header">
-            <h2>Vendor Management</h2>
+            <h2>Unapproved Vendors</h2>
             <div className="admin-vendors__header-buttons">
-              <button 
-                className="admin-vendors__add-btn" 
-                onClick={() => setShowAddModal(true)}
-              >
-                Add Vendor
-              </button>
-              <button 
+              <button
                 className="admin-vendors__unapproved-btn"
-                onClick={() => navigate('/admin-vendors/unapproved')}
+                onClick={() => navigate('/admin-vendors')}
               >
-                Unapproved Vendors
+                Back to Vendor Page
               </button>
             </div>
           </div>
@@ -605,13 +395,13 @@ const AdminVendors: React.FC = () => {
                       <td>{vendor.businessName}</td>
                       <td>{vendor.email}</td>
                       <td>{vendor.district?.name || "N/A"}</td>
-                      <td>{vendor.phoneNumber}</td>
+                      <td>{vendor.phoneNumber || "N/A"}</td>
                       <td>
                         <div className="admin-vendors__actions">
                           <button
-                            className="admin-vendors__action-btn admin-vendors__edit-btn"
-                            onClick={() => editVendor(vendor)}
-                            aria-label="Edit vendor"
+                            className="admin-vendors__action-btn admin-vendors__approve-btn"
+                            onClick={() => handleApproveVendor(vendor.id)}
+                            aria-label="Approve vendor"
                           >
                             <svg
                               width="20"
@@ -621,14 +411,7 @@ const AdminVendors: React.FC = () => {
                               xmlns="http://www.w3.org/2000/svg"
                             >
                               <path
-                                d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                              <path
-                                d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z"
+                                d="M20 6L9 17L4 12"
                                 stroke="currentColor"
                                 strokeWidth="2"
                                 strokeLinecap="round"
@@ -638,8 +421,8 @@ const AdminVendors: React.FC = () => {
                           </button>
                           <button
                             className="admin-vendors__action-btn admin-vendors__delete-btn"
-                            onClick={() => handleDeleteVendor(vendor.id)}
-                            aria-label="Delete vendor"
+                            onClick={() => handleRejectVendor(vendor.id)}
+                            aria-label="Reject vendor"
                           >
                             <svg
                               width="20"
@@ -649,14 +432,7 @@ const AdminVendors: React.FC = () => {
                               xmlns="http://www.w3.org/2000/svg"
                             >
                               <path
-                                d="M3 6H5H21"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                              <path
-                                d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
+                                d="M6 18L18 6M6 6L18 18"
                                 stroke="currentColor"
                                 strokeWidth="2"
                                 strokeLinecap="round"
@@ -671,7 +447,7 @@ const AdminVendors: React.FC = () => {
                 ) : (
                   <tr>
                     <td colSpan={6} className="admin-vendors__no-data">
-                      No vendors found
+                      No unapproved vendors found
                     </td>
                   </tr>
                 )}
@@ -691,24 +467,8 @@ const AdminVendors: React.FC = () => {
           </div>
         </div>
       </div>
-
-      <VendorEditModal
-        show={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedVendor(null);
-        }}
-        onSave={handleSaveVendor}
-        vendor={selectedVendor as any}
-      />
-      <AddVendorModal
-        show={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onAdd={handleAddVendor}
-        districts={districts}
-      />
     </div>
   );
 };
 
-export default AdminVendors;
+export default UnapprovedVendors;

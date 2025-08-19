@@ -98,10 +98,10 @@ const About = () => {
     <>
       <Navbar />
       <div className="contact-container">
-        <div className="contact-content">
+        <div className="contact-content" style={{ alignItems: 'flex-start' }}>
           <div className="contact-content-left">
-            <h2 className="contact-title">Contact Us</h2>
-            <p className="contact-subtext">We’re here to help! Have questions, feedback, or need assistance? Reach out via email, phone, or by filling out the form , and our team will respond promptly.</p>
+            <h2 className="contact-title" style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)' }}>Contact Us</h2>
+            <p className="contact-subtext">We’re here to help! Have questions, feedback, or need assistance? Reach out via email, phone, or by filling out the form, and our team will respond promptly.</p>
             <div className="contact-info">
               <div className="contact-info-item">
                 <FaPhone className="contact-icon" />
@@ -116,9 +116,22 @@ const About = () => {
                 <span>Kathmandu, Nepal</span>
               </div>
             </div>
-       
+            <div className="vendor-section">
+              <h3 className="vendor-title">Want to Become a Vendor?</h3>
+              <p className="vendor-subtext">Join our platform and start selling your products today! Partner with us to reach a wider audience and grow your business.</p>
+              <div className="about__ctas">
+                <a
+                  href="/becomevendor"
+                  className="btn btn--primary"
+                  aria-label="Become a Vendor"
+                  style={{ padding: 'clamp(0.7rem, 1.5vw, 0.9rem) clamp(1.5rem, 3vw, 2rem)' }}
+                >
+                  Become a Vendor
+                </a>
+              </div>
+            </div>
           </div>
-          <div className="contact-content-right">
+          <div className="contact-content-right" style={{ marginTop: 0 }}>
             <form onSubmit={handleSubmit}>
               <div className="form-row">
                 <div className="form-group">
@@ -190,30 +203,28 @@ const About = () => {
                   onChange={handleInputChange}
                 ></textarea>
               </div>
-              <button type="submit" className="submit-button" disabled={loading}>
+              <button type="submit" className="btn btn--primary" disabled={loading} style={{ padding: 'clamp(0.7rem, 1.5vw, 0.9rem) clamp(1.5rem, 3vw, 2rem)' }}>
                 {loading ? <span className="contact-loader">Loading...</span> : "Submit Form"}
               </button>
             </form>
           </div>
         </div>
         <div className="find-store">
-          
-  <h2 className="store-title">Find our store</h2>
-  <div className="map-container">
-    <iframe
-      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3531.671688837276!2d85.3281763150625!3d27.7364789827758!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb193854e20abb%3A0x8ff36d1f00e10346!2sMaharajgunj%2C%20Kathmandu%2044600!5e0!3m2!1sen!2snp!4v1698765432100!5m2!1sen!2snp"
-      width="100%"
-      height="100%"
-      style={{ border: 0 }}
-      loading="lazy"
-      referrerPolicy="no-referrer-when-downgrade"
-      title="Kathmandu Map"
-      aria-label="Store location map"
-    ></iframe>
-  </div>
-</div>
+          <h2 className="store-title">Find our store</h2>
+          <div className="map-container">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3531.671688837276!2d85.3281763150625!3d27.7364789827758!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb193854e20abb%3A0x8ff36d1f00e10346!2sMaharajgunj%2C%20Kathmandu%2044600!5e0!3m2!1sen!2snp!4v1698765432100!5m2!1sen!2snp"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Kathmandu Map"
+              aria-label="Store location map"
+            ></iframe>
           </div>
-       
+        </div>
+      </div>
       <ToastContainer />
       <Footer />
     </>

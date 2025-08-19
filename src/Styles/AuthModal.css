@@ -153,6 +153,14 @@
   margin-bottom: 15px;
 }
 
+.auth-modal__label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
 .auth-modal__input {
   width: 100%;
   padding: 12px 15px;
@@ -625,4 +633,87 @@ body.auth-modal--open {
   padding: 0 10px;
   position: relative;
   z-index: 1;
+}
+
+/* New styles for step-by-step */
+.auth-modal__step-indicator {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 15px;
+}
+
+.auth-modal__step-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.auth-modal__back-button {
+  flex: 1;
+  padding: 12px;
+  background-color: #ddd;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.auth-modal__back-button:hover {
+  background-color: #ccc;
+}
+
+.auth-modal__back-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Enhanced file upload styles */
+.auth-modal__file-upload {
+  border: 1px dashed #ddd;
+  border-radius: 4px;
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  background-color: #f9f9f9;
+  transition: border-color 0.3s;
+}
+
+.auth-modal__file-upload:hover {
+  border-color: #ff5722;
+}
+
+.auth-modal__file-label {
+  background-color: #ff5722;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-block;
+  transition: background-color 0.3s;
+}
+
+.auth-modal__file-label:hover {
+  background-color: #e64a19;
+}
+
+.auth-modal__file-input {
+  display: none;
+}
+
+.auth-modal__file-name {
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+  color: #666;
+}
+
+.auth-modal__file-preview {
+  max-width: 100%;
+  max-height: 200px;
+  margin-top: 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
 }
