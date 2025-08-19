@@ -24,26 +24,20 @@ const Footer: React.FC = () => {
   const { token } = useAuth();
 
   const handleTrackOrder = async () => {
-    if (!orderId.trim()) {
+    if (!orderId.trim() || !email.trim()) {
       setTrackingResult({
         success: false,
-        message: 'Please enter an Order ID'
+        message: 'Please enter both Order ID and Email'
       });
       setIsTrackingModalOpen(true);
       return;
     }
-
-    if (!token) {
-      setTrackingResult({
-        success: false,
-        message: 'Please log in to track your order'
-      });
-      setIsTrackingModalOpen(true);
-      return;
-    }
-
     try {
-      const result = await OrderService.trackOrder(parseInt(orderId), token);
+      const result = await OrderService.trackOrder(
+        parseInt(orderId),
+        email
+      );
+
       setTrackingResult({
         success: true,
         orderStatus: result.orderStatus
@@ -117,7 +111,8 @@ const Footer: React.FC = () => {
                 <ul className="footer__list">
                   <li><Link to="/privacy" className="footer__link">Privacy Policy</Link></li>
                   <li><Link to="/terms" className="footer__link">Terms & Condition</Link></li>
-                  <li><Link to="/contact" className="footer__link">Site Map</Link></li>
+                  <li><Link to="/becomevendor" className="footer__link">Become a vendor</Link></li>
+
                 </ul>
               </div>
 

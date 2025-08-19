@@ -708,7 +708,7 @@ const Navbar: React.FC = () => {
         <div>
         
         {/* New Top Links Section */}
-        <div className="navbar__top-links">
+        <div className="nav_bar_right">
           <a href="/privacy" className="navbar__top-link">Privacy Policy</a>
           <a href="/terms" className="navbar__top-link">Terms & Conditions</a>
           <a href="/becomevendor" className="navbar__top-link">Become a Vendor</a>
@@ -1568,7 +1568,7 @@ const Navbar: React.FC = () => {
       <VendorAuthModal
         isOpen={vendorAuthModalOpen}
         onClose={() => setVendorAuthModalOpen(false)}
-        forceLoginMode={true} // Force login mode for Vendor Login links
+        forceLoginMode={true} 
       />
     </nav>
   );
