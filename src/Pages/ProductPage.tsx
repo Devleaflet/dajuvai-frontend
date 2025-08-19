@@ -32,6 +32,7 @@ import AuthModal from '../Components/AuthModal';
 import defaultProductImage from '../assets/logo.webp';
 import Reviews from '../Components/Reviews';
 import React from 'react';
+import RecommendedProducts from '../Components/Product/RecommendedProducts';
 
 const CACHE_KEY_REVIEWS = 'productReviewsData';
 
@@ -311,6 +312,21 @@ const ProductPage = () => {
     },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     gcTime: 10 * 60 * 1000, // Keep unused data for 10 minutes
+  });
+
+  // Fetch recommended products
+  const { data: recommendedProducts } = useQuery({
+    queryKey: ['recommendedProducts', categoryId, subcategoryId],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (categoryId) params.append('categoryId', categoryId);
+      if (subcategoryId) params.append('subcategoryId', subcategoryId);
+      
+      const response = await axiosInstance.get(`/api/categories/all/products?${params.toString()}`);
+      return response.data.data || [];
+    },
+    enabled: !!categoryId || !!subcategoryId,
+    staleTime: 5 * 60 * 1000
   });
 
   const product = productData?.product;
@@ -1016,6 +1032,17 @@ const ProductPage = () => {
         />
       </div>
       
+      {/* Recommended Products */}
+      {recommendedProducts && (
+        <div className="product-page__recommended">
+          <RecommendedProducts 
+            products={recommendedProducts} 
+            currentProductId={Number(id)} 
+            fallbackCategoryId={categoryId}
+            fallbackSubcategoryId={subcategoryId}
+          />
+        </div>
+      )}
      
       {/* Toast Notification */}
       {showToast && (
