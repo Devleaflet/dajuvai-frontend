@@ -3,6 +3,7 @@ import { useHomepageSections } from '../hooks/useHomepageSections';
 import ProductCarousel from './ProductCarousel';
 import ProductCardSkeleton from '../skeleton/ProductCardSkeleton';
 import '../Styles/Home.css';
+import type { Product as DisplayProduct } from './Types/Product';
 
 const HomepageSections: React.FC = () => {
   const { data: sections, isLoading, error } = useHomepageSections();
@@ -35,13 +36,17 @@ const HomepageSections: React.FC = () => {
   return (
     <div className="homepage-sections">
       {sections.filter(section => section.isActive).map(section => {
-        const mappedProducts = section.products.map(product => ({
+        const mappedProducts: DisplayProduct[] = section.products.map(product => ({
           id: product.id,
           title: product.name,
           description: product.description,
           price: product.basePrice,
+          basePrice: product.basePrice,
           originalPrice: undefined,
           discount: product.discount,
+          discountType: (product.discountType === 'PERCENTAGE' || product.discountType === 'FLAT'
+            ? product.discountType
+            : undefined) as DisplayProduct['discountType'],
           rating: 0,
           ratingCount: '0',
           isBestSeller: false,
@@ -49,6 +54,7 @@ const HomepageSections: React.FC = () => {
           image: product.productImages?.[0] || '',
           stock: product.stock,
           productImages: product.productImages,
+          variants: (product as any).variants,
         }));
         return (
           <ProductCarousel
@@ -64,4 +70,4 @@ const HomepageSections: React.FC = () => {
   );
 };
 
-export default HomepageSections; 
+export default HomepageSections;

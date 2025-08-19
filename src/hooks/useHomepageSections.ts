@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { API_BASE_URL } from '../config';
+import type { ProductVariant } from '../types/product';
 
 export interface HomepageProduct {
   id: number;
@@ -8,7 +9,7 @@ export interface HomepageProduct {
   basePrice: string;
   stock: number;
   discount: string;
-  discountType: string;
+  discountType?: string;
   size: string[];
   productImages: string[];
   status: string;
@@ -19,6 +20,9 @@ export interface HomepageProduct {
   dealId: number | null;
   created_at: string;
   updated_at: string;
+  // Optional fields for variant-aware rendering
+  hasVariants?: boolean;
+  variants?: ProductVariant[];
 }
 
 export interface HomepageSection {

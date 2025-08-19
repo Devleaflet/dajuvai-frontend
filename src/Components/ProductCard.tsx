@@ -9,6 +9,8 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import AuthModal from "./AuthModal";
 import defaultProductImage from "../assets/logo.webp";
+import { API_BASE_URL } from "../config";
+// Removed VariantSelectModal to directly add the displayed variant on cards
 
 interface ProductCardProps {
   product: Product;
@@ -38,51 +40,101 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     id,
   } = product;
 
-  // Enhanced image handling with debugging
-  const getDisplayImage = () => {
-    console.log('Product data:', { 
-      id: product.id, 
-      title: product.title,
-      hasVariants: !!variants?.length,
-      variantImages: variants?.map(v => ({
-        hasImage: !!v.image,
-        hasImages: v.images?.length > 0,
-        image: v.image,
-        images: v.images
-      })),
-      mainImage: image,
-      productImages: productImages
-    });
-
-    // Check if there are variants with images
-    if (variants?.length > 0) {
-      // Find first variant with an image
-      const variantWithImage = variants.find(v => v.image || v.images?.length > 0);
-      
-      if (variantWithImage) {
-        const variantImage = variantWithImage.image || variantWithImage.images?.[0];
-        console.log('Using variant image:', variantImage);
-        return variantImage;
-      }
+  // Normalize/complete image URLs similar to Shop/ProductList
+  const processImageUrl = (imgUrl: string): string => {
+    if (!imgUrl) return "";
+    const trimmed = imgUrl.trim();
+    if (!trimmed) return "";
+    if (trimmed.startsWith("//")) return `https:${trimmed}`;
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/")) {
+      return trimmed;
     }
-    
-    // Fall back to product images or default
-    const fallbackImage = productImages?.[0] || image || defaultProductImage;
-    console.log('Using fallback image:', fallbackImage);
-    return imageError ? defaultProductImage : fallbackImage;
+    const base = API_BASE_URL.replace(/\/?api\/?$/, "");
+    const needsSlash = !trimmed.startsWith("/");
+    const url = `${base}${needsSlash ? "/" : ""}${trimmed}`;
+    return url.replace(/([^:]\/)\/+/, "$1/");
   };
 
-  const displayImage = getDisplayImage();
-  console.log('Final display image:', displayImage);
+  // Robust image fallback: productImages -> image -> variant images -> default
+  const getDisplayImage = (): string => {
+    const imgs = (productImages || [])
+      .filter((u): u is string => !!u && typeof u === "string" && u.trim() !== "")
+      .map(processImageUrl)
+      .filter(Boolean);
+    if (imgs.length > 0) return imgs[0];
+
+    if (typeof image === "string" && image.trim()) {
+      const p = processImageUrl(image);
+      if (p) return p;
+    }
+
+    const vImgs: string[] = (variants || [])
+      .flatMap((v: any) => [
+        v?.image,
+        ...(Array.isArray(v?.images) ? v.images : []),
+        ...(Array.isArray(v?.variantImages) ? v.variantImages : []),
+      ])
+      .filter((u): u is string => !!u && typeof u === "string" && u.trim() !== "")
+      .map(processImageUrl)
+      .filter(Boolean);
+    if (vImgs.length > 0) return vImgs[0];
+
+    return defaultProductImage;
+  };
+
+  const displayImage = imageError ? defaultProductImage : getDisplayImage();
 
   const handleImageError = () => {
     setImageError(true);
   };
 
+  // Price calculation helpers and variant-aware display price
+  const calculatePrice = (basePrice: string | number, discountVal?: string | number, discountType?: string | null): number => {
+    const base = typeof basePrice === "string" ? parseFloat(basePrice) : Number(basePrice) || 0;
+    if (!discountVal || !discountType) return base;
+    const dVal = typeof discountVal === "string" ? parseFloat(discountVal) : Number(discountVal) || 0;
+    if (discountType === "PERCENTAGE") return base * (1 - dVal / 100);
+    if (discountType === "FIXED" || discountType === "FLAT") return base - dVal;
+    return base;
+  };
+
+  let currentPrice = 0;
+  let originalPriceDisplay: number | undefined = undefined;
+  let discountLabel: string | null = null;
+
+  if (variants && variants.length > 0) {
+    const v: any = variants[0] || {};
+    const variantBase = v?.price ?? v?.originalPrice ?? v?.basePrice ?? product.basePrice ?? price ?? 0;
+    const baseNum = typeof variantBase === "string" ? parseFloat(variantBase) : Number(variantBase) || 0;
+    const hasCalculated = typeof v?.calculatedPrice === "number" && isFinite(v.calculatedPrice);
+
+    if (hasCalculated) {
+      currentPrice = v.calculatedPrice as number;
+    } else if (v?.discount && v?.discountType) {
+      currentPrice = calculatePrice(baseNum, v.discount, v.discountType);
+      originalPriceDisplay = baseNum;
+      discountLabel = v.discountType === "PERCENTAGE" ? `${v.discount} %` : `Rs ${v.discount} off`;
+    } else if (product.discount && product.discountType) {
+      currentPrice = calculatePrice(baseNum, product.discount, product.discountType);
+      originalPriceDisplay = baseNum;
+      discountLabel = product.discountType === "PERCENTAGE" ? `${product.discount} %` : `Rs ${product.discount} off`;
+    } else {
+      currentPrice = baseNum;
+    }
+  } else {
+    const baseNum = typeof price === "string" ? parseFloat(price) : Number(price) || 0;
+    if (product.discount && product.discountType) {
+      currentPrice = calculatePrice(baseNum, product.discount, product.discountType);
+      originalPriceDisplay = baseNum;
+      discountLabel = product.discountType === "PERCENTAGE" ? `${product.discount} %` : `Rs ${product.discount} off`;
+    } else {
+      currentPrice = baseNum;
+    }
+  }
+
   const handleWishlist = async () => {
-    if (!token) {
-      setToast("Please log in to add to wishlist");
-      setTimeout(() => setToast(null), 2000);
+    if (!isAuthenticated) {
+      setAuthModalOpen(true);
       return;
     }
     setWishlistLoading(true);
@@ -107,7 +159,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <button
             className="product-card__wishlist-button"
             aria-label="Add to wishlist"
-            onClick={handleWishlist}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleWishlist();
+            }}
             disabled={wishlistLoading}
           >
             <svg
@@ -147,8 +203,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   setAuthModalOpen(true);
                   return;
                 }
-                // If there's exactly one variant, pass its id; otherwise leave undefined
-                const variantId = product.variants?.length === 1 ? product.variants[0].id : undefined;
+                const variantCount = product.variants?.length || 0;
+                // Always add the first variant if present, since card displays its price/image
+                const variantId = variantCount > 0 ? product.variants![0].id : undefined;
                 handleCartOnAdd(product, 1, variantId);
               }}
             />
@@ -167,15 +224,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <h3 className="product-card__title">{title}</h3>
           <p className="product-card__description">{description}</p>
           <div className="product-card__price">
-            <span className="product-card__current-price">Rs {price}</span>
+            <span className="product-card__current-price">Rs {currentPrice.toFixed(2)}</span>
             <div className="product-card__price-details">
-              {originalPrice && (
-                <span className="product-card__original-price">
-                  Rs {originalPrice}
-                </span>
+              {typeof originalPriceDisplay === "number" && originalPriceDisplay > currentPrice && (
+                <span className="product-card__original-price">Rs {originalPriceDisplay.toFixed(2)}</span>
               )}
-              {discount && (
-                <span className="product-card__discount">{discount} % </span>
+              {discountLabel && (
+                <span className="product-card__discount">{discountLabel}</span>
               )}
             </div>
           </div>

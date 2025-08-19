@@ -1,6 +1,7 @@
 import React from "react";
 import { Product } from "../Components/Types/Product";
 import defaultProductImage from "../assets/logo.webp";
+import { API_BASE_URL } from "../config";
 
 interface ProductListProps {
   products: Product[];
@@ -26,6 +27,51 @@ const ProductList: React.FC<ProductListProps> = ({
       return base - discountValue;
     }
     return base;
+  };
+
+  // Normalize/complete image URLs similar to Shop page
+  const processImageUrl = (imgUrl: string): string => {
+    if (!imgUrl) return '';
+    const trimmed = imgUrl.trim();
+    if (!trimmed) return '';
+    if (trimmed.startsWith('//')) return `https:${trimmed}`;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
+      return trimmed;
+    }
+    const base = API_BASE_URL.replace(/\/?api\/?$/, '');
+    const needsSlash = !trimmed.startsWith('/');
+    const url = `${base}${needsSlash ? '/' : ''}${trimmed}`;
+    return url.replace(/([^:]\/)\/+/, '$1/');
+  };
+
+  const getDisplayImage = (product: Product): string => {
+    // 1) Product images
+    const productImages = (product.productImages || [])
+      .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
+      .map(processImageUrl)
+      .filter(Boolean);
+    if (productImages.length > 0) return productImages[0];
+
+    // 2) Single product.image
+    if (typeof product.image === 'string' && product.image.trim()) {
+      const img = processImageUrl(product.image);
+      if (img) return img;
+    }
+
+    // 3) Variant images (image + images[])
+    const variantImages: string[] = (product.variants || [])
+      .flatMap((v: any) => [
+        v?.image,
+        ...(Array.isArray(v?.images) ? v.images : []),
+        ...(Array.isArray(v?.variantImages) ? v.variantImages : []),
+      ])
+      .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
+      .map(processImageUrl)
+      .filter(Boolean);
+    if (variantImages.length > 0) return variantImages[0];
+
+    // 4) Default
+    return defaultProductImage;
   };
 
   return (
@@ -55,6 +101,7 @@ const ProductList: React.FC<ProductListProps> = ({
               // Handle variant products
               let numericStock = 0;
               let displayPrice = 0;
+              const displayImage = getDisplayImage(product);
               
               if (product.variants && product.variants.length > 0) {
                 // Use first variant's price and stock
@@ -100,7 +147,7 @@ const ProductList: React.FC<ProductListProps> = ({
                     <div
                       className="product-cell__icon vendor-product__image"
                       style={{
-                        backgroundImage: `url(${product.productImages?.[0] || product.image || defaultProductImage})`,
+                        backgroundImage: `url(${displayImage})`,
                         backgroundSize: "cover",
                         backgroundPosition: "center",
                       }}

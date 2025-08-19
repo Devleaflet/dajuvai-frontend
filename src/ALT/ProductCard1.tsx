@@ -9,6 +9,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import AuthModal from "../Components/AuthModal";
 import defaultProductImage from "../assets/logo.webp";
+// Removed VariantSelectModal: add first variant directly to match thumbnail price
 
 interface ProductCardProps {
   product: Product;
@@ -16,7 +17,7 @@ interface ProductCardProps {
 
 const Product1: React.FC<ProductCardProps> = ({ product }) => {
   const { handleCartOnAdd } = useCart();
-  const { token } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const [toast, setToast] = useState<string | null>(null);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -96,9 +97,8 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
   const displayPrice = `Rs. ${displayPriceNum.toFixed(2)}`;
 
   const handleWishlist = async () => {
-    if (!token) {
-      setToast("Please log in to add to wishlist");
-      setTimeout(() => setToast(null), 2000);
+    if (!isAuthenticated) {
+      setAuthModalOpen(true);
       return;
     }
     setWishlistLoading(true);
@@ -123,7 +123,11 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
           <button
             className="product1__wishlist-button"
             aria-label="Add to wishlist"
-            onClick={handleWishlist}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleWishlist();
+            }}
             disabled={wishlistLoading}
           >
             <svg
@@ -170,8 +174,8 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
                   setAuthModalOpen(true);
                   return;
                 }
-                // If there's exactly one variant, pass its id; otherwise leave undefined
-                const variantId = product.variants?.length === 1 ? product.variants[0].id : undefined;
+                const variantCount = product.variants?.length || 0;
+                const variantId = variantCount > 0 ? product.variants![0].id : undefined;
                 handleCartOnAdd(product, 1, variantId);
               }}
             />
