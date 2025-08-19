@@ -5,7 +5,7 @@
   min-height: 100vh;
   margin: 0 auto;
   max-width: 95%;
-  padding: 1rem;
+ 
 }
 
 .product-page__container {
@@ -24,7 +24,7 @@
   gap: 2rem;
   flex-wrap: wrap;
   max-width: 600px;
-  margin: 0 auto;
+
 }
 
 .product-gallery__main-image {

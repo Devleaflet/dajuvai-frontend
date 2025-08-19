@@ -8,6 +8,7 @@ import { addToWishlist } from "../api/wishlist";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import AuthModal from "../Components/AuthModal";
+import { getProductPrimaryImage } from "../utils/getProductPrimaryImage";
 import defaultProductImage from "../assets/logo.webp";
 // Removed VariantSelectModal: add first variant directly to match thumbnail price
 
@@ -38,22 +39,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
     id,
   } = product;
 
-  // Helper function to get the first available image from variants or fall back to product images
-  const getProductImage = () => {
-    // Check if there are variants with images
-    if (product.variants?.length > 0) {
-      // Find the first variant with an image
-      const variantWithImage = product.variants.find(v => v.image || (v.images && v.images.length > 0));
-      if (variantWithImage) {
-        // Return the variant's image or the first image from variant's images array
-        return variantWithImage.image || variantWithImage.images?.[0];
-      }
-    }
-    // Fall back to product images or default image
-    return productImages?.[0] || image || defaultProductImage;
-  };
-
-  const displayImage = getProductImage();
+  const displayImage = imageError ? defaultProductImage : getProductPrimaryImage(product, defaultProductImage);
 
   const handleImageError = () => {
     setImageError(true);
