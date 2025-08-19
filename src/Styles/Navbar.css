@@ -58,7 +58,31 @@
     height: 100px;
     margin-right: 5px;
 }
+.navbar__top-links {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 0;
+  background-color: #ffffff; /* Match the navbar background */
+  
+}.navbar__top-link {
+  margin-left: 20px;
+  text-decoration: none;
+  color: #42504b;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
 
+.navbar__top-link:hover {
+  color: #ff6b00;
+}
+
+/* Update Cart Icon Size */
+.navbar__account-icon {
+  font-size: 24px; /* Larger cart icon */
+}
+
+/* Enhanced search styles */
 .navbar__search {
     position: relative;
     width: 100%;
@@ -73,12 +97,13 @@
 
 .navbar__search-input {
     width: 100%;
-    padding: 10px 15px;
+    padding: 10px 50px 10px 15px;
     border: 2px solid #ff6b00;
     border-radius: 4px;
     font-size: 14px;
     outline: none;
     transition: all 0.3s ease;
+    box-sizing: border-box;
 }
 
 .navbar__search-input:focus {
@@ -87,20 +112,34 @@
 
 .navbar__search-button {
     position: absolute;
-    right: 0;
-    top: 0;
-    height: 100%;
-    padding: 0 15px;
+    right: 2px;
+    top: 2px;
+    height: calc(100% - 4px);
+    width: 45px;
+    padding: 0;
+    margin: 0;
     background: #ff6b00;
     border: none;
-    border-radius: 0 4px 4px 0;
+    border-radius: 0 2px 2px 0;
     color: white;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .navbar__search-button:hover {
-    background: #e05a00;
+    background: #e55a00;
+}
+
+.navbar__search-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.navbar__search-button svg {
+    font-size: 14px;
 }
 
 .navbar__search-dropdown {
@@ -157,7 +196,6 @@
     color: #333;
     font-weight: 500;
     display: -webkit-box;
-
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -210,16 +248,19 @@
 .navbar__links {
     display: flex;
     align-items: center;
+    gap: 5px;
 }
 
+/* Updated main navigation links for consistent font sizing */
 .navbar__link {
     margin-right: 20px;
     text-decoration: none;
     color: #42504b;
-    font-size: 16px;
+    font-size: 14px; /* Reduced from 16px to match account links */
     display: flex;
     align-items: center;
     transition: color 0.2s, background 0.2s;
+    font-weight: 500; /* Added to match account link weight */
 }
 
 .navbar__link:hover, .navbar__link:focus {
@@ -243,33 +284,39 @@
 .navbar__account {
     display: flex;
     align-items: center;
-    gap: 5px;
-}
-
-.navbar__account-link {
-    margin-left: 15px;
-    text-decoration: none;
-    color: #42504b;
-    font-size: 16px;
-    display: flex;
-    font-weight: 500;
-    align-items: center;
-    white-space: nowrap;
-}
-
-.navbar__account-text {
-    margin-right: 5px;
+    gap: 10px;
 }
 
 .navbar__account-icon {
     margin-left: 5px;
 }
 
+.navbar__account-link {
+    margin-left: 15px;
+    text-decoration: none;
+    color: #42504b;
+    font-size: 14px;
+    display: flex;
+    font-weight: 500;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.navbar__account-link:hover {
+    color: #ff9800;
+    transition: color 0.2s ease;
+}
+
+.navbar__account-text {
+    margin-right: 5px;
+    font-size: 14px;
+}
+
 .navbar__account-icon-link {
     margin-left: 15px;
     text-decoration: none;
     color: #42504b;
-    font-size: 18px;
+    font-size: 16px;
     display: flex;
     align-items: center;
 }
@@ -585,8 +632,6 @@
     justify-content: center;
 }
 
-
-
 .navbar__social-link--instagram {
     color: #e4405f;
 }
@@ -602,7 +647,6 @@
 .navbar__social-link--whatsapp {
     color: #25d366;
 }
-
 
 .navbar__social-link--viber {
     color: #7360f2;
@@ -748,7 +792,7 @@
 
 @media (min-width: 768px) and (max-width: 1199px) {
     .navbar__account-link {
-        font-size: 14px;
+        font-size: 13px;
         white-space: nowrap;
         padding: 0 5px;
     }
@@ -759,6 +803,10 @@
     
     .navbar__account-icon {
         margin-left: 3px;
+    }
+    
+    .navbar__link {
+        font-size: 14px;
     }
 }
 
@@ -775,6 +823,17 @@
     .navbar__side-cart {
         width: 85%;
     }
+    
+    .navbar__search-input {
+        padding: 8px 45px 8px 12px;
+        font-size: 13px;
+    }
+    
+    .navbar__search-button {
+        width: 40px;
+        right: 2px;
+        top: 2px;
+    }
 }
 
 @media (max-width: 360px) {
@@ -788,7 +847,6 @@
 }
 
 @media (max-width: 1099px) {
-    
     .navbar__top {
         position: sticky;
         top: 0;
@@ -796,12 +854,10 @@
         background-color: #ffffff;
     }
     
-    
     .navbar__search-row {
         position: relative;
         transition: transform 0.3s ease;
     }
-    
     
     .navbar__search-row.hidden {
         transform: translateY(-100%);
@@ -810,7 +866,6 @@
         visibility: hidden;
     }
 }
-
 
 .navbar__cart-count {
     position: absolute;
@@ -1027,7 +1082,7 @@
     transition: box-shadow 0.2s;
     box-shadow: 0 1px 4px rgba(0,0,0,0.04);
     position: relative;
-    margin:0xp 10px;
+    margin: 0px 10px;
 }
 
 .navbar__avatar-circle {
@@ -1289,7 +1344,7 @@
 }
 
 .navbar__user-profile{
-    margin:0px 10px;
+    margin: 0px 10px;
 }
 .navbar__mobile-user{
     margin: 0px 15px;
@@ -1387,15 +1442,6 @@
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 4px;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
 }
 
 /* Category Dropdown Styles */
@@ -1513,6 +1559,7 @@
   visibility: visible;
   transform: translateY(0);
 }
+
 /* Coming Soon Popup */
 .navbar__coming-soon-popup {
     position: fixed;
@@ -1593,6 +1640,7 @@
         margin: 0;
     }
 }
+
 /* More Dropdown Styles */
 .navbar__more-dropdown {
     position: relative;
@@ -1606,6 +1654,9 @@
     padding: 0 !important;
     margin: 0 !important;
     cursor: pointer;
+    font-size: 14px !important;
+    color: #42504b !important;
+    font-weight: 500 !important;
 }
 
 .navbar__more-dropdown-content {
@@ -1650,4 +1701,13 @@
 .navbar__more-dropdown-link:hover {
     background-color: #f8f9fa;
     color: #ff6b00;
+}
+
+/* Enhanced focus states for accessibility */
+.navbar__link:focus,
+.navbar__account-link:focus,
+.navbar__search-button:focus,
+.navbar__more-trigger:focus {
+    outline: 2px solid #ff6b00;
+    outline-offset: 2px;
 }

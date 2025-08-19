@@ -31,6 +31,7 @@ import iphone from "../assets/iphone.jpg";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import { fetchSubCategory } from "../api/subcategory";
+
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "../config";
 import { useVendorAuth } from "../context/VendorAuthContext";
@@ -704,6 +705,16 @@ const Navbar: React.FC = () => {
   return (
     <nav className="navbar">
       <div className="navbar__container">
+        <div>
+        
+        {/* New Top Links Section */}
+        <div className="navbar__top-links">
+          <a href="/privacy" className="navbar__top-link">Privacy Policy</a>
+          <a href="/terms" className="navbar__top-link">Terms & Conditions</a>
+          <a href="/becomevendor" className="navbar__top-link">Become a Vendor</a>
+          <a href="/faq" className="navbar__top-link">FAQ</a>
+        </div>
+        </div>
         <div className="navbar__top">
           <div className="navbar__top-row">
             <div className="navbar__logo">
@@ -835,16 +846,13 @@ const Navbar: React.FC = () => {
                   <FaShoppingBag />
                 </a>
               )}
-              <a
-                href="/nepal"
-                className="navbar__social-link navbar__social-link--nepal"
-              >
-                <img
-                  src={nepal}
-                  alt="Nepal Flag"
-                  className="navbar__nepal-flag"
-                />
-              </a>
+            <span className="navbar__social-link navbar__social-link--nepal">
+  <img
+    src={nepal}
+    alt="Nepal Flag"
+    className="navbar__nepal-flag"
+  />
+</span>
               <button
                 className="navbar__hamburger"
                 onClick={toggleSideMenu}
@@ -955,6 +963,7 @@ const Navbar: React.FC = () => {
               >
                 Contact <span className="navbar__link-icon"></span>
               </NavLink>
+                
               <div className="navbar__more-dropdown" ref={moreDropdownRef}>
                 <button
                   className="navbar__link navbar__more-trigger"
@@ -998,15 +1007,7 @@ const Navbar: React.FC = () => {
                 onClick={toggleCart}
                 ref={cartButtonRef}
               >
-                <span className="navbar__account-text">
-                  My Cart | Rs.
-                  {cartItems
-                    .reduce(
-                      (total, item) => total + item.price * item.quantity,
-                      0
-                    )
-                    .toLocaleString("en-IN")}
-                </span>
+                
                 <FaShoppingCart className="navbar__account-icon" />
                 {cartItems.length > 0 && (
                   <span className="navbar__cart-count">{cartItems.length}</span>
@@ -1112,6 +1113,7 @@ const Navbar: React.FC = () => {
                   <span className="navbar__account-text">Vendor Login</span>
                 </a>
               )}
+               
               <NavLink
                 to="/wishlist"
                 className="navbar__account-icon-link"
@@ -1124,18 +1126,15 @@ const Navbar: React.FC = () => {
             </div>
           </div>
 
-          <div className="nepal-flag">
-            <a
-              href="/nepal"
-              className="navbar__social-link navbar__social-link--nepal"
-            >
-              <img
-                src={nepal}
-                alt="Nepal Flag"
-                className="navbar__nepal-flag"
-              />
-            </a>
-          </div>
+        <div className="nepal-flag">
+  <span className="navbar__social-link navbar__social-link--nepal">
+    <img
+      src={nepal}
+      alt="Nepal Flag"
+      className="navbar__nepal-flag"
+    />
+  </span>
+</div>
         </div>
 
         <div
@@ -1182,6 +1181,15 @@ const Navbar: React.FC = () => {
             >
               About Us
             </NavLink>
+              <NavLink
+                  to="/contact"
+                  className="navbar__side-menu-link"
+                  style={({ isActive }) => ({
+                    color: isActive ? '#f97316' : 'inherit'
+                  })}
+                >
+                  Contact Us
+                </NavLink>
             <button
               className="navbar__side-menu-link"
               onClick={showComingSoon}
@@ -1238,15 +1246,16 @@ const Navbar: React.FC = () => {
                 >
                   Wishlist
                 </NavLink>
-                <NavLink
-                  to="/orders"
+               <NavLink
+                  to="/faq"
                   className="navbar__side-menu-link"
                   style={({ isActive }) => ({
                     color: isActive ? '#f97316' : 'inherit'
                   })}
                 >
-                  My Orders
+                  FAQ
                 </NavLink>
+                 
                 <a
                   href="/logout"
                   className="navbar__side-menu-link"
@@ -1268,30 +1277,13 @@ const Navbar: React.FC = () => {
                 Login
               </a>
             )}
-            {!isLoading && !isAuthenticated && (
-              <a
-                href="/vendor-login"
-                className="navbar__side-menu-link"
-                onClick={toggleVendorAuthModal}
-              >
-                Vendor Login
-              </a>
-            )}
+         
           </div>
 
           {renderSideMenuCategories()}
 
           <div className="navbar__side-menu-social">
-            <NavLink
-              to="/becomevendor"
-              className="navbar__side-menu-link"
-              end
-              style={({ isActive }) => ({
-                color: isActive ? '#f97316' : 'inherit'
-              })}
-            >
-              Become a Vendor
-            </NavLink>
+          
             <h3 className="navbar__side-menu-subtitle">Follow Us</h3>
             <div className="navbar__side-menu-social-icons">
               <a
@@ -1473,17 +1465,7 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="navbar__social navbar__social--desktop">
-            <NavLink
-              to="/becomevendor"
-              className={({ isActive }) =>
-                `navbar__link${isActive ? " active" : ""}`
-              }
-              style={({ isActive }) => ({
-                color: isActive ? '#f97316' : 'inherit'
-              })}
-            >
-              Become a Vendor
-            </NavLink>
+           
             <a
               href="https://www.facebook.com/"
               target="_blank"

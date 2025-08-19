@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import Footer from "../Components/Footer";
 import Navbar from "../Components/Navbar";
 import '../Styles/About.css';
-import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaCheckCircle, FaExclamationCircle} from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axiosInstance from '../api/axiosInstance';
+
 
 const About = () => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -106,6 +107,11 @@ const About = () => {
               <div className="contact-info-item">
                 <FaPhone className="contact-icon" />
                 <span>+977- 9700620004</span>
+              </div>
+               <div className="contact-info-item">
+         
+                <FaPhone className="contact-icon" />
+                <span>01-4720234</span>
               </div>
               <div className="contact-info-item">
                 <FaEnvelope className="contact-icon" />

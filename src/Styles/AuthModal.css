@@ -195,10 +195,6 @@
   background-color: #e64a19;
 }
 
-
-
-
-
 .auth-modal__footer {
   padding: 15px 25px;
   background-color: #f8f8f8;
@@ -307,7 +303,6 @@ body.auth-modal--open {
   letter-spacing: 8px;
   font-weight: bold;
   padding-left: 20px !important;
-
   background-size: 48px 2px;
   background-position: 12px;
   background-repeat: repeat-x;
@@ -550,6 +545,7 @@ body.auth-modal--open {
   font-size: 14px;
   padding-bottom: 10px;
 }
+
 .auth-modal__forgot-link:hover {
   color: #ea580c;
 }
@@ -648,12 +644,12 @@ body.auth-modal--open {
   gap: 10px;
 }
 
-.auth-modal__back-button {
+.auth-modal__back-button-improved {
   flex: 1;
   padding: 12px;
-  background-color: #ddd;
+  background-color: #e0e0e0;
   color: #333;
-  border: none;
+  border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 16px;
   font-weight: bold;
@@ -661,13 +657,14 @@ body.auth-modal--open {
   transition: background-color 0.3s;
 }
 
-.auth-modal__back-button:hover {
-  background-color: #ccc;
+.auth-modal__back-button-improved:hover:not(:disabled) {
+  background-color: #d0d0d0;
 }
 
-.auth-modal__back-button:disabled {
+.auth-modal__back-button-improved:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  background-color: #f0f0f0;
 }
 
 /* Enhanced file upload styles */

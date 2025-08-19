@@ -384,10 +384,7 @@ const UserProfile: React.FC = () => {
           <label>Email Address</label>
           <div>{userDetails.email}</div>
         </div>
-        <div className="profile-form__group">
-          <label>Account Role</label>
-          <div>{userDetails.role}</div>
-        </div>
+        
         {/* <div className="profile-form__group">
           <label>Account Status</label>
           <div className={userDetails.isVerified ? "verified-yes" : "verified-no"}>

@@ -270,7 +270,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("=== handleCartOnAdd ERROR ===");
       console.error("Cart POST error:", error?.response?.data || error.message);
       console.error("Full error object:", error);
-      toast.error("Failed to add item to cart. Please try again.");
+      toast.error("Only customer accounts can perform this action. If you are an admin or vendor, please create a customer account first.");
     } finally {
       console.log("Removing product ID from addingItems set:", product.id);
       // Remove item from adding set

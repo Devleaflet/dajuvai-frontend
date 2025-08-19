@@ -33,6 +33,7 @@ interface District {
 }
 
 interface ImageUploadResponse {
+  msg: string;
   success: boolean;
   data: string;
   publicId?: string;
@@ -55,7 +56,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
   const [district, setDistrict] = useState<string>("");
   const [taxNumber, setTaxNumber] = useState<string>("");
   const [taxDocument, setTaxDocument] = useState<File | null>(null);
-  const [taxDocumentUrl, setTaxDocumentUrl] = useState<string>("");
+
   const [taxDocumentPreview, setTaxDocumentPreview] = useState<string>("");
   const [districts, setDistricts] = useState<District[]>([]);
   const [isLoginMode, setIsLoginMode] = useState<boolean>(
@@ -72,6 +73,19 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const modalRef = useRef<HTMLDivElement | null>(null);
+  const [isStepValid, setIsStepValid] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!isLoginMode && !showVerification) {
+      const validateCurrentStep = () => {
+        if (currentStep === 1) {
+          return businessName.trim().length >= 3 && taxNumber.trim().length >= 9 && taxDocument !== null;
+        }
+        return true;
+      };
+      setIsStepValid(validateCurrentStep());
+    }
+  }, [businessName, taxNumber, taxDocument, currentStep, isLoginMode, showVerification]);
 
   useEffect(() => {
     if (forceLoginMode) {
@@ -89,8 +103,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
           const response = await axios.get(`${API_BASE_URL}/api/district`, {
             headers: { "Content-Type": "application/json", Accept: "application/json" },
           });
-
-          console.log("Districts API response:", response.data);
           const districtData = response.data?.success && Array.isArray(response.data.data) ? response.data.data : [];
           setDistricts(districtData);
         } catch (err) {
@@ -150,7 +162,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       setDistrict("");
       setTaxNumber("");
       setTaxDocument(null);
-      setTaxDocumentUrl("");
       setTaxDocumentPreview("");
       setDistricts([]);
       setError("");
@@ -183,9 +194,9 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     if (!phoneNumber.trim()) errors.push("Phone number is required");
     if (!/^\+?[\d\s-]{10,}$/.test(phoneNumber)) errors.push("Please enter a valid phone number");
     if (!district.trim()) errors.push("District is required");
-    if (!taxNumber.trim()) errors.push("Tax number is required");
-    if (taxNumber.length < 9) errors.push("Tax number must be at least 9 characters");
-    if (!taxDocument) errors.push("Tax document is required");
+    if (!taxNumber.trim()) errors.push("Pan/Vat number is required");
+    if (taxNumber.length < 9) errors.push("Pan/Vat number must be at least 9 characters");
+    if (!taxDocument) errors.push("Pan/Vat document is required");
     if (!password.trim()) errors.push("Password is required");
     if (password.length < 8) errors.push("Password must be at least 8 characters");
     if (!/[a-z]/.test(password)) errors.push("Password must contain at least one lowercase letter");
@@ -225,16 +236,15 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
           headers: { "Content-Type": "multipart/form-data" },
         }
       );
-
       if (response.data.success) {
         return response.data.data;
       } else {
-        throw new Error(response.data.msg || "Failed to upload tax document");
+        throw new Error(response.data.msg || "Failed to upload Pan/Vat document");
       }
     } catch (err) {
       console.error("File upload error:", err);
-      setError("Failed to upload tax document. Please try again.");
-      toast.error("Failed to upload tax document. Please try again.");
+      setError("Failed to upload Pan/Vat document. Please try again.");
+      toast.error("Failed to upload Pan/Vat document. Please try again.");
       return null;
     }
   };
@@ -272,7 +282,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       setDistrict("");
       setTaxNumber("");
       setTaxDocument(null);
-      setTaxDocumentUrl("");
       setTaxDocumentPreview("");
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -357,7 +366,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     try {
       setIsLoading(true);
       setError("");
-      setVerificationToken(""); // Clear previous token to avoid using stale codes
+      setVerificationToken("");
       console.log("Sending resend verification request for:", pendingVerificationEmail);
 
       const response = await axios.post<VerificationResponse>(
@@ -369,7 +378,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       console.log("Resend verification response:", response.data);
       setSuccess(response.data.message);
       toast.success("Verification code resent successfully");
-      setCountdown(120); // Reset countdown to 120 seconds
+      setCountdown(120);
     } catch (err) {
       if (axios.isAxiosError(err)) {
         console.error("Resend verification error details:", {
@@ -474,7 +483,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       if (taxDocument) {
         const uploadedUrl = await handleFileUpload(taxDocument);
         if (!uploadedUrl) return;
-        setTaxDocumentUrl(uploadedUrl);
         await handleSignup({
           businessName: businessName.trim(),
           email: email.trim(),
@@ -599,48 +607,48 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                       disabled={isLoading}
                     />
                   </div>
-                  <div className="auth-modal__form-group" style={{ position: "relative" }}>
-                    <label className="auth-modal__label">Password</label>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      className="auth-modal__input"
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      disabled={isLoading}
-                      style={{ paddingRight: "40px" }}
-                    />
-                    <button
-                      type="button"
-                      onClick={togglePasswordVisibility}
-                      style={{
-                        position: "absolute",
-                        right: "10px",
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "0",
-                        fontSize: "16px",
-                      }}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <ellipse cx="12" cy="12" rx="10" ry="7" />
-                          <circle cx="12" cy="12" r="3.5" />
-                        </svg>
-                      ) : (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M1 1l22 22" />
-                          <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" />
-                          <path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" />
-                        </svg>
-                      )}
-                    </button>
-                  </div>
+                  <div className="auth-modal__form-group" style={{ marginBottom: "20px", position: "relative" , paddingBottom: "20px" }}>
+  <label className="auth-modal__label">Password</label>
+  <input
+    type={showPassword ? "text" : "password"}
+    className="auth-modal__input"
+    placeholder="Enter your password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    required
+    disabled={isLoading}
+    style={{ paddingRight: "40px" }}
+  />
+  <button
+    type="button"
+    onClick={togglePasswordVisibility}
+    style={{
+      position: "absolute",
+      right: "10px",
+      top: "55%", // Adjusted from 50% to 55% to move it down slightly
+      transform: "translateY(-55%)", // Adjusted to match the new top value
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      padding: "0",
+      fontSize: "16px",
+    }}
+    aria-label={showPassword ? "Hide password" : "Show password"}
+  >
+    {showPassword ? (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <ellipse cx="12" cy="12" rx="10" ry="7"/>
+        <circle cx="12" cy="12" r="3.5"/>
+      </svg>
+    ) : (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M1 1l22 22"/>
+        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/>
+        <path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/>
+      </svg>
+    )}
+  </button>
+</div>
                   <button type="submit" className="auth-modal__submit" disabled={isLoading}>
                     {isLoading ? "Loading..." : "LOG IN"}
                   </button>
@@ -662,11 +670,11 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                         />
                       </div>
                       <div className="auth-modal__form-group">
-                        <label className="auth-modal__label">Tax Number</label>
+                        <label className="auth-modal__label">Vat/Pan Number</label>
                         <input
                           type="text"
                           className="auth-modal__input"
-                          placeholder="Enter tax number"
+                          placeholder="Enter pan/vat number"
                           value={taxNumber}
                           onChange={(e) => setTaxNumber(e.target.value)}
                           required
@@ -674,7 +682,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                         />
                       </div>
                       <div className="auth-modal__form-group">
-                        <label className="auth-modal__label">Tax Document (Image)</label>
+                        <label className="auth-modal__label">Please attach your business PAN/VAT registration document below</label>
                         <div className="auth-modal__file-upload">
                           <label htmlFor="taxDocument" className="auth-modal__file-label">
                             Choose File
@@ -747,107 +755,112 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                       </div>
                     </>
                   )}
-                  {currentStep === 3 && (
-                    <>
-                      <div className="auth-modal__form-group" style={{ position: "relative" }}>
-                        <label className="auth-modal__label">Password</label>
-                        <input
-                          type={showPassword ? "text" : "password"}
-                          className="auth-modal__input"
-                          placeholder="Enter password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required
-                          disabled={isLoading}
-                          style={{ paddingRight: "40px" }}
-                        />
-                        <button
-                          type="button"
-                          onClick={togglePasswordVisibility}
-                          style={{
-                            position: "absolute",
-                            right: "10px",
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            padding: "0",
-                            fontSize: "16px",
-                          }}
-                          aria-label={showPassword ? "Hide password" : "Show password"}
-                        >
-                          {showPassword ? (
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <ellipse cx="12" cy="12" rx="10" ry="7" />
-                              <circle cx="12" cy="12" r="3.5" />
-                            </svg>
-                          ) : (
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M1 1l22 22" />
-                              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" />
-                              <path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" />
-                            </svg>
-                          )}
-                        </button>
-                      </div>
-                      <div className="auth-modal__form-group" style={{ position: "relative" }}>
-                        <label className="auth-modal__label">Confirm Password</label>
-                        <input
-                          type={showConfirmPassword ? "text" : "password"}
-                          className="auth-modal__input"
-                          placeholder="Confirm password"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          required
-                          disabled={isLoading}
-                          style={{ paddingRight: "40px" }}
-                        />
-                        <button
-                          type="button"
-                          onClick={toggleConfirmPasswordVisibility}
-                          style={{
-                            position: "absolute",
-                            right: "10px",
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            padding: "0",
-                            fontSize: "16px",
-                          }}
-                          aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                        >
-                          {showConfirmPassword ? (
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <ellipse cx="12" cy="12" rx="10" ry="7" />
-                              <circle cx="12" cy="12" r="3.5" />
-                            </svg>
-                          ) : (
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M1 1l22 22" />
-                              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" />
-                              <path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" />
-                            </svg>
-                          )}
-                        </button>
-                      </div>
-                    </>
-                  )}
+               {currentStep === 3 && (
+  <>
+    <div className="auth-modal__form-group" style={{ position: "relative" }}>
+      <label className="auth-modal__label">Password</label>
+      <input
+        type={showPassword ? "text" : "password"}
+        className="auth-modal__input" style={{ marginBottom: "20px"}}
+        placeholder="Enter password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+        disabled={isLoading}
+       
+      />
+      <button
+        type="button"
+        onClick={togglePasswordVisibility}
+        style={{
+          position: "absolute",
+          right: "10px",
+          top: "55%", // Adjusted from 50% to 55% to move it down slightly
+          transform: "translateY(-55%)", // Adjusted to match the new top value
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: "0",
+          fontSize: "16px",
+        }}
+        aria-label={showPassword ? "Hide password" : "Show password"}
+      >
+        {showPassword ? (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <ellipse cx="12" cy="12" rx="10" ry="7"/>
+            <circle cx="12" cy="12" r="3.5"/>
+          </svg>
+        ) : (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M1 1l22 22"/>
+            <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/>
+            <path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/>
+          </svg>
+        )}
+      </button>
+    </div>
+    <div className="auth-modal__form-group" style={{ position: "relative", marginTop: "15px"  ,  paddingBottom: "15px"}}>
+      <label className="auth-modal__label">Confirm Password</label>
+      <input
+        type={showConfirmPassword ? "text" : "password"}
+        className="auth-modal__input"  style={{ marginBottom: "10px"}}
+        placeholder="Confirm password"
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        required
+        disabled={isLoading}
+  
+      />
+      <button
+        type="button"
+        onClick={toggleConfirmPasswordVisibility}
+        style={{
+          position: "absolute",
+          right: "10px",
+          top: "55%", // Adjusted from 50% to 55% to move it down slightly
+          transform: "translateY(-55%)", // Adjusted to match the new top value
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: "0",
+          fontSize: "16px",
+        }}
+        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+      >
+        {showConfirmPassword ? (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <ellipse cx="12" cy="12" rx="10" ry="7"/>
+            <circle cx="12" cy="12" r="3.5"/>
+          </svg>
+        ) : (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M1 1l22 22"/>
+            <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/>
+            <path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/>
+          </svg>
+        )}
+      </button>
+    </div>
+  </>
+)}
                   <div className="auth-modal__step-buttons">
                     {currentStep > 1 && (
                       <button
                         type="button"
-                        className="auth-modal__back-button"
+                        className="auth-modal__back-button-improved"
                         onClick={handleBack}
                         disabled={isLoading}
                       >
                         Back
                       </button>
                     )}
-                    <button type="submit" className="auth-modal__submit" disabled={isLoading}>
-                      {isLoading ? "Loading..." : currentStep < 3 ? "Next" : "SIGN UP"}
+                    <button
+                      type="button"
+                      className="auth-modal__submit"
+                      onClick={handleNext}
+                      disabled={isLoading || !isStepValid}
+                    >
+                      {isLoading ? "Loading..." : "Next"}
                     </button>
                   </div>
                 </>
