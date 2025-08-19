@@ -10,7 +10,6 @@ import logo from '../assets/logo.webp';
 import esewa from '../assets/esewa.png';
 import npx from '../assets/npx.png';
 import khalti from '../assets/khalti1.png';
-import { Product } from '../Components/Types/Product';
 import { useAuth } from '../context/AuthContext';
 import AlertModal from '../Components/Modal/AlertModal';
 import { API_BASE_URL } from '../config';
@@ -33,6 +32,19 @@ interface CartItem {
   name: string;
   description?: string;
   image: string | null;
+  // Optional variant-related fields
+  variantId?: number;
+  variant?: {
+    id?: number;
+    name?: string;
+    sku?: string;
+    attributes?: any;
+    attributeValues?: any;
+    attrs?: any;
+    attributeSpecs?: any;
+  };
+  attributes?: any;
+  variantAttributes?: any;
   product?: {
     id: number;
     name: string;
@@ -360,32 +372,72 @@ const Checkout: React.FC = () => {
   const discountAmount = appliedPromoCode ? Math.round((total * discountPercentage) / 100) : 0;
   const finalTotal = total - discountAmount;
 
+  // Format a human-readable label for the item's selected variant
+  const getVariantLabel = (item: any): string => {
+    const v = item?.variant || item?.selectedVariant || null;
+    if (!v) {
+      // Some APIs put attributes at the item root
+      const rootAttrs = (item && (item.variantAttributes || item.attributes)) || null;
+      const fromRoot = rootAttrs ? formatAttributes(rootAttrs) : '';
+      return fromRoot;
+    }
+
+    // Prefer variant name if present
+    if (typeof v.name === 'string' && v.name.trim()) return v.name.trim();
+
+    // Build label from attributes on the variant
+    const byAttrs = formatAttributes(v.attributes || v.attributeValues || v.attributeSpecs || v.attrs || null);
+    if (byAttrs) return byAttrs;
+
+    // Fallbacks
+    if (v.sku) return `SKU: ${String(v.sku)}`;
+    return '';
+  };
+
+  // Helper: formats different shapes of attributes into "Color: Red, Size: M"
+  const formatAttributes = (attrs: any): string => {
+    if (!attrs) return '';
+
+    // Case 1: Array of attribute entries
+    if (Array.isArray(attrs)) {
+      const parts = attrs.map((a: any) => {
+        const label = String(a?.type ?? a?.attributeType ?? a?.name ?? '').trim();
+        const valuesSrc: any = a?.values ?? a?.attributeValues ?? a?.value ?? a?.name ?? [];
+        const valuesArr = Array.isArray(valuesSrc) ? valuesSrc : [valuesSrc];
+        const valueText = valuesArr
+          .map((v: any) => String((v && typeof v === 'object') ? (v.value ?? v.name ?? JSON.stringify(v)) : v))
+          .filter(Boolean)
+          .join('/');
+        if (!label && !valueText) return '';
+        return label ? `${label}: ${valueText}` : valueText;
+      }).filter(Boolean);
+      return parts.join(', ');
+    }
+
+    // Case 2: Object map { Color: 'Red', Size: 'M' }
+    if (typeof attrs === 'object') {
+      const parts = Object.entries(attrs).map(([k, v]) => {
+        const label = String(k).trim();
+        const valueText = Array.isArray(v)
+          ? v.map((x: any) => String(x?.value ?? x?.name ?? x)).join('/')
+          : String((v as any)?.value ?? (v as any)?.name ?? v);
+        return `${label}: ${valueText}`;
+      });
+      return parts.join(', ');
+    }
+
+    // Fallback: treat as plain text
+    return String(attrs);
+  };
+
   const handleIncrease = (item: any) => {
-    const product: Product = {
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      image: item.image || '',
-      quantity: item.quantity,
-      description: item.description || '',
-      rating: 0,
-      ratingCount: '0',
-    };
-    handleIncreaseQuantity(product, 1);
+    // Use cartItemId (item.id) with new API contract
+    handleIncreaseQuantity(item.id, 1);
   };
 
   const handleDecrease = (item: any) => {
-    const product: Product = {
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      image: item.image || '',
-      quantity: item.quantity,
-      description: item.description || '',
-      rating: 0,
-      ratingCount: '0',
-    };
-    handleDecreaseQuantity(product, 1);
+    // Use cartItemId (item.id) with new API contract
+    handleDecreaseQuantity(item.id, 1);
   };
 
   useEffect(() => {
@@ -660,26 +712,28 @@ const Checkout: React.FC = () => {
                             src={item.image || logo}
                             alt={item.name}
                             className="checkout-container__product-item-img"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = logo;
-                            }}
                           />
                           <div className="checkout-container__product-info">
                             <span className="checkout-container__product-info-text">{item.name}</span>
+                            {(() => {
+                              const label = getVariantLabel(item);
+                              return label ? (
+                                <small style={{ display: 'block', color: '#666', marginTop: 4 }}>Variant: {label}</small>
+                              ) : null;
+                            })()}
                             <div className="checkout-container__quantity-controls">
-                              <button
-                                className="checkout-container__quantity-controls-button"
-                                onClick={() => handleIncrease(item)}
-                              >
-                                +
-                              </button>
-                              <span>{item.quantity}</span>
                               <button
                                 className="checkout-container__quantity-controls-button"
                                 onClick={() => handleDecrease(item)}
                               >
                                 -
+                              </button>
+                              <span>{item.quantity}</span>
+                              <button
+                                className="checkout-container__quantity-controls-button"
+                                onClick={() => handleIncrease(item)}
+                              >
+                                +
                               </button>
                             </div>
                           </div>

@@ -168,7 +168,9 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
                   setAuthModalOpen(true);
                   return;
                 }
-                handleCartOnAdd(product);
+                // If there's exactly one variant, pass its id; otherwise leave undefined
+                const variantId = product.variants?.length === 1 ? product.variants[0].id : undefined;
+                handleCartOnAdd(product, 1, variantId);
               }}
             />
           </div>

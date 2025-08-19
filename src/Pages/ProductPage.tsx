@@ -502,7 +502,9 @@ const ProductPage = () => {
       return;
     }
     if (!product) return;
-    handleCartOnAdd(product, quantity);
+    // Pass selectedVariant id when available for variant-aware add-to-cart
+    const variantId = selectedVariant?.id;
+    handleCartOnAdd(product, quantity, variantId);
     showNotification('Product added to cart!');
   };
 

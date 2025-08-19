@@ -429,6 +429,55 @@ const Navbar: React.FC = () => {
     return score;
   };
 
+  const formatAttributes = (attrs: any): string => {
+    if (!attrs) return "";
+    if (Array.isArray(attrs)) {
+      return attrs
+        .map((a) => {
+          if (!a) return "";
+          if (typeof a === "string") return a;
+          if (typeof a === "object") {
+            const key = a.key || a.name || a.attribute || Object.keys(a)[0];
+            const value = a.value || a.val || a.option || a[key];
+            return [key, value].filter(Boolean).join(": ");
+          }
+          return String(a);
+        })
+        .filter(Boolean)
+        .join(", ");
+    }
+    if (typeof attrs === "object") {
+      return Object.entries(attrs)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(", ");
+    }
+    return String(attrs);
+  };
+
+  const getCartVariantLabel = (item: any): string | null => {
+    try {
+      const name = item?.variant?.name || item?.selectedVariant?.name;
+      if (name && typeof name === "string") return name;
+
+      const candidates = [
+        item?.variant?.attributes,
+        item?.variant?.attributeValues,
+        item?.variant?.attrs,
+        item?.variant?.attributeSpecs,
+        item?.variantAttributes,
+        item?.attributes,
+      ];
+      for (const c of candidates) {
+        const s = formatAttributes(c);
+        if (s) return s;
+      }
+
+      const sku = item?.variant?.sku || item?.sku || item?.variantSku;
+      if (sku) return `SKU: ${sku}`;
+    } catch {}
+    return null;
+  };
+
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
@@ -1292,6 +1341,12 @@ const Navbar: React.FC = () => {
                       </div>
                       <div className="navbar__cart-item-details">
                         <h4 className="navbar__cart-item-name">{item.name}</h4>
+                        {(() => {
+                          const label = getCartVariantLabel(item);
+                          return label ? (
+                            <small style={{ display: 'block', color: '#666', marginTop: 4 }}>Variant: {label}</small>
+                          ) : null;
+                        })()}
                         <div className="navbar__cart-item-price-qty">
                           <span className="navbar__cart-item-price">
                             Rs. {item.price.toLocaleString("en-IN")}

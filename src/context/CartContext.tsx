@@ -10,22 +10,24 @@ import { toast } from "react-hot-toast";
 
 // Define cart item type with proper ID structure
 interface CartItem {
-  id: number; // This is the cart item ID from backend
-  productId?: number; // Product ID (might be separate field)
+  id: number; // cart item ID from backend
+  productId?: number; // product ID
+  variantId?: number; // optional variant ID
   name: string;
   price: number;
   quantity: number;
   image: string;
-  product?: Product;
+  product?: Product & { id: number };
+  variant?: any;
 }
 
 // Reducer action types
 type ActionType =
   | { type: "SET_ITEMS"; payload: CartItem[] }
-  | { type: "ADD_ITEM"; payload: { product: Product; quantity: number } }
+  | { type: "ADD_ITEM"; payload: { product: Product; quantity: number; variantId?: number } }
   | { type: "DELETE_ITEM"; payload: { cartItem: CartItem } }
-  | { type: "INC_QUANTITY"; payload: { product: Product; quantity: number } }
-  | { type: "DEC_QUANTITY"; payload: { product: Product; quantity: number } };
+  | { type: "INC_QUANTITY"; payload: { cartItemId: number; quantity: number } }
+  | { type: "DEC_QUANTITY"; payload: { cartItemId: number; quantity: number } };
 
 // Reducer function
 const cartReducer = (state: CartItem[], action: ActionType): CartItem[] => {
@@ -37,11 +39,11 @@ const cartReducer = (state: CartItem[], action: ActionType): CartItem[] => {
     case "ADD_ITEM": {
       // Check if product already exists using product ID
       const productId = action.payload.product.id;
-      const exists = state.find((item) => 
-        (item.productId === productId) || 
+      const exists = state.find((item) =>
+        (item.productId === productId) ||
         (item.product?.id === productId)
       );
-      
+
       if (exists) {
         return state.map((item) => {
           const itemProductId = item.productId || item.product?.id;
@@ -50,7 +52,7 @@ const cartReducer = (state: CartItem[], action: ActionType): CartItem[] => {
             : item;
         });
       }
-      
+
       return [
         {
           id: Date.now(), // Temporary ID - backend will provide real cart item ID
@@ -60,6 +62,7 @@ const cartReducer = (state: CartItem[], action: ActionType): CartItem[] => {
           quantity: action.payload.quantity,
           image: action.payload.product.image || iphone,
           product: action.payload.product,
+          variantId: action.payload.variantId,
         },
         ...state,
       ];
@@ -73,10 +76,9 @@ const cartReducer = (state: CartItem[], action: ActionType): CartItem[] => {
     case "INC_QUANTITY": {
       console.log('INC_QUANTITY action:', action);
       console.log('State before INC_QUANTITY:', state);
-      const productId = action.payload.product.id;
+      const cartItemId = action.payload.cartItemId;
       const newState = state.map((item) => {
-        const itemProductId = item.productId || item.product?.id;
-        return itemProductId === productId
+        return item.id === cartItemId
           ? { ...item, quantity: item.quantity + action.payload.quantity }
           : item;
       });
@@ -87,11 +89,10 @@ const cartReducer = (state: CartItem[], action: ActionType): CartItem[] => {
     case "DEC_QUANTITY": {
       console.log('DEC_QUANTITY action:', action);
       console.log('State before DEC_QUANTITY:', state);
-      const productId = action.payload.product.id;
+      const cartItemId = action.payload.cartItemId;
       const newState = state
         .map((item) => {
-          const itemProductId = item.productId || item.product?.id;
-          return itemProductId === productId
+          return item.id === cartItemId
             ? { ...item, quantity: Math.max(0, item.quantity - action.payload.quantity) }
             : item;
         })
@@ -108,15 +109,15 @@ const cartReducer = (state: CartItem[], action: ActionType): CartItem[] => {
 // Context type
 interface CartContextType {
   cartItems: CartItem[];
-  handleCartOnAdd: (product: Product, quantity?: number) => void;
+  handleCartOnAdd: (product: Product, quantity?: number, variantId?: number) => void;
   handleCartItemOnDelete: (cartItem: CartItem) => void;
-  handleIncreaseQuantity: (product: Product, quantity?: number) => void;
-  handleDecreaseQuantity: (product: Product, quantity?: number) => void;
+  handleIncreaseQuantity: (cartItemId: number, quantity?: number) => void;
+  handleDecreaseQuantity: (cartItemId: number, quantity?: number) => void;
   setCartItems: (items: CartItem[]) => void;
   refreshCart: () => Promise<void>;
-  deletingItems: Set<number>; // Track which cart items are being deleted (by cart item ID)
-  addingItems: Set<number>; // Track which products are being added (by product ID)
-  updatingItems: Set<number>; // Track which products are being updated (by product ID)
+  deletingItems: Set<number>; // cart item IDs being deleted
+  addingItems: Set<number>; // product IDs being added
+  updatingItems: Set<number>; // cart item IDs being updated
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -129,6 +130,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
   const [deletingItems, setDeletingItems] = useState<Set<number>>(new Set());
   const [addingItems, setAddingItems] = useState<Set<number>>(new Set());
   const [updatingItems, setUpdatingItems] = useState<Set<number>>(new Set());
+
   const location = useLocation();
   const auth = useAuth();
 
@@ -141,7 +143,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
         setCartItems([]);
         return;
       }
-      
+
       try {
         const items = await fetchCart();
         setCartItems(items);
@@ -162,7 +164,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const cartRelatedPages = ['/checkout', '/cart'];
     const isCartPage = cartRelatedPages.some(page => location.pathname.includes(page));
-    
+
     if (isCartPage && auth.isAuthenticated) {
       const refreshCart = async () => {
         try {
@@ -192,7 +194,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
         setCartItems([]);
         return;
       }
-      
+
       try {
         const items = await fetchCart();
         setCartItems(items);
@@ -223,42 +225,45 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     dispatch({ type: "SET_ITEMS", payload: items });
   };
 
-  const handleCartOnAdd = async (product: Product, quantity = 1) => {
+  const handleCartOnAdd = async (product: Product, quantity = 1, variantId?: number) => {
     console.log("=== handleCartOnAdd START ===");
     console.log("Product being added:", product);
     console.log("Quantity:", quantity);
     console.log("Current cart items:", cartItems);
     console.log("Is authenticated:", auth.isAuthenticated);
-    
+
     if (!auth.isAuthenticated) {
       console.log("User not authenticated, cannot add to cart");
       return;
     }
-    
+
     // Prevent multiple clicks using product ID
     if (addingItems.has(product.id)) {
       console.log("Item is already being added, product ID:", product.id);
       return;
     }
-    
+
     console.log("Adding product ID to addingItems set:", product.id);
     // Add item to adding set
     setAddingItems(prev => new Set(prev).add(product.id));
-    
+
     try {
       console.log("Making API call to add item to cart...");
-      const response = await axiosInstance.post("/api/cart", {
+      const payload: any = {
         productId: product.id,
         quantity,
-      }, { withCredentials: true });
-      
+      };
+      if (variantId) {
+        payload.variantId = variantId;
+      }
+      const response = await axiosInstance.post("/api/cart", payload, { withCredentials: true });
       console.log("API response:", response.data);
 
       console.log("Refreshing cart from backend...");
       // Refresh cart from backend to get the correct item structure
       await refreshCart();
       console.log("Cart refreshed successfully");
-      
+
       toast.success("Item added to cart successfully!");
       console.log("=== handleCartOnAdd SUCCESS ===");
     } catch (error: any) {
@@ -285,38 +290,37 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     console.log("Product ID:", cartItem.productId || cartItem.product?.id);
     console.log("Current cart items:", cartItems);
     console.log("Is authenticated:", auth.isAuthenticated);
-    
+
     if (!auth.isAuthenticated) {
       console.log("User not authenticated, cannot delete from cart");
       return;
     }
-    
+
     // Prevent multiple clicks using cart item ID
     if (deletingItems.has(cartItem.id)) {
       console.log("Item is already being deleted, cart item ID:", cartItem.id);
       return;
     }
-    
+
     console.log("Adding cart item ID to deletingItems set:", cartItem.id);
     // Add item to deleting set
     setDeletingItems(prev => new Set(prev).add(cartItem.id));
-    
+
     try {
       console.log("Making API call to delete item from cart...");
       console.log("Sending cartItemId:", cartItem.id);
-      
+
       const response = await axiosInstance.delete("/api/cart", {
         data: { cartItemId: cartItem.id },
         withCredentials: true
       });
-      
       console.log("Delete API response:", response.data);
 
       console.log("Refreshing cart from backend...");
       // Refresh cart from backend to get the correct state
       await refreshCart();
       console.log("Cart refreshed successfully after deletion");
-      
+
       console.log("Item deleted successfully from backend");
       toast.success("Item removed from cart successfully!");
       console.log("=== handleCartItemOnDelete SUCCESS ===");
@@ -326,7 +330,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("Full error object:", error);
       console.error("Error response status:", error?.response?.status);
       console.error("Error response headers:", error?.response?.headers);
-      
+
       // Show error toast notification
       toast.error("Failed to remove item from cart. Please try again.");
     } finally {
@@ -342,32 +346,43 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const handleIncreaseQuantity = async (
-    product: Product,
+    cartItemId: number,
     amount: number = 1
   ) => {
     if (!auth.isAuthenticated) {
       console.log("User not authenticated, cannot modify cart");
       return;
     }
-    
-    // Prevent multiple clicks using product ID
-    if (updatingItems.has(product.id)) {
+
+    if (updatingItems.has(cartItemId)) {
       console.log("Item is already being updated");
       return;
     }
-    
-    // Add item to updating set
-    setUpdatingItems(prev => new Set(prev).add(product.id));
-    
+
+    // Add cartItem to updating set
+    setUpdatingItems(prev => new Set(prev).add(cartItemId));
+
     try {
-      await axiosInstance.put("/api/cart/increase", {
-        productId: product.id,
+      // Find the cart item to derive productId and variantId
+      const item = cartItems.find(ci => ci.id === cartItemId);
+      if (!item) {
+        console.warn("Cart item not found for increase:", cartItemId);
+        return;
+      }
+
+      const payload: any = {
+        productId: item.product?.id || item.productId,
         quantity: amount,
-      }, { withCredentials: true });
-      
+      };
+      if (item.variant?.id || item.variantId) {
+        payload.variantId = item.variant?.id || item.variantId;
+      }
+
+      await axiosInstance.post("/api/cart", payload, { withCredentials: true });
+
       // Refresh cart from backend to get the correct state
       await refreshCart();
-      console.log("Quantity increased for:", product.name || product.title);
+      console.log("Quantity increased for cart item:", cartItemId);
     } catch (error: any) {
       console.error(
         "Failed to increase quantity:",
@@ -378,39 +393,41 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
       // Remove item from updating set
       setUpdatingItems(prev => {
         const newSet = new Set(prev);
-        newSet.delete(product.id);
+        newSet.delete(cartItemId);
         return newSet;
       });
     }
   };
 
   const handleDecreaseQuantity = async (
-    product: Product,
+    cartItemId: number,
     amount: number = 1
   ) => {
     if (!auth.isAuthenticated) {
       console.log("User not authenticated, cannot modify cart");
       return;
     }
-    
-    // Prevent multiple clicks using product ID
-    if (updatingItems.has(product.id)) {
+
+    if (updatingItems.has(cartItemId)) {
       console.log("Item is already being updated");
       return;
     }
-    
-    // Add item to updating set
-    setUpdatingItems(prev => new Set(prev).add(product.id));
-    
+
+    // Add cartItem to updating set
+    setUpdatingItems(prev => new Set(prev).add(cartItemId));
+
     try {
-      await axiosInstance.put("/api/cart/decrease", {
-        productId: product.id,
-        quantity: amount,
-      }, { withCredentials: true });
-      
+      // The DELETE endpoint supports decreaseOnly; loop for amount times
+      for (let i = 0; i < amount; i++) {
+        await axiosInstance.delete("/api/cart", {
+          data: { cartItemId, decreaseOnly: true },
+          withCredentials: true
+        });
+      }
+
       // Refresh cart from backend to get the correct state
       await refreshCart();
-      console.log("Quantity decreased for:", product.name || product.title);
+      console.log("Quantity decreased for cart item:", cartItemId);
     } catch (error: any) {
       console.error(
         "Failed to decrease quantity:",
@@ -421,7 +438,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
       // Remove item from updating set
       setUpdatingItems(prev => {
         const newSet = new Set(prev);
-        newSet.delete(product.id);
+        newSet.delete(cartItemId);
         return newSet;
       });
     }
@@ -430,19 +447,19 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
   const refreshCart = async () => {
     console.log("=== refreshCart START ===");
     console.log("Is authenticated:", auth.isAuthenticated);
-    
+
     if (!auth.isAuthenticated) {
       console.log("User not authenticated, clearing cart");
       setCartItems([]);
       return;
     }
-    
+
     try {
       console.log("Fetching cart from backend...");
       const items = await fetchCart();
       console.log("Fetched cart items from backend:", items);
       console.log("Number of items fetched:", items.length);
-      
+
       // Log the structure of each item for debugging
       items.forEach((item, index) => {
         console.log(`Item ${index}:`, {
@@ -453,7 +470,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
           allFields: Object.keys(item)
         });
       });
-      
+
       console.log("Setting cart items in state...");
       setCartItems(items);
       console.log("Cart items set successfully");
