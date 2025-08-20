@@ -7,8 +7,7 @@ import EditProductModal from "../Components/Modal/EditProductModalRedesigned";
 import { useAuth } from "../context/AuthContext";
 import ProductService from "../services/productService";
 import "../Styles/AdminProduct.css";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-hot-toast";
 import { ApiProduct } from "../Components/Types/ApiProduct";
 import { ProductFormData } from "../types/product";
 import { debounce } from "lodash";
@@ -215,16 +214,6 @@ const AdminProduct: React.FC = () => {
   if (!isAuthenticated || !token) {
     return (
       <div className="admin-products">
-        <ToastContainer
-          position="top-right"
-          autoClose={4000}
-          hideProgressBar={false}
-          newestOnTop
-          closeOnClick
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-        />
         <AdminSidebar />
         <div className="admin-products__content">
           <div className="admin-products__error">
@@ -237,16 +226,6 @@ const AdminProduct: React.FC = () => {
 
   return (
     <div className="admin-products">
-      <ToastContainer
-        position="top-right"
-        autoClose={4000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
       <AdminSidebar />
       <div className="admin-products__content">
         {error && (

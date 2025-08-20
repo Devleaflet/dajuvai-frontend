@@ -7,7 +7,7 @@ import { updateProduct, uploadProductImages } from '../../api/products';
 import axiosInstance from '../../api/axiosInstance';
 import { ApiProduct } from "../Types/ApiProduct";
 import { API_BASE_URL } from "../../config";
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 import { dealApiService } from '../../services/apiDeals';
 import { Deal } from '../Types/Deal';
 

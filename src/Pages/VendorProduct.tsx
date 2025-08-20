@@ -408,7 +408,7 @@ const VendorProduct: React.FC = () => {
         setShowAddModal(false);
       },
       onError: (err: Error) => {
-        alert(err.message || 'Failed to add product.');
+        toast.error(err.message || 'Failed to add product.');
       }
     });
   };
@@ -507,16 +507,14 @@ const VendorProduct: React.FC = () => {
     setShowEditModal(true);
   };
 
-  const handleSaveEditProduct = async (productId: number, productData: ProductFormData, categoryId: number, subcategoryId: number) => {
-    editProductMutation.mutate({ productId, productData, categoryId, subcategoryId }, {
-      onSuccess: () => {
-        setShowEditModal(false);
-        setEditingProduct(null);
-      },
-      onError: (err: Error) => {
-        alert(err.message || 'Failed to update product.');
-      }
-    });
+  const handleSaveEditProduct = async (_productId: number, _productData: ProductFormData, _categoryId: number, _subcategoryId: number) => {
+    // Modal performs the update and shows toasts. Here we just refresh and close.
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
+    } finally {
+      setShowEditModal(false);
+      setEditingProduct(null);
+    }
   };
 
   // Extract products and total from the query data
