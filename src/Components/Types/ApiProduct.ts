@@ -16,9 +16,16 @@ export const convertApiProductToDisplayProduct = (apiProduct: ApiProduct) => {
         : (apiProduct.basePrice + apiProduct.discount).toFixed(2)
       : undefined,
     discount: apiProduct.discount?.toString() || undefined,
-    rating: 0, // Default value since API doesn't provide this
-    ratingCount: '0', // Default value since API doesn't provide this
-    image: apiProduct.productImages[0] || '',
+    // Prefer backend-provided avgRating when available, else fall back to 0
+    rating: Number((apiProduct as any).avgRating ?? (apiProduct as any).rating ?? 0) || 0,
+    // Try reviews array length, then reviewsCount/ratingCount fields, else 0
+    ratingCount: String(
+      (Array.isArray((apiProduct as any).reviews) ? (apiProduct as any).reviews.length : undefined)
+      ?? (apiProduct as any).reviewsCount
+      ?? (apiProduct as any).ratingCount
+      ?? 0
+    ),
+    image: apiProduct.productImages?.[0] || '',
     brand: apiProduct.brand?.name,
     name: apiProduct.name,
     category: apiProduct.subcategory, // Map subcategory to category for compatibility

@@ -36,8 +36,13 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({ products, cur
             originalPrice: undefined,
             discount: (p as any).discount ?? undefined,
             discountType: p.discountType ?? undefined,
-            rating: (p as any).avgRating ?? 0,
-            ratingCount: '0',
+            rating: Number((p as any).avgRating ?? (p as any).rating ?? 0) || 0,
+            ratingCount: String(
+              (Array.isArray((p as any).reviews) ? (p as any).reviews.length : undefined)
+              ?? (p as any).reviewsCount
+              ?? (p as any).ratingCount
+              ?? 0
+            ),
             isBestSeller: false,
             freeDelivery: false,
             image: p.image || (p.productImages && p.productImages[0]) || '',

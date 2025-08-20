@@ -136,8 +136,14 @@ const VendorStore: React.FC = () => {
               price: priceNum > 0 ? priceNum.toFixed(2) : 0,
               originalPrice: originalPrice,
               discount: discount > 0 ? String(product.discount) : undefined,
-              rating: 0,
-              ratingCount: '0',
+              // Map rating info from backend if present
+              rating: Number((product as any).avgRating ?? (product as any).rating ?? 0) || 0,
+              ratingCount: String(
+                (Array.isArray((product as any).reviews) ? (product as any).reviews.length : undefined)
+                ?? (product as any).reviewsCount
+                ?? (product as any).ratingCount
+                ?? 0
+              ),
               isBestSeller: false,
               freeDelivery: false,
               category: { id: product.subcategory.id, name: product.subcategory.name },

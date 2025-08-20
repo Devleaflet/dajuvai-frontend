@@ -52,8 +52,14 @@ const HomepageSections: React.FC = () => {
             discountType: (product.discountType === 'PERCENTAGE' || product.discountType === 'FLAT'
               ? product.discountType
               : undefined) as DisplayProduct['discountType'],
-            rating: 0,
-            ratingCount: '0',
+            // Map ratings from backend if available
+            rating: Number((product as any).avgRating ?? (product as any).rating ?? 0) || 0,
+            ratingCount: String(
+              (Array.isArray((product as any).reviews) ? (product as any).reviews.length : undefined)
+              ?? (product as any).reviewsCount
+              ?? (product as any).ratingCount
+              ?? 0
+            ),
             isBestSeller: false,
             freeDelivery: true,
             image: primaryImage,
