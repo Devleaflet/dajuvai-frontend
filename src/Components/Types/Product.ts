@@ -50,4 +50,13 @@ export interface Product {
     attributes?: Record<string, any>;
     [key: string]: any;
   }>;
+  
+  inventory?: Array<{
+    id?: number;
+    productId?: number;
+    quantity: number;
+    status?: 'IN_STOCK' | 'OUT_OF_STOCK' | 'LOW_STOCK';
+    location?: string;
+    updatedAt?: string;
+  }>;
 }
