@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import { useState } from 'react';
 import OrderTrackingModal from './Modal/OrderTrackingModal';
 import { OrderService } from '../services/orderService';
-import { useAuth } from '../context/AuthContext';
+// import { useAuth } from '../context/AuthContext';
 
 const Footer: React.FC = () => {
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
@@ -21,7 +21,7 @@ const Footer: React.FC = () => {
     message?: string;
   } | null>(null);
 
-  const { token } = useAuth();
+  // const { token } = useAuth();
 
   const handleTrackOrder = async () => {
     if (!orderId.trim() || !email.trim()) {
@@ -134,50 +134,90 @@ const Footer: React.FC = () => {
                   <li><Link to="/contact" className="footer__link">Complain</Link></li>
                 </ul>
               </div>
-
-              <div className="footer__bottom-right">
-          <div className="footer__payment-icons">
-          <h3 className="footer__section-title" style={{marginBottom: '5px'}}>Payment Partners</h3>
-            <img src={esewa} alt="eSewa Payment" className="footer__payment-image" />
-            <img src={npx} alt="NPX Payment" className="footer__payment-image" />
-          </div>
-        </div>
             </div>
           </div>
         </div>
 
-        {/* Minimal Services Marquee */}
-        <div className="footer__marquee" aria-label="DajuVai services">
-          <div className="footer__marquee-track">
-            <div className="footer__marquee-item"><TbTruckDelivery /><span>Delivery — All over Nepal</span></div>
-            <div className="footer__marquee-item"><FaPhoneVolume /><span>Phone — 9700620004</span></div>
-            <div className="footer__marquee-item"><FaPhoneVolume /><span>Landline — 01-4720234</span></div>
-            <div className="footer__marquee-item"><FaLocationDot /><span>Address — Kathmandu, Nepal</span></div>
-            <div className="footer__marquee-item"><TbTruckDelivery /><span>Delivery — All over Nepal</span></div>
-            <div className="footer__marquee-item"><FaPhoneVolume /><span>Phone — 9700620004</span></div>
-            <div className="footer__marquee-item"><FaPhoneVolume /><span>Landline — 01-4720234</span></div>
-            <div className="footer__marquee-item"><FaLocationDot /><span>Address — Kathmandu, Nepal</span></div>
+        {/* Second Div: Three Cards in a Row */}
+        <div className="footer__bottom-links-section">
+          {/* Services Section */}
+          <div className="footer__section footer__services-section">
+            <h3 className="footer__section-title">Services</h3>
+            <div className="footer__services-list">
+              <div className="footer__service-item">
+                <div className="footer__service-icon">
+                  <TbTruckDelivery />
+                </div>
+                <div className="footer__service-text">
+                  <div className="footer__service-label">Delivery</div>
+                  <div className="footer__service-value">All over Nepal</div>
+                </div>
+              </div>
+              <div className="footer__service-item">
+                <div className="footer__service-icon">
+                  <FaPhoneVolume />
+                </div>
+                <div className="footer__service-text">
+                  <div className="footer__service-label">Phone</div>
+                  <div className="footer__service-value">9700620004</div>
+                </div>
+              </div>
+              <div className="footer__service-item">
+                <div className="footer__service-icon">
+                  <FaPhoneVolume />
+                </div>
+                <div className="footer__service-text">
+                  <div className="footer__service-label">Landline</div>
+                  <div className="footer__service-value">01-4720234</div>
+                </div>
+              </div>
+              <div className="footer__service-item">
+                <div className="footer__service-icon">
+                  <FaLocationDot />
+                </div>
+                <div className="footer__service-text">
+                  <div className="footer__service-label">Address</div>
+                  <div className="footer__service-value">Kathmandu, Nepal</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact With Us Section */}
+          <div className="footer__section footer__contact-section">
+            <h3 className="footer__section-title">Contact With Us</h3>
+            <div className="footer__social-icons">
+              <a href="https://www.facebook.com/" className="footer__social-link" target="_blank" rel="noopener noreferrer">
+                <FaFacebookF />
+              </a>
+              <a href="mailto:Dajuvai106@gmail.com" className="footer__social-link" target="_blank" rel="noopener noreferrer">
+                <MdEmail />
+              </a>
+              <a href="https://wa.me/+9779700620004" className="footer__social-link" target="_blank" rel="noopener noreferrer">
+                <IoLogoWhatsapp />
+              </a>
+              <a href="https://www.instagram.com/dajuvai_/" className="footer__social-link" target="_blank" rel="noopener noreferrer">
+                <FaInstagram />
+              </a>
+            </div>
+          </div>
+
+          {/* Payment Methods Section */}
+          <div className="footer__section footer__payment-section">
+            <h3 className="footer__section-title">Payment Methods</h3>
+            <div className="footer__payment-icons">
+              <img src={esewa} alt="eSewa Payment" className="footer__payment-image" />
+              <img src={npx} alt="NPX Payment" className="footer__payment-image" />
+            </div>
           </div>
         </div>
-
       </div>
 
-      {/* Footer Bottom Bar */}
+      {/* Copyright Section */}
       <div className="footer__bottom">
-        <div className="footer__bottom-left">
-          <div className="footer__social-icons">
-            <a href="https://www.facebook.com/" className="footer__social-link" target="_blank" rel="noopener noreferrer"><FaFacebookF /></a>
-            <a href="mailto:Dajuvai106@gmail.com" className="footer__social-link" target="_blank" rel="noopener noreferrer"><MdEmail /></a>
-            <a href="https://wa.me/+9779700620004" className="footer__social-link" target="_blank" rel="noopener noreferrer"><IoLogoWhatsapp /></a>
-            <a href="https://www.instagram.com/dajuvai_/" className="footer__social-link" target="_blank" rel="noopener noreferrer"><FaInstagram /></a>
-          </div>
+        <div className="footer__copyright">
+          Copyright Dajuvai © 2025 - <a href="#" className="footer__copyright-link">Leaflet Digital Solutions Pvt Ltd.</a>
         </div>
-        <div className="footer__bottom-center">
-          <div className="footer__copyright">
-            Copyright Dajuvai  2025 - <a href="#" className="footer__copyright-link">Leaflet Digital Solutions Pvt Ltd.</a>
-          </div>
-        </div>
-       
       </div>
 
       {/* Order Tracking Modal */}

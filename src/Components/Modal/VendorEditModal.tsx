@@ -1,4 +1,3 @@
-// VendorEditModal.tsx
 import React, { useState, useEffect } from "react";
 import "../../Styles/VendorModal.css";
 import { API_BASE_URL } from '../../config';
@@ -21,6 +20,8 @@ interface Vendor {
     id: number;
     name: string;
   };
+  taxNumber?: string;
+  taxDocument?: string;
 }
 
 interface VendorEditModalProps {
@@ -38,12 +39,13 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
     phoneNumber: "",
     isVerified: true,
     status: "Active",
+    taxNumber: "",
+    taxDocument: "",
   });
   const [districts, setDistricts] = useState<District[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch districts when modal opens
   useEffect(() => {
     if (show) {
       fetchDistricts();
@@ -54,7 +56,9 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
     if (vendor) {
       setFormData({
         ...vendor,
-        status: vendor.isVerified ? "Active" : "Inactive"
+        status: vendor.isVerified ? "Active" : "Inactive",
+        taxNumber: vendor.taxNumber || "",
+        taxDocument: vendor.taxDocument || "",
       });
     }
   }, [vendor]);
@@ -85,7 +89,6 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
     const { name, value } = e.target;
     
     if (name === "district") {
-      // Find the selected district object
       const selectedDistrict = districts.find(d => d.name === value);
       setFormData((prev) => ({
         ...prev,
@@ -105,7 +108,6 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
     setLoading(true);
     setError(null);
 
-    // Client-side validation
     if (!formData.businessName.trim()) {
       setError("Business name is required");
       toast.error("Business name is required");
@@ -187,6 +189,15 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
                 required
               />
             </div>
+            <div className="form-group">
+              <label>Tax Number</label>
+              <input
+                type="text"
+                name="taxNumber"
+                value={formData.taxNumber}
+                onChange={handleChange}
+              />
+            </div>
           </div>
 
           <div className="add-vendor-form-row">
@@ -200,6 +211,23 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
                 disabled
                 style={{ backgroundColor: '#f5f5f5', color: '#888' }}
               />
+            </div>
+            <div className="form-group">
+              <label>Tax Document</label>
+              {formData.taxDocument ? (
+                <a href={formData.taxDocument} target="_blank" rel="noopener noreferrer">
+                  View Document
+                </a>
+              ) : (
+                <input
+                  type="text"
+                  name="taxDocument"
+                  value={formData.taxDocument}
+                  readOnly
+                  disabled
+                  style={{ backgroundColor: '#f5f5f5', color: '#888' }}
+                />
+              )}
             </div>
           </div>
 

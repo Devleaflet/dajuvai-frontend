@@ -8,20 +8,26 @@ export interface Vendor {
   profilePicture?: string;
   createdAt?: string;
   updatedAt?: string;
+  taxNumber?: string;
+  taxDocument?: string;
 }
 
 export interface VendorSignupRequest {
   businessName: string;
   email: string;
   password: string;
-  businessAddress: string;
+
   phoneNumber: string;
   district: string;
+  taxNumber?: string;
+  taxDocument?: string;
 }
 
 export interface VendorLoginRequest {
   email: string;
   password: string;
+    taxNumber?: string;
+  taxDocument?: string;
 }
 
 export interface VendorUpdateRequest {
@@ -29,6 +35,8 @@ export interface VendorUpdateRequest {
   email: string;
   phoneNumber: string;
   isVerified: boolean;
+  taxNumber?: string;
+  taxDocument?: string;
 }
 
 export interface ApiResponse<T> {

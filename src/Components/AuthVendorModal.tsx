@@ -82,8 +82,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
   const modalRef = useRef<HTMLDivElement | null>(null);
   const [isStepValid, setIsStepValid] = useState<boolean>(false);
 
-
-
   // Validate current step
   useEffect(() => {
     if (!isLoginMode && !showVerification && !isVerificationComplete) {
@@ -219,7 +217,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
   }, [isOpen]);
 
   const validateSignup = (): boolean => {
- 
     const errors: string[] = [];
     
     if (!businessName.trim()) errors.push("Business name is required");
@@ -232,6 +229,9 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     if (!taxNumber.trim()) errors.push("Pan/Vat number is required");
     if (taxNumber.length !== 9) errors.push("Pan/Vat number must be 9 characters");
     if (!taxDocument) errors.push("Pan/Vat document is required");
+    if (taxDocument && !/\.(jpg|jpeg|png|pdf)$/i.test(taxDocument.name)) {
+      errors.push("Document must be an image (JPG, JPEG, PNG) or PDF");
+    }
     if (!password.trim()) errors.push("Password is required");
     if (password.length < 8) errors.push("Password must be at least 8 characters");
     if (!/[a-z]/.test(password)) errors.push("Password must contain at least one lowercase letter");
@@ -248,19 +248,16 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       return false;
     }
     
-   
     return true;
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files ? e.target.files[0] : null;
     setTaxDocument(file);
-
   };
 
   const handleFileUpload = async (file: File): Promise<string | null> => {
     try {
-    
       const formData = new FormData();
       formData.append("file", file);
       
@@ -274,14 +271,13 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       
       console.log("📤 File upload response:", response.data);
       
-      if (response.data.success) {
- 
+      if (response.data.success && response.data.data) {
         return response.data.data;
       } else {
         throw new Error(response.data.msg || "Failed to upload Pan/Vat document");
       }
     } catch (err) {
-
+      console.error("File upload failed:", err);
       setError("Failed to upload Pan/Vat document. Please try again.");
       toast.error("Failed to upload Pan/Vat document. Please try again.");
       return null;
@@ -295,26 +291,22 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     phoneNumber: string;
     district: string;
     taxNumber: string;
-    taxDocumentUrl: string;
+    taxDocument: string;
   }) => {
     try {
-      
-      
       setIsLoading(true);
       setError("");
-
+      console.log("Sending signup request with payload:", userData);
       const response = await axios.post<SignupResponse>(
         `${API_BASE_URL}/api/vendors/request/register`,
         userData,
         { headers: { "Content-Type": "application/json" } }
       );
-
-      console.log(" Signup API successful:", response.data);
+      console.log("Signup API successful:", response.data);
       setSuccess(response.data.message);
       toast.success("Registration successful! Please check your email for verification code.");
 
       // Set verification state
-     
       setPendingVerificationEmail(userData.email);
       setShowVerification(true);
       setCountdown(120);
@@ -328,18 +320,14 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       setTaxNumber("");
       setTaxDocument(null);
       setCurrentStep(1);
-      
-
     } catch (err) {
-      console.error(" Signup failed:", err);
-      
+      console.error("Signup failed:", err);
       if (axios.isAxiosError(err)) {
-        console.error(" Error details:", {
+        console.error("Error details:", {
           status: err.response?.status,
           statusText: err.response?.statusText,
           data: err.response?.data,
         });
-        
         if (err.response?.status === 400 && err.response?.data?.errors) {
           const errorMessages = Object.entries(err.response.data.errors)
             .map(([field, message]) => `${field}: ${message}`)
@@ -350,8 +338,8 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
           setError(err.response.data.message);
           toast.error(err.response.data.message);
         } else if (err.response?.status === 409) {
-          setError(err.response.data.message || "Email or business name already in use");
-          toast.error("Email or business name already in use");
+          setError(err.response.data.message);
+         
         } else {
           setError(`Signup failed (${err.response?.status || "unknown error"}). Please try again.`);
           toast.error("Signup failed. Please try again.");
@@ -367,43 +355,32 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
 
   const handleVerifyEmail = async () => {
     try {
-   
       setIsLoading(true);
       setError("");
-      
       console.log("📋 Verification data:", { 
         email: pendingVerificationEmail, 
         token: verificationToken 
       });
-
       const response = await axios.post<VerificationResponse>(
         `${API_BASE_URL}/api/auth/verify`,
         { email: pendingVerificationEmail, token: verificationToken },
         { headers: { "Content-Type": "application/json", Accept: "application/json" } }
       );
-
-      console.log(" Verification successful:", response.data);
-      
-      // Show final success message
+      console.log("Verification successful:", response.data);
       setShowVerification(false);
       setIsVerificationComplete(true);
       setVerificationToken("");
       setCountdown(0);
-      
       toast.success("Email verified successfully! Waiting for admin approval.");
-      
     } catch (err) {
-      console.error(" Verification failed:", err);
-      
+      console.error("Verification failed:", err);
       if (axios.isAxiosError(err)) {
-        console.error(" Verification error details:", {
+        console.error("Verification error details:", {
           status: err.response?.status,
           statusText: err.response?.statusText,
           data: err.response?.data,
         });
-        
         const errorMessage = err.response?.data?.message || err.response?.data?.error || "Verification failed";
-        
         if (errorMessage.toLowerCase().includes("token") && errorMessage.toLowerCase().includes("invalid")) {
           setError("The verification code is invalid. Please check the code or request a new one.");
           toast.error("Invalid verification code. Please try again.");
@@ -425,24 +402,18 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
 
   const handleResendVerification = async () => {
     try {
-
       setIsLoading(true);
       setError("");
       setVerificationToken("");
-
       const response = await axios.post<VerificationResponse>(
         `${API_BASE_URL}/api/auth/verify/resend`,
         { email: pendingVerificationEmail },
         { headers: { "Content-Type": "application/json", Accept: "application/json" } }
       );
-
-    
       setSuccess(response.data.message);
       toast.success("Verification code resent successfully");
       setCountdown(120);
     } catch (err) {
-     
-      
       if (axios.isAxiosError(err)) {
         const errorMessage = err.response?.data?.message || err.response?.data?.error || "Failed to resend verification code";
         setError(errorMessage);
@@ -458,16 +429,12 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
 
   const handleLogin = async (userData: { email: string; password: string }) => {
     try {
- 
       setIsLoading(true);
       setError("");
       setSuccess("");
-
       const vendorService = VendorService.getInstance();
       const response = await vendorService.login(userData);
-
       if (response.success && response.token && response.vendor) {
-    
         vendorLogin(response.token, response.vendor);
         navigate("/dashboard");
         onClose();
@@ -479,8 +446,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
         toast.error(response.message || "Login failed");
       }
     } catch (err) {
-
-      
       if (axios.isAxiosError(err)) {
         if (err.response?.status === 401 && err.response?.data?.message === "Email not verified") {
           setPendingVerificationEmail(userData.email);
@@ -506,12 +471,10 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
   };
 
   const handleNext = () => {
-
     setCurrentStep((prev) => Math.min(prev + 1, 3));
   };
 
   const handleBack = () => {
-
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
@@ -520,11 +483,8 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     setError("");
     setSuccess("");
 
-   
-
     // Handle verification form submission
     if (showVerification) {
- 
       if (verificationToken.length !== 6 || !/^\d{6}$/.test(verificationToken)) {
         setError("Please enter a valid 6-digit verification code");
         toast.error("Please enter a valid 6-digit verification code");
@@ -536,7 +496,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
 
     // Handle login form submission
     if (isLoginMode) {
-
       if (!email.trim()) {
         setError("Email is required");
         toast.error("Email is required");
@@ -551,11 +510,8 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       return;
     }
 
-    
-    
     // If not on final step, move to next step
     if (currentStep < 3) {
-     
       if (!isStepValid) {
         toast.error("Please complete all required fields before proceeding.");
         return;
@@ -565,15 +521,11 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     }
 
     // Final step - submit registration
-   
-    
     if (!validateSignup()) {
-      
       return;
     }
 
     if (!taxDocument) {
-     
       setError("Please upload your Pan/Vat document");
       toast.error("Please upload your Pan/Vat document");
       return;
@@ -581,23 +533,27 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
 
     console.log("Uploading file...");
     const uploadedUrl = await handleFileUpload(taxDocument);
-    
-   
+    if (!uploadedUrl) {
+      setError("Failed to obtain document URL. Please try again.");
+      toast.error("Failed to obtain document URL. Please try again.");
+      return;
+    }
 
     console.log("File uploaded, calling signup...");
-    await handleSignup({
+    const userData = {
       businessName: businessName.trim(),
       email: email.trim(),
       password,
       phoneNumber: phoneNumber.trim(),
       district,
       taxNumber: taxNumber.trim(),
-      taxDocumentUrl: uploadedUrl,
-    });
+      taxDocument: uploadedUrl,
+    };
+    console.log("Signup payload:", userData);
+    await handleSignup(userData);
   };
 
   const handleCloseModal = () => {
- 
     onClose();
   };
 
@@ -656,10 +612,8 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
           </div>
         )}
 
-        {/* VERIFICATION COMPLETE MESSAGE */}
         {isVerificationComplete ? (
           <div className="auth-modal__verification-complete">
-           
             <div className="auth-modal__success-message">
               <h3>Email Verified Successfully!</h3>
               <p>Your account has been verified. An admin needs to approve your account.</p>
@@ -676,7 +630,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
           </div>
         ) : (
           <form className="auth-modal__form" onSubmit={handleSubmit}>
-            {/* VERIFICATION FORM */}
             {showVerification ? (
               <>
                 <div className="auth-modal__verification-info">
@@ -724,7 +677,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
               </>
             ) : (
               <>
-                {/* LOGIN FORM */}
                 {isLoginMode ? (
                   <>
                     <div className="auth-modal__form-group">
@@ -749,8 +701,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                         onChange={(e) => setPassword(e.target.value)}
                         required
                         disabled={isLoading}
-                    
-                        style={{        marginBottom:"20px",}}
+                        style={{ marginBottom: "20px" }}
                       />
                       <button
                         type="button"
@@ -759,7 +710,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                           position: "absolute",
                           right: "10px",
                           top: "55%",
-                       
                           transform: "translateY(-55%)",
                           background: "none",
                           border: "none",
@@ -770,10 +720,10 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                         aria-label={showPassword ? "Hide password" : "Show password"}
                       >
                         {showPassword ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
-                    )}
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
+                        ) : (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
+                        )}
                       </button>
                     </div>
                     <button type="submit" className="auth-modal__submit" disabled={isLoading}>
@@ -782,7 +732,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                   </>
                 ) : (
                   <>
-                    {/* SIGNUP STEP 1 */}
                     {currentStep === 1 && (
                       <>
                         <div className="auth-modal__form-group">
@@ -831,7 +780,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                       </>
                     )}
 
-                    {/* SIGNUP STEP 2 */}
                     {currentStep === 2 && (
                       <>
                         <div className="auth-modal__form-group">
@@ -856,8 +804,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             disabled={isLoading}
-           
-                                             style={{        marginBottom:"20px",}}
+                            style={{ marginBottom: "20px" }}
                           />
                           <button
                             type="button"
@@ -876,10 +823,10 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                             aria-label={showPassword ? "Hide password" : "Show password"}
                           >
                             {showPassword ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
-                    )}
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
+                            ) : (
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
+                            )}
                           </button>
                         </div>
                         <div className="auth-modal__form-group" style={{ position: "relative" }}>
@@ -892,7 +839,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             required
                             disabled={isLoading}
-                               style={{        marginBottom:"20px",}}
+                            style={{ marginBottom: "20px" }}
                           />
                           <button
                             type="button"
@@ -910,17 +857,16 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                             }}
                             aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                           >
-                         {showConfirmPassword ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
-                    ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
-                    )}
+                            {showConfirmPassword ? (
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
+                            ) : (
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
+                            )}
                           </button>
                         </div>
                       </>
                     )}
 
-                    {/* SIGNUP STEP 3 */}
                     {currentStep === 3 && (
                       <>
                         <div className="auth-modal__form-group">
@@ -940,7 +886,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                         </div>
                         <div className="auth-modal__form-group">
                           <label className="auth-modal__label">
-                            Please attach your business PAN/VAT registration document
+                            Please attach your business PAN/VAT registration document (Image or PDF)
                           </label>
                           <div className="auth-modal__file-upload">
                             <label htmlFor="taxDocument" className="auth-modal__file-label">
@@ -950,7 +896,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                               id="taxDocument"
                               type="file"
                               className="auth-modal__file-input"
-                              accept="image/*"
+                              accept="image/*,application/pdf"
                               onChange={handleFileChange}
                               required
                               disabled={isLoading}
@@ -963,7 +909,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                       </>
                     )}
 
-                    {/* SIGNUP NAVIGATION BUTTONS */}
                     <div className="auth-modal__step-buttons">
                       {currentStep > 1 && (
                         <button
@@ -990,7 +935,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
           </form>
         )}
 
-        {/* FOOTER - SWITCH BETWEEN LOGIN/SIGNUP */}
         {!showVerification && !isVerificationComplete && (
           <div className="auth-modal__footer">
             <p className="auth-modal__footer-text">

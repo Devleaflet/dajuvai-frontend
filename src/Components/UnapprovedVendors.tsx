@@ -18,6 +18,8 @@ interface AdminVendor {
     name: string;
   };
   status: "Inactive";
+  taxNumber?: string;
+  taxDocument?: string;
 }
 
 interface ApiResponse<T> {
@@ -30,6 +32,8 @@ interface ApiResponse<T> {
 const SkeletonRow: React.FC = () => {
   return (
     <tr>
+      <td><div className="skeleton skeleton-text"></div></td>
+      <td><div className="skeleton skeleton-text"></div></td>
       <td><div className="skeleton skeleton-text"></div></td>
       <td><div className="skeleton skeleton-text"></div></td>
       <td><div className="skeleton skeleton-text"></div></td>
@@ -65,6 +69,8 @@ const createVendorAPI = (token: string | null) => ({
       return (result.data || []).map((vendor) => ({
         ...vendor,
         status: "Inactive",
+        taxNumber: vendor.taxNumber || "N/A",
+        taxDocument: vendor.taxDocument || "N/A",
       }));
     } catch (error) {
       console.error("Error fetching unapproved vendors:", error);
@@ -218,6 +224,7 @@ const UnapprovedVendors: React.FC = () => {
         vendor.businessName.toLowerCase().includes(query.toLowerCase()) ||
         vendor.email.toLowerCase().includes(query.toLowerCase()) ||
         (vendor.phoneNumber || "").toLowerCase().includes(query.toLowerCase()) ||
+        (vendor.taxNumber || "").toLowerCase().includes(query.toLowerCase()) ||
         vendor.id.toString().includes(query.toLowerCase())
     );
     setFilteredVendors(results);
@@ -325,6 +332,8 @@ const UnapprovedVendors: React.FC = () => {
                     <th>Email</th>
                     <th>District</th>
                     <th>Phone Number</th>
+                    <th>Tax Number</th>
+                    <th>Tax Document</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -384,6 +393,10 @@ const UnapprovedVendors: React.FC = () => {
                   <th onClick={() => handleSort("phoneNumber")} className="sortable">
                     Phone Number {sortConfig?.key === "phoneNumber" && (sortConfig.direction === "asc" ? "↑" : "↓")}
                   </th>
+                  <th onClick={() => handleSort("taxNumber")} className="sortable">
+                    Tax Number {sortConfig?.key === "taxNumber" && (sortConfig.direction === "asc" ? "↑" : "↓")}
+                  </th>
+                  <th>Tax Document</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -396,6 +409,16 @@ const UnapprovedVendors: React.FC = () => {
                       <td>{vendor.email}</td>
                       <td>{vendor.district?.name || "N/A"}</td>
                       <td>{vendor.phoneNumber || "N/A"}</td>
+                      <td>{vendor.taxNumber}</td>
+                      <td>
+                        {vendor.taxDocument && vendor.taxDocument !== "N/A" ? (
+                          <a href={vendor.taxDocument} target="_blank" rel="noopener noreferrer">
+                            View Document
+                          </a>
+                        ) : (
+                          "N/A"
+                        )}
+                      </td>
                       <td>
                         <div className="admin-vendors__actions">
                           <button
@@ -446,7 +469,7 @@ const UnapprovedVendors: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="admin-vendors__no-data">
+                    <td colSpan={8} className="admin-vendors__no-data">
                       No unapproved vendors found
                     </td>
                   </tr>

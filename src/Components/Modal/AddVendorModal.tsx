@@ -21,7 +21,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, onAdd, d
     businessName: "",
     email: "",
     password: "",
-    businessAddress: "",
+
     phoneNumber: "",
     district: districts[0]?.name || "",
   });
@@ -58,11 +58,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, onAdd, d
       setLoading(false);
       return;
     }
-    if (!formData.businessAddress.trim()) {
-      toast.error("Business address is required");
-      setLoading(false);
-      return;
-    }
+  
     if (!formData.phoneNumber.trim()) {
       toast.error("Phone number is required");
       setLoading(false);
@@ -90,7 +86,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, onAdd, d
         businessName: "",
         email: "",
         password: "",
-        businessAddress: "",
+     
         phoneNumber: "",
         district: districts[0]?.name || "",
       });
@@ -154,16 +150,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, onAdd, d
                 minLength={8}
               />
             </div>
-            <div className="form-group">
-              <label>Business Address</label>
-              <input
-                type="text"
-                name="businessAddress"
-                value={formData.businessAddress}
-                onChange={handleChange}
-                required
-              />
-            </div>
+          
           </div>
 
           <div className="add-vendor-form-row">

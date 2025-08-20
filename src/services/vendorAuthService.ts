@@ -8,6 +8,9 @@ export interface VendorUpdateRequest {
   phoneNumber: string;
   businessAddress?: string;
   district?: string;
+   taxNumber?: string;
+  taxDocument?: string;
+
 }
 
 export class VendorAuthService {
@@ -25,14 +28,14 @@ static async signup(vendorData: VendorSignupRequest, token: string | null): Prom
       };
     }
 
-    // The API expects district name, not districtId
+
     const payload = {
       businessName: vendorData.businessName,
       email: vendorData.email,
       password: vendorData.password,
-      businessAddress: vendorData.businessAddress,
+    
       phoneNumber: vendorData.phoneNumber,
-      district: vendorData.district, // Send district name as string, not districtId as number
+      district: vendorData.district, 
     };
     console.log("API Request Payload:", payload);
 
