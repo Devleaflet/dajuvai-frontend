@@ -213,6 +213,40 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     }
   };
 
+  // Resolve category by scanning categories' subcategories when only subcategoryId is known
+  const resolveCategoryFromSubcategoryId = async (
+    subId: number
+  ): Promise<{ categoryId: number; subcategories: Subcategory[] } | null> => {
+    try {
+      let cats = categories;
+      if (!cats || cats.length === 0) {
+        try {
+          const fetched = await fetchCategories();
+          cats = fetched || [];
+          setCategories(cats);
+        } catch (e) {
+          console.warn('Failed to fetch categories while resolving category from subcategory:', e);
+          return null;
+        }
+      }
+
+      for (const cat of cats) {
+        try {
+          const subs = await fetchSubcategories(cat.id);
+          if (Array.isArray(subs) && subs.some((s: any) => Number(s.id) === Number(subId))) {
+            return { categoryId: cat.id, subcategories: subs };
+          }
+        } catch (e) {
+          // Continue scanning other categories
+          console.warn(`Failed to fetch subcategories for category ${cat.id}:`, e);
+        }
+      }
+    } catch (e) {
+      console.warn('Unexpected error resolving category from subcategory:', e);
+    }
+    return null;
+  };
+
   const populateFormWithProduct = async () => {
     if (!product) return;
   
@@ -242,14 +276,15 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       if (prod.subcategoryId) subcategoryId = Number(prod.subcategoryId);
     }
   
-    // Strategy 4: Hardcode fallback for testing (you can remove this later)
-    if (!categoryId) {
-      console.warn('⚠️ No category ID found, using fallback value 1');
-      categoryId = 1; // Use a default category for testing
-    }
-    if (!subcategoryId) {
-      console.warn('⚠️ No subcategory ID found, using fallback value 1');
-      subcategoryId = 1; // Use a default subcategory for testing
+    // Strategy 4: If categoryId is still missing but subcategoryId is known, resolve category by scanning
+    if (!categoryId && subcategoryId) {
+      console.warn('ℹ️ Category ID missing; resolving from subcategory...');
+      const resolved = await resolveCategoryFromSubcategoryId(subcategoryId);
+      if (resolved) {
+        categoryId = Number(resolved.categoryId);
+        // Preload subcategories based on resolution result
+        setSubcategories(resolved.subcategories || []);
+      }
     }
   
     console.log('🎯 FINAL EXTRACTED IDs:');
@@ -258,12 +293,12 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   
     setSelectedCategoryId(categoryId);
   
-    // Load subcategories for the product's category
+    // Load subcategories for the product's category (if not already resolved)
     if (categoryId > 0) {
       try {
-        const subcategories = await fetchSubcategories(categoryId);
-        setSubcategories(subcategories || []);
-        console.log('✅ Loaded subcategories:', subcategories);
+        const subs = await fetchSubcategories(categoryId);
+        setSubcategories(subs || []);
+        console.log('✅ Loaded subcategories:', subs);
       } catch (error) {
         console.error('Error loading subcategories:', error);
         toast.error('Failed to load subcategories');
@@ -371,7 +406,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       size: Array.isArray(fullProduct.size) ? fullProduct.size : [],
       status: fullProduct.status || InventoryStatus.AVAILABLE,
       productImages: resolvedProductImages as (File | string)[],
-      categoryId: Number(fullProduct.categoryId || selectedCategoryId || 0),
+      categoryId: Number(categoryId || fullProduct.categoryId || selectedCategoryId || 0),
       subcategoryId: Number(subcategoryId || fullProduct.subcategory?.id || 0),
       quantity: Number(fullProduct.quantity ?? fullProduct.stock ?? 0),
       brand_id: fullProduct.brand_id ?? null,

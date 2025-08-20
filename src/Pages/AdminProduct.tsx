@@ -3,7 +3,7 @@ import { AdminSidebar } from "../Components/AdminSidebar";
 import Header from "../Components/Header";
 import Pagination from "../Components/Pagination";
 import DeleteModal from "../Components/Modal/DeleteModal";
-import EditProductModal from "../Components/Modal/EditProductModal";
+import EditProductModal from "../Components/Modal/EditProductModalRedesigned";
 import { useAuth } from "../context/AuthContext";
 import ProductService from "../services/productService";
 import "../Styles/AdminProduct.css";
@@ -16,7 +16,7 @@ import defaultProductImage from "../assets/logo.webp";
 
 const SkeletonRow: React.FC = () => (
   <tr>
-    {[...Array(7)].map((_, i) => (
+    {[...Array(6)].map((_, i) => (
       <td key={i}>
         <div className="skeleton skeleton-text" />
       </td>
@@ -72,41 +72,32 @@ const AdminProduct: React.FC = () => {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Update product function
-  const updateProduct = useCallback(async (
-    productId: number,
-    product: ProductFormData,
-    categoryId: number,
-    subcategoryId: number
-  ) => {
-    setIsUpdating(true);
-    console.log("AdminProduct: updateProduct called with token:", token ? "Present" : "Missing");
-    console.log("AdminProduct: User role:", user?.role);
-    try {
-      const updatedProduct = await productService.updateProduct(
-        categoryId,
-        subcategoryId,
-        productId,
-        product,
-        token // <-- pass the token here!
-      );
-      setProducts(prevProducts => 
-        prevProducts.map(p => p.id === updatedProduct.id ? updatedProduct : p)
-      );
-      setFilteredProducts(prevProducts => 
-        prevProducts.map(p => p.id === updatedProduct.id ? updatedProduct : p)
-      );
-      setShowEditModal(false);
-      setProductToEdit(null);
-      toast.success("Product updated successfully");
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to update product";
-      toast.error(errorMessage);
-      throw err;
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [productService, token, user?.role]);
+  // Save callback from modal: modal already performed the API update (new JSON flow).
+  // Here we only refresh the list to reflect changes and close the modal.
+  const handleSaveProduct = useCallback(
+    async (
+      _productId: number,
+      _product: ProductFormData,
+      _categoryId: number,
+      _subcategoryId: number
+    ) => {
+      try {
+        setIsUpdating(true);
+        await fetchProducts();
+        setShowEditModal(false);
+        setProductToEdit(null);
+        // Modal already shows success toast; keep page quiet.
+      } catch (err: unknown) {
+        console.error("AdminProduct: Error refreshing after update:", err);
+        const errorMessage = err instanceof Error ? err.message : "Failed to refresh products";
+        toast.error(errorMessage);
+        throw err; // let modal handle if needed
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [fetchProducts]
+  );
 
   // Delete product function
   const deleteProduct = useCallback(async (product: ApiProduct) => {
@@ -210,28 +201,7 @@ const AdminProduct: React.FC = () => {
     setShowEditModal(true);
   }, []);
 
-  const handleSaveProduct = useCallback(
-    async (
-      productId: number,
-      product: ProductFormData,
-      categoryId: number,
-      subcategoryId: number
-    ) => {
-      try {
-        console.log("AdminProduct: Updating product:", {
-          productId,
-          product,
-          categoryId,
-          subcategoryId,
-        });
-        await updateProduct(productId, product, categoryId, subcategoryId);
-      } catch (err: unknown) {
-        console.error("AdminProduct: Error updating product:", err);
-        throw err; // Re-throw to let the modal handle the error
-      }
-    },
-    [updateProduct]
-  );
+  // Note: handleSaveProduct replaced above; this block intentionally removed to avoid double update calls.
 
   const handleDeleteProduct = useCallback(async () => {
     if (!productToDelete) return;
@@ -295,18 +265,17 @@ const AdminProduct: React.FC = () => {
               <thead className="admin-products__table-head">
                 <tr>
                   <th>Image</th>
-                  {["id", "name", "basePrice", "stock"].map((key) => (
+                  {['id', 'name', 'basePrice', 'stock'].map((key) => (
                     <th
                       key={key}
                       onClick={() => handleSort(key as keyof ApiProduct)}
                       className="sortable"
                     >
-                      {key.charAt(0).toUpperCase() + key.slice(1)}{" "}
+                      {key.charAt(0).toUpperCase() + key.slice(1)}{' '}
                       {sortConfig?.key === key &&
-                        (sortConfig.direction === "asc" ? "↑" : "↓")}
+                        (sortConfig.direction === 'asc' ? '↑' : '↓')}
                     </th>
                   ))}
-                  <th>Discount</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -316,32 +285,59 @@ const AdminProduct: React.FC = () => {
                     <SkeletonRow key={i} />
                   ))
                 ) : currentProducts.length > 0 ? (
-                  currentProducts.map((product) => (
-                    <tr key={product.id} className="admin-products__table-row">
-                      <td className="admin-products__image-cell">
-                        <img
-                          src={
-                            product.productImages?.length > 0
-                              ? product.productImages[0]
-                              : defaultProductImage
-                          }
-                          alt={product.name}
-                          className="admin-products__product-image"
-                        />
-                      </td>
-                      <td>{product.id}</td>
-                      <td>{product.name}</td>
-                      <td>Rs. {product.basePrice}</td>
-                      <td>{product.stock}</td>
-                      <td>
-                        {product.discount
-                          ? `${product.discount}${
-                              product.discountType === "PERCENTAGE" ? "%" : "$"
-                            }`
-                          : "None"}
-                      </td>
-                      <td>
-                        <div className="admin-products__actions">
+                  currentProducts.map((product) => {
+                    const firstVariant = product.hasVariants && product.variants && product.variants.length > 0
+                      ? product.variants[0]
+                      : null;
+                    // Variant price may be provided as `price` (number) or `basePrice` (string/number) from API
+                    const variantPrice: number | undefined = (() => {
+                      if (!product.hasVariants || !product.variants || product.variants.length === 0) return undefined;
+                      const getVarPrice = (v: any): number | undefined => {
+                        if (typeof v?.price === 'number' && isFinite(v.price) && v.price > 0) return v.price;
+                        if (typeof v?.basePrice === 'string') {
+                          const parsed = parseFloat(v.basePrice);
+                          if (isFinite(parsed) && parsed > 0) return parsed;
+                        }
+                        if (typeof v?.basePrice === 'number' && isFinite(v.basePrice) && v.basePrice > 0) return v.basePrice;
+                        return undefined;
+                      };
+                      for (const v of product.variants as any[]) {
+                        const p = getVarPrice(v);
+                        if (p && p > 0) return p;
+                      }
+                      return undefined;
+                    })();
+                    const displayPrice = (typeof product.basePrice === 'number' && product.basePrice > 0)
+                      ? product.basePrice
+                      : (variantPrice ?? 0);
+                    const displayStock = product.stock && product.stock > 0 ? product.stock : (firstVariant?.stock ?? 0);
+                    // Only use string URLs for image src
+                    const variantImgStr = firstVariant
+                      ? (
+                          (Array.isArray(firstVariant.variantImages) && typeof firstVariant.variantImages[0] === 'string'
+                            ? (firstVariant.variantImages[0] as string)
+                            : undefined) ||
+                          (Array.isArray(firstVariant.images) && typeof firstVariant.images[0] === 'string'
+                            ? (firstVariant.images[0] as string)
+                            : undefined)
+                        )
+                      : undefined;
+                    const displayImage: string = (product.productImages?.[0]) || variantImgStr || (defaultProductImage as string);
+                    return (
+                      <tr key={product.id} className="admin-products__table-row">
+                        <td className="admin-products__image-cell">
+                          <img
+                            src={displayImage}
+                            alt={product.name}
+                            className="admin-products__product-image"
+                          />
+                        </td>
+                        <td>{product.id}</td>
+                        <td>{product.name}</td>
+                        <td>Rs. {displayPrice.toFixed ? displayPrice.toFixed(2) : Number(displayPrice).toFixed(2)}</td>
+                        <td>{displayStock}</td>
+                        <td>
+                          <div className="admin-products__actions">
                           <button
                             className="admin-products__action-btn admin-products__edit-btn"
                             onClick={() => handleEditProduct(product)}
@@ -406,10 +402,11 @@ const AdminProduct: React.FC = () => {
                         </div>
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 ) : (
                   <tr>
-                    <td colSpan={7} className="admin-products__no-data">
+                    <td colSpan={6} className="admin-products__no-data">
                       No products found
                     </td>
                   </tr>
