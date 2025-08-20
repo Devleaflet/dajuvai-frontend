@@ -526,7 +526,7 @@ const Navbar: React.FC = () => {
   const handleSearchResultClick = (productId: number) => {
     setShowSearchDropdown(false);
     setSearchQuery("");
-    navigate(`/product-page/1/3/${productId}`);
+    navigate(`/product-page/${productId}`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

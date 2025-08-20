@@ -115,7 +115,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   };
 
   return (
-    <Link to={`/product-page/${product.category?.id || 1}/${product.subcategory?.id || 1}/${product.id}`} className="product-card__link-wrapper">
+    <Link to={`/product-page/${product.id}`} className="product-card__link-wrapper">
       <div className="product-card">
         <div className="product-card__header">
           {isBestSeller && <span className="product-card__tag">Best seller</span>}

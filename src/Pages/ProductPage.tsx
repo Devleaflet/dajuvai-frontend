@@ -258,6 +258,21 @@ const ProductPage = () => {
         }
       });
 
+      // Derive category/subcategory IDs robustly (support nested objects or top-level IDs)
+      const derivedCategoryId = (apiProduct?.category?.id != null)
+        ? Number(apiProduct.category.id)
+        : (apiProduct as any)?.categoryId != null
+          ? Number((apiProduct as any).categoryId)
+          : undefined;
+      const derivedCategoryName = apiProduct?.category?.name;
+
+      const derivedSubcategoryId = (apiProduct?.subcategory?.id != null)
+        ? Number(apiProduct.subcategory.id)
+        : (apiProduct as any)?.subcategoryId != null
+          ? Number((apiProduct as any).subcategoryId)
+          : undefined;
+      const derivedSubcategoryName = apiProduct?.subcategory?.name;
+
       return {
         product: {
           id: apiProduct.id,
@@ -269,14 +284,14 @@ const ProductPage = () => {
           ratingCount: '0', // Will be populated from reviews
           image: allImages[0] || defaultProductImage,
           brand: apiProduct.brand?.name || 'Unknown Brand',
-          category: { 
-            id: apiProduct.category?.id || 0, 
-            name: apiProduct.category?.name || 'Category' 
-          },
-          subcategory: { 
-            id: apiProduct.subcategory?.id || 0, 
-            name: apiProduct.subcategory?.name || 'Subcategory' 
-          },
+          category: derivedCategoryId != null ? {
+            id: derivedCategoryId,
+            name: derivedCategoryName || 'Category'
+          } : undefined,
+          subcategory: derivedSubcategoryId != null ? {
+            id: derivedSubcategoryId,
+            name: derivedSubcategoryName || 'Subcategory'
+          } : undefined,
           vendor: apiProduct.vendor || { id: null, businessName: 'Unknown Vendor' },
           productImages: allImages,
           colors: Array.from(colorOptions),
@@ -315,23 +330,78 @@ const ProductPage = () => {
     gcTime: 10 * 60 * 1000, // Keep unused data for 10 minutes
   });
 
-  // Fetch recommended products
-  const { data: recommendedProducts } = useQuery({
-    queryKey: ['recommendedProducts', categoryId, subcategoryId],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (categoryId) params.append('categoryId', categoryId);
-      if (subcategoryId) params.append('subcategoryId', subcategoryId);
-      
-      const response = await axiosInstance.get(`/api/categories/all/products?${params.toString()}`);
-      return response.data.data || [];
-    },
-    enabled: !!categoryId || !!subcategoryId,
-    staleTime: 5 * 60 * 1000
-  });
 
   const product = productData?.product;
   const vendorId = productData?.vendorId;
+
+  // Determine effective category/subcategory for recommendations
+  const effectiveCategoryId = categoryId ?? (product?.category?.id != null ? String(product.category.id) : undefined);
+  const effectiveSubcategoryId = subcategoryId ?? (product?.subcategory?.id != null ? String(product.subcategory.id) : undefined);
+
+  // Fetch recommended products using effective IDs (works even when URL lacks params)
+  const { data: recommendedProducts, isLoading: isLoadingRecommended } = useQuery({
+    queryKey: ['recommendedProducts', effectiveCategoryId, effectiveSubcategoryId],
+    queryFn: async () => {
+      const fetchWithParams = async (p: URLSearchParams) => {
+        const url = p.toString()
+          ? `/api/categories/all/products?${p.toString()}`
+          : `/api/categories/all/products`;
+        const res = await axiosInstance.get(url);
+        return (res?.data?.data ?? []) as any[];
+      };
+
+      try {
+        // 1) Try most-specific: subcategory + category when both available
+        if (effectiveCategoryId && effectiveSubcategoryId) {
+          const params = new URLSearchParams();
+          params.append('categoryId', String(effectiveCategoryId));
+          params.append('subcategoryId', String(effectiveSubcategoryId));
+          let data = await fetchWithParams(params);
+          // If only the current product shows up or very few, broaden scope
+          if (!Array.isArray(data) || data.length <= 1) {
+            const catOnly = new URLSearchParams();
+            catOnly.append('categoryId', String(effectiveCategoryId));
+            data = await fetchWithParams(catOnly);
+            if (!Array.isArray(data) || data.length <= 1) {
+              data = await fetchWithParams(new URLSearchParams());
+            }
+          }
+          return data;
+        }
+
+        // 2) If only subcategory
+        if (effectiveSubcategoryId && !effectiveCategoryId) {
+          const params = new URLSearchParams();
+          params.append('subcategoryId', String(effectiveSubcategoryId));
+          let data = await fetchWithParams(params);
+          if (!Array.isArray(data) || data.length <= 1) {
+            data = await fetchWithParams(new URLSearchParams());
+          }
+          return data;
+        }
+
+        // 3) If only category
+        if (effectiveCategoryId && !effectiveSubcategoryId) {
+          const params = new URLSearchParams();
+          params.append('categoryId', String(effectiveCategoryId));
+          let data = await fetchWithParams(params);
+          if (!Array.isArray(data) || data.length <= 1) {
+            data = await fetchWithParams(new URLSearchParams());
+          }
+          return data;
+        }
+
+        // 4) Fallback: no filters available, fetch general list
+        return await fetchWithParams(new URLSearchParams());
+      } catch (error) {
+        console.error('Failed to fetch recommended products:', error);
+        return [];
+      }
+    },
+    // Always enabled so we can show general recommendations as a fallback
+    enabled: true,
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Safely format variant attributes coming from different API shapes
   const formatVariantAttributes = (attributes: any): string => {
@@ -1040,16 +1110,15 @@ const ProductPage = () => {
       </div>
       
       {/* Recommended Products */}
-      {recommendedProducts && (
-        <div className="product-page__recommended">
-          <RecommendedProducts 
-            products={recommendedProducts} 
-            currentProductId={Number(id)} 
-            fallbackCategoryId={categoryId}
-            fallbackSubcategoryId={subcategoryId}
-          />
-        </div>
-      )}
+      <div className="product-page__recommended">
+        <RecommendedProducts 
+          products={recommendedProducts ?? []}
+          currentProductId={product.id}
+          fallbackCategoryId={effectiveCategoryId}
+          fallbackSubcategoryId={effectiveSubcategoryId}
+          isLoading={isLoadingRecommended}
+        />
+      </div>
      
       {/* Toast Notification */}
       {showToast && (

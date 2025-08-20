@@ -9,21 +9,49 @@ interface RecommendedProductsProps {
   // Optional fallbacks from current page URL if product items miss categoryId/subcategoryId
   fallbackCategoryId?: string | number;
   fallbackSubcategoryId?: string | number;
+  isLoading?: boolean;
 }
 
-const RecommendedProducts: React.FC<RecommendedProductsProps> = ({ products, currentProductId, fallbackCategoryId, fallbackSubcategoryId }) => {
+const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
+  products,
+  currentProductId,
+  fallbackCategoryId,
+  fallbackSubcategoryId,
+  isLoading = false
+}) => {
   // Filter out current product from recommendations
   const filteredProducts = products.filter(p => p.id !== currentProductId);
 
-  if (filteredProducts.length === 0) return null;
+  if (isLoading) {
+    return (
+      <div className="recommended-loading">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="recommended-skeleton" />
+        ))}
+      </div>
+    );
+  }
+
+  if (filteredProducts.length === 0) {
+    return (
+      <div className="recommended-empty" style={{ padding: '20px', textAlign: 'center' }}>
+        <p style={{ color: '#666' }}>No recommendations available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="recommended-products">
       <h3>Recommended for you</h3>
       <div className="recommended-products__grid">
         {filteredProducts.slice(0, 8).map((p) => {
-          const categoryId = p.categoryId ?? (fallbackCategoryId != null ? Number(fallbackCategoryId) : undefined);
-          const subcatId = p.subcategory?.id ?? (fallbackSubcategoryId != null ? Number(fallbackSubcategoryId) : undefined);
+          // Derive IDs from multiple possible shapes
+          const categoryId = (p as any).categoryId
+            ?? (p as any)?.category?.id
+            ?? (fallbackCategoryId != null ? Number(fallbackCategoryId) : undefined);
+          const subcatId = (p as any).subcategoryId
+            ?? (p as any)?.subcategory?.id
+            ?? (fallbackSubcategoryId != null ? Number(fallbackSubcategoryId) : undefined);
 
           // Map ApiProduct to UI Product expected by ProductCard
           const mapped: UIProduct = {
@@ -47,8 +75,8 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({ products, cur
             freeDelivery: false,
             image: p.image || (p.productImages && p.productImages[0]) || '',
             stock: (p as any).stock ?? undefined,
-            category: categoryId != null ? { id: categoryId } as any : undefined,
-            subcategory: subcatId != null ? { id: subcatId, name: p.subcategory?.name || '' } : undefined,
+            category: categoryId != null ? { id: Number(categoryId) } as any : undefined,
+            subcategory: subcatId != null ? { id: Number(subcatId), name: (p as any)?.subcategory?.name || '' } : undefined,
             productImages: p.productImages || [],
             // Pass variants through with fields ProductCard may use (variantImages, discount, discountType, price/basePrice)
             variants: (p.variants || []).map((v: any) => ({

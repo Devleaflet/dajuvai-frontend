@@ -57,8 +57,8 @@ const Catalog: React.FC = () => {
   };
 
   const handleProductClick = (product: Product) => {
-    // Align navigation with ProductCard.tsx
-    navigate(`/product-page/${product.category?.id || 1}/${product.subcategory?.id || 1}/${product.id}`);
+    // Navigate using product ID only; ProductPage derives category/subcategory from product
+    navigate(`/product-page/${product.id}`);
   };
 
   const calculateDiscountedPrice = (product: Product) => {
@@ -116,13 +116,13 @@ const Catalog: React.FC = () => {
               <h3 className="catalog__product-name">{product.title || product.name}</h3>
               <p className="catalog__product-description">{product.description}</p>
               <div className="product-price">
-                {product.discount !== undefined && Number(product.discount) > 0 ? (
+                {product.originalPrice && Number(product.originalPrice) > Number(product.price) ? (
                   <>
-                    <span className="original-price">Rs. {(Number(product.price)).toFixed(2)}</span>
-                    <span className="discounted-price">Rs. {(calculateDiscountedPrice(product)).toFixed(2)}</span>
+                    <span className="original-price">Rs. {Number(product.originalPrice).toFixed(2)}</span>
+                    <span className="discounted-price">Rs. {Number(product.price).toFixed(2)}</span>
                   </>
                 ) : (
-                  <span className="price">Rs. {(Number(product.price)).toFixed(2)}</span>
+                  <span className="price">Rs. {Number(product.price).toFixed(2)}</span>
                 )}
               </div>
               {product.brand && (

@@ -102,6 +102,7 @@ function App() {
         <Route path="/about" element={<AboutUs />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/product-page/:id" element={<ProductPage />} />
         <Route path="/product-page/:categoryId/:subcategoryId/:id" element={<ProductPage />} />
         <Route path="/user-profile" element={<UserProfile />} />
         <Route path="/shop" element={<Shop />} />
