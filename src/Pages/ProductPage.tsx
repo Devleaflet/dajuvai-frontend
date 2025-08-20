@@ -809,7 +809,7 @@ const ProductPage = () => {
               )}
               
               <div style={{
-                marginBottom: '20px',
+                marginBottom: '0px',
                 fontSize: '14px',
                 color: '#666',
                 display: 'flex',
@@ -817,36 +817,7 @@ const ProductPage = () => {
                 flexWrap: 'wrap',
                 gap: '8px'
               }}>
-                <span>Category: </span>
-                <Link 
-                  to={`/category/${displayCategory?.id}`}
-                  style={{
-                    color: '#0066cc',
-                    textDecoration: 'none',
-                    ':hover': {
-                      textDecoration: 'underline'
-                    }
-                  } as React.CSSProperties}
-                >
-                  {displayCategory?.name || 'Uncategorized'}
-                </Link>
-                {displaySubcategory && (
-                  <>
-                    <span>›</span>
-                    <Link 
-                      to={`/category/${displayCategory?.id}?subcategory=${displaySubcategory.id}`}
-                      style={{
-                        color: '#0066cc',
-                        textDecoration: 'none',
-                        ':hover': {
-                          textDecoration: 'underline'
-                        }
-                      } as React.CSSProperties}
-                    >
-                      {displaySubcategory.name}
-                    </Link>
-                  </>
-                )}
+               
               </div>
               
               {product.hasVariants && product.variants && product.variants.length > 1 && (
