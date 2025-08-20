@@ -31,11 +31,11 @@ import iphone from "../assets/iphone.jpg";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import { fetchSubCategory } from "../api/subcategory";
-
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "../config";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import VendorAuthModal from "./AuthVendorModal";
+import { toast } from "react-hot-toast";
 
 interface Category {
   id: number;
@@ -66,7 +66,7 @@ const Navbar: React.FC = () => {
   const [vendorAuthModalOpen, setVendorAuthModalOpen] = useState<boolean>(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState<boolean>(false);
   const [moreDropdownOpen, setMoreDropdownOpen] = useState<boolean>(false);
-  const [showComingSoonPopup, setShowComingSoonPopup] = useState<boolean>(false);
+  const [sideMoreOpen, setSideMoreOpen] = useState<boolean>(false);
   const [isCategoriesReady, setIsCategoriesReady] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [dropdownSubcategories, setDropdownSubcategories] = useState([]);
@@ -232,7 +232,7 @@ const Navbar: React.FC = () => {
     }
   };
 
- const toggleVendorAuthModal = (e?: React.MouseEvent): void => {
+  const toggleVendorAuthModal = (e?: React.MouseEvent): void => {
     e?.preventDefault();
     setVendorAuthModalOpen(!vendorAuthModalOpen);
     if (sideMenuOpen) {
@@ -240,10 +240,10 @@ const Navbar: React.FC = () => {
       document.body.classList.remove("navbar--menu-open");
     }
   };
+
   const showComingSoon = () => {
-    setShowComingSoonPopup(true);
     setMoreDropdownOpen(false);
-    setTimeout(() => setShowComingSoonPopup(false), 3000);
+    toast('🚀 Coming soon! This feature will be available soon.', { icon: '✨' });
   };
 
   useEffect(() => {
@@ -979,6 +979,9 @@ const Navbar: React.FC = () => {
                     <button
                       className="navbar__more-dropdown-link"
                       onClick={showComingSoon}
+                      style={{
+                        cursor:'pointer'
+                      }}
                     >
                       DajuVai Rental
                     </button>
@@ -1144,7 +1147,48 @@ const Navbar: React.FC = () => {
             </button>
             <h3 className="navbar__side-menu-title">Menu</h3>
           </div>
-
+          <div className="navbar__side-menu-category">
+            <button
+              className="navbar__side-menu-category-button"
+              onClick={() => setSideMoreOpen(!sideMoreOpen)}
+              aria-expanded={sideMoreOpen}
+            >
+              <span>More</span>
+              <FaChevronDown
+                size={20}
+                className={`navbar__side-menu-category-icon ${
+                  sideMoreOpen ? "navbar__side-menu-category-icon--open" : ""
+                }`}
+              />
+            </button>
+            {sideMoreOpen && (
+              <div className="navbar__side-menu-subcategories">
+                <div
+                  className="navbar__side-menu-subcategory"
+                  style={{cursor:'pointer'}}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    showComingSoon();
+                    setSideMenuOpen(false);
+                    
+                  }}
+                >
+                  DajuVai Rental
+                </div>
+                <div
+                  className="navbar__side-menu-subcategory"
+                  style={{cursor:'pointer'}}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    showComingSoon();
+                    setSideMenuOpen(false);
+                  }}
+                >
+                  DajuVai Services
+                </div>
+              </div>
+            )}
+          </div>
          
 
           {renderSideMenuCategories()}
@@ -1417,16 +1461,6 @@ const Navbar: React.FC = () => {
           <span className="navbar__mobile-dock-text">Wishlist</span>
         </NavLink>
       </div>
-
-      {/* Coming Soon Popup */}
-      {showComingSoonPopup && (
-        <div className="navbar__coming-soon-popup">
-          <div className="navbar__coming-soon-content">
-            <h3>🚀 Coming Soon!</h3>
-            <p>This feature is under development and will be available soon.</p>
-          </div>
-        </div>
-      )}
 
       <AuthModal
         isOpen={authModalOpen}
