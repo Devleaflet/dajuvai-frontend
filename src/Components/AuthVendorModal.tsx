@@ -82,14 +82,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
   const modalRef = useRef<HTMLDivElement | null>(null);
   const [isStepValid, setIsStepValid] = useState<boolean>(false);
 
-  // Debug verification state changes
-  useEffect(() => {
-    console.log("🔍 Verification state changed:", {
-      showVerification,
-      isVerificationComplete,
-      pendingVerificationEmail
-    });
-  }, [showVerification, isVerificationComplete, pendingVerificationEmail]);
+
 
   // Validate current step
   useEffect(() => {
@@ -226,7 +219,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
   }, [isOpen]);
 
   const validateSignup = (): boolean => {
-    console.log("🔍 Starting validation...");
+ 
     const errors: string[] = [];
     
     if (!businessName.trim()) errors.push("Business name is required");
@@ -255,19 +248,19 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       return false;
     }
     
-    console.log("✅ Validation passed");
+   
     return true;
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files ? e.target.files[0] : null;
     setTaxDocument(file);
-    console.log("📁 File selected:", file?.name);
+
   };
 
   const handleFileUpload = async (file: File): Promise<string | null> => {
     try {
-      console.log("📤 Starting file upload...");
+    
       const formData = new FormData();
       formData.append("file", file);
       
@@ -282,13 +275,13 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       console.log("📤 File upload response:", response.data);
       
       if (response.data.success) {
-        console.log("✅ File upload successful:", response.data.data);
+ 
         return response.data.data;
       } else {
         throw new Error(response.data.msg || "Failed to upload Pan/Vat document");
       }
     } catch (err) {
-      console.error("❌ File upload error:", err);
+
       setError("Failed to upload Pan/Vat document. Please try again.");
       toast.error("Failed to upload Pan/Vat document. Please try again.");
       return null;
@@ -321,7 +314,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       toast.success("Registration successful! Please check your email for verification code.");
 
       // Set verification state
-      console.log("🔄 Setting verification state...");
+     
       setPendingVerificationEmail(userData.email);
       setShowVerification(true);
       setCountdown(120);
@@ -374,7 +367,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
 
   const handleVerifyEmail = async () => {
     try {
-      console.log("🔍 Starting email verification...");
+   
       setIsLoading(true);
       setError("");
       
@@ -432,7 +425,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
 
   const handleResendVerification = async () => {
     try {
-      console.log("🔄 Resending verification code...");
+
       setIsLoading(true);
       setError("");
       setVerificationToken("");
@@ -513,12 +506,12 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
   };
 
   const handleNext = () => {
-    console.log(`📈 Moving from step ${currentStep} to ${currentStep + 1}`);
+
     setCurrentStep((prev) => Math.min(prev + 1, 3));
   };
 
   const handleBack = () => {
-    console.log(`📉 Moving from step ${currentStep} to ${currentStep - 1}`);
+
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
@@ -527,13 +520,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     setError("");
     setSuccess("");
 
-    console.log("🎯 Submit handler called", {
-      showVerification,
-      isVerificationComplete,
-      isLoginMode,
-      currentStep,
-      isStepValid
-    });
+   
 
     // Handle verification form submission
     if (showVerification) {
