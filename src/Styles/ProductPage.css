@@ -16,6 +16,7 @@
 .product-page__content {
   padding: 1rem;
   display: flex;
+  gap: 1.5rem;
 }
 
 /* Block: product-gallery */

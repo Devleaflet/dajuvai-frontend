@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import AuthModal from "./AuthModal";
 import defaultProductImage from "../assets/logo.webp";
 import { getProductPrimaryImage } from "../utils/getProductPrimaryImage";
+import { toast } from "react-hot-toast";
 // Removed VariantSelectModal to directly add the displayed variant on cards
 
 interface ProductCardProps {
@@ -19,7 +20,6 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { handleCartOnAdd } = useCart();
   const { token, isAuthenticated } = useAuth();
-  const [toast, setToast] = useState<string | null>(null);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -95,15 +95,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     }
     setWishlistLoading(true);
     try {
-      // If there's exactly one variant, pass its id; otherwise leave undefined
-      const variantId = product.variants?.length === 1 ? product.variants[0].id : undefined;
+      // Card displays the first variant's price/image when variants exist
+      // So add that specific variant to wishlist for consistency
+      const variantCount = product.variants?.length || 0;
+      const variantId = variantCount > 0 ? product.variants![0].id : undefined;
       await addToWishlist(id, variantId, token);
-      setToast("Added to wishlist!");
-    } catch (e) {
-      setToast("Failed to add to wishlist");
+      toast.success("Added to wishlist");
+    } catch (e: any) {
+      const status = e?.response?.status;
+      const msg: string = e?.response?.data?.message || e?.response?.data?.error || e?.message || "";
+      if (status === 409 || /already/i.test(msg)) {
+        toast("Already present in the wishlist");
+      } else {
+        toast.error("Failed to add to wishlist");
+      }
     } finally {
       setWishlistLoading(false);
-      setTimeout(() => setToast(null), 2000);
     }
   };
 
@@ -210,9 +217,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             )}
           </div>
         </div>
-        {toast && (
-          <div className="product-card__toast">{toast}</div>
-        )}
       </div>
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
     </Link>

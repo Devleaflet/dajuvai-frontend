@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { toast } from 'react-hot-toast';
 
 interface Category {
   id: number;
@@ -532,9 +533,15 @@ const ProductPage = () => {
     try {
       const variantId = selectedVariant?.id;
       await addToWishlist(product.id, variantId, token);
-      showNotification('Product added to wishlist!');
-    } catch {
-      showNotification('Failed to add to wishlist');
+      toast.success('Added to wishlist');
+    } catch (e: any) {
+      const status = e?.response?.status;
+      const msg: string = e?.response?.data?.message || e?.response?.data?.error || e?.message || '';
+      if (status === 409 || /already/i.test(msg)) {
+        toast('Already present in the wishlist');
+      } else {
+        toast.error('Failed to add to wishlist');
+      }
     }
   };
 
