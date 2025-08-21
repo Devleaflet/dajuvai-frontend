@@ -1,4 +1,4 @@
-import React, { useState} from 'react';
+import React, { useState } from 'react';
 import { Sidebar } from '../Components/Sidebar';
 import Header from '../Components/Header';
 import ProductList from '../Components/ProductList';
@@ -29,12 +29,12 @@ const ProductListSkeleton: React.FC = () => {
       <div className="vendor-product__skeleton-table">
         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
           <div key={`row-${i}`} className="vendor-product__skeleton-row">
-            <div className="vendor-product__skeleton-cell shimmer" style={{width:'2.5rem',height:'2.5rem',borderRadius:'0.5rem'}}></div>
-            <div className="vendor-product__skeleton-cell shimmer" style={{width:'8rem',height:'1.1rem'}}></div>
-            <div className="vendor-product__skeleton-cell shimmer" style={{width:'5rem',height:'1.1rem'}}></div>
-            <div className="vendor-product__skeleton-cell shimmer" style={{width:'4rem',height:'1.1rem'}}></div>
-            <div className="vendor-product__skeleton-cell shimmer" style={{width:'3rem',height:'1.1rem'}}></div>
-            <div className="vendor-product__skeleton-cell shimmer" style={{width:'2.5rem',height:'1.1rem'}}></div>
+            <div className="vendor-product__skeleton-cell shimmer" style={{ width: '2.5rem', height: '2.5rem', borderRadius: '0.5rem' }}></div>
+            <div className="vendor-product__skeleton-cell shimmer" style={{ width: '8rem', height: '1.1rem' }}></div>
+            <div className="vendor-product__skeleton-cell shimmer" style={{ width: '5rem', height: '1.1rem' }}></div>
+            <div className="vendor-product__skeleton-cell shimmer" style={{ width: '4rem', height: '1.1rem' }}></div>
+            <div className="vendor-product__skeleton-cell shimmer" style={{ width: '3rem', height: '1.1rem' }}></div>
+            <div className="vendor-product__skeleton-cell shimmer" style={{ width: '2.5rem', height: '1.1rem' }}></div>
           </div>
         ))}
       </div>
@@ -78,13 +78,13 @@ const VendorProduct: React.FC = () => {
         productsPerPage
       );
       if (!response.data || typeof response.data !== 'object') throw new Error('Invalid response');
-      if (!response.data.success || !response.data.data || !Array.isArray(response.data.data.products)) throw new Error('Invalid response format');
-      const products: Product[] = response.data.data.products.map((product: ApiProduct): Product => {
+      if (!response.data.success || !response.data.data || !Array.isArray(response.data.data.product)) throw new Error('Invalid response format');
+      const products: Product[] = response.data.data.product.map((product: ApiProduct): Product => {
         // Extract images from both productImages and variant images
         const productImages = Array.isArray(product.productImages)
           ? product.productImages.map((img: string | { url?: string }) => (typeof img === 'string' ? img : img.url || ''))
           : [];
-        
+
         // Extract images from variants if product has variants
         const variantImages: string[] = [];
         if ((product as any).hasVariants && (product as any).variants && Array.isArray((product as any).variants)) {
@@ -99,7 +99,7 @@ const VendorProduct: React.FC = () => {
             }
           });
         }
-        
+
         // Combine all images (product images first, then variant images)
         const images = [...productImages, ...variantImages].filter(Boolean);
         // Calculate discounted price
@@ -129,23 +129,23 @@ const VendorProduct: React.FC = () => {
 
         const normalizedVariants = Array.isArray((product as any).variants)
           ? (product as any).variants.map((v: any) => {
-              const rawBase =
-                (typeof v?.price !== 'undefined' ? v.price :
+            const rawBase =
+              (typeof v?.price !== 'undefined' ? v.price :
                 typeof v?.basePrice !== 'undefined' ? v.basePrice :
-                typeof v?.originalPrice !== 'undefined' ? v.originalPrice :
-                typeof product.basePrice !== 'undefined' ? product.basePrice :
-                (product as any).price);
-              const baseNum = typeof rawBase === 'string' ? parseFloat(rawBase) : (Number(rawBase) || 0);
-              let calc = baseNum;
-              if (discount > 0 && (discountType === 'PERCENTAGE' || discountType === 'FLAT' || discountType === 'FIXED')) {
-                if (discountType === 'PERCENTAGE') {
-                  calc = baseNum - (baseNum * discount / 100);
-                } else {
-                  calc = baseNum - discount;
-                }
+                  typeof v?.originalPrice !== 'undefined' ? v.originalPrice :
+                    typeof product.basePrice !== 'undefined' ? product.basePrice :
+                      (product as any).price);
+            const baseNum = typeof rawBase === 'string' ? parseFloat(rawBase) : (Number(rawBase) || 0);
+            let calc = baseNum;
+            if (discount > 0 && (discountType === 'PERCENTAGE' || discountType === 'FLAT' || discountType === 'FIXED')) {
+              if (discountType === 'PERCENTAGE') {
+                calc = baseNum - (baseNum * discount / 100);
+              } else {
+                calc = baseNum - discount;
               }
-              return { ...v, calculatedPrice: calc };
-            })
+            }
+            return { ...v, calculatedPrice: calc };
+          })
           : undefined;
 
         let status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK' = 'AVAILABLE';
@@ -213,32 +213,32 @@ const VendorProduct: React.FC = () => {
       console.log('VendorProduct: vendor ID:', authState.vendor?.id);
       console.log('VendorProduct: vendor verified:', authState.vendor?.isVerified);
       console.log('VendorProduct: Product data received:', productData);
-      
+
       if (!authState.token) {
         throw new Error('No authentication token found');
       }
-      
+
       if (!authState.vendor) {
         throw new Error('No vendor data found');
       }
 
       // Convert ProductFormData to FormData
       const formData = new FormData();
-      
+
       // Required fields
       formData.append("name", String(productData.name));
       formData.append("subcategoryId", String(productData.subcategoryId));
       formData.append("hasVariants", String(productData.hasVariants));
-      
+
       // Optional fields
       if (productData.description) {
         formData.append("description", String(productData.description));
       }
-      
+
       // Handle variant vs non-variant products
       if (!productData.hasVariants) {
         console.log('VendorProduct: Creating non-variant product');
-        
+
         // Non-variant product fields
         if (productData.basePrice != null) {
           formData.append("basePrice", String(productData.basePrice));
@@ -249,7 +249,7 @@ const VendorProduct: React.FC = () => {
         if (productData.status) {
           formData.append("status", String(productData.status));
         }
-        
+
         // Non-variant product images
         if (productData.productImages && Array.isArray(productData.productImages)) {
           productData.productImages.forEach((image, index) => {
@@ -260,12 +260,12 @@ const VendorProduct: React.FC = () => {
         }
       } else {
         console.log('VendorProduct: Creating variant product');
-        
+
         // Variant product - variants data
         if (productData.variants && Array.isArray(productData.variants)) {
           console.log('VendorProduct: Adding variants data:', productData.variants);
           formData.append("variants", JSON.stringify(productData.variants));
-          
+
           // Handle variant images
           productData.variants.forEach((variant, variantIndex) => {
             console.log(`VendorProduct: Processing variant ${variantIndex + 1} (${variant.sku}):`, variant);
@@ -287,21 +287,21 @@ const VendorProduct: React.FC = () => {
           });
         }
       }
-      
+
       // Common optional fields
       if (productData.discount && Number(productData.discount) > 0) {
         formData.append("discount", Number(productData.discount).toFixed(2));
         formData.append("discountType", String(productData.discountType || 'PERCENTAGE'));
       }
-      
+
       if (productData.dealId != null) {
         formData.append("dealId", String(productData.dealId));
       }
-      
+
       if (productData.bannerId != null) {
         formData.append("bannerId", String(productData.bannerId));
       }
-      
+
       if (productData.brandId != null) {
         formData.append("brandId", String(productData.brandId));
       }
@@ -385,7 +385,7 @@ const VendorProduct: React.FC = () => {
       }
 
       console.log('📤 Final Update Payload:', JSON.stringify(updatePayload, null, 2));
-      
+
       return updateProduct(productId, categoryId, subcategoryId, updatePayload);
     },
     onSuccess: () => {
@@ -424,10 +424,10 @@ const VendorProduct: React.FC = () => {
     console.log('Product Subcategory Object:', product.subcategory);
     console.log('Product Category Object:', product.category);
     console.log('=== END PRODUCT DATA ===');
-    
+
     // Convert Product to ApiProduct for editing
     let discount: number | null = null;
-    
+
     // Handle discount conversion
     if (product.discount) {
       if (typeof product.discount === 'number') {
@@ -441,12 +441,12 @@ const VendorProduct: React.FC = () => {
     type SubcategoryType = { id: number; name: string; image?: string | null; createdAt?: string; updatedAt?: string };
     const subcategory = product.subcategory && typeof product.subcategory === 'object' && 'id' in product.subcategory && 'name' in product.subcategory
       ? {
-          id: product.subcategory.id,
-          name: product.subcategory.name,
-          image: (product.subcategory as SubcategoryType).image || null,
-          createdAt: (product.subcategory as SubcategoryType).createdAt || new Date().toISOString(),
-          updatedAt: (product.subcategory as SubcategoryType).updatedAt || new Date().toISOString(),
-        }
+        id: product.subcategory.id,
+        name: product.subcategory.name,
+        image: (product.subcategory as SubcategoryType).image || null,
+        createdAt: (product.subcategory as SubcategoryType).createdAt || new Date().toISOString(),
+        updatedAt: (product.subcategory as SubcategoryType).updatedAt || new Date().toISOString(),
+      }
       : { id: 0, name: '', image: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     console.log('🔄 CONVERTING PRODUCT FOR EDITING:');
     console.log('Original Product:', product);
@@ -566,7 +566,7 @@ const VendorProduct: React.FC = () => {
     <div className="vendor-dash-container">
       <Sidebar />
       <div className={`dashboard ${isMobile ? "dashboard--mobile" : ""}`}>
-        <Header title="Product Management" onSearch={() => {}} />
+        <Header title="Product Management" onSearch={() => { }} />
         {/* Search and Sort Controls */}
         <div className="dashboard__search-container" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <div className="dashboard__search" style={{ flex: 1, minWidth: 200 }}>

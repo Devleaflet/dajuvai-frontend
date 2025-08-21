@@ -1,0 +1,21 @@
+.special-offers-fallback {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+}
+
+.special-offers-fallback p {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    /* light gray */
+    border-radius: 12px;
+    padding: 16px 24px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #374151;
+    /* dark gray */
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    max-width: 400px;
+}
