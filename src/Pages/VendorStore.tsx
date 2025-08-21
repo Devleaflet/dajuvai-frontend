@@ -40,7 +40,7 @@ interface ApiProduct {
     id: number;
     businessName: string;
     email: string;
-    phoneNumber: string;
+   
     districtId: number;
     district: {
       id: number;
@@ -52,7 +52,7 @@ interface ApiProduct {
 interface VendorInfo {
   businessName: string;
   email?: string;
-  phoneNumber?: string;
+ 
   districtName?: string;
 }
 
@@ -90,7 +90,7 @@ const VendorStore: React.FC = () => {
             setVendorInfo({
               businessName: v.businessName,
               email: v.email,
-              phoneNumber: v.phoneNumber,
+        
               districtName: v?.district?.name,
             });
           } else {
@@ -317,12 +317,7 @@ const VendorStore: React.FC = () => {
                 <span className="chip-text">{vendorInfo.email}</span>
               </div>
             )}
-            {vendorInfo?.phoneNumber && (
-              <div className="vendor-hero__chip" title={vendorInfo.phoneNumber}>
-                <FiPhone className="chip-icon" />
-                <span className="chip-text">{vendorInfo.phoneNumber}</span>
-              </div>
-            )}
+          
             {vendorInfo?.districtName && (
               <div className="vendor-hero__chip" title={vendorInfo.districtName}>
                 <FiMapPin className="chip-icon" />
@@ -343,14 +338,7 @@ const VendorStore: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="vendor-details__item">
-              <div className="vendor-detail-row">
-                <FiPhone className="vendor-detail-icon" />
-                <div>
-                  <strong>Phone Number:</strong> <span>{vendorInfo?.phoneNumber || 'N/A'}</span>
-                </div>
-              </div>
-            </div>
+            
             <div className="vendor-details__item">
               <div className="vendor-detail-row">
                 <FiMapPin className="vendor-detail-icon" />
