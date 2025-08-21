@@ -1,0 +1,130 @@
+body {
+    font-family: 'Inter', Arial, sans-serif;
+    background: linear-gradient(to bottom right, #f9fafb, #e5e7eb);
+}
+
+.commission-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.search-bar {
+    width: 100%;
+    max-width: 500px;
+    margin: 20px auto;
+    display: flex;
+    justify-content: center;
+}
+
+.search-bar input {
+    width: 100%;
+    padding: 12px 20px 12px 40px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    background-color: #ffffff;
+}
+
+.search-bar input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
+
+.commission-card {
+    width: 100%;
+    max-width: 1300px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.commission-header {
+    background: linear-gradient(to right, #ff6b00, #ff6b00);
+    color: white;
+    text-align: center;
+    padding: 24px;
+}
+
+.commission-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.commission-header p {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-top: 6px;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+}
+
+thead {
+    background: #f3f4f6;
+    position: sticky;
+    top: 0;
+}
+
+th,
+td {
+    padding: 14px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+}
+
+tbody tr:hover {
+    background: #f9fafb;
+}
+
+.highlight {
+    font-weight: 600;
+    color: #4f46e5;
+    text-align: center;
+}
+
+.button-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px;
+    background: #f9fafb;
+}
+
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+}
+
+.btn-green {
+    background: linear-gradient(to right, #16a34a, #15803d);
+    color: white;
+}
+
+.btn-blue {
+    background: linear-gradient(to right, #2563eb, #1d4ed8);
+    color: white;
+}

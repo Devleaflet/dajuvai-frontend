@@ -135,18 +135,19 @@ const Footer: React.FC = () => {
                 <h3 className="footer__section-title">Quick Access</h3>
                 <ul className="footer__list">
                   <li>
-                    <Link to="/shop" className="footer__link">
-                      Shop
+                    <Link to="/faq" className="footer__link">
+                      FAQ
                     </Link>
                   </li>
+                   
                   <li>
                     <Link to="/contact" className="footer__link">
                       Contact Us
                     </Link>
                   </li>
                   <li>
-                    <Link to="/faq" className="footer__link">
-                      FAQ
+                    <Link to="/about" className="footer__link">
+                      About Us
                     </Link>
                   </li>
                 </ul>

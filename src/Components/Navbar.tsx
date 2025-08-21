@@ -944,7 +944,7 @@ const Navbar: React.FC = () => {
               >
                 Shop
               </NavLink>
-              <NavLink
+              {/* <NavLink
                 to="/about"
                 className={({ isActive }) =>
                   `navbar__link${isActive ? " active" : ""}`
@@ -954,7 +954,7 @@ const Navbar: React.FC = () => {
                 })}
               >
                 About Us
-              </NavLink>
+              </NavLink> */}
               <NavLink
                 to="/contact"
                 className={({ isActive }) =>
