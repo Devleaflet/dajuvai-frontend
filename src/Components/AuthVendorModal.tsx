@@ -54,10 +54,19 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [businessName, setBusinessName] = useState<string>("");
   const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [businessRegNumber, setBusinessRegNumber] = useState<string>("");
   const [district, setDistrict] = useState<string>("");
   const [taxNumber, setTaxNumber] = useState<string>("");
   const [taxDocuments, setTaxDocuments] = useState<File[]>([]);
-  const [companyDocuments, setCompanyDocuments] = useState<File[]>([]);
+  const [citizenshipDocuments, setCitizenshipDocuments] = useState<File[]>([]);
+  const [accountName, setAccountName] = useState<string>("");
+  const [bankName, setBankName] = useState<string>("");
+  const [accountNumber, setAccountNumber] = useState<string>("");
+  const [bankBranch, setBankBranch] = useState<string>("");
+  const [bankCode, setBankCode] = useState<string>("");
+  const [blankChequePhoto, setBlankChequePhoto] = useState<File | null>(null);
+  const [acceptTerms, setAcceptTerms] = useState<boolean>(false);
+  const [acceptListingFee, setAcceptListingFee] = useState<boolean>(false);
 
   // UI states
   const [districts, setDistricts] = useState<District[]>([]);
@@ -68,7 +77,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
-  
+
   // Verification states
   const [verificationToken, setVerificationToken] = useState<string>("");
   const [showVerification, setShowVerification] = useState<boolean>(false);
@@ -76,10 +85,10 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
   const [countdown, setCountdown] = useState<number>(0);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
-  
+
   // Final success state
   const [isVerificationComplete, setIsVerificationComplete] = useState<boolean>(false);
-  
+
   const modalRef = useRef<HTMLDivElement | null>(null);
   const [isStepValid, setIsStepValid] = useState<boolean>(false);
 
@@ -91,7 +100,10 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
           return (
             businessName.trim().length >= 3 &&
             phoneNumber.trim().length >= 10 &&
-            district.trim().length > 0
+            businessRegNumber.trim().length > 0 &&
+            district.trim().length > 0 &&
+            acceptTerms &&
+            acceptListingFee
           );
         } else if (currentStep === 2) {
           return (
@@ -103,7 +115,13 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
         } else if (currentStep === 3) {
           return taxNumber.trim().length === 9 && taxDocuments.length > 0;
         } else if (currentStep === 4) {
-          return companyDocuments.length > 0;
+          return (
+            accountName.trim().length > 0 &&
+            bankName.trim().length > 0 &&
+            accountNumber.trim().length > 0 &&
+            bankBranch.trim().length > 0 &&
+            blankChequePhoto !== null
+          );
         }
         return true;
       };
@@ -112,13 +130,21 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
   }, [
     businessName,
     phoneNumber,
+    businessRegNumber,
     district,
+    acceptTerms,
+    acceptListingFee,
     email,
     password,
     confirmPassword,
     taxNumber,
     taxDocuments,
-    companyDocuments,
+    citizenshipDocuments,
+    accountName,
+    bankName,
+    accountNumber,
+    bankBranch,
+    blankChequePhoto,
     currentStep,
     isLoginMode,
     showVerification,
@@ -203,10 +229,19 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       setConfirmPassword("");
       setBusinessName("");
       setPhoneNumber("");
+      setBusinessRegNumber("");
       setDistrict("");
       setTaxNumber("");
       setTaxDocuments([]);
-      setCompanyDocuments([]);
+      setCitizenshipDocuments([]);
+      setAccountName("");
+      setBankName("");
+      setAccountNumber("");
+      setBankBranch("");
+      setBankCode("");
+      setBlankChequePhoto(null);
+      setAcceptTerms(false);
+      setAcceptListingFee(false);
       setDistricts([]);
       setError("");
       setSuccess("");
@@ -223,9 +258,10 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
 
   const validateSignup = (): boolean => {
     const errors: string[] = [];
-    
+
     if (!businessName.trim()) errors.push("Business name is required");
     if (businessName.length < 3) errors.push("Business name must be at least 3 characters");
+    if (!businessRegNumber.trim()) errors.push("Business registration number is required");
     if (!email.trim()) errors.push("Email is required");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push("Please enter a valid email");
     if (!phoneNumber.trim()) errors.push("Phone number is required");
@@ -239,12 +275,19 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
         errors.push(`Pan/Vat document ${index + 1} must be an image (JPG, JPEG, PNG) or PDF`);
       }
     });
-    if (companyDocuments.length === 0) errors.push("At least one company document is required");
-    companyDocuments.forEach((doc, index) => {
+    citizenshipDocuments.forEach((doc, index) => {
       if (!/\.(jpg|jpeg|png|pdf)$/i.test(doc.name)) {
-        errors.push(`Company document ${index + 1} must be an image (JPG, JPEG, PNG) or PDF`);
+        errors.push(`Citizenship document ${index + 1} must be an image (JPG, JPEG, PNG) or PDF`);
       }
     });
+    if (!accountName.trim()) errors.push("Account name is required");
+    if (!bankName.trim()) errors.push("Bank name is required");
+    if (!accountNumber.trim()) errors.push("Account number is required");
+    if (!bankBranch.trim()) errors.push("Bank branch is required");
+    if (!blankChequePhoto) errors.push("Blank cheque photo is required");
+    if (blankChequePhoto && !/\.(jpg|jpeg|png)$/i.test(blankChequePhoto.name)) {
+      errors.push("Blank cheque photo must be an image (JPG, JPEG, PNG)");
+    }
     if (!password.trim()) errors.push("Password is required");
     if (password.length < 8) errors.push("Password must be at least 8 characters");
     if (!/[a-z]/.test(password)) errors.push("Password must contain at least one lowercase letter");
@@ -252,32 +295,37 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     if (!/[^a-zA-Z0-9]/.test(password)) errors.push("Password must contain at least one special character");
     if (!confirmPassword.trim()) errors.push("Please confirm your password");
     if (password !== confirmPassword) errors.push("Passwords do not match");
-
-    console.log("🔍 Validation errors:", errors);
+    if (!acceptTerms) errors.push("You must accept the terms and conditions");
+    if (!acceptListingFee) errors.push("You must accept the listing fee");
 
     if (errors.length > 0) {
       errors.forEach((err) => toast.error(err));
       setError(errors[0]);
       return false;
     }
-    
+
     return true;
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, documentType: 'tax' | 'company') => {
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    documentType: 'tax' | 'citizenship' | 'cheque'
+  ) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     if (documentType === 'tax') {
       setTaxDocuments((prev) => [...prev, ...files]);
-    } else {
-      setCompanyDocuments((prev) => [...prev, ...files]);
+    } else if (documentType === 'citizenship') {
+      setCitizenshipDocuments((prev) => [...prev, ...files]);
+    } else if (documentType === 'cheque' && files.length > 0) {
+      setBlankChequePhoto(files[0]);
     }
   };
 
-  const removeFile = (index: number, documentType: 'tax' | 'company') => {
+  const removeFile = (index: number, documentType: 'tax' | 'citizenship') => {
     if (documentType === 'tax') {
       setTaxDocuments((prev) => prev.filter((_, i) => i !== index));
     } else {
-      setCompanyDocuments((prev) => prev.filter((_, i) => i !== index));
+      setCitizenshipDocuments((prev) => prev.filter((_, i) => i !== index));
     }
   };
 
@@ -286,7 +334,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       const uploadPromises = files.map(async (file) => {
         const formData = new FormData();
         formData.append("file", file);
-        
+
         const response = await axios.post<ImageUploadResponse>(
           `${API_BASE_URL}/api/image?folder=vendor`,
           formData,
@@ -294,9 +342,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
             headers: { "Content-Type": "multipart/form-data" },
           }
         );
-        
-        console.log("📤 File upload response:", response.data);
-        
+
         if (response.data.success && response.data.data) {
           return response.data.data;
         } else {
@@ -319,46 +365,53 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     email: string;
     password: string;
     phoneNumber: string;
+    businessRegNumber: string;
     district: string;
     taxNumber: string;
     documents: string[];
+    bankDetails: {
+      accountName: string;
+      bankName: string;
+      accountNumber: string;
+      bankBranch: string;
+      bankCode?: string;
+    };
   }) => {
     try {
       setIsLoading(true);
       setError("");
-      console.log("Sending signup request with payload:", userData);
       const response = await axios.post<SignupResponse>(
         `${API_BASE_URL}/api/vendors/request/register`,
         userData,
         { headers: { "Content-Type": "application/json" } }
       );
-      console.log("Signup API successful:", response.data);
       setSuccess(response.data.message);
       toast.success("Registration successful! Please check your email for verification code.");
 
-      // Set verification state
       setPendingVerificationEmail(userData.email);
       setShowVerification(true);
       setCountdown(120);
-      
-      // Reset form data
+
       setPassword("");
       setConfirmPassword("");
       setBusinessName("");
       setPhoneNumber("");
+      setBusinessRegNumber("");
       setDistrict("");
       setTaxNumber("");
       setTaxDocuments([]);
-      setCompanyDocuments([]);
+      setCitizenshipDocuments([]);
+      setAccountName("");
+      setBankName("");
+      setAccountNumber("");
+      setBankBranch("");
+      setBankCode("");
+      setBlankChequePhoto(null);
+      setAcceptTerms(false);
+      setAcceptListingFee(false);
       setCurrentStep(1);
     } catch (err) {
-      console.error("Signup failed:", err);
       if (axios.isAxiosError(err)) {
-        console.error("Error details:", {
-          status: err.response?.status,
-          statusText: err.response?.statusText,
-          data: err.response?.data,
-        });
         if (err.response?.status === 400 && err.response?.data?.errors) {
           const errorMessages = Object.entries(err.response.data.errors)
             .map(([field, message]) => `${field}: ${message}`)
@@ -387,29 +440,19 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     try {
       setIsLoading(true);
       setError("");
-      console.log("📋 Verification data:", { 
-        email: pendingVerificationEmail, 
-        token: verificationToken 
-      });
       const response = await axios.post<VerificationResponse>(
         `${API_BASE_URL}/api/auth/verify`,
         { email: pendingVerificationEmail, token: verificationToken },
         { headers: { "Content-Type": "application/json", Accept: "application/json" } }
       );
-      console.log("Verification successful:", response.data);
+      console.log(response)
       setShowVerification(false);
       setIsVerificationComplete(true);
       setVerificationToken("");
       setCountdown(0);
       toast.success("Email verified successfully! Waiting for admin approval.");
     } catch (err) {
-      console.error("Verification failed:", err);
       if (axios.isAxiosError(err)) {
-        console.error("Verification error details:", {
-          status: err.response?.status,
-          statusText: err.response?.statusText,
-          data: err.response?.data,
-        });
         const errorMessage = err.response?.data?.message || err.response?.data?.error || "Verification failed";
         if (errorMessage.toLowerCase().includes("token") && errorMessage.toLowerCase().includes("invalid")) {
           setError("The verification code is invalid. Please check the code or request a new one.");
@@ -538,7 +581,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       return;
     }
 
-    // If not on final step, move to next step
     if (currentStep < 4) {
       if (!isStepValid) {
         toast.error("Please complete all required fields before proceeding.");
@@ -548,38 +590,43 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       return;
     }
 
-    // Final step - submit registration
     if (!validateSignup()) {
       return;
     }
 
-    if (taxDocuments.length === 0 || companyDocuments.length === 0) {
-      setError("Please upload at least one Pan/Vat and one Company document");
-      toast.error("Please upload at least one Pan/Vat and one Company document");
+    if (taxDocuments.length === 0 || !blankChequePhoto) {
+      setError("Please upload at least one Pan/Vat document and a blank cheque photo");
+      toast.error("Please upload at least one Pan/Vat document and a blank cheque photo");
       return;
     }
 
-    console.log("Uploading files...");
     const taxDocumentUrls = await handleFileUpload(taxDocuments);
-    const companyDocumentUrls = await handleFileUpload(companyDocuments);
-    
-    if (!taxDocumentUrls || !companyDocumentUrls) {
+    const citizenshipDocumentUrls = await handleFileUpload(citizenshipDocuments);
+    const chequePhotoUrl = blankChequePhoto ? await handleFileUpload([blankChequePhoto]) : null;
+
+    if (!taxDocumentUrls || (blankChequePhoto && !chequePhotoUrl)) {
       setError("Failed to obtain document URLs. Please try again.");
       toast.error("Failed to obtain document URLs. Please try again.");
       return;
     }
 
-    console.log("Files uploaded, calling signup...");
     const userData = {
       businessName: businessName.trim(),
       email: email.trim(),
       password,
       phoneNumber: phoneNumber.trim(),
+      businessRegNumber: businessRegNumber.trim(),
       district,
       taxNumber: taxNumber.trim(),
-      documents: [...taxDocumentUrls, ...companyDocumentUrls],
+      documents: [...taxDocumentUrls, ...(citizenshipDocumentUrls || []), ...(chequePhotoUrl || [])],
+      bankDetails: {
+        accountName: accountName.trim(),
+        bankName: bankName.trim(),
+        accountNumber: accountNumber.trim(),
+        bankBranch: bankBranch.trim(),
+        bankCode: bankCode.trim() || undefined,
+      },
     };
-    console.log("Signup payload:", userData);
     await handleSignup(userData);
   };
 
@@ -606,13 +653,13 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
         </div>
 
         <div className="auth-modal__title">
-          {isVerificationComplete 
-            ? "Account Verification Complete" 
-            : showVerification 
-            ? "Verify Your Email" 
-            : isLoginMode 
-            ? "Vendor Login" 
-            : "Vendor Sign Up"
+          {isVerificationComplete
+            ? "Account Verification Complete"
+            : showVerification
+              ? "Verify Your Email"
+              : isLoginMode
+                ? "Vendor Login"
+                : "Vendor Sign Up"
           }
         </div>
 
@@ -650,8 +697,8 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
               <p><strong>You will receive an email notification after your account gets approved.</strong></p>
               <p>This process may take 24-48 hours. Thank you for your patience!</p>
             </div>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="auth-modal__submit"
               onClick={handleCloseModal}
             >
@@ -750,9 +797,9 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                         aria-label={showPassword ? "Hide password" : "Show password"}
                       >
                         {showPassword ? (
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7" /><circle cx="12" cy="12" r="3.5" /></svg>
                         ) : (
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22" /><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" /><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" /></svg>
                         )}
                       </button>
                     </div>
@@ -789,6 +836,18 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                           />
                         </div>
                         <div className="auth-modal__form-group">
+                          <label className="auth-modal__label">Business Registration Number</label>
+                          <input
+                            type="text"
+                            className="auth-modal__input"
+                            placeholder="Enter business registration number"
+                            value={businessRegNumber}
+                            onChange={(e) => setBusinessRegNumber(e.target.value)}
+                            required
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <div className="auth-modal__form-group">
                           <label className="auth-modal__label">District</label>
                           <select
                             className="auth-modal__input"
@@ -806,6 +865,37 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                               </option>
                             ))}
                           </select>
+                        </div>
+                        <div className="auth-modal__form-group">
+                          <label className="auth-modal__checkbox">
+                            <input
+                              type="checkbox"
+                              checked={acceptTerms}
+                              onChange={(e) => setAcceptTerms(e.target.checked)}
+                              disabled={isLoading}
+                            />
+                            I accept the terms and conditions
+                          </label>
+                        </div>
+                        <div className="auth-modal__form-group">
+                          <label className="auth-modal__checkbox">
+                            <input
+                              type="checkbox"
+                              checked={acceptListingFee}
+                              onChange={(e) => setAcceptListingFee(e.target.checked)}
+                              disabled={isLoading}
+                            />
+                            I accept the listing fee (
+                            <a
+                              href="https://res.cloudinary.com/dxvyc12au/raw/upload/v1755774646/CommisionList/uzhk4v26kdc2sim44ihl"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="auth-modal__link"
+                            >
+                              View Commission List
+                            </a>
+                            )
+                          </label>
                         </div>
                       </>
                     )}
@@ -853,9 +943,9 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                             aria-label={showPassword ? "Hide password" : "Show password"}
                           >
                             {showPassword ? (
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7" /><circle cx="12" cy="12" r="3.5" /></svg>
                             ) : (
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22" /><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" /><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" /></svg>
                             )}
                           </button>
                         </div>
@@ -888,9 +978,9 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                             aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                           >
                             {showConfirmPassword ? (
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7" /><circle cx="12" cy="12" r="3.5" /></svg>
                             ) : (
-                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22" /><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" /><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" /></svg>
                             )}
                           </button>
                         </div>
@@ -916,7 +1006,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                         </div>
                         <div className="auth-modal__form-group">
                           <label className="auth-modal__label">
-                            Please attach your business PAN/VAT registration document(s) (Image or PDF)
+                            Please attach your business and PAN/VAT document(s) (Image or PDF)
                           </label>
                           <div className="auth-modal__file-upload">
                             <label htmlFor="taxDocument" className="auth-modal__file-label">
@@ -950,43 +1040,133 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                             )}
                           </div>
                         </div>
-                      </>
-                    )}
-
-                    {currentStep === 4 && (
-                      <>
                         <div className="auth-modal__form-group">
                           <label className="auth-modal__label">
-                            Please attach your company registration document(s) (Image or PDF)
+                            Ownership Citizenship Document(s) (Optional, Image or PDF)
                           </label>
                           <div className="auth-modal__file-upload">
-                            <label htmlFor="companyDocument" className="auth-modal__file-label">
+                            <label htmlFor="citizenshipDocument" className="auth-modal__file-label">
                               Choose File(s)
                             </label>
                             <input
-                              id="companyDocument"
+                              id="citizenshipDocument"
                               type="file"
                               className="auth-modal__file-input"
                               accept="image/*,application/pdf"
-                              onChange={(e) => handleFileChange(e, 'company')}
+                              onChange={(e) => handleFileChange(e, 'citizenship')}
                               multiple
                               disabled={isLoading}
                             />
-                            {companyDocuments.length > 0 && (
+                            {citizenshipDocuments.length > 0 && (
                               <div className="auth-modal__file-list">
-                                {companyDocuments.map((doc, index) => (
+                                {citizenshipDocuments.map((doc, index) => (
                                   <div key={index} className="auth-modal__file-item">
                                     <span className="auth-modal__file-name">{doc.name}</span>
                                     <button
                                       type="button"
                                       className="auth-modal__file-remove"
-                                      onClick={() => removeFile(index, 'company')}
+                                      onClick={() => removeFile(index, 'citizenship')}
                                       disabled={isLoading}
                                     >
                                       ✕
                                     </button>
                                   </div>
                                 ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {currentStep === 4 && (
+                      <>
+                        <div className="auth-modal__form-group">
+                          <label className="auth-modal__label">Account Name</label>
+                          <input
+                            type="text"
+                            className="auth-modal__input"
+                            placeholder="Enter account name"
+                            value={accountName}
+                            onChange={(e) => setAccountName(e.target.value)}
+                            required
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <div className="auth-modal__form-group">
+                          <label className="auth-modal__label">Bank Name</label>
+                          <input
+                            type="text"
+                            className="auth-modal__input"
+                            placeholder="Enter bank name"
+                            value={bankName}
+                            onChange={(e) => setBankName(e.target.value)}
+                            required
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <div className="auth-modal__form-group">
+                          <label className="auth-modal__label">Account Number</label>
+                          <input
+                            type="text"
+                            className="auth-modal__input"
+                            placeholder="Enter account number"
+                            value={accountNumber}
+                            onChange={(e) => setAccountNumber(e.target.value)}
+                            required
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <div className="auth-modal__form-group">
+                          <label className="auth-modal__label">Bank Branch</label>
+                          <input
+                            type="text"
+                            className="auth-modal__input"
+                            placeholder="Enter bank branch"
+                            value={bankBranch}
+                            onChange={(e) => setBankBranch(e.target.value)}
+                            required
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <div className="auth-modal__form-group">
+                          <label className="auth-modal__label">Bank Code (Optional)</label>
+                          <input
+                            type="text"
+                            className="auth-modal__input"
+                            placeholder="Enter bank code"
+                            value={bankCode}
+                            onChange={(e) => setBankCode(e.target.value)}
+                            disabled={isLoading}
+                          />
+                        </div>
+                        <div className="auth-modal__form-group">
+                          <label className="auth-modal__label">Blank Cheque Photo (Image)</label>
+                          <div className="auth-modal__file-upload">
+                            <label htmlFor="chequePhoto" className="auth-modal__file-label">
+                              Choose File
+                            </label>
+                            <input
+                              id="chequePhoto"
+                              type="file"
+                              className="auth-modal__file-input"
+                              accept="image/*"
+                              onChange={(e) => handleFileChange(e, 'cheque')}
+                              disabled={isLoading}
+                            />
+                            {blankChequePhoto && (
+                              <div className="auth-modal__file-list">
+                                <div className="auth-modal__file-item">
+                                  <span className="auth-modal__file-name">{blankChequePhoto.name}</span>
+                                  <button
+                                    type="button"
+                                    className="auth-modal__file-remove"
+                                    onClick={() => setBlankChequePhoto(null)}
+                                    disabled={isLoading}
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
                               </div>
                             )}
                           </div>

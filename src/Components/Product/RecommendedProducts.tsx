@@ -44,7 +44,7 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
     <div className="recommended-products">
       <h3>Recommended for you</h3>
       <div className="recommended-products__grid">
-        {filteredProducts.slice(0, 8).map((p) => {
+        {filteredProducts.slice(0, 6).map((p) => {
           // Derive IDs from multiple possible shapes
           const categoryId = (p as any).categoryId
             ?? (p as any)?.category?.id

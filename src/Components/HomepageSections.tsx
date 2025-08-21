@@ -38,6 +38,7 @@ const HomepageSections: React.FC = () => {
     <div className="homepage-sections">
       {sections.filter(section => section.isActive).map(section => {
         const mappedProducts: DisplayProduct[] = section.products.map(product => {
+          console.log("Product", product)
           const primaryImage = getProductPrimaryImage(product, '');
           const productImages = Array.isArray(product.productImages) ? product.productImages : [];
 
@@ -56,7 +57,7 @@ const HomepageSections: React.FC = () => {
             rating: Number((product as any).avgRating ?? (product as any).rating ?? 0) || 0,
             ratingCount: String(
               (Array.isArray((product as any).reviews) ? (product as any).reviews.length : undefined)
-              ?? (product as any).reviewsCount
+              ?? (product as any).reviewCount
               ?? (product as any).ratingCount
               ?? 0
             ),

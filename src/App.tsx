@@ -47,6 +47,7 @@ import AboutUs from "./Pages/AboutUs";
 import EcommerceFAQ from "./Pages/Faq";
 import BecomeVendor from "./Pages/BecomeVendor";
 import UnapprovedVendors from "./Components/UnapprovedVendors";
+import CommissionList from "./Pages/ComissionList";
 
 // Admin route guards
 // Allows both admin and staff to access admin area
@@ -97,8 +98,9 @@ function App() {
         <Route path="/contact" element={<About />} />
         <Route path="/faq" element={<EcommerceFAQ />} />
         <Route path="/terms" element={<TermsAndConditions />} />
+        <Route path="/commission-list" element={<CommissionList />} />
         <Route path="/privacy" element={<Privacy />} />
-                <Route path="/becomevendor" element={<BecomeVendor />} />
+        <Route path="/becomevendor" element={<BecomeVendor />} />
         <Route path="/about" element={<AboutUs />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/checkout" element={<Checkout />} />
@@ -205,7 +207,7 @@ function App() {
             </AdminOrStaffRoute>
           }
         />
-          <Route
+        <Route
           path="/admin-vendors/unapproved"
           element={
             <AdminOrStaffRoute>
