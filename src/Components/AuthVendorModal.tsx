@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import VendorService from "../services/vendorService";
 import { API_BASE_URL } from "../config";
@@ -368,7 +368,9 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     businessRegNumber: string;
     district: string;
     taxNumber: string;
-    documents: string[];
+    taxDocuments: string[];
+    citizenshipDocuments: string[];
+    chequePhoto: string;
     bankDetails: {
       accountName: string;
       bankName: string;
@@ -445,7 +447,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
         { email: pendingVerificationEmail, token: verificationToken },
         { headers: { "Content-Type": "application/json", Accept: "application/json" } }
       );
-      console.log(response)
+      console.log(response);
       setShowVerification(false);
       setIsVerificationComplete(true);
       setVerificationToken("");
@@ -618,7 +620,9 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       businessRegNumber: businessRegNumber.trim(),
       district,
       taxNumber: taxNumber.trim(),
-      documents: [...taxDocumentUrls, ...(citizenshipDocumentUrls || []), ...(chequePhotoUrl || [])],
+      taxDocuments: taxDocumentUrls,
+      citizenshipDocuments: citizenshipDocumentUrls || [],
+      chequePhoto: chequePhotoUrl ? chequePhotoUrl[0] : null,
       bankDetails: {
         accountName: accountName.trim(),
         bankName: bankName.trim(),
@@ -627,6 +631,13 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
         bankCode: bankCode.trim() || undefined,
       },
     };
+
+    if (!userData.chequePhoto) {
+      setError("Blank cheque photo is required");
+      toast.error("Blank cheque photo is required");
+      return;
+    }
+
     await handleSignup(userData);
   };
 
@@ -874,7 +885,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                               onChange={(e) => setAcceptTerms(e.target.checked)}
                               disabled={isLoading}
                             />
-                            I accept the terms and conditions
+                            I accept the <Link to="/terms" target="_blank">terms and conditions</Link>
                           </label>
                         </div>
                         <div className="auth-modal__form-group">
@@ -886,14 +897,13 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                               disabled={isLoading}
                             />
                             I accept the listing fee (
-                            <a
-                              href="https://res.cloudinary.com/dxvyc12au/raw/upload/v1755774646/CommisionList/uzhk4v26kdc2sim44ihl"
+                            <Link
+                              to="/commission-list"
                               target="_blank"
-                              rel="noopener noreferrer"
                               className="auth-modal__link"
                             >
                               View Commission List
-                            </a>
+                            </Link>
                             )
                           </label>
                         </div>
