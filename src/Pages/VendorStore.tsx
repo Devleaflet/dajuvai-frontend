@@ -83,7 +83,7 @@ const VendorStore: React.FC = () => {
           `/api/vendors/${vendorId}/products?page=${page}&limit=${limit}`
         );
         if (response.data.success) {
-          const products = response.data.data.products;
+          const products = response.data.data.product;
           // Set vendor info from first product if available
           if (products && products.length > 0 && products[0].vendor) {
             const v = products[0].vendor;
@@ -98,6 +98,7 @@ const VendorStore: React.FC = () => {
           }
 
           const transformedProducts: DisplayProduct[] = products.map(product => {
+            console.log("vendorproduct", product)
             // Calculate product-level price if basePrice is present; otherwise defer to variants
             const hasBase = product.basePrice !== null && product.basePrice !== undefined;
             const basePrice = hasBase ? parseFloat(String(product.basePrice)) : NaN;
@@ -140,7 +141,7 @@ const VendorStore: React.FC = () => {
               rating: Number((product as any).avgRating ?? (product as any).rating ?? 0) || 0,
               ratingCount: String(
                 (Array.isArray((product as any).reviews) ? (product as any).reviews.length : undefined)
-                ?? (product as any).reviewsCount
+                ?? (product as any).count
                 ?? (product as any).ratingCount
                 ?? 0
               ),
@@ -266,25 +267,25 @@ const VendorStore: React.FC = () => {
   const VendorStoreSkeleton: React.FC = () => (
     <>
       <div className="vendor-store__header">
-        <div className="vendor-store__logo shimmer" style={{width:'4rem',height:'4rem',borderRadius:'50%'}}></div>
+        <div className="vendor-store__logo shimmer" style={{ width: '4rem', height: '4rem', borderRadius: '50%' }}></div>
         <div className="vendor-store__info">
-          <div className="shimmer" style={{width:'10rem',height:'1.2rem',borderRadius:'0.4rem',marginBottom:'0.5rem'}}></div>
-          <div className="shimmer" style={{width:'16rem',height:'0.9rem',borderRadius:'0.4rem'}}></div>
+          <div className="shimmer" style={{ width: '10rem', height: '1.2rem', borderRadius: '0.4rem', marginBottom: '0.5rem' }}></div>
+          <div className="shimmer" style={{ width: '16rem', height: '0.9rem', borderRadius: '0.4rem' }}></div>
         </div>
       </div>
       <aside className="vendor-store__details">
-        <div className="shimmer" style={{width:'7rem',height:'1rem',borderRadius:'0.3rem',marginBottom:'0.7rem'}}></div>
-        <div className="shimmer" style={{width:'12rem',height:'0.9rem',borderRadius:'0.3rem',marginBottom:'0.5rem'}}></div>
-        <div className="shimmer" style={{width:'10rem',height:'0.9rem',borderRadius:'0.3rem',marginBottom:'0.5rem'}}></div>
-        <div className="shimmer" style={{width:'8rem',height:'0.9rem',borderRadius:'0.3rem'}}></div>
+        <div className="shimmer" style={{ width: '7rem', height: '1rem', borderRadius: '0.3rem', marginBottom: '0.7rem' }}></div>
+        <div className="shimmer" style={{ width: '12rem', height: '0.9rem', borderRadius: '0.3rem', marginBottom: '0.5rem' }}></div>
+        <div className="shimmer" style={{ width: '10rem', height: '0.9rem', borderRadius: '0.3rem', marginBottom: '0.5rem' }}></div>
+        <div className="shimmer" style={{ width: '8rem', height: '0.9rem', borderRadius: '0.3rem' }}></div>
       </aside>
       <main className="vendor-store__products">
         <div className="products-header">
-          <div className="shimmer" style={{width:'8rem',height:'1.1rem',borderRadius:'0.3rem',marginBottom:'1rem'}}></div>
+          <div className="shimmer" style={{ width: '8rem', height: '1.1rem', borderRadius: '0.3rem', marginBottom: '1rem' }}></div>
         </div>
         <div className="vendor-store__product-grid">
-          {[...Array(8)].map((_,i) => (
-            <div key={i} className="shimmer" style={{height:'220px',borderRadius:'0.7rem',marginBottom:'1rem'}}></div>
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="shimmer" style={{ height: '220px', borderRadius: '0.7rem', marginBottom: '1rem' }}></div>
           ))}
         </div>
       </main>
@@ -413,8 +414,8 @@ const VendorStore: React.FC = () => {
 
             {totalProducts > limit && (
               <div className="vendor-store__pagination">
-                <button 
-                  onClick={() => handlePageChange(page - 1)} 
+                <button
+                  onClick={() => handlePageChange(page - 1)}
                   disabled={page === 1}
                   className="pagination-button"
                 >

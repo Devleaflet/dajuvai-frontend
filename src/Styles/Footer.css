@@ -195,8 +195,6 @@
   margin: 0;
 }
 
-
-
 .footer__list li {
   margin-bottom: 12px;
 }
@@ -497,12 +495,15 @@
   display: flex;
   justify-content: center;
   align-items: stretch;
-  gap: 35px;
+  gap: 20px;
   border-top: 1px solid #e1e5e9;
   padding-top: 40px;
   margin-top: 25px;
   flex-wrap: wrap;
   width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Footer Bottom - Centered copyright */
@@ -559,7 +560,7 @@
   }
 
   .footer__bottom-links-section {
-    gap: 60px;
+    gap: 25px;
   }
 }
 
@@ -571,7 +572,7 @@
   }
 
   .footer__bottom-links-section {
-    gap: 30px;
+    gap: 20px;
   }
 }
 
@@ -590,7 +591,7 @@
   }
 
   .footer__bottom-links-section {
-    gap: 25px;
+    gap: 20px;
   }
 
   .footer__track-section {
@@ -606,20 +607,14 @@
 @media (max-width: 768px) {
   .footer__top-links {
     display: flex;
-    /* use flexbox instead of grid */
     flex-direction: row;
-    /* side by side */
     justify-content: space-between;
-    /* spread them */
     gap: 15px;
-    /* spacing between groups */
   }
 
   .footer__section {
     width: auto;
-    /* allow natural width */
     flex: 1;
-    /* each group takes equal space */
   }
 
   .footer__copyright {
@@ -647,6 +642,7 @@
     flex-direction: column;
     align-items: center;
     gap: 20px;
+    width: 100%;
   }
 
   .footer__bottom {
@@ -673,6 +669,7 @@
   .footer__services-section,
   .footer__contact-section,
   .footer__payment-section {
+    width: 100%;
     max-width: 100%;
     min-height: 220px;
     padding: 25px 20px;
@@ -683,7 +680,9 @@
   }
 
   .footer__services-list {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    max-width: 100%;
   }
 }
 
@@ -743,12 +742,15 @@
   .footer__services-section,
   .footer__contact-section,
   .footer__payment-section {
+    width: 100%;
     padding: 20px 15px;
     min-height: 200px;
   }
 
   .footer__services-list {
+    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
+    max-width: 100%;
   }
 
   .footer__social-icons {
@@ -761,6 +763,7 @@
 
   .footer__bottom-links-section {
     gap: 15px;
+    width: 100%;
   }
 
   .footer__bottom-links {

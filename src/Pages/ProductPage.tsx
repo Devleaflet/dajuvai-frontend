@@ -66,10 +66,10 @@ const ProductPage = () => {
       : `${window.location.origin}${imgUrl.startsWith('/') ? '' : '/'}${imgUrl}`;
   };
   // Extract productId, categoryId, and subcategoryId from URL
-  const { id: productId, categoryId, subcategoryId } = useParams<{ 
-    id: string; 
-    categoryId?: string; 
-    subcategoryId?: string 
+  const { id: productId, categoryId, subcategoryId } = useParams<{
+    id: string;
+    categoryId?: string;
+    subcategoryId?: string
   }>();
   const id = productId; // For backward compatibility
   const [selectedColor, setSelectedColor] = useState('');
@@ -85,7 +85,7 @@ const ProductPage = () => {
   const [isZoomActive, setIsZoomActive] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
   const mainImageRef = useRef<HTMLDivElement>(null);
-  
+
   // Amazon-like zoom configuration
   const ZOOM_LEVEL = 3.0; // Increased zoom level for better detail
   const ZOOM_BOX_SIZE = 450; // Size of the zoomed-in box (increased from 350)
@@ -100,7 +100,7 @@ const ProductPage = () => {
     queryKey: ['product', id],
     queryFn: async () => {
       if (!id || isNaN(Number(id))) throw new Error('Invalid product ID');
-      
+
       const response = await axiosInstance.get(`/api/product/${id}`);
       const apiProduct = response.data.product;
 
@@ -112,7 +112,7 @@ const ProductPage = () => {
       const variantImages: string[] = [];
       let allVariants = [];
       let defaultVariant = null;
-      
+
       // Process each variant
       if (apiProduct.variants && Array.isArray(apiProduct.variants)) {
         allVariants = apiProduct.variants.map((variant: any) => {
@@ -135,11 +135,11 @@ const ProductPage = () => {
                   // Handle image object
                   imgUrl = img.url || img.imageUrl || '';
                 }
-                
+
                 if (imgUrl) {
                   // Ensure we have a full URL
-                  const fullUrl = imgUrl.startsWith('http') ? imgUrl : 
-                                 `${window.location.origin}${imgUrl.startsWith('/') ? '' : '/'}${imgUrl}`;
+                  const fullUrl = imgUrl.startsWith('http') ? imgUrl :
+                    `${window.location.origin}${imgUrl.startsWith('/') ? '' : '/'}${imgUrl}`;
                   variantImgUrls.push(fullUrl);
                   if (!variantImages.includes(fullUrl)) {
                     variantImages.push(fullUrl);
@@ -156,7 +156,7 @@ const ProductPage = () => {
           const discount = parseFloat(variant.discount) || 0;
           let price = basePrice;
           let savings = 0;
-          
+
           if (variant.discountType === 'PERCENTAGE') {
             savings = basePrice * (discount / 100);
             price = basePrice - savings;
@@ -183,39 +183,39 @@ const ProductPage = () => {
           return variantData;
         });
       }
-      
+
       // Process product images (normalize to absolute URLs; handle strings/objects/JSON strings)
       const productImages = Array.isArray(apiProduct.productImages)
         ? apiProduct.productImages
-            .map((img: any) => {
-              try {
-                let imgUrl = '';
-                if (typeof img === 'string') {
-                  // Could be a direct URL or a JSON string
-                  try {
-                    const parsed = JSON.parse(img);
-                    imgUrl = parsed.url || parsed.imageUrl || img;
-                  } catch {
-                    imgUrl = img; // already a URL string
-                  }
-                } else if (img && typeof img === 'object') {
-                  imgUrl = img.url || img.imageUrl || '';
+          .map((img: any) => {
+            try {
+              let imgUrl = '';
+              if (typeof img === 'string') {
+                // Could be a direct URL or a JSON string
+                try {
+                  const parsed = JSON.parse(img);
+                  imgUrl = parsed.url || parsed.imageUrl || img;
+                } catch {
+                  imgUrl = img; // already a URL string
                 }
-                return imgUrl ? toFullUrl(imgUrl) : '';
-              } catch (e) {
-                console.error('Error parsing product image:', e, img);
-                return '';
+              } else if (img && typeof img === 'object') {
+                imgUrl = img.url || img.imageUrl || '';
               }
-            })
-            .filter(Boolean)
+              return imgUrl ? toFullUrl(imgUrl) : '';
+            } catch (e) {
+              console.error('Error parsing product image:', e, img);
+              return '';
+            }
+          })
+          .filter(Boolean)
         : [];
-      
+
       const allImages = [...new Set([...productImages, ...variantImages])].filter(Boolean);
 
       // Calculate product-level pricing if no variants
       let productPrice = 0;
       let productOriginalPrice = 0;
-      
+
       if (apiProduct.hasVariants) {
         // Use default variant for pricing if available
         if (defaultVariant) {
@@ -226,10 +226,10 @@ const ProductPage = () => {
         // Use product-level pricing
         const basePrice = parseFloat(apiProduct.basePrice) || 0;
         const discount = parseFloat(apiProduct.discount) || 0;
-        
+
         productOriginalPrice = basePrice;
         productPrice = basePrice;
-        
+
         if (apiProduct.discountType === 'PERCENTAGE') {
           productPrice = basePrice - (basePrice * (discount / 100));
         } else if (apiProduct.discountType === 'FLAT') {
@@ -239,8 +239,8 @@ const ProductPage = () => {
 
       // Extract size and color options from variants
       const sizeOptions = new Set<string>();
-      const colorOptions = new Set<{name: string, img: string}>();
-      
+      const colorOptions = new Set<{ name: string, img: string }>();
+
       allVariants.forEach((variant: any) => {
         if (variant.attributes) {
           Object.entries(variant.attributes).forEach(([key, value]) => {
@@ -314,12 +314,12 @@ const ProductPage = () => {
     queryKey: ['reviews', id],
     queryFn: async () => {
       if (!id || isNaN(Number(id))) throw new Error('Invalid product ID');
-      
+
       const response = await axiosInstance.get<ReviewsResponse>(`/api/reviews/${id}`);
       if (!response.data.success) {
         throw new Error('Failed to fetch reviews');
       }
-      
+
       return {
         reviews: response.data.data.reviews || [],
         averageRating: response.data.data.averageRating || 0,
@@ -347,7 +347,19 @@ const ProductPage = () => {
           ? `/api/categories/all/products?${p.toString()}`
           : `/api/categories/all/products`;
         const res = await axiosInstance.get(url);
-        return (res?.data?.data ?? []) as any[];
+        const products = (res?.data?.data ?? []) as any[];
+        return products.map((product) => {
+          // Assuming the API returns review data like averageRating and ratingCount
+          // Adjust field names based on actual API response structure
+          const rating = product.avgRating || product.rating || 0; // Map to API field
+          const ratingCount = product.count || product.reviews?.length || 0; // Map to API field
+
+          return {
+            ...product,
+            rating, // Add avgRating field
+            ratingCount, // Add count field
+          };
+        });
       };
 
       try {
@@ -650,7 +662,7 @@ const ProductPage = () => {
       setQuantity(1);
       return;
     }
-    
+
     const numValue = parseInt(value, 10);
     if (!isNaN(numValue) && numValue > 0 && numValue <= Math.min(getCurrentStock(), 10)) {
       setQuantity(numValue);
@@ -695,14 +707,14 @@ const ProductPage = () => {
           <div className="product-page__content">
             <div className="product-gallery" style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
               <div className="product-gallery__images" style={{ flex: 1 }}>
-                <div 
+                <div
                   className="product-gallery__main-image"
                   ref={mainImageRef}
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                   onMouseMove={handleMouseMove}
-                  style={{ 
-                    position: 'relative', 
+                  style={{
+                    position: 'relative',
                     overflow: 'hidden',
                     cursor: isZoomActive ? 'crosshair' : 'zoom-in',
                   }}
@@ -711,7 +723,7 @@ const ProductPage = () => {
                     src={currentImage}
                     alt={product.name}
                     onError={() => handleImageError(selectedImageIndex)}
-                    style={{ 
+                    style={{
                       width: '100%',
                       height: 'auto',
                       display: 'block',
@@ -749,33 +761,32 @@ const ProductPage = () => {
 
                 {currentImages && currentImages.length > 1 && (
                   <div className="product-gallery__thumbnails">
-                  {currentImages.map((image: string, index: number) => (
-                    <button
-                      key={index}
-                      className={`product-gallery__thumbnail ${
-                        selectedImageIndex === index ? 'product-gallery__thumbnail--active' : ''
-                      }`}
-                      onClick={() => setSelectedImageIndex(index)}
-                    >
-                      <img
-                        src={imageError[index] ? defaultProductImage : image}
-                        alt={`Product view ${index + 1}`}
-                        onError={() => handleImageError(index)}
-                        style={{
-                          width: '60px',
-                          height: '60px',
-                          objectFit: 'cover',
-                          borderRadius: '4px'
-                        }}
-                      />
-                    </button>
-                  ))}
-                </div>
+                    {currentImages.map((image: string, index: number) => (
+                      <button
+                        key={index}
+                        className={`product-gallery__thumbnail ${selectedImageIndex === index ? 'product-gallery__thumbnail--active' : ''
+                          }`}
+                        onClick={() => setSelectedImageIndex(index)}
+                      >
+                        <img
+                          src={imageError[index] ? defaultProductImage : image}
+                          alt={`Product view ${index + 1}`}
+                          onError={() => handleImageError(index)}
+                          style={{
+                            width: '60px',
+                            height: '60px',
+                            objectFit: 'cover',
+                            borderRadius: '4px'
+                          }}
+                        />
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
-            
-            <div className="product-info" style={{ 
+
+            <div className="product-info" style={{
               flex: 1,
               padding: '0 20px',
               maxWidth: '600px'
@@ -790,7 +801,7 @@ const ProductPage = () => {
               }}>
                 {product.name}
               </h1>
-              
+
               {product.description && (
                 <div style={{
                   marginBottom: '25px',
@@ -807,7 +818,7 @@ const ProductPage = () => {
                   <p style={{ margin: 0 }}>{product.description}</p>
                 </div>
               )}
-              
+
               <div style={{
                 marginBottom: '0px',
                 fontSize: '14px',
@@ -817,21 +828,21 @@ const ProductPage = () => {
                 flexWrap: 'wrap',
                 gap: '8px'
               }}>
-               
+
               </div>
-              
+
               {product.hasVariants && product.variants && product.variants.length > 1 && (
                 <div className="product-info__variants" >
                   <h4 style={{ marginBottom: '10px', fontSize: '16px', fontWeight: '600' }}>Available Options:</h4>
-                  <div className="product-info__variant-options" style={{ 
-                    display: 'flex', 
+                  <div className="product-info__variant-options" style={{
+                    display: 'flex',
                     flexDirection: 'row',
                     gap: '10px',
                     marginBottom: '20px'
                   }}>
                     {product.variants.map((variant: any) => (
-                      <div key={variant.id} style={{ 
-                        display: 'flex', 
+                      <div key={variant.id} style={{
+                        display: 'flex',
                         flexDirection: 'column',
                         gap: '5px',
                         padding: '10px',
@@ -841,7 +852,7 @@ const ProductPage = () => {
                         opacity: variant.stock <= 0 ? 0.7 : 1,
                         cursor: variant.stock <= 0 ? 'not-allowed' : 'pointer'
                       }}
-                      onClick={() => variant.stock > 0 && handleVariantSelect(variant)}
+                        onClick={() => variant.stock > 0 && handleVariantSelect(variant)}
                       >
                         <div style={{ fontWeight: '500' }}>
                           {formatVariantAttributes(variant.attributes)}
@@ -853,171 +864,204 @@ const ProductPage = () => {
                           <div style={{ color: '#dc3545', fontSize: '14px' }}>Out of Stock</div>
                         )}
                       </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <div className="product-info__quantity" style={{ margin: '20px 0' }}>
-              <h4 style={{ marginBottom: '10px', fontSize: '16px', fontWeight: '600' }}>Quantity:</h4>
-              <div className="product-info__quantity-selector" style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '10px',
-                marginBottom: '10px'
-              }}>
-                <button
-                  style={{
-                    padding: '5px 15px',
-                    border: '1px solid #ddd',
-                    background: '#fff',
-                    borderRadius: '4px',
-                    cursor: quantity <= 1 ? 'not-allowed' : 'pointer',
-                    opacity: quantity <= 1 ? 0.5 : 1
-                  }}
-                  onClick={() => handleQuantityChange(false)}
-                  disabled={quantity <= 1}
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  min="1"
-                  max={Math.min(getCurrentStock(), 10)}
-                  value={quantity}
-                  onChange={handleQuantityInputChange}
-                  onBlur={handleQuantityBlur}
-                  style={{
-                    width: '50px',
-                    textAlign: 'center',
-                    padding: '5px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontWeight: '600',
-                    MozAppearance: 'textfield',
-                    WebkitAppearance: 'none',
-                    margin: '0 5px'
-                  }}
-                  onKeyDown={(e) => {
-                    // Prevent typing 'e', '+', '-', '.'
-                    if (['e', 'E', '+', '-', '.'].includes(e.key)) {
-                      e.preventDefault();
-                    }
-                  }}
-                />
-                <button
-                  style={{
-                    padding: '5px 15px',
-                    border: '1px solid #ddd',
-                    background: '#fff',
-                    borderRadius: '4px',
-                    cursor: quantity >= Math.min(getCurrentStock(), 10) ? 'not-allowed' : 'pointer',
-                    opacity: quantity >= Math.min(getCurrentStock(), 10) ? 0.5 : 1
-                  }}
-                  onClick={() => handleQuantityChange(true)}
-                  disabled={quantity >= Math.min(getCurrentStock(), 10)}
-                >
-                  +
-                </button>
-              </div>
-              <div style={{ 
-                color: getCurrentStock() <= 5 ? '#dc3545' : '#28a745',
-                fontWeight: '500',
-                marginBottom: '20px'
-              }}>
-                {getCurrentStock()} in stock
-                {getCurrentStock() <= 5 && ' - Order soon!'}
-              </div>
-            </div>
-          
-
-      {/* Vendor Information */}
-      <div 
-        className="seller-info" 
-        onClick={async () => {
-          const vendorId = product.vendor?.id;
-          if (!vendorId) {
-            console.warn('Vendor ID not found in product data');
-            return;
-          }
-          
-          try {
-            const response = await fetch(`/api/vendors/${vendorId}`, {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-                // Add authentication token if required
-                // 'Authorization': `Bearer ${yourAuthToken}`
-              }
-            });
-            
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            if (data.success) {
-              // Navigate to the vendor page with the vendor ID
-              window.location.href = `/vendor/${vendorId}`;
-            } else {
-              console.error('Failed to fetch vendor details:', data.message);
-            }
-          } catch (error) {
-            console.error('Error fetching vendor details:', error);
-            // Fallback to the vendor page with just the ID if the API call fails
-            window.location.href = `/vendor/${vendorId}`;
-          }
-        }}
-        style={{ 
-          margin: '15px 0',
-          padding: '10px 0',
-          cursor: 'pointer',
-          borderBottom: '1px solid #eee'
-        }}
-      >
-        <div className="seller-info__identity" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div className="seller-info__icon" style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            backgroundColor: '#f0f0f0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 'bold',
-            color: '#666'
-          }}>
-            {product.vendor?.businessName?.charAt(0).toUpperCase() || 'U'}
-          </div>
-          <h4 className="seller-info__name" style={{ margin: 0, fontSize: '15px' }}>
-            Sold by: {product.vendor?.businessName || 'Unknown Vendor'}
-          </h4>
-        </div>
-      </div>
-
-      <div className="product-info__actions" style={{ display: 'flex', gap: '15px', marginTop: '20px', width: '100%' }}>
-              <button 
-                className="product-info__add-to-cart"
-                onClick={handleAddToCart}
-                disabled={getCurrentStock() <= 0}
-                style={{
-                  flex: 1,
-                  padding: '12px 24px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  color: '#fff',
-                  backgroundColor:'#ff6b35',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: getCurrentStock() <= 0 ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
+              <div className="product-info__quantity" style={{ margin: '20px 0' }}>
+                <h4 style={{ marginBottom: '10px', fontSize: '16px', fontWeight: '600' }}>Quantity:</h4>
+                <div className="product-info__quantity-selector" style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  ...(getCurrentStock() > 0 && {
+                  gap: '10px',
+                  marginBottom: '10px'
+                }}>
+                  <button
+                    style={{
+                      padding: '5px 15px',
+                      border: '1px solid #ddd',
+                      background: '#fff',
+                      borderRadius: '4px',
+                      cursor: quantity <= 1 ? 'not-allowed' : 'pointer',
+                      opacity: quantity <= 1 ? 0.5 : 1
+                    }}
+                    onClick={() => handleQuantityChange(false)}
+                    disabled={quantity <= 1}
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    min="1"
+                    max={Math.min(getCurrentStock(), 10)}
+                    value={quantity}
+                    onChange={handleQuantityInputChange}
+                    onBlur={handleQuantityBlur}
+                    style={{
+                      width: '50px',
+                      textAlign: 'center',
+                      padding: '5px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      fontWeight: '600',
+                      MozAppearance: 'textfield',
+                      WebkitAppearance: 'none',
+                      margin: '0 5px'
+                    }}
+                    onKeyDown={(e) => {
+                      // Prevent typing 'e', '+', '-', '.'
+                      if (['e', 'E', '+', '-', '.'].includes(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                  />
+                  <button
+                    style={{
+                      padding: '5px 15px',
+                      border: '1px solid #ddd',
+                      background: '#fff',
+                      borderRadius: '4px',
+                      cursor: quantity >= Math.min(getCurrentStock(), 10) ? 'not-allowed' : 'pointer',
+                      opacity: quantity >= Math.min(getCurrentStock(), 10) ? 0.5 : 1
+                    }}
+                    onClick={() => handleQuantityChange(true)}
+                    disabled={quantity >= Math.min(getCurrentStock(), 10)}
+                  >
+                    +
+                  </button>
+                </div>
+                <div style={{
+                  color: getCurrentStock() <= 5 ? '#dc3545' : '#28a745',
+                  fontWeight: '500',
+                  marginBottom: '20px'
+                }}>
+                  {getCurrentStock()} in stock
+                  {getCurrentStock() <= 5 && ' - Order soon!'}
+                </div>
+              </div>
+
+
+              {/* Vendor Information */}
+              <div
+                className="seller-info"
+                onClick={async () => {
+                  const vendorId = product.vendor?.id;
+                  if (!vendorId) {
+                    console.warn('Vendor ID not found in product data');
+                    return;
+                  }
+
+                  try {
+                    const response = await fetch(`/api/vendors/${vendorId}`, {
+                      method: 'GET',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        // Add authentication token if required
+                        // 'Authorization': `Bearer ${yourAuthToken}`
+                      }
+                    });
+
+                    if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    if (data.success) {
+                      // Navigate to the vendor page with the vendor ID
+                      window.location.href = `/vendor/${vendorId}`;
+                    } else {
+                      console.error('Failed to fetch vendor details:', data.message);
+                    }
+                  } catch (error) {
+                    console.error('Error fetching vendor details:', error);
+                    // Fallback to the vendor page with just the ID if the API call fails
+                    window.location.href = `/vendor/${vendorId}`;
+                  }
+                }}
+                style={{
+                  margin: '15px 0',
+                  padding: '10px 0',
+                  cursor: 'pointer',
+                  borderBottom: '1px solid #eee'
+                }}
+              >
+                <div className="seller-info__identity" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div className="seller-info__icon" style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    backgroundColor: '#f0f0f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    color: '#666'
+                  }}>
+                    {product.vendor?.businessName?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <h4 className="seller-info__name" style={{ margin: 0, fontSize: '15px' }}>
+                    Sold by: {product.vendor?.businessName || 'Unknown Vendor'}
+                  </h4>
+                </div>
+              </div>
+
+              <div className="product-info__actions" style={{ display: 'flex', gap: '15px', marginTop: '20px', width: '100%' }}>
+                <button
+                  className="product-info__add-to-cart"
+                  onClick={handleAddToCart}
+                  disabled={getCurrentStock() <= 0}
+                  style={{
+                    flex: 1,
+                    padding: '12px 24px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: '#fff',
+                    backgroundColor: '#ff6b35',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: getCurrentStock() <= 0 ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    ...(getCurrentStock() > 0 && {
+                      ':hover': {
+                        backgroundColor: '#0069d9',
+                        transform: 'translateY(-1px)',
+                        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
+                      },
+                      ':active': {
+                        transform: 'translateY(0)',
+                        boxShadow: 'none'
+                      }
+                    })
+                  } as React.CSSProperties}
+                >
+                  <span></span>
+                  {getCurrentStock() > 0 ? 'Add to Cart' : 'Out of Stock'}
+                </button>
+                <button
+                  className="product-info__wishlist"
+                  onClick={handleAddToWishlist}
+                  style={{
+                    flex: 1,
+                    padding: '12px 24px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    color: 'orange',
+                    backgroundColor: 'transparent',
+                    border: '2px solid orange',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
                     ':hover': {
-                      backgroundColor: '#0069d9',
+                      backgroundColor: '#5a32a3',
                       transform: 'translateY(-1px)',
                       boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
                     },
@@ -1025,86 +1069,53 @@ const ProductPage = () => {
                       transform: 'translateY(0)',
                       boxShadow: 'none'
                     }
-                  })
-                } as React.CSSProperties}
-              >
-                <span></span>
-                {getCurrentStock() > 0 ? 'Add to Cart' : 'Out of Stock'}
-              </button>
-              <button 
-                className="product-info__wishlist"
-                onClick={handleAddToWishlist}
-                style={{
-                  flex: 1,
-                  padding: '12px 24px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  color: 'orange',
-                  backgroundColor: 'transparent',
-                  border: '2px solid orange',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  ':hover': {
-                    backgroundColor: '#5a32a3',
-                    transform: 'translateY(-1px)',
-                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)'
-                  },
-                  ':active': {
-                    transform: 'translateY(0)',
-                    boxShadow: 'none'
-                  }
-                } as React.CSSProperties}
-              >
-                <span></span>
-                Add to Wishlist
-              </button>
+                  } as React.CSSProperties}
+                >
+                  <span></span>
+                  Add to Wishlist
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      
-      {/* Reviews Section */}
-      <div className="product-page__reviews">
-        <Reviews
-          productId={Number(id)}
-          initialReviews={reviews}
-          initialAverageRating={averageRating}
-          onReviewUpdate={async () => {
-            localStorage.removeItem(`${CACHE_KEY_REVIEWS}_${id}`);
-          }}
-        />
-      </div>
-      
-      {/* Recommended Products */}
-      <div className="product-page__recommended">
-        <RecommendedProducts 
-          products={recommendedProducts ?? []}
-          currentProductId={product.id}
-          fallbackCategoryId={effectiveCategoryId}
-          fallbackSubcategoryId={effectiveSubcategoryId}
-          isLoading={isLoadingRecommended}
-        />
-      </div>
-     
-      {/* Toast Notification */}
-      {showToast && (
-        <div className="toast">
-          <div className="toast__content">
-            <span className="toast__icon">✓</span>
-            <span className="toast__message">{toastMessage}</span>
-          </div>
+
+        {/* Reviews Section */}
+        <div className="product-page__reviews">
+          <Reviews
+            productId={Number(id)}
+            initialReviews={reviews}
+            initialAverageRating={averageRating}
+            onReviewUpdate={async () => {
+              localStorage.removeItem(`${CACHE_KEY_REVIEWS}_${id}`);
+            }}
+          />
         </div>
-      )}
-      
-      {/* Auth Modal */}
-      {authModalOpen && (
-        <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
-      )}
+
+        {/* Recommended Products */}
+        <div className="product-page__recommended">
+          <RecommendedProducts
+            products={recommendedProducts ?? []}
+            currentProductId={product.id}
+            fallbackCategoryId={effectiveCategoryId}
+            fallbackSubcategoryId={effectiveSubcategoryId}
+            isLoading={isLoadingRecommended}
+          />
+        </div>
+
+        {/* Toast Notification */}
+        {showToast && (
+          <div className="toast">
+            <div className="toast__content">
+              <span className="toast__icon">✓</span>
+              <span className="toast__message">{toastMessage}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Auth Modal */}
+        {authModalOpen && (
+          <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+        )}
       </main>
       <Footer />
     </div>

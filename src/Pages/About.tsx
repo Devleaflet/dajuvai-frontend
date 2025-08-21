@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Footer from "../Components/Footer";
 import Navbar from "../Components/Navbar";
 import '../Styles/About.css';
-import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaCheckCircle, FaExclamationCircle} from 'react-icons/fa';
+import { FaPhone, FaEnvelope, FaMapMarkerAlt} from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axiosInstance from '../api/axiosInstance';
@@ -71,13 +71,16 @@ const About = () => {
       });
     } catch (err: unknown) {
       let errorMessage = "Oops! Something went wrong. Please try again later.";
+      if(formData.phone.length!=10){
+        errorMessage="Phone number should be of 10 digits"
+      }
       if (err && typeof err === 'object' && 'response' in err && err.response && typeof err.response === 'object' && 'data' in err.response && err.response.data && typeof err.response.data === 'object' && 'message' in err.response.data) {
         // @ts-expect-error: dynamic error shape from axios
         errorMessage = err.response.data.message || errorMessage;
       }
       toast.error(
         <div className="flex items-center">
-          <FaExclamationCircle size={24} className="mr-2 text-red-500" />
+
           <span>{errorMessage}</span>
         </div>,
         {

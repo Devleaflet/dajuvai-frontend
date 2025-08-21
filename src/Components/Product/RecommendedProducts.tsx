@@ -21,7 +21,7 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
 }) => {
   // Filter out current product from recommendations
   const filteredProducts = products.filter(p => p.id !== currentProductId);
-
+  console.log("fil", filteredProducts)
   if (isLoading) {
     return (
       <div className="recommended-loading">
@@ -64,10 +64,10 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
             originalPrice: undefined,
             discount: (p as any).discount ?? undefined,
             discountType: p.discountType ?? undefined,
-            rating: Number((p as any).avgRating ?? (p as any).rating ?? 0) || 0,
+            rating: Number((p as any).avgRating.avg ?? (p as any).rating ?? 0) || 0,
             ratingCount: String(
               (Array.isArray((p as any).reviews) ? (p as any).reviews.length : undefined)
-              ?? (p as any).reviewsCount
+              ?? (p as any).avgRating.count
               ?? (p as any).ratingCount
               ?? 0
             ),

@@ -12,7 +12,7 @@ import {
   FaSignOutAlt,
   FaHome,
   FaShoppingBag,
-  FaInfoCircle,
+  FaInfoCircle
 } from "react-icons/fa";
 import {
   FaFacebook,
@@ -181,7 +181,7 @@ const Navbar: React.FC = () => {
 
   const getUserAvatar = () => {
     if (isLoading) return <div className="navbar__avatar-loading"></div>;
-    if (!isAuthenticated || !user) return <FaUser />;
+    if (!isAuthenticated || !user) return <FaUser className="navbar__account-icon-login" />;
     if (user.profilePicture) {
       return (
         <img
@@ -507,7 +507,7 @@ const Navbar: React.FC = () => {
 
       const sku = item?.variant?.sku || item?.sku || item?.variantSku;
       if (sku) return `SKU: ${sku}`;
-    } catch {}
+    } catch { }
     return null;
   };
 
@@ -708,14 +708,34 @@ const Navbar: React.FC = () => {
     <nav className="navbar">
       <div className="navbar__container">
         <div>
-        
-        {/* New Top Links Section */}
-        <div className="nav_bar_right">
-          <a href="/privacy" className="navbar__top-link">Privacy Policy</a>
+
+          {/* New Top Links Section */}
+          <div className="nav_bar_right">
+            {/* <a href="/privacy" className="navbar__top-link">Privacy Policy</a>
           <a href="/terms" className="navbar__top-link">Terms & Conditions</a>
           <a href="/becomevendor" className="navbar__top-link">Become a Vendor</a>
-          <a href="/faq" className="navbar__top-link">FAQ</a>
-        </div>
+          <a href="/faq" className="navbar__top-link">FAQ</a> */}
+            {!isLoading && !isAuthenticated && (
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <a
+                  href="/vendor-login"
+                  className="navbar__account-link"
+                  onClick={toggleVendorAuthModal}
+                  aria-label="Vendor Login"
+                >
+                  <span className="navbar__account-text">Vendor Login</span>
+                </a>
+                <a
+                  href="/becomevendor"
+                  className="navbar__account-link"
+                  aria-label="Vendor Registration"
+                >
+                  <span className="navbar__account-text">Vendor Registration</span>
+                </a>
+              </div>
+            )}
+
+          </div>
         </div>
         <div className="navbar__top">
           <div className="navbar__top-row">
@@ -838,23 +858,13 @@ const Navbar: React.FC = () => {
                   </div>
                 )}
               </div>
-              {!isLoading && !isAuthenticated && (
-                <a
-                  href="/vendor-login"
-                  className="navbar__account-icon-link"
-                  onClick={toggleVendorAuthModal}
-                  aria-label="Vendor Login"
-                >
-                  <FaShoppingBag />
-                </a>
-              )}
-            <span className="navbar__social-link navbar__social-link--nepal">
-  <img
-    src={nepal}
-    alt="Nepal Flag"
-    className="navbar__nepal-flag"
-  />
-</span>
+              <span className="navbar__social-link navbar__social-link--nepal">
+                <img
+                  src={nepal}
+                  alt="Nepal Flag"
+                  className="navbar__nepal-flag"
+                />
+              </span>
               <button
                 className="navbar__hamburger"
                 onClick={toggleSideMenu}
@@ -956,7 +966,7 @@ const Navbar: React.FC = () => {
               >
                 Contact <span className="navbar__link-icon"></span>
               </NavLink>
-                
+
               <div className="navbar__more-dropdown" ref={moreDropdownRef}>
                 <button
                   className="navbar__link navbar__more-trigger"
@@ -980,7 +990,7 @@ const Navbar: React.FC = () => {
                       className="navbar__more-dropdown-link"
                       onClick={showComingSoon}
                       style={{
-                        cursor:'pointer'
+                        cursor: 'pointer'
                       }}
                     >
                       DajuVai Rental
@@ -1003,7 +1013,7 @@ const Navbar: React.FC = () => {
                 onClick={toggleCart}
                 ref={cartButtonRef}
               >
-                
+
                 <FaShoppingCart className="navbar__account-icon" />
                 {cartItems.length > 0 && (
                   <span className="navbar__cart-count">{cartItems.length}</span>
@@ -1099,17 +1109,8 @@ const Navbar: React.FC = () => {
                   </div>
                 )}
               </div>
-              {!isLoading && !isAuthenticated && (
-                <a
-                  href="/vendor-login"
-                  className="navbar__account-link"
-                  onClick={toggleVendorAuthModal}
-                  aria-label="Vendor Login"
-                >
-                  <span className="navbar__account-text">Vendor Login</span>
-                </a>
-              )}
-               
+
+
               <NavLink
                 to="/wishlist"
                 className="navbar__account-icon-link"
@@ -1122,15 +1123,15 @@ const Navbar: React.FC = () => {
             </div>
           </div>
 
-        <div className="nepal-flag">
-  <span className="navbar__social-link navbar__social-link--nepal">
-    <img
-      src={nepal}
-      alt="Nepal Flag"
-      className="navbar__nepal-flag"
-    />
-  </span>
-</div>
+          <div className="nepal-flag">
+            <span className="navbar__social-link navbar__social-link--nepal">
+              <img
+                src={nepal}
+                alt="Nepal Flag"
+                className="navbar__nepal-flag"
+              />
+            </span>
+          </div>
         </div>
 
         <div
@@ -1147,6 +1148,29 @@ const Navbar: React.FC = () => {
             </button>
             <h3 className="navbar__side-menu-title">Menu</h3>
           </div>
+          {!isLoading && !isAuthenticated && (
+            <div>
+              <div className="navbar__side-vendor">
+                <a
+                  href="/vendor-login"
+                  className="navbar__account-link"
+                  onClick={toggleVendorAuthModal}
+                  aria-label="Vendor Login"
+                >
+                  <span className="navbar__account-text">Vendor Login</span>
+                </a>
+              </div>
+              <div className="navbar__side-vendor">
+                <a
+                  href="/becomevendor"
+                  className="navbar__account-link"
+                  aria-label="Vendor Registration"
+                >
+                  <span className="navbar__account-text">Vendor Registration</span>
+                </a>
+              </div>
+            </div>
+          )}
           <div className="navbar__side-menu-category">
             <button
               className="navbar__side-menu-category-button"
@@ -1156,28 +1180,27 @@ const Navbar: React.FC = () => {
               <span>More</span>
               <FaChevronDown
                 size={20}
-                className={`navbar__side-menu-category-icon ${
-                  sideMoreOpen ? "navbar__side-menu-category-icon--open" : ""
-                }`}
+                className={`navbar__side-menu-category-icon ${sideMoreOpen ? "navbar__side-menu-category-icon--open" : ""
+                  }`}
               />
             </button>
             {sideMoreOpen && (
               <div className="navbar__side-menu-subcategories">
                 <div
                   className="navbar__side-menu-subcategory"
-                  style={{cursor:'pointer'}}
+                  style={{ cursor: 'pointer' }}
                   onClick={(e) => {
                     e.preventDefault();
                     showComingSoon();
                     setSideMenuOpen(false);
-                    
+
                   }}
                 >
                   DajuVai Rental
                 </div>
                 <div
                   className="navbar__side-menu-subcategory"
-                  style={{cursor:'pointer'}}
+                  style={{ cursor: 'pointer' }}
                   onClick={(e) => {
                     e.preventDefault();
                     showComingSoon();
@@ -1189,12 +1212,12 @@ const Navbar: React.FC = () => {
               </div>
             )}
           </div>
-         
+
 
           {renderSideMenuCategories()}
 
           <div className="navbar__side-menu-social">
-         
+
             <h3 className="navbar__side-menu-subtitle">Follow Us</h3>
             <div className="navbar__side-menu-social-icons">
               <a
@@ -1376,7 +1399,7 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="navbar__social navbar__social--desktop">
-           
+
             <a
               href="https://www.facebook.com/"
               target="_blank"
@@ -1469,7 +1492,7 @@ const Navbar: React.FC = () => {
       <VendorAuthModal
         isOpen={vendorAuthModalOpen}
         onClose={() => setVendorAuthModalOpen(false)}
-        forceLoginMode={true} 
+        forceLoginMode={true}
       />
     </nav>
   );
