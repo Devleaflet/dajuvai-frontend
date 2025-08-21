@@ -90,8 +90,8 @@ const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ isOpen, onClose
           <h4>Need Help?</h4>
           <p>If you're having trouble tracking your order, please contact our customer support:</p>
           <ul>
-            <li>📧 Email: support@dajuvai.com</li>
-            <li>📞 Phone: +977 - 9708555024</li>
+            <li>📧 Email: Dajuvai106@gmail.com</li>
+            <li>📞 Phone: +977 - 9700620004</li>
             <li>💬 WhatsApp: Available on our website</li>
           </ul>
         </div>

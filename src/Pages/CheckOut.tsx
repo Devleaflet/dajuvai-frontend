@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import CryptoJS from 'crypto-js';
 import '../Styles/CheckOut.css';
@@ -9,7 +9,6 @@ import Footer from '../Components/Footer';
 import logo from '../assets/logo.webp';
 import esewa from '../assets/esewa.png';
 import npx from '../assets/npx.png';
-import khalti from '../assets/khalti1.png';
 import { useAuth } from '../context/AuthContext';
 import AlertModal from '../Components/Modal/AlertModal';
 import { API_BASE_URL } from '../config';
@@ -25,6 +24,47 @@ interface PromoCode {
   discountPercentage: number;
 }
 
+interface Vendor {
+  id: number;
+  businessName: string;
+  district: District;
+}
+
+interface Variant {
+  id?: number;
+  sku?: string;
+  basePrice?: string;
+  discount?: string;
+  discountType?: string;
+  attributes?: { type: string; values: { value: string; nestedAttributes?: any[] }[] }[];
+  variantImages?: string[];
+  stock?: number;
+  status?: string;
+  productId?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface Product {
+  id: number;
+  name: string;
+  description?: string;
+  basePrice?: string | null;
+  discount?: string;
+  discountType?: string;
+  status?: string;
+  stock?: number | null;
+  subcategoryId?: number;
+  vendorId?: number;
+  dealId?: number | null;
+  bannerId?: number | null;
+  productImages?: string[];
+  brandId?: number | null;
+  hasVariants?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 interface CartItem {
   id: number;
   quantity: number;
@@ -32,31 +72,9 @@ interface CartItem {
   name: string;
   description?: string;
   image: string | null;
-  // Optional variant-related fields
   variantId?: number;
-  variant?: {
-    id?: number;
-    name?: string;
-    sku?: string;
-    attributes?: any;
-    attributeValues?: any;
-    attrs?: any;
-    attributeSpecs?: any;
-  };
-  attributes?: any;
-  variantAttributes?: any;
-  product?: {
-    id: number;
-    name: string;
-    vendor?: {
-      id: number;
-      businessName: string;
-      district?: {
-        id: number;
-        name: string;
-      };
-    };
-  };
+  variant?: Variant;
+  product?: Product;
 }
 
 interface ShippingGroup {
@@ -65,14 +83,13 @@ interface ShippingGroup {
   items: CartItem[];
   shippingCost: number;
   subtotal: number;
-  lineTotal: number; // Added line total (subtotal + shipping)
+  lineTotal: number;
 }
 
 const Checkout: React.FC = () => {
   const location = useLocation();
   const { cartItems: contextCartItems, handleIncreaseQuantity, handleDecreaseQuantity } = useCart();
   let cartItems = contextCartItems;
-  // If coming from Buy Now, override cartItems with the single product from state
   if (location.state && location.state.buyNow && location.state.product) {
     const p = location.state.product;
     cartItems = [{
@@ -84,7 +101,7 @@ const Checkout: React.FC = () => {
       product: {
         id: p.id,
         name: p.name,
-        vendor: p.vendor?.businessName || undefined,
+        vendorId: p.vendor?.id || 0,
         description: p.description || '',
         price: Number(p.price),
         rating: p.rating || 0,
@@ -92,9 +109,11 @@ const Checkout: React.FC = () => {
         image: p.image || '',
       },
     }];
+    console.log('Buy Now cartItems:', cartItems);
   }
+  console.log('Initial cartItems:', cartItems); // Debug initial cartItems
   const navigate = useNavigate();
-  
+
   const [billingDetails, setBillingDetails] = useState({
     province: 'Bagmati',
     district: '',
@@ -105,9 +124,10 @@ const Checkout: React.FC = () => {
 
   const auth = useAuth();
   const token = auth?.token;
- 
+
   const [districts, setDistricts] = useState<District[]>([]);
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
+  const [vendors, setVendors] = useState<{ [key: number]: Vendor }>({});
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('CASH_ON_DELIVERY');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -119,7 +139,6 @@ const Checkout: React.FC = () => {
   const [appliedPromoCode, setAppliedPromoCode] = useState<PromoCode | null>(null);
   const [promoError, setPromoError] = useState('');
 
-  // eSewa form data state
   const [formData, setformData] = useState({
     amount: "10",
     tax_amount: "0",
@@ -135,7 +154,6 @@ const Checkout: React.FC = () => {
     secret: "8gBm/:&EnhH.1/q",
   });
 
-  // Generate eSewa signature
   const generateSignature = (
     total_amount: string,
     transaction_uuid: string,
@@ -148,7 +166,6 @@ const Checkout: React.FC = () => {
     return hashedSignature;
   };
 
-  // Update signature when amount changes
   useEffect(() => {
     const { total_amount, transaction_uuid, product_code, secret } = formData;
     const hashedSignature = generateSignature(
@@ -167,11 +184,9 @@ const Checkout: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
     if (name === 'phoneNumber') {
       const numericValue = value.replace(/\D/g, '').slice(0, 10);
       setBillingDetails((prev) => ({ ...prev, [name]: numericValue }));
-      
       if (numericValue && !validatePhoneNumber(numericValue)) {
         setPhoneError('Phone number must start with 9 and be exactly 10 digits long');
       } else {
@@ -195,11 +210,9 @@ const Checkout: React.FC = () => {
       setPromoError('Please enter a promo code');
       return;
     }
-
     const foundPromoCode = promoCodes.find(
       promo => promo.promoCode.toUpperCase() === enteredPromoCode.toUpperCase()
     );
-
     if (foundPromoCode) {
       setAppliedPromoCode(foundPromoCode);
       setPromoError('');
@@ -223,27 +236,22 @@ const Checkout: React.FC = () => {
       setShowAlert(true);
       return;
     }
-
     if (!billingDetails.district || !billingDetails.city || !billingDetails.streetAddress || !billingDetails.phoneNumber) {
       setAlertMessage('Please fill in all required fields including phone number');
       setShowAlert(true);
       return;
     }
-
     if (!validatePhoneNumber(billingDetails.phoneNumber)) {
       setAlertMessage('Please enter a valid phone number (must start with 9 and be exactly 10 digits long)');
       setShowAlert(true);
       return;
     }
-
     if (cartItems.length === 0) {
       setAlertMessage('Your cart is empty');
       setShowAlert(true);
       return;
     }
-
     setIsPlacingOrder(true);
-
     try {
       const orderData = {
         shippingAddress: {
@@ -256,10 +264,7 @@ const Checkout: React.FC = () => {
         phoneNumber: billingDetails.phoneNumber,
         ...(appliedPromoCode && { promoCode: appliedPromoCode.promoCode })
       };
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const response = await fetch(`${API_BASE_URL}/api/order`, {
         method: 'POST',
@@ -267,30 +272,20 @@ const Checkout: React.FC = () => {
         body: JSON.stringify(orderData),
         credentials: 'include',
       });
-
       const result = await response.json();
-
       if (result.success) {
         if (selectedPaymentMethod === 'CASH_ON_DELIVERY') {
           setAlertMessage('Order placed successfully!');
           setShowAlert(true);
         }
         setTimeout(() => {
-          if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod!=='ESEWA') {
+          if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod !== 'ESEWA') {
             navigate('/order-page', {
-              state: {
-                orderDetails: {
-                  orderId: result.data?.id || null,
-                  totalAmount: finalTotal,
-                },
-              },
+              state: { orderDetails: { orderId: result.data?.id || null, totalAmount: finalTotal } },
             });
           } else {
-            // Force full page reload to clear cart visually and then redirect
             window.location.reload();
-            setTimeout(() => {
-              window.location.href = '/user-profile';
-            }, 100);
+            setTimeout(() => { window.location.href = '/user-profile'; }, 100);
           }
         }, 1500);
       } else {
@@ -308,57 +303,44 @@ const Checkout: React.FC = () => {
 
   const normalizeDistrict = (district: string): string => {
     const kathmandu_valley = ['kathmandu', 'lalitpur', 'bhaktapur'];
-    if (kathmandu_valley.includes(district.toLowerCase())) {
-      return 'Kathmandu Valley';
-    }
-    return district;
+    return kathmandu_valley.includes(district.toLowerCase()) ? 'Kathmandu Valley' : district;
   };
 
-  const getVendorInfo = (item: any) => {
+  const getVendorInfo = (item: CartItem) => {
+    const vendorId = item.product?.vendorId || 0;
+    console.log('Vendor ID:', vendorId, 'Vendors[1]:', vendors[1]); // Detailed debug
     return {
-      businessName: item.product?.vendor?.businessName || item.vendor?.businessName || 'Unknown Vendor',
-      district: item.product?.vendor?.district?.name || item.vendor?.district?.name || 'Unknown District'
+      businessName: vendors[vendorId]?.businessName || 'Unknown Vendor',
+      district: vendors[vendorId]?.district?.name || 'Unknown District',
     };
   };
 
   const groupItemsByVendor = (): ShippingGroup[] => {
-    if (cartItems.length === 0) {
-      return [];
-    }
-
-    const vendorGroups: { [key: string]: any[] } = {};
-
+    if (cartItems.length === 0) return [];
+    const vendorGroups: { [key: string]: CartItem[] } = {};
     cartItems.forEach((item) => {
       const vendorInfo = getVendorInfo(item);
       const key = `${vendorInfo.businessName}-${vendorInfo.district}`;
-      
-      if (!vendorGroups[key]) {
-        vendorGroups[key] = [];
-      }
+      if (!vendorGroups[key]) vendorGroups[key] = [];
       vendorGroups[key].push(item);
     });
-
-    return Object.entries(vendorGroups).map(([key, items]) => {
+    return Object.entries(vendorGroups).map(([_, items]) => {
       const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
       const vendorInfo = getVendorInfo(items[0]);
-      
       let shippingCost = 0;
       if (billingDetails.district) {
         const customerDistrict = normalizeDistrict(billingDetails.district);
         const normalizedVendorDistrict = normalizeDistrict(vendorInfo.district);
-        const isSameDistrict = customerDistrict === normalizedVendorDistrict;
-        shippingCost = isSameDistrict ? 100 : 200;
+        shippingCost = customerDistrict === normalizedVendorDistrict ? 100 : 200;
       }
-
       const lineTotal = subtotal + shippingCost;
-
       return {
         vendorDistrict: vendorInfo.district,
         vendorName: vendorInfo.businessName,
         items,
         shippingCost,
         subtotal,
-        lineTotal
+        lineTotal,
       };
     });
   };
@@ -367,54 +349,38 @@ const Checkout: React.FC = () => {
   const subtotal = cartItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
   const totalShipping = vendorGroups.reduce((sum, group) => sum + group.shippingCost, 0);
   const total = subtotal + totalShipping;
-
   const discountPercentage = appliedPromoCode ? appliedPromoCode.discountPercentage : 0;
   const discountAmount = appliedPromoCode ? Math.round((total * discountPercentage) / 100) : 0;
   const finalTotal = total - discountAmount;
 
-  // Format a human-readable label for the item's selected variant
-  const getVariantLabel = (item: any): string => {
-    const v = item?.variant || item?.selectedVariant || null;
+  const getVariantLabel = (item: CartItem): string => {
+    const v = item.variant || item?.selectedVariant || null;
     if (!v) {
-      // Some APIs put attributes at the item root
       const rootAttrs = (item && (item.variantAttributes || item.attributes)) || null;
-      const fromRoot = rootAttrs ? formatAttributes(rootAttrs) : '';
-      return fromRoot;
+      return rootAttrs ? formatAttributes(rootAttrs) : '';
     }
-
-    // Prefer variant name if present
     if (typeof v.name === 'string' && v.name.trim()) return v.name.trim();
-
-    // Build label from attributes on the variant
     const byAttrs = formatAttributes(v.attributes || v.attributeValues || v.attributeSpecs || v.attrs || null);
     if (byAttrs) return byAttrs;
-
-    // Fallbacks
     if (v.sku) return `SKU: ${String(v.sku)}`;
     return '';
   };
 
-  // Helper: formats different shapes of attributes into "Color: Red, Size: M"
   const formatAttributes = (attrs: any): string => {
     if (!attrs) return '';
-
-    // Case 1: Array of attribute entries
     if (Array.isArray(attrs)) {
       const parts = attrs.map((a: any) => {
         const label = String(a?.type ?? a?.attributeType ?? a?.name ?? '').trim();
-        const valuesSrc: any = a?.values ?? a?.attributeValues ?? a?.value ?? a?.name ?? [];
+        const valuesSrc = a?.values ?? a?.attributeValues ?? a?.value ?? a?.name ?? [];
         const valuesArr = Array.isArray(valuesSrc) ? valuesSrc : [valuesSrc];
         const valueText = valuesArr
           .map((v: any) => String((v && typeof v === 'object') ? (v.value ?? v.name ?? JSON.stringify(v)) : v))
           .filter(Boolean)
           .join('/');
-        if (!label && !valueText) return '';
         return label ? `${label}: ${valueText}` : valueText;
       }).filter(Boolean);
       return parts.join(', ');
     }
-
-    // Case 2: Object map { Color: 'Red', Size: 'M' }
     if (typeof attrs === 'object') {
       const parts = Object.entries(attrs).map(([k, v]) => {
         const label = String(k).trim();
@@ -425,18 +391,14 @@ const Checkout: React.FC = () => {
       });
       return parts.join(', ');
     }
-
-    // Fallback: treat as plain text
     return String(attrs);
   };
 
-  const handleIncrease = (item: any) => {
-    // Use cartItemId (item.id) with new API contract
+  const handleIncrease = (item: CartItem) => {
     handleIncreaseQuantity(item.id, 1);
   };
 
-  const handleDecrease = (item: any) => {
-    // Use cartItemId (item.id) with new API contract
+  const handleDecrease = (item: CartItem) => {
     handleDecreaseQuantity(item.id, 1);
   };
 
@@ -445,9 +407,7 @@ const Checkout: React.FC = () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/district`);
         const result = await response.json();
-        if (result.success) {
-          setDistricts(result.data);
-        }
+        if (result.success) setDistricts(result.data);
       } catch (error) {
         console.error('Error fetching districts:', error);
       }
@@ -457,30 +417,44 @@ const Checkout: React.FC = () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/promo`);
         const result = await response.json();
-        if (result.success && result.data) {
-          setPromoCodes(result.data);
-        }
+        if (result.success && result.data) setPromoCodes(result.data);
       } catch (error) {
         console.error('Error fetching promo codes:', error);
       }
     };
 
+    const fetchVendors = async () => {
+      const uniqueVendorIds = [...new Set(cartItems.map(item => item.product?.vendorId).filter(id => id !== undefined))];
+      console.log('Unique Vendor IDs:', uniqueVendorIds); // Debug
+      if (uniqueVendorIds.length > 0) {
+        try {
+          const vendorPromises = uniqueVendorIds.map(async (vendorId) => {
+            const response = await fetch(`${API_BASE_URL}/api/vendors/${vendorId}`, {
+              headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+            });
+            const result = await response.json();
+            return result.success ? { [vendorId]: result.data } : null; // Extract data object
+          });
+          const vendorData = await Promise.all(vendorPromises);
+          const updatedVendors = vendorData.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+          console.log('Updated Vendors:', updatedVendors); // Debug full object
+          setVendors(prevVendors => ({ ...prevVendors, ...updatedVendors }));
+        } catch (error) {
+          console.error('Error fetching vendors:', error);
+        }
+      }
+    };
+
     fetchDistricts();
     fetchPromoCodes();
-  }, []);
+    fetchVendors();
+  }, [cartItems, token]);
 
   return (
     <>
       <Navbar />
       <AlertModal open={showAlert} message={alertMessage} onClose={() => setShowAlert(false)} />
-      
-      {/* Hidden eSewa form */}
-      <form
-        id="esewa-form"
-        action="https://rc-epay.esewa.com.np/api/epay/main/v2/form"
-        method="POST"
-        style={{ display: 'none' }}
-      >
+      <form id="esewa-form" action="https://rc-epay.esewa.com.np/api/epay/main/v2/form" method="POST" style={{ display: 'none' }}>
         <input type="hidden" name="amount" value={formData.amount} />
         <input type="hidden" name="tax_amount" value={formData.tax_amount} />
         <input type="hidden" name="total_amount" value={formData.total_amount} />
@@ -493,28 +467,19 @@ const Checkout: React.FC = () => {
         <input type="hidden" name="signed_field_names" value={formData.signed_field_names} />
         <input type="hidden" name="signature" value={formData.signature} />
       </form>
-
-      {/* Order placed alert for Cash on Delivery only */}
       {showAlert && alertMessage && selectedPaymentMethod === 'CASH_ON_DELIVERY' && (
         <div className="checkout-container__alert">
-          <span role="img" aria-label="success" style={{fontSize: '1.5em', marginRight: '0.5em'}}>✅</span>
+          <span role="img" aria-label="success" style={{ fontSize: '1.5em', marginRight: '0.5em' }}>✅</span>
           {alertMessage}
         </div>
       )}
-
       <div className="checkout-container">
         <h2>Billing Details</h2>
         <div className="checkout-container__content">
           <div className="checkout-container__billing-details">
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Province</label>
-              <select
-                name="province"
-                value={billingDetails.province}
-                onChange={handleInputChange}
-                className="checkout-container__form-group-select"
-                required
-              >
+              <select name="province" value={billingDetails.province} onChange={handleInputChange} className="checkout-container__form-group-select" required>
                 <option value="Province 1">Province 1</option>
                 <option value="Madhesh">Madhesh</option>
                 <option value="Bagmati">Bagmati</option>
@@ -526,169 +491,49 @@ const Checkout: React.FC = () => {
             </div>
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">District *</label>
-              <select
-                name="district"
-                value={billingDetails.district}
-                onChange={handleInputChange}
-                className="checkout-container__form-group-select"
-                required
-              >
+              <select name="district" value={billingDetails.district} onChange={handleInputChange} className="checkout-container__form-group-select" required>
                 <option value="">Select District</option>
                 {districts.map((district) => (
-                  <option key={district.id} value={district.name}>
-                    {district.name}
-                  </option>
+                  <option key={district.id} value={district.name}>{district.name}</option>
                 ))}
               </select>
             </div>
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">City *</label>
-              <input
-                type="text"
-                name="city"
-                value={billingDetails.city}
-                onChange={handleInputChange}
-                placeholder="Enter your city"
-                className="checkout-container__form-group-input"
-                required
-              />
+              <input type="text" name="city" value={billingDetails.city} onChange={handleInputChange} placeholder="Enter your city" className="checkout-container__form-group-input" required />
             </div>
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Street Address *</label>
-              <input
-                type="text"
-                name="streetAddress"
-                value={billingDetails.streetAddress}
-                onChange={handleInputChange}
-                placeholder="Enter your street address"
-                className="checkout-container__form-group-input"
-                required
-              />
+              <input type="text" name="streetAddress" value={billingDetails.streetAddress} onChange={handleInputChange} placeholder="Enter your street address" className="checkout-container__form-group-input" required />
             </div>
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Phone Number *</label>
-              <input
-                type="tel"
-                name="phoneNumber"
-                value={billingDetails.phoneNumber}
-                onChange={handleInputChange}
-                placeholder="9xxxxxxxxx"
-                className="checkout-container__form-group-input"
-                maxLength={10}
-                required
-              />
-              {phoneError && (
-                <span style={{ color: 'red', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
-                  {phoneError}
-                </span>
-              )}
+              <input type="tel" name="phoneNumber" value={billingDetails.phoneNumber} onChange={handleInputChange} placeholder="9xxxxxxxxx" className="checkout-container__form-group-input" maxLength={10} required />
+              {phoneError && <span style={{ color: 'red', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>{phoneError}</span>}
             </div>
-            
-            {/* Promo Code Section */}
             <div className="checkout-container__promo-section-left">
               <h3 style={{ marginBottom: '1rem', color: '#333' }}>🎉 Have a Promo Code?</h3>
               {!showPromoField ? (
-                <button
-                  type="button"
-                  className="checkout-container__promo-button-left"
-                  onClick={() => setShowPromoField(true)}
-                  style={{
-                    backgroundColor: '#ff6b35',
-                    color: 'white',
-                    border: 'none',
-                    padding: '12px 24px',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    boxShadow: '0 4px 12px rgba(255, 107, 53, 0.3)',
-                    width: '100%',
-                    maxWidth: '300px'
-                  }}
-                >
-                  ✨ Apply Promo Code
-                </button>
+                <button type="button" className="checkout-container__promo-button-left" onClick={() => setShowPromoField(true)} style={{
+                  backgroundColor: '#ff6b35', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 4px 12px rgba(255, 107, 53, 0.3)', width: '100%', maxWidth: '300px'
+                }}>✨ Apply Promo Code</button>
               ) : (
                 <div className="checkout-container__promo-input-section-left">
                   <div className="checkout-container__promo-input-container-left" style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                    <input
-                      type="text"
-                      placeholder="Enter your promo code"
-                      value={enteredPromoCode}
-                      onChange={(e) => setEnteredPromoCode(e.target.value)}
-                      style={{
-                        flex: 1,
-                        padding: '12px',
-                        border: '2px solid #ddd',
-                        borderRadius: '6px',
-                        fontSize: '16px',
-                        outline: 'none',
-                        transition: 'border-color 0.3s ease'
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleApplyPromoCode}
-                      style={{
-                        backgroundColor: '#ff6b35',
-                        color: 'white',
-                        border: 'none',
-                        padding: '12px 20px',
-                        borderRadius: '6px',
-                        fontSize: '16px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease',
-                        boxShadow: '0 2px 8px rgba(255, 107, 53, 0.3)'
-                      }}
-                    >
-                      Apply
-                    </button>
+                    <input type="text" placeholder="Enter your promo code" value={enteredPromoCode} onChange={(e) => setEnteredPromoCode(e.target.value)} style={{ flex: 1, padding: '12px', border: '2px solid #ddd', borderRadius: '6px', fontSize: '16px', outline: 'none', transition: 'border-color 0.3s ease' }} />
+                    <button type="button" onClick={handleApplyPromoCode} style={{ backgroundColor: '#ff6b35', color: 'white', border: 'none', padding: '12px 20px', borderRadius: '6px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 2px 8px rgba(255, 107, 53, 0.3)' }}>Apply</button>
                   </div>
-                  {promoError && (
-                    <span style={{ color: 'red', fontSize: '0.9rem', display: 'block' }}>
-                      ❌ {promoError}
-                    </span>
-                  )}
+                  {promoError && <span style={{ color: 'red', fontSize: '0.9rem', display: 'block' }}>❌ {promoError}</span>}
                 </div>
               )}
-              
               {appliedPromoCode && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  backgroundColor: '#f0f9ff',
-                  border: '2px solid #22c55e',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  marginTop: '15px'
-                }}>
-                  <span style={{ color: '#22c55e', fontSize: '16px', fontWeight: '600' }}>
-                    ✅ "{appliedPromoCode.promoCode}" applied ({appliedPromoCode.discountPercentage}% off)
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleRemovePromoCode}
-                    style={{
-                      backgroundColor: '#ef4444',
-                      color: 'white',
-                      border: 'none',
-                      padding: '6px 12px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      cursor: 'pointer',
-                      transition: 'background-color 0.3s ease'
-                    }}
-                  >
-                    Remove
-                  </button>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f0f9ff', border: '2px solid #22c55e', borderRadius: '8px', padding: '12px', marginTop: '15px' }}>
+                  <span style={{ color: '#22c55e', fontSize: '16px', fontWeight: '600' }}>✅ "{appliedPromoCode.promoCode}" applied ({appliedPromoCode.discountPercentage}% off)</span>
+                  <button type="button" onClick={handleRemovePromoCode} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', fontSize: '12px', cursor: 'pointer', transition: 'background-color 0.3s ease' }}>Remove</button>
                 </div>
               )}
             </div>
           </div>
-
           <div className="checkout-container__order-summary">
             <h3 className="checkout-container__order-summary-heading">Your Order</h3>
             <div className="checkout-container__order-details">
@@ -698,49 +543,27 @@ const Checkout: React.FC = () => {
                   {vendorGroups.map((group, groupIndex) => (
                     <div key={groupIndex} className="checkout-container__vendor-group">
                       <div className="checkout-container__vendor-info">
-                        <h5 className="checkout-container__vendor-name">
-                          Vendor: {group.vendorName}
-                        </h5>
-                        <p className="checkout-container__vendor-location">
-                          Location: {group.vendorDistrict}
-                        </p>
+                        <h5 className="checkout-container__vendor-name">Vendor: {group.vendorName}</h5>
+                        <p className="checkout-container__vendor-location">Location: {group.vendorDistrict}</p>
                       </div>
-                      
                       {group.items.map((item) => (
                         <div key={item.id} className="checkout-container__product-item">
-                          <img
-                            src={item.image || logo}
-                            alt={item.name}
-                            className="checkout-container__product-item-img"
-                          />
+                          <img src={item.image || logo} alt={item.name} className="checkout-container__product-item-img" />
                           <div className="checkout-container__product-info">
                             <span className="checkout-container__product-info-text">{item.name}</span>
                             {(() => {
                               const label = getVariantLabel(item);
-                              return label ? (
-                                <small style={{ display: 'block', color: '#666', marginTop: 4 }}>Variant: {label}</small>
-                              ) : null;
+                              return label ? <small style={{ display: 'block', color: '#666', marginTop: 4 }}>Variant: {label}</small> : null;
                             })()}
                             <div className="checkout-container__quantity-controls">
-                              <button
-                                className="checkout-container__quantity-controls-button"
-                                onClick={() => handleDecrease(item)}
-                              >
-                                -
-                              </button>
+                              <button className="checkout-container__quantity-controls-button" onClick={() => handleDecrease(item)}>-</button>
                               <span>{item.quantity}</span>
-                              <button
-                                className="checkout-container__quantity-controls-button"
-                                onClick={() => handleIncrease(item)}
-                              >
-                                +
-                              </button>
+                              <button className="checkout-container__quantity-controls-button" onClick={() => handleIncrease(item)}>+</button>
                             </div>
                           </div>
                           <span className="checkout-container__product-price">Rs {(Number(item.price) * item.quantity).toLocaleString()}</span>
                         </div>
                       ))}
-                      
                       <div className="checkout-container__group-summary">
                         <div className="checkout-container__group-subtotal">
                           <span>Linetotal ({group.vendorName}):</span>
@@ -751,9 +574,7 @@ const Checkout: React.FC = () => {
                             <span>Shipping from {group.vendorDistrict}:</span>
                             <span className="checkout-container__shipping-cost">
                               Rs {group.shippingCost.toLocaleString()}
-                              {normalizeDistrict(billingDetails.district) === normalizeDistrict(group.vendorDistrict) && 
-                                <small> (Same district)</small>
-                              }
+                              {normalizeDistrict(billingDetails.district) === normalizeDistrict(group.vendorDistrict) && <small> (Same district)</small>}
                             </span>
                           </div>
                         )}
@@ -768,7 +589,6 @@ const Checkout: React.FC = () => {
               ) : (
                 <p>No items in cart.</p>
               )}
-              
               <div className="checkout-container__order-total">
                 <span>Sub Total:</span>
                 <span>Rs {subtotal.toLocaleString()}</span>
@@ -779,7 +599,6 @@ const Checkout: React.FC = () => {
                   <span>Rs {totalShipping.toLocaleString()}</span>
                 </div>
               )}
-
               {appliedPromoCode && (
                 <div className="checkout-container__order-total">
                   <span>Discount ({discountPercentage}%):</span>
@@ -793,58 +612,26 @@ const Checkout: React.FC = () => {
             </div>
             <div className="checkout-container__payment-methods">
               <label className="checkout-container__payment-methods-label">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="CASH_ON_DELIVERY"
-                  className="checkout-container__payment-methods-input"
-                  checked={selectedPaymentMethod === 'CASH_ON_DELIVERY'}
-                  onChange={handlePaymentMethodChange}
-                />
+                <input type="radio" name="payment" value="CASH_ON_DELIVERY" className="checkout-container__payment-methods-input" checked={selectedPaymentMethod === 'CASH_ON_DELIVERY'} onChange={handlePaymentMethodChange} />
                 Cash on delivery
               </label>
-            
               <label className="checkout-container__payment-methods-label">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="ONLINE_PAYMENT"
-                  className="checkout-container__payment-methods-input"
-                  checked={selectedPaymentMethod === 'ONLINE_PAYMENT'}
-                  onChange={handlePaymentMethodChange}
-                />
+                <input type="radio" name="payment" value="ONLINE_PAYMENT" className="checkout-container__payment-methods-input" checked={selectedPaymentMethod === 'ONLINE_PAYMENT'} onChange={handlePaymentMethodChange} />
                 <img src={npx} alt="NPX" className="checkout-container__payment-methods-img" />
               </label>
               <label className="checkout-container__payment-methods-label">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="ESEWA"
-                  className="checkout-container__payment-methods-input"
-                  checked={selectedPaymentMethod === 'ESEWA'}
-                  onChange={handlePaymentMethodChange}
-                />
-                <img src={esewa} alt="eSewa" className="checkout-container__payment-methods-img"/>
-                </label>
+                <input type="radio" name="payment" value="ESEWA" className="checkout-container__payment-methods-input" checked={selectedPaymentMethod === 'ESEWA'} onChange={handlePaymentMethodChange} />
+                <img src={esewa} alt="eSewa" className="checkout-container__payment-methods-img" />
+              </label>
             </div>
             <p className="checkout-container__privacy-note">
               Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our privacy policy.
             </p>
             <label className="checkout-container__terms-checkbox">
-              <input
-                type="checkbox"
-                checked={termsAgreed}
-                onChange={handleTermsChange}
-                className="checkout-container__terms-checkbox-input"
-                required
-              />
+              <input type="checkbox" checked={termsAgreed} onChange={handleTermsChange} className="checkout-container__terms-checkbox-input" required />
               I have read and agree to the website terms and conditions *
             </label>
-            <button
-              className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''}`}
-              disabled={!termsAgreed || isPlacingOrder}
-              onClick={handlePlaceOrder}
-            >
+            <button className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''}`} disabled={!termsAgreed || isPlacingOrder} onClick={handlePlaceOrder}>
               {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
             </button>
           </div>

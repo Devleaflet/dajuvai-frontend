@@ -56,7 +56,8 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [district, setDistrict] = useState<string>("");
   const [taxNumber, setTaxNumber] = useState<string>("");
-  const [taxDocument, setTaxDocument] = useState<File | null>(null);
+  const [taxDocuments, setTaxDocuments] = useState<File[]>([]);
+  const [companyDocuments, setCompanyDocuments] = useState<File[]>([]);
 
   // UI states
   const [districts, setDistricts] = useState<District[]>([]);
@@ -100,7 +101,9 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
             password === confirmPassword
           );
         } else if (currentStep === 3) {
-          return taxNumber.trim().length === 9 && taxDocument !== null;
+          return taxNumber.trim().length === 9 && taxDocuments.length > 0;
+        } else if (currentStep === 4) {
+          return companyDocuments.length > 0;
         }
         return true;
       };
@@ -114,7 +117,8 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     password,
     confirmPassword,
     taxNumber,
-    taxDocument,
+    taxDocuments,
+    companyDocuments,
     currentStep,
     isLoginMode,
     showVerification,
@@ -201,7 +205,8 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       setPhoneNumber("");
       setDistrict("");
       setTaxNumber("");
-      setTaxDocument(null);
+      setTaxDocuments([]);
+      setCompanyDocuments([]);
       setDistricts([]);
       setError("");
       setSuccess("");
@@ -228,10 +233,18 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     if (!district.trim()) errors.push("District is required");
     if (!taxNumber.trim()) errors.push("Pan/Vat number is required");
     if (taxNumber.length !== 9) errors.push("Pan/Vat number must be 9 characters");
-    if (!taxDocument) errors.push("Pan/Vat document is required");
-    if (taxDocument && !/\.(jpg|jpeg|png|pdf)$/i.test(taxDocument.name)) {
-      errors.push("Document must be an image (JPG, JPEG, PNG) or PDF");
-    }
+    if (taxDocuments.length === 0) errors.push("At least one Pan/Vat document is required");
+    taxDocuments.forEach((doc, index) => {
+      if (!/\.(jpg|jpeg|png|pdf)$/i.test(doc.name)) {
+        errors.push(`Pan/Vat document ${index + 1} must be an image (JPG, JPEG, PNG) or PDF`);
+      }
+    });
+    if (companyDocuments.length === 0) errors.push("At least one company document is required");
+    companyDocuments.forEach((doc, index) => {
+      if (!/\.(jpg|jpeg|png|pdf)$/i.test(doc.name)) {
+        errors.push(`Company document ${index + 1} must be an image (JPG, JPEG, PNG) or PDF`);
+      }
+    });
     if (!password.trim()) errors.push("Password is required");
     if (password.length < 8) errors.push("Password must be at least 8 characters");
     if (!/[a-z]/.test(password)) errors.push("Password must contain at least one lowercase letter");
@@ -251,35 +264,52 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     return true;
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files ? e.target.files[0] : null;
-    setTaxDocument(file);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, documentType: 'tax' | 'company') => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    if (documentType === 'tax') {
+      setTaxDocuments((prev) => [...prev, ...files]);
+    } else {
+      setCompanyDocuments((prev) => [...prev, ...files]);
+    }
   };
 
-  const handleFileUpload = async (file: File): Promise<string | null> => {
+  const removeFile = (index: number, documentType: 'tax' | 'company') => {
+    if (documentType === 'tax') {
+      setTaxDocuments((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      setCompanyDocuments((prev) => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleFileUpload = async (files: File[]): Promise<string[] | null> => {
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      
-      const response = await axios.post<ImageUploadResponse>(
-        `${API_BASE_URL}/api/image?folder=vendor`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
+      const uploadPromises = files.map(async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        
+        const response = await axios.post<ImageUploadResponse>(
+          `${API_BASE_URL}/api/image?folder=vendor`,
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
+        
+        console.log("📤 File upload response:", response.data);
+        
+        if (response.data.success && response.data.data) {
+          return response.data.data;
+        } else {
+          throw new Error(response.data.msg || "Failed to upload document");
         }
-      );
-      
-      console.log("📤 File upload response:", response.data);
-      
-      if (response.data.success && response.data.data) {
-        return response.data.data;
-      } else {
-        throw new Error(response.data.msg || "Failed to upload Pan/Vat document");
-      }
+      });
+
+      const urls = await Promise.all(uploadPromises);
+      return urls;
     } catch (err) {
       console.error("File upload failed:", err);
-      setError("Failed to upload Pan/Vat document. Please try again.");
-      toast.error("Failed to upload Pan/Vat document. Please try again.");
+      setError("Failed to upload document(s). Please try again.");
+      toast.error("Failed to upload document(s). Please try again.");
       return null;
     }
   };
@@ -291,7 +321,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     phoneNumber: string;
     district: string;
     taxNumber: string;
-    taxDocument: string;
+    documents: string[];
   }) => {
     try {
       setIsLoading(true);
@@ -318,7 +348,8 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       setPhoneNumber("");
       setDistrict("");
       setTaxNumber("");
-      setTaxDocument(null);
+      setTaxDocuments([]);
+      setCompanyDocuments([]);
       setCurrentStep(1);
     } catch (err) {
       console.error("Signup failed:", err);
@@ -339,7 +370,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
           toast.error(err.response.data.message);
         } else if (err.response?.status === 409) {
           setError(err.response.data.message);
-         
         } else {
           setError(`Signup failed (${err.response?.status || "unknown error"}). Please try again.`);
           toast.error("Signup failed. Please try again.");
@@ -471,7 +501,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
   };
 
   const handleNext = () => {
-    setCurrentStep((prev) => Math.min(prev + 1, 3));
+    setCurrentStep((prev) => Math.min(prev + 1, 4));
   };
 
   const handleBack = () => {
@@ -483,7 +513,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     setError("");
     setSuccess("");
 
-    // Handle verification form submission
     if (showVerification) {
       if (verificationToken.length !== 6 || !/^\d{6}$/.test(verificationToken)) {
         setError("Please enter a valid 6-digit verification code");
@@ -494,7 +523,6 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       return;
     }
 
-    // Handle login form submission
     if (isLoginMode) {
       if (!email.trim()) {
         setError("Email is required");
@@ -511,7 +539,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
     }
 
     // If not on final step, move to next step
-    if (currentStep < 3) {
+    if (currentStep < 4) {
       if (!isStepValid) {
         toast.error("Please complete all required fields before proceeding.");
         return;
@@ -525,21 +553,23 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       return;
     }
 
-    if (!taxDocument) {
-      setError("Please upload your Pan/Vat document");
-      toast.error("Please upload your Pan/Vat document");
+    if (taxDocuments.length === 0 || companyDocuments.length === 0) {
+      setError("Please upload at least one Pan/Vat and one Company document");
+      toast.error("Please upload at least one Pan/Vat and one Company document");
       return;
     }
 
-    console.log("Uploading file...");
-    const uploadedUrl = await handleFileUpload(taxDocument);
-    if (!uploadedUrl) {
-      setError("Failed to obtain document URL. Please try again.");
-      toast.error("Failed to obtain document URL. Please try again.");
+    console.log("Uploading files...");
+    const taxDocumentUrls = await handleFileUpload(taxDocuments);
+    const companyDocumentUrls = await handleFileUpload(companyDocuments);
+    
+    if (!taxDocumentUrls || !companyDocumentUrls) {
+      setError("Failed to obtain document URLs. Please try again.");
+      toast.error("Failed to obtain document URLs. Please try again.");
       return;
     }
 
-    console.log("File uploaded, calling signup...");
+    console.log("Files uploaded, calling signup...");
     const userData = {
       businessName: businessName.trim(),
       email: email.trim(),
@@ -547,7 +577,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
       phoneNumber: phoneNumber.trim(),
       district,
       taxNumber: taxNumber.trim(),
-      taxDocument: uploadedUrl,
+      documents: [...taxDocumentUrls, ...companyDocumentUrls],
     };
     console.log("Signup payload:", userData);
     await handleSignup(userData);
@@ -608,7 +638,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
 
         {!isLoginMode && !showVerification && !isVerificationComplete && (
           <div className="auth-modal__step-indicator">
-            Step {currentStep} of 3
+            Step {currentStep} of 4
           </div>
         )}
 
@@ -886,23 +916,78 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                         </div>
                         <div className="auth-modal__form-group">
                           <label className="auth-modal__label">
-                            Please attach your business PAN/VAT registration document (Image or PDF)
+                            Please attach your business PAN/VAT registration document(s) (Image or PDF)
                           </label>
                           <div className="auth-modal__file-upload">
                             <label htmlFor="taxDocument" className="auth-modal__file-label">
-                              Choose File
+                              Choose File(s)
                             </label>
                             <input
                               id="taxDocument"
                               type="file"
                               className="auth-modal__file-input"
                               accept="image/*,application/pdf"
-                              onChange={handleFileChange}
-                              required
+                              onChange={(e) => handleFileChange(e, 'tax')}
+                              multiple
                               disabled={isLoading}
                             />
-                            {taxDocument && (
-                              <span className="auth-modal__file-name">{taxDocument.name}</span>
+                            {taxDocuments.length > 0 && (
+                              <div className="auth-modal__file-list">
+                                {taxDocuments.map((doc, index) => (
+                                  <div key={index} className="auth-modal__file-item">
+                                    <span className="auth-modal__file-name">{doc.name}</span>
+                                    <button
+                                      type="button"
+                                      className="auth-modal__file-remove"
+                                      onClick={() => removeFile(index, 'tax')}
+                                      disabled={isLoading}
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {currentStep === 4 && (
+                      <>
+                        <div className="auth-modal__form-group">
+                          <label className="auth-modal__label">
+                            Please attach your company registration document(s) (Image or PDF)
+                          </label>
+                          <div className="auth-modal__file-upload">
+                            <label htmlFor="companyDocument" className="auth-modal__file-label">
+                              Choose File(s)
+                            </label>
+                            <input
+                              id="companyDocument"
+                              type="file"
+                              className="auth-modal__file-input"
+                              accept="image/*,application/pdf"
+                              onChange={(e) => handleFileChange(e, 'company')}
+                              multiple
+                              disabled={isLoading}
+                            />
+                            {companyDocuments.length > 0 && (
+                              <div className="auth-modal__file-list">
+                                {companyDocuments.map((doc, index) => (
+                                  <div key={index} className="auth-modal__file-item">
+                                    <span className="auth-modal__file-name">{doc.name}</span>
+                                    <button
+                                      type="button"
+                                      className="auth-modal__file-remove"
+                                      onClick={() => removeFile(index, 'company')}
+                                      disabled={isLoading}
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -925,7 +1010,7 @@ const VendorAuthModal: React.FC<VendorAuthModalProps> = ({
                         className="auth-modal__submit"
                         disabled={isLoading || !isStepValid}
                       >
-                        {isLoading ? "Loading..." : currentStep === 3 ? "Submit Registration" : "Next"}
+                        {isLoading ? "Loading..." : currentStep === 4 ? "Submit Registration" : "Next"}
                       </button>
                     </div>
                   </>
