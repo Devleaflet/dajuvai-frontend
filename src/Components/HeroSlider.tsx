@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef , useEffect } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -25,11 +25,13 @@ const fetchHeroBanners = async (): Promise<Slide[]> => {
     throw new Error(`Failed to fetch banners: ${response.statusText}`);
   }
   const data = await response.json();
-  return data.data.filter((banner: Slide & { type: string; status: string; startDate?: string; endDate?: string }) => 
-    banner.type === 'HERO' && 
-    banner.status === 'ACTIVE' &&
-    (!banner.startDate || new Date(banner.startDate) <= new Date()) &&
-    (!banner.endDate || new Date(banner.endDate) >= new Date())
+  console.log('Fetched banners:', data); // Debug API response
+  return data.data.filter(
+    (banner: Slide & { type: string; status: string; startDate?: string; endDate?: string }) =>
+      banner.type === 'HERO' &&
+      banner.status === 'ACTIVE' &&
+      (!banner.startDate || new Date(banner.startDate) <= new Date()) &&
+      (!banner.endDate || new Date(banner.endDate) >= new Date())
   );
 };
 
@@ -38,8 +40,8 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   const [activeSlide, setActiveSlide] = useState<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [startX, setStartX] = useState<number>(0);
-  const [dragDistance, setDragDistance] = useState<number>(0);
   const [translateX, setTranslateX] = useState<number>(0);
+  const sliderRef = useRef<HTMLDivElement>(null);
 
   const { data: slides = [], isLoading, error } = useQuery<Slide[], Error>({
     queryKey: ['heroBanners'],
@@ -57,55 +59,61 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
 
   useEffect(() => {
     onLoad?.();
-  }, [onLoad]);
+    console.log('Slides loaded:', slides); // Debug slides data
+  }, [onLoad, slides]);
 
   const goToSlide = (index: number): void => {
     setActiveSlide(index);
     setTranslateX(0);
+    console.log('Go to slide:', index); // Debug slide change
   };
 
   const goToPrevSlide = (): void => {
     setActiveSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
     setTranslateX(0);
+    console.log('Previous slide'); // Debug navigation
   };
 
   const goToNextSlide = (): void => {
     setActiveSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
     setTranslateX(0);
+    console.log('Next slide'); // Debug navigation
   };
 
   const handleDragStart = (clientX: number): void => {
     setIsDragging(true);
     setStartX(clientX);
-    setDragDistance(0);
+    setTranslateX(0);
+    console.log('Drag start at:', clientX); // Debug drag start
   };
 
   const handleDragMove = (clientX: number): void => {
     if (!isDragging) return;
     const currentDrag = clientX - startX;
-    setDragDistance(currentDrag);
-    setTranslateX(currentDrag);
+    const maxDrag = sliderRef.current ? sliderRef.current.offsetWidth / 3 : 200;
+    setTranslateX(Math.max(-maxDrag, Math.min(maxDrag, currentDrag)));
+    console.log('Dragging, translateX:', currentDrag); // Debug drag movement
   };
 
   const handleDragEnd = (): void => {
     if (!isDragging) return;
     setIsDragging(false);
+    const swipeThreshold = sliderRef.current ? sliderRef.current.offsetWidth / 4 : 100;
 
-    // Determine swipe direction based on drag distance
-    const swipeThreshold = 50; // Minimum distance to trigger slide change
-    if (dragDistance > swipeThreshold) {
-      goToPrevSlide();
-    } else if (dragDistance < -swipeThreshold) {
-      goToNextSlide();
+    if (Math.abs(translateX) > swipeThreshold) {
+      if (translateX > 0) {
+        goToPrevSlide();
+      } else {
+        goToNextSlide();
+      }
     } else {
-      setTranslateX(0); // Reset position if swipe is too small
+      setTranslateX(0); // Snap back
     }
-
-    // Reset drag distance after a short delay
-    setTimeout(() => setDragDistance(0), 100);
+    console.log('Drag end, translateX:', translateX); // Debug drag end
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
+    if (e.button !== 0) return; // Only left-click
     handleDragStart(e.clientX);
   };
 
@@ -136,32 +144,23 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   };
 
   const handleImageClick = (slide: Slide): void => {
-    // Prevent navigation if user was dragging
-    if (Math.abs(dragDistance) > 5) {
-      return;
-    }
-
-    console.log('🎯 HeroSlider banner clicked:', slide);
-    if (slide && slide.name) {
+    if (Math.abs(translateX) > 5) return; // Prevent click during drag
+    console.log('Banner clicked:', slide); // Debug click
+    if (slide?.name) {
       const searchQuery = encodeURIComponent(slide.name);
-      console.log('🔍 Navigating to shop with search:', {
-        bannerName: slide.name,
-        encodedSearch: searchQuery,
-        fullUrl: `/shop?search=${searchQuery}`,
-      });
+      console.log('Navigating to:', `/shop?search=${searchQuery}`);
       try {
         navigate(`/shop?search=${searchQuery}`);
-        console.log('✅ Navigation successful');
       } catch (error) {
-        console.error('❌ Navigation failed:', error);
+        console.error('Navigation failed:', error);
         window.location.href = `/shop?search=${searchQuery}`;
       }
     } else {
-      console.log('⚠️ No slide name found, navigating to shop without search');
+      console.log('No slide name, navigating to /shop');
       try {
         navigate('/shop');
       } catch (error) {
-        console.error('❌ Fallback navigation failed:', error);
+        console.error('Navigation failed:', error);
         window.location.href = '/shop';
       }
     }
@@ -174,6 +173,7 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   return (
     <div
       className="hero-slider"
+      ref={sliderRef}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -187,7 +187,7 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
         className="hero-slider__track"
         style={{
           transform: `translateX(calc(-${activeSlide * 100}% + ${translateX}px))`,
-          transition: isDragging ? 'none' : 'transform 500ms ease-in-out',
+          transition: isDragging ? 'none' : 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
         {slides.map((slide) => (
@@ -199,18 +199,24 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
                 className="hero-slider__image"
                 loading="lazy"
                 onClick={() => handleImageClick(slide)}
-                style={{ cursor: 'pointer' }}
+                style={{
+                  cursor: 'pointer',
+                  transform: isDragging ? `scale(0.98)` : 'scale(1)',
+                  transition: isDragging ? 'transform 0.1s ease' : 'transform 0.3s ease',
+                }}
                 draggable={false}
               />
               <button
                 className="hero-slider__nav-button hero-slider__nav-button--prev"
                 onClick={goToPrevSlide}
+                disabled={slides.length <= 1}
               >
                 <ArrowLeft size={24} color="white" />
               </button>
               <button
                 className="hero-slider__nav-button hero-slider__nav-button--next"
                 onClick={goToNextSlide}
+                disabled={slides.length <= 1}
               >
                 <ArrowRight size={24} color="white" />
               </button>
@@ -219,17 +225,19 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
         ))}
       </div>
 
-      <div className="hero-slider__indicators">
-        {slides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`hero-slider__indicator ${
-              activeSlide === index ? 'hero-slider__indicator--active' : ''
-            }`}
-          />
-        ))}
-      </div>
+      {slides.length > 1 && (
+        <div className="hero-slider__indicators">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => goToSlide(index)}
+              className={`hero-slider__indicator ${
+                activeSlide === index ? 'hero-slider__indicator--active' : ''
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

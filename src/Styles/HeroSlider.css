@@ -7,10 +7,10 @@
   border-radius: 20px;
   margin-top: 2rem;
   cursor: grab;
-  user-select: none; /* Prevent text selection during drag */
-  -webkit-user-select: none; /* Safari */
-  -ms-user-select: none; /* IE/Edge */
-  touch-action: pan-y; /* Allow vertical scrolling on touch devices */
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  touch-action: pan-y;
 }
 
 .hero-slider:active {
@@ -20,7 +20,8 @@
 .hero-slider__track {
   display: flex;
   height: 16rem;
-  will-change: transform; /* Optimize for smooth animations */
+  will-change: transform;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hero-slider__slide {
@@ -41,12 +42,17 @@
   height: 100%;
   object-fit: cover;
   border-radius: 20px;
-  pointer-events: none; /* Prevent image dragging */
+  pointer-events: none;
   user-select: none;
-  -webkit-user-drag: none; /* Prevent image dragging in WebKit browsers */
+  -webkit-user-drag: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
-/* Navigation Buttons */
+.hero-slider:active .hero-slider__image {
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
 .hero-slider__nav-button {
   position: absolute;
   top: 50%;
@@ -63,7 +69,7 @@
   cursor: pointer;
   padding: 0.5rem;
   transition: background-color 0.3s ease;
-  pointer-events: auto; /* Ensure buttons are clickable */
+  pointer-events: auto;
 }
 
 .hero-slider__nav-button:hover {
@@ -71,8 +77,7 @@
 }
 
 .hero-slider__nav-button:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
+  display: none;
 }
 
 .hero-slider__nav-button--prev {
@@ -83,7 +88,6 @@
   right: 1rem;
 }
 
-/* Indicators */
 .hero-slider__indicators {
   position: absolute;
   bottom: 1rem;
@@ -92,7 +96,7 @@
   display: flex;
   gap: 0.5rem;
   z-index: 2;
-  pointer-events: auto; /* Ensure indicators are clickable */
+  pointer-events: auto;
 }
 
 .hero-slider__indicator {
@@ -110,7 +114,6 @@
   background-color: white;
 }
 
-/* Responsive Styles */
 @media (min-width: 640px) {
   .hero-slider__track {
     height: 20rem;
@@ -134,7 +137,6 @@
   }
 }
 
-/* Touch device specific styles */
 @media (hover: none) and (pointer: coarse) {
   .hero-slider {
     cursor: default;

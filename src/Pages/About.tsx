@@ -1,12 +1,12 @@
 // About.tsx
-import { useState, useEffect } from 'react';
-import Footer from "../Components/Footer";
-import Navbar from "../Components/Navbar";
-import '../Styles/About.css';
-import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaExclamationCircle } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
+import { FaEnvelope, FaExclamationCircle, FaMapMarkerAlt, FaPhone } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axiosInstance from '../api/axiosInstance';
+import Footer from "../Components/Footer";
+import Navbar from "../Components/Navbar";
+import '../Styles/About.css';
 
 const About = () => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -49,54 +49,55 @@ const About = () => {
   return (
     <>
       <Navbar />
-      <section className="contact-section">
-        <div className="contact-container">
-          <div className="contact-content">
-            <div className="contact-content-left">
-              <h2 className="contact-title">Contact Us</h2>
-              <p className="contact-subtext">
-                We’re here to help! Have questions, feedback, or need assistance?
-                Reach out via email, phone, or the form and we’ll respond promptly.
-              </p>
-              <div className="contact-info">
-                <div className="contact-info-item"><FaPhone /><span>+977-9700620004</span></div>
-                <div className="contact-info-item"><FaPhone /><span>01-4720234</span></div>
-                <div className="contact-info-item"><FaEnvelope /><span>Dajuvai106@gmail.com</span></div>
-                <div className="contact-info-item"><FaMapMarkerAlt /><span>Kathmandu, Nepal</span></div>
-              </div>
-
-              <div className="vendor-cta">
-                <h3>Want to Become a Vendor?</h3>
-                <p>Join our platform and reach thousands of customers across Nepal.</p>
-                <a href="/becomevendor" className="btn btn--primary">Become a Vendor</a>
-              </div>
-            </div>
-
-            <div className="contact-content-right">
-              <form onSubmit={handleSubmit} className="contact-form">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>First Name *</label>
-                    <input name="firstName" value={formData.firstName} onChange={handleInputChange} required />
-                  </div>
-                  <div className="form-group">
-                    <label>Last Name *</label>
-                    <input name="lastName" value={formData.lastName} onChange={handleInputChange} required />
-                  </div>
+      <div className="about-max-width-container">
+        <section className="contact-section">
+          <div className="contact-container">
+            <div className="contact-content">
+              <div className="contact-content-left">
+                <h2 className="contact-title">Contact Us</h2>
+                <p className="contact-subtext">
+                  We're here to help! Have questions, feedback, or need assistance?
+                  Reach out via email, phone, or the form and we'll respond promptly.
+                </p>
+                <div className="contact-info">
+                  <div className="contact-info-item"><FaPhone /><span>+977-9700620004</span></div>
+                  <div className="contact-info-item"><FaPhone /><span>01-4720234</span></div>
+                  <div className="contact-info-item"><FaEnvelope /><span>Dajuvai106@gmail.com</span></div>
+                  <div className="contact-info-item"><FaMapMarkerAlt /><span>Kathmandu, Nepal</span></div>
                 </div>
-                <div className="form-group"><label>Email *</label><input type="email" name="email" value={formData.email} onChange={handleInputChange} required /></div>
-                <div className="form-group"><label>Phone *</label><input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required /></div>
-                <div className="form-group"><label>Subject *</label><input name="subject" value={formData.subject} onChange={handleInputChange} required /></div>
-                <div className="form-group"><label>Message</label><textarea rows={windowWidth < 576 ? 5 : 7} name="message" value={formData.message} onChange={handleInputChange}></textarea></div>
-                <button type="submit" className="btn btn--primary" disabled={loading}>{loading ? 'Sending…' : 'Send Message'}</button>
-              </form>
+
+                <div className="vendor-cta">
+                  <h3>Want to Become a Vendor?</h3>
+                  <p>Join our platform and reach thousands of customers across Nepal.</p>
+                  <a href="/becomevendor" className="btn btn--primary">Become a Vendor</a>
+                </div>
+              </div>
+
+              <div className="contact-content-right">
+                <form onSubmit={handleSubmit} className="contact-form">
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>First Name *</label>
+                      <input name="firstName" value={formData.firstName} onChange={handleInputChange} required />
+                    </div>
+                    <div className="form-group">
+                      <label>Last Name *</label>
+                      <input name="lastName" value={formData.lastName} onChange={handleInputChange} required />
+                    </div>
+                  </div>
+                  <div className="form-group"><label>Email *</label><input type="email" name="email" value={formData.email} onChange={handleInputChange} required /></div>
+                  <div className="form-group"><label>Phone *</label><input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required /></div>
+                  <div className="form-group"><label>Subject *</label><input name="subject" value={formData.subject} onChange={handleInputChange} required /></div>
+                  <div className="form-group"><label>Message</label><textarea rows={windowWidth < 576 ? 5 : 7} name="message" value={formData.message} onChange={handleInputChange}></textarea></div>
+                  <button type="submit" className="btn btn--primary" disabled={loading}>{loading ? 'Sending…' : 'Send Message'}</button>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <ToastContainer />
+        </section>
+      </div>
       <Footer />
+      <ToastContainer />
     </>
   );
 };

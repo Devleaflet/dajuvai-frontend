@@ -19,8 +19,7 @@ const AboutUs = () => {
                   Nepal's Fastest-Growing E-Commerce Marketplace
                 </h1>
                 <p className="about__subtitle">
-                  Founded in 2022 by brothers <strong>Aarav</strong> and{" "}
-                  <strong>Rohan Thapa</strong> in Kathmandu, DajuVai began as a
+                  Founded in 2022 by two brothers in Kathmandu, DajuVai began as a
                   humble startup. Inspired by Silicon Valley experiences, they
                   envisioned a platform to bridge Nepal's digital divide. Today,
                   we serve <strong>1.2M+ users</strong> across all{" "}
