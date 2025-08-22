@@ -1,4 +1,38 @@
+import axios from "axios";
 import axiosInstance from "./axiosInstance";
+
+interface RawProduct {
+  id: number;
+  name: string;
+  description: string;
+  basePrice: string;
+  discount: string;
+  discountType: "PERCENTAGE" | "FLAT";
+  status: "AVAILABLE" | "OUT_OF_STOCK" | "LOW_STOCK";
+  stock: number;
+  subcategoryId: number;
+  vendorId: number;
+  dealId: number | null;
+  bannerId: number | null;
+  productImages: string[];
+  brandId: number | null;
+  hasVariants: boolean;
+  created_at: string;
+  updated_at: string;
+  variants: Array<{
+    id?: number;
+    name?: string;
+    price?: number | string;
+    originalPrice?: number | string;
+    stock?: number;
+    sku?: string;
+    image?: string;
+    images?: string[];
+    attributes?: Record<string, any>;
+  }>;
+  avgRating: number;
+  count: number;
+}
 
 // Simple test function to debug API endpoint
 export const testProductAPI = async (categoryId: number, subcategoryId: number) => {
@@ -31,7 +65,62 @@ export const testProductAPI = async (categoryId: number, subcategoryId: number) 
 };
 
 export interface Product {
-  // Add product properties here
+  id: number;
+  title: string; // Maps to `name` in API response
+  description: string;
+  price: string | number; // Maps to `basePrice` in API response
+  basePrice?: string | number; // Maps to `basePrice` in API response
+  originalPrice?: string | number;
+  discount?: string | number; // API returns string (e.g., "15.00")
+  discountType?: "PERCENTAGE" | "FLAT";
+  rating: number; // Maps to `avgRating` in API response
+  ratingCount: string | number; // Maps to `count` in API response
+  isBestSeller?: boolean; // Not in API response, default to false
+  freeDelivery?: boolean; // Not in API response, default to false
+  image: string; // Maps to first item in `productImages`
+  stock?: number;
+  brand?: string;
+  name?: string; // Optional, as API uses `name` but we map to `title`
+  category?: any;
+  subcategory?: { id: number; name: string; category?: any };
+  subcategoryId?: number; // Maps to `subcategoryId` in API response
+  vendor?: string;
+  vendorId?: number; // Maps to `vendorId` in API response
+  piece?: string | number;
+  availableColor?: string;
+  onSale?: boolean;
+  isFeatured?: boolean;
+  discountPercentage?: string;
+  colors?: { name: string; img: string }[];
+  memoryOptions?: string[];
+  quantity?: number;
+  productImages?: string[]; // Maps to `productImages` in API response
+  categoryId?: number;
+  brandId?: number | null; // Maps to `brandId` in API response
+  dealId?: number | null; // Maps to `dealId` in API response
+  bannerId?: number | null; // Maps to `bannerId` in API response
+  status?: "AVAILABLE" | "OUT_OF_STOCK" | "LOW_STOCK"; // Maps to `status` in API response
+  hasVariants?: boolean; // Maps to `hasVariants` in API response
+  variants?: Array<{
+    id?: number;
+    name?: string;
+    price?: number | string;
+    originalPrice?: number | string;
+    stock?: number;
+    sku?: string;
+    image?: string;
+    images?: string[];
+    attributes?: Record<string, any>;
+    [key: string]: any;
+  }>;
+  inventory?: Array<{
+    id?: number;
+    productId?: number;
+    quantity: number;
+    status?: "IN_STOCK" | "OUT_OF_STOCK" | "LOW_STOCK";
+    location?: string;
+    updatedAt?: string;
+  }>;
 }
 
 export const fetchProduct = async (url: string) => {
@@ -504,4 +593,49 @@ export const setupAxiosInterceptors = (
       return Promise.reject(error);
     }
   );
+};
+export const fetchProductsBySection = async (sectionId: number): Promise<Product[]> => {
+  try {
+    const response = await axiosInstance.get<{ success: boolean; message: string; data: RawProduct[] }>(
+      `/api/homepage/${sectionId}`,
+      {
+        headers: {
+          accept: "application/json",
+        },
+      }
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.message || "Failed to fetch products");
+    }
+
+    // Map the API response to the Product interface
+    return response.data.data.map((rawProduct) => ({
+      id: rawProduct.id,
+      title: rawProduct.name, // Map name to title
+      description: rawProduct.description,
+      price: rawProduct.basePrice, // Map basePrice to price
+      basePrice: rawProduct.basePrice,
+      discount: rawProduct.discount,
+      discountType: rawProduct.discountType,
+      rating: rawProduct.avgRating, // Map avgRating to rating
+      ratingCount: rawProduct.count, // Map count to ratingCount
+      image: rawProduct.productImages[0] || "", // Use first image as primary image
+      stock: rawProduct.stock,
+      status: rawProduct.status,
+      subcategoryId: rawProduct.subcategoryId,
+      vendorId: rawProduct.vendorId,
+      dealId: rawProduct.dealId,
+      bannerId: rawProduct.bannerId,
+      productImages: rawProduct.productImages,
+      brandId: rawProduct.brandId,
+      hasVariants: rawProduct.hasVariants,
+      variants: rawProduct.variants,
+      isBestSeller: false, // Not provided in API, default to false
+      freeDelivery: false, // Not provided in API, default to false
+    }));
+  } catch (error: any) {
+    console.error("Error fetching products by section:", error);
+    throw new Error(error.response?.data?.message || "Failed to fetch products");
+  }
 };

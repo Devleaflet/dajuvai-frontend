@@ -38,7 +38,7 @@ const HomepageSections: React.FC = () => {
     <div className="homepage-sections">
       {sections.filter(section => section.isActive).map(section => {
         const mappedProducts: DisplayProduct[] = section.products.map(product => {
-          console.log("Product", product)
+          console.log("Product", product);
           const primaryImage = getProductPrimaryImage(product, '');
           const productImages = Array.isArray(product.productImages) ? product.productImages : [];
 
@@ -53,7 +53,6 @@ const HomepageSections: React.FC = () => {
             discountType: (product.discountType === 'PERCENTAGE' || product.discountType === 'FLAT'
               ? product.discountType
               : undefined) as DisplayProduct['discountType'],
-            // Map ratings from backend if available
             rating: Number((product as any).avgRating ?? (product as any).rating ?? 0) || 0,
             ratingCount: String(
               (Array.isArray((product as any).reviews) ? (product as any).reviews.length : undefined)
@@ -73,8 +72,9 @@ const HomepageSections: React.FC = () => {
           <ProductCarousel
             key={section.id}
             title={section.title}
+            sectionId={section.id} // Add sectionId prop
             products={mappedProducts}
-            scrollAmount={300}
+          
             showTitle={true}
           />
         );

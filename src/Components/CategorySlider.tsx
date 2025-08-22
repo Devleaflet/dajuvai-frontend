@@ -17,6 +17,12 @@ const CategorySlider: React.FC = () => {
   const [isDesktop, setIsDesktop] = useState<boolean>(window.innerWidth >= 768)
   const [isCategoriesReady, setIsCategoriesReady] = useState(false)
 
+  // Drag functionality state
+  const [isDragging, setIsDragging] = useState(false)
+  const [startX, setStartX] = useState(0)
+  const [scrollLeft, setScrollLeft] = useState(0)
+  const [dragDistance, setDragDistance] = useState(0)
+
   const categoryContext = useCategory()
   const updateCategoriesWithSubcategories = categoryContext?.updateCategoriesWithSubcategories
   const categories = categoryContext?.categories || []
@@ -73,6 +79,11 @@ const CategorySlider: React.FC = () => {
 
   // Enhanced category click handler to force navigation refresh
   const handleCategoryClick = (mainCategoryId: string, itemId: string) => {
+    // Prevent navigation if user was dragging
+    if (Math.abs(dragDistance) > 5) {
+      return
+    }
+
     const newUrl = `/shop?categoryId=${mainCategoryId}&subcategoryId=${itemId}`
 
     // If already on shop page, dispatch a custom event to update filters
@@ -119,6 +130,84 @@ const CategorySlider: React.FC = () => {
     setShowNext(slider.scrollLeft < slider.scrollWidth - slider.clientWidth - 10)
   }
 
+  // Mouse drag handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const slider = sliderRef.current
+    if (!slider) return
+
+    setIsDragging(true)
+    setStartX(e.pageX - slider.offsetLeft)
+    setScrollLeft(slider.scrollLeft)
+    setDragDistance(0)
+    slider.style.cursor = 'grabbing'
+    slider.style.userSelect = 'none'
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return
+    
+    e.preventDefault()
+    const slider = sliderRef.current
+    if (!slider) return
+
+    const x = e.pageX - slider.offsetLeft
+    const walk = (x - startX) * 2 // Multiply by 2 for faster scrolling
+    const newScrollLeft = scrollLeft - walk
+    
+    setDragDistance(Math.abs(walk))
+    slider.scrollLeft = newScrollLeft
+  }
+
+  const handleMouseUp = () => {
+    const slider = sliderRef.current
+    if (!slider) return
+
+    setIsDragging(false)
+    slider.style.cursor = 'grab'
+    slider.style.userSelect = ''
+    
+    // Reset drag distance after a short delay
+    setTimeout(() => setDragDistance(0), 100)
+  }
+
+  const handleMouseLeave = () => {
+    if (isDragging) {
+      handleMouseUp()
+    }
+  }
+
+  // Touch handlers for mobile devices
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const slider = sliderRef.current
+    if (!slider) return
+
+    setIsDragging(true)
+    setStartX(e.touches[0].pageX - slider.offsetLeft)
+    setScrollLeft(slider.scrollLeft)
+    setDragDistance(0)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return
+    
+    const slider = sliderRef.current
+    if (!slider) return
+
+    const x = e.touches[0].pageX - slider.offsetLeft
+    const walk = (x - startX) * 1.5
+    const newScrollLeft = scrollLeft - walk
+    
+    setDragDistance(Math.abs(walk))
+    slider.scrollLeft = newScrollLeft
+  }
+
+  const handleTouchEnd = () => {
+    setIsDragging(false)
+    
+    // Reset drag distance after a short delay
+    setTimeout(() => setDragDistance(0), 100)
+  }
+
   useEffect(() => {
     const handleResize = () => {
       setIsDesktop(window.innerWidth >= 768)
@@ -147,7 +236,19 @@ const CategorySlider: React.FC = () => {
         </button>
       )}
 
-      <div className="top-category__slider-container" ref={sliderRef} onScroll={checkScroll}>
+      <div 
+        className="top-category__slider-container" 
+        ref={sliderRef} 
+        onScroll={checkScroll}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+      >
         {showLoading
           ? // Show skeleton loading state with consistent count
             Array.from({ length: 8 }).map((_, index) => <CategorySkeleton key={`skeleton-${index}`} />)
@@ -169,6 +270,7 @@ const CategorySlider: React.FC = () => {
                         decoding="async"
                         width="200"
                         height="200"
+                        draggable={false}
                       />
                     </div>
                     <p className="top-category__name">{item.name}</p>

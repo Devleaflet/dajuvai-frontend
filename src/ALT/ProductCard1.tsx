@@ -11,7 +11,7 @@ import AuthModal from "../Components/AuthModal";
 import { getProductPrimaryImage } from "../utils/getProductPrimaryImage";
 import defaultProductImage from "../assets/logo.webp";
 import { toast } from "react-hot-toast";
-// Removed VariantSelectModal: add first variant directly to match thumbnail price
+
 
 interface ProductCardProps {
   product: Product;
@@ -34,8 +34,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
     ratingCount,
     isBestSeller,
     freeDelivery,
-    image,
-    productImages = [],
+
     id,
   } = product;
 
@@ -89,8 +88,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
     }
     setWishlistLoading(true);
     try {
-      // Thumbnail shows first variant's price/image when variants exist
-      // Add that specific variant to wishlist for consistency
+    
       const variantCount = product.variants?.length || 0;
       const variantId = variantCount > 0 ? product.variants![0].id : undefined;
       await addToWishlist(id, variantId, token);
@@ -199,25 +197,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
               )}
             </div>
           </div>
-          <div className="product1__delivery">
-            {freeDelivery && (
-              <>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <rect x="1" y="3" width="15" height="13"></rect>
-                  <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-                  <circle cx="5.5" cy="18.5" r="2.5"></circle>
-                  <circle cx="18.5" cy="18.5" r="2.5"></circle>
-                </svg>
-                <span>Free Delivery</span>
-              </>
-            )}
-          </div>
+        
         </div>
       </div>
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />

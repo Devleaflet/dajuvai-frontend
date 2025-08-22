@@ -926,328 +926,330 @@ const Shop: React.FC = () => {
       <ProductBanner />
       <CategorySlider />
       
-      {/* Search Bar */}
-      <div className="search-bar-container">
-        <form onSubmit={handleSearchSubmit} className="search-form">
-          <div className={`search-input-container ${searchInputValue ? 'has-clear-button' : ''}`}>
-            <input
-              type="text"
-              value={searchInputValue}
-              onChange={handleSearchInputChange}
-              placeholder="Search for products, brands, or categories..."
-              className="search-input"
-            />
-            {searchInputValue && (
-              <button
-                type="button"
-                onClick={handleClearSearch}
-                className="search-clear-button"
-              >
-                ×
-              </button>
-            )}
-          </div>
-          <button type="submit" className="search-button">
-            Search
-          </button>
-        </form>
-      </div>
-
-      <div className="shop-container">
-        <div style={{
-          marginBottom: '1.5rem',
-          padding: '1rem 0',
-          borderBottom: '1px solid #e9ecef',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          width: '100%'
-        }}>
-          <h2 style={{
-            fontSize: '2rem',
-            margin: '0',
-            color: '#222',
-            fontWeight: '700',
-            letterSpacing: '-1px'
-          }}>
-            {getDisplayTitle()}
-            {getCurrentSubcategoryName() && (
-              <span style={{
-                fontSize: '1.1rem',
-                color: '#666',
-                fontWeight: 'normal',
-                marginLeft: '0.5rem'
-              }}>
-                {' > '}{getCurrentSubcategoryName()}
-              </span>
-            )}
-          </h2>
-          <div style={{
-            fontSize: '1rem',
-            color: '#666',
-            backgroundColor: '#f8f9fa',
-            padding: '0.5rem 1rem',
-            borderRadius: '6px'
-          }}>
-            {isLoadingProducts ? 'Loading...' : `${filteredProducts.length} products`}
-          </div>
-        </div>
-        <div className="shop-content">
-          <div className="shop">
-            <button 
-              className="filter-button" 
-              onClick={toggleSidebar}
-              aria-label="Toggle filters"
-            >
-              <span className="filter-icon">⚙</span>
-            </button>
-            
-            {isSidebarOpen && (
-              <div 
-                className="filter-sidebar-overlay" 
-                onClick={toggleSidebar}
-                aria-label="Close filters"
+      <div className="shop-max-width-container">
+        {/* Search Bar */}
+        <div className="search-bar-container">
+          <form onSubmit={handleSearchSubmit} className="search-form">
+            <div className={`search-input-container ${searchInputValue ? 'has-clear-button' : ''}`}>
+              <input
+                type="text"
+                value={searchInputValue}
+                onChange={handleSearchInputChange}
+                placeholder="Search for products, brands, or categories..."
+                className="search-input"
               />
-            )}
-            
-            <div className={`filter-sidebar ${isSidebarOpen ? "open" : ""}`} key={`${selectedCategory}-${selectedSubcategory}-${selectedPriceRange}-${sortBy}`}>
-              <div className="filter-sidebar__header">
-                <h3>Filters</h3>
-                <button 
-                  className="filter-sidebar__close" 
-                  onClick={toggleSidebar}
-                  aria-label="Close filters"
+              {searchInputValue && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className="search-clear-button"
                 >
                   ×
                 </button>
-              </div>
-
-              {hasActiveFilters && (
-                <div className="filter-sidebar__section">
-                  <button 
-                    onClick={clearAllFilters}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      backgroundColor: '#ff6b00',
-                      border: '1px solid #ff6b00',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '0.95rem',
-                      color: 'white',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = '#e05a00';
-                      e.currentTarget.style.borderColor = '#e05a00';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = '#ff6b00';
-                      e.currentTarget.style.borderColor = '#ff6b00';
-                    }}
-                  >
-                    Clear All Filters
-                  </button>
-                </div>
-              )}
-
-              {searchQuery.trim() && (
-                <div className="filter-sidebar__section">
-                  <h4 className="filter-sidebar__section-title">Search</h4>
-                  <div style={{
-                    padding: '0.75rem',
-                    backgroundColor: '#f8f9fa',
-                    borderRadius: '6px',
-                    border: '1px solid #e9ecef',
-                    fontSize: '0.9rem',
-                    color: '#495057'
-                  }}>
-                    <strong>Searching for:</strong> "{searchQuery}"
-                  </div>
-                </div>
-              )}
-
-              <div className="filter-sidebar__section">
-                <h4 className="filter-sidebar__section-title">Sort By</h4>
-                <div className="filter-sidebar__radio-list">
-                  {[
-                    { value: 'all', label: 'Default' },
-                    { value: 'low-to-high', label: 'Price: Low to High' },
-                    { value: 'high-to-low', label: 'Price: High to Low' }
-                  ].map((option) => (
-                    <div key={option.value} className="filter-sidebar__radio-item">
-                      <input
-                        type="radio"
-                        id={`sort-${option.value}`}
-                        name="sort"
-                        checked={sortBy === option.value}
-                        onChange={() => handleSortChange(option.value)}
-                      />
-                      <label htmlFor={`sort-${option.value}`}>{option.label}</label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="filter-sidebar__section">
-                <h4 className="filter-sidebar__section-title">Categories</h4>
-                <div className="filter-sidebar__checkbox-list">
-                  {isLoadingCategories ? (
-                    <p className="filter-sidebar__loading">Loading categories...</p>
-                  ) : (
-                    <>
-                      <div className="filter-sidebar__checkbox-item">
-                        <input
-                          type="radio"
-                          id="category-all"
-                          name="category"
-                          checked={selectedCategory === undefined}
-                          onChange={() => handleCategoryChange(undefined)}
-                        />
-                        <label htmlFor="category-all">All Categories</label>
-                      </div>
-                      {categories.map((category: Category) => (
-                        <div key={category.id} className="filter-sidebar__category-group">
-                          <div className="filter-sidebar__checkbox-item">
-                            <input
-                              type="radio"
-                              id={`category-${category.id}`}
-                              name="category"
-                              checked={selectedCategory === category.id}
-                              onChange={() => handleCategoryChange(category.id)}
-                            />
-                            <label htmlFor={`category-${category.id}`}>{category.name}</label>
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {selectedCategory !== undefined && (
-                <div className="filter-sidebar__section">
-                  <h4 className="filter-sidebar__section-title">Subcategories</h4>
-                  <div className="filter-sidebar__checkbox-list">
-                    {isLoadingSubcategories ? (
-                      <p className="filter-sidebar__loading">Loading subcategories...</p>
-                    ) : subcategories.length > 0 ? (
-                      <>
-                        <div className="filter-sidebar__checkbox-item">
-                          <input
-                            type="radio"
-                            id="subcategory-all"
-                            name="subcategory"
-                            checked={selectedSubcategory === undefined}
-                            onChange={() => handleSubcategoryChange(undefined)}
-                          />
-                          <label htmlFor="subcategory-all">All Subcategories</label>
-                        </div>
-                        {subcategories.map((subcategory: Subcategory) => (
-                          <div key={subcategory.id} className="filter-sidebar__checkbox-item">
-                            <input
-                              type="radio"
-                              id={`subcategory-${subcategory.id}`}
-                              name="subcategory"
-                              checked={selectedSubcategory === subcategory.id}
-                              onChange={() => handleSubcategoryChange(subcategory.id)}
-                            />
-                            <label htmlFor={`subcategory-${subcategory.id}`}>{subcategory.name}</label>
-                          </div>
-                        ))}
-                      </>
-                    ) : (
-                      <p className="filter-sidebar__no-data">No subcategories available</p>
-                    )}
-                  </div>
-                </div>
               )}
             </div>
+            <button type="submit" className="search-button">
+              Search
+            </button>
+          </form>
+        </div>
 
-            <div className="shop-products" style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-              gap: '1rem'
+        <div className="shop-container">
+          <div style={{
+            marginBottom: '1.5rem',
+            padding: '1rem 0',
+            borderBottom: '1px solid #e9ecef',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem',
+            width: '100%'
+          }}>
+            <h2 style={{
+              fontSize: '2rem',
+              margin: '0',
+              color: '#222',
+              fontWeight: '700',
+              letterSpacing: '-1px'
             }}>
-              {isLoadingProducts ? (
-                Array(8).fill(null).map((_, index) => (
-                  <ProductCardSkeleton key={index} count={1} />
-                ))
-              ) : filteredProducts.length > 0 ? (
-                filteredProducts.map((product) => (
-                  <ProductCard1 key={product.id} product={product} />
-                ))
-              ) : (
-                <div className="no-products" style={{
-                  textAlign: 'center',
-                  padding: '3rem 2rem',
-                  backgroundColor: '#f8f9fa',
-                  borderRadius: '12px',
-                  border: '1px solid #e9ecef',
-                  margin: '2rem 0',
-                  gridColumn: '1 / -1'
+              {getDisplayTitle()}
+              {getCurrentSubcategoryName() && (
+                <span style={{
+                  fontSize: '1.1rem',
+                  color: '#666',
+                  fontWeight: 'normal',
+                  marginLeft: '0.5rem'
                 }}>
-                  <div style={{
-                    fontSize: '3rem',
-                    marginBottom: '1rem',
-                    opacity: 0.3,
-                    animation: 'bounce 1s infinite'
-                  }}>
-                    📦
-                  </div>
-                  <h3 style={{
-                    color: '#333',
-                    marginBottom: '0.75rem',
-                    fontSize: '1.5rem'
-                  }}>
-                    No products found
-                  </h3>
-                  <p style={{
-                    color: '#666',
-                    marginBottom: '1.5rem',
-                    fontSize: '1rem',
-                    maxWidth: '400px',
-                    margin: '0 auto 1.5rem'
-                  }}>
-                    {searchQuery.trim()
-                      ? `No products found matching "${searchQuery}". Try adjusting your search terms or browse categories.`
-                      : selectedCategory === undefined
-                      ? "No products available at the moment."
-                      : `No products found in ${getCurrentCategoryName()}${getCurrentSubcategoryName() ? ` > ${getCurrentSubcategoryName()}` : ''}.`
-                    }
-                  </p>
-                  {hasActiveFilters && (
-                    <button
+                  {' > '}{getCurrentSubcategoryName()}
+                </span>
+              )}
+            </h2>
+            <div style={{
+              fontSize: '1rem',
+              color: '#666',
+              backgroundColor: '#f8f9fa',
+              padding: '0.5rem 1rem',
+              borderRadius: '6px'
+            }}>
+              {isLoadingProducts ? 'Loading...' : `${filteredProducts.length} products`}
+            </div>
+          </div>
+          <div className="shop-content">
+            <div className="shop">
+              <button 
+                className="filter-button" 
+                onClick={toggleSidebar}
+                aria-label="Toggle filters"
+              >
+                <span className="filter-icon">⚙</span>
+              </button>
+              
+              {isSidebarOpen && (
+                <div 
+                  className="filter-sidebar-overlay" 
+                  onClick={toggleSidebar}
+                  aria-label="Close filters"
+                />
+              )}
+              
+              <div className={`filter-sidebar ${isSidebarOpen ? "open" : ""}`} key={`${selectedCategory}-${selectedSubcategory}-${selectedPriceRange}-${sortBy}`}>
+                <div className="filter-sidebar__header">
+                  <h3>Filters</h3>
+                  <button 
+                    className="filter-sidebar__close" 
+                    onClick={toggleSidebar}
+                    aria-label="Close filters"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {hasActiveFilters && (
+                  <div className="filter-sidebar__section">
+                    <button 
                       onClick={clearAllFilters}
                       style={{
-                        padding: '0.75rem 1.5rem',
+                        width: '100%',
+                        padding: '0.75rem',
                         backgroundColor: '#ff6b00',
-                        color: 'white',
-                        border: 'none',
+                        border: "1px solid #ff6b00",
                         borderRadius: '8px',
                         cursor: 'pointer',
-                        fontSize: '1rem',
-                        transition: 'all 0.2s ease',
-                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                        fontSize: '0.95rem',
+                        color: 'white',
+                        transition: 'all 0.2s ease'
                       }}
                       onMouseOver={(e) => {
                         e.currentTarget.style.backgroundColor = '#e05a00';
-                        e.currentTarget.style.transform = 'translateY(-1px)';
-                        e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+                        e.currentTarget.style.borderColor = '#e05a00';
                       }}
                       onMouseOut={(e) => {
                         e.currentTarget.style.backgroundColor = '#ff6b00';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+                        e.currentTarget.style.borderColor = '#ff6b00';
                       }}
                     >
                       Clear All Filters
                     </button>
-                  )}
+                  </div>
+                )}
+
+                {searchQuery.trim() && (
+                  <div className="filter-sidebar__section">
+                    <h4 className="filter-sidebar__section-title">Search</h4>
+                    <div style={{
+                      padding: '0.75rem',
+                      backgroundColor: '#f8f9fa',
+                      borderRadius: '6px',
+                      border: '1px solid #e9ecef',
+                      fontSize: '0.9rem',
+                      color: '#495057'
+                    }}>
+                      <strong>Searching for:</strong> "{searchQuery}"
+                    </div>
+                  </div>
+                )}
+
+                <div className="filter-sidebar__section">
+                  <h4 className="filter-sidebar__section-title">Sort By</h4>
+                  <div className="filter-sidebar__radio-list">
+                    {[
+                      { value: 'all', label: 'Default' },
+                      { value: 'low-to-high', label: 'Price: Low to High' },
+                      { value: 'high-to-low', label: 'Price: High to Low' }
+                    ].map((option) => (
+                      <div key={option.value} className="filter-sidebar__radio-item">
+                        <input
+                          type="radio"
+                          id={`sort-${option.value}`}
+                          name="sort"
+                          checked={sortBy === option.value}
+                          onChange={() => handleSortChange(option.value)}
+                        />
+                        <label htmlFor={`sort-${option.value}`}>{option.label}</label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )}
+
+                <div className="filter-sidebar__section">
+                  <h4 className="filter-sidebar__section-title">Categories</h4>
+                  <div className="filter-sidebar__checkbox-list">
+                    {isLoadingCategories ? (
+                      <p className="filter-sidebar__loading">Loading categories...</p>
+                    ) : (
+                      <>
+                        <div className="filter-sidebar__checkbox-item">
+                          <input
+                            type="radio"
+                            id="category-all"
+                            name="category"
+                            checked={selectedCategory === undefined}
+                            onChange={() => handleCategoryChange(undefined)}
+                          />
+                          <label htmlFor="category-all">All Categories</label>
+                        </div>
+                        {categories.map((category: Category) => (
+                          <div key={category.id} className="filter-sidebar__category-group">
+                            <div className="filter-sidebar__checkbox-item">
+                              <input
+                                type="radio"
+                                id={`category-${category.id}`}
+                                name="category"
+                                checked={selectedCategory === category.id}
+                                onChange={() => handleCategoryChange(category.id)}
+                              />
+                              <label htmlFor={`category-${category.id}`}>{category.name}</label>
+                              </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {selectedCategory !== undefined && (
+                  <div className="filter-sidebar__section">
+                    <h4 className="filter-sidebar__section-title">Subcategories</h4>
+                    <div className="filter-sidebar__checkbox-list">
+                      {isLoadingSubcategories ? (
+                        <p className="filter-sidebar__loading">Loading subcategories...</p>
+                      ) : subcategories.length > 0 ? (
+                        <>
+                          <div className="filter-sidebar__checkbox-item">
+                            <input
+                              type="radio"
+                              id="subcategory-all"
+                              name="subcategory"
+                              checked={selectedSubcategory === undefined}
+                              onChange={() => handleSubcategoryChange(undefined)}
+                            />
+                            <label htmlFor="subcategory-all">All Subcategories</label>
+                          </div>
+                          {subcategories.map((subcategory: Subcategory) => (
+                            <div key={subcategory.id} className="filter-sidebar__checkbox-item">
+                              <input
+                                type="radio"
+                                id={`subcategory-${subcategory.id}`}
+                                name="subcategory"
+                                checked={selectedSubcategory === subcategory.id}
+                                onChange={() => handleSubcategoryChange(subcategory.id)}
+                              />
+                              <label htmlFor={`subcategory-${subcategory.id}`}>{subcategory.name}</label>
+                            </div>
+                          ))}
+                        </>
+                      ) : (
+                        <p className="filter-sidebar__no-data">No subcategories available</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="shop-products" style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                gap: '1rem'
+              }}>
+                {isLoadingProducts ? (
+                  Array(8).fill(null).map((_, index) => (
+                    <ProductCardSkeleton key={index} count={1} />
+                  ))
+                ) : filteredProducts.length > 0 ? (
+                  filteredProducts.map((product) => (
+                    <ProductCard1 key={product.id} product={product} />
+                  ))
+                ) : (
+                  <div className="no-products" style={{
+                    textAlign: 'center',
+                    padding: '3rem 2rem',
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: '12px',
+                    border: '1px solid #e9ecef',
+                    margin: '2rem 0',
+                    gridColumn: '1 / -1'
+                  }}>
+                    <div style={{
+                      fontSize: '3rem',
+                      marginBottom: '1rem',
+                      opacity: 0.3,
+                      animation: 'bounce 1s infinite'
+                    }}>
+                      📦
+                    </div>
+                    <h3 style={{
+                      color: '#333',
+                      marginBottom: '0.75rem',
+                      fontSize: '1.5rem'
+                    }}>
+                      No products found
+                    </h3>
+                    <p style={{
+                      color: '#666',
+                      marginBottom: '1.5rem',
+                      fontSize: '1rem',
+                      maxWidth: '400px',
+                      margin: '0 auto 1.5rem'
+                    }}>
+                      {searchQuery.trim()
+                        ? `No products found matching "${searchQuery}". Try adjusting your search terms or browse categories.`
+                        : selectedCategory === undefined
+                        ? "No products available at the moment."
+                        : `No products found in ${getCurrentCategoryName()}${getCurrentSubcategoryName() ? ` > ${getCurrentSubcategoryName()}` : ''}.`
+                      }
+                    </p>
+                    {hasActiveFilters && (
+                      <button
+                        onClick={clearAllFilters}
+                        style={{
+                          padding: '0.75rem 1.5rem',
+                          backgroundColor: '#ff6b00',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontSize: '1rem',
+                          transition: 'all 0.2s ease',
+                          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor = '#e05a00';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor = '#ff6b00';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+                        }}
+                      >
+                        Clear All Filters
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

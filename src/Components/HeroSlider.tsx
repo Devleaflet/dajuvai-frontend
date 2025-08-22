@@ -36,8 +36,10 @@ const fetchHeroBanners = async (): Promise<Slide[]> => {
 const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   const navigate = useNavigate();
   const [activeSlide, setActiveSlide] = useState<number>(0);
-  const [touchStart, setTouchStart] = useState<number>(0);
-  const [touchEnd, setTouchEnd] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [startX, setStartX] = useState<number>(0);
+  const [dragDistance, setDragDistance] = useState<number>(0);
+  const [translateX, setTranslateX] = useState<number>(0);
 
   const { data: slides = [], isLoading, error } = useQuery<Slide[], Error>({
     queryKey: ['heroBanners'],
@@ -54,48 +56,91 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   });
 
   useEffect(() => {
-    if (slides.length === 0) return;
-
-    const interval = setInterval(() => {
-      setActiveSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [slides]);
-
-  useEffect(() => {
     onLoad?.();
   }, [onLoad]);
 
   const goToSlide = (index: number): void => {
     setActiveSlide(index);
+    setTranslateX(0);
   };
 
   const goToPrevSlide = (): void => {
     setActiveSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+    setTranslateX(0);
   };
 
   const goToNextSlide = (): void => {
     setActiveSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+    setTranslateX(0);
+  };
+
+  const handleDragStart = (clientX: number): void => {
+    setIsDragging(true);
+    setStartX(clientX);
+    setDragDistance(0);
+  };
+
+  const handleDragMove = (clientX: number): void => {
+    if (!isDragging) return;
+    const currentDrag = clientX - startX;
+    setDragDistance(currentDrag);
+    setTranslateX(currentDrag);
+  };
+
+  const handleDragEnd = (): void => {
+    if (!isDragging) return;
+    setIsDragging(false);
+
+    // Determine swipe direction based on drag distance
+    const swipeThreshold = 50; // Minimum distance to trigger slide change
+    if (dragDistance > swipeThreshold) {
+      goToPrevSlide();
+    } else if (dragDistance < -swipeThreshold) {
+      goToNextSlide();
+    } else {
+      setTranslateX(0); // Reset position if swipe is too small
+    }
+
+    // Reset drag distance after a short delay
+    setTimeout(() => setDragDistance(0), 100);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
+    handleDragStart(e.clientX);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
+    handleDragMove(e.clientX);
+  };
+
+  const handleMouseUp = (): void => {
+    handleDragEnd();
+  };
+
+  const handleMouseLeave = (): void => {
+    if (isDragging) {
+      handleDragEnd();
+    }
   };
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>): void => {
-    setTouchStart(e.targetTouches[0].clientX);
+    handleDragStart(e.touches[0].clientX);
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>): void => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    handleDragMove(e.touches[0].clientX);
   };
 
   const handleTouchEnd = (): void => {
-    if (touchStart - touchEnd > 50) {
-      goToNextSlide();
-    }
-    if (touchStart - touchEnd < -50) {
-      goToPrevSlide();
-    }
+    handleDragEnd();
   };
 
   const handleImageClick = (slide: Slide): void => {
+    // Prevent navigation if user was dragging
+    if (Math.abs(dragDistance) > 5) {
+      return;
+    }
+
     console.log('🎯 HeroSlider banner clicked:', slide);
     if (slide && slide.name) {
       const searchQuery = encodeURIComponent(slide.name);
@@ -127,13 +172,23 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   if (slides.length === 0) return <div>No hero banners available</div>;
 
   return (
-    <div className="hero-slider">
+    <div
+      className="hero-slider"
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+    >
       <div
         className="hero-slider__track"
-        style={{ transform: `translateX(-${activeSlide * 100}%)` }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        style={{
+          transform: `translateX(calc(-${activeSlide * 100}% + ${translateX}px))`,
+          transition: isDragging ? 'none' : 'transform 500ms ease-in-out',
+        }}
       >
         {slides.map((slide) => (
           <div key={slide.id} className="hero-slider__slide">
@@ -145,8 +200,8 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
                 loading="lazy"
                 onClick={() => handleImageClick(slide)}
                 style={{ cursor: 'pointer' }}
+                draggable={false}
               />
-              {/* Navigation buttons inside the slide */}
               <button
                 className="hero-slider__nav-button hero-slider__nav-button--prev"
                 onClick={goToPrevSlide}

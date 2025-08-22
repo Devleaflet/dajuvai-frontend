@@ -3,6 +3,7 @@
   width: 100%;
   overflow: hidden;
   margin-top: 2rem;
+  max-width: 1800px;
 }
 
 /* Slider Container */
@@ -12,11 +13,18 @@
   overflow-x: auto;
   scroll-behavior: smooth;
   padding: 0 1rem;
-  /* Maintain consistent height during loading */
   min-height: 120px;
+  max-width: 1800px;
+  cursor: grab;
+  user-select: none;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
-/* Hide Scrollbar for Mobile */
+.top-category__slider-container:active {
+  cursor: grabbing;
+}
+
+/* Hide Scrollbar */
 .top-category__slider-container::-webkit-scrollbar {
   display: none;
 }
@@ -32,9 +40,10 @@
   flex-direction: column;
   align-items: center;
   min-width: 100px;
-  flex-shrink: 0; /* Prevent shrinking */
+  flex-shrink: 0;
   cursor: pointer;
   transition: transform 0.2s ease-in-out;
+  user-select: none;
 }
 
 .top-category__card:hover:not(.top-category__card--skeleton) {
@@ -56,13 +65,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  flex-shrink: 0; /* Prevent shrinking */
+  flex-shrink: 0;
 }
 
 .top-category__image {
   max-width: 100%;
   max-height: 100%;
   object-fit: cover;
+  pointer-events: none; /* Prevent image dragging */
+  user-select: none;
 }
 
 /* Skeleton image */
@@ -79,7 +90,8 @@
   text-align: center;
   margin-top: 0.5rem;
   line-height: 1.2;
-  min-height: 1.05rem; /* Consistent height */
+  min-height: 1.05rem;
+  pointer-events: none; /* Prevent text selection during drag */
 }
 
 /* Skeleton name */
@@ -161,7 +173,30 @@
 /* Responsive Styles */
 @media (max-width: 1100px) {
   .top-category__nav {
-    display: none; /* Hide arrows on mobile */
+    display: none;
+  }
+}
+
+@media (min-width: 640px) {
+  .hero-slider__track {
+    height: 20rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .hero-slider__track {
+    height: 24rem;
+  }
+
+  .hero-slider__nav-button {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-slider__track {
+    height: 30rem;
   }
 }
 
@@ -169,7 +204,7 @@
   .top-category__slider-container {
     gap: 1.5rem;
     padding: 0 2rem;
-    min-height: 140px; /* Adjust for larger desktop size */
+    min-height: 140px;
   }
 
   .top-category__card {
@@ -183,7 +218,7 @@
 
   .top-category__name {
     font-size: 1rem;
-    min-height: 1.2rem; /* Consistent height for desktop */
+    min-height: 1.2rem;
   }
 
   .top-category__name-skeleton {
@@ -194,5 +229,16 @@
   .top-category__nav svg {
     width: 20px;
     height: 20px;
+  }
+}
+
+/* Touch device specific styles */
+@media (hover: none) and (pointer: coarse) {
+  .top-category__slider-container {
+    cursor: default;
+  }
+  
+  .hero-slider {
+    cursor: default;
   }
 }

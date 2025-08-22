@@ -48,6 +48,7 @@ import EcommerceFAQ from "./Pages/Faq";
 import BecomeVendor from "./Pages/BecomeVendor";
 import UnapprovedVendors from "./Components/UnapprovedVendors";
 import CommissionList from "./Pages/ComissionList";
+import Catalog from "./Pages/Catalog";
 
 // Admin route guards
 // Allows both admin and staff to access admin area
@@ -106,6 +107,7 @@ function App() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/product-page/:id" element={<ProductPage />} />
         <Route path="/product-page/:categoryId/:subcategoryId/:id" element={<ProductPage />} />
+        <Route path="/catalog/:sectionId" element={<Catalog />} />
         <Route path="/user-profile" element={<UserProfile />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/vendor/:vendorId" element={<VendorStore />} />

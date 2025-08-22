@@ -1,15 +1,16 @@
 
-
 .about {
   color: #000000;
-  background: radial-gradient(1200px 600px at 10% -10%, #f8f9fa, transparent),
-    radial-gradient(1200px 600px at 90% -10%, #f1f3f4, transparent), #ffffff;
+
   min-height: 100%;
+  max-width: 1800px;
+  margin-inline: auto;
 }
 
 .about__container {
   width: min(1200px, 92%);
   margin-inline: auto;
+  max-width: 1800px;
 }
 
 .about__hero {

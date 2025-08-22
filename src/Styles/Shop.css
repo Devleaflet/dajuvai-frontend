@@ -1,7 +1,13 @@
+/* Max width container for shop */
+.shop-max-width-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  overflow: hidden;
+}
+
 .shop-container {
   padding: 20px;
-  max-width: 95%;
-  margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
 }
@@ -247,7 +253,6 @@
   }
 
   .filter-sidebar {
-   
     left: -100%;
   }
 
@@ -259,8 +264,6 @@
 /* Search Bar Styles */
 .search-bar-container {
   padding: 40px;
-  max-width: 95%;
-  /* margin: 0 auto; */
   width: 100%;
   box-sizing: border-box;
 }
@@ -269,7 +272,6 @@
   display: flex;
   gap: 12px;
   max-width: 600px;
-  /* margin: 0 auto; */
   align-items: center;
 }
 
@@ -385,4 +387,18 @@
 
 .filter-sidebar.open {
   animation: slideIn 0.3s ease forwards;
+}
+
+/* Prevent zoom out issues */
+@media (max-width: 1440px) {
+  .shop-max-width-container {
+    max-width: 100%;
+  }
+}
+
+/* Hide content when zoomed out */
+@media (max-width: 1024px) {
+  .shop-max-width-container {
+    overflow: hidden;
+  }
 }

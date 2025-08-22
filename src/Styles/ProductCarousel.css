@@ -5,6 +5,8 @@
   padding: 20px;
   box-sizing: border-box;
   position: relative;
+    max-width: 1800px;
+  margin-inline: auto;
 }
 
 .product-carousel__title {

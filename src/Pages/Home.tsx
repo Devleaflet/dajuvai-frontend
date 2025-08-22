@@ -9,6 +9,7 @@ import PageLoader from "../Components/PageLoader";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCategory } from "../api/category";
 import SpecialOffers from "../Components/SpecialOffers";
+import CategorySection from "../Components/CategorySection";
 
 const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -99,6 +100,7 @@ const Home = () => {
       <CategorySlider />
       <HomepageSections />
       <SpecialOffers />
+      <CategorySection/>
       <Footer />
     </>
   );

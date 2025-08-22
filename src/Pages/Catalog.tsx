@@ -4,7 +4,7 @@ import { Product } from '../Components/Types/Product';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext'; // Added for token
-import defaultProductImage from '../assets/default-product.png';
+
 import { convertApiProductToDisplayProduct } from '../Components/Types/ApiProduct';
 import { getProductPrimaryImage } from '../utils/getProductPrimaryImage';
 import '../Styles/Catalog.css';
