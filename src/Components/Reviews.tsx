@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
-import { Star, StarHalf, ArrowUpDown, Check, MoreVertical } from 'lucide-react';
+import { Star, StarHalf, ArrowUpDown, Check, MoreVertical, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { API_BASE_URL } from '../config';
@@ -10,14 +10,22 @@ interface ReviewsProps {
   productId: number;
   initialReviews: Review[];
   initialAverageRating: number;
+  totalReviews: number;
+  currentPage: number;
+  totalPages: number;
   onReviewUpdate: () => Promise<void>;
+  onPageChange: (page: number) => void;
 }
 
 const Reviews: React.FC<ReviewsProps> = ({
   productId,
   initialReviews,
   initialAverageRating,
+  totalReviews,
+  currentPage,
+  totalPages,
   onReviewUpdate,
+  onPageChange,
 }) => {
   const [reviews, setReviews] = useState<Review[]>(initialReviews);
   const [averageRating, setAverageRating] = useState<number>(initialAverageRating);
@@ -44,7 +52,7 @@ const Reviews: React.FC<ReviewsProps> = ({
       }
     });
 
-    const total = reviews.length || 1;
+const total = totalReviews || 1;
     return {
       5: { count: distribution[5], percentage: (distribution[5] / total) * 100 },
       4: { count: distribution[4], percentage: (distribution[4] / total) * 100 },
@@ -177,6 +185,7 @@ const Reviews: React.FC<ReviewsProps> = ({
         setNewReview({ rating: 5, comment: '' });
         setIsWritingReview(false);
         
+        
         // Still call onReviewUpdate to sync with backend
         await onReviewUpdate();
       } catch (error) {
@@ -199,6 +208,8 @@ const Reviews: React.FC<ReviewsProps> = ({
 
   const handleSortChange = useCallback((newSortBy: 'relevance' | 'rating' | 'date') => {
     setSortBy(newSortBy);
+    onPageChange(1)
+
     toast.success(`Sorted by ${newSortBy}`, {
       duration: 2000,
       position: 'top-center',
@@ -208,10 +219,11 @@ const Reviews: React.FC<ReviewsProps> = ({
         border: '1px solid #86EFAC',
       },
     });
-  }, []);
+  }, [onPageChange]);
 
   const handleFilterChange = useCallback((newFilter: 'all' | '5' | '4' | '3' | '2' | '1') => {
     setFilterBy(newFilter);
+    onPageChange(1)
     toast.success(`Filtered by ${newFilter === 'all' ? 'all stars' : `${newFilter} star`}`, {
       duration: 2000,
       position: 'top-center',
@@ -221,7 +233,7 @@ const Reviews: React.FC<ReviewsProps> = ({
         border: '1px solid #86EFAC',
       },
     });
-  }, []);
+  }, [onPageChange]);
 
   const getTimeAgo = useCallback((dateString: string) => {
     const now = new Date();
@@ -235,6 +247,38 @@ const Reviews: React.FC<ReviewsProps> = ({
       return `${diffInDays} days ago`;
     }
   }, []);
+  // Generate pagination numbers
+const generatePaginationNumbers = useCallback(() => {
+  const pages = [];
+  const maxVisiblePages = 5;
+  
+  if (totalPages <= maxVisiblePages) {
+    // Show all pages if total is small
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+  } else {
+    // Show smart pagination
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(totalPages, start + maxVisiblePages - 1);
+    
+    if (start > 1) {
+      pages.push(1);
+      if (start > 2) pages.push('...');
+    }
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    
+    if (end < totalPages) {
+      if (end < totalPages - 1) pages.push('...');
+      pages.push(totalPages);
+    }
+  }
+  
+  return pages;
+}, [currentPage, totalPages]);
 
   // Filter and sort reviews
   const filteredAndSortedReviews = useMemo(() => {
@@ -674,6 +718,61 @@ const Reviews: React.FC<ReviewsProps> = ({
           cursor: not-allowed;
           transform: none;
         }
+          .pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  padding: 1rem 0;
+}
+
+.pagination-button {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f9fafb;
+}
+
+.pagination-button--active {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.pagination-button--active:hover {
+  background-color: #2563eb;
+}
+
+.pagination-ellipsis {
+  padding: 0.5rem;
+  color: #9ca3af;
+}
+
+.pagination-info {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
 
         @media (min-width: 1024px) {
           .rating-summary {
@@ -715,7 +814,7 @@ const Reviews: React.FC<ReviewsProps> = ({
           <div className="stars-container">
             {renderStars(averageRating, "lg")}
           </div>
-          <div className="rating-count">{reviews.length} Ratings</div>
+            <div className="rating-count">{totalReviews} Ratings</div>
         </div>
 
         <div className="rating-breakdown">
@@ -916,7 +1015,55 @@ const Reviews: React.FC<ReviewsProps> = ({
           ))
         )}
       </div>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="pagination">
+          {/* Previous Button */}
+          <button
+            className="pagination-button"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft style={{ width: '1rem', height: '1rem' }} />
+          </button>
+
+          {/* Page Numbers */}
+          {generatePaginationNumbers().map((page, index) => (
+            <React.Fragment key={index}>
+              {page === '...' ? (
+                <div className="pagination-ellipsis">...</div>
+              ) : (
+                <button
+                  className={`pagination-button ${
+                    currentPage === page ? 'pagination-button--active' : ''
+                  }`}
+                  onClick={() => onPageChange(page as number)}
+                >
+                  {page}
+                </button>
+              )}
+            </React.Fragment>
+          ))}
+
+          {/* Next Button */}
+          <button
+            className="pagination-button"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            <ChevronRight style={{ width: '1rem', height: '1rem' }} />
+          </button>
+        </div>
+      )}
+
+      {/* Pagination Info */}
+      {totalPages > 1 && (
+        <div className="pagination-info">
+          Showing page {currentPage} of {totalPages} ({totalReviews} total reviews)
+        </div>
+      )}
     </div>
+    
   );
 };
 
