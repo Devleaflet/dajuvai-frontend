@@ -2,6 +2,7 @@ import React from 'react';
 import { ApiProduct } from '../../types/product';
 import ProductCard1 from '../../ALT/ProductCard1';
 import type { Product as UIProduct } from '../Types/Product';
+import "../../Styles/RecommendedProducts.css";
 
 interface RecommendedProductsProps {
   products: ApiProduct[];
@@ -21,28 +22,46 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
 }) => {
   // Filter out current product from recommendations
   const filteredProducts = products.filter(p => p.id !== currentProductId);
-  console.log("fil", filteredProducts)
+  
   if (isLoading) {
     return (
-      <div className="recommended-loading">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="recommended-skeleton" />
-        ))}
+      <div className="recommended-products">
+        <div className="recommended-products__header">
+          <h3 className="recommended-products__title">Recommended for you</h3>
+          <p className="recommended-products__subtitle">Products you might love</p>
+        </div>
+        <div className="recommended-products__grid">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="recommended-skeleton">
+              <div className="skeleton-image"></div>
+              <div className="skeleton-content">
+                <div className="skeleton-line short"></div>
+                <div className="skeleton-line medium"></div>
+                <div className="skeleton-line long"></div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   if (filteredProducts.length === 0) {
     return (
-      <div className="recommended-empty" style={{ padding: '20px', textAlign: 'center' }}>
-        <p style={{ color: '#666' }}>No recommendations available</p>
+      <div className="recommended-empty">
+        <div className="recommended-empty__icon">✨</div>
+        <p className="recommended-empty__text">No recommendations available at the moment</p>
+        <p className="recommended-empty__subtext">Check back later for personalized suggestions</p>
       </div>
     );
   }
 
   return (
     <div className="recommended-products">
-      <h3>Recommended for you</h3>
+      <div className="recommended-products__header">
+        <h3 className="recommended-products__title">Recommended for you</h3>
+        <p className="recommended-products__subtitle">Products you might love</p>
+      </div>
       <div className="recommended-products__grid">
         {filteredProducts.slice(0, 6).map((p) => {
           // Derive IDs from multiple possible shapes

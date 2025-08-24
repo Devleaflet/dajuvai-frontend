@@ -4,35 +4,14 @@ import Header from "../Components/Header";
 import Pagination from "../Components/Pagination";
 import VendorEditModal from "../Components/Modal/VendorEditModal";
 import AddVendorModal from "../Components/Modal/AddVendorModal";
+import VendorViewModal from "../Components/Modal/VendorViewModal";
 import { API_BASE_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
 import { VendorAuthService } from "../services/vendorAuthService";
-import { Vendor } from "../Components/Types/vendor";
+import { Vendor, District, ApiResponse, VendorSignupRequest, VendorUpdateRequest } from "../Components/Types/vendor";
 import "../Styles/AdminVendor.css";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-
-interface AdminVendor extends Vendor {
-  status: "Active" | "Inactive";
-  district?: {
-    id: number;
-    name: string;
-  };
-}
-
-interface District {
-  id: number;
-  name: string;
-}
-
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  vendor?: T;
-  message?: string;
-  errors?: { path: string[]; message: string }[];
-  token?: string;
-}
 
 const SkeletonRow: React.FC = () => {
   return (
@@ -49,7 +28,7 @@ const SkeletonRow: React.FC = () => {
 };
 
 const createVendorAPI = (token: string | null) => ({
-  async getAll(): Promise<AdminVendor[]> {
+  async getAll(): Promise<Vendor[]> {
     try {
       if (!token) {
         throw new Error("No token provided. Please log in.");
@@ -74,7 +53,17 @@ const createVendorAPI = (token: string | null) => ({
         ...vendor,
         status: vendor.isVerified ? "Active" : "Inactive",
         taxNumber: vendor.taxNumber || "N/A",
-        taxDocument: vendor.taxDocument || "N/A",
+        taxDocuments: Array.isArray(vendor.taxDocuments) ? vendor.taxDocuments : vendor.taxDocuments ? [vendor.taxDocuments] : null,
+        businessRegNumber: vendor.businessRegNumber || "N/A",
+        citizenshipDocuments: Array.isArray(vendor.citizenshipDocuments) ? vendor.citizenshipDocuments : vendor.citizenshipDocuments ? [vendor.citizenshipDocuments] : null,
+        chequePhoto: Array.isArray(vendor.chequePhoto) ? vendor.chequePhoto : vendor.chequePhoto ? [vendor.chequePhoto] : null,
+        accountName: vendor.accountName || "N/A",
+        bankName: vendor.bankName || "N/A",
+        accountNumber: vendor.accountNumber || "N/A",
+        bankBranch: vendor.bankBranch || "N/A",
+        bankCode: vendor.bankCode || "N/A",
+        businessAddress: vendor.businessAddress || "N/A",
+        profilePicture: vendor.profilePicture || "N/A",
       }));
     } catch (error) {
       console.error("Error fetching vendors:", error);
@@ -82,7 +71,7 @@ const createVendorAPI = (token: string | null) => ({
     }
   },
 
-  async getUnapproved(): Promise<AdminVendor[]> {
+  async getUnapproved(): Promise<Vendor[]> {
     try {
       if (!token) {
         throw new Error("No token provided. Please log in.");
@@ -107,7 +96,17 @@ const createVendorAPI = (token: string | null) => ({
         ...vendor,
         status: "Inactive",
         taxNumber: vendor.taxNumber || "N/A",
-        taxDocument: vendor.taxDocument || "N/A",
+        taxDocuments: Array.isArray(vendor.taxDocuments) ? vendor.taxDocuments : vendor.taxDocuments ? [vendor.taxDocuments] : null,
+        businessRegNumber: vendor.businessRegNumber || "N/A",
+        citizenshipDocuments: Array.isArray(vendor.citizenshipDocuments) ? vendor.citizenshipDocuments : vendor.citizenshipDocuments ? [vendor.citizenshipDocuments] : null,
+        chequePhoto: Array.isArray(vendor.chequePhoto) ? vendor.chequePhoto : vendor.chequePhoto ? [vendor.chequePhoto] : null,
+        accountName: vendor.accountName || "N/A",
+        bankName: vendor.bankName || "N/A",
+        accountNumber: vendor.accountNumber || "N/A",
+        bankBranch: vendor.bankBranch || "N/A",
+        bankCode: vendor.bankCode || "N/A",
+        businessAddress: vendor.businessAddress || "N/A",
+        profilePicture: vendor.profilePicture || "N/A",
       }));
     } catch (error) {
       console.error("Error fetching unapproved vendors:", error);
@@ -158,46 +157,66 @@ const createVendorAPI = (token: string | null) => ({
     }
   },
 
-  async create(vendorData: any): Promise<AdminVendor> {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const response = await VendorAuthService.signup(
-        {
-          businessName: vendorData.businessName || "",
-          email: vendorData.email || "",
-        
-          phoneNumber: vendorData.phoneNumber || "",
-          password: vendorData.password,
-          district: String(vendorData.district),
-          taxNumber: vendorData.taxNumber || "",
-          taxDocument: vendorData.taxDocument || "",
-        },
-        token
-      );
-      if (!response.success || !response.vendor) {
-        if (response.errors?.some((err) => err.message.includes("email already exists"))) {
-          throw new Error("A vendor with this email already exists");
-        }
-        throw new Error(response.message || "Failed to create vendor");
-      }
-      return {
-        ...response.vendor,
-        phoneNumber: response.vendor.phoneNumber || "",
-        businessAddress: response.vendor.businessAddress || "",
-        taxNumber: response.vendor.taxNumber || "N/A",
-        taxDocument: response.vendor.taxDocument || "N/A",
-        isVerified: !!response.vendor.isVerified,
-        status: response.vendor.isVerified ? "Active" : "Inactive",
-      };
-    } catch (error) {
-      console.error("Error creating vendor:", error);
-      throw error;
+async create(vendorData: VendorSignupRequest): Promise<Vendor> {
+  try {
+    if (!token) {
+      throw new Error("No token provided. Please log in.");
     }
-  },
 
-  async update(id: number, vendorData: Partial<AdminVendor>): Promise<AdminVendor> {
+    console.log("Creating vendor with data:", vendorData);
+
+    const response = await VendorAuthService.signup(
+      {
+        businessName: vendorData.businessName,
+        email: vendorData.email,
+        phoneNumber: vendorData.phoneNumber,
+        password: vendorData.password,
+        district: vendorData.district, // Changed from districtId to district
+        taxNumber: vendorData.taxNumber,
+        taxDocuments: vendorData.taxDocuments,
+        businessRegNumber: vendorData.businessRegNumber,
+        citizenshipDocuments: vendorData.citizenshipDocuments,
+        chequePhoto: vendorData.chequePhoto, // This is now a string, not an array
+        bankDetails: vendorData.bankDetails,
+        
+        profilePicture: vendorData.profilePicture,
+      },
+      token
+    );
+    
+    if (!response.success || !response.vendor) {
+      if (response.errors?.some((err) => err.message.includes("email already exists"))) {
+        throw new Error("A vendor with this email already exists");
+      }
+      throw new Error(response.message || "Failed to create vendor");
+    }
+    
+    return {
+      ...response.vendor,
+      phoneNumber: response.vendor.phoneNumber || "N/A",
+      taxNumber: response.vendor.taxNumber || "N/A",
+      taxDocuments: Array.isArray(response.vendor.taxDocuments) ? response.vendor.taxDocuments : response.vendor.taxDocuments ? [response.vendor.taxDocuments] : null,
+      businessRegNumber: response.vendor.businessRegNumber || "N/A",
+      citizenshipDocuments: Array.isArray(response.vendor.citizenshipDocuments) ? response.vendor.citizenshipDocuments : response.vendor.citizenshipDocuments ? [response.vendor.citizenshipDocuments] : null,
+    
+      chequePhoto: response.vendor.chequePhoto,
+      accountName: response.vendor.accountName || "N/A",
+      bankName: response.vendor.bankName || "N/A",
+      accountNumber: response.vendor.accountNumber || "N/A",
+      bankBranch: response.vendor.bankBranch || "N/A",
+      bankCode: response.vendor.bankCode || "N/A",
+      businessAddress: response.vendor.businessAddress || "N/A",
+      profilePicture: response.vendor.profilePicture || "N/A",
+      isVerified: !!response.vendor.isVerified,
+      status: response.vendor.isVerified ? "Active" : "Inactive",
+    };
+  } catch (error) {
+    console.error("Error creating vendor:", error);
+    throw error;
+  }
+},
+
+  async update(id: number, vendorData: VendorUpdateRequest): Promise<Vendor> {
     try {
       if (!token) {
         throw new Error("No token provided. Please log in.");
@@ -206,12 +225,19 @@ const createVendorAPI = (token: string | null) => ({
         id,
         {
           id,
-          businessName: vendorData.businessName || "",
-          email: vendorData.email || "",
-          phoneNumber: vendorData.phoneNumber || "",
-          district: vendorData.district?.name,
-          taxNumber: vendorData.taxNumber || "",
-          taxDocument: vendorData.taxDocument || "",
+          businessName: vendorData.businessName,
+          email: vendorData.email,
+          phoneNumber: vendorData.phoneNumber,
+          district: vendorData.district,
+          taxNumber: vendorData.taxNumber,
+          taxDocuments: vendorData.taxDocuments,
+          businessRegNumber: vendorData.businessRegNumber,
+          citizenshipDocuments: vendorData.citizenshipDocuments,
+          chequePhoto: vendorData.chequePhoto,
+          bankDetails: vendorData.bankDetails,
+          isVerified: vendorData.isVerified,
+          businessAddress: vendorData.businessAddress,
+          profilePicture: vendorData.profilePicture,
         },
         token
       );
@@ -225,10 +251,19 @@ const createVendorAPI = (token: string | null) => ({
 
       return {
         ...response.vendor,
-        phoneNumber: response.vendor.phoneNumber || "",
-        businessAddress: response.vendor.businessAddress || "",
+        phoneNumber: response.vendor.phoneNumber || "N/A",
         taxNumber: response.vendor.taxNumber || "N/A",
-        taxDocument: response.vendor.taxDocument || "N/A",
+        taxDocuments: Array.isArray(response.vendor.taxDocuments) ? response.vendor.taxDocuments : response.vendor.taxDocuments ? [response.vendor.taxDocuments] : null,
+        businessRegNumber: response.vendor.businessRegNumber || "N/A",
+        citizenshipDocuments: Array.isArray(response.vendor.citizenshipDocuments) ? response.vendor.citizenshipDocuments : response.vendor.citizenshipDocuments ? [response.vendor.citizenshipDocuments] : null,
+        chequePhoto: Array.isArray(response.vendor.chequePhoto) ? response.vendor.chequePhoto : response.vendor.chequePhoto ? [response.vendor.chequePhoto] : null,
+        accountName: response.vendor.accountName || "N/A",
+        bankName: response.vendor.bankName || "N/A",
+        accountNumber: response.vendor.accountNumber || "N/A",
+        bankBranch: response.vendor.bankBranch || "N/A",
+        bankCode: response.vendor.bankCode || "N/A",
+        businessAddress: response.vendor.businessAddress || "N/A",
+        profilePicture: response.vendor.profilePicture || "N/A",
         isVerified: !!response.vendor.isVerified,
         status: response.vendor.isVerified ? "Active" : "Inactive",
       };
@@ -282,25 +317,27 @@ const createVendorAPI = (token: string | null) => ({
   },
 });
 
-const AdminVendors: React.FC = () => {
+const AdminVendor: React.FC = () => {
   const { token, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [vendors, setVendors] = useState<AdminVendor[]>([]);
-  const [filteredVendors, setFilteredVendors] = useState<AdminVendor[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [filteredVendors, setFilteredVendors] = useState<Vendor[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [vendorsPerPage] = useState(7);
-  const [selectedVendor, setSelectedVendor] = useState<AdminVendor | null>(null);
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortConfig, setSortConfig] = useState<{ key: keyof AdminVendor; direction: "asc" | "desc" } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Vendor; direction: "asc" | "desc" } | null>(null);
+  const [unapprovedCount, setUnapprovedCount] = useState(0);
 
   const vendorAPI = createVendorAPI(token);
 
   const CACHE_KEY = "admin_vendors";
-  const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+  const CACHE_TTL = 10 * 60 * 1000;
 
   const fetchDistricts = useCallback(async () => {
     try {
@@ -336,6 +373,15 @@ const AdminVendors: React.FC = () => {
     }
   }, [token]);
 
+  const loadUnapprovedCount = useCallback(async () => {
+    try {
+      const unapproved = await vendorAPI.getUnapproved();
+      setUnapprovedCount(unapproved.length);
+    } catch (err) {
+      console.error("Failed to load unapproved count");
+    }
+  }, [token]);
+
   useEffect(() => {
     if (isAuthenticated && token) {
       const cached = localStorage.getItem(CACHE_KEY);
@@ -351,6 +397,7 @@ const AdminVendors: React.FC = () => {
       }
       loadVendors();
       fetchDistricts();
+      loadUnapprovedCount();
     } else {
       setLoading(false);
       setError("Please log in to access vendor management.");
@@ -386,7 +433,7 @@ const AdminVendors: React.FC = () => {
     setFilteredVendors(results);
   };
 
-  const handleSort = (key: keyof AdminVendor) => {
+  const handleSort = (key: keyof Vendor) => {
     let direction: "asc" | "desc" = "asc";
     if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
       direction = "desc";
@@ -423,20 +470,39 @@ const AdminVendors: React.FC = () => {
   const indexOfFirstVendor = indexOfLastVendor - vendorsPerPage;
   const currentVendors = getSortedAndFilteredVendors().slice(indexOfFirstVendor, indexOfLastVendor);
 
-  const editVendor = (vendor: AdminVendor) => {
+  const viewVendor = (vendor: Vendor) => {
+    setSelectedVendor(vendor);
+    setShowViewModal(true);
+  };
+
+  const editVendor = (vendor: Vendor) => {
     setSelectedVendor({ ...vendor });
     setShowEditModal(true);
   };
 
-  const handleSaveVendor = async (updatedVendor: AdminVendor) => {
+  const handleSaveVendor = async (updatedVendor: Vendor) => {
     try {
       const savedVendor = await vendorAPI.update(updatedVendor.id, {
+        id: updatedVendor.id,
         businessName: updatedVendor.businessName,
         email: updatedVendor.email,
         phoneNumber: updatedVendor.phoneNumber,
-        district: updatedVendor.district,
+        districtId: updatedVendor.district?.id,
         taxNumber: updatedVendor.taxNumber,
-        taxDocument: updatedVendor.taxDocument,
+        taxDocuments: updatedVendor.taxDocuments,
+        businessRegNumber: updatedVendor.businessRegNumber,
+        citizenshipDocuments: updatedVendor.citizenshipDocuments,
+        chequePhoto: updatedVendor.chequePhoto,
+        bankDetails: {
+          accountName: updatedVendor.accountName || "",
+          bankName: updatedVendor.bankName || "",
+          accountNumber: updatedVendor.accountNumber || "",
+          bankBranch: updatedVendor.bankBranch || "",
+          bankCode: updatedVendor.bankCode || "",
+        },
+        isVerified: updatedVendor.isVerified,
+        businessAddress: updatedVendor.businessAddress,
+        profilePicture: updatedVendor.profilePicture,
       });
       setVendors(vendors.map((v) => (v.id === savedVendor.id ? savedVendor : v)));
       setFilteredVendors(filteredVendors.map((v) => (v.id === savedVendor.id ? savedVendor : v)));
@@ -449,52 +515,24 @@ const AdminVendors: React.FC = () => {
     }
   };
 
- const handleAddVendor = async (newVendor: unknown) => {
+  const handleAddVendor = async (newVendor: VendorSignupRequest) => {
   try {
-    const vendor = newVendor as { [key: string]: any };
-    if (!vendor.district) {
+    if (!newVendor.district) {
       throw new Error("Please select a valid district");
     }
-    const selectedDistrict = districts.find((d) => d.name === vendor.district);
+    const selectedDistrict = districts.find((d) => d.name.toLowerCase() === newVendor.district.toLowerCase());
     if (!selectedDistrict) {
       throw new Error("Selected district is not valid. Please refresh the page and try again.");
     }
-    const savedVendor = await vendorAPI.create({
-      businessName: vendor.businessName,
-      email: vendor.email,
-      businessAddress: vendor.businessAddress,
-      phoneNumber: vendor.phoneNumber,
-      password: vendor.password,
-      district: vendor.district,
-      taxNumber: vendor.taxNumber,
-      taxDocument: vendor.taxDocument,
-    });
-    setVendors([
-      ...vendors,
-      {
-        ...savedVendor,
-        phoneNumber: savedVendor.phoneNumber || "",
-        isVerified: !!savedVendor.isVerified,
-        taxNumber: savedVendor.taxNumber || "N/A",
-        taxDocument: savedVendor.taxDocument || "N/A",
-      },
-    ]);
-    setFilteredVendors([
-      ...filteredVendors,
-      {
-        ...savedVendor,
-        phoneNumber: savedVendor.phoneNumber || "",
-        isVerified: !!savedVendor.isVerified,
-        taxNumber: savedVendor.taxNumber || "N/A",
-        taxDocument: savedVendor.taxDocument || "N/A",
-      },
-    ]);
+    const savedVendor = await vendorAPI.create(newVendor);
+    setVendors([...vendors, savedVendor]);
+    setFilteredVendors([...filteredVendors, savedVendor]);
     setShowAddModal(false);
     toast.success("Vendor added successfully");
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : "Failed to add vendor";
     toast.error(errorMessage);
-    setError(errorMessage); 
+    setError(errorMessage);
   }
 };
 
@@ -536,7 +574,7 @@ const AdminVendors: React.FC = () => {
                 <button className="admin-vendors__add-btn" onClick={() => setShowAddModal(true)}>
                   Add Vendor
                 </button>
-                <button 
+                <button
                   className="admin-vendors__unapproved-btn"
                   onClick={() => navigate('/admin-vendors/unapproved')}
                 >
@@ -555,7 +593,6 @@ const AdminVendors: React.FC = () => {
                     <th>Phone Number</th>
                     <th>Tax Number</th>
                     <th>Tax Document</th>
-                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -586,17 +623,17 @@ const AdminVendors: React.FC = () => {
           <div className="admin-vendors__header">
             <h2>Vendor Management</h2>
             <div className="admin-vendors__header-buttons">
-              <button 
-                className="admin-vendors__add-btn" 
+              <button
+                className="admin-vendors__add-btn"
                 onClick={() => setShowAddModal(true)}
               >
                 Add Vendor
               </button>
-              <button 
+              <button
                 className="admin-vendors__unapproved-btn"
                 onClick={() => navigate('/admin-vendors/unapproved')}
               >
-                Unapproved Vendors
+                Unapproved Vendors {unapprovedCount > 0 && `(${unapprovedCount})`}
               </button>
             </div>
           </div>
@@ -638,8 +675,8 @@ const AdminVendors: React.FC = () => {
                       <td>{vendor.phoneNumber}</td>
                       <td>{vendor.taxNumber}</td>
                       <td>
-                        {vendor.taxDocument && vendor.taxDocument !== "N/A" ? (
-                          <a href={vendor.taxDocument} target="_blank" rel="noopener noreferrer">
+                        {vendor.taxDocuments && vendor.taxDocuments.length > 0 ? (
+                          <a href={vendor.taxDocuments[0]} target="_blank" rel="noopener noreferrer">
                             View Document
                           </a>
                         ) : (
@@ -648,6 +685,34 @@ const AdminVendors: React.FC = () => {
                       </td>
                       <td>
                         <div className="admin-vendors__actions">
+                          <button
+                            className="admin-vendors__action-btn admin-vendors__view-btn"
+                            onClick={() => viewVendor(vendor)}
+                            aria-label="View vendor"
+                          >
+                            <svg
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M1 12S4 4 12 4S23 12 23 12S20 20 12 20S1 12 1 12Z"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </button>
                           <button
                             className="admin-vendors__action-btn admin-vendors__edit-btn"
                             onClick={() => editVendor(vendor)}
@@ -739,17 +804,25 @@ const AdminVendors: React.FC = () => {
           setSelectedVendor(null);
         }}
         onSave={handleSaveVendor}
-        vendor={selectedVendor as any}
+        vendor={selectedVendor}
       />
       <AddVendorModal
         show={showAddModal}
         onClose={() => setShowAddModal(false)}
         onAdd={handleAddVendor}
         districts={districts}
+        token={token}
+      />
+      <VendorViewModal
+        show={showViewModal}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedVendor(null);
+        }}
+        vendor={selectedVendor}
       />
     </div>
   );
 };
 
-export default AdminVendors;
-
+export default AdminVendor ;

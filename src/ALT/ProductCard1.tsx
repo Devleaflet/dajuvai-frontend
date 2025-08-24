@@ -12,7 +12,6 @@ import { getProductPrimaryImage } from "../utils/getProductPrimaryImage";
 import defaultProductImage from "../assets/logo.webp";
 import { toast } from "react-hot-toast";
 
-
 interface ProductCardProps {
   product: Product;
 }
@@ -34,7 +33,6 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
     ratingCount,
     isBestSeller,
     freeDelivery,
-
     id,
   } = product;
 
@@ -138,13 +136,6 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
             alt={title || "Product image"}
             onError={handleImageError}
             loading="lazy"
-            style={{ 
-              width: '100%', 
-              height: '200px',
-              objectFit: 'contain',
-              backgroundColor: '#f8f9fa',
-              borderRadius: '8px'
-            }}
           />
         </div>
         <div className="product1__rating">
@@ -157,7 +148,6 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
           </div>
           <div className="product1__cart-button">
             <FaCartPlus
-              style={{ color: "#ea5f0a", width: "25px" }}
               onClick={e => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -172,15 +162,6 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
             />
           </div>
         </div>
-        <div className="product1__pagination">
-          <div className="product1__dots">
-            <span className="product1__dot product1__dot--active"></span>
-            <span className="product1__dot"></span>
-            <span className="product1__dot"></span>
-            <span className="product1__dot"></span>
-            <span className="product1__dot"></span>
-          </div>
-        </div>
         <div className="product1__info">
           <h3 className="product1__title">{title}</h3>
           <p className="product1__description">{description}</p>
@@ -193,11 +174,26 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
                 </span>
               )}
               {discount && (
-                <span className="product1__discount">{discount}%</span>
+                <span className="product1__discount">{discount}% off</span>
               )}
             </div>
           </div>
-        
+          {freeDelivery && (
+            <div className="product1__delivery">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M9 20l-1.5-1.5M14 20l-1.5-1.5M4 8h16M4 8l1.5 5h9L16 8M4 8V6a2 2 0 012-2h12a2 2 0 012 2v2"></path>
+                <circle cx="8.5" cy="15.5" r="1.5"></circle>
+                <circle cx="15.5" cy="15.5" r="1.5"></circle>
+              </svg>
+              <span>Free Delivery</span>
+            </div>
+          )}
         </div>
       </div>
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />

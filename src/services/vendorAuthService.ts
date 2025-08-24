@@ -8,9 +8,8 @@ export interface VendorUpdateRequest {
   phoneNumber: string;
   businessAddress?: string;
   district?: string;
-   taxNumber?: string;
+  taxNumber?: string;
   taxDocument?: string;
-
 }
 
 export class VendorAuthService {
@@ -19,97 +18,227 @@ export class VendorAuthService {
     document.cookie = `vendorToken=${token}; HttpOnly; Secure; SameSite=Strict; Max-Age=7200`;
   }
 
-static async signup(vendorData: VendorSignupRequest, token: string | null): Promise<ApiResponse<Vendor>> {
-  try {
-    if (!token) {
-      return {
-        success: false,
-        message: "No authentication token provided. Please log in.",
-      };
-    }
-
-
-    const payload = {
-      businessName: vendorData.businessName,
-      email: vendorData.email,
-      password: vendorData.password,
-    
-      phoneNumber: vendorData.phoneNumber,
-      district: vendorData.district, 
-    };
-    console.log("API Request Payload:", payload);
-
-    const response = await fetch(`${API_BASE_URL}/api/vendors/signup`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const contentType = response.headers.get("content-type");
-    if (!contentType?.includes("application/json")) {
-      const text = await response.text();
-      return {
-        success: false,
-        message: `Server returned ${response.status}: ${text.substring(0, 100)}`,
-      };
-    }
-
-    const data: ApiResponse<Vendor> = await response.json();
-
-    if (response.status === 201 && data.success && data.vendor && data.token) {
-      await this.setAuthToken(data.token);
-      return {
-        success: true,
-        vendor: data.vendor,
-        token: data.token,
-      };
-    }
-
-    if (!response.ok) {
-      console.log("Signup Error Response:", data);
-      
-      // Handle specific error cases
-      if (response.status === 409) {
+  static async signup(vendorData: VendorSignupRequest, token: string | null): Promise<ApiResponse<Vendor>> {
+    try {
+      if (!token) {
         return {
           success: false,
-          message: "A vendor with this email already exists. Please use a different email address.",
+          message: "No authentication token provided. Please log in.",
         };
       }
-      
-      if (response.status === 400 && data.message?.includes("District")) {
+
+      const payload = {
+        businessName: vendorData.businessName,
+        email: vendorData.email,
+        password: vendorData.password,
+        phoneNumber: vendorData.phoneNumber,
+        district: vendorData.district,
+        taxNumber: vendorData.taxNumber,
+        taxDocuments: vendorData.taxDocuments,
+        businessRegNumber: vendorData.businessRegNumber,
+        citizenshipDocuments: vendorData.citizenshipDocuments,
+        chequePhoto: vendorData.chequePhoto,
+        bankDetails: vendorData.bankDetails,
+        businessAddress: vendorData.businessAddress,
+        profilePicture: vendorData.profilePicture,
+      };
+      console.log("API Request Payload:", JSON.stringify(payload, null, 2));
+
+      const response = await fetch(`${API_BASE_URL}/api/vendors/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType?.includes("application/json")) {
+        const text = await response.text();
+        console.error("Non-JSON response:", text);
         return {
           success: false,
-          message: "The selected district is not valid. Please select a different district.",
+          message: `Server returned ${response.status}: ${text.substring(0, 100)}`,
         };
       }
-      
-      if (data.errors) {
-        const errorMessage = data.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join("; ");
+
+      const data: ApiResponse<Vendor> = await response.json();
+
+      if (response.status === 201 && data.success && data.vendor && data.token) {
+        await this.setAuthToken(data.token);
+        return {
+          success: true,
+          vendor: {
+            ...data.vendor,
+            district: data.vendor.district || { id: 0, name: data.vendor.district || "N/A" },
+            status: data.vendor.isVerified ? "Active" : "Inactive",
+            taxNumber: data.vendor.taxNumber || "N/A",
+            taxDocuments: Array.isArray(data.vendor.taxDocuments) ? data.vendor.taxDocuments : data.vendor.taxDocuments ? [data.vendor.taxDocuments] : null,
+            businessRegNumber: data.vendor.businessRegNumber || "N/A",
+            citizenshipDocuments: Array.isArray(data.vendor.citizenshipDocuments) ? data.vendor.citizenshipDocuments : data.vendor.citizenshipDocuments ? [data.vendor.citizenshipDocuments] : null,
+            chequePhoto: Array.isArray(data.vendor.chequePhoto) ? data.vendor.chequePhoto : data.vendor.chequePhoto ? [data.vendor.chequePhoto] : null,
+            accountName: data.vendor.accountName || "N/A",
+            bankName: data.vendor.bankName || "N/A",
+            accountNumber: data.vendor.accountNumber || "N/A",
+            bankBranch: data.vendor.bankBranch || "N/A",
+            bankCode: data.vendor.bankCode || "N/A",
+            businessAddress: data.vendor.businessAddress || "N/A",
+            profilePicture: data.vendor.profilePicture || "N/A",
+          },
+          token: data.token,
+        };
+      }
+
+      if (!response.ok) {
+        console.error("Signup Error Response:", data);
+        if (response.status === 409) {
+          return {
+            success: false,
+            message: "A vendor with this email already exists. Please use a different email address.",
+          };
+        }
+        if (response.status === 400 && data.message?.includes("District")) {
+          return {
+            success: false,
+            message: "The selected district is not valid. Please select a different district.",
+          };
+        }
+        if (data.errors) {
+          const errorMessage = data.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join("; ");
+          return {
+            success: false,
+            errors: data.errors,
+            message: errorMessage,
+          };
+        }
         return {
           success: false,
-          errors: data.errors,
-          message: errorMessage,
+          message: data.message || `Request failed with status ${response.status}`,
         };
       }
+
+      return data;
+    } catch (error) {
+      console.error("Vendor signup error:", error);
       return {
         success: false,
-        message: data.message || `Request failed with status ${response.status}`,
+        message: error instanceof Error ? error.message : "Network error during signup",
       };
     }
-
-    return data;
-  } catch (error) {
-    console.error("Vendor signup error:", error);
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : "Network error during signup",
-    };
   }
-}
+
+  static async adminsignup(vendorData: VendorSignupRequest, token: string | null): Promise<ApiResponse<Vendor>> {
+    try {
+      if (!token) {
+        return {
+          success: false,
+          message: "No authentication token provided. Please log in.",
+        };
+      }
+
+      const payload = {
+        businessName: vendorData.businessName,
+        email: vendorData.email,
+        password: vendorData.password,
+        phoneNumber: vendorData.phoneNumber,
+        district: vendorData.district,
+        taxNumber: vendorData.taxNumber,
+        taxDocuments: vendorData.taxDocuments,
+        businessRegNumber: vendorData.businessRegNumber,
+        citizenshipDocuments: vendorData.citizenshipDocuments,
+        chequePhoto: vendorData.chequePhoto,
+        bankDetails: vendorData.bankDetails,
+        businessAddress: vendorData.businessAddress,
+        profilePicture: vendorData.profilePicture,
+      };
+      console.log("API Request Payload:", JSON.stringify(payload, null, 2));
+
+      const response = await fetch(`${API_BASE_URL}/api/vendors/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType?.includes("application/json")) {
+        const text = await response.text();
+        console.error("Non-JSON response:", text);
+        return {
+          success: false,
+          message: `Server returned ${response.status}: ${text.substring(0, 100)}`,
+        };
+      }
+
+      const data: ApiResponse<Vendor> = await response.json();
+
+      if (response.status === 201 && data.success && data.vendor && data.token) {
+        await this.setAuthToken(data.token);
+        return {
+          success: true,
+          vendor: {
+            ...data.vendor,
+            district: data.vendor.district || { id: 0, name: data.vendor.district || "N/A" },
+            status: data.vendor.isVerified ? "Active" : "Inactive",
+            taxNumber: data.vendor.taxNumber || "N/A",
+            taxDocuments: Array.isArray(data.vendor.taxDocuments) ? data.vendor.taxDocuments : data.vendor.taxDocuments ? [data.vendor.taxDocuments] : null,
+            businessRegNumber: data.vendor.businessRegNumber || "N/A",
+            citizenshipDocuments: Array.isArray(data.vendor.citizenshipDocuments) ? data.vendor.citizenshipDocuments : data.vendor.citizenshipDocuments ? [data.vendor.citizenshipDocuments] : null,
+            chequePhoto: Array.isArray(data.vendor.chequePhoto) ? data.vendor.chequePhoto : data.vendor.chequePhoto ? [data.vendor.chequePhoto] : null,
+            accountName: data.vendor.accountName || "N/A",
+            bankName: data.vendor.bankName || "N/A",
+            accountNumber: data.vendor.accountNumber || "N/A",
+            bankBranch: data.vendor.bankBranch || "N/A",
+            bankCode: data.vendor.bankCode || "N/A",
+            businessAddress: data.vendor.businessAddress || "N/A",
+            profilePicture: data.vendor.profilePicture || "N/A",
+          },
+          token: data.token,
+        };
+      }
+
+      if (!response.ok) {
+        console.error("Signup Error Response:", data);
+        if (response.status === 409) {
+          return {
+            success: false,
+            message: "A vendor with this email already exists. Please use a different email address.",
+          };
+        }
+        if (response.status === 400 && data.message?.includes("District")) {
+          return {
+            success: false,
+            message: "The selected district is not valid. Please select a different district.",
+          };
+        }
+        if (data.errors) {
+          const errorMessage = data.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join("; ");
+          return {
+            success: false,
+            errors: data.errors,
+            message: errorMessage,
+          };
+        }
+        return {
+          success: false,
+          message: data.message || `Request failed with status ${response.status}`,
+        };
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Vendor signup error:", error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : "Network error during signup",
+      };
+    }
+  }
 
   static async login(credentials: VendorLoginRequest): Promise<ApiResponse<Vendor>> {
     try {
@@ -156,10 +285,9 @@ static async signup(vendorData: VendorSignupRequest, token: string | null): Prom
         };
       }
 
-      // Format phone number with country code if not already present
       const formattedPhoneNumber = vendorData.phoneNumber.startsWith('+')
         ? vendorData.phoneNumber
-        : `+977${vendorData.phoneNumber}`; // Assuming Nepal country code; adjust as needed
+        : `+977${vendorData.phoneNumber}`;
 
       const payload = {
         ...vendorData,
@@ -219,7 +347,6 @@ static async signup(vendorData: VendorSignupRequest, token: string | null): Prom
         };
       }
 
-      // Return the updated vendor data
       return {
         success: true,
         vendor: data.data || data.vendor,
@@ -237,13 +364,11 @@ static async signup(vendorData: VendorSignupRequest, token: string | null): Prom
   static logout() {
     console.log("VendorAuthService logout - clearing all vendor data");
     
-    // Clear all vendor-related localStorage items
     localStorage.removeItem("vendorToken");
     localStorage.removeItem("vendorData");
     localStorage.removeItem("accessToken");
     localStorage.removeItem("currentTxnId");
     
-    // Clear all admin-related cache
     const adminCacheKeys = [
       'admin_products',
       'admin_dashboard_stats',
@@ -255,22 +380,17 @@ static async signup(vendorData: VendorSignupRequest, token: string | null): Prom
     ];
     adminCacheKeys.forEach(key => localStorage.removeItem(key));
     
-    // Clear cookies
     document.cookie = "vendorToken=; Max-Age=0; path=/;";
     document.cookie = "authToken=; Max-Age=0; path=/;";
     
-    // Clear any session storage
     sessionStorage.clear();
     
-    // Dispatch custom event to notify other components
     window.dispatchEvent(new CustomEvent('userLoggedOut'));
   }
 
-  // Comprehensive logout utility that clears all user data
   static comprehensiveLogout() {
     console.log("Comprehensive logout - clearing all user and vendor data");
     
-    // Clear all authentication tokens
     localStorage.removeItem("authToken");
     localStorage.removeItem("authUser");
     localStorage.removeItem("vendorToken");
@@ -278,7 +398,6 @@ static async signup(vendorData: VendorSignupRequest, token: string | null): Prom
     localStorage.removeItem("accessToken");
     localStorage.removeItem("currentTxnId");
     
-    // Clear all cache data
     const cacheKeys = [
       'admin_products',
       'admin_dashboard_stats',
@@ -293,25 +412,19 @@ static async signup(vendorData: VendorSignupRequest, token: string | null): Prom
     ];
     cacheKeys.forEach(key => localStorage.removeItem(key));
     
-    // Clear all cookies
     document.cookie = "vendorToken=; Max-Age=0; path=/;";
     document.cookie = "authToken=; Max-Age=0; path=/;";
     
-    // Clear session storage
     sessionStorage.clear();
     
-    // Dispatch logout event
     window.dispatchEvent(new CustomEvent('userLoggedOut'));
     
-    // Force page reload to ensure complete cleanup
     window.location.href = '/';
   }
 
-  // Clear all user data without forcing page reload
   static clearAllUserData() {
     console.log("Clearing all user data");
     
-    // Clear all authentication tokens
     localStorage.removeItem("authToken");
     localStorage.removeItem("authUser");
     localStorage.removeItem("vendorToken");
@@ -319,7 +432,6 @@ static async signup(vendorData: VendorSignupRequest, token: string | null): Prom
     localStorage.removeItem("accessToken");
     localStorage.removeItem("currentTxnId");
     
-    // Clear all cache data
     const cacheKeys = [
       'admin_products',
       'admin_dashboard_stats',
@@ -334,14 +446,11 @@ static async signup(vendorData: VendorSignupRequest, token: string | null): Prom
     ];
     cacheKeys.forEach(key => localStorage.removeItem(key));
     
-    // Clear all cookies
     document.cookie = "vendorToken=; Max-Age=0; path=/;";
     document.cookie = "authToken=; Max-Age=0; path=/;";
     
-    // Clear session storage
     sessionStorage.clear();
     
-    // Dispatch logout event
     window.dispatchEvent(new CustomEvent('userLoggedOut'));
   }
 

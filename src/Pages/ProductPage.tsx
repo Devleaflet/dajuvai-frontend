@@ -786,7 +786,7 @@ const ProductPage = () => {
           <div className="product-page__content">
             <div
               className="product-gallery"
-              style={{ display: "flex", flexDirection: "row", gap: "20px" }}
+              style={{ display: "flex", flexDirection: "row", gap: "1.25rem" }}
             >
               <div className="product-gallery__images" style={{ flex: 1 }}>
                 <div
@@ -828,12 +828,12 @@ const ProductPage = () => {
                           : 100,
                         width: `${ZOOM_BOX_SIZE}px`,
                         height: `${ZOOM_BOX_SIZE}px`,
-                        border: "2px solid #ddd",
-                        borderRadius: "8px",
+                        border: "0.125rem solid #ddd",
+                        borderRadius: "0.5rem",
                         overflow: "hidden",
                         zIndex: 2000,
                         boxShadow:
-                          "0 8px 32px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.1)",
+                          "0 0.5rem 2rem rgba(0,0,0,0.15), 0 0.25rem 1rem rgba(0,0,0,0.1)",
                         backgroundColor: "#fff",
                         backgroundImage: `url(${currentImage})`,
                         backgroundSize: `${ZOOM_LEVEL * 100}%`,
@@ -863,10 +863,10 @@ const ProductPage = () => {
                           alt={`Product view ${index + 1}`}
                           onError={() => handleImageError(index)}
                           style={{
-                            width: "60px",
-                            height: "60px",
+                            width: "3.75rem",
+                            height: "3.75rem",
                             objectFit: "cover",
-                            borderRadius: "4px",
+                            borderRadius: "0.25rem",
                           }}
                         />
                       </button>
@@ -880,18 +880,18 @@ const ProductPage = () => {
               className="product-info"
               style={{
                 flex: 1,
-                padding: "0 20px",
-                maxWidth: "600px",
+                padding: "0 1.25rem",
+                maxWidth: "37.5rem",
               }}
             >
               <h1
                 style={{
-                  fontSize: "40px",
+                  fontSize: "2.5rem",
                   fontWeight: "700",
-                  marginBottom: "20px",
+                  marginBottom: "1.25rem",
                   color: "#1a1a1a",
                   lineHeight: "1.3",
-                  letterSpacing: "-0.3px",
+                  letterSpacing: "-0.01875rem",
                 }}
               >
                 {product.name}
@@ -900,17 +900,17 @@ const ProductPage = () => {
               {product.description && (
                 <div
                   style={{
-                    marginBottom: "25px",
-                    fontSize: "16px",
+                    marginBottom: "1.5625rem",
+                    fontSize: "1rem",
                     lineHeight: "1.6",
                     color: "#4a4a4a",
                   }}
                 >
                   <h3
                     style={{
-                      fontSize: "18px",
+                      fontSize: "1.125rem",
                       fontWeight: "600",
-                      marginBottom: "10px",
+                      marginBottom: "0.625rem",
                       color: "#333",
                     }}
                   >
@@ -923,12 +923,12 @@ const ProductPage = () => {
               <div
                 style={{
                   marginBottom: "0px",
-                  fontSize: "14px",
+                  fontSize: "0.875rem",
                   color: "#666",
                   display: "flex",
                   alignItems: "center",
                   flexWrap: "wrap",
-                  gap: "8px",
+                  gap: "0.5rem",
                 }}
               ></div>
 
@@ -938,8 +938,8 @@ const ProductPage = () => {
                   <div className="product-info__variants">
                     <h4
                       style={{
-                        marginBottom: "10px",
-                        fontSize: "16px",
+                        marginBottom: "0.625rem",
+                        fontSize: "1rem",
                         fontWeight: "600",
                       }}
                     >
@@ -950,8 +950,8 @@ const ProductPage = () => {
                       style={{
                         display: "flex",
                         flexDirection: "row",
-                        gap: "10px",
-                        marginBottom: "20px",
+                        gap: "0.625rem",
+                        marginBottom: "1.25rem",
                       }}
                     >
                       {product.variants.map((variant: any) => (
@@ -960,13 +960,13 @@ const ProductPage = () => {
                           style={{
                             display: "flex",
                             flexDirection: "column",
-                            gap: "5px",
-                            padding: "10px",
+                            gap: "0.3125rem",
+                            padding: "0.625rem",
                             border:
                               selectedVariant?.id === variant.id
-                                ? "1px solid #007bff"
-                                : "1px solid #ddd",
-                            borderRadius: "4px",
+                                ? "0.0625rem solid #007bff"
+                                : "0.0625rem solid #ddd",
+                            borderRadius: "0.25rem",
                             backgroundColor:
                               variant.stock <= 0 ? "#f8f9fa" : "#fff",
                             opacity: variant.stock <= 0 ? 0.7 : 1,
@@ -984,7 +984,7 @@ const ProductPage = () => {
                             ${variant.calculatedPrice?.toFixed(2) || "0.00"}
                           </div>
                           {variant.stock <= 0 && (
-                            <div style={{ color: "#dc3545", fontSize: "14px" }}>
+                            <div style={{ color: "#dc3545", fontSize: "0.875rem" }}>
                               Out of Stock
                             </div>
                           )}
@@ -996,12 +996,12 @@ const ProductPage = () => {
 
               <div
                 className="product-info__quantity"
-                style={{ margin: "20px 0" }}
+                style={{ margin: "1.25rem 0" }}
               >
                 <h4
                   style={{
-                    marginBottom: "10px",
-                    fontSize: "16px",
+                    marginBottom: "0.625rem",
+                    fontSize: "1rem",
                     fontWeight: "600",
                   }}
                 >
@@ -1012,16 +1012,16 @@ const ProductPage = () => {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "10px",
-                    marginBottom: "10px",
+                    gap: "0.625rem",
+                    marginBottom: "0.625rem",
                   }}
                 >
                   <button
                     style={{
-                      padding: "5px 15px",
-                      border: "1px solid #ddd",
+                      padding: "0.3125rem 0.9375rem",
+                      border: "0.0625rem solid #ddd",
                       background: "#fff",
-                      borderRadius: "4px",
+                      borderRadius: "0.25rem",
                       cursor: quantity <= 1 ? "not-allowed" : "pointer",
                       opacity: quantity <= 1 ? 0.5 : 1,
                     }}
@@ -1038,15 +1038,15 @@ const ProductPage = () => {
                     onChange={handleQuantityInputChange}
                     onBlur={handleQuantityBlur}
                     style={{
-                      width: "70px",
+                      width: "4.375rem",
                       textAlign: "center",
-                      padding: "5px",
-                      border: "1px solid #ddd",
-                      borderRadius: "4px",
+                      padding: "0.3125rem",
+                      border: "0.0625rem solid #ddd",
+                      borderRadius: "0.25rem",
                       fontWeight: "600",
                       MozAppearance: "textfield",
                       WebkitAppearance: "none",
-                      margin: "0 5px",
+                      margin: "0 0.3125rem",
                     }}
                     onKeyDown={(e) => {
                       // Prevent typing 'e', '+', '-', '.'
@@ -1057,10 +1057,10 @@ const ProductPage = () => {
                   />
                   <button
                     style={{
-                      padding: "5px 15px",
-                      border: "1px solid #ddd",
+                      padding: "0.3125rem 0.9375rem",
+                      border: "0.0625rem solid #ddd",
                       background: "#fff",
-                      borderRadius: "4px",
+                      borderRadius: "0.25rem",
                       cursor:
                         quantity >= getCurrentStock()
                           ? "not-allowed"
@@ -1077,7 +1077,7 @@ const ProductPage = () => {
                   style={{
                     color: getCurrentStock() <= 5 ? "#dc3545" : "#28a745",
                     fontWeight: "500",
-                    marginBottom: "20px",
+                    marginBottom: "1.25rem",
                   }}
                 >
                   {getCurrentStock()} in stock
@@ -1126,21 +1126,21 @@ const ProductPage = () => {
                   }
                 }}
                 style={{
-                  margin: "15px 0",
-                  padding: "10px 0",
+                  margin: "0.9375rem 0",
+                  padding: "0.625rem 0",
                   cursor: "pointer",
-                  borderBottom: "1px solid #eee",
+                  borderBottom: "0.0625rem solid #eee",
                 }}
               >
                 <div
                   className="seller-info__identity"
-                  style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                  style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}
                 >
                   <div
                     className="seller-info__icon"
                     style={{
-                      width: "36px",
-                      height: "36px",
+                      width: "2.25rem",
+                      height: "2.25rem",
                       borderRadius: "50%",
                       backgroundColor: "#f0f0f0",
                       display: "flex",
@@ -1155,7 +1155,7 @@ const ProductPage = () => {
                   </div>
                   <h4
                     className="seller-info__name"
-                    style={{ margin: 0, fontSize: "15px" }}
+                    style={{ margin: 0, fontSize: "0.9375rem" }}
                   >
                     Sold by: {product.vendor?.businessName || "Unknown Vendor"}
                   </h4>
@@ -1166,8 +1166,8 @@ const ProductPage = () => {
                 className="product-info__actions"
                 style={{
                   display: "flex",
-                  gap: "15px",
-                  marginTop: "20px",
+                  gap: "0.9375rem",
+                  marginTop: "1.25rem",
                   width: "100%",
                 }}
               >
@@ -1178,25 +1178,25 @@ const ProductPage = () => {
                   style={
                     {
                       flex: 1,
-                      padding: "12px 24px",
-                      fontSize: "16px",
+                      padding: "0.75rem 1.5rem",
+                      fontSize: "1rem",
                       fontWeight: "600",
                       color: "#fff",
                       backgroundColor: "#ff6b35",
                       border: "none",
-                      borderRadius: "4px",
+                      borderRadius: "0.25rem",
                       cursor:
                         getCurrentStock() <= 0 ? "not-allowed" : "pointer",
                       transition: "all 0.2s ease",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: "8px",
+                      gap: "0.5rem",
                       ...(getCurrentStock() > 0 && {
                         ":hover": {
                           backgroundColor: "#0069d9",
-                          transform: "translateY(-1px)",
-                          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                          transform: "translateY(-0.0625rem)",
+                          boxShadow: "0 0.25rem 0.5rem rgba(0, 0, 0, 0.1)",
                         },
                         ":active": {
                           transform: "translateY(0)",
@@ -1215,23 +1215,23 @@ const ProductPage = () => {
                   style={
                     {
                       flex: 1,
-                      padding: "12px 24px",
-                      fontSize: "16px",
+                      padding: "0.75rem 1.5rem",
+                      fontSize: "1rem",
                       fontWeight: "600",
                       color: "orange",
                       backgroundColor: "transparent",
-                      border: "2px solid orange",
-                      borderRadius: "4px",
+                      border: "0.125rem solid orange",
+                      borderRadius: "0.25rem",
                       cursor: "pointer",
                       transition: "all 0.2s ease",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      gap: "8px",
+                      gap: "0.5rem",
                       ":hover": {
                         backgroundColor: "#5a32a3",
-                        transform: "translateY(-1px)",
-                        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                        transform: "translateY(-0.0625rem)",
+                        boxShadow: "0 0.25rem 0.5rem rgba(0, 0, 0, 0.1)",
                       },
                       ":active": {
                         transform: "translateY(0)",
