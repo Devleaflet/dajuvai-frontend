@@ -1,20 +1,20 @@
-// src/Components/ProductCarousel.tsx
 import type React from "react";
 import { useRef, useState, useEffect } from "react";
-import { Link } from "react-router-dom"; // Import Link for navigation
+import { Link } from "react-router-dom";
 import ProductCard from "./ProductCard";
 import "../Styles/ProductCarousel.css";
 import type { Product } from "./Types/Product";
 import { IoIosArrowDroprightCircle, IoIosArrowDropleftCircle } from "react-icons/io";
 
-// Define the type for props
+
 interface ProductCarouselProps {
   title: string;
-  sectionId: number; // Ensure sectionId is included
+  sectionId: number;
   products: Product[];
   scrollAmount?: number;
   showTitle?: boolean;
   isLoading?: boolean;
+  isHomepage?: boolean; 
 }
 
 const ProductCarousel: React.FC<ProductCarouselProps> = ({
@@ -24,9 +24,16 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
   scrollAmount = 300,
   showTitle = true,
   isLoading = false,
+  isHomepage = false, // Default to false
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [showScrollButtons, setShowScrollButtons] = useState<boolean>(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [startX, setStartX] = useState<number>(0);
+  const [scrollLeft, setScrollLeft] = useState<number>(0);
+
+  // Limit products to 25 if on homepage
+  const displayedProducts = isHomepage ? products.slice(0, 25) : products;
 
   useEffect(() => {
     const checkWidth = (): void => {
@@ -49,6 +56,55 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
         behavior: "smooth",
       });
     }
+  };
+
+  const handleDragStart = (clientX: number): void => {
+    if (scrollContainerRef.current) {
+      setIsDragging(true);
+      setStartX(clientX);
+      setScrollLeft(scrollContainerRef.current.scrollLeft);
+    }
+  };
+
+  const handleDragMove = (clientX: number): void => {
+    if (!isDragging || !scrollContainerRef.current) return;
+    const x = clientX - startX;
+    scrollContainerRef.current.scrollLeft = scrollLeft - x;
+  };
+
+  const handleDragEnd = (): void => {
+    setIsDragging(false);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
+    if (e.button !== 0) return; // Only left-click
+    handleDragStart(e.clientX);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
+    handleDragMove(e.clientX);
+  };
+
+  const handleMouseUp = (): void => {
+    handleDragEnd();
+  };
+
+  const handleMouseLeave = (): void => {
+    if (isDragging) {
+      handleDragEnd();
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>): void => {
+    handleDragStart(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>): void => {
+    handleDragMove(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (): void => {
+    handleDragEnd();
   };
 
   // Skeleton loading component
@@ -119,10 +175,25 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
           </div>
         )}
 
-        <div className="product-carousel__products" ref={scrollContainerRef}>
+        <div
+          className="product-carousel__products"
+          ref={scrollContainerRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          style={{ cursor: isDragging ? "grabbing" : "grab" }}
+        >
           {isLoading
             ? Array.from({ length: 6 }).map((_, index) => <ProductCardSkeleton key={`skeleton-${index}`} />)
-            : products.map((product) => <ProductCard key={product.id} product={product} />)}
+            : displayedProducts.map((product) => (
+                <div key={product.id} className="product-card__wrapper">
+                  <ProductCard product={product} />
+                </div>
+              ))}
         </div>
 
         {showScrollButtons && !isLoading && (
