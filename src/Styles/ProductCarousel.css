@@ -1,5 +1,5 @@
 .product-carousel {
-  width: 95%;
+  width: 93%;
   margin: 0 auto;
   padding: 20px;
   box-sizing: border-box;
@@ -27,15 +27,13 @@
 
 .product-carousel__products {
   display: flex;
-  gap: 20px;
+  gap: 10px;
   overflow-x: auto;
   padding: 10px 0;
   scroll-behavior: smooth;
   -ms-overflow-style: none;
   scrollbar-width: none;
   width: 100%;
-  padding-left: 3px;
-  padding-right: 3px;
   min-height: 420px; 
   will-change: scroll-position;
   cursor: grab;
@@ -114,8 +112,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
-  min-height: 24px;
+  margin-bottom: 5px;
+  max-height: 10px;
 }
 
 .product-card__tag {
@@ -159,7 +157,7 @@
 }
 
 .product-card__image {
-  height: 260px;
+  height: 230px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -303,6 +301,9 @@
 
 .product-card__price {
   margin-bottom: 10px;
+  display: flex;
+  gap:5px;
+  align-items: center;
 }
 
 .product-card__current-price {

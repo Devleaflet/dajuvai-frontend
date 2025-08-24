@@ -125,7 +125,7 @@ const Checkout: React.FC = () => {
 
   useEffect(() => {
         const fetchData = async () => {
-            const provinceResponse = await fetch("/data/provinces.json");
+            const provinceResponse = await fetch("/Nepal-Address-API-main/data/provinces.json");
             const data = await provinceResponse.json();
             setProvinceData(data.provinces.map(capitalizeFirstLetter));
         };
@@ -147,7 +147,7 @@ const Checkout: React.FC = () => {
     // }, [province, provinceData]);
         async function fetchDistricts(province:string) {
         try {
-            const districtResponse = await fetch(`/data/districtsByProvince/${province.toLowerCase()}.json`);
+            const districtResponse = await fetch(`/Nepal-Address-API-main/data/districtsByProvince/${province.toLowerCase()}.json`);
             const data = await districtResponse.json();
             setDistrictData(data.districts.map(capitalizeFirstLetter));
         } catch (error) {

@@ -14,7 +14,7 @@ export interface Product {
   freeDelivery?: boolean;
   image: string;
   stock?: number;
-
+  created_at?:string
   brand?: string;
   name?: string;
   category?: any;

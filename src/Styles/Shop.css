@@ -4,10 +4,11 @@
   margin: 0 auto;
   width: 100%;
   overflow: hidden;
+
 }
 
 .shop-container {
-  padding: 20px;
+  padding: 30px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -21,7 +22,7 @@
 
 .shop {
   display: flex;
-  gap: 30px;
+  gap: 10px;
   width: 100%;
   position: relative;
 }
@@ -263,7 +264,11 @@
 
 /* Search Bar Styles */
 .search-bar-container {
-  padding: 40px;
+  display:flex;
+  justify-content: center;
+  padding-top:40px;
+  padding-bottom: 0px;
+
   width: 100%;
   box-sizing: border-box;
 }
@@ -271,7 +276,7 @@
 .search-form {
   display: flex;
   gap: 12px;
-  max-width: 600px;
+  max-width: 800px;
   align-items: center;
 }
 

@@ -139,10 +139,10 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
   return (
     <section className="product-carousel">
       {showTitle && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", }}>
           <h2 className="product-carousel__title">{title}</h2>
           <Link
-            to={`/section/${sectionId}`}
+            to={`/section/${sectionId}?sectionname=${title}`}
             style={{
               padding: "0.5rem 1rem",
               backgroundColor: "#ff6b00",

@@ -956,14 +956,14 @@ const Shop: React.FC = () => {
 
         <div className="shop-container">
           <div style={{
-            marginBottom: '1.5rem',
-            padding: '1rem 0',
+            marginBottom: '0.5rem',
+            padding: '0.5rem 2rem',
             borderBottom: '1px solid #e9ecef',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             flexWrap: 'wrap',
-            gap: '1rem',
+            gap: '0.5rem',
             width: '100%'
           }}>
             <h2 style={{
@@ -1170,7 +1170,7 @@ const Shop: React.FC = () => {
               <div className="shop-products" style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-                gap: '1rem'
+                gap: '0.5rem'
               }}>
                 {isLoadingProducts ? (
                   Array(8).fill(null).map((_, index) => (

@@ -3,16 +3,22 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { VendorAuthService } from "../services/vendorAuthService";
 
-
-
 // Define the props interface for the Header component
 interface HeaderProps {
   onSearch: (query: string) => void;
   showSearch?: boolean;
   title?: string;
+  onSort?: (sortOption: string) => void;
+  sortOption?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ onSearch, showSearch = true, title }) => {
+const Header: React.FC<HeaderProps> = ({ 
+  onSearch, 
+  showSearch = true, 
+  title, 
+  onSort, 
+  sortOption = "newest" 
+}) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -21,6 +27,13 @@ const Header: React.FC<HeaderProps> = ({ onSearch, showSearch = true, title }) =
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     onSearch(query);
+  };
+
+  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newSortOption = e.target.value;
+    if (onSort) {
+      onSort(newSortOption);
+    }
   };
 
   useEffect(() => {
@@ -64,19 +77,36 @@ const Header: React.FC<HeaderProps> = ({ onSearch, showSearch = true, title }) =
           )}
         </div>
       </header>
-      {showSearch && (
-        <div className="dashboard__search-container">
-          <div className="dashboard__search">
-            <input
-              type="text"
-              placeholder="Search"
-              className="dashboard__search-input"
-              onChange={handleInputChange}
-            />
-            <span className="dashboard__search-icon"></span>
+      <div>
+        {showSearch && (
+          <div className="dashboard__search-container" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <div className="dashboard__search" style={{ flex: 1, minWidth: 200 }}>
+              <input
+                type="text"
+                placeholder="Search"
+                className="dashboard__search-input"
+                onChange={handleInputChange}
+              />
+              <span className="dashboard__search-icon"></span>
+            </div>
+            {onSort && (
+              <select
+                className="vendor-product__sort-select"
+                value={sortOption}
+                onChange={handleSortChange}
+                style={{ minWidth: 180, height: 38, borderRadius: 20, border: '1px solid #e5e7eb', padding: '0 12px', background: '#fff', fontSize: 14 }}
+              >
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="name-asc">Name: A-Z</option>
+                <option value="name-desc">Name: Z-A</option>
+              </select>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </>
   );
 };

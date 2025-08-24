@@ -31,9 +31,7 @@ const AdminProduct: React.FC = () => {
   const [productsPerPage] = useState(7);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<ApiProduct | null>(
-    null
-  );
+  const [productToDelete, setProductToDelete] = useState<ApiProduct | null>(null);
   const [productToEdit, setProductToEdit] = useState<ApiProduct | null>(null);
   const [sortConfig, setSortConfig] = useState<{
     key: keyof ApiProduct;
@@ -44,6 +42,8 @@ const AdminProduct: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  // Add sort option state
+  const [sortOption, setSortOption] = useState<string>("newest");
 
   const productService = ProductService;
 
@@ -152,7 +152,8 @@ const AdminProduct: React.FC = () => {
     [debouncedSearch]
   );
 
-  const handleSort = useCallback((key: keyof ApiProduct) => {
+  // Column sort handler (for table headers)
+  const handleColumnSort = useCallback((key: keyof ApiProduct) => {
     setSortConfig((prev) => {
       const direction =
         prev?.key === key && prev.direction === "asc" ? "desc" : "asc";
@@ -160,8 +161,41 @@ const AdminProduct: React.FC = () => {
     });
   }, []);
 
+  // Dropdown sort handler (for Header component)
+  const handleSort = useCallback((newSortOption: string) => {
+    setSortOption(newSortOption);
+    setCurrentPage(1); // Reset to first page when sorting changes
+  }, []);
+
+  // Sort products function
+  const sortProducts = useCallback((products: ApiProduct[], sortOption: string) => {
+    const sorted = [...products];
+    
+    switch (sortOption) {
+      case 'newest':
+        return sorted.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+      case 'oldest':
+        return sorted.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+      case 'price-asc':
+        return sorted.sort((a, b) => (a.basePrice || 0) - (b.basePrice || 0));
+      case 'price-desc':
+        return sorted.sort((a, b) => (b.basePrice || 0) - (a.basePrice || 0));
+      case 'name-asc':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'name-desc':
+        return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      default:
+        return sorted;
+    }
+  }, []);
+
   const sortedAndFilteredProducts = useMemo(() => {
-    const filtered = [...filteredProducts];
+    let filtered = [...filteredProducts];
+    
+    // Apply dropdown sorting first
+    filtered = sortProducts(filtered, sortOption);
+    
+    // Then apply any table column sorting if needed
     if (sortConfig) {
       filtered.sort((a, b) => {
         const aValue = a[sortConfig.key] ?? "";
@@ -182,8 +216,9 @@ const AdminProduct: React.FC = () => {
           : 1;
       });
     }
+    
     return filtered;
-  }, [filteredProducts, sortConfig]);
+  }, [filteredProducts, sortOption, sortConfig, sortProducts]);
 
   const currentProducts = useMemo(
     () =>
@@ -199,8 +234,6 @@ const AdminProduct: React.FC = () => {
     setProductToEdit(product);
     setShowEditModal(true);
   }, []);
-
-  // Note: handleSaveProduct replaced above; this block intentionally removed to avoid double update calls.
 
   const handleDeleteProduct = useCallback(async () => {
     if (!productToDelete) return;
@@ -234,7 +267,12 @@ const AdminProduct: React.FC = () => {
             <button onClick={fetchProducts}>Retry</button>
           </div>
         )}
-        <Header onSearch={handleSearch} showSearch />
+        <Header 
+          onSearch={handleSearch} 
+          showSearch 
+          onSort={handleSort}
+          sortOption={sortOption}
+        />
         <div className="admin-products__list-container">
           <div className="admin-products__header">
             <h2>Product Management</h2>
@@ -247,7 +285,7 @@ const AdminProduct: React.FC = () => {
                   {['id', 'name', 'basePrice', 'stock'].map((key) => (
                     <th
                       key={key}
-                      onClick={() => handleSort(key as keyof ApiProduct)}
+                      onClick={() => handleColumnSort(key as keyof ApiProduct)}
                       className="sortable"
                     >
                       {key.charAt(0).toUpperCase() + key.slice(1)}{' '}
@@ -396,12 +434,12 @@ const AdminProduct: React.FC = () => {
           <div className="admin-products__pagination-container">
             <div className="admin-products__pagination-info">
               Showing {(currentPage - 1) * productsPerPage + 1}-
-              {Math.min(currentPage * productsPerPage, filteredProducts.length)}{" "}
-              out of {filteredProducts.length}
+              {Math.min(currentPage * productsPerPage, sortedAndFilteredProducts.length)}{" "}
+              out of {sortedAndFilteredProducts.length}
             </div>
             <Pagination
               currentPage={currentPage}
-              totalPages={Math.ceil(filteredProducts.length / productsPerPage)}
+              totalPages={Math.ceil(sortedAndFilteredProducts.length / productsPerPage)}
               onPageChange={setCurrentPage}
             />
           </div>

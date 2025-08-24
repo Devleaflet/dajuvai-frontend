@@ -222,8 +222,10 @@
 }
 
 .product1__price {
-  margin-bottom: 12px;
-  margin-top: auto;
+  margin-bottom: 4px;
+  display:flex;
+  align-items: center;
+  gap:5px;
 }
 
 .product1__current-price {

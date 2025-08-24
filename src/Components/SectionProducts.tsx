@@ -282,6 +282,7 @@ const SectionProducts: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const prevSearchQueryRef = useRef<string>("");
   const prevSearchInputValueRef = useRef<string>("");
+  const [sectionName,setSectionName] = useState<string>("")
 
   // Initialize search from URL parameters
   useEffect(() => {
@@ -307,6 +308,13 @@ const SectionProducts: React.FC = () => {
       }
     }
   }, [searchParams]);
+  useEffect(()=>{
+    const sectionNameParam = searchParams.get("sectionname")
+    if(sectionNameParam){
+      const decodedSectionName = decodeURIComponent(sectionNameParam)
+      setSectionName(decodedSectionName)
+    }
+  },[searchParams])
 
   // Fetch section products
   const { data: sectionData, isLoading: isLoadingProducts, error: productsError } = useQuery({
@@ -344,7 +352,7 @@ const SectionProducts: React.FC = () => {
         })
       );
       return {
-        title: response?.data?.[0]?.section?.title || "Section Products",
+        title: response?.data?.[0]?.section?.title ||sectionName|| "Section Products",
         products: processedProducts,
       };
     },

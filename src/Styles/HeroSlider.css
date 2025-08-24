@@ -1,11 +1,11 @@
 .hero-slider {
   position: relative;
-  width: 95%;
+  width: 93%;
   max-width: 1800px;
   overflow: hidden;
   margin: 0 auto;
   border-radius: 20px;
-  margin-top: 2rem;
+  margin-top: 1rem;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
