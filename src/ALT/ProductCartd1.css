@@ -194,14 +194,14 @@
 .product1__title {
   font-size: 15px;
   font-weight: 600;
-  margin: 0 0 8px 0;
+  margin: 0 0 3px 0;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-height: 42px;
+  min-height: 30px;
   text-decoration: none !important;
   color: #2d2d2d;
 }
@@ -222,17 +222,15 @@
 }
 
 .product1__price {
-  margin-bottom: 4px;
+  margin-top: auto;
   display:flex;
-  align-items: center;
-  gap:5px;
+  justify-content: space-between;
 }
 
 .product1__current-price {
   font-size: 18px;
   font-weight: 700;
   display: block;
-  margin-bottom: 4px;
   color: #2d2d2d;
 }
 
@@ -435,4 +433,4 @@
   .product1__current-price {
     font-size: 15px;
   }
-}
+ }

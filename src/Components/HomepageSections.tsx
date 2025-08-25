@@ -74,7 +74,6 @@ const HomepageSections: React.FC = () => {
             title={section.title}
             sectionId={section.id} // Add sectionId prop
             products={mappedProducts}
-          
             showTitle={true}
           />
         );

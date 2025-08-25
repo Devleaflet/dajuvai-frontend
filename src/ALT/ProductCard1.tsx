@@ -168,17 +168,17 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
           <div className="product1__price">
             <span className="product1__current-price">{displayPrice}</span>
             <div className="product1__price-details">
-              {originalPrice && (
+              {originalPrice>displayPrice && (
                 <span className="product1__original-price">
                   {originalPrice}
                 </span>
               )}
-              {discount && (
+              {Number(discount)>0 && (
                 <span className="product1__discount">{discount}% off</span>
               )}
             </div>
           </div>
-          {freeDelivery && (
+          {/* {freeDelivery && (
             <div className="product1__delivery">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -191,9 +191,8 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
                 <circle cx="8.5" cy="15.5" r="1.5"></circle>
                 <circle cx="15.5" cy="15.5" r="1.5"></circle>
               </svg>
-              <span>Free Delivery</span>
             </div>
-          )}
+          )} */}
         </div>
       </div>
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />

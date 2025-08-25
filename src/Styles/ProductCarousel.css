@@ -93,13 +93,13 @@
   position: relative;
   transition: transform 0.3s ease;
   height: fit-content;
-  min-height: 400px;
+  min-height: 350px;
   pointer-events: auto; 
 }
 
-.product-card:hover:not(.product-card--skeleton) {
+/* .product-card:hover:not(.product-card--skeleton) {
   transform: translateY(-5px);
-}
+} */
 
 
 .product-card--skeleton {
@@ -132,11 +132,16 @@
 }
 
 .product-card__wishlist-button {
-  background: none;
+  position:absolute;
+  z-index: 100;
+  right:0px;
+  top:10px;
+  background: white;
+  border-radius: 100%;
   border: none;
   cursor: pointer;
   color: #ff6b6b;
-  padding: 5px;
+
 }
 
 .product-card__wishlist-button svg {
@@ -153,25 +158,32 @@
 .product-card__wishlist-skeleton {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: 100%;
 }
 
 .product-card__image {
-  height: 230px;
+  position:relative;
+  height: 200px;
   display: flex;
   justify-content: center;
   align-items: center;
   margin-bottom: 10px;
   overflow: hidden;
+  border-radius:8px;
+  transition:all 0.3s ease;
 }
 
 .product-card__image img {
   max-width: 100%;
   max-height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   pointer-events: none; /* Prevent image dragging */
-  user-select: none;
+  user-select: none; transition: transform 0.3s ease;
+ border-radius:8px;
   -webkit-user-drag: none;
+}
+.product-card:hover .product-card__image img {
+  transform: scale(1.1);
 }
 
 .product-card__image-skeleton {
@@ -302,16 +314,14 @@
 .product-card__price {
   margin-bottom: 10px;
   display: flex;
-  gap:5px;
+  justify-content: space-between;
   align-items: center;
 }
 
 .product-card__current-price {
-  font-size: 18px;
+  font-size: 13px;
   font-weight: bold;
   display: block;
-  margin-bottom: 5px;
-  line-height: 1.2;
   min-height: 22px;
 }
 
@@ -330,7 +340,7 @@
 }
 
 .product-card__original-price {
-  font-size: 14px;
+  font-size: 10px;
   color: #757575;
   text-decoration: line-through;
 }
@@ -342,8 +352,12 @@
 }
 
 .product-card__discount {
-  font-size: 14px;
+  font-size: 10px;
   color: #4caf50;
+  font-weight: 600;
+  background: rgba(76, 175, 80, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .product-card__discount-skeleton {
