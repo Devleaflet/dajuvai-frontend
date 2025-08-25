@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 import "../Styles/AuthModal.css";
 import close from "../assets/close.png";
@@ -27,7 +27,7 @@ interface ImageUploadResponse {
 }
 
 const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   // Form states
   const [email, setEmail] = useState<string>("");
@@ -350,7 +350,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 
   const renderFilePreview = (file: File, index: number, documentType: "tax" | "citizenship") => {
     const isImage = file.type.startsWith('image/');
-    
+
     if (isImage) {
       return (
         <div key={index} className="auth-modal__file-preview-container" style={{ margin: "5px 0", position: "relative", display: "inline-block" }}>
@@ -727,8 +727,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
           {isVerificationComplete
             ? "Account Verification Complete"
             : showVerification
-            ? "Verify Your Email"
-            : "Vendor Sign Up"}
+              ? "Verify Your Email"
+              : "Vendor Sign Up"}
         </div>
 
         {error && <div className="auth-modal__message auth-modal__message--error">{error}</div>}
@@ -1271,18 +1271,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
             )}
           </form>
         )}
-
-        <div className="auth-modal__footer">
-          <p className="auth-modal__footer-text">
-            <button
-              type="button"
-              className="auth-modal__link-button"
-              onClick={() => navigate("/vendor/login")}
-            >
-              Already have an account? Log in
-            </button>
-          </p>
-        </div>
       </div>
     </div>
   );

@@ -50,8 +50,8 @@ import UnapprovedVendors from "./Components/UnapprovedVendors";
 import CommissionList from "./Pages/ComissionList";
 // import VendorLogin from "./Pages/VendorLogin"
 import SectionProducts from "./Components/SectionProducts";
-import VendorLoginPage from "./Pages/VendorLoginPage";
-import VendorSignupPage from "./Pages/VendorSignupPage";
+// import VendorLoginPage from "./Pages/VendorLoginPage";
+// import VendorSignupPage from "./Pages/VendorSignupPage";
 
 // Admin route guards
 // Allows both admin and staff to access admin area
@@ -128,8 +128,8 @@ function App() {
         <Route path="/data-deletion" element={<DataDeletion />} />
 
         {/* Vendor Routes (protected) */}
-        <Route path="/vendor/login" element={<VendorLoginPage />} />
-        <Route path="/vendor/signup" element={<VendorSignupPage />} />
+        {/* <Route path="/vendor/login" element={<VendorLoginPage />} />
+        <Route path="/vendor/signup" element={<VendorSignupPage />} /> */}
 
         <Route
           path="/dashboard"
