@@ -10,7 +10,7 @@
 /* Slider Container */
 .top-category__slider-container {
   display: flex;
-  width: 85%;
+  width: 100%;
   gap: 1rem;
   overflow-x: auto;
   scroll-behavior: smooth;
@@ -97,7 +97,7 @@
 /* Navigation Buttons */
 .top-category__nav {
   position: absolute;
-  top: 50%;
+  top: 35%;
   transform: translateY(-50%);
   background-color: rgb(255, 255, 255);
   box-shadow: 0px 0px 5px 4px rgba(0, 0, 0, 0.2);

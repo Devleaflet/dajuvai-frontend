@@ -33,7 +33,6 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
   width: 100%;
-  max-height: 400px; 
   will-change: scroll-position;
   cursor: grab;
 }
@@ -92,7 +91,7 @@
   position: relative;
   transition: transform 0.3s ease;
   height: fit-content;
-  min-height: 350px;
+
   pointer-events: auto; 
 }
 

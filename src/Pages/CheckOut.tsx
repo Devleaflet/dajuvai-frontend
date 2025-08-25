@@ -48,14 +48,7 @@ interface CartItem {
   product?: {
     id: number;
     name: string;
-    vendor?: {
-      id: number;
-      businessName: string;
-      district?: {
-        id: number;
-        name: string;
-      };
-    };
+    vendorId?: number
   };
 }
 
@@ -96,7 +89,7 @@ const Checkout: React.FC = () => {
   const navigate = useNavigate();
   
   const [billingDetails, setBillingDetails] = useState({
-    province: 'Bagmati',
+    province: '',
     district: '',
     city: '',
     streetAddress: '',
@@ -356,12 +349,52 @@ const Checkout: React.FC = () => {
     return district;
   };
 
-  const getVendorInfo = (item: any) => {
-    return {
-      businessName: item.product?.vendor?.businessName || item.vendor?.businessName || 'Unknown Vendor',
-      district: item.product?.vendor?.district?.name || item.vendor?.district?.name || 'Unknown District'
-    };
+const [vendorCache, setVendorCache] = useState<{ [key: number]: { businessName: string; district: { name: string } } }>({});
+
+useEffect(() => {
+  const fetchVendorDetails = async (vendorId: number) => {
+    if (!vendorCache[vendorId]) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/vendors/${vendorId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const result = await response.json();
+        if (result.success && result.data) {
+          setVendorCache((prev) => ({
+            ...prev,
+            [vendorId]: {
+              businessName: result.data.businessName,
+              district: result.data.district,
+            },
+          }));
+        }
+      } catch (error) {
+        console.error(`Error fetching vendor ${vendorId}:`, error);
+      }
+    }
   };
+
+  // Fetch vendor details for all cart items with vendorId
+  cartItems.forEach((item) => {
+    if (item.product?.vendorId && !vendorCache[item.product.vendorId]) {
+      fetchVendorDetails(item.product.vendorId);
+    }
+  });
+}, [cartItems, token]);
+
+const getVendorInfo = (item: any) => {
+  if (item.product?.vendorId && vendorCache[item.product.vendorId]) {
+    return {
+      businessName: vendorCache[item.product.vendorId].businessName,
+      district: vendorCache[item.product.vendorId].district.name,
+    };
+  }
+
+  return {
+    businessName: item.product?.vendor || item.vendor?.businessName || 'Unknown Vendor',
+    district: item.product?.vendor?.district?.name || item.vendor?.district?.name || 'Unknown District',
+  };
+};
 
   const groupItemsByVendor = (): ShippingGroup[] => {
     if (cartItems.length === 0) {
@@ -557,7 +590,7 @@ const Checkout: React.FC = () => {
                 className="checkout-container__form-group-select"
                 required
               >
-              <option value="">Select Province</option>
+              <option value="" selected >Select Province</option>
           {provinceData.map((p) => (
             <option key={p} value={p}>
               {p}
@@ -849,11 +882,9 @@ const Checkout: React.FC = () => {
                   className="checkout-container__payment-methods-input"
                   checked={selectedPaymentMethod === 'CASH_ON_DELIVERY'}
                   onChange={handlePaymentMethodChange}
-                  style={
-                  {
-                    boxShadow:"none"
-                  }
-                }
+                  style={{
+                  boxShadow:"none"
+                }}
                 />
                 Cash on delivery
               </label>
@@ -865,12 +896,10 @@ const Checkout: React.FC = () => {
                   value="ONLINE_PAYMENT"
                   className="checkout-container__payment-methods-input"
                   checked={selectedPaymentMethod === 'ONLINE_PAYMENT'}
-                  style={
-                  {
-                    boxShadow:"none"
-                  }
-                }
                   onChange={handlePaymentMethodChange}
+                  style={{
+                  boxShadow:"none"
+                }}
                 />
                 <img src={npx} alt="NPX" className="checkout-container__payment-methods-img" />
               </label>
@@ -882,11 +911,9 @@ const Checkout: React.FC = () => {
                   className="checkout-container__payment-methods-input"
                   checked={selectedPaymentMethod === 'ESEWA'}
                   onChange={handlePaymentMethodChange}
-                  style={
-                  {
-                    boxShadow:"none"
-                  }
-                }
+                  style={{
+                  boxShadow:"none"
+                }}
                 />
                 <img src={esewa} alt="eSewa" className="checkout-container__payment-methods-img"/>
                 </label>
@@ -901,11 +928,9 @@ const Checkout: React.FC = () => {
                 onChange={handleTermsChange}
                 className="checkout-container__terms-checkbox-input"
                 required
-                style={
-                  {
-                    boxShadow:"none"
-                  }
-                }
+                style={{
+                  boxShadow:"none"
+                }}
               />
               I have read and agree to the website terms and conditions *
             </label>
