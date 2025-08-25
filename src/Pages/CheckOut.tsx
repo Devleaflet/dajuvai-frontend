@@ -617,7 +617,7 @@ const getVendorInfo = (item: any) => {
               >
                 <option value="">Select District</option>
                 {districtData.map((district) => (
-                  <option key={district} value={district.toLowerCase()}>
+                  <option key={district} value={district}>
                     {district}
                   </option>
                 ))}

@@ -230,6 +230,15 @@ const CategorySection: React.FC<CategorySectionProps> = ({
               onMouseLeave={() => handleMouseLeave(maincategory.id)}
             >
               {maincategory.items.map((item) => (
+                <div style={{
+                  display:"flex",
+                  flexDirection:"column",
+                  gap:"10px",
+                  justifyContent:"center",
+                  alignItems:"center",
+                  maxWidth:"280px"
+                }}
+>
                 <div
                   key={`sub-${maincategory.id}-${item.id}`}
                   className="category-section__subcategory-item"
@@ -245,8 +254,10 @@ const CategorySection: React.FC<CategorySectionProps> = ({
                       draggable={false} // Prevent image dragging
                     />
                   </div>
-                  <p className="category-section__subcategory-name">{item.name}</p>
                 </div>
+
+                  <p className="category-section__subcategory-name">{item.name}</p>
+              </div>
               ))}
             </div>
 
