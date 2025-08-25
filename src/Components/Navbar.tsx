@@ -711,7 +711,7 @@ const Navbar: React.FC = () => {
           
            {!isLoading && !isAuthenticated && (
                 <a
-                  href="/vendor-login"
+                  // href="/vendor-login"
                   className="navbar__top-link"
                   onClick={toggleVendorAuthModal}
               

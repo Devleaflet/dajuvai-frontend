@@ -106,7 +106,7 @@ interface ApiProduct {
 // Unified API fetch function
 const apiRequest = async (endpoint: string, token: string | null | undefined = undefined) => {
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
-  
+
   const response = await fetch(url, {
     headers: {
       'Authorization': token ? `Bearer ${token}` : '',
@@ -114,22 +114,22 @@ const apiRequest = async (endpoint: string, token: string | null | undefined = u
       'Accept': 'application/json',
     },
   });
-  
+
   if (!response.ok) {
     throw new Error(`API request failed: ${response.status} ${response.statusText}`);
   }
-  
+
   const contentType = response.headers.get('content-type');
   if (!contentType || !contentType.includes('application/json')) {
     const textResponse = await response.text();
-    
+
     if (textResponse.trim().startsWith('<!doctype html') || textResponse.trim().startsWith('<html')) {
       throw new Error(`API endpoint not found. The server returned HTML instead of JSON.`);
     }
-    
+
     throw new Error(`Expected JSON response but received ${contentType}`);
   }
-  
+
   return await response.json();
 };
 
@@ -158,7 +158,7 @@ const buildQueryParams = (filters: ProductFilters): string => {
 const fetchProductsWithFilters = async (filters: ProductFilters, token: string | null | undefined = undefined) => {
   const queryParams = buildQueryParams(filters);
   const endpoint = `/api/categories/all/products${queryParams ? `?${queryParams}` : ''}`;
-  
+
   console.log('🔍 Fetching products with filters:', {
     filters,
     queryParams,
@@ -166,7 +166,7 @@ const fetchProductsWithFilters = async (filters: ProductFilters, token: string |
     fullUrl: `${API_BASE_URL}${endpoint}`,
     token: token ? 'Present' : 'Not present'
   });
-  
+
   try {
     const response = await apiRequest(endpoint, token);
     console.log('✅ Products API response:', response);
@@ -186,7 +186,7 @@ const fetchProductsWithFilters = async (filters: ProductFilters, token: string |
 const Shop: React.FC = () => {
   const { token } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   const [selectedCategory, setSelectedCategory] = useState<number | undefined>(undefined);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | undefined>(undefined);
   const [selectedPriceRange, setSelectedPriceRange] = useState<string | undefined>(undefined);
@@ -206,21 +206,21 @@ const Shop: React.FC = () => {
     const categoryIdParam = searchParams.get('categoryId');
     const subcategoryIdParam = searchParams.get('subcategoryId');
     const searchParam = searchParams.get('search');
-    
+
     // console.log('🏪 Shop useEffect triggered with searchParams:', {
     //   categoryIdParam,
     //   subcategoryIdParam,
     //   searchParam,
     //   allParams: Object.fromEntries(searchParams.entries())
     // });
-    
+
     // Only update category if it's different from previous value
     const newCategoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
     if (newCategoryId !== prevSelectedCategoryRef.current) {
       setSelectedCategory(newCategoryId);
       prevSelectedCategoryRef.current = newCategoryId;
     }
-    
+
     // Only update subcategory if it's different from previous value
     const newSubcategoryId = subcategoryIdParam ? Number(subcategoryIdParam) : undefined;
     if (newSubcategoryId !== prevSelectedSubcategoryRef.current) {
@@ -261,25 +261,25 @@ const Shop: React.FC = () => {
   useEffect(() => {
     const handleShopFiltersChanged = (event: CustomEvent) => {
       const { categoryId, subcategoryId } = event.detail;
-      
+
       // Update URL parameters instead of directly setting state
       const newSearchParams = new URLSearchParams(searchParams);
-      
+
       if (categoryId) {
         newSearchParams.set('categoryId', categoryId.toString());
       } else {
         newSearchParams.delete('categoryId');
       }
-      
+
       if (subcategoryId) {
         newSearchParams.set('subcategoryId', subcategoryId.toString());
       } else {
         newSearchParams.delete('subcategoryId');
       }
-      
+
       // Clear search when changing categories
       newSearchParams.delete('search');
-      
+
       setSearchParams(newSearchParams);
     };
 
@@ -340,19 +340,19 @@ const Shop: React.FC = () => {
   });
 
   // Query for products with filters
-  const { 
-    data: productsData, 
-    isLoading: isLoadingProducts, 
+  const {
+    data: productsData,
+    isLoading: isLoadingProducts,
     error: productsError
   } = useQuery({
     queryKey: ["products", currentFilters],
     queryFn: async () => {
       console.log('🔄 Starting products query with filters:', currentFilters);
-      
+
       try {
         const response = await fetchProductsWithFilters(currentFilters, token);
         let productsArray: ApiProduct[] = [];
-        
+
         console.log('📦 Processing products response:', {
           hasResponse: !!response,
           responseType: typeof response,
@@ -361,7 +361,7 @@ const Shop: React.FC = () => {
           dataIsArray: Array.isArray(response?.data),
           responseKeys: response ? Object.keys(response) : []
         });
-        
+
         if (response?.success && Array.isArray(response.data)) {
           productsArray = response.data;
           console.log('✅ Using response.data array, length:', productsArray.length);
@@ -400,12 +400,12 @@ const Shop: React.FC = () => {
             };
           }
         }));
-        
+
         console.log('✅ Successfully processed all products, final count:', processedProducts.length);
         return processedProducts;
       } catch (error) {
         console.error('❌ Fatal error in products query:', error);
-        
+
         // Debug the fallback condition
         console.log('🔍 Fallback condition check:', {
           hasCategoryId: !!currentFilters.categoryId,
@@ -415,22 +415,22 @@ const Shop: React.FC = () => {
           hasSort: !!currentFilters.sort,
           currentFilters
         });
-        
+
         // If we have any filters and the request failed, try without filters as fallback
         if (currentFilters.categoryId || currentFilters.subcategoryId || currentFilters.brandId || currentFilters.dealId || currentFilters.sort) {
           console.log('🔄 Trying fallback: fetching all products without filters');
           try {
             const fallbackResponse = await fetchProductsWithFilters({}, token);
             let fallbackProductsArray: ApiProduct[] = [];
-            
+
             if (fallbackResponse?.success && Array.isArray(fallbackResponse.data)) {
               fallbackProductsArray = fallbackResponse.data;
             } else if (Array.isArray(fallbackResponse)) {
               fallbackProductsArray = fallbackResponse;
             }
-            
+
             console.log('✅ Fallback successful, got products:', fallbackProductsArray.length);
-            
+
             // Process fallback products
             const processedFallbackProducts = await Promise.all(fallbackProductsArray.map(async (item) => {
               try {
@@ -454,11 +454,11 @@ const Shop: React.FC = () => {
                 };
               }
             }));
-            
+
             return processedFallbackProducts;
           } catch (fallbackError) {
             console.error('❌ Fallback also failed:', fallbackError);
-            
+
             // Try one more fallback - just category without subcategory
             if (currentFilters.categoryId && currentFilters.subcategoryId) {
               console.log('🔄 Trying second fallback: category only without subcategory');
@@ -467,15 +467,15 @@ const Shop: React.FC = () => {
                   categoryId: currentFilters.categoryId
                 }, token);
                 let secondFallbackProductsArray: ApiProduct[] = [];
-                
+
                 if (secondFallbackResponse?.success && Array.isArray(secondFallbackResponse.data)) {
                   secondFallbackProductsArray = secondFallbackResponse.data;
                 } else if (Array.isArray(secondFallbackResponse)) {
                   secondFallbackProductsArray = secondFallbackResponse;
                 }
-                
+
                 console.log('✅ Second fallback successful, got products:', secondFallbackProductsArray.length);
-                
+
                 // Process second fallback products
                 const processedSecondFallbackProducts = await Promise.all(secondFallbackProductsArray.map(async (item) => {
                   try {
@@ -499,19 +499,19 @@ const Shop: React.FC = () => {
                     };
                   }
                 }));
-                
+
                 return processedSecondFallbackProducts;
               } catch (secondFallbackError) {
                 console.error('❌ Second fallback also failed:', secondFallbackError);
               }
             }
-            
+
             throw error; // Throw the original error
           }
         } else {
           console.log('⚠️ No filters detected, not attempting fallback');
         }
-        
+
         throw error;
       }
     },
@@ -530,7 +530,7 @@ const Shop: React.FC = () => {
     // Price filtering
     if (selectedPriceRange) {
       const maxPrice = parseFloat(selectedPriceRange);
-      const productPrice = typeof product.price === 'string' 
+      const productPrice = typeof product.price === 'string'
         ? parseFloat(product.price.replace(/[^0-9.]/g, ""))
         : parseFloat(String(product.price));
       if (isNaN(productPrice) || productPrice > maxPrice) {
@@ -545,11 +545,11 @@ const Shop: React.FC = () => {
       const productDescription = product.description?.toLowerCase() || '';
       const productCategory = product.category?.toLowerCase() || '';
       const productBrand = product.brand?.toLowerCase() || '';
-      
-      return productName.includes(query) || 
-             productDescription.includes(query) || 
-             productCategory.includes(query) || 
-             productBrand.includes(query);
+
+      return productName.includes(query) ||
+        productDescription.includes(query) ||
+        productCategory.includes(query) ||
+        productBrand.includes(query);
     }
 
     return true;
@@ -559,32 +559,32 @@ const Shop: React.FC = () => {
   const handleCategoryChange = (categoryId: number | undefined): void => {
     // Update URL parameters instead of directly setting state
     const newSearchParams = new URLSearchParams(searchParams);
-    
+
     if (categoryId) {
       newSearchParams.set('categoryId', categoryId.toString());
     } else {
       newSearchParams.delete('categoryId');
     }
-    
+
     // Clear subcategory when changing category
     newSearchParams.delete('subcategoryId');
-    
+
     // Clear search when changing categories
     newSearchParams.delete('search');
-    
+
     setSearchParams(newSearchParams);
   };
 
   const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
     // Update URL parameters instead of directly setting state
     const newSearchParams = new URLSearchParams(searchParams);
-    
+
     if (subcategoryId) {
       newSearchParams.set('subcategoryId', subcategoryId.toString());
     } else {
       newSearchParams.delete('subcategoryId');
     }
-    
+
     setSearchParams(newSearchParams);
   };
 
@@ -600,7 +600,7 @@ const Shop: React.FC = () => {
     setSelectedPriceRange(undefined);
     setSortBy('all');
     setSearchInputValue('');
-    
+
     // Clear URL parameters - let useEffect handle state updates
     const newSearchParams = new URLSearchParams();
     setSearchParams(newSearchParams);
@@ -615,7 +615,7 @@ const Shop: React.FC = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedSearch = searchInputValue.trim();
-    
+
     // Update URL parameters
     const newSearchParams = new URLSearchParams(searchParams);
     if (trimmedSearch) {
@@ -623,11 +623,11 @@ const Shop: React.FC = () => {
     } else {
       newSearchParams.delete('search');
     }
-    
+
     // Clear category filters when searching
     newSearchParams.delete('categoryId');
     newSearchParams.delete('subcategoryId');
-    
+
     setSearchParams(newSearchParams);
     // Remove direct state update - let useEffect handle it
   };
@@ -663,11 +663,11 @@ const Shop: React.FC = () => {
   };
 
   // Constants
-  const hasActiveFilters = selectedCategory !== undefined || 
-                         selectedSubcategory !== undefined || 
-                         selectedPriceRange !== undefined || 
-                         sortBy !== 'all' ||
-                         searchQuery.trim() !== '';
+  const hasActiveFilters = selectedCategory !== undefined ||
+    selectedSubcategory !== undefined ||
+    selectedPriceRange !== undefined ||
+    sortBy !== 'all' ||
+    searchQuery.trim() !== '';
 
   // Update the product processing
   const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
@@ -766,7 +766,7 @@ const Shop: React.FC = () => {
         originalPrice: item.basePrice?.toString() || '0',
         discount: item.discount ? `${item.discount}` : undefined,
         discountPercentage: item.discount ? `${item.discount}%` : '0%',
-        price: item.basePrice && item.discount 
+        price: item.basePrice && item.discount
           ? (Number(item.basePrice) * (1 - Number(item.discount) / 100)).toFixed(2)
           : item.basePrice?.toString() || '0',
         rating: Number(averageRating) || 0,
@@ -808,7 +808,7 @@ const Shop: React.FC = () => {
         .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
         .map(processImageUrl)
         .filter(Boolean);
-        
+
       // Process variants (normalize variantImages/images and derive primary image)
       const processedVariants = (item.variants || []).map(variant => {
         const rawImages = Array.isArray((variant as any).images)
@@ -900,8 +900,8 @@ const Shop: React.FC = () => {
           <p style={{ marginBottom: '1rem' }}>
             {productsError instanceof Error ? productsError.message : 'Unknown error occurred'}
           </p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             style={{
               marginTop: '1rem',
               padding: '0.5rem 1rem',
@@ -925,153 +925,153 @@ const Shop: React.FC = () => {
       <Navbar />
       <ProductBanner />
       <CategorySlider />
-      
+
       <div className="shop-max-width-container">
         {/* Search Bar */}
 
 
         <div className="shop-container">
 
-<div style={{
-  marginBottom: '0.5rem',
-  padding: '0.5rem 2rem',
-  borderBottom: '1px solid #e9ecef',
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  flexWrap: 'nowrap', // Changed from 'wrap' to 'nowrap'
-  gap: '1rem', // Increased gap for better spacing
-  width: '100%',
-  minHeight: '60px' // Added min height for consistency
-}} className="shop-header">
-  <div style={{
-    flex: '0 0 auto', // Don't grow or shrink
-    minWidth: '200px' // Minimum width for title
-  }}>
-    <h2 style={{
-      fontSize: '2rem',
-      margin: '0',
-      color: '#222',
-      fontWeight: '700',
-      letterSpacing: '-1px',
-      whiteSpace: 'nowrap', // Prevent title wrapping
-      overflow: 'hidden',
-      textOverflow: 'ellipsis'
-    }}>
-      {getDisplayTitle()}
-      {getCurrentSubcategoryName() && (
-        <span style={{
-          fontSize: '1.1rem',
-          color: '#666',
-          fontWeight: 'normal',
-          marginLeft: '0.5rem'
-        }}>
-          {' > '}{getCurrentSubcategoryName()}
-        </span>
-      )}
-    </h2>
-  </div>
-  
-  <div className="search-bar-container" style={{
-    flex: '1 1 auto', // Allow to grow and shrink
-    display: 'flex',
-    justifyContent: 'center', // Center the search form
-    maxWidth: '500px', // Limit maximum width
-    minWidth: '250px' // Minimum width for usability
-  }}>
-    <form onSubmit={handleSearchSubmit} className="search-form" style={{
-      width: '100%',
-      display: 'flex'
-    }}>
-      <div className={`search-input-container ${searchInputValue ? 'has-clear-button' : ''}`} style={{
-        position: 'relative',
-        flex: '1'
-      }}>
-        <input
-          type="text"
-          value={searchInputValue}
-          onChange={handleSearchInputChange}
-          placeholder="Search for products, brands, or categories..."
-          className="search-input"
-          style={{
+          <div style={{
+            marginBottom: '0.5rem',
+            padding: '0.5rem 2rem',
+            borderBottom: '1px solid #e9ecef',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'nowrap', // Changed from 'wrap' to 'nowrap'
+            gap: '1rem', // Increased gap for better spacing
             width: '100%',
-            padding: '0.75rem',
-            border: '1px solid #ddd',
-            borderRadius: '4px 0 0 4px',
-            fontSize: '0.9rem'
-          }}
-        />
-        {searchInputValue && (
-          <button
-            type="button"
-            onClick={handleClearSearch}
-            className="search-clear-button"
-            style={{
-              position: 'absolute',
-              right: '8px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'none',
-              border: 'none',
-              fontSize: '1.2rem',
-              cursor: 'pointer',
-              color: '#999'
-            }}
-          >
-            ×
-          </button>
-        )}
-      </div>
-      <button type="submit" className="search-button" style={{
-        padding: '0.75rem 1rem',
-        backgroundColor: '#ff6b00',
-        color: 'white',
-        border: '1px solid #ff6b00',
-        borderRadius: '0 4px 4px 0',
-        cursor: 'pointer',
-        fontSize: '0.9rem',
-        whiteSpace: 'nowrap'
-      }}>
-        Search
-      </button>
-    </form>
-  </div>
-  
-  <div style={{
-    flex: '0 0 auto', // Don't grow or shrink
-    fontSize: '1rem',
-    color: '#666',
-    backgroundColor: '#f8f9fa',
-    padding: '0.5rem 1rem',
-    borderRadius: '6px',
-    whiteSpace: 'nowrap' // Prevent wrapping
-  }}>
-    {isLoadingProducts ? 'Loading...' : `${filteredProducts.length} products`}
-  </div>
-</div>
+            minHeight: '60px' // Added min height for consistency
+          }} className="shop-header">
+            <div style={{
+              flex: '0 0 auto', // Don't grow or shrink
+              minWidth: '200px' // Minimum width for title
+            }}>
+              <h2 style={{
+                fontSize: '2rem',
+                margin: '0',
+                color: '#222',
+                fontWeight: '700',
+                letterSpacing: '-1px',
+                whiteSpace: 'nowrap', // Prevent title wrapping
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                {getDisplayTitle()}
+                {getCurrentSubcategoryName() && (
+                  <span style={{
+                    fontSize: '1.1rem',
+                    color: '#666',
+                    fontWeight: 'normal',
+                    marginLeft: '0.5rem'
+                  }}>
+                    {' > '}{getCurrentSubcategoryName()}
+                  </span>
+                )}
+              </h2>
+            </div>
+
+            <div className="search-bar-container" style={{
+              flex: '1 1 auto', // Allow to grow and shrink
+              display: 'flex',
+              justifyContent: 'center', // Center the search form
+              maxWidth: '500px', // Limit maximum width
+              minWidth: '250px' // Minimum width for usability
+            }}>
+              <form onSubmit={handleSearchSubmit} className="search-form" style={{
+                width: '100%',
+                display: 'flex'
+              }}>
+                <div className={`search-input-container ${searchInputValue ? 'has-clear-button' : ''}`} style={{
+                  position: 'relative',
+                  flex: '1'
+                }}>
+                  <input
+                    type="text"
+                    value={searchInputValue}
+                    onChange={handleSearchInputChange}
+                    placeholder="Search for products, brands, or categories..."
+                    className="search-input"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px 0 0 4px',
+                      fontSize: '0.9rem'
+                    }}
+                  />
+                  {searchInputValue && (
+                    <button
+                      type="button"
+                      onClick={handleClearSearch}
+                      className="search-clear-button"
+                      style={{
+                        position: 'absolute',
+                        right: '8px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        fontSize: '1.2rem',
+                        cursor: 'pointer',
+                        color: '#999'
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+                <button type="submit" className="search-button" style={{
+                  padding: '0.75rem 1rem',
+                  backgroundColor: '#ff6b00',
+                  color: 'white',
+                  border: '1px solid #ff6b00',
+                  borderRadius: '0 4px 4px 0',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  whiteSpace: 'nowrap'
+                }}>
+                  Search
+                </button>
+              </form>
+            </div>
+
+            <div style={{
+              flex: '0 0 auto', // Don't grow or shrink
+              fontSize: '1rem',
+              color: '#666',
+              backgroundColor: '#f8f9fa',
+              padding: '0.5rem 1rem',
+              borderRadius: '6px',
+              whiteSpace: 'nowrap' // Prevent wrapping
+            }}>
+              {isLoadingProducts ? 'Loading...' : `${filteredProducts.length} products`}
+            </div>
+          </div>
           <div className="shop-content">
             <div className="shop">
-              <button 
-                className="filter-button" 
+              <button
+                className="filter-button"
                 onClick={toggleSidebar}
                 aria-label="Toggle filters"
               >
                 <span className="filter-icon">⚙</span>
               </button>
-              
+
               {isSidebarOpen && (
-                <div 
-                  className="filter-sidebar-overlay" 
+                <div
+                  className="filter-sidebar-overlay"
                   onClick={toggleSidebar}
                   aria-label="Close filters"
                 />
               )}
-              
+
               <div className={`filter-sidebar ${isSidebarOpen ? "open" : ""}`} key={`${selectedCategory}-${selectedSubcategory}-${selectedPriceRange}-${sortBy}`}>
                 <div className="filter-sidebar__header">
                   <h3>Filters</h3>
-                  <button 
-                    className="filter-sidebar__close" 
+                  <button
+                    className="filter-sidebar__close"
                     onClick={toggleSidebar}
                     aria-label="Close filters"
                   >
@@ -1081,7 +1081,7 @@ const Shop: React.FC = () => {
 
                 {hasActiveFilters && (
                   <div className="filter-sidebar__section">
-                    <button 
+                    <button
                       onClick={clearAllFilters}
                       style={{
                         width: '100%',
@@ -1174,7 +1174,7 @@ const Shop: React.FC = () => {
                                 onChange={() => handleCategoryChange(category.id)}
                               />
                               <label htmlFor={`category-${category.id}`}>{category.name}</label>
-                              </div>
+                            </div>
                           </div>
                         ))}
                       </>
@@ -1269,8 +1269,8 @@ const Shop: React.FC = () => {
                       {searchQuery.trim()
                         ? `No products found matching "${searchQuery}". Try adjusting your search terms or browse categories.`
                         : selectedCategory === undefined
-                        ? "No products available at the moment."
-                        : `No products found in ${getCurrentCategoryName()}${getCurrentSubcategoryName() ? ` > ${getCurrentSubcategoryName()}` : ''}.`
+                          ? "No products available at the moment."
+                          : `No products found in ${getCurrentCategoryName()}${getCurrentSubcategoryName() ? ` > ${getCurrentSubcategoryName()}` : ''}.`
                       }
                     </p>
                     {hasActiveFilters && (

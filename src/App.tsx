@@ -17,7 +17,7 @@ import AdminCatalog from "./Pages/AdminCatalog";
 import ProductPage from "./Pages/ProductPage";
 import UserProfile from "./Pages/UserProfile";
 
-import VendorSignup from "./Pages/VendorSignup";
+// import VendorSignup from "./Pages/VendorSignup";
 import PageNotFound from "./Pages/PageNotFound";
 import { useAuth } from "./context/AuthContext";
 import ScrollToTop from "./Components/ScrollToTop";
@@ -48,8 +48,10 @@ import EcommerceFAQ from "./Pages/Faq";
 import BecomeVendor from "./Pages/BecomeVendor";
 import UnapprovedVendors from "./Components/UnapprovedVendors";
 import CommissionList from "./Pages/ComissionList";
-import VendorLogin from "./Pages/VendorLogin"
+// import VendorLogin from "./Pages/VendorLogin"
 import SectionProducts from "./Components/SectionProducts";
+import VendorLoginPage from "./Pages/VendorLoginPage";
+import VendorSignupPage from "./Pages/VendorSignupPage";
 
 // Admin route guards
 // Allows both admin and staff to access admin area
@@ -108,7 +110,7 @@ function App() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/product-page/:id" element={<ProductPage />} />
         <Route path="/product-page/:categoryId/:subcategoryId/:id" element={<ProductPage />} />
-  <Route path="/section/:sectionId" element={<SectionProducts />} />
+        <Route path="/section/:sectionId" element={<SectionProducts />} />
 
         <Route path="/user-profile" element={<UserProfile />} />
         <Route path="/shop" element={<Shop />} />
@@ -126,8 +128,8 @@ function App() {
         <Route path="/data-deletion" element={<DataDeletion />} />
 
         {/* Vendor Routes (protected) */}
-        <Route path="/vendor/login" element={<VendorLogin />} />
-        <Route path="/vendor/signup" element={<VendorSignup />} />
+        <Route path="/vendor/login" element={<VendorLoginPage />} />
+        <Route path="/vendor/signup" element={<VendorSignupPage />} />
 
         <Route
           path="/dashboard"

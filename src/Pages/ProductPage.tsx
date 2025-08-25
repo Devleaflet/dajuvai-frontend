@@ -56,7 +56,7 @@ interface ReviewsResponse {
     averageRating: number;
     reviews: Review[];
     total: number;
-    totalPages: umber;
+    totalPages: number;
   };
 }
 
@@ -204,7 +204,7 @@ const ProductPage = () => {
                 // Could be a direct URL or a JSON string
                 try {
                   const parsed = JSON.parse(img);
-                    imgUrl = parsed.url || parsed.imageUrl || img;
+                  imgUrl = parsed.url || parsed.imageUrl || img;
                 } catch {
                   imgUrl = img; // already a URL string
                 }
@@ -809,11 +809,10 @@ const ProductPage = () => {
                     {currentImages.map((image: string, index: number) => (
                       <button
                         key={index}
-                        className={`product-gallery__thumbnail ${
-                          selectedImageIndex === index
+                        className={`product-gallery__thumbnail ${selectedImageIndex === index
                             ? "product-gallery__thumbnail--active"
                             : ""
-                        }`}
+                          }`}
                         onClick={() => handleImageSelect(index)}
                       >
                         <img
@@ -831,7 +830,7 @@ const ProductPage = () => {
             <div className="product-info">
               <div className="product-info__header">
                 <h1 className="product-info__title">{product.name}</h1>
-                
+
                 <div className="product-price">
                   <span className="product-price__current">Rs. {getCurrentPrice().toFixed(2)}</span>
                   {getOriginalPrice() > getCurrentPrice() && (
@@ -861,11 +860,10 @@ const ProductPage = () => {
                       {product.variants.map((variant: any) => (
                         <div
                           key={variant.id}
-                          className={`product-options__variant ${
-                            selectedVariant?.id === variant.id
+                          className={`product-options__variant ${selectedVariant?.id === variant.id
                               ? "product-options__variant--active"
                               : ""
-                          }`}
+                            }`}
                           onClick={() =>
                             variant.stock > 0 && handleVariantSelect(variant)
                           }

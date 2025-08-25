@@ -364,7 +364,7 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
             <button
               type="button"
               className="auth-modal__link-button"
-              onClick={() => navigate("/signup")} // Assuming a signup route exists
+              onClick={() => navigate("/vendor/signup")} 
             >
               Don't have an account? Sign up
             </button>

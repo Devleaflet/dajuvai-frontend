@@ -10,7 +10,7 @@ import { Product } from "../Components/Types/Product";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { getProductPrimaryImage } from "../utils/getProductPrimaryImage";
-import './ProductCartd1.css';
+import '../ALT/ProductCartd1.css';
 
 interface ProductCardProps {
   product: Product;
@@ -75,11 +75,18 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
   } else {
     displayPriceNum = productPriceNum;
   }
-  const displayPrice = `Rs. ${displayPriceNum.toFixed(2)}`;
+
+  // Remove .00 if it's a whole number
+  const formatPrice = (price: number): string => {
+    return price % 1 === 0 ? `Rs. ${price.toFixed(0)}` : `Rs. ${price.toFixed(2)}`;
+  };
+
+  const displayPrice = formatPrice(displayPriceNum);
 
   // Check if original price should be shown (only if there's a discount or original price differs)
   const originalPriceNum = toNumber(originalPrice);
   const showOriginalPrice = originalPrice && discount && discount > 0 && originalPriceNum !== displayPriceNum;
+  const formattedOriginalPrice = showOriginalPrice ? formatPrice(originalPriceNum) : '';
 
   const handleWishlist = async () => {
     if (!isAuthenticated) {
@@ -132,7 +139,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
           {isBestSeller && <span className="product1__tag">Best seller</span>}
         </div>
         <div className="product1__image">
-          <img 
+          <img
             src={displayImage}
             alt={title || "Product image"}
             onError={handleImageError}
@@ -167,14 +174,14 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
           <h3 className="product1__title">{title}</h3>
           <p className="product1__description">{description}</p>
           <div className="product1__price">
+            {discount && discount > 0 && (
+              <span className="product1__discount">{discount}% off</span>
+            )}
             <span className="product1__current-price">{displayPrice}</span>
             {showOriginalPrice && (
               <span className="product1__original-price">
-                {originalPrice}
+                {formattedOriginalPrice}
               </span>
-            )}
-            {discount && discount > 0 && (
-              <span className="product1__discount">{discount}% off</span>
             )}
           </div>
         </div>
