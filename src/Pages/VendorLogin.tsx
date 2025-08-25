@@ -358,8 +358,6 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
             </div>
           )}
         </form>
-
-
       </div>
     </div>
   );
