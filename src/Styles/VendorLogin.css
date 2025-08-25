@@ -128,3 +128,9 @@
     font-size: 20px;
   }
 }
+
+
+.auth-modal__input--verification {
+  width: 200px;
+  text-align: center;
+}

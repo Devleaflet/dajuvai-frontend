@@ -11,6 +11,7 @@
   align-items: center;
   z-index: 1000;
   animation: fadeIn 0.2s ease-out;
+  max-width: 100%;
 }
 
 @keyframes fadeIn {
@@ -37,7 +38,7 @@
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  width: 95%;
+  width: 100%;
   max-width: 800px;
   padding: 0;
   position: relative;
@@ -282,7 +283,8 @@ input[type="file"] {
   justify-content: flex-end;
   gap: 15px;
   padding: 20px 24px;
-  border-top: 1px solid #e5e5e5;
+  width: 100%; /* Ensure full width */
+
 }
 
 .btn {
@@ -384,4 +386,108 @@ input[type="file"] {
     max-width: 150px; /* Even smaller on very small screens */
     padding: 5px 6px; /* Minimum padding */
   }
+}
+
+
+
+
+
+.cheque-container {
+  background-image: url('../assets/cheque.png'); 
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  min-height: 250px;
+  padding: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+  filter: blur(2px); 
+}
+
+.cheque-container .document-item {
+  position: relative;
+  z-index: 2;
+  padding: 12px;
+  background: transparent;
+  height: 100%;
+}
+
+.cheque-container .file-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+}
+
+
+.cheque-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 12px 0;
+}
+
+.choose-file-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 24px;
+}
+
+.choose-file-btn:hover {
+  background: #2563eb;
+}
+
+.file-name {
+  font-size: 12px;
+  color: #1f2937;
+  background: rgba(255, 255, 255, 0.9); /* Slight background for readability */
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-left: 5px; /* Space between button and file name */
+}
+
+.remove-btn {
+  background: #ef4444;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  margin-left: 5px; /* Space between file name and remove button */
+}
+
+.remove-btn:hover {
+  background: #dc2626;
+  transform: scale(1.1);
+}
+
+/* Ensure document-section padding doesn't interfere */
+.document-section {
+  margin: 0;
+  padding: 0 24px 24px;
+}
+
+/* Hide file-upload when no file is selected (handled by conditional rendering in JSX) */
+.cheque-container .file-upload {
+  display: none; /* This will be overridden by the conditional rendering */
 }

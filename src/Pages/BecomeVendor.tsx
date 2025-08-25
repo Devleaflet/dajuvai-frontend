@@ -4,7 +4,8 @@ import { FaStore, FaCheckCircle, FaEnvelope } from "react-icons/fa";
 import "../Styles/BecomeVendor.css";
 import Navbar from "../Components/Navbar";
 import Footer from "../Components/Footer";
-import VendorAuthModal from "../Components/AuthVendorModal"; // Import the modal
+
+import VendorSignup from "../Pages/VendorSignup";
 
 const BecomeVendor: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false); // State to control modal visibility
@@ -106,10 +107,9 @@ const BecomeVendor: React.FC = () => {
           </div>
         </div>
       </div>
-     <VendorAuthModal
+   <VendorSignup
   isOpen={isModalOpen}
   onClose={closeModal}
-  forceSignupMode={true} // Force signup mode
 />
       <Footer />
     </>

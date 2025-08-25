@@ -16,7 +16,7 @@ import AdminBannerWithTabs from "./Pages/AdminBanner";
 import AdminCatalog from "./Pages/AdminCatalog";
 import ProductPage from "./Pages/ProductPage";
 import UserProfile from "./Pages/UserProfile";
-import VendorLogin from "./Pages/VendorLogin";
+
 import VendorSignup from "./Pages/VendorSignup";
 import PageNotFound from "./Pages/PageNotFound";
 import { useAuth } from "./context/AuthContext";
@@ -48,7 +48,7 @@ import EcommerceFAQ from "./Pages/Faq";
 import BecomeVendor from "./Pages/BecomeVendor";
 import UnapprovedVendors from "./Components/UnapprovedVendors";
 import CommissionList from "./Pages/ComissionList";
-import Catalog from "./Pages/Catalog";
+import VendorLogin from "./Pages/VendorLogin"
 import SectionProducts from "./Components/SectionProducts";
 
 // Admin route guards
@@ -109,6 +109,7 @@ function App() {
         <Route path="/product-page/:id" element={<ProductPage />} />
         <Route path="/product-page/:categoryId/:subcategoryId/:id" element={<ProductPage />} />
   <Route path="/section/:sectionId" element={<SectionProducts />} />
+
         <Route path="/user-profile" element={<UserProfile />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/vendor/:vendorId" element={<VendorStore />} />

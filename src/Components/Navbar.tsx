@@ -34,7 +34,7 @@ import { fetchSubCategory } from "../api/subcategory";
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "../config";
 import { useVendorAuth } from "../context/VendorAuthContext";
-import VendorAuthModal from "./AuthVendorModal";
+import VendorLogin from "../Pages/VendorLogin";
 import { toast } from "react-hot-toast";
 
 interface Category {
@@ -1400,11 +1400,10 @@ const Navbar: React.FC = () => {
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
       />
-      <VendorAuthModal
-        isOpen={vendorAuthModalOpen}
-        onClose={() => setVendorAuthModalOpen(false)}
-        forceLoginMode={true} 
-      />
+    <VendorLogin
+  isOpen={vendorAuthModalOpen}
+  onClose={() => setVendorAuthModalOpen(false)}
+/>
     </nav>
   );
 };

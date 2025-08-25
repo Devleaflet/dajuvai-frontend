@@ -449,11 +449,11 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
         }
       }
 
-      // ✅ FIX: Use the same endpoint as VendorAuthModal instead of onAdd
+
       console.log("Calling vendor registration API with updatedFormData:", updatedFormData);
       
       const response = await axios.post(
-        `${API_BASE_URL}/api/vendors/request/register`, // Same endpoint as VendorAuthModal
+        `${API_BASE_URL}/api/vendors/request/register`, 
         updatedFormData,
         {
           headers: {
@@ -466,13 +466,11 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
       console.log("Vendor registration API response:", response.data);
       toast.success("Vendor registered successfully! Please verify your email.");
       
-      // ✅ Only show verification UI if registration was successful
       console.log("Setting up email verification for:", formData.email);
       setShowVerification(true);
       setCountdown(120);
       
-      // The registration endpoint should automatically send verification email
-      // No need to manually call handleSendVerification
+   
 
     } catch (err: any) {
       console.error("Error in handleSubmit:", err.response?.data || err.message);
@@ -482,10 +480,10 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
         err.message ||
         "Failed to add vendor";
       
-      // ✅ Don't show verification UI on registration failure
+
       toast.error(errorMessage);
       
-      // Handle specific error cases
+
       if (err.response?.status === 500) {
         toast.error("Server error occurred. Please try again later.");
       } else if (err.response?.status === 400) {
@@ -877,41 +875,35 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
                   </div>
                 </div>
               </div>
-
-              <div className="document-section">
-                <h3>Cheque Photo</h3>
-                <div className="document-container">
-                  <div className="document-item file-upload">
-                    <label htmlFor="chequePhoto" className="file-label">
-                      Choose File
-                    </label>
-                    <input
-                      type="file"
-                      id="chequePhoto"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange(e, "chequePhoto")}
-                      required
-                      aria-label="Upload Cheque Photo"
-                    />
-                    <div className="file-list">
-                      {chequeFile && (
-                        <div className="file-item">
-                          <span className="file-name">{chequeFile.name}</span>
-                          <button
-                            type="button"
-                            className="remove-btn"
-                            onClick={() => handleRemoveFile(0, "chequePhoto")}
-                            aria-label={`Remove ${chequeFile.name}`}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
+<div className="document-section">
+  <h3 className="cheque-header">
+    Cheque Photo
+   
+    {chequeFile && <span className="file-name">{chequeFile.name}</span>}
+  </h3>
+  <div
+    className="document-container cheque-container"
+    onClick={() => document.getElementById("chequePhoto")?.click()}
+    style={{ cursor: 'pointer' }}
+  >
+    <div className="document-item file-upload">
+      <input
+        type="file"
+        id="chequePhoto"
+        accept="image/*"
+        onChange={(e) => {
+          const files = e.target.files;
+          if (files && files.length > 0) {
+            setChequeFile(files[0]); // Update chequeFile state with the first file
+          }
+        }}
+        required
+        aria-label="Upload Cheque Photo"
+        style={{ display: "none" }}
+      />
+    </div>
+  </div>
+</div>
               <div className="modal-actions">
                 <button type="button" onClick={onClose} disabled={loading} className="btn btn-secondary">
                   Cancel

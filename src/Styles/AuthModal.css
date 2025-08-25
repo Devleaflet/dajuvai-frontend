@@ -23,6 +23,7 @@
 .auth-modal__content {
   position: relative;
   width: 100%;
+  
   max-width: 450px;
   background-color: #fff;
   border-radius: 10px;
@@ -153,6 +154,11 @@
   margin-bottom: 15px;
 }
 
+.auth-modal__form-group-login{
+  width: 300px;
+
+}
+
 .auth-modal__label {
   display: block;
   margin-bottom: 5px;
@@ -162,7 +168,7 @@
 }
 
 .auth-modal__input {
-  width: 100%;
+  width: 300px;
   padding: 12px 15px;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -293,8 +299,6 @@ body.auth-modal--open {
   font-weight: 600;
 }
 
-
-
 /* Ensure compatibility with existing modal styles */
 .auth-modal__content .auth-modal__verification-complete {
   max-height: 70vh;
@@ -314,8 +318,6 @@ body.auth-modal--open {
   .auth-modal__success-message p {
     font-size: 0.9rem;
   }
-
- 
 }
 
 .auth-modal__message--error {
@@ -763,17 +765,116 @@ body.auth-modal--open {
   display: none;
 }
 
-.auth-modal__file-name {
-  display: block;
+.auth-modal__file-list {
   margin-top: 10px;
+}
+
+.auth-modal__file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 5px;
+  background-color:  #fff;
+  padding: 5px 10px;
+  border-radius: 4px;
+}
+
+.auth-modal__file-name {
   font-size: 14px;
-  color: #666;
+  color: #333;
+  word-break: break-all;
+}
+
+.auth-modal__file-remove {
+  background: none;
+  border: none;
+  color: #ff5722;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 5px;
+  transition: color 0.3s;
+}
+
+.auth-modal__file-remove:hover {
+  color: #e64a19;
+}
+
+.auth-modal__file-preview-container {
+  position: relative;
+  display: inline-block;
+  margin-top: 10px;
 }
 
 .auth-modal__file-preview {
-  max-width: 100%;
-  max-height: 200px;
-  margin-top: 10px;
+  max-width: 200px;
+  max-height: 150px;
+  object-fit: contain;
   border-radius: 4px;
-  border: 1px solid #ddd;
+  filter: blur(4px); /* Blur effect for cheque image */
+  opacity: 0.8; /* Image cover effect */
+  transition: filter 0.3s, opacity 0.3s;
+}
+
+.auth-modal__file-preview-container:hover .auth-modal__file-preview {
+  filter: blur(0); /* Remove blur on hover */
+  opacity: 1; /* Full opacity on hover */
+}
+
+/* Updated cheque photo styles */
+.cheque-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cheque-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px dashed #ddd;
+  border-radius: 4px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.cheque-container:hover {
+  border-color: #ff5722;
+}
+
+.cheque-container .auth-modal__file-upload {
+  min-height: 100px;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+.document-item {
+  text-align: center;
+  width: 100%;
+}
+
+.auth-modal__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #333;
+}
+
+.auth-modal__checkbox input {
+  margin: 0;
+  vertical-align: middle;
+}
+
+/* Responsive adjustments for file preview */
+@media (max-width: 480px) {
+  .auth-modal__file-preview {
+    max-width: 150px;
+    max-height: 100px;
+  }
 }
