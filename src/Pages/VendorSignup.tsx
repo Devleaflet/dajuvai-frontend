@@ -1272,17 +1272,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
           </form>
         )}
 
-        <div className="auth-modal__footer">
-          <p className="auth-modal__footer-text">
-            <button
-              type="button"
-              className="auth-modal__link-button"
-              onClick={() => navigate("/vendor/login")}
-            >
-              Already have an account? Log in
-            </button>
-          </p>
-        </div>
+      
       </div>
     </div>
   );
