@@ -1,16 +1,16 @@
-import './ProductCartd1.css'
-import star from "../assets/star.png";
-import { FaCartPlus } from "react-icons/fa";
-import { Product } from "../Components/Types/Product";
-import { useCart } from "../context/CartContext";
-import { useAuth } from "../context/AuthContext";
-import { addToWishlist } from "../api/wishlist";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import AuthModal from "../Components/AuthModal";
-import { getProductPrimaryImage } from "../utils/getProductPrimaryImage";
-import defaultProductImage from "../assets/logo.webp";
 import { toast } from "react-hot-toast";
+import { FaCartPlus } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import { addToWishlist } from "../api/wishlist";
+import defaultProductImage from "../assets/logo.webp";
+import star from "../assets/star.png";
+import AuthModal from "../Components/AuthModal";
+import { Product } from "../Components/Types/Product";
+import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
+import { getProductPrimaryImage } from "../utils/getProductPrimaryImage";
+import './ProductCartd1.css';
 
 interface ProductCardProps {
   product: Product;
@@ -32,7 +32,6 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
     rating,
     ratingCount,
     isBestSeller,
-    freeDelivery,
     id,
   } = product;
 
@@ -74,10 +73,13 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
       displayPriceNum = toNumber(variantBase);
     }
   } else {
-    // product price already includes discount mapping from Shop.tsx when applicable
     displayPriceNum = productPriceNum;
   }
   const displayPrice = `Rs. ${displayPriceNum.toFixed(2)}`;
+
+  // Check if original price should be shown (only if there's a discount or original price differs)
+  const originalPriceNum = toNumber(originalPrice);
+  const showOriginalPrice = originalPrice && discount && discount > 0 && originalPriceNum !== displayPriceNum;
 
   const handleWishlist = async () => {
     if (!isAuthenticated) {
@@ -86,7 +88,6 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
     }
     setWishlistLoading(true);
     try {
-    
       const variantCount = product.variants?.length || 0;
       const variantId = variantCount > 0 ? product.variants![0].id : undefined;
       await addToWishlist(id, variantId, token);
@@ -108,7 +109,6 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
     <Link to={`/product-page/${product.id}`} className="product1__link-wrapper">
       <div className="product1">
         <div className="product1__header">
-          {isBestSeller && <span className="product1__tag">Best seller</span>}
           <button
             className="product1__wishlist-button"
             aria-label="Add to wishlist"
@@ -129,6 +129,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
             </svg>
           </button>
+          {isBestSeller && <span className="product1__tag">Best seller</span>}
         </div>
         <div className="product1__image">
           <img 
@@ -167,32 +168,15 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
           <p className="product1__description">{description}</p>
           <div className="product1__price">
             <span className="product1__current-price">{displayPrice}</span>
-            <div className="product1__price-details">
-              {originalPrice>displayPrice && (
-                <span className="product1__original-price">
-                  {originalPrice}
-                </span>
-              )}
-              {Number(discount)>0 && (
-                <span className="product1__discount">{discount}% off</span>
-              )}
-            </div>
+            {showOriginalPrice && (
+              <span className="product1__original-price">
+                {originalPrice}
+              </span>
+            )}
+            {discount && discount > 0 && (
+              <span className="product1__discount">{discount}% off</span>
+            )}
           </div>
-          {/* {freeDelivery && (
-            <div className="product1__delivery">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M9 20l-1.5-1.5M14 20l-1.5-1.5M4 8h16M4 8l1.5 5h9L16 8M4 8V6a2 2 0 012-2h12a2 2 0 012 2v2"></path>
-                <circle cx="8.5" cy="15.5" r="1.5"></circle>
-                <circle cx="15.5" cy="15.5" r="1.5"></circle>
-              </svg>
-            </div>
-          )} */}
         </div>
       </div>
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />

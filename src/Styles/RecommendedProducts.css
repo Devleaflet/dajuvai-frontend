@@ -4,7 +4,7 @@
   margin: 3rem 0;
   position: relative;
   width: 100%;
-  max-width: 1400px;
+  max-width: 1800px; /* Increased to accommodate 6 products */
   margin-left: auto;
   margin-right: auto;
 }
@@ -57,8 +57,8 @@
 
 .recommended-products__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(6, 1fr); /* Fixed 6 columns */
+  gap: 1.5rem;
   justify-content: flex-start;
   align-items: start;
   width: 100%;
@@ -168,6 +168,18 @@
 }
 
 /* Responsive adjustments */
+@media (max-width: 1800px) {
+  .recommended-products__grid {
+    grid-template-columns: repeat(5, 1fr); /* 5 columns for medium-large screens */
+  }
+}
+
+@media (max-width: 1500px) {
+  .recommended-products__grid {
+    grid-template-columns: repeat(4, 1fr); /* 4 columns for medium screens */
+  }
+}
+
 @media (max-width: 1200px) {
   .recommended-products {
     max-width: 1200px;
@@ -176,15 +188,21 @@
   }
   
   .recommended-products__grid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(3, 1fr); /* 3 columns for smaller screens */
     gap: 1.5rem;
   }
 }
 
 @media (max-width: 1024px) {
   .recommended-products__grid {
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .recommended-products__grid {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns for tablets */
   }
 }
 
@@ -213,7 +231,7 @@
   }
   
   .recommended-products__grid {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.25rem;
   }
   
@@ -267,7 +285,7 @@
   }
   
   .recommended-products__grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr; /* 1 column for mobile */
     gap: 0.75rem;
   }
   

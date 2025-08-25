@@ -75,9 +75,9 @@
 
 /* Fixed container to prevent shadow clipping */
 .checkout-container {
-  width: calc(100% - 20px);
+  width: 85%;
   /* Minimal padding for mobile */
-  max-width: none;
+  max-width: 1800px;
   /* Remove max-width constraint */
   margin: 20px auto;
   padding: 0 10px;
@@ -280,10 +280,7 @@
   transition: all 0.2s ease;
 }
 
-.checkout-container__payment-methods-label:hover {
-  background: #f9fafb;
-  border-color: #ddd;
-}
+
 
 .checkout-container__payment-methods-input {
   margin: 0;

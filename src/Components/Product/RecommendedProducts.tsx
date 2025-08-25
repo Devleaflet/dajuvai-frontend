@@ -31,7 +31,7 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
           <p className="recommended-products__subtitle">Products you might love</p>
         </div>
         <div className="recommended-products__grid">
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 6 }).map((_, i) => ( // Changed to 6 skeletons
             <div key={i} className="recommended-skeleton">
               <div className="skeleton-image"></div>
               <div className="skeleton-content">
@@ -63,7 +63,7 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
         <p className="recommended-products__subtitle">Products you might love</p>
       </div>
       <div className="recommended-products__grid">
-        {filteredProducts.slice(0, 6).map((p) => {
+        {filteredProducts.slice(0, 6).map((p) => { // Already slicing to 6 products
           // Derive IDs from multiple possible shapes
           const categoryId = (p as any).categoryId
             ?? (p as any)?.category?.id

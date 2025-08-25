@@ -870,17 +870,7 @@ const Navbar: React.FC = () => {
               >
                 Shop
               </NavLink>
-              <NavLink
-                to="/about"
-                className={({ isActive }) =>
-                  `navbar__link${isActive ? " active" : ""}`
-                }
-                style={({ isActive }) => ({
-                  color: isActive ? '#f97316' : 'inherit'
-                })}
-              >
-                About Us
-              </NavLink>
+            
               <NavLink
                 to="/contact"
                 className={({ isActive }) =>

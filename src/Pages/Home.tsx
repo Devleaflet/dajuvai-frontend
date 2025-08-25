@@ -94,7 +94,13 @@ const Home = () => {
   }
 
   return (
-    <>
+    <div
+      style={
+        {
+          border:"1px solid black"
+        }
+      }
+    >
       <Navbar />
       <HeroSlider />
       <CategorySlider />
@@ -102,7 +108,7 @@ const Home = () => {
       <SpecialOffers />
       <CategorySection/>
       <Footer />
-    </>
+    </div>
   );
 };
 

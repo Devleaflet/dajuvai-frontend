@@ -2,17 +2,20 @@
 .shop-max-width-container {
   max-width: 1800px;
   margin: 0 auto;
-  width: 100%;
+  width: 85%;
   overflow: hidden;
 
 }
 
 .shop-container {
-  padding: 30px;
   width: 100%;
   box-sizing: border-box;
 }
-
+.shop-header{
+  display:flex;
+  justify-content: space-between;
+  align-items: center;
+}
 .shop-content {
   display: flex;
   flex-direction: column;
@@ -264,11 +267,6 @@
 
 /* Search Bar Styles */
 .search-bar-container {
-  display:flex;
-  justify-content: center;
-  padding-top:40px;
-  padding-bottom: 0px;
-
   width: 100%;
   box-sizing: border-box;
 }

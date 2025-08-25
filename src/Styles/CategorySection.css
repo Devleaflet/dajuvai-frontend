@@ -1,5 +1,5 @@
 /* Skeleton loading states */.category-section {
-  width: 93%;
+  width: 85%;
   max-width: 1800px;
   margin: 0 auto;
 }
@@ -150,8 +150,8 @@
 }
 
 .category-section__subcategory-image {
-  width: 60%;
-  height: 60%;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
   pointer-events: none;

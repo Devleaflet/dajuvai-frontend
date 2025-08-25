@@ -849,6 +849,11 @@ const Checkout: React.FC = () => {
                   className="checkout-container__payment-methods-input"
                   checked={selectedPaymentMethod === 'CASH_ON_DELIVERY'}
                   onChange={handlePaymentMethodChange}
+                  style={
+                  {
+                    boxShadow:"none"
+                  }
+                }
                 />
                 Cash on delivery
               </label>
@@ -860,6 +865,11 @@ const Checkout: React.FC = () => {
                   value="ONLINE_PAYMENT"
                   className="checkout-container__payment-methods-input"
                   checked={selectedPaymentMethod === 'ONLINE_PAYMENT'}
+                  style={
+                  {
+                    boxShadow:"none"
+                  }
+                }
                   onChange={handlePaymentMethodChange}
                 />
                 <img src={npx} alt="NPX" className="checkout-container__payment-methods-img" />
@@ -872,6 +882,11 @@ const Checkout: React.FC = () => {
                   className="checkout-container__payment-methods-input"
                   checked={selectedPaymentMethod === 'ESEWA'}
                   onChange={handlePaymentMethodChange}
+                  style={
+                  {
+                    boxShadow:"none"
+                  }
+                }
                 />
                 <img src={esewa} alt="eSewa" className="checkout-container__payment-methods-img"/>
                 </label>
@@ -886,6 +901,11 @@ const Checkout: React.FC = () => {
                 onChange={handleTermsChange}
                 className="checkout-container__terms-checkbox-input"
                 required
+                style={
+                  {
+                    boxShadow:"none"
+                  }
+                }
               />
               I have read and agree to the website terms and conditions *
             </label>

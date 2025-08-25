@@ -928,73 +928,127 @@ const Shop: React.FC = () => {
       
       <div className="shop-max-width-container">
         {/* Search Bar */}
-        <div className="search-bar-container">
-          <form onSubmit={handleSearchSubmit} className="search-form">
-            <div className={`search-input-container ${searchInputValue ? 'has-clear-button' : ''}`}>
-              <input
-                type="text"
-                value={searchInputValue}
-                onChange={handleSearchInputChange}
-                placeholder="Search for products, brands, or categories..."
-                className="search-input"
-              />
-              {searchInputValue && (
-                <button
-                  type="button"
-                  onClick={handleClearSearch}
-                  className="search-clear-button"
-                >
-                  ×
-                </button>
-              )}
-            </div>
-            <button type="submit" className="search-button">
-              Search
-            </button>
-          </form>
-        </div>
+
 
         <div className="shop-container">
-          <div style={{
-            marginBottom: '0.5rem',
-            padding: '0.5rem 2rem',
-            borderBottom: '1px solid #e9ecef',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '0.5rem',
-            width: '100%'
-          }}>
-            <h2 style={{
-              fontSize: '2rem',
-              margin: '0',
-              color: '#222',
-              fontWeight: '700',
-              letterSpacing: '-1px'
-            }}>
-              {getDisplayTitle()}
-              {getCurrentSubcategoryName() && (
-                <span style={{
-                  fontSize: '1.1rem',
-                  color: '#666',
-                  fontWeight: 'normal',
-                  marginLeft: '0.5rem'
-                }}>
-                  {' > '}{getCurrentSubcategoryName()}
-                </span>
-              )}
-            </h2>
-            <div style={{
-              fontSize: '1rem',
-              color: '#666',
-              backgroundColor: '#f8f9fa',
-              padding: '0.5rem 1rem',
-              borderRadius: '6px'
-            }}>
-              {isLoadingProducts ? 'Loading...' : `${filteredProducts.length} products`}
-            </div>
-          </div>
+
+<div style={{
+  marginBottom: '0.5rem',
+  padding: '0.5rem 2rem',
+  borderBottom: '1px solid #e9ecef',
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  flexWrap: 'nowrap', // Changed from 'wrap' to 'nowrap'
+  gap: '1rem', // Increased gap for better spacing
+  width: '100%',
+  minHeight: '60px' // Added min height for consistency
+}} className="shop-header">
+  <div style={{
+    flex: '0 0 auto', // Don't grow or shrink
+    minWidth: '200px' // Minimum width for title
+  }}>
+    <h2 style={{
+      fontSize: '2rem',
+      margin: '0',
+      color: '#222',
+      fontWeight: '700',
+      letterSpacing: '-1px',
+      whiteSpace: 'nowrap', // Prevent title wrapping
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
+    }}>
+      {getDisplayTitle()}
+      {getCurrentSubcategoryName() && (
+        <span style={{
+          fontSize: '1.1rem',
+          color: '#666',
+          fontWeight: 'normal',
+          marginLeft: '0.5rem'
+        }}>
+          {' > '}{getCurrentSubcategoryName()}
+        </span>
+      )}
+    </h2>
+  </div>
+  
+  <div className="search-bar-container" style={{
+    flex: '1 1 auto', // Allow to grow and shrink
+    display: 'flex',
+    justifyContent: 'center', // Center the search form
+    maxWidth: '500px', // Limit maximum width
+    minWidth: '250px' // Minimum width for usability
+  }}>
+    <form onSubmit={handleSearchSubmit} className="search-form" style={{
+      width: '100%',
+      display: 'flex'
+    }}>
+      <div className={`search-input-container ${searchInputValue ? 'has-clear-button' : ''}`} style={{
+        position: 'relative',
+        flex: '1'
+      }}>
+        <input
+          type="text"
+          value={searchInputValue}
+          onChange={handleSearchInputChange}
+          placeholder="Search for products, brands, or categories..."
+          className="search-input"
+          style={{
+            width: '100%',
+            padding: '0.75rem',
+            border: '1px solid #ddd',
+            borderRadius: '4px 0 0 4px',
+            fontSize: '0.9rem'
+          }}
+        />
+        {searchInputValue && (
+          <button
+            type="button"
+            onClick={handleClearSearch}
+            className="search-clear-button"
+            style={{
+              position: 'absolute',
+              right: '8px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'none',
+              border: 'none',
+              fontSize: '1.2rem',
+              cursor: 'pointer',
+              color: '#999'
+            }}
+          >
+            ×
+          </button>
+        )}
+      </div>
+      <button type="submit" className="search-button" style={{
+        padding: '0.75rem 1rem',
+        backgroundColor: '#ff6b00',
+        color: 'white',
+        border: '1px solid #ff6b00',
+        borderRadius: '0 4px 4px 0',
+        cursor: 'pointer',
+        fontSize: '0.9rem',
+        whiteSpace: 'nowrap'
+      }}>
+        Search
+      </button>
+    </form>
+  </div>
+  
+  <div style={{
+    flex: '0 0 auto', // Don't grow or shrink
+    fontSize: '1rem',
+    color: '#666',
+    backgroundColor: '#f8f9fa',
+    padding: '0.5rem 1rem',
+    borderRadius: '6px',
+    whiteSpace: 'nowrap' // Prevent wrapping
+  }}>
+    {isLoadingProducts ? 'Loading...' : `${filteredProducts.length} products`}
+  </div>
+</div>
           <div className="shop-content">
             <div className="shop">
               <button 

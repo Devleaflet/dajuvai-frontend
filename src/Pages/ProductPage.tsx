@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
+import { useNavigate, useParams } from "react-router-dom";
 
 interface Category {
   id: number;
@@ -21,19 +21,20 @@ interface Subcategory {
   name: string;
   category?: Category;
 }
-import "../Styles/ProductPage.css";
-import Navbar from "../Components/Navbar";
-import Footer from "../Components/Footer";
-import axiosInstance from "../api/axiosInstance";
-import { useCart } from "../context/CartContext";
-import { useAuth } from "../context/AuthContext";
-import { addToWishlist } from "../api/wishlist";
-import Preloader from "../Components/Preloader";
-import AuthModal from "../Components/AuthModal";
-import defaultProductImage from "../assets/logo.webp";
-import Reviews from "../Components/Reviews";
+
 import React from "react";
+import axiosInstance from "../api/axiosInstance";
+import { addToWishlist } from "../api/wishlist";
+import defaultProductImage from "../assets/logo.webp";
+import AuthModal from "../Components/AuthModal";
+import Footer from "../Components/Footer";
+import Navbar from "../Components/Navbar";
+import Preloader from "../Components/Preloader";
 import RecommendedProducts from "../Components/Product/RecommendedProducts";
+import Reviews from "../Components/Reviews";
+import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
+import "../Styles/ProductPage.css";
 
 const CACHE_KEY_REVIEWS = "productReviewsData";
 
@@ -55,7 +56,7 @@ interface ReviewsResponse {
     averageRating: number;
     reviews: Review[];
     total: number;
-    totalPages: number;
+    totalPages: umber;
   };
 }
 
@@ -65,9 +66,9 @@ const ProductPage = () => {
     if (!imgUrl) return "";
     return imgUrl.startsWith("http")
       ? imgUrl
-      : `${window.location.origin}${imgUrl.startsWith("/") ? "" : "/"
-      }${imgUrl}`;
+      : `${window.location.origin}${imgUrl.startsWith("/") ? "" : "/"}${imgUrl}`;
   };
+
   // Extract productId, categoryId, and subcategoryId from URL
   const {
     id: productId,
@@ -93,17 +94,17 @@ const ProductPage = () => {
   const [isZoomActive, setIsZoomActive] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
   const mainImageRef = useRef<HTMLDivElement>(null);
+  const quantityInputRef = useRef<HTMLInputElement>(null);
 
   // Amazon-like zoom configuration
   const ZOOM_LEVEL = 3.0; // Increased zoom level for better detail
-  const ZOOM_BOX_SIZE = 450; // Size of the zoomed-in box (increased from 350)
+  const ZOOM_BOX_SIZE = 450; // Size of the zoomed-in box
 
   const { handleCartOnAdd } = useCart();
   const { token, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // Fetch product data using React Query with the new API structure
-  // Fetch product data
   const { data: productData, isLoading: isProductLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
@@ -148,8 +149,7 @@ const ProductPage = () => {
                   // Ensure we have a full URL
                   const fullUrl = imgUrl.startsWith("http")
                     ? imgUrl
-                    : `${window.location.origin}${imgUrl.startsWith("/") ? "" : "/"
-                    }${imgUrl}`;
+                    : `${window.location.origin}${imgUrl.startsWith("/") ? "" : "/"}${imgUrl}`;
                   variantImgUrls.push(fullUrl);
                   if (!variantImages.includes(fullUrl)) {
                     variantImages.push(fullUrl);
@@ -194,7 +194,7 @@ const ProductPage = () => {
         });
       }
 
-      // Process product images (normalize to absolute URLs; handle strings/objects/JSON strings)
+      // Process product images
       const productImages = Array.isArray(apiProduct.productImages)
         ? apiProduct.productImages
           .map((img: any) => {
@@ -204,7 +204,7 @@ const ProductPage = () => {
                 // Could be a direct URL or a JSON string
                 try {
                   const parsed = JSON.parse(img);
-                  imgUrl = parsed.url || parsed.imageUrl || img;
+                    imgUrl = parsed.url || parsed.imageUrl || img;
                 } catch {
                   imgUrl = img; // already a URL string
                 }
@@ -270,7 +270,7 @@ const ProductPage = () => {
         }
       });
 
-      // Derive category/subcategory IDs robustly (support nested objects or top-level IDs)
+      // Derive category/subcategory IDs robustly
       const derivedCategoryId =
         apiProduct?.category?.id != null
           ? Number(apiProduct.category.id)
@@ -347,7 +347,6 @@ const ProductPage = () => {
       if (!response.data.success) {
         throw new Error("Failed to fetch reviews");
       }
-      console.log("Revies", response.data);
       return {
         reviews: response.data.data.reviews || [],
         averageRating: response.data.data.averageRating || 0,
@@ -372,92 +371,85 @@ const ProductPage = () => {
       ? String(product.subcategory.id)
       : undefined);
 
-  // Fetch recommended products using effective IDs (works even when URL lacks params)
-  const { data: recommendedProducts, isLoading: isLoadingRecommended } =
-    useQuery({
-      queryKey: [
-        "recommendedProducts",
-        effectiveCategoryId,
-        effectiveSubcategoryId,
-      ],
-      queryFn: async () => {
-        const fetchWithParams = async (p: URLSearchParams) => {
-          const url = p.toString()
-            ? `/api/categories/all/products?${p.toString()}`
-            : `/api/categories/all/products`;
-          const res = await axiosInstance.get(url);
-          const products = (res?.data?.data ?? []) as any[];
-          return products.map((product) => {
-            // Assuming the API returns review data like averageRating and ratingCount
-            // Adjust field names based on actual API response structure
-            const rating = product.avgRating || product.rating || 0; // Map to API field
-            const ratingCount = product.count || product.reviews?.length || 0; // Map to API field
+  // Fetch recommended products
+  const { data: recommendedProducts, isLoading: isLoadingRecommended } = useQuery({
+    queryKey: [
+      "recommendedProducts",
+      effectiveCategoryId,
+      effectiveSubcategoryId,
+    ],
+    queryFn: async () => {
+      const fetchWithParams = async (p: URLSearchParams) => {
+        const url = p.toString()
+          ? `/api/categories/all/products?${p.toString()}`
+          : `/api/categories/all/products`;
+        const res = await axiosInstance.get(url);
+        const products = (res?.data?.data ?? []) as any[];
+        return products.map((product) => {
+          const rating = product.avgRating || product.rating || 0;
+          const ratingCount = product.count || product.reviews?.length || 0;
+          return {
+            ...product,
+            rating,
+            ratingCount,
+          };
+        });
+      };
 
-            return {
-              ...product,
-              rating, // Add avgRating field
-              ratingCount, // Add count field
-            };
-          });
-        };
-
-        try {
-          // 1) Try most-specific: subcategory + category when both available
-          if (effectiveCategoryId && effectiveSubcategoryId) {
-            const params = new URLSearchParams();
-            params.append("categoryId", String(effectiveCategoryId));
-            params.append("subcategoryId", String(effectiveSubcategoryId));
-            let data = await fetchWithParams(params);
-            // If only the current product shows up or very few, broaden scope
-            if (!Array.isArray(data) || data.length <= 1) {
-              const catOnly = new URLSearchParams();
-              catOnly.append("categoryId", String(effectiveCategoryId));
-              data = await fetchWithParams(catOnly);
-              if (!Array.isArray(data) || data.length <= 1) {
-                data = await fetchWithParams(new URLSearchParams());
-              }
-            }
-            return data;
-          }
-
-          // 2) If only subcategory
-          if (effectiveSubcategoryId && !effectiveCategoryId) {
-            const params = new URLSearchParams();
-            params.append("subcategoryId", String(effectiveSubcategoryId));
-            let data = await fetchWithParams(params);
+      try {
+        // 1) Try most-specific: subcategory + category
+        if (effectiveCategoryId && effectiveSubcategoryId) {
+          const params = new URLSearchParams();
+          params.append("categoryId", String(effectiveCategoryId));
+          params.append("subcategoryId", String(effectiveSubcategoryId));
+          let data = await fetchWithParams(params);
+          if (!Array.isArray(data) || data.length <= 1) {
+            const catOnly = new URLSearchParams();
+            catOnly.append("categoryId", String(effectiveCategoryId));
+            data = await fetchWithParams(catOnly);
             if (!Array.isArray(data) || data.length <= 1) {
               data = await fetchWithParams(new URLSearchParams());
             }
-            return data;
           }
-
-          // 3) If only category
-          if (effectiveCategoryId && !effectiveSubcategoryId) {
-            const params = new URLSearchParams();
-            params.append("categoryId", String(effectiveCategoryId));
-            let data = await fetchWithParams(params);
-            if (!Array.isArray(data) || data.length <= 1) {
-              data = await fetchWithParams(new URLSearchParams());
-            }
-            return data;
-          }
-
-          // 4) Fallback: no filters available, fetch general list
-          return await fetchWithParams(new URLSearchParams());
-        } catch (error) {
-          console.error("Failed to fetch recommended products:", error);
-          return [];
+          return data;
         }
-      },
-      // Always enabled so we can show general recommendations as a fallback
-      enabled: true,
-      staleTime: 5 * 60 * 1000,
-    });
 
-  // Safely format variant attributes coming from different API shapes
+        // 2) If only subcategory
+        if (effectiveSubcategoryId && !effectiveCategoryId) {
+          const params = new URLSearchParams();
+          params.append("subcategoryId", String(effectiveSubcategoryId));
+          let data = await fetchWithParams(params);
+          if (!Array.isArray(data) || data.length <= 1) {
+            data = await fetchWithParams(new URLSearchParams());
+          }
+          return data;
+        }
+
+        // 3) If only category
+        if (effectiveCategoryId && !effectiveSubcategoryId) {
+          const params = new URLSearchParams();
+          params.append("categoryId", String(effectiveCategoryId));
+          let data = await fetchWithParams(params);
+          if (!Array.isArray(data) || data.length <= 1) {
+            data = await fetchWithParams(new URLSearchParams());
+          }
+          return data;
+        }
+
+        // 4) Fallback: no filters
+        return await fetchWithParams(new URLSearchParams());
+      } catch (error) {
+        console.error("Failed to fetch recommended products:", error);
+        return [];
+      }
+    },
+    enabled: true,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Safely format variant attributes
   const formatVariantAttributes = (attributes: any): string => {
     if (!attributes) return "";
-    // New shape: Array<{ type: string; values: { value: string }[] }>
     if (Array.isArray(attributes)) {
       return attributes
         .map((attr: any) => {
@@ -474,7 +466,6 @@ const ProductPage = () => {
         .filter(Boolean)
         .join(", ");
     }
-    // Legacy/object shape: { color: 'Red', size: 'M' } or values as arrays/objects
     if (typeof attributes === "object") {
       return Object.entries(attributes)
         .map(([key, value]) => {
@@ -486,7 +477,6 @@ const ProductPage = () => {
             return `${key}: ${vals.join(", ")}`;
           }
           if (typeof value === "object") {
-            // Try common fields; fallback to JSON
             const val = (value as any).value ?? (value as any).name ?? "";
             return val
               ? `${key}: ${String(val)}`
@@ -519,12 +509,12 @@ const ProductPage = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Find the subcategory from the category data if available
+  // Find the subcategory
   const subcategory = categoryData?.data?.subcategories?.find(
     (sub: any) => sub.id === Number(subcategoryId)
   );
 
-  // Fallback to product data if URL params are not available
+  // Fallback to product data
   const displayCategory = categoryData?.data || product?.category;
   const displaySubcategory = subcategory || product?.subcategory;
   const reviews = (reviewsData?.reviews || []).map((review: Review) => ({
@@ -543,7 +533,6 @@ const ProductPage = () => {
           ? product.colors[0].name
           : ""
       );
-      // Determine default variant and current images at mount
       const defaultVar =
         product.hasVariants && product.variants && product.variants.length > 0
           ? product.variants[0]
@@ -566,12 +555,11 @@ const ProductPage = () => {
     setSelectedImageIndex(index);
   };
 
-  // Get current images to display (variant images or product images)
+  // Get current images
   const getCurrentImages = () => {
     if (selectedVariant?.variantImgUrls?.length > 0) {
       return selectedVariant.variantImgUrls;
     }
-    // If no variant selected but product has variants with images, show first variant's images
     if (
       product?.hasVariants &&
       product?.variants?.[0]?.variantImgUrls?.length > 0
@@ -581,7 +569,7 @@ const ProductPage = () => {
     return product?.productImages || [];
   };
 
-  // Keep error-state array and selected image index in sync with current images
+  // Sync error-state array and selected image index
   useEffect(() => {
     const imgs = getCurrentImages();
     setImageError(new Array(imgs && imgs.length ? imgs.length : 1).fill(false));
@@ -590,7 +578,7 @@ const ProductPage = () => {
     }
   }, [selectedVariant, product]);
 
-  // Get current stock based on selected variant or product
+  // Get current stock
   const getCurrentStock = () => {
     if (selectedVariant) {
       return selectedVariant.stock || 0;
@@ -598,7 +586,7 @@ const ProductPage = () => {
     return product?.stock || 0;
   };
 
-  // Get current price based on selected variant or product
+  // Get current price
   const getCurrentPrice = () => {
     if (selectedVariant) {
       return selectedVariant.calculatedPrice || 0;
@@ -606,7 +594,7 @@ const ProductPage = () => {
     return parseFloat(product?.price || "0");
   };
 
-  // Get original price based on selected variant or product
+  // Get original price
   const getOriginalPrice = () => {
     if (selectedVariant) {
       return (
@@ -619,7 +607,6 @@ const ProductPage = () => {
   // Handle variant selection
   const handleVariantSelect = (variant: any) => {
     setSelectedVariant(variant);
-    // Reset to first image when variant changes
     if (variant.variantImgUrls && variant.variantImgUrls.length > 0) {
       setSelectedImageIndex(0);
     } else if (product?.productImages?.length > 0) {
@@ -627,7 +614,7 @@ const ProductPage = () => {
     }
   };
 
-  // Enhanced Amazon-style zoom handlers
+  // Zoom handlers
   const handleMouseEnter = () => {
     setIsZoomActive(true);
   };
@@ -643,11 +630,9 @@ const ProductPage = () => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // Constrain mouse position within image bounds
     const constrainedX = Math.max(0, Math.min(x, rect.width));
     const constrainedY = Math.max(0, Math.min(y, rect.height));
 
-    // Calculate percent position for transform-origin
     const percentX = (constrainedX / rect.width) * 100;
     const percentY = (constrainedY / rect.height) * 100;
     setZoomPosition({ x: percentX, y: percentY });
@@ -665,7 +650,6 @@ const ProductPage = () => {
       return;
     }
     if (!product) return;
-    // Pass selectedVariant id when available for variant-aware add-to-cart
     const variantId = selectedVariant?.id;
     handleCartOnAdd(product, quantity, variantId);
     showNotification("Product added to cart!");
@@ -701,7 +685,6 @@ const ProductPage = () => {
       return;
     }
     if (!product) return;
-    // Pass product info to checkout page via state
     navigate("/checkout", {
       state: {
         buyNow: true,
@@ -716,7 +699,8 @@ const ProductPage = () => {
 
   const handleQuantityChange = (increment: boolean) => {
     if (!product) return;
-    if (increment && quantity < getCurrentStock()) {
+    const currentStock = getCurrentStock();
+    if (increment && quantity < currentStock) {
       setQuantity((prev) => prev + 1);
     } else if (!increment && quantity > 1) {
       setQuantity((prev) => prev - 1);
@@ -727,22 +711,34 @@ const ProductPage = () => {
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const value = e.target.value;
-    // Allow empty input (for backspace/delete) or numeric input
+    const currentStock = getCurrentStock();
+
     if (value === "") {
       setQuantity(1);
       return;
     }
 
     const numValue = parseInt(value, 10);
-    if (!isNaN(numValue) && numValue > 0 && numValue <= getCurrentStock()) {
-      setQuantity(numValue);
+    if (!isNaN(numValue)) {
+      if (numValue <= 0) {
+        setQuantity(1);
+      } else if (numValue <= currentStock) {
+        setQuantity(numValue);
+      } else {
+        setQuantity(currentStock);
+      }
     }
   };
 
   const handleQuantityBlur = () => {
-    // Ensure quantity is at least 1
     if (quantity < 1) {
       setQuantity(1);
+    }
+  };
+
+  const handleQuantitySelect = () => {
+    if (quantityInputRef.current) {
+      quantityInputRef.current.select();
     }
   };
 
@@ -756,7 +752,6 @@ const ProductPage = () => {
 
   const handleReviewPageChange = (page: number) => {
     setCurrentReviewPage(page);
-    // Scroll to reviews section
     document
       .getElementById("reviews-section")
       ?.scrollIntoView({ behavior: "smooth" });
@@ -784,90 +779,47 @@ const ProductPage = () => {
       <main className="product-page">
         <div className="product-page__container">
           <div className="product-page__content">
-            <div
-              className="product-gallery"
-              style={{ display: "flex", flexDirection: "row", gap: "1.25rem" }}
-            >
-              <div className="product-gallery__images" style={{ flex: 1 }}>
+            <div className="product-gallery">
+              <div className="product-gallery__images">
                 <div
                   className="product-gallery__main-image"
                   ref={mainImageRef}
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                   onMouseMove={handleMouseMove}
-                  style={{
-                    position: "relative",
-                    overflow: "hidden",
-                    cursor: isZoomActive ? "crosshair" : "zoom-in",
-                  }}
                 >
                   <img
                     src={currentImage}
                     alt={product.name}
                     onError={() => handleImageError(selectedImageIndex)}
-                    style={{
-                      width: "100%",
-                      height: "auto",
-                      display: "block",
-                      userSelect: "none",
-                      transition: "transform 0.2s cubic-bezier(0.4,0,0.2,1)",
-                      transform: "scale(1)",
-                      transformOrigin: "center center",
-                    }}
                   />
                   {isZoomActive && (
                     <div
+                      className="product-gallery__zoom-box"
                       style={{
-                        position: "fixed",
-                        left: mainImageRef.current
-                          ? mainImageRef.current.getBoundingClientRect().right +
-                          32
-                          : "60%",
-                        top: mainImageRef.current
-                          ? mainImageRef.current.getBoundingClientRect().top
-                          : 100,
-                        width: `${ZOOM_BOX_SIZE}px`,
-                        height: `${ZOOM_BOX_SIZE}px`,
-                        border: "0.125rem solid #ddd",
-                        borderRadius: "0.5rem",
-                        overflow: "hidden",
-                        zIndex: 2000,
-                        boxShadow:
-                          "0 0.5rem 2rem rgba(0,0,0,0.15), 0 0.25rem 1rem rgba(0,0,0,0.1)",
-                        backgroundColor: "#fff",
                         backgroundImage: `url(${currentImage})`,
                         backgroundSize: `${ZOOM_LEVEL * 100}%`,
                         backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
-                        backgroundRepeat: "no-repeat",
-                        pointerEvents: "none",
-                        opacity: 1,
-                        transition: "opacity 0.2s ease-out",
                       }}
                     />
                   )}
                 </div>
-
                 {currentImages && currentImages.length > 1 && (
                   <div className="product-gallery__thumbnails">
                     {currentImages.map((image: string, index: number) => (
                       <button
                         key={index}
-                        className={`product-gallery__thumbnail ${selectedImageIndex === index
+                        className={`product-gallery__thumbnail ${
+                          selectedImageIndex === index
                             ? "product-gallery__thumbnail--active"
                             : ""
-                          }`}
-                        onClick={() => setSelectedImageIndex(index)}
+                        }`}
+                        onClick={() => handleImageSelect(index)}
                       >
                         <img
                           src={imageError[index] ? defaultProductImage : image}
                           alt={`Product view ${index + 1}`}
                           onError={() => handleImageError(index)}
-                          style={{
-                            width: "3.75rem",
-                            height: "3.75rem",
-                            objectFit: "cover",
-                            borderRadius: "0.25rem",
-                          }}
                         />
                       </button>
                     ))}
@@ -876,371 +828,155 @@ const ProductPage = () => {
               </div>
             </div>
 
-            <div
-              className="product-info"
-              style={{
-                flex: 1,
-                padding: "0 1.25rem",
-                maxWidth: "37.5rem",
-              }}
-            >
-              <h1
-                style={{
-                  fontSize: "2.5rem",
-                  fontWeight: "700",
-                  marginBottom: "1.25rem",
-                  color: "#1a1a1a",
-                  lineHeight: "1.3",
-                  letterSpacing: "-0.01875rem",
-                }}
-              >
-                {product.name}
-              </h1>
+            <div className="product-info">
+              <div className="product-info__header">
+                <h1 className="product-info__title">{product.name}</h1>
+                
+                <div className="product-price">
+                  <span className="product-price__current">Rs. {getCurrentPrice().toFixed(2)}</span>
+                  {getOriginalPrice() > getCurrentPrice() && (
+                    <>
+                      <span className="product-price__original">Rs. {getOriginalPrice().toFixed(2)}</span>
+                      <span className="product-price__savings">
+                        Save Rs. {(getOriginalPrice() - getCurrentPrice()).toFixed(2)}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
 
               {product.description && (
-                <div
-                  style={{
-                    marginBottom: "1.5625rem",
-                    fontSize: "1rem",
-                    lineHeight: "1.6",
-                    color: "#4a4a4a",
-                  }}
-                >
-                  <h3
-                    style={{
-                      fontSize: "1.125rem",
-                      fontWeight: "600",
-                      marginBottom: "0.625rem",
-                      color: "#333",
-                    }}
-                  >
-                    Description
-                  </h3>
-                  <p style={{ margin: 0 }}>{product.description}</p>
+                <div className="product-info__description">
+                  <h3>Description</h3>
+                  <p>{product.description}</p>
                 </div>
               )}
-
-              <div
-                style={{
-                  marginBottom: "0px",
-                  fontSize: "0.875rem",
-                  color: "#666",
-                  display: "flex",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "0.5rem",
-                }}
-              ></div>
 
               {product.hasVariants &&
                 product.variants &&
                 product.variants.length > 1 && (
-                  <div className="product-info__variants">
-                    <h4
-                      style={{
-                        marginBottom: "0.625rem",
-                        fontSize: "1rem",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Available Options:
-                    </h4>
-                    <div
-                      className="product-info__variant-options"
-                      style={{
-                        display: "flex",
-                        flexDirection: "row",
-                        gap: "0.625rem",
-                        marginBottom: "1.25rem",
-                      }}
-                    >
+                  <div className="product-options">
+                    <h4 className="product-options__label">Available Options:</h4>
+                    <div className="product-options__variants">
                       {product.variants.map((variant: any) => (
                         <div
                           key={variant.id}
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "0.3125rem",
-                            padding: "0.625rem",
-                            border:
-                              selectedVariant?.id === variant.id
-                                ? "0.0625rem solid #007bff"
-                                : "0.0625rem solid #ddd",
-                            borderRadius: "0.25rem",
-                            backgroundColor:
-                              variant.stock <= 0 ? "#f8f9fa" : "#fff",
-                            opacity: variant.stock <= 0 ? 0.7 : 1,
-                            cursor:
-                              variant.stock <= 0 ? "not-allowed" : "pointer",
-                          }}
+                          className={`product-options__variant ${
+                            selectedVariant?.id === variant.id
+                              ? "product-options__variant--active"
+                              : ""
+                          }`}
                           onClick={() =>
                             variant.stock > 0 && handleVariantSelect(variant)
                           }
                         >
-                          <div style={{ fontWeight: "500" }}>
-                            {formatVariantAttributes(variant.attributes)}
-                          </div>
-                          <div style={{ color: "#28a745", fontWeight: "600" }}>
-                            ${variant.calculatedPrice?.toFixed(2) || "0.00"}
-                          </div>
-                          {variant.stock <= 0 && (
-                            <div style={{ color: "#dc3545", fontSize: "0.875rem" }}>
-                              Out of Stock
+                          <div className="product-options__variant-info">
+                            <div>{formatVariantAttributes(variant.attributes)}</div>
+                            <div className="product-options__variant-sku">
+                              Rs. {variant.calculatedPrice?.toFixed(2) || "0.00"}
                             </div>
-                          )}
+                            {variant.stock <= 0 && (
+                              <div>Out of Stock</div>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-              <div
-                className="product-info__quantity"
-                style={{ margin: "1.25rem 0" }}
-              >
-                <h4
-                  style={{
-                    marginBottom: "0.625rem",
-                    fontSize: "1rem",
-                    fontWeight: "600",
-                  }}
-                >
-                  Quantity:
-                </h4>
-                <div
-                  className="product-info__quantity-selector"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.625rem",
-                    marginBottom: "0.625rem",
-                  }}
-                >
+              <div className="product-quantity">
+                <h4 className="product-quantity__label">Quantity:</h4>
+                <div className="product-quantity__selector">
                   <button
-                    style={{
-                      padding: "0.3125rem 0.9375rem",
-                      border: "0.0625rem solid #ddd",
-                      background: "#fff",
-                      borderRadius: "0.25rem",
-                      cursor: quantity <= 1 ? "not-allowed" : "pointer",
-                      opacity: quantity <= 1 ? 0.5 : 1,
-                    }}
+                    className="product-quantity__button"
                     onClick={() => handleQuantityChange(false)}
                     disabled={quantity <= 1}
                   >
                     -
                   </button>
                   <input
+                    ref={quantityInputRef}
                     type="number"
-                    min="1"
-                    max={getCurrentStock()}
+                    className="product-quantity__input"
                     value={quantity}
                     onChange={handleQuantityInputChange}
                     onBlur={handleQuantityBlur}
-                    style={{
-                      width: "4.375rem",
-                      textAlign: "center",
-                      padding: "0.3125rem",
-                      border: "0.0625rem solid #ddd",
-                      borderRadius: "0.25rem",
-                      fontWeight: "600",
-                      MozAppearance: "textfield",
-                      WebkitAppearance: "none",
-                      margin: "0 0.3125rem",
-                    }}
+                    onClick={handleQuantitySelect}
+                    onFocus={handleQuantitySelect}
                     onKeyDown={(e) => {
-                      // Prevent typing 'e', '+', '-', '.'
                       if (["e", "E", "+", "-", "."].includes(e.key)) {
                         e.preventDefault();
                       }
                     }}
+                    min="1"
+                    max={getCurrentStock()}
                   />
                   <button
-                    style={{
-                      padding: "0.3125rem 0.9375rem",
-                      border: "0.0625rem solid #ddd",
-                      background: "#fff",
-                      borderRadius: "0.25rem",
-                      cursor:
-                        quantity >= getCurrentStock()
-                          ? "not-allowed"
-                          : "pointer",
-                      opacity: quantity >= getCurrentStock() ? 0.5 : 1,
-                    }}
+                    className="product-quantity__button"
                     onClick={() => handleQuantityChange(true)}
                     disabled={quantity >= getCurrentStock()}
                   >
                     +
                   </button>
                 </div>
-                <div
-                  style={{
-                    color: getCurrentStock() <= 5 ? "#dc3545" : "#28a745",
-                    fontWeight: "500",
-                    marginBottom: "1.25rem",
-                  }}
-                >
-                  {getCurrentStock()} in stock
-                  {getCurrentStock() <= 5 && " - Order soon!"}
-                </div>
               </div>
 
-              {/* Vendor Information */}
-              <div
-                className="seller-info"
-                onClick={async () => {
-                  const vendorId = product.vendor?.id;
-                  if (!vendorId) {
-                    console.warn("Vendor ID not found in product data");
-                    return;
-                  }
-
-                  try {
-                    const response = await fetch(`/api/vendors/${vendorId}`, {
-                      method: "GET",
-                      headers: {
-                        "Content-Type": "application/json",
-                        // Add authentication token if required
-                        // 'Authorization': `Bearer ${yourAuthToken}`
-                      },
-                    });
-
-                    if (!response.ok) {
-                      throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    if (data.success) {
-                      // Navigate to the vendor page with the vendor ID
-                      window.location.href = `/vendor/${vendorId}`;
-                    } else {
-                      console.error(
-                        "Failed to fetch vendor details:",
-                        data.message
-                      );
-                    }
-                  } catch (error) {
-                    console.error("Error fetching vendor details:", error);
-                    // Fallback to the vendor page with just the ID if the API call fails
-                    window.location.href = `/vendor/${vendorId}`;
-                  }
-                }}
-                style={{
-                  margin: "0.9375rem 0",
-                  padding: "0.625rem 0",
-                  cursor: "pointer",
-                  borderBottom: "0.0625rem solid #eee",
-                }}
-              >
+              <div className="seller-info">
                 <div
                   className="seller-info__identity"
-                  style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}
+                  onClick={async () => {
+                    const vendorId = product.vendor?.id;
+                    if (!vendorId) {
+                      console.warn("Vendor ID not found in product data");
+                      return;
+                    }
+                    try {
+                      const response = await fetch(`/api/vendors/${vendorId}`, {
+                        method: "GET",
+                        headers: {
+                          "Content-Type": "application/json",
+                        },
+                      });
+                      if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                      }
+                      const data = await response.json();
+                      if (data.success) {
+                        window.location.href = `/vendor/${vendorId}`;
+                      } else {
+                        console.error(
+                          "Failed to fetch vendor details:",
+                          data.message
+                        );
+                      }
+                    } catch (error) {
+                      console.error("Error fetching vendor details:", error);
+                      window.location.href = `/vendor/${vendorId}`;
+                    }
+                  }}
                 >
-                  <div
-                    className="seller-info__icon"
-                    style={{
-                      width: "2.25rem",
-                      height: "2.25rem",
-                      borderRadius: "50%",
-                      backgroundColor: "#f0f0f0",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: "bold",
-                      color: "#666",
-                    }}
-                  >
-                    {product.vendor?.businessName?.charAt(0).toUpperCase() ||
-                      "U"}
+                  <div className="seller-info__icon">
+                    {product.vendor?.businessName?.charAt(0).toUpperCase() || "U"}
                   </div>
-                  <h4
-                    className="seller-info__name"
-                    style={{ margin: 0, fontSize: "0.9375rem" }}
-                  >
+                  <h4 className="seller-info__name">
                     Sold by: {product.vendor?.businessName || "Unknown Vendor"}
                   </h4>
                 </div>
               </div>
 
-              <div
-                className="product-info__actions"
-                style={{
-                  display: "flex",
-                  gap: "0.9375rem",
-                  marginTop: "1.25rem",
-                  width: "100%",
-                }}
-              >
+              <div className="product-actions">
                 <button
-                  className="product-info__add-to-cart"
+                  className="product-actions__button product-actions__button--primary"
                   onClick={handleAddToCart}
                   disabled={getCurrentStock() <= 0}
-                  style={
-                    {
-                      flex: 1,
-                      padding: "0.75rem 1.5rem",
-                      fontSize: "1rem",
-                      fontWeight: "600",
-                      color: "#fff",
-                      backgroundColor: "#ff6b35",
-                      border: "none",
-                      borderRadius: "0.25rem",
-                      cursor:
-                        getCurrentStock() <= 0 ? "not-allowed" : "pointer",
-                      transition: "all 0.2s ease",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "0.5rem",
-                      ...(getCurrentStock() > 0 && {
-                        ":hover": {
-                          backgroundColor: "#0069d9",
-                          transform: "translateY(-0.0625rem)",
-                          boxShadow: "0 0.25rem 0.5rem rgba(0, 0, 0, 0.1)",
-                        },
-                        ":active": {
-                          transform: "translateY(0)",
-                          boxShadow: "none",
-                        },
-                      }),
-                    } as React.CSSProperties
-                  }
                 >
-                  <span></span>
                   {getCurrentStock() > 0 ? "Add to Cart" : "Out of Stock"}
                 </button>
                 <button
-                  className="product-info__wishlist"
+                  className="product-actions__button product-actions__button--secondary"
                   onClick={handleAddToWishlist}
-                  style={
-                    {
-                      flex: 1,
-                      padding: "0.75rem 1.5rem",
-                      fontSize: "1rem",
-                      fontWeight: "600",
-                      color: "orange",
-                      backgroundColor: "transparent",
-                      border: "0.125rem solid orange",
-                      borderRadius: "0.25rem",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "0.5rem",
-                      ":hover": {
-                        backgroundColor: "#5a32a3",
-                        transform: "translateY(-0.0625rem)",
-                        boxShadow: "0 0.25rem 0.5rem rgba(0, 0, 0, 0.1)",
-                      },
-                      ":active": {
-                        transform: "translateY(0)",
-                        boxShadow: "none",
-                      },
-                    } as React.CSSProperties
-                  }
                 >
-                  <span></span>
                   Add to Wishlist
                 </button>
               </div>
@@ -1248,7 +984,6 @@ const ProductPage = () => {
           </div>
         </div>
 
-        {/* Reviews Section */}
         <div id="reviews-section" className="product-page__reviews">
           <Reviews
             productId={Number(id)}
@@ -1265,7 +1000,6 @@ const ProductPage = () => {
           />
         </div>
 
-        {/* Recommended Products */}
         <div className="product-page__recommended">
           <RecommendedProducts
             products={recommendedProducts ?? []}
@@ -1276,7 +1010,6 @@ const ProductPage = () => {
           />
         </div>
 
-        {/* Toast Notification */}
         {showToast && (
           <div className="toast">
             <div className="toast__content">
@@ -1286,7 +1019,6 @@ const ProductPage = () => {
           </div>
         )}
 
-        {/* Auth Modal */}
         {authModalOpen && (
           <AuthModal
             isOpen={authModalOpen}
