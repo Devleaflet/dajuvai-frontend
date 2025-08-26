@@ -2,7 +2,6 @@
   font-family: inherit;
   background-color: #F8F8F8;
   color: #333;
-  padding: 40px 0 0;
   border-top: 1px solid #eee;
   box-sizing: border-box;
   overflow: hidden;
@@ -19,15 +18,14 @@
 .footer__max-width-container {
   max-width: 1800px;
   margin: 0 auto;
-  width: 100%;
+  width: 85%;
   overflow: hidden;
 }
 
 .footer__container {
   width: 100%;
-  max-width: 95%;
   margin: 0 auto;
-  padding: 0 20px;
+
 }
 
 .footer__main-content {

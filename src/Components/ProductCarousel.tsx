@@ -6,7 +6,6 @@ import "../Styles/ProductCarousel.css";
 import type { Product } from "./Types/Product";
 import { IoIosArrowDroprightCircle, IoIosArrowDropleftCircle } from "react-icons/io";
 
-
 interface ProductCarouselProps {
   title: string;
   sectionId: number;
@@ -14,7 +13,7 @@ interface ProductCarouselProps {
   scrollAmount?: number;
   showTitle?: boolean;
   isLoading?: boolean;
-  isHomepage?: boolean; 
+  isHomepage?: boolean;
 }
 
 const ProductCarousel: React.FC<ProductCarouselProps> = ({
@@ -24,7 +23,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
   scrollAmount = 300,
   showTitle = true,
   isLoading = false,
-  isHomepage = false, // Default to false
+  isHomepage = false,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [showScrollButtons, setShowScrollButtons] = useState<boolean>(false);
@@ -32,7 +31,6 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
   const [startX, setStartX] = useState<number>(0);
   const [scrollLeft, setScrollLeft] = useState<number>(0);
 
-  // Limit products to 25 if on homepage
   const displayedProducts = isHomepage ? products.slice(0, 25) : products;
 
   useEffect(() => {
@@ -58,61 +56,71 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
     }
   };
 
-  const handleDragStart = (clientX: number): void => {
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>): void => {
     if (scrollContainerRef.current) {
       setIsDragging(true);
-      setStartX(clientX);
+      setStartX(e.touches[0].clientX);
       setScrollLeft(scrollContainerRef.current.scrollLeft);
     }
   };
 
-  const handleDragMove = (clientX: number): void => {
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>): void => {
     if (!isDragging || !scrollContainerRef.current) return;
-    const x = clientX - startX;
-    scrollContainerRef.current.scrollLeft = scrollLeft - x;
+    e.preventDefault();
+    const x = e.touches[0].clientX;
+    const walk = (startX - x) * 2;
+    scrollContainerRef.current.scrollLeft = scrollLeft + walk;
   };
 
-  const handleDragEnd = (): void => {
+  const handleTouchEnd = (): void => {
     setIsDragging(false);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.style.pointerEvents = "auto";
+    }
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
-    if (e.button !== 0) return; // Only left-click
-    handleDragStart(e.clientX);
+    if (e.button !== 0) return;
+    if (scrollContainerRef.current) {
+      setIsDragging(true);
+      setStartX(e.pageX - scrollContainerRef.current.offsetLeft);
+      setScrollLeft(scrollContainerRef.current.scrollLeft);
+      scrollContainerRef.current.style.cursor = "grabbing";
+      e.preventDefault();
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
-    handleDragMove(e.clientX);
+    if (!isDragging || !scrollContainerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startX) * 2;
+    scrollContainerRef.current.scrollLeft = scrollLeft - walk;
   };
 
   const handleMouseUp = (): void => {
-    handleDragEnd();
+    setIsDragging(false);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.style.cursor = "grab";
+      scrollContainerRef.current.style.pointerEvents = "auto";
+    }
   };
 
   const handleMouseLeave = (): void => {
     if (isDragging) {
-      handleDragEnd();
+      setIsDragging(false);
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.style.cursor = "grab";
+        scrollContainerRef.current.style.pointerEvents = "auto";
+      }
     }
   };
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>): void => {
-    handleDragStart(e.touches[0].clientX);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>): void => {
-    handleDragMove(e.touches[0].clientX);
-  };
-
-  const handleTouchEnd = (): void => {
-    handleDragEnd();
-  };
-
-  // Skeleton loading component
   const ProductCardSkeleton = () => (
     <div className="product-card product-card--skeleton">
       <div className="product-card__header">
         <div className="product-card__tag-skeleton skeleton"></div>
-        <div className="product-card__wishlist-skeleton skeleton"></div>
+        <div classodym className="product-card__wishlist-skeleton skeleton"></div>
       </div>
       <div className="product-card__image">
         <div className="product-card__image-skeleton skeleton"></div>
@@ -139,7 +147,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
   return (
     <section className="product-carousel">
       {showTitle && (
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", }}>
+        <div className="product-carousel__title-container">
           <h2 className="product-carousel__title">{title}</h2>
           <Link
             to={`/section/${sectionId}?sectionname=${title}`}
@@ -151,6 +159,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
               textDecoration: "none",
               fontSize: "0.95rem",
               transition: "all 0.2s ease",
+              flexShrink:"0"
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.backgroundColor = "#e05a00";
@@ -176,7 +185,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
         )}
 
         <div
-          className="product-carousel__products"
+          className={`product-carousel__products ${isDragging ? "product-carousel__products--dragging" : ""}`}
           ref={scrollContainerRef}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -185,7 +194,6 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          style={{ cursor: isDragging ? "grabbing" : "grab" }}
         >
           {isLoading
             ? Array.from({ length: 6 }).map((_, index) => <ProductCardSkeleton key={`skeleton-${index}`} />)

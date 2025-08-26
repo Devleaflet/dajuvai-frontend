@@ -1217,11 +1217,7 @@ const Shop: React.FC = () => {
                 )}
               </div>
 
-              <div className="shop-products" style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-                gap: '0.5rem'
-              }}>
+              <div className="shop-products">
                 {isLoadingProducts ? (
                   Array(8).fill(null).map((_, index) => (
                     <ProductCardSkeleton key={index} count={1} />

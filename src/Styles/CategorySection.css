@@ -220,6 +220,13 @@
   height: 1rem;
   width: 60px;
 }
+@media (max-width: 1200px) {
+  .category-section {
+    width: 95%;
+    margin:0 auto;
+    padding:0px
+  }
+}
 
 @media (max-width: 768px) {
   .category-section {

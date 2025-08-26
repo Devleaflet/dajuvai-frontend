@@ -369,6 +369,11 @@ const VendorStore: React.FC = () => {
                       placeholder="Search products..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
+                      style={
+                        {
+                          outline:"none"
+                        }
+                      }
                     />
                   </div>
                 </form>

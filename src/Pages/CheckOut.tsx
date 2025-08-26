@@ -311,24 +311,25 @@ const Checkout: React.FC = () => {
           setAlertMessage('Order placed successfully!');
           setShowAlert(true);
         }
-        setTimeout(() => {
-          if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod!=='ESEWA') {
-            navigate('/order-page', {
-              state: {
-                orderDetails: {
-                  orderId: result.data?.id || null,
-                  totalAmount: finalTotal,
-                },
-              },
-            });
-          } else {
-            // Force full page reload to clear cart visually and then redirect
-            window.location.reload();
-            setTimeout(() => {
-              window.location.href = '/user-profile';
-            }, 100);
-          }
-        }, 1500);
+       setTimeout(() => {
+  if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod !== 'ESEWA') {
+    navigate('/order-page', {
+      state: {
+        orderDetails: {
+          orderId: result.data?.id || null,
+          totalAmount: finalTotal,
+        },
+      },
+    });
+  } else {
+    // For Cash on Delivery and other payment methods, redirect to user profile orders tab
+    navigate('/user-profile', {
+      state: {
+        activeTab: 'orders'
+      }
+    });
+  }
+}, 1500);
       } else {
         setAlertMessage('Failed to place order. Please try again.');
         setShowAlert(true);
@@ -586,7 +587,7 @@ const getVendorInfo = (item: any) => {
               <label className="checkout-container__form-label">Full Name *</label>
               <input
                 type="text"
-                name="city"
+                name="fullName"
                 value={billingDetails.fullName}
                 onChange={handleInputChange}
                 placeholder="Enter your Full Name"

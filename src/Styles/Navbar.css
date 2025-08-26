@@ -678,7 +678,11 @@
         display: block;
     }
 }
-
+@media (max-width: 1200px) {
+    .navbar__container{
+        width: 95%;
+    }
+}
 /* Mobile dock */
 .navbar__mobile-dock {
     display: none;
@@ -746,7 +750,7 @@
     .navbar__desktop-links {
         width: auto;
         margin-top: 0;
-        margin-left: 20px;
+        margin-left: 40px;
     }
 
     .navbar__side-menu,

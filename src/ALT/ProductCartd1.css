@@ -1,17 +1,17 @@
-/* ProductCard1.css - Enhanced product card design */
+/* ProductCard1.css - Enhanced product card design with fixed heights */
 
 .product1__link-wrapper {
   text-decoration: none !important;
   color: inherit;
   display: block;
-  width: 100%;
+  max-width: 280px;
   margin-bottom: 0.1rem;
 }
 
 .product1 {
   width: 100%;
   max-width: 280px;
-  min-height: 400px;
+  height: 400px; /* Fixed height for desktop */
   border-radius: 10px;
   background-color: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -22,7 +22,7 @@
   pointer-events: auto;
   margin: 0 auto;
   transition: box-shadow 0.3s ease;
-  overflow: visible;
+  overflow: hidden; /* Changed from visible to hidden */
 }
 
 .product1:hover {
@@ -36,7 +36,7 @@
   margin-bottom: 10px;
   position: relative;
   z-index: 10;
-  min-height: 34px;
+  height: 34px; /* Fixed height */
   flex-shrink: 0;
 }
 
@@ -90,7 +90,7 @@
 
 .product1__image {
   position: relative;
-  height: 180px;
+  height: 180px; /* Fixed height */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -121,7 +121,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 5px;
-  min-height: 28px;
+  height: 28px; /* Fixed height */
   flex-shrink: 0;
 }
 
@@ -193,30 +193,29 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 110px;
+  min-height: 0; /* Allow shrinking */
+  overflow: hidden;
+  gap: 0; /* Remove any gap between elements */
 }
 
 .product1__title {
   font-size: 15px;
   font-weight: 600;
-  margin: 0 0 5px 0;
-  white-space: nowrap;
+  margin: 0 0 0px 0; /* Remove margin completely for closest spacing to price */
+  line-height: 1.4;
+  height: 42px; /* Set appropriate height for 2 lines */
+  color: #2d2d2d;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.3;
-  min-height: 20px;
-  color: #2d2d2d;
+  word-break: break-word;
+  hyphens: auto; /* Help with word breaking */
 }
 
 .product1__description {
-  font-size: 13px;
-  color: #757575;
-  margin: 0 0 8px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.3;
-  min-height: 18px;
+  display: none; /* Hide description in desktop view */
 }
 
 .product1__price {
@@ -226,7 +225,14 @@
   align-items: center;
   gap: 6px;
   flex-wrap: nowrap;
-  padding-top: 0;
+  padding-top: -5px; /* Negative padding to pull price up closer to title */
+  position: relative;
+  height: auto;
+  min-height: 20px;
+}
+
+.product1__price-row {
+  display: contents; /* This makes the div transparent in desktop view */
 }
 
 /* Price left, discount right */
@@ -254,37 +260,185 @@
   background: rgba(76, 175, 80, 0.1);
   padding: 2px 6px;
   border-radius: 6px;
-  /* Increased radius */
   white-space: nowrap;
   order: 3;
-  /* Always right side */
-  margin-left: auto;
+  position: absolute;
+  right: 0;
+  top: 0; /* Back to original position */
 }
 
-/* ===== Responsive ===== */
+/* ===== Mobile Responsive - UPDATED ===== */
 @media (max-width: 768px) {
+  .product1__link-wrapper {
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin-bottom: 0.5rem;
+  }
+
   .product1 {
     max-width: 100%;
-    width: 100%;
-    min-height: auto;
-    height: auto;
-    padding: 8px;
+    width: 100%; /* Ensure full width */
+    height: 420px; /* Fixed height for mobile */
+    padding: 12px;
     margin: 0;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .product1__header {
+    height: 36px; /* Fixed height */
+    margin-bottom: 8px;
+  }
+
+  .product1__wishlist-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .product1__wishlist-button svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .product1__image {
+    height: 200px; /* Fixed height */
+    margin-bottom: 12px;
+    border-radius: 10px;
+  }
+
+  .product1__rating {
+    height: 30px; /* Fixed height */
+    margin-bottom: 8px;
+  }
+
+  .product1__rating-info {
+    padding: 5px 12px;
+  }
+
+  .product1__rating-score {
+    font-size: 13px;
+  }
+
+  .product1__rating-count {
+    font-size: 13px;
+  }
+
+  .product1__cart-button {
+    width: 34px;
+    height: 34px;
+    padding: 7px;
+  }
+
+  .product1__cart-button svg,
+  .product1__cart-button .fa-cart-plus {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+  }
+
+  .product1__info {
+    padding-top: 8px;
+    min-height: 0;
   }
 
   .product1__title {
     font-size: 16px;
+    min-height: 44px; /* Use min-height instead of fixed height */
+    max-height: 44px; /* Maximum height for 2 lines with larger mobile font */
+    margin-bottom: 4px; /* Reduced margin for closer spacing */
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    hyphens: auto;
   }
 
   .product1__description {
+    display: block; /* Show description in mobile */
     font-size: 14px;
-    margin: 0 0 6px 0;
-    /* reduced gap before price */
-    min-height: 16px;
+    margin: 0 0 4px 0; /* Reduced margin for closer spacing */
+    height: 44px; /* Fixed height for 2 lines with larger font - increased */
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
   }
 
   .product1__price {
+    gap: 4px;
+    flex-direction: column;
+    align-items: flex-start; /* Left align in mobile */
+    position: relative;
+    height: auto;
+    min-height: 60px; /* Fixed min-height for price section */
+  }
+
+  .product1__price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
     gap: 8px;
+    order: 1;
+  }
+
+  .product1__current-price {
+    font-size: 18px;
+    order: 1;
+    margin: 0;
+  }
+
+  .product1__discount {
+    font-size: 13px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    order: 2;
+    margin: 0;
+    position: relative; /* Changed from absolute */
+    right: auto;
+    top: auto;
+  }
+
+  .product1__original-price {
+    font-size: 12px;
+    order: 2; /* Below the current price row */
+    margin: 0; /* Removed top margin to reduce space */
+    text-align: left; /* Left align */
+    width: 100%;
+    display: block;
+  }
+}
+
+@media (max-width: 576px) {
+  .product1 {
+    height: 400px; /* Fixed height */
+    padding: 10px;
+  }
+
+  .product1__image {
+    height: 180px;
+  }
+
+  .product1__title {
+    font-size: 15px;
+    min-height: 42px; /* Use min-height instead of fixed height */
+    max-height: 42px; /* Maximum height for 2 lines */
+    line-height: 1.4;
+    hyphens: auto;
+  }
+
+  .product1__description {
+    display: block; /* Show description in mobile */
+    font-size: 13px;
+    margin: 0 0 4px 0; /* Reduced margin for closer spacing */
+    height: 36px; /* Adjust for smaller font */
   }
 
   .product1__current-price {
@@ -292,30 +446,42 @@
   }
 
   .product1__original-price {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .product1__discount {
-    font-size: 11px;
-    /* reduced size for mobile */
-    padding: 2px 6px;
+    font-size: 12px;
     border-radius: 5px;
+  }
+
+  .product1__price {
+    min-height: 55px;
   }
 }
 
-@media (max-width: 576px) {
+@media (max-width: 480px) {
   .product1 {
-    padding: 6px;
+    height: 380px; /* Fixed height */
+    padding: 8px;
+  }
+
+  .product1__image {
+    height: 160px;
   }
 
   .product1__title {
-    font-size: 15px;
+    font-size: 14px;
+    min-height: 40px; /* Use min-height instead of fixed height */
+    max-height: 40px; /* Maximum height for 2 lines with smaller font */
+    line-height: 1.4;
+    hyphens: auto;
   }
 
   .product1__description {
-    font-size: 13px;
-    margin: 0 0 9px 0;
-    /* tighter */
+    display: block; /* Show description in mobile */
+    font-size: 12px;
+    margin: 0 0 4px 0; /* Reduced margin for closer spacing */
+    height: 34px; /* Adjust for smaller font */
   }
 
   .product1__current-price {
@@ -323,42 +489,16 @@
   }
 
   .product1__original-price {
+    font-size: 10px;
+  }
+
+  .product1__discount {
     font-size: 11px;
-  }
-
-  .product1__discount {
-    font-size: 10px;
-    border-radius: 5px;
-  }
-}
-
-@media (max-width: 480px) {
-  .product1 {
-    padding: 5px;
-  }
-
-  .product1__title {
-    font-size: 14px;
-  }
-
-  .product1__description {
-    font-size: 12px;
-    margin: 0 0 0px 0;
-    /* closer */
-  }
-
-  .product1__current-price {
-    font-size: 15px;
-  }
-
-  .product1__original-price {
-    font-size: 10px;
-  }
-
-  .product1__discount {
-    font-size: 10px;
-    /* smaller sale in tiny screens */
     padding: 2px 5px;
     border-radius: 4px;
+  }
+
+  .product1__price {
+    min-height: 50px;
   }
 }

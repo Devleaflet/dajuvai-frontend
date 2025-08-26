@@ -174,10 +174,12 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
           <h3 className="product1__title">{title}</h3>
           <p className="product1__description">{description}</p>
           <div className="product1__price">
-            {discount && discount > 0 && (
-              <span className="product1__discount">{discount}% off</span>
-            )}
-            <span className="product1__current-price">{displayPrice}</span>
+            <div className="product1__price-row">
+              <span className="product1__current-price">{displayPrice}</span>
+              {discount && discount > 0 && (
+                <span className="product1__discount">{discount}% off</span>
+              )}
+            </div>
             {showOriginalPrice && (
               <span className="product1__original-price">
                 {formattedOriginalPrice}
