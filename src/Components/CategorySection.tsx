@@ -201,14 +201,14 @@ const CategorySection: React.FC<CategorySectionProps> = ({
         <div key={`section-${maincategory.id}`} className="category-section__category">
           <div className="category-section__header">
             <h2 className="category-section__title">{maincategory.name}</h2>
-            {showViewAll && (
+            {/* {showViewAll && (
               <button
                 className="category-section__view-all"
                 onClick={() => handleViewAllClick(maincategory.id)}
               >
                 View All
               </button>
-            )}
+            )} */}
           </div>
           
           <div className="category-section__carousel-container">

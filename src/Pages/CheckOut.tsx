@@ -89,6 +89,7 @@ const Checkout: React.FC = () => {
   const navigate = useNavigate();
   
   const [billingDetails, setBillingDetails] = useState({
+    fullName:"",
     province: '',
     district: '',
     city: '',
@@ -581,6 +582,18 @@ const getVendorInfo = (item: any) => {
         <h2>Billing Details</h2>
         <div className="checkout-container__content">
           <div className="checkout-container__billing-details">
+             <div className="checkout-container__form-group">
+              <label className="checkout-container__form-label">Full Name *</label>
+              <input
+                type="text"
+                name="city"
+                value={billingDetails.fullName}
+                onChange={handleInputChange}
+                placeholder="Enter your Full Name"
+                className="checkout-container__form-group-input"
+                required
+              />
+            </div>
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Province</label>
               <select
@@ -932,7 +945,7 @@ const getVendorInfo = (item: any) => {
                   boxShadow:"none"
                 }}
               />
-              I have read and agree to the website terms and conditions *
+             <p>I have read and agree to the website terms and conditions *</p> 
             </label>
             <button
               className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''}`}
