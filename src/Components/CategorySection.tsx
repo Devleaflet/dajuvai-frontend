@@ -255,7 +255,6 @@ const CategorySection: React.FC<CategorySectionProps> = ({
                     />
                   </div>
                 </div>
-
                   <p className="category-section__subcategory-name">{item.name}</p>
               </div>
               ))}
