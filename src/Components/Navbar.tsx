@@ -814,6 +814,9 @@ const Navbar: React.FC = () => {
                   onKeyDown={handleKeyDown}
                   className="navbar__search-input"
                   autoComplete="off"
+                  style={{
+                      outline: 'none'
+                  }}
                 />
                 <button type="submit" className="navbar__search-button">
                   <FaSearch />

@@ -994,11 +994,7 @@ const Shop: React.FC = () => {
                     placeholder="Search for products, brands, or categories..."
                     className="search-input"
                     style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px 0 0 4px',
-                      fontSize: '0.9rem'
+                     outline:'none'
                     }}
                   />
                   {searchInputValue && (
