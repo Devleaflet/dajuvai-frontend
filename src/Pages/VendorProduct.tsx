@@ -5,8 +5,8 @@ import ProductList from '../Components/ProductList';
 import NewProductModal from '../Components/NewProductModalRedesigned';
 import EditProductModal from '../Components/Modal/EditProductModalRedesigned';
 import '../Styles/VendorProduct.css';
-import { Product as ApiProduct, NewProductFormData, ProductFormData } from '../types/product';
-import { fetchProducts, createProduct, updateProduct } from '../api/products';
+import { Product as ApiProduct, ProductFormData } from '../types/product';
+import { fetchProducts, updateProduct } from '../api/products';
 import { useVendorAuth } from '../context/VendorAuthContext';
 import Pagination from '../Components/Pagination';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -57,8 +57,8 @@ const VendorProduct: React.FC = () => {
   const [sortOption, setSortOption] = useState<string>("newest");
   // Reset to first page when sort option changes
   React.useEffect(() => {
-  setCurrentPage(1);
-}, [sortOption]);
+    setCurrentPage(1);
+  }, [sortOption]);
   // React Query for products
   const {
     data: productData,
@@ -186,7 +186,7 @@ const VendorProduct: React.FC = () => {
           isFeatured: false,
           isBestSeller: false,
           freeDelivery: false,
-          created_at:product.created_at
+          created_at: product.created_at
         };
 
         return mappedProduct;
@@ -202,27 +202,27 @@ const VendorProduct: React.FC = () => {
     enabled: !!authState.vendor?.id && !!authState.token
   });
   // Sort products based on sortOption
-const sortProducts = (products: Product[]) => {
-  const sorted = [...products];
-  
-  switch (sortOption) {
-    case 'newest':
-      console.log(sorted)
-      return sorted.sort((a:Product, b:Product) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-    case 'oldest':
-      return sorted.sort((a:Product, b:Product) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
-    case 'price-asc':
-      return sorted.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
-    case 'price-desc':
-      return sorted.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
-    case 'name-asc':
-      return sorted.sort((a, b) => a.name.localeCompare(b.name));
-    case 'name-desc':
-      return sorted.sort((a, b) => b.name.localeCompare(a.name));
-    default:
-      return sorted;
-  }
-};
+  const sortProducts = (products: Product[]) => {
+    const sorted = [...products];
+
+    switch (sortOption) {
+      case 'newest':
+        console.log(sorted)
+        return sorted.sort((a: Product, b: Product) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+      case 'oldest':
+        return sorted.sort((a: Product, b: Product) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+      case 'price-asc':
+        return sorted.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+      case 'price-desc':
+        return sorted.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+      case 'name-asc':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'name-desc':
+        return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      default:
+        return sorted;
+    }
+  };
   // Handle product creation success
   const handleProductSubmit = (success: boolean) => {
     if (success) {
@@ -553,25 +553,25 @@ const sortProducts = (products: Product[]) => {
   const displayProducts = products;
 
   // Apply client-side filtering only for search (this will require refetching from server)
-// Apply client-side filtering and sorting
-const filteredProducts = products.filter((product) => {
-  if (!searchQuery) return true;
-  const searchLower = searchQuery.toLowerCase();
-  return (
-    product.name?.toLowerCase().includes(searchLower) ||
-    product.description?.toLowerCase().includes(searchLower) ||
-    (typeof product.subcategory === 'object' && product.subcategory?.name?.toLowerCase().includes(searchLower)) ||
-    product.category?.toLowerCase().includes(searchLower)
-  );
-});
+  // Apply client-side filtering and sorting
+  const filteredProducts = products.filter((product) => {
+    if (!searchQuery) return true;
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      product.name?.toLowerCase().includes(searchLower) ||
+      product.description?.toLowerCase().includes(searchLower) ||
+      (typeof product.subcategory === 'object' && product.subcategory?.name?.toLowerCase().includes(searchLower)) ||
+      product.category?.toLowerCase().includes(searchLower)
+    );
+  });
 
-// Apply sorting to filtered products
-const sortedProducts = sortProducts(filteredProducts);
+  // Apply sorting to filtered products
+  const sortedProducts = sortProducts(filteredProducts);
 
-// If there's a search query, we need to handle pagination differently
-const isSearching = searchQuery.trim().length > 0;
-const finalProducts = isSearching ? sortedProducts : sortProducts(displayProducts);
-const finalTotal = isSearching ? sortedProducts.length : totalProducts;
+  // If there's a search query, we need to handle pagination differently
+  const isSearching = searchQuery.trim().length > 0;
+  const finalProducts = isSearching ? sortedProducts : sortProducts(displayProducts);
+  const finalTotal = isSearching ? sortedProducts.length : totalProducts;
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
   };

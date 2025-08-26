@@ -1,10 +1,12 @@
-/* RecommendedProducts.css - Enhanced Version with Perfect Alignment */
+
+
 .recommended-products {
   padding: 3rem 1rem;
   margin: 3rem 0;
   position: relative;
   width: 100%;
-  max-width: 1800px; /* Increased to accommodate 6 products */
+  max-width: 1800px;
+  /* Increased to accommodate 6 products */
   margin-left: auto;
   margin-right: auto;
 }
@@ -15,7 +17,8 @@
   padding-left: 0;
   padding-top: 0;
   position: relative;
-  padding-top: 20px; /* Space for the decorative line */
+  padding-top: 20px;
+  /* Space for the decorative line */
   width: 100%;
 }
 
@@ -55,22 +58,16 @@
   width: 100%;
 }
 
+
 .recommended-products__grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr); /* Fixed 6 columns */
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
   justify-content: flex-start;
   align-items: start;
   width: 100%;
 }
 
-.recommended-products__item {
-  display: flex;
-  justify-content: flex-start;
-  align-items: flex-start;
-  width: 100%;
-  height: auto;
-}
 
 /* Ensure product cards are properly contained */
 .recommended-products__item .product1 {
@@ -127,9 +124,11 @@
   0% {
     background-position: 0% 0%;
   }
+
   50% {
     background-position: 100% 100%;
   }
+
   100% {
     background-position: 0% 0%;
   }
@@ -170,13 +169,15 @@
 /* Responsive adjustments */
 @media (max-width: 1800px) {
   .recommended-products__grid {
-    grid-template-columns: repeat(5, 1fr); /* 5 columns for medium-large screens */
+    grid-template-columns: repeat(5, 1fr);
+    /* 5 columns for medium-large screens */
   }
 }
 
 @media (max-width: 1500px) {
   .recommended-products__grid {
-    grid-template-columns: repeat(4, 1fr); /* 4 columns for medium screens */
+    grid-template-columns: repeat(4, 1fr);
+    /* 4 columns for medium screens */
   }
 }
 
@@ -186,9 +187,10 @@
     padding-left: 1rem;
     padding-right: 1rem;
   }
-  
+
   .recommended-products__grid {
-    grid-template-columns: repeat(3, 1fr); /* 3 columns for smaller screens */
+    grid-template-columns: repeat(3, 1fr);
+    /* 3 columns for smaller screens */
     gap: 1.5rem;
   }
 }
@@ -202,7 +204,8 @@
 
 @media (max-width: 900px) {
   .recommended-products__grid {
-    grid-template-columns: repeat(2, 1fr); /* 2 columns for tablets */
+    grid-template-columns: repeat(2, 1fr);
+    /* 2 columns for tablets */
   }
 }
 
@@ -211,30 +214,30 @@
     padding: 2rem 1rem;
     margin: 2rem 0;
   }
-  
+
   .recommended-products__header {
     margin-bottom: 2.5rem;
     padding-top: 18px;
   }
-  
+
   .recommended-products__header::before {
     width: 60px;
     height: 3px;
   }
-  
+
   .recommended-products__title {
     font-size: 1.75rem;
   }
-  
+
   .recommended-products__subtitle {
     font-size: 1rem;
   }
-  
+
   .recommended-products__grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 1.25rem;
   }
-  
+
   .recommended-empty {
     padding: 3rem 1.5rem;
     margin: 2rem 1rem;
@@ -246,15 +249,15 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
   }
-  
+
   .skeleton-image {
     height: 160px;
   }
-  
+
   .recommended-empty__icon {
     font-size: 3rem;
   }
-  
+
   .recommended-empty__text {
     font-size: 1.125rem;
   }
@@ -263,32 +266,34 @@
 @media (max-width: 480px) {
   .recommended-products {
     padding: 2rem 0.75rem;
+    width: 95%;
   }
-  
+
   .recommended-products__header {
     margin-bottom: 2rem;
     padding-top: 15px;
   }
-  
+
   .recommended-products__header::before {
     width: 50px;
     height: 2px;
   }
-  
+
   .recommended-products__title {
     font-size: 1.5rem;
     margin-bottom: 0.5rem;
   }
-  
+
   .recommended-products__subtitle {
     font-size: 0.95rem;
   }
-  
+
   .recommended-products__grid {
-    grid-template-columns: 1fr; /* 1 column for mobile */
+    grid-template-columns: 1fr;
+    /* 1 column for mobile */
     gap: 0.75rem;
   }
-  
+
   .recommended-empty {
     padding: 2.5rem 1rem;
     margin: 2rem 0.75rem;
@@ -296,10 +301,14 @@
 }
 
 @media (max-width: 360px) {
+  .recommended-products__item {
+    width: 95%;
+  }
+
   .recommended-products__grid {
     grid-template-columns: 1fr;
   }
-  
+
   .recommended-products__header {
     padding-top: 12px;
   }

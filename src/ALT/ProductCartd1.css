@@ -4,13 +4,13 @@
   text-decoration: none !important;
   color: inherit;
   display: block;
-  max-width: 280px;
+  /* max-width: 280px; */
   margin-bottom: 0.1rem;
 }
 
 .product1 {
   width: 100%;
-  max-width: 280px;
+  /* max-width: 280px; */
   height: 400px; /* Fixed height for desktop */
   border-radius: 10px;
   background-color: #fff;
@@ -189,19 +189,18 @@
 }
 
 .product1__info {
-  padding-top: 5px;
+  padding-top: 15px;
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0; /* Allow shrinking */
   overflow: hidden;
-  gap: 0; /* Remove any gap between elements */
 }
 
 .product1__title {
   font-size: 15px;
   font-weight: 600;
-  margin: 0 0 0px 0; /* Remove margin completely for closest spacing to price */
+  margin: 0 0 0 0; /* Remove margin completely for closest spacing to price */
   line-height: 1.4;
   height: 42px; /* Set appropriate height for 2 lines */
   color: #2d2d2d;
@@ -219,8 +218,8 @@
 }
 
 .product1__price {
-  margin-top: auto;
-  margin-bottom: 0;
+  /* margin-top: auto; */
+  /* margin-bottom: 0; */
   display: flex;
   align-items: center;
   gap: 6px;
@@ -470,22 +469,16 @@
   }
 
   .product1__title {
-    font-size: 14px;
+    font-size: 13px;
     min-height: 40px; /* Use min-height instead of fixed height */
     max-height: 40px; /* Maximum height for 2 lines with smaller font */
     line-height: 1.4;
     hyphens: auto;
   }
 
-  .product1__description {
-    display: block; /* Show description in mobile */
-    font-size: 12px;
-    margin: 0 0 4px 0; /* Reduced margin for closer spacing */
-    height: 34px; /* Adjust for smaller font */
-  }
 
   .product1__current-price {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .product1__original-price {
@@ -497,8 +490,8 @@
     padding: 2px 5px;
     border-radius: 4px;
   }
-
-  .product1__price {
+ .product1__price {
     min-height: 50px;
   }
+ 
 }

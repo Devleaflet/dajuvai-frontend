@@ -1,4 +1,4 @@
-import  { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../Components/Navbar";
 import CategorySlider from "../Components/CategorySlider";
@@ -22,7 +22,7 @@ const Home = () => {
     if (searchParam) {
       const decodedSearch = decodeURIComponent(searchParam);
       console.log('🏠 Home page received search parameter:', decodedSearch);
-      
+
       // Set the search query in the Navbar by dispatching a custom event
       window.dispatchEvent(new CustomEvent('setNavbarSearch', {
         detail: { searchQuery: decodedSearch }
@@ -94,19 +94,13 @@ const Home = () => {
   }
 
   return (
-    <div
-      style={
-        {
-          border:"1px solid black"
-        }
-      }
-    >
+    <div>
       <Navbar />
       <HeroSlider />
       <CategorySlider />
       <HomepageSections />
       <SpecialOffers />
-      <CategorySection/>
+      <CategorySection />
       <Footer />
     </div>
   );

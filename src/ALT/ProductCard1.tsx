@@ -1,3 +1,20 @@
+
+
+
+
+/* ==========================================================================
+   PRODUCT CARD (ProductCard1)
+   --------------------------------------------------------------------------
+   
+   Shared component used in:
+   - Shop Page
+   - Vendor Product Page
+   - Recommend product 
+   ========================================================================== */
+
+
+
+
 import React, { useState } from "react";
 import { toast } from "react-hot-toast";
 import { FaCartPlus } from "react-icons/fa";
@@ -25,7 +42,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 
   const {
     title,
-    description,
+    // description,
     price,
     originalPrice,
     discount,
@@ -172,11 +189,11 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
         </div>
         <div className="product1__info">
           <h3 className="product1__title">{title}</h3>
-          <p className="product1__description">{description}</p>
+          {/* <p className="product1__description">{description}</p> */}
           <div className="product1__price">
             <div className="product1__price-row">
               <span className="product1__current-price">{displayPrice}</span>
-              {discount && discount > 0 && (
+              {discount && Number(discount) > 0 && (
                 <span className="product1__discount">{discount}% off</span>
               )}
             </div>
