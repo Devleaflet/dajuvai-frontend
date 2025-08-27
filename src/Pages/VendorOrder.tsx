@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Sidebar } from "../Components/Sidebar";
-import Header from "../Components/Header";
 import Pagination from "../Components/Pagination";
 import OrderList from "../Components/OrderList";
 import ViewModal from "../Components/Modal/ViewModal";
@@ -11,7 +10,8 @@ import VendorDashboardService from "../services/vendorDashboardService";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import { Order, OrderDetail } from "../Components/Types/Order";
 import { useQuery } from '@tanstack/react-query';
-import logo from '../assets/logo.webp';
+
+import VendorHeader from "../Components/VendorHeader";
 
 const VendorOrder: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("All Orders");
@@ -45,7 +45,6 @@ const VendorOrder: React.FC = () => {
       const dashboardService = VendorDashboardService.getInstance();
       const response = await dashboardService.getVendorOrdersNew(authState.token);
       const apiOrders = response.data;
-      // Map API response to Order interface
       return apiOrders.map((order: OrderDetail) => {
         const firstItem = order.orderItems[0];
         return {
@@ -200,10 +199,11 @@ const VendorOrder: React.FC = () => {
       <div className="vendor-dash-container">
         <Sidebar />
         <div className={`dashboard ${isMobile ? "dashboard--mobile" : ""}`}>
-          <header className="dashboard__header">
-            <div className="skeleton" style={{ width: "150px", height: "24px" }}></div>
-          </header>
-          <main className="dashboard__main" style={{ paddingBottom: isMobile ? `${docketHeight + 24}px` : "24px" }}>
+          <VendorHeader title="Order Management" onSearch={handleSearch} showSearch={true} />
+          <main
+            className="dashboard__main"
+            style={{ paddingBottom: isMobile ? `${docketHeight + 24}px` : "24px" }}
+          >
             <div className="vendor-order__tabs">
               {[...Array(4)].map((_, index) => (
                 <div key={index} className="skeleton" style={{ width: "100px", height: "24px", margin: "0 8px" }}></div>
@@ -268,7 +268,7 @@ const VendorOrder: React.FC = () => {
       <div className="vendor-dash-container">
         <Sidebar />
         <div className={`dashboard ${isMobile ? "dashboard--mobile" : ""}`}>
-          <Header onSearch={handleSearch} />
+          <VendorHeader title="Order Management" onSearch={handleSearch} showSearch={false} />
           <main
             className="dashboard__main"
             style={{ paddingBottom: isMobile ? `${docketHeight + 24}px` : "24px" }}
@@ -333,4 +333,4 @@ const VendorOrder: React.FC = () => {
   );
 };
 
-export default VendorOrder; 
+export default VendorOrder;

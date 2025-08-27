@@ -25,8 +25,8 @@ const fetchSpecialDeals = async (): Promise<Offer[]> => {
   // Filter for active SPECIAL_DEALS banners that are not expired and map to Offer interface
   const colors = ['#FFF3EA', '#F4F2ED', '#131313', '#FCE9E4', '#E2FFE2', '#E0F2FF'];
   return data.data
-    .filter((banner: Offer & { type: string; status: string; startDate?: string; endDate?: string }) => 
-      banner.type === 'SPECIAL_DEALS' && 
+    .filter((banner: Offer & { type: string; status: string; startDate?: string; endDate?: string }) =>
+      banner.type === 'SPECIAL_DEALS' &&
       banner.status === 'ACTIVE' &&
       (!banner.startDate || new Date(banner.startDate) <= new Date()) &&
       (!banner.endDate || new Date(banner.endDate) >= new Date())
@@ -57,9 +57,12 @@ const SpecialOffers: React.FC = () => {
   if (error) return <div className="special-offers-error">Error loading offers: {error.message}</div>;
   if (offers.length === 0) return (
     <div className="special-offers-fallback">
-      <p>No special offers available at the moment.</p>
+      <p className="text-gray-600 text-center text-sm">
+        🎉 Stay tuned! Exciting special offers will be available soon.
+      </p>
     </div>
   );
+
 
   return (
     <div className="special-offers-container">

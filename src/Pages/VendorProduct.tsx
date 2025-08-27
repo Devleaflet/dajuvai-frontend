@@ -1,12 +1,12 @@
-import React, { useState} from 'react';
+import React, { useState } from 'react';
 import { Sidebar } from '../Components/Sidebar';
 import Header from '../Components/Header';
 import ProductList from '../Components/ProductList';
-import ProductModal from '../Components/ProductModal';
-import EditProductModal from '../Components/Modal/EditProductModal';
+import NewProductModal from '../Components/NewProductModalRedesigned';
+import EditProductModal from '../Components/Modal/EditProductModalRedesigned';
 import '../Styles/VendorProduct.css';
 import { Product as ApiProduct, ProductFormData } from '../types/product';
-import { createProduct, fetchProducts, updateProduct } from '../api/products';
+import { fetchProducts, updateProduct } from '../api/products';
 import { useVendorAuth } from '../context/VendorAuthContext';
 import Pagination from '../Components/Pagination';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -29,12 +29,12 @@ const ProductListSkeleton: React.FC = () => {
       <div className="vendor-product__skeleton-table">
         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
           <div key={`row-${i}`} className="vendor-product__skeleton-row">
-            <div className="vendor-product__skeleton-cell shimmer" style={{width:'2.5rem',height:'2.5rem',borderRadius:'0.5rem'}}></div>
-            <div className="vendor-product__skeleton-cell shimmer" style={{width:'8rem',height:'1.1rem'}}></div>
-            <div className="vendor-product__skeleton-cell shimmer" style={{width:'5rem',height:'1.1rem'}}></div>
-            <div className="vendor-product__skeleton-cell shimmer" style={{width:'4rem',height:'1.1rem'}}></div>
-            <div className="vendor-product__skeleton-cell shimmer" style={{width:'3rem',height:'1.1rem'}}></div>
-            <div className="vendor-product__skeleton-cell shimmer" style={{width:'2.5rem',height:'1.1rem'}}></div>
+            <div className="vendor-product__skeleton-cell shimmer" style={{ width: '2.5rem', height: '2.5rem', borderRadius: '0.5rem' }}></div>
+            <div className="vendor-product__skeleton-cell shimmer" style={{ width: '8rem', height: '1.1rem' }}></div>
+            <div className="vendor-product__skeleton-cell shimmer" style={{ width: '5rem', height: '1.1rem' }}></div>
+            <div className="vendor-product__skeleton-cell shimmer" style={{ width: '4rem', height: '1.1rem' }}></div>
+            <div className="vendor-product__skeleton-cell shimmer" style={{ width: '3rem', height: '1.1rem' }}></div>
+            <div className="vendor-product__skeleton-cell shimmer" style={{ width: '2.5rem', height: '1.1rem' }}></div>
           </div>
         ))}
       </div>
@@ -55,7 +55,10 @@ const VendorProduct: React.FC = () => {
   // Add search and sort state
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortOption, setSortOption] = useState<string>("newest");
-
+  // Reset to first page when sort option changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [sortOption]);
   // React Query for products
   const {
     data: productData,
@@ -86,11 +89,30 @@ const VendorProduct: React.FC = () => {
       console.log('Response data:', response.data);
       
       if (!response.data || typeof response.data !== 'object') throw new Error('Invalid response');
-      if (!response.data.success || !response.data.data || !Array.isArray(response.data.data.products)) throw new Error('Invalid response format');
-      const products: Product[] = response.data.data.products.map((product: ApiProduct): Product => {
-        const images = Array.isArray(product.productImages)
+      if (!response.data.success || !response.data.data || !Array.isArray(response.data.data.product)) throw new Error('Invalid response format');
+      const products: Product[] = response.data.data.product.map((product: ApiProduct): Product => {
+        // Extract images from both productImages and variant images
+        const productImages = Array.isArray(product.productImages)
           ? product.productImages.map((img: string | { url?: string }) => (typeof img === 'string' ? img : img.url || ''))
           : [];
+
+        // Extract images from variants if product has variants
+        const variantImages: string[] = [];
+        if ((product as any).hasVariants && (product as any).variants && Array.isArray((product as any).variants)) {
+          (product as any).variants.forEach((variant: any) => {
+            if (variant.variantImages && Array.isArray(variant.variantImages)) {
+              variant.variantImages.forEach((img: string | { url?: string }) => {
+                const imageUrl = typeof img === 'string' ? img : img.url || '';
+                if (imageUrl && !variantImages.includes(imageUrl)) {
+                  variantImages.push(imageUrl);
+                }
+              });
+            }
+          });
+        }
+
+        // Combine all images (product images first, then variant images)
+        const images = [...productImages, ...variantImages].filter(Boolean);
         // Calculate discounted price
         let basePrice = 0;
         if (typeof product.basePrice === 'number') basePrice = product.basePrice;
@@ -112,11 +134,34 @@ const VendorProduct: React.FC = () => {
             originalPrice = basePrice.toFixed(2);
           }
         }
-        // Only use allowed status values
+
+
+
+
+        const normalizedVariants = Array.isArray((product as any).variants)
+          ? (product as any).variants.map((v: any) => {
+            const rawBase =
+              (typeof v?.price !== 'undefined' ? v.price :
+                typeof v?.basePrice !== 'undefined' ? v.basePrice :
+                  typeof v?.originalPrice !== 'undefined' ? v.originalPrice :
+                    typeof product.basePrice !== 'undefined' ? product.basePrice :
+                      (product as any).price);
+            const baseNum = typeof rawBase === 'string' ? parseFloat(rawBase) : (Number(rawBase) || 0);
+            let calc = baseNum;
+            if (discount > 0 && (discountType === 'PERCENTAGE' || discountType === 'FLAT' || discountType === 'FIXED')) {
+              if (discountType === 'PERCENTAGE') {
+                calc = baseNum - (baseNum * discount / 100);
+              } else {
+                calc = baseNum - discount;
+              }
+            }
+            return { ...v, calculatedPrice: calc };
+          })
+          : undefined;
+
         let status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK' = 'AVAILABLE';
         if (product.status === 'OUT_OF_STOCK') status = 'OUT_OF_STOCK';
         else if (product.status === 'LOW_STOCK') status = 'LOW_STOCK';
-        // Explicitly create the object with all required properties
         const mappedProduct: Product = {
           id: product.id,
           name: product.name,
@@ -131,6 +176,7 @@ const VendorProduct: React.FC = () => {
           size: product.size || [],
           status: status,
           productImages: images,
+          variants: normalizedVariants,
           subcategory: product.subcategory,
           vendor: product.vendor?.businessName || '',
           category: product.subcategory?.name || '',
@@ -148,80 +194,162 @@ const VendorProduct: React.FC = () => {
           isFeatured: false,
           isBestSeller: false,
           freeDelivery: false,
+          created_at: product.created_at
         };
+
         return mappedProduct;
       });
 
+
       return {
         products,
-        total: response.data.data.total || products.length
-      } as { products: Product[]; total: number };
+        total: response.data.data.total || products.length,
+        serverTotal: response.data.data.total || products.length
+      } as { products: Product[]; total: number; serverTotal: number };
     },
     enabled: !!authState.vendor?.id && !!authState.token
   });
+  // Sort products based on sortOption
+  const sortProducts = (products: Product[]) => {
+    const sorted = [...products];
 
-  // Mutation for adding a product
+    switch (sortOption) {
+      case 'newest':
+        console.log(sorted)
+        return sorted.sort((a: Product, b: Product) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+      case 'oldest':
+        return sorted.sort((a: Product, b: Product) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+      case 'price-asc':
+        return sorted.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+      case 'price-desc':
+        return sorted.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+      case 'name-asc':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'name-desc':
+        return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      default:
+        return sorted;
+    }
+  };
+  // Handle product creation success
+  const handleProductSubmit = (success: boolean) => {
+    if (success) {
+      queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
+      toast.success('Product created successfully!');
+    }
+  };
+
+  // Mutation for adding a product (keeping for compatibility)
   const addProductMutation = useMutation({
     mutationFn: async (productData: ProductFormData) => {
+      console.log('=== VENDOR PRODUCT CREATION START ===');
       console.log('VendorProduct: token exists:', !!authState.token);
       console.log('VendorProduct: vendor exists:', !!authState.vendor);
       console.log('VendorProduct: vendor ID:', authState.vendor?.id);
       console.log('VendorProduct: vendor verified:', authState.vendor?.isVerified);
-      
+      console.log('VendorProduct: Product data received:', productData);
+
       if (!authState.token) {
         throw new Error('No authentication token found');
       }
-      
+
       if (!authState.vendor) {
         throw new Error('No vendor data found');
       }
 
       // Convert ProductFormData to FormData
       const formData = new FormData();
-      formData.append("name", String(productData.name));
-      formData.append("description", String(productData.description));
-      formData.append("basePrice", productData.basePrice != null ? String(productData.basePrice) : "0");
-      formData.append("stock", productData.stock.toString());
 
-      formData.append("vendorId", String(authState.vendor.id));
-      
+      // Required fields
+      formData.append("name", String(productData.name));
+      formData.append("subcategoryId", String(productData.subcategoryId));
+      formData.append("hasVariants", String(productData.hasVariants));
+
+      // Optional fields
+      if (productData.description) {
+        formData.append("description", String(productData.description));
+      }
+
+      // Handle variant vs non-variant products
+      if (!productData.hasVariants) {
+        console.log('VendorProduct: Creating non-variant product');
+
+        // Non-variant product fields
+        if (productData.basePrice != null) {
+          formData.append("basePrice", String(productData.basePrice));
+        }
+        if (productData.stock != null) {
+          formData.append("stock", String(productData.stock));
+        }
+        if (productData.status) {
+          formData.append("status", String(productData.status));
+        }
+
+        // Non-variant product images
+        if (productData.productImages && Array.isArray(productData.productImages)) {
+          productData.productImages.forEach((image, index) => {
+            if (index < 5 && image instanceof File) {
+              formData.append("productImages", image);
+            }
+          });
+        }
+      } else {
+        console.log('VendorProduct: Creating variant product');
+
+        // Variant product - variants data
+        if (productData.variants && Array.isArray(productData.variants)) {
+          console.log('VendorProduct: Adding variants data:', productData.variants);
+          formData.append("variants", JSON.stringify(productData.variants));
+
+          // Handle variant images
+          productData.variants.forEach((variant, variantIndex) => {
+            console.log(`VendorProduct: Processing variant ${variantIndex + 1} (${variant.sku}):`, variant);
+            if (variant.images && Array.isArray(variant.images)) {
+              console.log(`VendorProduct: Variant ${variant.sku} has ${variant.images.length} images`);
+              variant.images.forEach((image, imageIndex) => {
+                console.log(`VendorProduct: Processing image ${imageIndex + 1} for variant ${variant.sku}:`, image);
+                if (image instanceof File) {
+                  const imageKey = `variantImages${variantIndex + 1}`;
+                  formData.append(imageKey, image);
+                  console.log(`VendorProduct: Added image to FormData with key: ${imageKey}`);
+                } else {
+                  console.warn(`VendorProduct: Image ${imageIndex + 1} for variant ${variant.sku} is not a File:`, image);
+                }
+              });
+            } else {
+              console.error(`VendorProduct: Variant ${variant.sku} has no images or images is not an array:`, variant.images);
+            }
+          });
+        }
+      }
+
+      // Common optional fields
       if (productData.discount && Number(productData.discount) > 0) {
         formData.append("discount", Number(productData.discount).toFixed(2));
-        formData.append("discountType", String(productData.discountType));
+        formData.append("discountType", String(productData.discountType || 'PERCENTAGE'));
       }
-      if (Array.isArray(productData.size) && productData.size.length > 0) {
-        formData.append("size", productData.size.join(","));
-      }
-      if (productData.status) formData.append("status", String(productData.status));
-      if (productData.brand_id != null) {
-        formData.append("brand_id", String(productData.brand_id));
-      }
+
       if (productData.dealId != null) {
         formData.append("dealId", String(productData.dealId));
       }
+
       if (productData.bannerId != null) {
         formData.append("bannerId", String(productData.bannerId));
       }
-      if (productData.productImages && Array.isArray(productData.productImages)) {
-        productData.productImages.forEach((image, index) => {
-          if (index < 5 && image instanceof File) {
-            formData.append("productImages", image);
-          }
-        });
-      }
-      if (productData.inventory && Array.isArray(productData.inventory)) {
-        formData.append("inventory", JSON.stringify(productData.inventory));
+
+      if (productData.brandId != null) {
+        formData.append("brandId", String(productData.brandId));
       }
 
       // Log formData contents for debugging
-      console.log('VendorProduct: FormData vendorId:', formData.get('vendorId'));
-      console.log('VendorProduct: FormData entries:', Object.fromEntries(formData.entries()));
+      console.log('VendorProduct: Final FormData entries:');
+      for (const [key, value] of formData.entries()) {
+        console.log(`  ${key}:`, value);
+      }
 
-      return createProduct(
-        productData.categoryId,
-        productData.subcategoryId,
-        formData
-      );
+      console.log('VendorProduct: Making API call to createProduct');
+      // This is legacy code - new products use NewProductModal
+      throw new Error('Use NewProductModal for creating products');
     },
     onSuccess: (data) => {
       console.log('Product created successfully:', data);
@@ -250,46 +378,62 @@ const VendorProduct: React.FC = () => {
   // Mutation for editing a product
   const editProductMutation = useMutation({
     mutationFn: async ({ productId, productData, categoryId, subcategoryId }: { productId: number, productData: ProductFormData, categoryId: number, subcategoryId: number }) => {
+      console.log('🔄 EDIT PRODUCT MUTATION START');
+      console.log('Product ID:', productId);
+      console.log('Category ID:', categoryId);
+      console.log('Subcategory ID:', subcategoryId);
+      console.log('Product Data:', productData);
+
       if (!authState.token) throw new Error("Authentication token is missing");
       if (!authState.vendor?.id) throw new Error("Vendor ID is missing");
       if (!categoryId || !subcategoryId) {
         throw new Error("Category and subcategory are required");
       }
-      const formData = new FormData();
-      formData.append("name", String(productData.name));
-      formData.append("description", String(productData.description));
-      formData.append("basePrice", productData.basePrice != null ? String(productData.basePrice) : "0");
-      formData.append("stock", productData.stock.toString());
-      
-      formData.append("vendorId", String(authState.vendor.id));
-      if (productData.discount && Number(productData.discount) > 0) {
-        formData.append("discount", Number(productData.discount).toFixed(2));
-        formData.append("discountType", String(productData.discountType));
+
+      // Prepare JSON payload according to new API contract
+      const updatePayload: any = {
+        name: productData.name,
+        subcategoryId: subcategoryId,
+        hasVariants: productData.hasVariants || false,
+      };
+
+      // Add optional fields
+      if (productData.description) updatePayload.description = productData.description;
+      if (productData.discount !== undefined && productData.discount !== null && productData.discount !== '') {
+        updatePayload.discount = typeof productData.discount === 'string' ? parseFloat(productData.discount) : productData.discount;
       }
-      if (Array.isArray(productData.size) && productData.size.length > 0) {
-        formData.append("size", productData.size.join(","));
+      if (productData.discountType) updatePayload.discountType = productData.discountType;
+      if (productData.dealId) updatePayload.dealId = productData.dealId;
+      if (productData.bannerId) updatePayload.bannerId = productData.bannerId;
+      if (productData.productImages && productData.productImages.length > 0) {
+        updatePayload.productImages = productData.productImages;
       }
-      if (productData.status) formData.append("status", String(productData.status));
-      if (productData.brand_id != null) {
-        formData.append("brand_id", String(productData.brand_id));
+
+      // Handle variants vs non-variants
+      if (productData.hasVariants) {
+        if (productData.variants && productData.variants.length > 0) {
+          // Convert variants to match API structure
+          updatePayload.variants = productData.variants.map((variant: any) => ({
+            sku: variant.sku,
+            basePrice: variant.price || variant.basePrice,
+            discount: variant.discount || 0,
+            discountType: variant.discountType || 'PERCENTAGE',
+            attributes: variant.attributes || {},
+            variantImages: variant.images || variant.variantImages || [],
+            stock: variant.stock,
+            status: variant.status || 'AVAILABLE'
+          }));
+        }
+      } else {
+        // For non-variant products, these fields are required
+        updatePayload.basePrice = typeof productData.basePrice === 'string' ? parseFloat(productData.basePrice) : productData.basePrice;
+        updatePayload.stock = typeof productData.stock === 'string' ? parseInt(productData.stock) : productData.stock;
+        updatePayload.status = productData.status || 'AVAILABLE';
       }
-      if (productData.dealId != null) {
-        formData.append("dealId", String(productData.dealId));
-      }
-      if (productData.bannerId != null) {
-        formData.append("bannerId", String(productData.bannerId));
-      }
-      if (productData.productImages && Array.isArray(productData.productImages)) {
-        productData.productImages.forEach((image, index) => {
-          if (index < 5 && image instanceof File) {
-            formData.append("productImages", image);
-          }
-        });
-      }
-      if (productData.inventory && Array.isArray(productData.inventory)) {
-        formData.append("inventory", JSON.stringify(productData.inventory));
-      }
-      return updateProduct(productId, categoryId, subcategoryId, formData);
+
+      console.log('📤 Final Update Payload:', JSON.stringify(updatePayload, null, 2));
+
+      return updateProduct(productId, categoryId, subcategoryId, updatePayload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -311,15 +455,26 @@ const VendorProduct: React.FC = () => {
         setShowAddModal(false);
       },
       onError: (err: Error) => {
-        alert(err.message || 'Failed to add product.');
+        toast.error(err.message || 'Failed to add product.');
       }
     });
   };
 
   const handleEditProduct = (product: Product) => {
+    console.log('🚀 EDIT BUTTON CLICKED!');
+    console.log('=== ORIGINAL PRODUCT DATA ===');
+    console.log('Full Product Object:', JSON.stringify(product, null, 2));
+    console.log('Product ID:', product.id);
+    console.log('Product Name:', product.name);
+    console.log('Product CategoryId:', product.categoryId);
+    console.log('Product SubcategoryId:', product.subcategoryId);
+    console.log('Product Subcategory Object:', product.subcategory);
+    console.log('Product Category Object:', product.category);
+    console.log('=== END PRODUCT DATA ===');
+
     // Convert Product to ApiProduct for editing
     let discount: number | null = null;
-    
+
     // Handle discount conversion
     if (product.discount) {
       if (typeof product.discount === 'number') {
@@ -333,31 +488,41 @@ const VendorProduct: React.FC = () => {
     type SubcategoryType = { id: number; name: string; image?: string | null; createdAt?: string; updatedAt?: string };
     const subcategory = product.subcategory && typeof product.subcategory === 'object' && 'id' in product.subcategory && 'name' in product.subcategory
       ? {
-          id: product.subcategory.id,
-          name: product.subcategory.name,
-          image: (product.subcategory as SubcategoryType).image || null,
-          createdAt: (product.subcategory as SubcategoryType).createdAt || new Date().toISOString(),
-          updatedAt: (product.subcategory as SubcategoryType).updatedAt || new Date().toISOString(),
-        }
+        id: product.subcategory.id,
+        name: product.subcategory.name,
+        image: (product.subcategory as SubcategoryType).image || null,
+        createdAt: (product.subcategory as SubcategoryType).createdAt || new Date().toISOString(),
+        updatedAt: (product.subcategory as SubcategoryType).updatedAt || new Date().toISOString(),
+      }
       : { id: 0, name: '', image: null, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    console.log('🔄 CONVERTING PRODUCT FOR EDITING:');
+    console.log('Original Product:', product);
+    console.log('Product Category ID:', product.categoryId);
+    console.log('Product Subcategory:', product.subcategory);
+
+    // Extract category ID from subcategory if available
+    let categoryId = product.categoryId || 0;
+    if (!categoryId && product.subcategory && typeof product.subcategory === 'object') {
+      // Try to get categoryId from subcategory object
+      if ('categoryId' in product.subcategory) {
+        categoryId = (product.subcategory as any).categoryId;
+      } else if ('category' in product.subcategory && product.subcategory.category && typeof product.subcategory.category === 'object' && 'id' in product.subcategory.category) {
+        categoryId = (product.subcategory.category as any).id;
+      }
+    }
+
     const apiProduct: ApiProduct = {
-      id: product.id,
-      name: product.name || '',
-      description: product.description || '',
+      ...(product as any),
+      categoryId: categoryId,
       basePrice: typeof product.basePrice === 'number' ? product.basePrice : (product.basePrice ? parseFloat(product.basePrice.toString()) : (typeof product.price === 'string' ? parseFloat(product.price) : typeof product.price === 'number' ? product.price : 0)),
-      stock: product.stock || 0,
       discount: discount,
       discountType: (product.discountType === 'PERCENTAGE' ? 'PERCENTAGE' : 'FLAT') as 'PERCENTAGE' | 'FLAT',
-      size: product.size || [],
       status: (product.status === 'OUT_OF_STOCK' ? 'OUT_OF_STOCK' : product.status === 'LOW_STOCK' ? 'LOW_STOCK' : 'AVAILABLE'),
       productImages: product.productImages || (product.image ? [product.image] : []),
       inventory: [], // fallback empty array
       vendorId: 0, // fallback 0
-      brand_id: product.brand_id || null,
-      dealId: product.dealId || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      categoryId: product.categoryId || 0,
       subcategory: subcategory,
       vendor: typeof product.vendor === 'object' && product.vendor !== null ? product.vendor : {
         id: 0,
@@ -372,68 +537,69 @@ const VendorProduct: React.FC = () => {
       },
       brand: null,
       deal: null,
+      hasVariants: (product as any).hasVariants || false,
+      variants: (product as any).variants || [],
       price: typeof product.price === 'number' ? product.price : (product.price ? parseFloat(product.price.toString()) : 0),
       image: product.image || '',
-    };
+      // Ensure all required ApiProduct fields are present
+      brand_id: product.brand_id || null,
+      bannerId: (product as any).bannerId || null,
+      brandId: (product as any).brandId || null,
+    } as ApiProduct;
+
+    console.log('✅ Converted ApiProduct:', apiProduct);
+    console.log('ApiProduct Category ID:', apiProduct.categoryId);
+    console.log('ApiProduct Subcategory:', apiProduct.subcategory);
     setEditingProduct(apiProduct);
     setShowEditModal(true);
   };
 
-  const handleSaveEditProduct = async (productId: number, productData: ProductFormData, categoryId: number, subcategoryId: number) => {
-    editProductMutation.mutate({ productId, productData, categoryId, subcategoryId }, {
-      onSuccess: () => {
-        setShowEditModal(false);
-        setEditingProduct(null);
-      },
-      onError: (err: Error) => {
-        alert(err.message || 'Failed to update product.');
-      }
-    });
+  const handleSaveEditProduct = async (_productId: number, _productData: ProductFormData, _categoryId: number, _subcategoryId: number) => {
+    // Modal performs the update and shows toasts. Here we just refresh and close.
+    try {
+      await queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
+    } finally {
+      setShowEditModal(false);
+      setEditingProduct(null);
+    }
   };
 
-  const allProducts = productData?.products || [];
-  const totalProducts = productData?.total || 0;
+  // Extract products and total from the query data
+  const products: Product[] = productData?.products || [];
+  const totalProducts = productData?.serverTotal || productData?.total || 0;
 
-  // Filter and sort products in-memory (only for search and sort, not pagination)
-  const filteredProducts = allProducts.filter((product) => {
-    const query = searchQuery.toLowerCase();
+  // For server-side pagination, we use the products directly from the API
+  // The API already handles pagination, so we don't need to slice again
+  const displayProducts = products;
+
+  // Apply client-side filtering only for search (this will require refetching from server)
+  // Apply client-side filtering and sorting
+  const filteredProducts = products.filter((product) => {
+    if (!searchQuery) return true;
+    const searchLower = searchQuery.toLowerCase();
     return (
-      product.name?.toLowerCase().includes(query) ||
-      product.description?.toLowerCase().includes(query) ||
-      product.category?.toLowerCase().includes(query) ||
-      product.subcategory?.name?.toLowerCase().includes(query)
+      product.name?.toLowerCase().includes(searchLower) ||
+      product.description?.toLowerCase().includes(searchLower) ||
+      (typeof product.subcategory === 'object' && product.subcategory?.name?.toLowerCase().includes(searchLower)) ||
+      product.category?.toLowerCase().includes(searchLower)
     );
   });
 
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    switch (sortOption) {
-      case "price-asc":
-        return parseFloat(a.price.toString()) - parseFloat(b.price.toString());
-      case "price-desc":
-        return parseFloat(b.price.toString()) - parseFloat(a.price.toString());
-      case "name-asc":
-        return a.name?.localeCompare(b.name || '') || 0;
-      case "name-desc":
-        return b.name?.localeCompare(a.name || '') || 0;
-      case "oldest":
-        return (a.id || 0) - (b.id || 0);
-      case "newest":
-      default:
-        return (b.id || 0) - (a.id || 0);
-    }
-  });
+  // Apply sorting to filtered products
+  const sortedProducts = sortProducts(filteredProducts);
 
-  // Use the sorted products directly (no client-side pagination)
-  const displayProducts = sortedProducts;
-
+  // If there's a search query, we need to handle pagination differently
+  const isSearching = searchQuery.trim().length > 0;
+  const finalProducts = isSearching ? sortedProducts : sortProducts(displayProducts);
+  const finalTotal = isSearching ? sortedProducts.length : totalProducts;
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
   };
 
   // Export to Excel handler
   const handleExportExcel = () => {
-    // Export the currently filtered and sorted products
-    const exportData = sortedProducts.map((product) => ({
+    // Export the currently displayed products
+    const exportData = finalProducts.map((product) => ({
       'Name': product.name,
       'Category': product.category || (typeof product.subcategory === 'object' && product.subcategory?.name) || '',
       'Price': product.price,
@@ -450,7 +616,7 @@ const VendorProduct: React.FC = () => {
     <div className="vendor-dash-container">
       <Sidebar />
       <div className={`dashboard ${isMobile ? "dashboard--mobile" : ""}`}>
-        <Header title="Product Management" onSearch={() => {}} />
+        <Header title="Product Management" onSearch={() => { }} />
         {/* Search and Sort Controls */}
         <div className="dashboard__search-container" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <div className="dashboard__search" style={{ flex: 1, minWidth: 200 }}>
@@ -491,10 +657,10 @@ const VendorProduct: React.FC = () => {
             </button>
           </div>
           {showAddModal && (
-            <ProductModal
+            <NewProductModal
               isOpen={showAddModal}
               onClose={() => setShowAddModal(false)}
-              onSubmit={handleAddProduct}
+              onSubmit={handleProductSubmit}
             />
           )}
           {showEditModal && editingProduct && (
@@ -509,18 +675,18 @@ const VendorProduct: React.FC = () => {
             <ProductListSkeleton />
           ) : isError ? (
             <div className="vendor-product__error">{(error as Error).message}</div>
-          ) : displayProducts.length > 0 ? (
+          ) : finalProducts.length > 0 ? (
             <>
               <ProductList
-                products={displayProducts}
+                products={finalProducts}
                 isMobile={isMobile}
                 onEdit={handleEditProduct}
                 showVendor={false}
               />
-              {totalProducts > productsPerPage && (
+              {finalTotal > productsPerPage && (
                 <Pagination
                   currentPage={currentPage}
-                  totalPages={Math.ceil(totalProducts / productsPerPage)}
+                  totalPages={Math.ceil(finalTotal / productsPerPage)}
                   onPageChange={handlePageChange}
                 />
               )}

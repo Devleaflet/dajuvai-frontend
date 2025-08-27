@@ -10,7 +10,6 @@ import logo from '../assets/logo.webp';
 import esewa from '../assets/esewa.png';
 import npx from '../assets/npx.png';
 import khalti from '../assets/khalti1.png';
-import { Product } from '../Components/Types/Product';
 import { useAuth } from '../context/AuthContext';
 import AlertModal from '../Components/Modal/AlertModal';
 import { API_BASE_URL } from '../config';
@@ -33,17 +32,23 @@ interface CartItem {
   name: string;
   description?: string;
   image: string | null;
+  // Optional variant-related fields
+  variantId?: number;
+  variant?: {
+    id?: number;
+    name?: string;
+    sku?: string;
+    attributes?: any;
+    attributeValues?: any;
+    attrs?: any;
+    attributeSpecs?: any;
+  };
+  attributes?: any;
+  variantAttributes?: any;
   product?: {
     id: number;
     name: string;
-    vendor?: {
-      id: number;
-      businessName: string;
-      district?: {
-        id: number;
-        name: string;
-      };
-    };
+    vendorId?: number
   };
 }
 
@@ -84,7 +89,8 @@ const Checkout: React.FC = () => {
   const navigate = useNavigate();
   
   const [billingDetails, setBillingDetails] = useState({
-    province: 'Bagmati',
+    fullName:"",
+    province: '',
     district: '',
     city: '',
     streetAddress: '',
@@ -94,7 +100,7 @@ const Checkout: React.FC = () => {
   const auth = useAuth();
   const token = auth?.token;
  
-  const [districts, setDistricts] = useState<District[]>([]);
+  // const [districts, setDistricts] = useState<District[]>([]);
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('CASH_ON_DELIVERY');
@@ -106,8 +112,46 @@ const Checkout: React.FC = () => {
   const [enteredPromoCode, setEnteredPromoCode] = useState('');
   const [appliedPromoCode, setAppliedPromoCode] = useState<PromoCode | null>(null);
   const [promoError, setPromoError] = useState('');
+  const [provinceData, setProvinceData] = useState([]);
+  const [districtData, setDistrictData] = useState<string[]>([]);
 
-  // eSewa form data state
+  
+
+  useEffect(() => {
+        const fetchData = async () => {
+            const provinceResponse = await fetch("/Nepal-Address-API-main/data/provinces.json");
+            const data = await provinceResponse.json();
+            setProvinceData(data.provinces.map(capitalizeFirstLetter));
+        };
+        fetchData();
+    }, []);
+    function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
+    // useEffect(() => {
+    //     if (province) {
+    //         const filtered = provinceData.filter(p =>
+    //             p.toLowerCase().includes(province.toLowerCase())
+    //         );
+    //         setFilteredProvinces(filtered.map(capitalizeFirstLetter));
+    //     } else {
+    //         setFilteredProvinces([]);
+    //     }
+    // }, [province, provinceData]);
+        async function fetchDistricts(province:string) {
+        try {
+            const districtResponse = await fetch(`/Nepal-Address-API-main/data/districtsByProvince/${province.toLowerCase()}.json`);
+            const data = await districtResponse.json();
+            setDistrictData(data.districts.map(capitalizeFirstLetter));
+        } catch (error) {
+            console.error('Error fetching district data:', error);
+        }
+
+            
+    }
+
+
   const [formData, setformData] = useState({
     amount: "10",
     tax_amount: "0",
@@ -165,6 +209,11 @@ const Checkout: React.FC = () => {
       } else {
         setPhoneError('');
       }
+    }
+    else if(name ==="province"){
+      fetchDistricts(value)
+      setBillingDetails((prev) => ({ ...prev, [name]: value }));
+      billingDetails.district = ""
     } else {
       setBillingDetails((prev) => ({ ...prev, [name]: value }));
     }
@@ -204,6 +253,55 @@ const Checkout: React.FC = () => {
     setEnteredPromoCode('');
     setPromoError('');
   };
+  const user = useAuth()
+  const fetchUser = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/users/${user.user.id}`, {
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        Authorization: `Bearer ${user.token}`,
+      },
+    });
+    if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+    const data = await response.json();
+    if (data.success && data.data) {
+      setBillingDetails((prev) => {
+        const newPhone = data.data.phoneNumber && validatePhoneNumber(data.data.phoneNumber) ? data.data.phoneNumber : prev.phoneNumber;
+        const newProvince = data.data.address?.province || prev.province;
+        return {
+          ...prev,
+          fullName: data.data.fullName || prev.fullName,
+          province: newProvince,
+          district: data.data.address?.district || prev.district,
+          streetAddress: data.data.address?.localAddress || prev.streetAddress,
+          phoneNumber: newPhone,
+          city: data.data.address?.city || prev.city,
+        };
+      });
+      if (data.data.address?.province) {
+        fetchDistricts(data.data.address.province);
+      }
+      console.log("Data stored", data.data);
+    } else {
+      console.log("Bad response");
+      setAlertMessage("Failed to fetch user data.");
+      setShowAlert(true);
+    }
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    setAlertMessage("An error occurred while fetching user data.");
+    setShowAlert(true);
+  }
+};
+
+useEffect(() => {
+  if (user?.user?.id && user?.token) {
+    fetchUser();
+  } else {
+    console.warn("User or token not available, skipping user data fetch");
+  }
+}, [user?.user?.id, user?.token]);
 
   const handlePlaceOrder = async () => {
     if (!termsAgreed) {
@@ -234,6 +332,7 @@ const Checkout: React.FC = () => {
 
     try {
       const orderData = {
+          fullName:billingDetails.fullName,
         shippingAddress: {
           province: billingDetails.province,
           city: billingDetails.city,
@@ -242,9 +341,8 @@ const Checkout: React.FC = () => {
         },
         paymentMethod: selectedPaymentMethod,
         phoneNumber: billingDetails.phoneNumber,
-        ...(appliedPromoCode && { promoCode: appliedPromoCode.promoCode })
       };
-
+      console.log(orderData)
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
@@ -263,24 +361,25 @@ const Checkout: React.FC = () => {
           setAlertMessage('Order placed successfully!');
           setShowAlert(true);
         }
-        setTimeout(() => {
-          if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod!=='ESEWA') {
-            navigate('/order-page', {
-              state: {
-                orderDetails: {
-                  orderId: result.data?.id || null,
-                  totalAmount: finalTotal,
-                },
-              },
-            });
-          } else {
-            // Force full page reload to clear cart visually and then redirect
-            window.location.reload();
-            setTimeout(() => {
-              window.location.href = '/user-profile';
-            }, 100);
-          }
-        }, 1500);
+       setTimeout(() => {
+  if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod !== 'ESEWA') {
+    navigate('/order-page', {
+      state: {
+        orderDetails: {
+          orderId: result.data?.id || null,
+          totalAmount: finalTotal,
+        },
+      },
+    });
+  } else {
+    // For Cash on Delivery and other payment methods, redirect to user profile orders tab
+    navigate('/user-profile', {
+      state: {
+        activeTab: 'orders'
+      }
+    });
+  }
+}, 1500);
       } else {
         setAlertMessage('Failed to place order. Please try again.');
         setShowAlert(true);
@@ -302,12 +401,52 @@ const Checkout: React.FC = () => {
     return district;
   };
 
-  const getVendorInfo = (item: any) => {
-    return {
-      businessName: item.product?.vendor?.businessName || item.vendor?.businessName || 'Unknown Vendor',
-      district: item.product?.vendor?.district?.name || item.vendor?.district?.name || 'Unknown District'
-    };
+const [vendorCache, setVendorCache] = useState<{ [key: number]: { businessName: string; district: { name: string } } }>({});
+
+useEffect(() => {
+  const fetchVendorDetails = async (vendorId: number) => {
+    if (!vendorCache[vendorId]) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/vendors/${vendorId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const result = await response.json();
+        if (result.success && result.data) {
+          setVendorCache((prev) => ({
+            ...prev,
+            [vendorId]: {
+              businessName: result.data.businessName,
+              district: result.data.district,
+            },
+          }));
+        }
+      } catch (error) {
+        console.error(`Error fetching vendor ${vendorId}:`, error);
+      }
+    }
   };
+
+  // Fetch vendor details for all cart items with vendorId
+  cartItems.forEach((item) => {
+    if (item.product?.vendorId && !vendorCache[item.product.vendorId]) {
+      fetchVendorDetails(item.product.vendorId);
+    }
+  });
+}, [cartItems, token]);
+
+const getVendorInfo = (item: any) => {
+  if (item.product?.vendorId && vendorCache[item.product.vendorId]) {
+    return {
+      businessName: vendorCache[item.product.vendorId].businessName,
+      district: vendorCache[item.product.vendorId].district.name,
+    };
+  }
+
+  return {
+    businessName: item.product?.vendor || item.vendor?.businessName || 'Unknown Vendor',
+    district: item.product?.vendor?.district?.name || item.vendor?.district?.name || 'Unknown District',
+  };
+};
 
   const groupItemsByVendor = (): ShippingGroup[] => {
     if (cartItems.length === 0) {
@@ -360,46 +499,86 @@ const Checkout: React.FC = () => {
   const discountAmount = appliedPromoCode ? Math.round((total * discountPercentage) / 100) : 0;
   const finalTotal = total - discountAmount;
 
+  // Format a human-readable label for the item's selected variant
+  const getVariantLabel = (item: any): string => {
+    const v = item?.variant || item?.selectedVariant || null;
+    if (!v) {
+      // Some APIs put attributes at the item root
+      const rootAttrs = (item && (item.variantAttributes || item.attributes)) || null;
+      const fromRoot = rootAttrs ? formatAttributes(rootAttrs) : '';
+      return fromRoot;
+    }
+
+    // Prefer variant name if present
+    if (typeof v.name === 'string' && v.name.trim()) return v.name.trim();
+
+    // Build label from attributes on the variant
+    const byAttrs = formatAttributes(v.attributes || v.attributeValues || v.attributeSpecs || v.attrs || null);
+    if (byAttrs) return byAttrs;
+
+    // Fallbacks
+    if (v.sku) return `SKU: ${String(v.sku)}`;
+    return '';
+  };
+
+  // Helper: formats different shapes of attributes into "Color: Red, Size: M"
+  const formatAttributes = (attrs: any): string => {
+    if (!attrs) return '';
+
+    // Case 1: Array of attribute entries
+    if (Array.isArray(attrs)) {
+      const parts = attrs.map((a: any) => {
+        const label = String(a?.type ?? a?.attributeType ?? a?.name ?? '').trim();
+        const valuesSrc: any = a?.values ?? a?.attributeValues ?? a?.value ?? a?.name ?? [];
+        const valuesArr = Array.isArray(valuesSrc) ? valuesSrc : [valuesSrc];
+        const valueText = valuesArr
+          .map((v: any) => String((v && typeof v === 'object') ? (v.value ?? v.name ?? JSON.stringify(v)) : v))
+          .filter(Boolean)
+          .join('/');
+        if (!label && !valueText) return '';
+        return label ? `${label}: ${valueText}` : valueText;
+      }).filter(Boolean);
+      return parts.join(', ');
+    }
+
+    // Case 2: Object map { Color: 'Red', Size: 'M' }
+    if (typeof attrs === 'object') {
+      const parts = Object.entries(attrs).map(([k, v]) => {
+        const label = String(k).trim();
+        const valueText = Array.isArray(v)
+          ? v.map((x: any) => String(x?.value ?? x?.name ?? x)).join('/')
+          : String((v as any)?.value ?? (v as any)?.name ?? v);
+        return `${label}: ${valueText}`;
+      });
+      return parts.join(', ');
+    }
+
+    // Fallback: treat as plain text
+    return String(attrs);
+  };
+
   const handleIncrease = (item: any) => {
-    const product: Product = {
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      image: item.image || '',
-      quantity: item.quantity,
-      description: item.description || '',
-      rating: 0,
-      ratingCount: '0',
-    };
-    handleIncreaseQuantity(product, 1);
+    // Use cartItemId (item.id) with new API contract
+    handleIncreaseQuantity(item.id, 1);
   };
 
   const handleDecrease = (item: any) => {
-    const product: Product = {
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      image: item.image || '',
-      quantity: item.quantity,
-      description: item.description || '',
-      rating: 0,
-      ratingCount: '0',
-    };
-    handleDecreaseQuantity(product, 1);
+    // Use cartItemId (item.id) with new API contract
+    handleDecreaseQuantity(item.id, 1);
   };
 
   useEffect(() => {
-    const fetchDistricts = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/district`);
-        const result = await response.json();
-        if (result.success) {
-          setDistricts(result.data);
-        }
-      } catch (error) {
-        console.error('Error fetching districts:', error);
-      }
-    };
+    // const fetchDistricts = async () => {
+    //   try {
+    //     const response = await fetch(`${API_BASE_URL}/api/district`);
+    //     const result = await response.json();
+    //     if (result.success) {
+    //       setDistricts(result.data);
+    //     }
+    //   } catch (error) {
+    //     console.error('Error fetching districts:', error);
+    //   }
+    // };
 
     const fetchPromoCodes = async () => {
       try {
@@ -413,7 +592,7 @@ const Checkout: React.FC = () => {
       }
     };
 
-    fetchDistricts();
+    // fetchDistricts();
     fetchPromoCodes();
   }, []);
 
@@ -454,6 +633,18 @@ const Checkout: React.FC = () => {
         <h2>Billing Details</h2>
         <div className="checkout-container__content">
           <div className="checkout-container__billing-details">
+             <div className="checkout-container__form-group">
+              <label className="checkout-container__form-label">Full Name *</label>
+              <input
+                type="text"
+                name="fullName"
+                value={billingDetails.fullName}
+                onChange={handleInputChange}
+                placeholder="Enter your Full Name"
+                className="checkout-container__form-group-input"
+                required
+              />
+            </div>
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Province</label>
               <select
@@ -463,13 +654,20 @@ const Checkout: React.FC = () => {
                 className="checkout-container__form-group-select"
                 required
               >
-                <option value="Province 1">Province 1</option>
+              <option value="" selected >Select Province</option>
+          {provinceData.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+
+                {/* <option value="Province 1">Province 1</option>
                 <option value="Madhesh">Madhesh</option>
                 <option value="Bagmati">Bagmati</option>
                 <option value="Gandaki">Gandaki</option>
                 <option value="Lumbini">Lumbini</option>
                 <option value="Karnali">Karnali</option>
-                <option value="Sudurpashchim">Sudurpashchim</option>
+                <option value="Sudurpashchim">Sudurpashchim</option> */}
               </select>
             </div>
             <div className="checkout-container__form-group">
@@ -482,9 +680,9 @@ const Checkout: React.FC = () => {
                 required
               >
                 <option value="">Select District</option>
-                {districts.map((district) => (
-                  <option key={district.id} value={district.name}>
-                    {district.name}
+                {districtData.map((district) => (
+                  <option key={district} value={district}>
+                    {district}
                   </option>
                 ))}
               </select>
@@ -660,26 +858,28 @@ const Checkout: React.FC = () => {
                             src={item.image || logo}
                             alt={item.name}
                             className="checkout-container__product-item-img"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.src = logo;
-                            }}
                           />
                           <div className="checkout-container__product-info">
                             <span className="checkout-container__product-info-text">{item.name}</span>
+                            {(() => {
+                              const label = getVariantLabel(item);
+                              return label ? (
+                                <small style={{ display: 'block', color: '#666', marginTop: 4 }}>Variant: {label}</small>
+                              ) : null;
+                            })()}
                             <div className="checkout-container__quantity-controls">
-                              <button
-                                className="checkout-container__quantity-controls-button"
-                                onClick={() => handleIncrease(item)}
-                              >
-                                +
-                              </button>
-                              <span>{item.quantity}</span>
                               <button
                                 className="checkout-container__quantity-controls-button"
                                 onClick={() => handleDecrease(item)}
                               >
                                 -
+                              </button>
+                              <span>{item.quantity}</span>
+                              <button
+                                className="checkout-container__quantity-controls-button"
+                                onClick={() => handleIncrease(item)}
+                              >
+                                +
                               </button>
                             </div>
                           </div>
@@ -746,6 +946,9 @@ const Checkout: React.FC = () => {
                   className="checkout-container__payment-methods-input"
                   checked={selectedPaymentMethod === 'CASH_ON_DELIVERY'}
                   onChange={handlePaymentMethodChange}
+                  style={{
+                  boxShadow:"none"
+                }}
                 />
                 Cash on delivery
               </label>
@@ -758,6 +961,9 @@ const Checkout: React.FC = () => {
                   className="checkout-container__payment-methods-input"
                   checked={selectedPaymentMethod === 'ONLINE_PAYMENT'}
                   onChange={handlePaymentMethodChange}
+                  style={{
+                  boxShadow:"none"
+                }}
                 />
                 <img src={npx} alt="NPX" className="checkout-container__payment-methods-img" />
               </label>
@@ -769,6 +975,9 @@ const Checkout: React.FC = () => {
                   className="checkout-container__payment-methods-input"
                   checked={selectedPaymentMethod === 'ESEWA'}
                   onChange={handlePaymentMethodChange}
+                  style={{
+                  boxShadow:"none"
+                }}
                 />
                 <img src={esewa} alt="eSewa" className="checkout-container__payment-methods-img"/>
                 </label>
@@ -783,8 +992,11 @@ const Checkout: React.FC = () => {
                 onChange={handleTermsChange}
                 className="checkout-container__terms-checkbox-input"
                 required
+                style={{
+                  boxShadow:"none"
+                }}
               />
-              I have read and agree to the website terms and conditions *
+             <p>I have read and agree to the website terms and conditions *</p> 
             </label>
             <button
               className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''}`}

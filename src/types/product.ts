@@ -104,6 +104,57 @@ export interface ProductFormData {
     status: string;
   }[];
   vendorId: string;
+  // New fields for variant support
+  hasVariants: boolean;
+  variants?: ProductVariant[];
+  bannerId?: number | null;
+  brandId?: number | null;
+}
+
+// New interfaces for the updated API
+export interface Image {
+  url: string;
+}
+
+// Unified complex attribute structure used by both New and Edit modals
+export interface Attribute {
+  type: string;
+  values: Array<{
+    value: string;
+    nestedAttributes?: Array<{
+      type: string;
+      values: string[];
+    }>;
+  }>;
+}
+
+export interface ProductVariant {
+  sku: string;
+  price: number;
+  stock: number;
+  status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
+  // Use unified complex attributes shape
+  attributes: Attribute[];
+  // Keep both images fields to support UI and API payload compatibility
+  images: (File | string)[];
+  variantImages: (File | string)[];
+  imagePreviews?: string[]; // For client-side preview URLs
+}
+
+export interface NewProductFormData {
+  name: string;
+  description?: string;
+  basePrice?: number;
+  discount?: number;
+  discountType?: 'PERCENTAGE' | 'FLAT';
+  status?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
+  stock?: number;
+  hasVariants: boolean;
+  variants?: ProductVariant[];
+  subcategoryId: number;
+  dealId?: number;
+  bannerId?: number;
+  productImages?: File[];
 }
 
 export interface ApiProduct {
@@ -158,4 +209,9 @@ export interface ApiProduct {
     id: number;
     title: string;
   } | null;
+  hasVariants: boolean;
+  variants?: ProductVariant[];
+  // Compatibility fields
+  price?: number;
+  image?: string;
 }

@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { AdminSidebar } from "../Components/AdminSidebar";
 import Header from "../Components/Header";
 import Pagination from "../Components/Pagination";
 import OrderEditModal from "../Components/Modal/OrderEditModal";
-import OrderDetailModal from '../Components/Modal/OrderDetailModal';
-import AdminOrdersSkeleton from '../skeleton/AdminOrdersSkeleton';
+import OrderDetailModal from "../Components/Modal/OrderDetailModal";
+import AdminOrdersSkeleton from "../skeleton/AdminOrdersSkeleton";
 import "../Styles/AdminOrders.css";
 import { OrderService } from "../services/orderService";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { toast } from 'react-hot-toast';
+import { toast } from "react-hot-toast";
 
 interface DisplayOrder {
   id: string;
@@ -52,47 +52,51 @@ const AdminOrders: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [sortOption, setSortOption] = useState<string>("newest");
 
   useEffect(() => {
     const fetchOrders = async () => {
-      if (authLoading) {
-        return;
-      }
+      if (authLoading) return;
 
       if (!isAuthenticated || !token) {
-        setError('Please log in to view orders');
+        setError("Please log in to view orders");
         setIsLoading(false);
-        navigate('/login');
+        navigate("/login");
         return;
       }
 
       try {
         setIsLoading(true);
         const response = await OrderService.getAllOrders(token);
-        const apiOrders = response;
-        setRawOrders(apiOrders);
-        const transformedOrders: DisplayOrder[] = apiOrders.map((order: any) => ({
+        setRawOrders(response);
+
+        const transformedOrders: DisplayOrder[] = response.map((order: any) => ({
           id: order.id.toString(),
-          customer: order.orderedBy?.username || 'Unknown',
-          email: order.orderedBy?.email || 'N/A',
-          orderDate: new Date(order.createdAt).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
+          customer: order.orderedBy?.username || "Unknown",
+          email: order.orderedBy?.email || "N/A",
+          orderDate: new Date(order.createdAt).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
           }),
           totalPrice: `Rs. ${parseFloat(order.totalPrice).toFixed(2)}`,
-          status: order.status || 'N/A',
-          paymentStatus: order.paymentStatus || 'N/A',
+          status: order.status || "N/A",
+          paymentStatus: order.paymentStatus || "N/A",
         }));
+
         setOrders(transformedOrders);
         setFilteredOrders(transformedOrders);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load orders';
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to load orders";
         setError(errorMessage);
         toast.error(errorMessage);
-        if (errorMessage.includes('Unauthorized') || errorMessage.includes('No authentication token')) {
+        if (
+          errorMessage.includes("Unauthorized") ||
+          errorMessage.includes("No authentication token")
+        ) {
           logout();
-          navigate('/login');
+          navigate("/login");
         }
       } finally {
         setIsLoading(false);
@@ -103,51 +107,97 @@ const AdminOrders: React.FC = () => {
   }, [authLoading, isAuthenticated, token, logout, navigate]);
 
   useEffect(() => {
-    const results = orders.filter(order => 
-      order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.status.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.paymentStatus.toLowerCase().includes(searchQuery.toLowerCase())
+    let results = orders.filter(
+      (order) =>
+        order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.status.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.paymentStatus.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    setFilteredOrders(results);
-  }, [searchQuery, orders]);
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
+    results = [...results].sort((a, b) => {
+      switch (sortOption) {
+        case "newest":
+          return (
+            new Date(b.orderDate).getTime() -
+            new Date(a.orderDate).getTime()
+          );
+        case "oldest":
+          return (
+            new Date(a.orderDate).getTime() -
+            new Date(b.orderDate).getTime()
+          );
+        case "price-asc":
+          return (
+            parseFloat(a.totalPrice.replace("Rs. ", "")) -
+            parseFloat(b.totalPrice.replace("Rs. ", ""))
+          );
+        case "price-desc":
+          return (
+            parseFloat(b.totalPrice.replace("Rs. ", "")) -
+            parseFloat(a.totalPrice.replace("Rs. ", ""))
+          );
+        case "name-asc":
+          return a.customer.localeCompare(b.customer);
+        case "name-desc":
+          return b.customer.localeCompare(a.customer);
+        default:
+          return 0;
+      }
+    });
+
+    setFilteredOrders(results);
     setCurrentPage(1);
-  };
+  }, [searchQuery, orders, sortOption]);
+
+  const handleSearch = (query: string) => setSearchQuery(query);
+
+  const handleSort = useCallback((newSortOption: string) => {
+    setSortOption(newSortOption);
+  }, []);
 
   const indexOfLastOrder = currentPage * ordersPerPage;
   const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const currentOrders = filteredOrders.slice(
+    indexOfFirstOrder,
+    indexOfLastOrder
+  );
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   const toModalOrder = (displayOrder: DisplayOrder): ModalOrder => {
-    const rawOrder = rawOrders.find(o => o.id.toString() === displayOrder.id) || {};
+    const rawOrder =
+      rawOrders.find((o) => o.id.toString() === displayOrder.id) || {};
     const orderedBy = rawOrder.orderedBy || {};
     const shippingAddress = rawOrder.shippingAddress || {};
-    
-    const username = orderedBy.username || displayOrder.customer || 'Unknown User';
-    const nameParts = username.split(' ');
-    const firstName = nameParts[0] || 'Unknown';
-    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User';
+
+    const username =
+      orderedBy.username || displayOrder.customer || "Unknown User";
+    const nameParts = username.split(" ");
+    const firstName = nameParts[0] || "Unknown";
+    const lastName =
+      nameParts.length > 1 ? nameParts.slice(1).join(" ") : "User";
 
     return {
       id: displayOrder.id,
-      firstName: firstName,
-      lastName: lastName,
+      firstName,
+      lastName,
       date: displayOrder.orderDate,
-      quantity: rawOrder.orderItems?.reduce((total: number, item: any) => total + item.quantity, 0) || 1,
-      address: shippingAddress.address || shippingAddress.localAddress || 'N/A',
-      phoneNumber: orderedBy.phoneNumber || 'N/A',
+      quantity:
+        rawOrder.orderItems?.reduce(
+          (total: number, item: any) => total + item.quantity,
+          0
+        ) || 1,
+      address: shippingAddress.address || shippingAddress.localAddress || "N/A",
+      phoneNumber: orderedBy.phoneNumber || "N/A",
       email: displayOrder.email,
-      country: shippingAddress.country || 'N/A',
-      streetAddress: shippingAddress.streetAddress || shippingAddress.localAddress || 'N/A',
-      town: shippingAddress.town || shippingAddress.city || 'N/A',
-      state: shippingAddress.state || shippingAddress.province || 'N/A',
-      vendorName: rawOrder.vendorName || 'N/A',
+      country: shippingAddress.country || "N/A",
+      streetAddress:
+        shippingAddress.streetAddress || shippingAddress.localAddress || "N/A",
+      town: shippingAddress.town || shippingAddress.city || "N/A",
+      state: shippingAddress.state || shippingAddress.province || "N/A",
+      vendorName: rawOrder.vendorName || "N/A",
       profileImage: undefined,
     };
   };
@@ -164,18 +214,19 @@ const AdminOrders: React.FC = () => {
 
   const handleSaveOrder = async (orderId: string, newStatus: string) => {
     try {
-      const updatedOrders = orders.map(order =>
+      const updatedOrders = orders.map((order) =>
         order.id === orderId ? { ...order, status: newStatus } : order
       );
       setOrders(updatedOrders);
       setFilteredOrders(updatedOrders);
-      setRawOrders(rawOrders.map(o =>
-        o.id.toString() === orderId
-          ? { ...o, status: newStatus }
-          : o
-      ));
+      setRawOrders(
+        rawOrders.map((o) =>
+          o.id.toString() === orderId ? { ...o, status: newStatus } : o
+        )
+      );
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to update order status';
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to update order status";
       toast.error(errorMessage);
     } finally {
       setShowEditModal(false);
@@ -187,17 +238,18 @@ const AdminOrders: React.FC = () => {
     setSelectedOrder(null);
   };
 
-  if (authLoading || isLoading) {
-    return <AdminOrdersSkeleton />;
-  }
+  if (authLoading || isLoading) return <AdminOrdersSkeleton />;
 
   if (error) {
     return (
       <div className="admin-orders">
         <div className="error-message">
           {error}
-          {error.includes('log in') && (
-            <button onClick={() => navigate('/login')} className="login-button">
+          {error.includes("log in") && (
+            <button
+              onClick={() => navigate("/login")}
+              className="login-button"
+            >
               Go to Login
             </button>
           )}
@@ -210,8 +262,14 @@ const AdminOrders: React.FC = () => {
     <div className="admin-orders">
       <AdminSidebar />
       <div className="admin-orders__content">
-        <Header onSearch={handleSearch} showSearch={true} title="Order Management" />
-        
+        <Header
+          onSearch={handleSearch}
+          onSort={handleSort}
+          sortOption={sortOption}
+          showSearch={true}
+          title="Order Management"
+        />
+
         {!showOrderDetails ? (
           <div className="admin-orders__list-container">
             <div className="admin-orders__header">
@@ -232,7 +290,7 @@ const AdminOrders: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentOrders.map(order => (
+                  {currentOrders.map((order) => (
                     <tr key={order.id} className="admin-orders__table-row">
                       <td>{order.id}</td>
                       <td className="admin-orders__name-cell">
@@ -244,25 +302,19 @@ const AdminOrders: React.FC = () => {
                       <td>{order.status}</td>
                       <td>{order.paymentStatus}</td>
                       <td className="admin-orders__actions">
-                        <button 
+                        <button
                           className="admin-orders__action-btn admin-orders__view-btn"
                           onClick={() => viewOrderDetails(order)}
                           aria-label="View order details"
                         >
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 5C7.63636 5 4 8.63636 4 12C4 15.3636 7.63636 19 12 19C16.3636 19 20 15.3636 20 12C20 8.63636 16.3636 5 12 5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
+                          👁
                         </button>
-                        <button 
+                        <button
                           className="admin-orders__action-btn admin-orders__edit-btn"
                           onClick={() => editOrder(order)}
                           aria-label="Edit order"
                         >
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            <path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
+                          ✏️
                         </button>
                       </td>
                     </tr>
@@ -272,18 +324,18 @@ const AdminOrders: React.FC = () => {
             </div>
             <div className="admin-orders__pagination-container">
               <div className="admin-orders__pagination-info">
-                Showing {indexOfFirstOrder + 1}-{Math.min(indexOfLastOrder, filteredOrders.length)} out of {filteredOrders.length}
+                Showing {indexOfFirstOrder + 1}-
+                {Math.min(indexOfLastOrder, filteredOrders.length)} out of{" "}
+                {filteredOrders.length}
               </div>
-              <Pagination 
+              <Pagination
                 currentPage={currentPage}
                 totalPages={Math.ceil(filteredOrders.length / ordersPerPage)}
                 onPageChange={paginate}
               />
             </div>
           </div>
-        ) : (
-          null
-        )}
+        ) : null}
       </div>
 
       <OrderDetailModal
@@ -298,8 +350,6 @@ const AdminOrders: React.FC = () => {
         onSave={handleSaveOrder}
         order={selectedOrder}
       />
-
-      
     </div>
   );
 };

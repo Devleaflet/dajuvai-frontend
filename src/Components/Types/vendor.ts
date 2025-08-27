@@ -3,20 +3,52 @@ export interface Vendor {
   businessName: string;
   email: string;
   businessAddress?: string;
-  phoneNumber?: string;
-  isVerified?: boolean;
+  phoneNumber: string;
   profilePicture?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  taxNumber?: string;
+  taxDocuments: string[] | null;
+  businessRegNumber?: string;
+  citizenshipDocuments: string[] | null;
+  chequePhoto: string | null; // Keep as array for display consistency
+  accountName?: string;
+  bankName?: string;
+  accountNumber?: string;
+  bankBranch?: string;
+  bankCode?: string;
+  verificationCode: string | null;
+  verificationCodeExpire: string | null;
+  isVerified: boolean;
+  isApproved: boolean | null;
+  resetToken: string | null;
+  resetTokenExpire: string | null;
+  resendCount: number;
+  resendBlockUntil: string | null;
+  createdAt: string;
+  updatedAt: string;
+  district: District;
+  status: "Active" | "Inactive";
 }
 
 export interface VendorSignupRequest {
   businessName: string;
   email: string;
   password: string;
-  businessAddress: string;
   phoneNumber: string;
   district: string;
+  taxNumber: string;
+  taxDocuments: string[];
+  businessRegNumber: string;
+  citizenshipDocuments?: string[] | null;
+  chequePhoto: string; // Keep as string for API consistency
+  bankDetails: {
+    accountName: string;
+    bankName: string;
+    accountNumber: string;
+    bankBranch: string;
+    bankCode: string;
+  };
+  businessAddress?: string;
+  profilePicture?: string;
 }
 
 export interface VendorLoginRequest {
@@ -25,10 +57,27 @@ export interface VendorLoginRequest {
 }
 
 export interface VendorUpdateRequest {
+  id: number;
   businessName: string;
   email: string;
   phoneNumber: string;
-  isVerified: boolean;
+  isVerified?: boolean;
+  districtId?: number; // Add this back for updates
+  district?: string;
+  taxNumber?: string;
+  taxDocuments?: string[] | null;
+  businessRegNumber?: string;
+  citizenshipDocuments?: string[] | null;
+  chequePhoto?: string[] | null;
+  bankDetails?: {
+    accountName: string;
+    bankName: string;
+    accountNumber: string;
+    bankBranch: string;
+    bankCode: string;
+  };
+  businessAddress?: string;
+  profilePicture?: string;
 }
 
 export interface ApiResponse<T> {
@@ -38,4 +87,9 @@ export interface ApiResponse<T> {
   message?: string;
   errors?: { path: string[]; message: string }[];
   token?: string;
+}
+
+export interface District {
+  id: number;
+  name: string;
 }

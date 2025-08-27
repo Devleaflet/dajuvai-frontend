@@ -1,6 +1,7 @@
 import React from "react";
 import { Product } from "../Components/Types/Product";
 import defaultProductImage from "../assets/logo.webp";
+import { API_BASE_URL } from "../config";
 
 interface ProductListProps {
   products: Product[];
@@ -22,10 +23,55 @@ const ProductList: React.FC<ProductListProps> = ({
     const discountValue = parseFloat(discount) || 0;
     if (discountType === "PERCENTAGE") {
       return base * (1 - discountValue / 100);
-    } else if (discountType === "FIXED") {
+    } else if (discountType === "FIXED" || discountType === "FLAT") {
       return base - discountValue;
     }
     return base;
+  };
+
+  // Normalize/complete image URLs similar to Shop page
+  const processImageUrl = (imgUrl: string): string => {
+    if (!imgUrl) return '';
+    const trimmed = imgUrl.trim();
+    if (!trimmed) return '';
+    if (trimmed.startsWith('//')) return `https:${trimmed}`;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
+      return trimmed;
+    }
+    const base = API_BASE_URL.replace(/\/?api\/?$/, '');
+    const needsSlash = !trimmed.startsWith('/');
+    const url = `${base}${needsSlash ? '/' : ''}${trimmed}`;
+    return url.replace(/([^:]\/)\/+/, '$1/');
+  };
+
+  const getDisplayImage = (product: Product): string => {
+    // 1) Product images
+    const productImages = (product.productImages || [])
+      .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
+      .map(processImageUrl)
+      .filter(Boolean);
+    if (productImages.length > 0) return productImages[0];
+
+    // 2) Single product.image
+    if (typeof product.image === 'string' && product.image.trim()) {
+      const img = processImageUrl(product.image);
+      if (img) return img;
+    }
+
+    // 3) Variant images (image + images[])
+    const variantImages: string[] = (product.variants || [])
+      .flatMap((v: any) => [
+        v?.image,
+        ...(Array.isArray(v?.images) ? v.images : []),
+        ...(Array.isArray(v?.variantImages) ? v.variantImages : []),
+      ])
+      .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
+      .map(processImageUrl)
+      .filter(Boolean);
+    if (variantImages.length > 0) return variantImages[0];
+
+    // 4) Default
+    return defaultProductImage;
   };
 
   return (
@@ -52,11 +98,34 @@ const ProductList: React.FC<ProductListProps> = ({
             </tr>
           ) : (
             products.map((product) => {
-              // Safely convert stock to a number
-              const numericStock = product.stock ?? 0;
+              // Handle variant products
+              let numericStock = 0;
+              let displayPrice = 0;
+              const displayImage = getDisplayImage(product);
+              
+              if (product.variants && product.variants.length > 0) {
+                // Use first variant's price and stock
+                const firstVariant = product.variants[0] as any;
+                numericStock = (firstVariant?.stock ?? product.stock ?? 0) as number;
 
-              // Compute display price
-              const displayPrice = calculatePrice(product.price, product.discount, product.discountType);
+                // Prefer precomputed calculatedPrice from mapping when available
+                const variantBase = (firstVariant?.price ?? firstVariant?.originalPrice ?? firstVariant?.basePrice ?? product.basePrice ?? product.price) as number | string | undefined;
+                const hasCalculated = typeof firstVariant?.calculatedPrice === 'number' && isFinite(firstVariant.calculatedPrice);
+
+                if (hasCalculated) {
+                  displayPrice = firstVariant.calculatedPrice as number;
+                } else if (firstVariant?.discount && firstVariant?.discountType) {
+                  displayPrice = calculatePrice(variantBase ?? 0, String(firstVariant.discount), String(firstVariant.discountType));
+                } else if (product.discount && product.discountType) {
+                  displayPrice = calculatePrice(variantBase ?? 0, String(product.discount), String(product.discountType));
+                } else {
+                  displayPrice = typeof variantBase === 'string' ? parseFloat(variantBase) : (Number(variantBase) || 0);
+                }
+              } else {
+                // For non-variant products
+                numericStock = product.stock ?? 0;
+                displayPrice = calculatePrice(product.price, product.discount as any, product.discountType as any);
+              }
 
               // Determine status display
               const statusDisplay = (() => {
@@ -78,7 +147,7 @@ const ProductList: React.FC<ProductListProps> = ({
                     <div
                       className="product-cell__icon vendor-product__image"
                       style={{
-                        backgroundImage: `url(${product.productImages?.[0] || product.image || defaultProductImage})`,
+                        backgroundImage: `url(${displayImage})`,
                         backgroundSize: "cover",
                         backgroundPosition: "center",
                       }}

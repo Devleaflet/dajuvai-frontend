@@ -1,4 +1,4 @@
-import  { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../Components/Navbar";
 import CategorySlider from "../Components/CategorySlider";
@@ -9,6 +9,7 @@ import PageLoader from "../Components/PageLoader";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCategory } from "../api/category";
 import SpecialOffers from "../Components/SpecialOffers";
+import CategorySection from "../Components/CategorySection";
 
 const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -21,7 +22,7 @@ const Home = () => {
     if (searchParam) {
       const decodedSearch = decodeURIComponent(searchParam);
       console.log('🏠 Home page received search parameter:', decodedSearch);
-      
+
       // Set the search query in the Navbar by dispatching a custom event
       window.dispatchEvent(new CustomEvent('setNavbarSearch', {
         detail: { searchQuery: decodedSearch }
@@ -93,14 +94,15 @@ const Home = () => {
   }
 
   return (
-    <>
+    <div>
       <Navbar />
       <HeroSlider />
       <CategorySlider />
       <HomepageSections />
       <SpecialOffers />
+      <CategorySection showViewAll={false}/>
       <Footer />
-    </>
+    </div>
   );
 };
 

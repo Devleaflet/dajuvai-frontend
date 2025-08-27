@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import "../Styles/Navbar.css";
 import {
   FaSearch,
@@ -18,10 +18,7 @@ import {
   FaFacebook,
   FaInstagram,
   FaTiktok,
-  FaYoutube,
   FaWhatsapp,
-  FaViber,
-  FaTelegram,
 } from "react-icons/fa6";
 import logo from "../assets/logo.webp";
 import nepal from "../assets/nepal.gif";
@@ -37,6 +34,8 @@ import { fetchSubCategory } from "../api/subcategory";
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "../config";
 import { useVendorAuth } from "../context/VendorAuthContext";
+import VendorLogin from "../Pages/VendorLogin";
+import { toast } from "react-hot-toast";
 
 interface Category {
   id: number;
@@ -64,7 +63,10 @@ const Navbar: React.FC = () => {
   const [cartOpen, setCartOpen] = useState<boolean>(false);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
+  const [vendorAuthModalOpen, setVendorAuthModalOpen] = useState<boolean>(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState<boolean>(false);
+  const [moreDropdownOpen, setMoreDropdownOpen] = useState<boolean>(false);
+  const [sideMoreOpen, setSideMoreOpen] = useState<boolean>(false);
   const [isCategoriesReady, setIsCategoriesReady] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [dropdownSubcategories, setDropdownSubcategories] = useState([]);
@@ -82,13 +84,43 @@ const Navbar: React.FC = () => {
   const profileRef = useRef<HTMLDivElement>(null);
   const dropdownTriggerRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const moreDropdownRef = useRef<HTMLDivElement>(null);
 
   const {
     cartItems,
     handleCartItemOnDelete,
     handleIncreaseQuantity,
     handleDecreaseQuantity,
+    updatingItems,
   } = useCart();
+
+  // Maintain a stable render order for cart items to avoid reordering on refresh
+  const cartOrderRef = useRef<Map<number, number>>(new Map());
+  const nextOrderIndexRef = useRef(0);
+
+  useEffect(() => {
+    // Assign stable order indices for any new cart items
+    cartItems.forEach((item) => {
+      if (!cartOrderRef.current.has(item.id)) {
+        cartOrderRef.current.set(item.id, nextOrderIndexRef.current++);
+      }
+    });
+    // Cleanup removed items from the order map
+    for (const id of Array.from(cartOrderRef.current.keys())) {
+      if (!cartItems.some((ci) => ci.id === id)) {
+        cartOrderRef.current.delete(id);
+      }
+    }
+  }, [cartItems]);
+
+  const stableCartItems = useMemo(() => {
+    return [...cartItems].sort((a, b) => {
+      const ai = cartOrderRef.current.get(a.id) ?? 0;
+      const bi = cartOrderRef.current.get(b.id) ?? 0;
+      return ai - bi;
+    });
+  }, [cartItems]);
+
   const categoryContext = useCategory();
   const updateCategoriesWithSubcategories =
     categoryContext?.updateCategoriesWithSubcategories;
@@ -122,11 +154,22 @@ const Navbar: React.FC = () => {
       ) {
         setProfileDropdownOpen(false);
       }
+
+      if (
+        moreDropdownOpen &&
+        moreDropdownRef.current &&
+        !moreDropdownRef.current.contains(event.target as Node)
+      ) {
+        setMoreDropdownOpen(false);
+      }
     }
     function handleEsc(event: KeyboardEvent) {
-      if (event.key === "Escape") setProfileDropdownOpen(false);
+      if (event.key === "Escape") {
+        setProfileDropdownOpen(false);
+        setMoreDropdownOpen(false);
+      }
     }
-    if (profileDropdownOpen) {
+    if (profileDropdownOpen || moreDropdownOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("keydown", handleEsc);
     }
@@ -134,7 +177,7 @@ const Navbar: React.FC = () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEsc);
     };
-  }, [profileDropdownOpen]);
+  }, [profileDropdownOpen, moreDropdownOpen]);
 
   const getUserAvatar = () => {
     if (isLoading) return <div className="navbar__avatar-loading"></div>;
@@ -187,6 +230,20 @@ const Navbar: React.FC = () => {
       setSideMenuOpen(false);
       document.body.classList.remove("navbar--menu-open");
     }
+  };
+
+  const toggleVendorAuthModal = (e?: React.MouseEvent): void => {
+    e?.preventDefault();
+    setVendorAuthModalOpen(!vendorAuthModalOpen);
+    if (sideMenuOpen) {
+      setSideMenuOpen(false);
+      document.body.classList.remove("navbar--menu-open");
+    }
+  };
+
+  const showComingSoon = () => {
+    setMoreDropdownOpen(false);
+    toast('🚀 Coming soon! This feature will be available soon.', { icon: '✨' });
   };
 
   useEffect(() => {
@@ -373,9 +430,11 @@ const Navbar: React.FC = () => {
         .map((product: any) => ({
           id: product.id,
           name: product.name,
-          price: product.basePrice * (1 - (product.discount || 0) / 100),
-          image: product.productImages?.[0] || iphone,
-          discount: product.discount || 0,
+          image:
+            product.productImages?.[0] ||
+            product.variants?.find((v: any) => v?.variantImages?.[0])
+              ?.variantImages?.[0] ||
+            iphone,
           matchScore: calculateMatchScore(product, searchTerm),
         }))
         .sort((a: any, b: any) => b.matchScore - a.matchScore)
@@ -403,6 +462,55 @@ const Navbar: React.FC = () => {
     return score;
   };
 
+  const formatAttributes = (attrs: any): string => {
+    if (!attrs) return "";
+    if (Array.isArray(attrs)) {
+      return attrs
+        .map((a) => {
+          if (!a) return "";
+          if (typeof a === "string") return a;
+          if (typeof a === "object") {
+            const key = a.key || a.name || a.attribute || Object.keys(a)[0];
+            const value = a.value || a.val || a.option || a[key];
+            return [key, value].filter(Boolean).join(": ");
+          }
+          return String(a);
+        })
+        .filter(Boolean)
+        .join(", ");
+    }
+    if (typeof attrs === "object") {
+      return Object.entries(attrs)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(", ");
+    }
+    return String(attrs);
+  };
+
+  const getCartVariantLabel = (item: any): string | null => {
+    try {
+      const name = item?.variant?.name || item?.selectedVariant?.name;
+      if (name && typeof name === "string") return name;
+
+      const candidates = [
+        item?.variant?.attributes,
+        item?.variant?.attributeValues,
+        item?.variant?.attrs,
+        item?.variant?.attributeSpecs,
+        item?.variantAttributes,
+        item?.attributes,
+      ];
+      for (const c of candidates) {
+        const s = formatAttributes(c);
+        if (s) return s;
+      }
+
+      const sku = item?.variant?.sku || item?.sku || item?.variantSku;
+      if (sku) return `SKU: ${sku}`;
+    } catch { }
+    return null;
+  };
+
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
@@ -418,7 +526,7 @@ const Navbar: React.FC = () => {
   const handleSearchResultClick = (productId: number) => {
     setShowSearchDropdown(false);
     setSearchQuery("");
-    navigate(`/product-page/1/3/${productId}`);
+    navigate(`/product-page/${productId}`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -599,6 +707,21 @@ const Navbar: React.FC = () => {
   return (
     <nav className="navbar">
       <div className="navbar__container">
+        <div className="nav_bar_right">
+
+          {!isLoading && !isAuthenticated && (
+            <a
+              // href="/vendor-login"
+              className="navbar__top-link"
+              onClick={toggleVendorAuthModal}
+
+            >
+              Vendor Login
+            </a>
+          )}
+          <a href="/becomevendor" className="navbar__top-link">Become a Vendor</a>
+
+        </div>
         <div className="navbar__top">
           <div className="navbar__top-row">
             <div className="navbar__logo">
@@ -659,67 +782,15 @@ const Navbar: React.FC = () => {
                 >
                   {getUserAvatar()}
                 </div>
-                {isAuthenticated && profileDropdownOpen && (
-                  <div
-                    className="navbar__profile-dropdown-card"
-                    ref={profileRef}
-                  >
-                    <div className="navbar__profile-card-header">
-                      {getUserAvatar()}
-                      <div className="navbar__profile-card-info">
-                        <div className="navbar__profile-card-name">
-                          {user?.username || user?.email}
-                        </div>
-                        {user?.email && (
-                          <div className="navbar__profile-card-email">
-                            {user.email}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="navbar__profile-card-divider" />
-                    {user?.role === 'admin' && (
-                      <NavLink
-                        to="/admin-dashboard"
-                        className="navbar__profile-card-link"
-                        onClick={() => setProfileDropdownOpen(false)}
-                        style={({ isActive }) => ({
-                          color: isActive ? '#f97316' : 'inherit'
-                        })}
-                      >
-                        <FaHome className="navbar__profile-card-icon" /> Admin Dashboard
-                      </NavLink>
-                    )}
-                    {vendorAuthState.isAuthenticated && vendorAuthState.vendor && (
-                      <NavLink
-                        to="/dashboard"
-                        className="navbar__profile-card-link"
-                        onClick={() => setProfileDropdownOpen(false)}
-                        style={({ isActive }) => ({
-                          color: isActive ? '#f97316' : 'inherit'
-                        })}
-                      >
-                        <FaHome className="navbar__profile-card-icon" /> Vendor Dashboard
-                      </NavLink>
-                    )}
-                    <NavLink
-                      to="/user-profile"
-                      className="navbar__profile-card-link"
-                      style={({ isActive }) => ({
-                        color: isActive ? '#f97316' : 'inherit'
-                      })}
-                    >
-                      <FaCog className="navbar__profile-card-icon" /> Settings
-                    </NavLink>
-                    <button
-                      className="navbar__profile-card-link navbar__profile-card-link--logout"
-                      onClick={handleFullLogout}
-                    >
-                      <FaSignOutAlt className="navbar__profile-card-icon" /> Log Out
-                    </button>
-                  </div>
-                )}
               </div>
+
+              <span className="navbar__social-link navbar__social-link--nepal">
+                <img
+                  src={nepal}
+                  alt="Nepal Flag"
+                  className="navbar__nepal-flag"
+                />
+              </span>
               <button
                 className="navbar__hamburger"
                 onClick={toggleSideMenu}
@@ -743,6 +814,9 @@ const Navbar: React.FC = () => {
                   onKeyDown={handleKeyDown}
                   className="navbar__search-input"
                   autoComplete="off"
+                  style={{
+                    outline: 'none'
+                  }}
                 />
                 <button type="submit" className="navbar__search-button">
                   <FaSearch />
@@ -766,15 +840,6 @@ const Navbar: React.FC = () => {
                         <h4 className="navbar__search-result-title">
                           {result.name}
                         </h4>
-                        <p className="navbar__search-result-price">
-                          Rs. {result.price.toFixed(2)}
-                          {result.discount > 0 && (
-                            <span className="navbar__search-result-discount">
-                              {" "}
-                              ({result.discount}% off)
-                            </span>
-                          )}
-                        </p>
                       </div>
                     </div>
                   ))}
@@ -810,6 +875,7 @@ const Navbar: React.FC = () => {
               >
                 Shop
               </NavLink>
+
               <NavLink
                 to="/contact"
                 className={({ isActive }) =>
@@ -819,8 +885,46 @@ const Navbar: React.FC = () => {
                   color: isActive ? '#f97316' : 'inherit'
                 })}
               >
-                Contact <span className="navbar__link-icon">🎧</span>
+                Contact <span className="navbar__link-icon"></span>
               </NavLink>
+
+              <div className="navbar__more-dropdown" ref={moreDropdownRef}>
+                <button
+                  className="navbar__link navbar__more-trigger"
+                  onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    color: '#42504b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px'
+                  }}
+                >
+                  More <FaChevronDown size={12} />
+                </button>
+                {moreDropdownOpen && (
+                  <div className="navbar__more-dropdown-content">
+                    <button
+                      className="navbar__more-dropdown-link"
+                      onClick={showComingSoon}
+                      style={{
+                        cursor: 'pointer'
+                      }}
+                    >
+                      DajuVai Rental
+                    </button>
+                    <button
+                      className="navbar__more-dropdown-link"
+                      onClick={showComingSoon}
+                    >
+                      DajuVai Services
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="navbar__account">
@@ -830,15 +934,7 @@ const Navbar: React.FC = () => {
                 onClick={toggleCart}
                 ref={cartButtonRef}
               >
-                <span className="navbar__account-text">
-                  My Cart | Rs.
-                  {cartItems
-                    .reduce(
-                      (total, item) => total + item.price * item.quantity,
-                      0
-                    )
-                    .toLocaleString("en-IN")}
-                </span>
+
                 <FaShoppingCart className="navbar__account-icon" />
                 {cartItems.length > 0 && (
                   <span className="navbar__cart-count">{cartItems.length}</span>
@@ -873,67 +969,9 @@ const Navbar: React.FC = () => {
                 >
                   {getUserAvatar()}
                 </div>
-                {isAuthenticated && profileDropdownOpen && (
-                  <div
-                    className="navbar__profile-dropdown-card"
-                    ref={profileRef}
-                  >
-                    <div className="navbar__profile-card-header">
-                      {getUserAvatar()}
-                      <div className="navbar__profile-card-info">
-                        <div className="navbar__profile-card-name">
-                          {user?.username || user?.email}
-                        </div>
-                        {user?.email && (
-                          <div className="navbar__profile-card-email">
-                            {user.email}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="navbar__profile-card-divider" />
-                    {user?.role === 'admin' && (
-                      <NavLink
-                        to="/admin-dashboard"
-                        className="navbar__profile-card-link"
-                        onClick={() => setProfileDropdownOpen(false)}
-                        style={({ isActive }) => ({
-                          color: isActive ? '#f97316' : 'inherit'
-                        })}
-                      >
-                        <FaHome className="navbar__profile-card-icon" /> Admin Dashboard
-                      </NavLink>
-                    )}
-                    {vendorAuthState.isAuthenticated && vendorAuthState.vendor && (
-                      <NavLink
-                        to="/dashboard"
-                        className="navbar__profile-card-link"
-                        onClick={() => setProfileDropdownOpen(false)}
-                        style={({ isActive }) => ({
-                          color: isActive ? '#f97316' : 'inherit'
-                        })}
-                      >
-                        <FaHome className="navbar__profile-card-icon" /> Vendor Dashboard
-                      </NavLink>
-                    )}
-                    <NavLink
-                      to="/user-profile"
-                      className="navbar__profile-card-link"
-                      style={({ isActive }) => ({
-                        color: isActive ? '#f97316' : 'inherit'
-                      })}
-                    >
-                      <FaCog className="navbar__profile-card-icon" /> Settings
-                    </NavLink>
-                    <button
-                      className="navbar__profile-card-link navbar__profile-card-link--logout"
-                      onClick={handleFullLogout}
-                    >
-                      <FaSignOutAlt className="navbar__profile-card-icon" /> Log Out
-                    </button>
-                  </div>
-                )}
               </div>
+
+
               <NavLink
                 to="/wishlist"
                 className="navbar__account-icon-link"
@@ -948,22 +986,18 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="nepal-flag">
-            <a
-              href="/nepal"
-              className="navbar__social-link navbar__social-link--nepal"
-            >
+            <span className="navbar__social-link navbar__social-link--nepal">
               <img
                 src={nepal}
                 alt="Nepal Flag"
                 className="navbar__nepal-flag"
               />
-            </a>
+            </span>
           </div>
         </div>
 
         <div
-          className={`navbar__side-menu ${sideMenuOpen ? "navbar__side-menu--open" : ""
-            }`}
+          className={`navbar__side-menu ${sideMenuOpen ? "navbar__side-menu--open" : ""}`}
           ref={sideMenuRef}
         >
           <div className="navbar__side-menu-header">
@@ -976,98 +1010,56 @@ const Navbar: React.FC = () => {
             </button>
             <h3 className="navbar__side-menu-title">Menu</h3>
           </div>
+          <div className="navbar__side-menu-category">
+            {!isLoading && !isAuthenticated && (
+              <a
+                href="/vendor-login"
+                className="navbar__side-menu-category-button"
+                onClick={toggleVendorAuthModal}
 
-          <div className="navbar__side-menu-links">
-            <NavLink
-              to="/"
-              className="navbar__side-menu-link"
-              end
-              style={({ isActive }) => ({
-                color: isActive ? '#f97316' : 'inherit'
-              })}
-            >
-              Home
-            </NavLink>
-            <NavLink
-              to="/shop"
-              className="navbar__side-menu-link"
-              style={({ isActive }) => ({
-                color: isActive ? '#f97316' : 'inherit'
-              })}
-            >
-              Shop
-            </NavLink>
-            {!isLoading && isAuthenticated && user?.role === 'admin' && (
-              <NavLink
-                to="/admin-dashboard"
-                className="navbar__side-menu-link"
-                style={({ isActive }) => ({
-                  color: isActive ? '#f97316' : 'inherit'
-                })}
               >
-                Admin Dashboard
-              </NavLink>
+                Vendor Login
+              </a>
             )}
-            {!isLoading && vendorAuthState.isAuthenticated && vendorAuthState.vendor && (
-              <NavLink
-                to="/dashboard"
-                className="navbar__side-menu-link"
-                style={({ isActive }) => ({
-                  color: isActive ? '#f97316' : 'inherit'
-                })}
-              >
-                Vendor Dashboard
-              </NavLink>
-            )}
-            {!isLoading && isAuthenticated ? (
-              <>
-                <NavLink
-                  to="/user-profile"
-                  className="navbar__side-menu-link"
-                  style={({ isActive }) => ({
-                    color: isActive ? '#f97316' : 'inherit'
-                  })}
-                >
-                  My Profile
-                </NavLink>
-                <NavLink
-                  to="/wishlist"
-                  className="navbar__side-menu-link"
-                  style={({ isActive }) => ({
-                    color: isActive ? '#f97316' : 'inherit'
-                  })}
-                >
-                  Wishlist
-                </NavLink>
-                <NavLink
-                  to="/orders"
-                  className="navbar__side-menu-link"
-                  style={({ isActive }) => ({
-                    color: isActive ? '#f97316' : 'inherit'
-                  })}
-                >
-                  My Orders
-                </NavLink>
-                <a
-                  href="/logout"
-                  className="navbar__side-menu-link"
-                  onClick={async (e) => {
+            <a href="/becomevendor" className="navbar__side-menu-category-button">Become a Vendor</a>
+            <button
+              className="navbar__side-menu-category-button"
+              onClick={() => setSideMoreOpen(!sideMoreOpen)}
+              aria-expanded={sideMoreOpen}
+            >
+              <span>More</span>
+              <FaChevronDown
+                size={20}
+                className={`navbar__side-menu-category-icon ${sideMoreOpen ? "navbar__side-menu-category-icon--open" : ""
+                  }`}
+              />
+            </button>
+            {sideMoreOpen && (
+              <div className="navbar__side-menu-subcategories">
+                <div
+                  className="navbar__side-menu-subcategory"
+                  style={{ cursor: 'pointer' }}
+                  onClick={(e) => {
                     e.preventDefault();
-                    await handleFullLogout();
-                    setAuthModalOpen(false);
+                    showComingSoon();
+                    setSideMenuOpen(false);
+
                   }}
                 >
-                  Logout
-                </a>
-              </>
-            ) : (
-              <a
-                href="/login"
-                className="navbar__side-menu-link"
-                onClick={toggleAuthModal}
-              >
-                Login
-              </a>
+                  DajuVai Rental
+                </div>
+                <div
+                  className="navbar__side-menu-subcategory"
+                  style={{ cursor: 'pointer' }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    showComingSoon();
+                    setSideMenuOpen(false);
+                  }}
+                >
+                  DajuVai Services
+                </div>
+              </div>
             )}
           </div>
 
@@ -1078,26 +1070,36 @@ const Navbar: React.FC = () => {
             <div className="navbar__side-menu-social-icons">
               <a
                 href="https://www.facebook.com/"
+                target="_blank"
                 className="navbar__social-link navbar__social-link--facebook"
               >
                 <FaFacebook />
               </a>
               <a
                 href="https://www.instagram.com/dajuvai_/"
+                target="_blank"
                 className="navbar__social-link navbar__social-link--instagram"
               >
                 <FaInstagram />
               </a>
               <a
                 href="https://www.tiktok.com/@www.dajuvai.com"
+                target="_blank"
                 className="navbar__social-link navbar__social-link--tiktok"
               >
                 <FaTiktok />
               </a>
+              <a
+                href="https://wa.me/9779700620004"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="navbar__social-link navbar__social-link--whatsapp"
+              >
+                <FaWhatsapp />
+              </a>
             </div>
           </div>
         </div>
-
         <div
           className={`navbar__side-cart ${cartOpen ? "navbar__side-cart--open" : ""
             }`}
@@ -1125,7 +1127,7 @@ const Navbar: React.FC = () => {
             ) : (
               <>
                 <div className="navbar__cart-items">
-                  {cartItems.map((item) => (
+                  {stableCartItems.map((item) => (
                     <div key={item.id} className="navbar__cart-item">
                       <div className="navbar__cart-item-image">
                         <img
@@ -1138,12 +1140,38 @@ const Navbar: React.FC = () => {
                       </div>
                       <div className="navbar__cart-item-details">
                         <h4 className="navbar__cart-item-name">{item.name}</h4>
+                        {(() => {
+                          const label = getCartVariantLabel(item);
+                          return label ? (
+                            <small style={{ display: 'block', color: '#666', marginTop: 4 }}>Variant: {label}</small>
+                          ) : null;
+                        })()}
                         <div className="navbar__cart-item-price-qty">
                           <span className="navbar__cart-item-price">
                             Rs. {item.price.toLocaleString("en-IN")}
                           </span>
-                          <div className="navbar__cart-item-quantity">
+                          <div className="navbar__cart-item-quantity" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <button
+                              type="button"
+                              aria-label="Decrease quantity"
+                              className="navbar__qty-btn navbar__qty-btn--dec"
+                              onClick={() => handleDecreaseQuantity(item.id, 1)}
+                              disabled={!!updatingItems?.has?.(item.id)}
+                              style={{ width: 28, height: 28, borderRadius: 4, border: '1px solid #ddd' }}
+                            >
+                              −
+                            </button>
                             <span>{item.quantity}</span>
+                            <button
+                              type="button"
+                              aria-label="Increase quantity"
+                              className="navbar__qty-btn navbar__qty-btn--inc"
+                              onClick={() => handleIncreaseQuantity(item.id, 1)}
+                              disabled={!!updatingItems?.has?.(item.id)}
+                              style={{ width: 28, height: 28, borderRadius: 4, border: '1px solid #ddd' }}
+                            >
+                              +
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -1198,8 +1226,7 @@ const Navbar: React.FC = () => {
             {categories.map((category: any) => (
               <div
                 key={category.id}
-                className={`navbar__category${activeDropdown === category.id ? " active" : ""
-                  }`}
+                className={`navbar__category${activeDropdown === category.id ? " active" : ""}`}
                 onMouseEnter={() => setActiveDropdown(category.id)}
                 onMouseLeave={() => setActiveDropdown(null)}
               >
@@ -1222,25 +1249,105 @@ const Navbar: React.FC = () => {
           <div className="navbar__social navbar__social--desktop">
             <a
               href="https://www.facebook.com/"
+              target="_blank"
               className="navbar__social-link navbar__social-link--facebook"
             >
               <FaFacebook />
             </a>
             <a
               href="https://www.instagram.com/dajuvai_/"
+              target="_blank"
               className="navbar__social-link navbar__social-link--instagram"
             >
               <FaInstagram />
             </a>
             <a
               href="https://www.tiktok.com/@www.dajuvai.com"
+              target="_blank"
               className="navbar__social-link navbar__social-link--tiktok"
             >
               <FaTiktok />
             </a>
+            <a
+              href="https://wa.me/9779700620004"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="navbar__social-link navbar__social-link--whatsapp"
+            >
+              <FaWhatsapp />
+            </a>
           </div>
         </div>
       </div>
+
+      {/* Unified profile drop-down rendered at top level */}
+      {isAuthenticated && profileDropdownOpen && (
+        <div
+          className="navbar__profile-dropdown-card"
+          ref={profileRef}
+          style={{
+            position: 'absolute',
+            top: '70px',
+            right: '16px',
+            zIndex: 9999,
+          }}
+        >
+          <div className="navbar__profile-card-header">
+            {getUserAvatar()}
+            <div className="navbar__profile-card-info">
+              <div className="navbar__profile-card-name">
+                {user?.username || user?.email}
+              </div>
+              {user?.email && (
+                <div className="navbar__profile-card-email">
+                  {user.email}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="navbar__profile-card-divider" />
+          {user?.role === 'admin' && (
+            <NavLink
+              to="/admin-dashboard"
+              className="navbar__profile-card-link"
+              onClick={() => setProfileDropdownOpen(false)}
+              style={({ isActive }) => ({
+                color: isActive ? '#f97316' : 'inherit'
+              })}
+            >
+              <FaHome className="navbar__profile-card-icon" /> Admin Dashboard
+            </NavLink>
+          )}
+          {vendorAuthState.isAuthenticated && vendorAuthState.vendor && (
+            <NavLink
+              to="/dashboard"
+              className="navbar__profile-card-link"
+              onClick={() => setProfileDropdownOpen(false)}
+              style={({ isActive }) => ({
+                color: isActive ? '#f97316' : 'inherit'
+              })}
+            >
+              <FaHome className="navbar__profile-card-icon" /> Vendor Dashboard
+            </NavLink>
+          )}
+          <NavLink
+            to="/user-profile"
+            className="navbar__profile-card-link"
+            onClick={() => setProfileDropdownOpen(false)}
+            style={({ isActive }) => ({
+              color: isActive ? '#f97316' : 'inherit'
+            })}
+          >
+            <FaCog className="navbar__profile-card-icon" /> Settings
+          </NavLink>
+          <button
+            className="navbar__profile-card-link navbar__profile-card-link--logout"
+            onClick={handleFullLogout}
+          >
+            <FaSignOutAlt className="navbar__profile-card-icon" /> Log Out
+          </button>
+        </div>
+      )}
 
       <div className="navbar__mobile-dock">
         <NavLink
@@ -1297,6 +1404,10 @@ const Navbar: React.FC = () => {
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
+      />
+      <VendorLogin
+        isOpen={vendorAuthModalOpen}
+        onClose={() => setVendorAuthModalOpen(false)}
       />
     </nav>
   );

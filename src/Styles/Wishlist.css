@@ -27,6 +27,79 @@
     padding: 3rem 0;
   }
   
+  .wishlist__login-container {
+    text-align: center;
+    padding: 3rem 0;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    max-width: 500px;
+    margin: 2rem auto;
+    padding: 2.5rem;
+  }
+
+  .wishlist__login-message {
+    font-size: 1.2rem;
+    color: #555;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  .wishlist__login-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0.9rem 2.2rem;
+    background: linear-gradient(135deg, #ff6b35 0%, #ff8c5a 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+    position: relative;
+    overflow: hidden;
+    min-width: 180px;
+  }
+
+  .wishlist__login-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: 0.5s;
+  }
+
+  .wishlist__login-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4);
+    background: linear-gradient(135deg, #ff5a1f 0%, #ff7a47 100%);
+  }
+
+  .wishlist__login-button:hover::before {
+    left: 100%;
+  }
+
+  .wishlist__login-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
+  }
+
+  .wishlist__login-icon {
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+  }
+
+  .wishlist__login-button:hover .wishlist__login-icon {
+    transform: scale(1.1);
+  }
+
   .wishlist__shop-button {
     display: inline-block;
     margin-top: 1rem;
@@ -460,4 +533,3 @@
 
 
 
-}

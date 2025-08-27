@@ -107,14 +107,6 @@
   font-weight: 600;
   color: #212529;
   margin: 0 0 12px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.tracking-help h4::before {
-  content: "💬";
-  font-size: 20px;
 }
 
 .tracking-help p {
@@ -128,28 +120,18 @@
   list-style: none;
   padding: 0;
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .tracking-help li {
   font-size: 14px;
   color: #495057;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-  transition: all 0.2s ease;
+  margin-bottom: 8px;
+  padding-left: 0;
+  line-height: 1.4;
 }
 
-.tracking-help li:hover {
-  background: #ffffff;
-  border-color: #FF6F00;
-  box-shadow: 0 2px 8px rgba(255, 111, 0, 0.1);
+.tracking-help li:last-child {
+  margin-bottom: 0;
 }
 
 /* Responsive Design */
@@ -158,73 +140,23 @@
     padding: 0 16px;
   }
   
-  .result-success,
-  .result-error {
-    padding: 20px;
-  }
-  
   .status-display {
     flex-direction: column;
-    gap: 12px;
+    text-align: center;
   }
   
-  .status-icon {
-    width: 64px;
-    height: 64px;
-    font-size: 36px;
+  .status-info {
+    text-align: center;
   }
   
   .status-value {
     font-size: 24px;
   }
   
-  .tracking-help {
-    padding: 20px;
-  }
-  
-  .tracking-help ul {
-    gap: 6px;
-  }
-  
-  .tracking-help li {
-    padding: 6px 10px;
-    font-size: 13px;
+  .status-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 36px;
   }
 }
 
-@media (max-width: 480px) {
-  .order-tracking-modal {
-    padding: 0 12px;
-  }
-  
-  .result-success,
-  .result-error {
-    padding: 16px;
-  }
-  
-  .status-icon {
-    width: 56px;
-    height: 56px;
-    font-size: 32px;
-  }
-  
-  .status-value {
-    font-size: 20px;
-  }
-  
-  .status-description {
-    font-size: 14px;
-  }
-  
-  .tracking-help {
-    padding: 16px;
-  }
-  
-  .tracking-help h4 {
-    font-size: 16px;
-  }
-  
-  .tracking-help p {
-    font-size: 13px;
-  }
-}

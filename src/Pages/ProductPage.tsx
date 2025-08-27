@@ -1,20 +1,42 @@
-import { useState, useEffect, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import '../Styles/ProductPage.css';
-import Navbar from '../Components/Navbar';
-import Footer from '../Components/Footer';
-import axiosInstance from '../api/axiosInstance';
-import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
-import { addToWishlist } from '../api/wishlist';
-import Preloader from '../Components/Preloader';
-import AuthModal from '../Components/AuthModal';
-import defaultProductImage from '../assets/logo.webp';
-import Reviews from '../Components/Reviews';
-import React from 'react';
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "react-hot-toast";
+import { useNavigate, useParams } from "react-router-dom";
 
-const CACHE_KEY_REVIEWS = 'productReviewsData';
+interface Category {
+  id: number;
+  name: string;
+  createdBy?: {
+    id: number;
+    username: string;
+  };
+  subcategories?: Array<{
+    id: number;
+    name: string;
+  }>;
+}
+
+interface Subcategory {
+  id: number;
+  name: string;
+  category?: Category;
+}
+
+import React from "react";
+import axiosInstance from "../api/axiosInstance";
+import { addToWishlist } from "../api/wishlist";
+import defaultProductImage from "../assets/logo.webp";
+import AuthModal from "../Components/AuthModal";
+import Footer from "../Components/Footer";
+import Navbar from "../Components/Navbar";
+import Preloader from "../Components/Preloader";
+import RecommendedProducts from "../Components/Product/RecommendedProducts";
+import Reviews from "../Components/Reviews";
+import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
+import "../Styles/ProductPage.css";
+
+const CACHE_KEY_REVIEWS = "productReviewsData";
 
 interface Review {
   id: number;
@@ -33,101 +55,303 @@ interface ReviewsResponse {
   data: {
     averageRating: number;
     reviews: Review[];
+    total: number;
+    totalPages: number;
   };
 }
 
 const ProductPage = () => {
-  const { id } = useParams<{ id: string }>();
-  const [selectedColor, setSelectedColor] = useState('');
-  const [selectedMemory, setSelectedMemory] = useState('');
+  // Helper to normalize any relative URL to an absolute URL
+  const toFullUrl = (imgUrl: string): string => {
+    if (!imgUrl) return "";
+    return imgUrl.startsWith("http")
+      ? imgUrl
+      : `${window.location.origin}${imgUrl.startsWith("/") ? "" : "/"}${imgUrl}`;
+  };
+
+  // Extract productId, categoryId, and subcategoryId from URL
+  const {
+    id: productId,
+    categoryId,
+    subcategoryId,
+  } = useParams<{
+    id: string;
+    categoryId?: string;
+    subcategoryId?: string;
+  }>();
+  const id = productId; // For backward compatibility
+  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
+  const [toastMessage, setToastMessage] = useState("");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [imageError, setImageError] = useState<boolean[]>([]);
+  const [currentReviewPage, setCurrentReviewPage] = useState(1);
 
   // Enhanced Amazon-style zoom state
   const [isZoomActive, setIsZoomActive] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
   const mainImageRef = useRef<HTMLDivElement>(null);
-  
+  const quantityInputRef = useRef<HTMLInputElement>(null);
+
   // Amazon-like zoom configuration
-  const ZOOM_LEVEL = 2.5;
-  const ZOOM_BOX_SIZE = 400; // Size of the zoomed-in box (doubled from 200)
+  const ZOOM_LEVEL = 3.0; // Increased zoom level for better detail
+  const ZOOM_BOX_SIZE = 450; // Size of the zoomed-in box
 
   const { handleCartOnAdd } = useCart();
   const { token, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Fetch product data using React Query
+  // Fetch product data using React Query with the new API structure
   const { data: productData, isLoading: isProductLoading } = useQuery({
-    queryKey: ['product', id],
+    queryKey: ["product", id],
     queryFn: async () => {
-      if (!id || isNaN(Number(id))) throw new Error('Invalid product ID');
-      
+      if (!id || isNaN(Number(id))) throw new Error("Invalid product ID");
+
       const response = await axiosInstance.get(`/api/product/${id}`);
       const apiProduct = response.data.product;
 
       if (!apiProduct) {
-        throw new Error('Product not found');
+        throw new Error("Product not found");
       }
 
-      const basePrice = parseFloat(apiProduct.basePrice) || 0;
-      const discount = parseFloat(apiProduct.discount) || 0;
-      let price = basePrice;
-      let savings = '0';
-      
-      if (apiProduct.discountType === 'PERCENTAGE') {
-        savings = (basePrice * (discount / 100)).toFixed(2);
-        price = basePrice - parseFloat(savings);
-      } else if (apiProduct.discountType === 'FLAT') {
-        savings = discount.toFixed(2);
-        price = basePrice - discount;
+      // Process variants and images
+      const variantImages: string[] = [];
+      let allVariants = [];
+      let defaultVariant = null;
+
+      // Process each variant
+      if (apiProduct.variants && Array.isArray(apiProduct.variants)) {
+        allVariants = apiProduct.variants.map((variant: any) => {
+          // Parse variant images
+          const variantImgUrls: string[] = [];
+          if (variant.variantImages && Array.isArray(variant.variantImages)) {
+            variant.variantImages.forEach((img: any) => {
+              try {
+                // Handle both string URLs and object formats
+                let imgUrl = "";
+                if (typeof img === "string") {
+                  // If it's a string, it might be a direct URL or a JSON string
+                  try {
+                    const parsed = JSON.parse(img);
+                    imgUrl = parsed.url || parsed.imageUrl || img;
+                  } catch {
+                    imgUrl = img; // It's already a URL string
+                  }
+                } else if (img && typeof img === "object") {
+                  // Handle image object
+                  imgUrl = img.url || img.imageUrl || "";
+                }
+
+                if (imgUrl) {
+                  // Ensure we have a full URL
+                  const fullUrl = imgUrl.startsWith("http")
+                    ? imgUrl
+                    : `${window.location.origin}${imgUrl.startsWith("/") ? "" : "/"}${imgUrl}`;
+                  variantImgUrls.push(fullUrl);
+                  if (!variantImages.includes(fullUrl)) {
+                    variantImages.push(fullUrl);
+                  }
+                }
+              } catch (e) {
+                console.error("Error parsing variant image:", e, img);
+              }
+            });
+          }
+
+          // Calculate variant pricing
+          const basePrice = parseFloat(variant.basePrice) || 0;
+          const discount = parseFloat(variant.discount) || 0;
+          let price = basePrice;
+          let savings = 0;
+
+          if (variant.discountType === "PERCENTAGE") {
+            savings = basePrice * (discount / 100);
+            price = basePrice - savings;
+          } else if (variant.discountType === "FLAT") {
+            savings = discount;
+            price = basePrice - discount;
+          }
+
+          const variantData = {
+            ...variant,
+            variantImgUrls,
+            calculatedPrice: price,
+            calculatedSavings: savings,
+            originalPrice: basePrice,
+            stock: variant.stock || 0,
+            status: variant.status || "AVAILABLE",
+          };
+
+          // Set first variant as default
+          if (!defaultVariant) {
+            defaultVariant = variantData;
+          }
+
+          return variantData;
+        });
       }
+
+      // Process product images
+      const productImages = Array.isArray(apiProduct.productImages)
+        ? apiProduct.productImages
+          .map((img: any) => {
+            try {
+              let imgUrl = "";
+              if (typeof img === "string") {
+                // Could be a direct URL or a JSON string
+                try {
+                  const parsed = JSON.parse(img);
+                  imgUrl = parsed.url || parsed.imageUrl || img;
+                } catch {
+                  imgUrl = img; // already a URL string
+                }
+              } else if (img && typeof img === "object") {
+                imgUrl = img.url || img.imageUrl || "";
+              }
+              return imgUrl ? toFullUrl(imgUrl) : "";
+            } catch (e) {
+              console.error("Error parsing product image:", e, img);
+              return "";
+            }
+          })
+          .filter(Boolean)
+        : [];
+
+      const allImages = [
+        ...new Set([...productImages, ...variantImages]),
+      ].filter(Boolean);
+
+      // Calculate product-level pricing if no variants
+      let productPrice = 0;
+      let productOriginalPrice = 0;
+
+      if (apiProduct.hasVariants) {
+        // Use default variant for pricing if available
+        if (defaultVariant) {
+          productPrice = defaultVariant.calculatedPrice;
+          productOriginalPrice = defaultVariant.originalPrice;
+        }
+      } else {
+        // Use product-level pricing
+        const basePrice = parseFloat(apiProduct.basePrice) || 0;
+        const discount = parseFloat(apiProduct.discount) || 0;
+
+        productOriginalPrice = basePrice;
+        productPrice = basePrice;
+
+        if (apiProduct.discountType === "PERCENTAGE") {
+          productPrice = basePrice - basePrice * (discount / 100);
+        } else if (apiProduct.discountType === "FLAT") {
+          productPrice = basePrice - discount;
+        }
+      }
+
+      // Extract size and color options from variants
+      const sizeOptions = new Set<string>();
+      const colorOptions = new Set<{ name: string; img: string }>();
+
+      allVariants.forEach((variant: any) => {
+        if (variant.attributes) {
+          Object.entries(variant.attributes).forEach(([key, value]) => {
+            if (typeof value === "string") {
+              if (key.toLowerCase().includes("size")) {
+                sizeOptions.add(value);
+              } else if (key.toLowerCase().includes("color")) {
+                colorOptions.add({
+                  name: value,
+                  img: variant.variantImgUrls?.[0] || "",
+                });
+              }
+            }
+          });
+        }
+      });
+
+      // Derive category/subcategory IDs robustly
+      const derivedCategoryId =
+        apiProduct?.category?.id != null
+          ? Number(apiProduct.category.id)
+          : (apiProduct as any)?.categoryId != null
+            ? Number((apiProduct as any).categoryId)
+            : undefined;
+      const derivedCategoryName = apiProduct?.category?.name;
+
+      const derivedSubcategoryId =
+        apiProduct?.subcategory?.id != null
+          ? Number(apiProduct.subcategory.id)
+          : (apiProduct as any)?.subcategoryId != null
+            ? Number((apiProduct as any).subcategoryId)
+            : undefined;
+      const derivedSubcategoryName = apiProduct?.subcategory?.name;
 
       return {
         product: {
           id: apiProduct.id,
           name: apiProduct.name,
           description: apiProduct.description,
-          price: price.toFixed(2),
-          originalPrice: basePrice > price ? basePrice.toFixed(2) : undefined,
-          rating: 0,
-          ratingCount: '0',
-          image: apiProduct.productImages?.[0] || '',
-          brand: apiProduct.brand?.name || 'Unknown Brand',
-          category: { id: 0, name: 'update testing subcategory' },
-          subcategory: { id: 0, name: 'update testing subcategory' },
-          vendor: apiProduct.vendor?.businessName || 'Himalayan Crafts',
-          productImages: apiProduct.productImages || [],
-          colors: [] as { name: string; img: string }[],
-          memoryOptions: apiProduct.size || [],
-          stock: apiProduct.stock || 10,
+          price: productPrice.toFixed(2),
+          originalPrice:
+            productOriginalPrice > productPrice
+              ? productOriginalPrice.toFixed(2)
+              : undefined,
+          rating: 0, // Will be populated from reviews
+          ratingCount: "0", // Will be populated from reviews
+          image: allImages[0] || defaultProductImage,
+          brand: apiProduct.brand?.name || "Unknown Brand",
+          category:
+            derivedCategoryId != null
+              ? {
+                id: derivedCategoryId,
+                name: derivedCategoryName || "Category",
+              }
+              : undefined,
+          subcategory:
+            derivedSubcategoryId != null
+              ? {
+                id: derivedSubcategoryId,
+                name: derivedSubcategoryName || "Subcategory",
+              }
+              : undefined,
+          vendor: apiProduct.vendor || {
+            id: null,
+            businessName: "Unknown Vendor",
+          },
+          productImages: allImages,
+          colors: Array.from(colorOptions),
+          memoryOptions: Array.from(sizeOptions),
+          stock: apiProduct.stock || defaultVariant?.stock || 0,
           isBestSeller: false,
+          variants: allVariants,
+          hasVariants: apiProduct.hasVariants || false,
+          selectedVariant: defaultVariant,
         },
-        vendorId: apiProduct.vendorId || null
+        vendorId: apiProduct.vendorId || null,
       };
     },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     gcTime: 10 * 60 * 1000, // Keep unused data for 10 minutes
   });
 
-  // Fetch reviews data using React Query
+  // Fetch reviews data using React Query with pagination
   const { data: reviewsData, isLoading: isReviewsLoading } = useQuery({
-    queryKey: ['reviews', id],
+    queryKey: ["reviews", id, currentReviewPage],
     queryFn: async () => {
-      if (!id || isNaN(Number(id))) throw new Error('Invalid product ID');
-      
-      const response = await axiosInstance.get<ReviewsResponse>(`/api/reviews/${id}`);
+      if (!id || isNaN(Number(id))) throw new Error("Invalid product ID");
+
+      const response = await axiosInstance.get<ReviewsResponse>(
+        `/api/reviews/${id}?page=${currentReviewPage}`
+      );
       if (!response.data.success) {
-        throw new Error('Failed to fetch reviews');
+        throw new Error("Failed to fetch reviews");
       }
-      
       return {
         reviews: response.data.data.reviews || [],
         averageRating: response.data.data.averageRating || 0,
-        ratingCount: response.data.data.reviews?.length || 0
+        totalReviews: response.data.data.total || 0,
+        totalPages: response.data.data.totalPages || 1,
       };
     },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
@@ -136,22 +360,261 @@ const ProductPage = () => {
 
   const product = productData?.product;
   const vendorId = productData?.vendorId;
+
+  // Determine effective category/subcategory for recommendations
+  const effectiveCategoryId =
+    categoryId ??
+    (product?.category?.id != null ? String(product.category.id) : undefined);
+  const effectiveSubcategoryId =
+    subcategoryId ??
+    (product?.subcategory?.id != null
+      ? String(product.subcategory.id)
+      : undefined);
+
+  // Fetch recommended products
+  const { data: recommendedProducts, isLoading: isLoadingRecommended } = useQuery({
+    queryKey: [
+      "recommendedProducts",
+      effectiveCategoryId,
+      effectiveSubcategoryId,
+    ],
+    queryFn: async () => {
+      const fetchWithParams = async (p: URLSearchParams) => {
+        const url = p.toString()
+          ? `/api/categories/all/products?${p.toString()}`
+          : `/api/categories/all/products`;
+        const res = await axiosInstance.get(url);
+        const products = (res?.data?.data ?? []) as any[];
+        return products.map((product) => {
+          const rating = product.avgRating || product.rating || 0;
+          const ratingCount = product.count || product.reviews?.length || 0;
+          return {
+            ...product,
+            rating,
+            ratingCount,
+          };
+        });
+      };
+
+      try {
+        // 1) Try most-specific: subcategory + category
+        if (effectiveCategoryId && effectiveSubcategoryId) {
+          const params = new URLSearchParams();
+          params.append("categoryId", String(effectiveCategoryId));
+          params.append("subcategoryId", String(effectiveSubcategoryId));
+          let data = await fetchWithParams(params);
+          if (!Array.isArray(data) || data.length <= 1) {
+            const catOnly = new URLSearchParams();
+            catOnly.append("categoryId", String(effectiveCategoryId));
+            data = await fetchWithParams(catOnly);
+            if (!Array.isArray(data) || data.length <= 1) {
+              data = await fetchWithParams(new URLSearchParams());
+            }
+          }
+          return data;
+        }
+
+        // 2) If only subcategory
+        if (effectiveSubcategoryId && !effectiveCategoryId) {
+          const params = new URLSearchParams();
+          params.append("subcategoryId", String(effectiveSubcategoryId));
+          let data = await fetchWithParams(params);
+          if (!Array.isArray(data) || data.length <= 1) {
+            data = await fetchWithParams(new URLSearchParams());
+          }
+          return data;
+        }
+
+        // 3) If only category
+        if (effectiveCategoryId && !effectiveSubcategoryId) {
+          const params = new URLSearchParams();
+          params.append("categoryId", String(effectiveCategoryId));
+          let data = await fetchWithParams(params);
+          if (!Array.isArray(data) || data.length <= 1) {
+            data = await fetchWithParams(new URLSearchParams());
+          }
+          return data;
+        }
+
+        // 4) Fallback: no filters
+        return await fetchWithParams(new URLSearchParams());
+      } catch (error) {
+        console.error("Failed to fetch recommended products:", error);
+        return [];
+      }
+    },
+    enabled: true,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Safely format variant attributes
+  const formatVariantAttributes = (attributes: any): string => {
+    if (!attributes) return "";
+    if (Array.isArray(attributes)) {
+      return attributes
+        .map((attr: any) => {
+          const label = String(attr?.type ?? attr?.attributeType ?? "");
+          const vals = Array.isArray(attr?.values)
+            ? attr.values.map((v: any) => String(v?.value ?? v)).filter(Boolean)
+            : Array.isArray(attr?.attributeValues)
+              ? attr.attributeValues
+                .map((v: any) => String(v?.value ?? v))
+                .filter(Boolean)
+              : [];
+          return label && vals.length ? `${label}: ${vals.join(", ")}` : "";
+        })
+        .filter(Boolean)
+        .join(", ");
+    }
+    if (typeof attributes === "object") {
+      return Object.entries(attributes)
+        .map(([key, value]) => {
+          if (value == null) return "";
+          if (Array.isArray(value)) {
+            const vals = value
+              .map((v: any) => String(v?.value ?? v))
+              .filter(Boolean);
+            return `${key}: ${vals.join(", ")}`;
+          }
+          if (typeof value === "object") {
+            const val = (value as any).value ?? (value as any).name ?? "";
+            return val
+              ? `${key}: ${String(val)}`
+              : `${key}: ${JSON.stringify(value)}`;
+          }
+          return `${key}: ${String(value)}`;
+        })
+        .filter(Boolean)
+        .join(", ");
+    }
+    return String(attributes);
+  };
+
+  // Fetch category data
+  const { data: categoryData } = useQuery<{ data: Category }>({
+    queryKey: ["category", categoryId],
+    queryFn: async () => {
+      if (!categoryId) return null;
+      try {
+        const response = await axiosInstance.get(
+          `/api/categories/${categoryId}`
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching category:", error);
+        return null;
+      }
+    },
+    enabled: !!categoryId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Find the subcategory
+  const subcategory = categoryData?.data?.subcategories?.find(
+    (sub: any) => sub.id === Number(subcategoryId)
+  );
+
+  // Fallback to product data
+  const displayCategory = categoryData?.data || product?.category;
+  const displaySubcategory = subcategory || product?.subcategory;
   const reviews = (reviewsData?.reviews || []).map((review: Review) => ({
     ...review,
-    userName: review.user?.username || review.user?.email?.split('@')[0] || 'Anonymous',
+    userName:
+      review.user?.username || review.user?.email?.split("@")[0] || "Anonymous",
   }));
   const averageRating = reviewsData?.averageRating || 0;
-  const ratingCount = reviewsData?.ratingCount || 0;
+  const totalReviews = reviewsData?.totalReviews || 0;
+  const totalPages = reviewsData?.totalPages || 1;
 
   useEffect(() => {
     if (product) {
-      setSelectedColor(product.colors && product.colors.length > 0 ? product.colors[0].name : '');
-      setSelectedMemory(product.memoryOptions && product.memoryOptions.length > 0 ? product.memoryOptions[0] : '');
-      setImageError(new Array(product.productImages?.length || 1).fill(false));
+      setSelectedColor(
+        product.colors && product.colors.length > 0
+          ? product.colors[0].name
+          : ""
+      );
+      const defaultVar =
+        product.hasVariants && product.variants && product.variants.length > 0
+          ? product.variants[0]
+          : null;
+      setSelectedVariant(defaultVar);
+      const imgs =
+        defaultVar &&
+          defaultVar.variantImgUrls &&
+          defaultVar.variantImgUrls.length > 0
+          ? defaultVar.variantImgUrls
+          : product.productImages || [];
+      setImageError(
+        new Array(imgs && imgs.length ? imgs.length : 1).fill(false)
+      );
     }
   }, [product]);
 
-  // Enhanced Amazon-style zoom handlers
+  // Handle image selection
+  const handleImageSelect = (index: number) => {
+    setSelectedImageIndex(index);
+  };
+
+  // Get current images
+  const getCurrentImages = () => {
+    if (selectedVariant?.variantImgUrls?.length > 0) {
+      return selectedVariant.variantImgUrls;
+    }
+    if (
+      product?.hasVariants &&
+      product?.variants?.[0]?.variantImgUrls?.length > 0
+    ) {
+      return product.variants[0].variantImgUrls;
+    }
+    return product?.productImages || [];
+  };
+
+  // Sync error-state array and selected image index
+  useEffect(() => {
+    const imgs = getCurrentImages();
+    setImageError(new Array(imgs && imgs.length ? imgs.length : 1).fill(false));
+    if (selectedImageIndex >= (imgs?.length || 0)) {
+      setSelectedImageIndex(0);
+    }
+  }, [selectedVariant, product]);
+
+  // Get current stock
+  const getCurrentStock = () => {
+    if (selectedVariant) {
+      return selectedVariant.stock || 0;
+    }
+    return product?.stock || 0;
+  };
+
+  // Get current price
+  const getCurrentPrice = () => {
+    if (selectedVariant) {
+      return selectedVariant.calculatedPrice || 0;
+    }
+    return parseFloat(product?.price || "0");
+  };
+
+  // Get original price
+  const getOriginalPrice = () => {
+    if (selectedVariant) {
+      return (
+        selectedVariant.originalPrice || selectedVariant.calculatedPrice || 0
+      );
+    }
+    return parseFloat(product?.originalPrice || product?.price || "0");
+  };
+
+  // Handle variant selection
+  const handleVariantSelect = (variant: any) => {
+    setSelectedVariant(variant);
+    if (variant.variantImgUrls && variant.variantImgUrls.length > 0) {
+      setSelectedImageIndex(0);
+    } else if (product?.productImages?.length > 0) {
+      setSelectedImageIndex(0);
+    }
+  };
+
+  // Zoom handlers
   const handleMouseEnter = () => {
     setIsZoomActive(true);
   };
@@ -167,11 +630,9 @@ const ProductPage = () => {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // Constrain mouse position within image bounds
     const constrainedX = Math.max(0, Math.min(x, rect.width));
     const constrainedY = Math.max(0, Math.min(y, rect.height));
 
-    // Calculate percent position for transform-origin
     const percentX = (constrainedX / rect.width) * 100;
     const percentY = (constrainedY / rect.height) * 100;
     setZoomPosition({ x: percentX, y: percentY });
@@ -189,8 +650,9 @@ const ProductPage = () => {
       return;
     }
     if (!product) return;
-    handleCartOnAdd(product, quantity);
-    showNotification('Product added to cart!');
+    const variantId = selectedVariant?.id;
+    handleCartOnAdd(product, quantity, variantId);
+    showNotification("Product added to cart!");
   };
 
   const handleAddToWishlist = async () => {
@@ -199,10 +661,21 @@ const ProductPage = () => {
       return;
     }
     try {
-      await addToWishlist(product.id, token);
-      showNotification('Product added to wishlist!');
-    } catch {
-      showNotification('Failed to add to wishlist');
+      const variantId = selectedVariant?.id;
+      await addToWishlist(product.id, variantId, token);
+      toast.success("Added to wishlist");
+    } catch (e: any) {
+      const status = e?.response?.status;
+      const msg: string =
+        e?.response?.data?.message ||
+        e?.response?.data?.error ||
+        e?.message ||
+        "";
+      if (status === 409 || /already/i.test(msg)) {
+        toast("Already present in the wishlist");
+      } else {
+        toast.error("Failed to add to wishlist");
+      }
     }
   };
 
@@ -212,26 +685,60 @@ const ProductPage = () => {
       return;
     }
     if (!product) return;
-    // Pass product info to checkout page via state
-    navigate('/checkout', {
+    navigate("/checkout", {
       state: {
         buyNow: true,
         product: {
           ...product,
           selectedColor,
-          selectedMemory,
-          quantity
-        }
-      }
+          quantity,
+        },
+      },
     });
   };
 
   const handleQuantityChange = (increment: boolean) => {
     if (!product) return;
-    if (increment && quantity < Math.min(product.stock || 10, 10)) {
-      setQuantity(quantity + 1);
+    const currentStock = getCurrentStock();
+    if (increment && quantity < currentStock) {
+      setQuantity((prev) => prev + 1);
     } else if (!increment && quantity > 1) {
-      setQuantity(quantity - 1);
+      setQuantity((prev) => prev - 1);
+    }
+  };
+
+  const handleQuantityInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    const currentStock = getCurrentStock();
+
+    if (value === "") {
+      setQuantity(1);
+      return;
+    }
+
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue)) {
+      if (numValue <= 0) {
+        setQuantity(1);
+      } else if (numValue <= currentStock) {
+        setQuantity(numValue);
+      } else {
+        setQuantity(currentStock);
+      }
+    }
+  };
+
+  const handleQuantityBlur = () => {
+    if (quantity < 1) {
+      setQuantity(1);
+    }
+  };
+
+  const handleQuantitySelect = () => {
+    if (quantityInputRef.current) {
+      quantityInputRef.current.select();
     }
   };
 
@@ -241,6 +748,13 @@ const ProductPage = () => {
       newState[index] = true;
       return newState;
     });
+  };
+
+  const handleReviewPageChange = (page: number) => {
+    setCurrentReviewPage(page);
+    document
+      .getElementById("reviews-section")
+      ?.scrollIntoView({ behavior: "smooth" });
   };
 
   if (isProductLoading || isReviewsLoading || !product) {
@@ -253,83 +767,53 @@ const ProductPage = () => {
     );
   }
 
-  const currentImage = imageError[selectedImageIndex]
-    ? defaultProductImage
-    : product.productImages?.[selectedImageIndex] || defaultProductImage;
+  const currentImages = getCurrentImages();
+  const currentImage =
+    imageError[selectedImageIndex] || !currentImages[selectedImageIndex]
+      ? defaultProductImage
+      : currentImages[selectedImageIndex];
 
   return (
-    <>
+    <div className="app">
       <Navbar />
-      <div className="product-page">
+      <main className="product-page">
         <div className="product-page__container">
           <div className="product-page__content">
             <div className="product-gallery">
               <div className="product-gallery__images">
-                <div 
+                <div
                   className="product-gallery__main-image"
                   ref={mainImageRef}
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                   onMouseMove={handleMouseMove}
-                  style={{ 
-                    position: 'relative', 
-                    overflow: 'hidden',
-                    cursor: isZoomActive ? 'crosshair' : 'zoom-in',
-                  }}
                 >
                   <img
                     src={currentImage}
                     alt={product.name}
                     onError={() => handleImageError(selectedImageIndex)}
-                    style={{ 
-                      width: '100%',
-                      height: 'auto',
-                      display: 'block',
-                      userSelect: 'none',
-                      transition: 'transform 0.2s cubic-bezier(0.4,0,0.2,1)',
-                      // Remove in-place zoom
-                      transform: 'scale(1)',
-                      transformOrigin: 'center center',
-                    }}
                   />
-                  {/* Zoom box overlay on the right, over product info */}
                   {isZoomActive && (
                     <div
+                      className="product-gallery__zoom-box"
                       style={{
-                        position: 'fixed', // Use fixed to overlay anywhere
-                        left: mainImageRef.current ? mainImageRef.current.getBoundingClientRect().right + 32 : '60%',
-                        top: mainImageRef.current ? mainImageRef.current.getBoundingClientRect().top : 100,
-                        width: `${ZOOM_BOX_SIZE}px`,
-                        height: `${ZOOM_BOX_SIZE}px`,
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        overflow: 'hidden',
-                        zIndex: 2000,
-                        boxShadow: '0 4px 8px rgba(0,0,0,0.1), 0 6px 20px rgba(0,0,0,0.15)',
-                        backgroundColor: '#fff',
                         backgroundImage: `url(${currentImage})`,
                         backgroundSize: `${ZOOM_LEVEL * 100}%`,
                         backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
-                        backgroundRepeat: 'no-repeat',
-                        pointerEvents: 'none',
-                        opacity: 1,
-                        transition: 'opacity 0.2s ease-out',
                       }}
                     />
                   )}
                 </div>
-
-                {/* Clean up: Remove always-false blocks */}
-
-                {product.productImages && product.productImages.length > 1 && (
+                {currentImages && currentImages.length > 1 && (
                   <div className="product-gallery__thumbnails">
-                    {product.productImages.map((image: string, index: number) => (
+                    {currentImages.map((image: string, index: number) => (
                       <button
                         key={index}
-                        className={`product-gallery__thumbnail ${
-                          selectedImageIndex === index ? 'product-gallery__thumbnail--active' : ''
-                        }`}
-                        onClick={() => setSelectedImageIndex(index)}
+                        className={`product-gallery__thumbnail ${selectedImageIndex === index
+                            ? "product-gallery__thumbnail--active"
+                            : ""
+                          }`}
+                        onClick={() => handleImageSelect(index)}
                       >
                         <img
                           src={imageError[index] ? defaultProductImage : image}
@@ -341,183 +825,189 @@ const ProductPage = () => {
                   </div>
                 )}
               </div>
-              
-              <div className="product-info">
-                <div className="product-info__badges">
-                  {product.isBestSeller && (
-                    <span className="product-info__badge product-info__badge--bestseller">
-                      Best Seller
-                    </span>
-                  )}
-                  <span className="product-info__badge product-info__badge--category">
-                    {product.category?.name || 'Category'}
-                  </span>
-                </div>
-                <h1 className="product-info__brand">{product.brand || 'Unknown Brand'}</h1>
-                <h2 className="product-info__title">{product.name}</h2>
-                <p className="product-info__description">{product.description}</p>
-                <div className="product-rating">
-                  <span className="product-rating__score">{averageRating.toFixed(1)}</span>
-                  <div className="product-rating__stars">
-                    {Array(5).fill('★').map((star, i) => (
-                      <span key={i} style={{ color: i < Math.round(averageRating) ? '#fbbf24' : '#d1d5db' }}>
-                        {star}
-                      </span>
-                    ))}
-                  </div>
-                  <span className="product-rating__count">({ratingCount} ratings)</span>
-                </div>
+            </div>
+
+            <div className="product-info">
+              <div className="product-info__header">
+                <h1 className="product-info__title">{product.name}</h1>
+
                 <div className="product-price">
-                  <span className="product-price__current">Rs.{product.price}</span>
-                  {product.originalPrice && (
+                  <span className="product-price__current">Rs. {getCurrentPrice().toFixed(2)}</span>
+                  {getOriginalPrice() > getCurrentPrice() && (
                     <>
-                      <span className="product-price__original">Rs.{product.originalPrice}</span>
+                      <span className="product-price__original">Rs. {getOriginalPrice().toFixed(2)}</span>
                       <span className="product-price__savings">
-                        Save Rs.{(parseFloat(String(product.originalPrice)) - parseFloat(String(product.price))).toFixed(2)}
+                        Save Rs. {(getOriginalPrice() - getCurrentPrice()).toFixed(2)}
                       </span>
                     </>
                   )}
-                  <span className="product-price__vat">Inclusive of all taxes</span>
                 </div>
-                {product.memoryOptions && product.memoryOptions.length > 0 && (
-                  <div className="product-storage">
-                    <div className="product-storage__label">Storage:</div>
-                    <div className="product-storage__value">{product.memoryOptions[0]}</div>
+              </div>
+
+              {product.description && (
+                <div className="product-info__description">
+                  <h3>Description</h3>
+                  <p>{product.description}</p>
+                </div>
+              )}
+
+              {product.hasVariants &&
+                product.variants &&
+                product.variants.length > 1 && (
+                  <div className="product-options">
+                    <h4 className="product-options__label">Available Options:</h4>
+                    <div className="product-options__variants">
+                      {product.variants.map((variant: any) => (
+                        <div
+                          key={variant.id}
+                          className={`product-options__variant ${selectedVariant?.id === variant.id
+                              ? "product-options__variant--active"
+                              : ""
+                            }`}
+                          onClick={() =>
+                            variant.stock > 0 && handleVariantSelect(variant)
+                          }
+                        >
+                          <div className="product-options__variant-info">
+                            <div>{formatVariantAttributes(variant.attributes)}</div>
+                            <div className="product-options__variant-sku">
+                              Rs. {variant.calculatedPrice?.toFixed(2) || "0.00"}
+                            </div>
+                            {variant.stock <= 0 && (
+                              <div>Out of Stock</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
-                <div className="product-options">
-                  {product.colors && product.colors.length > 0 && (
-                    <div className="product-options__group">
-                      <label className="product-options__label">Color: {selectedColor}</label>
-                      <div className="product-options__colors">
-                        {product.colors.map((color: { name: string; img: string }) => (
-                          <button
-                            key={color.name}
-                            className={`product-options__color ${
-                              selectedColor === color.name ? 'product-options__color--active' : ''
-                            }`}
-                            onClick={() => setSelectedColor(color.name)}
-                          >
-                            <img src={color.img} alt={color.name} />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {product.memoryOptions && product.memoryOptions.length > 0 && (
-                    <div className="product-options__group">
-                      <label className="product-options__label">Storage: {selectedMemory}</label>
-                      <div className="product-options__memory">
-                        {product.memoryOptions.map((memory: string) => (
-                          <button
-                            key={memory}
-                            className={`product-options__memory-item ${
-                              selectedMemory === memory ? 'product-options__memory-item--active' : ''
-                            }`}
-                            onClick={() => setSelectedMemory(memory)}
-                          >
-                            {memory}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="product-quantity">
-                  <label className="product-quantity__label">Quantity:</label>
-                  <div className="product-quantity__selector">
-                    <button
-                      className="product-quantity__button"
-                      onClick={() => handleQuantityChange(false)}
-                      disabled={quantity <= 1}
-                    >
-                      −
-                    </button>
-                    <span className="product-quantity__value">{quantity}</span>
-                    <button
-                      className="product-quantity__button"
-                      onClick={() => {
-                        if (quantity >= (product.stock || 10)) {
-                          showNotification(`Only ${product.stock} item${product.stock > 1 ? 's' : ''} in stock`);
-                          return;
-                        }
-                        handleQuantityChange(true);
-                      }}
-                      disabled={quantity >= Math.min(product.stock || 10, 10)}
-                    >
-                      +
-                    </button>
-                  </div>
-                  <div className="product-quantity__stock">In stock: {product.stock}</div>
-                </div>
-                <div className="product-actions">
-                  {/* <button
-                    className="product-actions__button product-actions__button--primary"
-                    style={{ order: 1 }}
-                    onClick={handleBuyNow}
-                  >
-                    Buy Now
-                  </button> */}
+
+              <div className="product-quantity">
+                <h4 className="product-quantity__label">Quantity:</h4>
+                <div className="product-quantity__selector">
                   <button
-                    className="product-actions__button product-actions__button--primary"
-                    style={{ order: 2 }}
-                    onClick={handleAddToCart}
+                    className="product-quantity__button"
+                    onClick={() => handleQuantityChange(false)}
+                    disabled={quantity <= 1}
                   >
-                    Add to Cart
+                    -
                   </button>
+                  <input
+                    ref={quantityInputRef}
+                    type="number"
+                    className="product-quantity__input"
+                    value={quantity}
+                    onChange={handleQuantityInputChange}
+                    onBlur={handleQuantityBlur}
+                    onClick={handleQuantitySelect}
+                    onFocus={handleQuantitySelect}
+                    onKeyDown={(e) => {
+                      if (["e", "E", "+", "-", "."].includes(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    min="1"
+                    max={getCurrentStock()}
+                  />
                   <button
-                    className="product-actions__button product-actions__button--secondary"
-                    style={{ order: 3 }}
-                    onClick={handleAddToWishlist}
+                    className="product-quantity__button"
+                    onClick={() => handleQuantityChange(true)}
+                    disabled={quantity >= getCurrentStock()}
                   >
-                    Add to Wishlist
+                    +
                   </button>
                 </div>
-                <div className="seller-info">
-                  <h3 className="seller-info__title">Seller Information</h3>
-                  <div className="seller-info__identity">
-                    <div className="seller-info__icon">
-                      {(product.vendor || 'Unknown Vendor').charAt(0)}
-                    </div>
-                    <h4 className="seller-info__name">
-                      {vendorId !== null ? (
-                        <Link to={`/vendor/${vendorId.toString()}`} className="seller-info__link">
-                          {product.vendor || 'Unknown Vendor'}
-                        </Link>
-                      ) : (
-                        <span>{product.vendor || 'Unknown Vendor'}</span>
-                      )}
-                    </h4>
+              </div>
+
+              <div className="seller-info">
+                <div
+                  className="seller-info__identity"
+                  onClick={async () => {
+                    const vendorId = product.vendor?.id;
+                    if (!vendorId) {
+                      console.warn("Vendor ID not found in product data");
+                      return;
+                    }
+                    try {
+                      const response = await fetch(`/api/vendors/${vendorId}`, {
+                        method: "GET",
+                        headers: {
+                          "Content-Type": "application/json",
+                        },
+                      });
+                      if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                      }
+                      const data = await response.json();
+                      if (data.success) {
+                        window.location.href = `/vendor/${vendorId}`;
+                      } else {
+                        console.error(
+                          "Failed to fetch vendor details:",
+                          data.message
+                        );
+                      }
+                    } catch (error) {
+                      console.error("Error fetching vendor details:", error);
+                      window.location.href = `/vendor/${vendorId}`;
+                    }
+                  }}
+                >
+                  <div className="seller-info__icon">
+                    {product.vendor?.businessName?.charAt(0).toUpperCase() || "U"}
                   </div>
-                  <div className="seller-info__details">
-                    <div className="seller-info__detail">
-                      <span className="seller-info__checkmark">✓</span>
-                      <span>Partner Since 4+ Years</span>
-                    </div>
-                    <div className="seller-info__detail">
-                      <span className="seller-info__checkmark">✓</span>
-                      <span>Great Recent Rating</span>
-                    </div>
-                    <div className="seller-info__detail">
-                      <span className="seller-info__checkmark">✓</span>
-                      <span>Ships on Time</span>
-                    </div>
-                  </div>
+                  <h4 className="seller-info__name">
+                    Sold by: {product.vendor?.businessName || "Unknown Vendor"}
+                  </h4>
                 </div>
+              </div>
+
+              <div className="product-actions">
+                <button
+                  className="product-actions__button product-actions__button--primary"
+                  onClick={handleAddToCart}
+                  disabled={getCurrentStock() <= 0}
+                >
+                  {getCurrentStock() > 0 ? "Add to Cart" : "Out of Stock"}
+                </button>
+                <button
+                  className="product-actions__button product-actions__button--secondary"
+                  onClick={handleAddToWishlist}
+                >
+                  Add to Wishlist
+                </button>
               </div>
             </div>
           </div>
         </div>
-        <div className="product-page__reviews">
+
+        <div id="reviews-section" className="product-page__reviews">
           <Reviews
             productId={Number(id)}
             initialReviews={reviews}
             initialAverageRating={averageRating}
+            totalReviews={totalReviews}
+            currentPage={currentReviewPage}
+            totalPages={totalPages}
             onReviewUpdate={async () => {
               localStorage.removeItem(`${CACHE_KEY_REVIEWS}_${id}`);
+              setCurrentReviewPage(1);
             }}
+            onPageChange={handleReviewPageChange}
           />
         </div>
+
+        <div className="product-page__recommended">
+          <RecommendedProducts
+            products={recommendedProducts ?? []}
+            currentProductId={product.id}
+            fallbackCategoryId={effectiveCategoryId}
+            fallbackSubcategoryId={effectiveSubcategoryId}
+            isLoading={isLoadingRecommended}
+          />
+        </div>
+
         {showToast && (
           <div className="toast">
             <div className="toast__content">
@@ -526,12 +1016,16 @@ const ProductPage = () => {
             </div>
           </div>
         )}
+
         {authModalOpen && (
-          <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+          <AuthModal
+            isOpen={authModalOpen}
+            onClose={() => setAuthModalOpen(false)}
+          />
         )}
-      </div>
+      </main>
       <Footer />
-    </>
+    </div>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ProductFormData } from "../types/product";
+import { ProductFormData, ProductVariant, Attribute } from "../types/product";
 import {
   fetchCategories,
   fetchSubcategories,
@@ -48,7 +48,32 @@ const ProductModal: React.FC<ProductModalProps> = ({
     bannerId: null,
     vendorId: authState.vendor?.id ? String(authState.vendor.id) : "",
     inventory: [],
+    hasVariants: false,
+    variants: [],
+    bannerId: null,
+    brandId: null,
   });
+  
+  // Variant management state
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [currentVariant, setCurrentVariant] = useState<Partial<ProductVariant>>({
+    sku: "",
+    price: 0,
+    stock: 0,
+    status: "AVAILABLE" as const,
+    attributes: [],
+    images: [],
+  });
+  const [currentVariantImages, setCurrentVariantImages] = useState<File[]>([]);
+  const [currentVariantImagePreviews, setCurrentVariantImagePreviews] = useState<string[]>([]);
+  
+  // Attribute management for variants
+  const [currentAttribute, setCurrentAttribute] = useState<Partial<Attribute>>({
+    attributeType: "",
+    attributeValues: [],
+  });
+  const [currentAttributeValue, setCurrentAttributeValue] = useState<string>("");
+
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
@@ -78,8 +103,19 @@ const ProductModal: React.FC<ProductModalProps> = ({
         bannerId: initialData.bannerId || null,
         vendorId: authState.vendor?.id ? String(authState.vendor.id) : "",
         inventory: initialData.inventory || [],
+        hasVariants: initialData.hasVariants || false,
+        variants: initialData.variants || [],
+        bannerId: initialData.bannerId || null,
+        brandId: initialData.brandId || null,
       });
       setSelectedCategory(initialData.categoryId || 0);
+      
+      // Initialize variants state if product has variants
+      if (initialData.hasVariants && initialData.variants) {
+        setVariants(initialData.variants);
+      } else {
+        setVariants([]);
+      }
     }
   }, [initialData, authState.vendor?.id]);
 
@@ -222,6 +258,103 @@ const ProductModal: React.FC<ProductModalProps> = ({
     }));
   };
 
+  // Variant management functions
+  const handleVariantChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setCurrentVariant((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAttributeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setCurrentAttribute((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAttributeValueAdd = () => {
+    if (currentAttributeValue.trim()) {
+      setCurrentAttribute((prev) => ({
+        ...prev,
+        attributeValues: [...(prev.attributeValues || []), currentAttributeValue.trim()]
+      }));
+      setCurrentAttributeValue("");
+    }
+  };
+
+  const handleAttributeValueRemove = (valueToRemove: string) => {
+    setCurrentAttribute((prev) => ({
+      ...prev,
+      attributeValues: (prev.attributeValues || []).filter(v => v !== valueToRemove)
+    }));
+  };
+
+  const handleAttributeAdd = () => {
+    if (currentAttribute.attributeType && currentAttribute.attributeValues && currentAttribute.attributeValues.length > 0) {
+      setCurrentVariant((prev) => ({
+        ...prev,
+        attributes: [...(prev.attributes || []), currentAttribute as Attribute]
+      }));
+      setCurrentAttribute({ attributeType: "", attributeValues: [] });
+    }
+  };
+
+  const handleAttributeRemove = (indexToRemove: number) => {
+    setCurrentVariant((prev) => ({
+      ...prev,
+      attributes: (prev.attributes || []).filter((_, index) => index !== indexToRemove)
+    }));
+  };
+
+  const handleVariantAdd = () => {
+    console.log("ProductModal: Adding variant:", currentVariant);
+    
+    if (!currentVariant.sku) {
+      alert("SKU is required for variant");
+      return;
+    }
+    if (!currentVariant.price || currentVariant.price <= 0) {
+      alert("Valid price is required for variant");
+      return;
+    }
+    if (!currentVariant.stock || currentVariant.stock < 0) {
+      alert("Valid stock is required for variant");
+      return;
+    }
+    if (!currentVariant.status) {
+      alert("Status is required for variant");
+      return;
+    }
+    if (currentVariantImages.length === 0) {
+      alert("At least one image is required for variant");
+      return;
+    }
+
+    const newVariant: ProductVariant = {
+      sku: currentVariant.sku,
+      price: currentVariant.price,
+      stock: currentVariant.stock,
+      status: currentVariant.status,
+      attributes: currentVariant.attributes || [],
+      images: currentVariantImages,
+    };
+
+    setVariants((prev) => [...prev, newVariant]);
+    setCurrentVariant({
+      sku: "",
+      price: 0,
+      stock: 0,
+      status: "AVAILABLE" as const,
+      attributes: [],
+      images: [],
+    });
+    setCurrentVariantImages([]);
+    setCurrentVariantImagePreviews([]);
+    
+    console.log("ProductModal: Variants after adding:", [...variants, newVariant]);
+  };
+
+  const handleVariantRemove = (skuToRemove: string) => {
+    setVariants((prev) => prev.filter(v => v.sku !== skuToRemove));
+  };
+
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
     if (!formData.name?.trim()) {
@@ -230,13 +363,52 @@ const ProductModal: React.FC<ProductModalProps> = ({
     if (!formData.description?.trim()) {
       newErrors.description = "Product description is required";
     }
-    const price = parseFloat(formData.basePrice?.toString() || "0");
-    if (isNaN(price) || price <= 0) {
-      newErrors.basePrice = "Base price must be a valid positive number";
+    
+    // Validate based on whether product has variants
+    if (!formData.hasVariants) {
+      // Non-variant product validation
+      const price = parseFloat(formData.basePrice?.toString() || "0");
+      if (isNaN(price) || price <= 0) {
+        newErrors.basePrice = "Base price must be a valid positive number";
+      }
+      if (typeof formData.stock !== "number" || formData.stock < 0) {
+        newErrors.stock = "Stock must be a valid non-negative number";
+      }
+      if (typeof formData.quantity !== "number" || formData.quantity <= 0) {
+        newErrors.quantity = "Quantity must be a valid positive number";
+      }
+    } else {
+      // Variant product validation
+      if (variants.length === 0) {
+        newErrors.variants = "At least one variant is required for variant products";
+      } else {
+                 // Validate each variant
+         for (let i = 0; i < variants.length; i++) {
+           const variant = variants[i];
+           if (!variant.sku) {
+             newErrors.variants = `Variant ${i + 1} missing SKU`;
+             break;
+           }
+           if (!variant.price || variant.price <= 0) {
+             newErrors.variants = `Variant ${i + 1} must have a valid positive price`;
+             break;
+           }
+           if (!variant.stock || variant.stock < 0) {
+             newErrors.variants = `Variant ${i + 1} must have a valid non-negative stock`;
+             break;
+           }
+           if (!variant.status) {
+             newErrors.variants = `Variant ${i + 1} must have a valid status`;
+             break;
+           }
+           if (!variant.images || variant.images.length === 0) {
+             newErrors.variants = `Variant ${i + 1} must have at least one image`;
+             break;
+           }
+         }
+      }
     }
-    if (typeof formData.stock !== "number" || formData.stock < 0) {
-      newErrors.stock = "Stock must be a valid non-negative number";
-    }
+    
     if (!formData.categoryId) {
       newErrors.categoryId = "Category is required";
     }
@@ -255,12 +427,22 @@ const ProductModal: React.FC<ProductModalProps> = ({
     if (validateForm()) {
       setLoading(true);
       try {
-        await onSubmit({
+        // Prepare final form data with variants
+        const finalFormData = {
           ...formData,
           basePrice: formData.basePrice.toString(),
           discount: formData.discount.toString(),
           vendorId: authState.vendor?.id ? String(authState.vendor.id) : "",
+          variants: formData.hasVariants ? variants : undefined,
+        };
+
+        console.log('ProductModal: Submitting form data:', {
+          formData: finalFormData,
+          hasVariants: formData.hasVariants,
+          variantsCount: variants.length
         });
+
+        await onSubmit(finalFormData);
       } catch (err) {
         setErrors((prev) => ({ ...prev, general: "Failed to save product" }));
         console.error("Submission error:", err);
@@ -492,138 +674,452 @@ const ProductModal: React.FC<ProductModalProps> = ({
             </div>
           </div>
 
+          {/* Has Variants Toggle */}
           <div className="product-modal__section">
             <div className="product-modal__field">
-              <label className="product-modal__label">Product Variants</label>
-              
-              {/* Quick Variant Selection */}
-              <div className="product-modal__variant-section">
-                <div className="product-modal__variant-section-label">Quick Select:</div>
-                <div className="product-modal__variant-options">
-                  {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'Red', 'Blue', 'Green', 'Black', 'White', 'Cotton', 'Polyester', 'Wool'].map((variant) => (
-                    <button
-                      key={variant}
-                      type="button"
-                      className={`product-modal__variant-option ${
-                        formData.size.includes(variant) ? 'product-modal__variant-option--selected' : ''
-                      }`}
-                      onClick={() => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          size: prev.size.includes(variant)
-                            ? prev.size.filter(s => s !== variant)
-                            : [...prev.size, variant],
-                          vendorId: authState.vendor?.id ? String(authState.vendor.id) : "",
-                        }));
-                      }}
-                    >
-                      {variant}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Custom Variant Input */}
-              <div className="product-modal__variant-section">
-                <div className="product-modal__variant-section-label">Add Custom Variant:</div>
-                <div className="product-modal__custom-variant">
-                  <div className="product-modal__custom-variant-input-group">
-                    <input
-                      type="text"
-                      placeholder="e.g., 32, 34, 36, 38 or Red, Blue, Green or Cotton, Silk"
-                      className="product-modal__input product-modal__input--small"
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          const input = e.target as HTMLInputElement;
-                          const customVariant = input.value.trim();
-                          if (customVariant && !formData.size.includes(customVariant)) {
-                            setFormData((prev) => ({
-                              ...prev,
-                              size: [...prev.size, customVariant],
-                              vendorId: authState.vendor?.id ? String(authState.vendor.id) : "",
-                            }));
-                            input.value = '';
-                          }
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="product-modal__add-variant-btn"
-                      onClick={(e) => {
-                        const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                        const customVariant = input.value.trim();
-                        if (customVariant && !formData.size.includes(customVariant)) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            size: [...prev.size, customVariant],
-                            vendorId: authState.vendor?.id ? String(authState.vendor.id) : "",
-                          }));
-                          input.value = '';
-                        }
-                      }}
-                    >
-                      Add
-                    </button>
-                  </div>
-                  <small className="product-modal__help-text">Press Enter or click Add to include custom variants</small>
-                </div>
-              </div>
-
-              {/* Selected Variants Display */}
-              {formData.size.length > 0 && (
-                <div className="product-modal__variant-section">
-                  <div className="product-modal__variant-section-label">
-                    Selected Variants ({formData.size.length}):
-                  </div>
-                  <div className="product-modal__variant-tags">
-                    {formData.size.map((variant, index) => (
-                      <span key={index} className="product-modal__variant-tag">
-                        {variant}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFormData((prev) => ({
-                              ...prev,
-                              size: prev.size.filter((_, i) => i !== index),
-                              vendorId: authState.vendor?.id ? String(authState.vendor.id) : "",
-                            }));
-                          }}
-                          className="product-modal__variant-remove"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    className="product-modal__clear-variants-btn"
-                    onClick={() => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        size: [],
-                        vendorId: authState.vendor?.id ? String(authState.vendor.id) : "",
-                      }));
-                    }}
-                  >
-                    Clear All Variants
-                  </button>
-                </div>
-              )}
-
-              {/* API Format Preview */}
-              {formData.size.length > 0 && (
-                <div className="product-modal__api-preview">
-                  <div className="product-modal__api-preview-label">API Format Preview:</div>
-                  <div className="product-modal__api-preview-value">
-                    {formData.size.join(', ')}
-                  </div>
-                </div>
-              )}
+              <label className="product-modal__label">
+                <input
+                  type="checkbox"
+                  name="hasVariants"
+                  checked={formData.hasVariants}
+                  onChange={(e) => setFormData(prev => ({ ...prev, hasVariants: e.target.checked }))}
+                  style={{ marginRight: "8px" }}
+                />
+                Product has variants (e.g., different sizes, colors)
+              </label>
             </div>
           </div>
+
+          {/* Conditional Fields for Non-Variant Products */}
+          {!formData.hasVariants && (
+            <div className="product-modal__section">
+              <div className="product-modal__row">
+                <div className="product-modal__field">
+                  <label className="product-modal__label">Base Price *</label>
+                  <input
+                    type="number"
+                    name="basePrice"
+                    value={formData.basePrice?.toString() || ""}
+                    onChange={handleNumberInputChange}
+                    required
+                    min="0"
+                    step="0.01"
+                    className="product-modal__input"
+                  />
+                  {errors.basePrice && (
+                    <span className="product-modal__error">{errors.basePrice}</span>
+                  )}
+                </div>
+
+                <div className="product-modal__field">
+                  <label className="product-modal__label">Stock *</label>
+                  <input
+                    type="number"
+                    name="stock"
+                    value={formData.stock?.toString() || ""}
+                    onChange={handleNumberInputChange}
+                    required
+                    min="0"
+                    className="product-modal__input"
+                  />
+                  {errors.stock && (
+                    <span className="product-modal__error">{errors.stock}</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="product-modal__field">
+                <label className="product-modal__label">Status *</label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  required
+                  className="product-modal__select"
+                >
+                  <option value="AVAILABLE">Available</option>
+                  <option value="OUT_OF_STOCK">Out of Stock</option>
+                  <option value="LOW_STOCK">Low Stock</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Variant Management Section */}
+          {formData.hasVariants && (
+            <div className="product-modal__section">
+              <div className="product-modal__field">
+                <label className="product-modal__label" style={{ fontWeight: 'bold', marginBottom: '10px' }}>
+                  Product Variants *
+                </label>
+                
+                {/* Current Variants List */}
+                {variants.length > 0 && (
+                  <div style={{ marginBottom: '15px' }}>
+                    <h4>Added Variants:</h4>
+                                         {variants.map((variant) => (
+                      <div key={variant.sku} style={{ 
+                        border: '1px solid #ddd', 
+                        padding: '10px', 
+                        marginBottom: '10px', 
+                        borderRadius: '4px',
+                        backgroundColor: '#f9f9f9'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <strong>SKU: {variant.sku}</strong>
+                          <button
+                            type="button"
+                            onClick={() => handleVariantRemove(variant.sku)}
+                            style={{
+                              background: 'red',
+                              color: 'white',
+                              border: 'none',
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                                                 <div>Price: ${variant.price}</div>
+                         <div>Stock: {variant.stock}</div>
+                         <div>Status: {variant.status}</div>
+                         {variant.images && variant.images.length > 0 && (
+                           <div>
+                             <strong>Images:</strong>
+                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '5px' }}>
+                               {variant.images.map((image, imgIndex) => (
+                                 <img 
+                                   key={imgIndex}
+                                   src={typeof image === 'string' ? image : URL.createObjectURL(image)} 
+                                   alt={`Variant ${imgIndex + 1}`}
+                                   style={{ 
+                                     width: '40px', 
+                                     height: '40px', 
+                                     objectFit: 'cover',
+                                     borderRadius: '4px',
+                                     border: '1px solid #ddd'
+                                   }}
+                                 />
+                               ))}
+                             </div>
+                           </div>
+                         )}
+                         {variant.attributes && variant.attributes.length > 0 && (
+                           <div>
+                             <strong>Attributes:</strong>
+                             {variant.attributes.map((attr, attrIndex) => (
+                               <div key={attrIndex} style={{ marginLeft: '10px' }}>
+                                 {attr.attributeType}: {attr.attributeValues.join(', ')}
+                               </div>
+                             ))}
+                           </div>
+                         )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Add New Variant Form */}
+                <div style={{ 
+                  border: '2px dashed #ccc', 
+                  padding: '15px', 
+                  borderRadius: '4px',
+                  backgroundColor: '#fafafa'
+                }}>
+                  <h4>Add New Variant:</h4>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <input
+                      type="text"
+                      name="sku"
+                      placeholder="SKU (e.g., TSHIRT-RED-M)"
+                      value={currentVariant.sku}
+                      onChange={handleVariantChange}
+                      style={{
+                        padding: '8px',
+                        borderRadius: '4px',
+                        border: '1px solid #ccc'
+                      }}
+                    />
+                    
+                    <input
+                      type="number"
+                      name="price"
+                      placeholder="Price"
+                      value={currentVariant.price}
+                      onChange={handleVariantChange}
+                      step="0.01"
+                      min="0"
+                      style={{
+                        padding: '8px',
+                        borderRadius: '4px',
+                        border: '1px solid #ccc'
+                      }}
+                    />
+                    
+                                         <input
+                       type="number"
+                       name="stock"
+                       placeholder="Stock Quantity"
+                       value={currentVariant.stock}
+                       onChange={handleVariantChange}
+                       min="0"
+                       style={{
+                         padding: '8px',
+                         borderRadius: '4px',
+                         border: '1px solid #ccc'
+                       }}
+                     />
+                     
+                     {/* Variant Images */}
+                     <div style={{ marginTop: '10px' }}>
+                       <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                         Variant Images (up to 5):
+                       </label>
+                       <input
+                         type="file"
+                         multiple
+                         accept="image/*"
+                         onChange={(e) => {
+                           if (e.target.files) {
+                             const files = Array.from(e.target.files);
+                             if (files.length > 5) {
+                               alert("Maximum 5 images allowed per variant");
+                               return;
+                             }
+                             setCurrentVariantImages(files);
+                             const previews = files.map(file => URL.createObjectURL(file));
+                             setCurrentVariantImagePreviews(previews);
+                           }
+                         }}
+                         style={{
+                           padding: '8px',
+                           borderRadius: '4px',
+                           border: '1px solid #ccc',
+                           width: '100%'
+                         }}
+                       />
+                       {currentVariantImagePreviews.length > 0 && (
+                         <div style={{ marginTop: '10px' }}>
+                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                             {currentVariantImagePreviews.map((preview, imgIndex) => (
+                               <div key={imgIndex} style={{ position: 'relative' }}>
+                                 <img 
+                                   src={preview} 
+                                   alt={`Variant ${imgIndex + 1}`}
+                                   style={{ 
+                                     width: '60px', 
+                                     height: '60px', 
+                                     objectFit: 'cover',
+                                     borderRadius: '4px',
+                                     border: '1px solid #ddd'
+                                   }}
+                                 />
+                                 <button
+                                   type="button"
+                                   onClick={() => {
+                                     setCurrentVariantImages(prev => prev.filter((_, i) => i !== imgIndex));
+                                     setCurrentVariantImagePreviews(prev => prev.filter((_, i) => i !== imgIndex));
+                                   }}
+                                   style={{
+                                     position: 'absolute',
+                                     top: '-5px',
+                                     right: '-5px',
+                                     background: 'red',
+                                     color: 'white',
+                                     border: 'none',
+                                     borderRadius: '50%',
+                                     width: '20px',
+                                     height: '20px',
+                                     cursor: 'pointer',
+                                     fontSize: '12px'
+                                   }}
+                                 >
+                                   ×
+                                 </button>
+                               </div>
+                             ))}
+                           </div>
+                         </div>
+                       )}
+                     </div>
+                    
+                    <select
+                      name="status"
+                      value={currentVariant.status}
+                      onChange={handleVariantChange}
+                      style={{
+                        padding: '8px',
+                        borderRadius: '4px',
+                        border: '1px solid #ccc'
+                      }}
+                    >
+                      <option value="AVAILABLE">Available</option>
+                      <option value="OUT_OF_STOCK">Out of Stock</option>
+                      <option value="LOW_STOCK">Low Stock</option>
+                    </select>
+                    
+                    {/* Attribute Management */}
+                    <div style={{ marginTop: '10px' }}>
+                      <h5>Attributes (Optional):</h5>
+                      
+                      {/* Current Attributes for this variant */}
+                      {currentVariant.attributes && currentVariant.attributes.length > 0 && (
+                        <div style={{ marginBottom: '10px' }}>
+                          {currentVariant.attributes.map((attr, index) => (
+                            <div key={index} style={{ 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center',
+                              padding: '5px',
+                              backgroundColor: '#e9ecef',
+                              marginBottom: '5px',
+                              borderRadius: '4px'
+                            }}>
+                              <span>{attr.attributeType}: {attr.attributeValues.join(', ')}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleAttributeRemove(index)}
+                                style={{
+                                  background: 'orange',
+                                  color: 'white',
+                                  border: 'none',
+                                  padding: '2px 6px',
+                                  borderRadius: '3px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Add New Attribute */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                        <input
+                          type="text"
+                          name="attributeType"
+                          placeholder="Attribute Type (e.g., Color, Size)"
+                          value={currentAttribute.attributeType}
+                          onChange={handleAttributeChange}
+                          style={{
+                            padding: '6px',
+                            borderRadius: '4px',
+                            border: '1px solid #ccc'
+                          }}
+                        />
+                        
+                        <div style={{ display: 'flex', gap: '5px' }}>
+                          <input
+                            type="text"
+                            placeholder="Attribute Value"
+                            value={currentAttributeValue}
+                            onChange={(e) => setCurrentAttributeValue(e.target.value)}
+                            style={{
+                              padding: '6px',
+                              borderRadius: '4px',
+                              border: '1px solid #ccc',
+                              flex: 1
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAttributeValueAdd}
+                            style={{
+                              padding: '6px 12px',
+                              backgroundColor: '#007bff',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Add Value
+                          </button>
+                        </div>
+                        
+                        {/* Current attribute values */}
+                        {currentAttribute.attributeValues && currentAttribute.attributeValues.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                            {currentAttribute.attributeValues.map((value, index) => (
+                              <span key={index} style={{
+                                backgroundColor: '#007bff',
+                                color: 'white',
+                                padding: '2px 8px',
+                                borderRadius: '12px',
+                                fontSize: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px'
+                              }}>
+                                {value}
+                                <button
+                                  type="button"
+                                  onClick={() => handleAttributeValueRemove(value)}
+                                  style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'white',
+                                    cursor: 'pointer',
+                                    fontSize: '14px'
+                                  }}
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <button
+                          type="button"
+                          onClick={handleAttributeAdd}
+                          disabled={!currentAttribute.attributeType || !currentAttribute.attributeValues || currentAttribute.attributeValues.length === 0}
+                          style={{
+                            padding: '6px 12px',
+                            backgroundColor: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            opacity: (!currentAttribute.attributeType || !currentAttribute.attributeValues || currentAttribute.attributeValues.length === 0) ? 0.5 : 1
+                          }}
+                        >
+                          Add Attribute
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <button
+                      type="button"
+                      onClick={handleVariantAdd}
+                      disabled={!currentVariant.sku || !currentVariant.price || currentVariant.price <= 0 || !currentVariant.stock || currentVariant.stock < 0}
+                      style={{
+                        padding: '10px',
+                        backgroundColor: '#28a745',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        marginTop: '10px',
+                        opacity: (!currentVariant.sku || !currentVariant.price || currentVariant.price <= 0 || !currentVariant.stock || currentVariant.stock < 0) ? 0.5 : 1
+                      }}
+                    >
+                      Add Variant
+                    </button>
+                  </div>
+                </div>
+                
+                {errors.variants && (
+                  <span className="product-modal__error">{errors.variants}</span>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="product-modal__section">
             <div className="product-modal__field">

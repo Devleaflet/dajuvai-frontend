@@ -1,0 +1,204 @@
+.become-vendor {
+  background-color: #f5f5f5;
+  padding: 48px 16px
+}
+
+.become-vendor__container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.become-vendor__content {
+  max-width: 896px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.become-vendor__title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #333333;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.become-vendor__icon {
+  color: #f97316;
+  margin-right: 12px;
+  font-size: 2.5rem;
+}
+
+.become-vendor__intro {
+  font-size: 1.125rem;
+  color: #666666;
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+.become-vendor__section {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 32px;
+  margin-bottom: 32px;
+}
+
+.become-vendor__section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 16px;
+}
+
+.become-vendor__list {
+  text-align: left;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.become-vendor__list-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  font-size: 1rem;
+  color: #666666;
+  line-height: 1.5;
+}
+
+.become-vendor__list-item:last-child {
+  margin-bottom: 0;
+}
+
+.become-vendor__list-icon {
+  color: #f97316;
+  margin-right: 12px;
+  margin-top: 4px;
+  font-size: 1.25rem;
+}
+
+.become-vendor__ordered-list {
+  text-align: left;
+  padding-left: 20px;
+  margin: 0;
+  font-size: 1rem;
+  color: #666666;
+  line-height: 1.5;
+}
+
+.become-vendor__ordered-list li {
+  margin-bottom: 16px;
+}
+
+.become-vendor__ordered-list li:last-child {
+  margin-bottom: 0;
+}
+
+.become-vendor__cta-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 16px;
+}
+
+.become-vendor__cta-text {
+  font-size: 1rem;
+  color: #666666;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.become-vendor__buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.become-vendor__button {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 24px;
+  border-radius: 5px;
+  font-size: 1.125rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.3s ease;
+}
+
+.become-vendor__button--primary {
+  background-color: #f97316;
+  color: #ffffff;
+}
+
+.become-vendor__button--primary:hover {
+  background-color: #e55e0d;
+}
+
+.become-vendor__button--secondary {
+  background-color: #e5e7eb;
+  color: #333333;
+}
+
+.become-vendor__button--secondary:hover {
+  background-color: #d1d5db;
+}
+
+.become-vendor__button-icon {
+  margin-right: 8px;
+  font-size: 1.125rem;
+}
+
+@media (max-width: 640px) {
+  .become-vendor__container {
+    padding: 0 16px;
+  }
+
+  .become-vendor__title {
+    font-size: 1.75rem;
+  }
+
+  .become-vendor__icon {
+    font-size: 2rem;
+  }
+
+  .become-vendor__intro {
+    font-size: 1rem;
+  }
+
+  .become-vendor__section {
+    padding: 24px;
+  }
+
+  .become-vendor__section-title {
+    font-size: 1.25rem;
+  }
+
+  .become-vendor__list-item {
+    font-size: 0.875rem;
+  }
+
+  .become-vendor__ordered-list {
+    font-size: 0.875rem;
+  }
+
+  .become-vendor__cta-title {
+    font-size: 1.125rem;
+  }
+
+  .become-vendor__cta-text {
+    font-size: 0.875rem;
+  }
+
+  .become-vendor__buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .become-vendor__button {
+    font-size: 1rem;
+    padding: 10px 20px;
+  }
+}

@@ -16,14 +16,16 @@ import AdminBannerWithTabs from "./Pages/AdminBanner";
 import AdminCatalog from "./Pages/AdminCatalog";
 import ProductPage from "./Pages/ProductPage";
 import UserProfile from "./Pages/UserProfile";
-import VendorLogin from "./Pages/VendorLogin";
-import VendorSignup from "./Pages/VendorSignup";
+
+// import VendorSignup from "./Pages/VendorSignup";
 import PageNotFound from "./Pages/PageNotFound";
 import { useAuth } from "./context/AuthContext";
 import ScrollToTop from "./Components/ScrollToTop";
 import type { ReactElement } from 'react';
 import AdminDistrict from './Pages/AdminDistrict';
 import DealAdmin from './Pages/DealAdmin';
+import AdminPromo from './Pages/AdminPromo';
+import AdminStaff from './Pages/AdminStaff';
 import Shop from "./Pages/Shop";
 import VendorStore from "./Pages/VendorStore";
 import Checkout from "./Pages/CheckOut";
@@ -31,7 +33,7 @@ import { useVendorAuth } from "./context/VendorAuthContext"; // Import useVendor
 import NepalPaymentGateway from "./Pages/Payment";
 import TransactionSuccess from "./Pages/Transaction";
 import OrdersList from "./Pages/AdminOrders";
-
+import Privacy from "./Pages/Privacy"
 import PaymentSuccess from "./Pages/EsewaPaymentSuccess";
 import GoogleAuthCallback from "./Pages/GoogleAuthCallback";
 import GoogleAuthDirect from "./Pages/GoogleAuthDirect";
@@ -40,23 +42,35 @@ import GoogleAuthBackend from "./Pages/GoogleAuthBackend";
 import FacebookAuthCallback from "./Pages/FacebookAuthCallback";
 import PrivacyPolicy from "./Pages/PrivacyPolicy";
 import DataDeletion from "./Pages/DataDeletion";
+import TermsAndConditions from "./Pages/TermsAndConditions";
+import AboutUs from "./Pages/AboutUs";
+import EcommerceFAQ from "./Pages/Faq";
+import BecomeVendor from "./Pages/BecomeVendor";
+import UnapprovedVendors from "./Components/UnapprovedVendors";
+import CommissionList from "./Pages/ComissionList";
+// import VendorLogin from "./Pages/VendorLogin"
+import SectionProducts from "./Components/SectionProducts";
+// import VendorLoginPage from "./Pages/VendorLoginPage";
+// import VendorSignupPage from "./Pages/VendorSignupPage";
 
-// ProtectedRoute component for admin routes
-const ProtectedRoute = ({ children }: { children: ReactElement }) => {
+// Admin route guards
+// Allows both admin and staff to access admin area
+const AdminOrStaffRoute = ({ children }: { children: ReactElement }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
 
-  if (isLoading) {
-    return <div>Loading...</div>; // You can replace with a proper loading component
-  }
+  if (isLoading) return <div>Loading...</div>;
+  if (!isAuthenticated || !user) return <Navigate to="/" replace />;
+  if (user.role !== 'admin' && user.role !== 'staff') return <Navigate to="/" replace />;
+  return children;
+};
 
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/" replace />;
-  }
+// Admin-only guard (e.g., Staff management page)
+const AdminOnlyRoute = ({ children }: { children: ReactElement }) => {
+  const { user, isAuthenticated, isLoading } = useAuth();
 
-  if (user.role !== "admin") {
-    return <Navigate to="/" replace />; // Redirect non-admin users to home
-  }
-
+  if (isLoading) return <div>Loading...</div>;
+  if (!isAuthenticated || !user) return <Navigate to="/" replace />;
+  if (user.role !== 'admin') return <Navigate to="/" replace />;
   return children;
 };
 
@@ -86,15 +100,24 @@ function App() {
         {/* Public Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/contact" element={<About />} />
+        <Route path="/faq" element={<EcommerceFAQ />} />
+        <Route path="/terms" element={<TermsAndConditions />} />
+        <Route path="/commission-list" element={<CommissionList />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/becomevendor" element={<BecomeVendor />} />
+        <Route path="/about" element={<AboutUs />} />
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/product-page/:id" element={<ProductPage />} />
         <Route path="/product-page/:categoryId/:subcategoryId/:id" element={<ProductPage />} />
+        <Route path="/section/:sectionId" element={<SectionProducts />} />
+
         <Route path="/user-profile" element={<UserProfile />} />
         <Route path="/shop" element={<Shop />} />
         <Route path="/vendor/:vendorId" element={<VendorStore />} />
-        <Route path="/order-page" element={<NepalPaymentGateway/>}/>
-        <Route path="/order/payment-response" element={<TransactionSuccess/>}/>
-        <Route path="/order/esewa-payment-success" element={<PaymentSuccess/>}/>
+        <Route path="/order-page" element={<NepalPaymentGateway />} />
+        <Route path="/order/payment-response" element={<TransactionSuccess />} />
+        <Route path="/order/esewa-payment-success" element={<PaymentSuccess />} />
         <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
         <Route path="/auth/google/direct" element={<GoogleAuthDirect />} />
         <Route path="/auth/google/json" element={<GoogleAuthJson />} />
@@ -105,8 +128,9 @@ function App() {
         <Route path="/data-deletion" element={<DataDeletion />} />
 
         {/* Vendor Routes (protected) */}
-        <Route path="/vendor/login" element={<VendorLogin />} />
-        <Route path="/vendor/signup" element={<VendorSignup />} />
+        {/* <Route path="/vendor/login" element={<VendorLoginPage />} />
+        <Route path="/vendor/signup" element={<VendorSignupPage />} /> */}
+
         <Route
           path="/dashboard"
           element={
@@ -144,81 +168,105 @@ function App() {
         <Route
           path="/admin-dashboard"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminDashboard />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-products"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminProduct />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-orders"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <OrdersList />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-customers"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminCustomers />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-categories"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminCategories />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-vendors"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminVendors />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
+          }
+        />
+        <Route
+          path="/admin-vendors/unapproved"
+          element={
+            <AdminOrStaffRoute>
+              <UnapprovedVendors />
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-banner"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminBannerWithTabs />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-catalog"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminCatalog />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin/district"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <AdminDistrict />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
           }
         />
         <Route
           path="/admin-deals"
           element={
-            <ProtectedRoute>
+            <AdminOrStaffRoute>
               <DealAdmin />
-            </ProtectedRoute>
+            </AdminOrStaffRoute>
+          }
+        />
+        <Route
+          path="/admin-promo"
+          element={
+            <AdminOrStaffRoute>
+              <AdminPromo />
+            </AdminOrStaffRoute>
+          }
+        />
+        <Route
+          path="/admin/staff"
+          element={
+            <AdminOnlyRoute>
+              <AdminStaff />
+            </AdminOnlyRoute>
           }
         />
 

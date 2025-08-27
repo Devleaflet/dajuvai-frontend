@@ -14,7 +14,7 @@ export interface Product {
   freeDelivery?: boolean;
   image: string;
   stock?: number;
-
+  created_at?:string
   brand?: string;
   name?: string;
   category?: any;
@@ -38,4 +38,25 @@ export interface Product {
   status?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
   discountType?: "PERCENTAGE" | "FLAT";
   size?: string[];
+  variants?: Array<{
+    id?: number;
+    name?: string;
+    price?: number | string;
+    originalPrice?: number | string;
+    stock?: number;
+    sku?: string;
+    image?: string;
+    images?: string[];
+    attributes?: Record<string, any>;
+    [key: string]: any;
+  }>;
+  
+  inventory?: Array<{
+    id?: number;
+    productId?: number;
+    quantity: number;
+    status?: 'IN_STOCK' | 'OUT_OF_STOCK' | 'LOW_STOCK';
+    location?: string;
+    updatedAt?: string;
+  }>;
 }

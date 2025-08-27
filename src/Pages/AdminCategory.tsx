@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { FiPlus, FiEdit2, FiTrash2, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import '../Styles/AdminCategory.css';
+import '../Styles/AdminCategory.css'
 
 interface Subcategory {
   id: number;

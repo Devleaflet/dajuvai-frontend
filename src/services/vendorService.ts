@@ -7,8 +7,51 @@ export interface Vendor {
   email: string;
   businessAddress?: string;
   phoneNumber: string;
+  profilePicture?: string;
+  taxNumber?: string;
+  taxDocuments: string[] | null;
+  businessRegNumber?: string;
+  citizenshipDocuments: string[] | null;
+  chequePhoto: string[] | null;
+  accountName?: string;
+  bankName?: string;
+  accountNumber?: string;
+  bankBranch?: string;
+  bankCode?: string;
+  verificationCode: string | null;
+  verificationCodeExpire: string | null;
   isVerified: boolean;
-  district?: string;
+  isApproved: boolean | null;
+  resetToken: string | null;
+  resetTokenExpire: string | null;
+  resendCount: number;
+  resendBlockUntil: string | null;
+  createdAt: string;
+  updatedAt: string;
+  district: District;
+  status: "Active" | "Inactive";
+}
+
+export interface VendorSignupRequest {
+  businessName: string;
+  email: string;
+  password: string;
+  phoneNumber: string;
+  districtId: number;
+  taxNumber: string;
+  taxDocuments: string[];
+  businessRegNumber: string;
+  citizenshipDocuments?: string[] | null;
+  chequePhoto: string[];
+  bankDetails: {
+    accountName: string;
+    bankName: string;
+    accountNumber: string;
+    bankBranch: string;
+    bankCode: string;
+  };
+  businessAddress?: string;
+  profilePicture?: string;
 }
 
 export interface VendorLoginData {
@@ -16,19 +59,41 @@ export interface VendorLoginData {
   password: string;
 }
 
-export interface VendorSignupData {
+export interface VendorUpdateData {
+  id: number;
   businessName: string;
   email: string;
-  password: string;
   phoneNumber: string;
-  district: string;
+  isVerified: boolean;
+  taxNumber?: string;
+  taxDocuments?: string[] | null;
+  businessRegNumber?: string;
+  citizenshipDocuments?: string[] | null;
+  chequePhoto?: string[] | null;
+  bankDetails?: {
+    accountName: string;
+    bankName: string;
+    accountNumber: string;
+    bankBranch: string;
+    bankCode: string;
+  };
+  districtId?: number;
+  businessAddress?: string;
+  profilePicture?: string;
 }
 
-export interface VendorUpdateData {
-  businessName?: string;
-  email?: string;
-  businessAddress?: string;
-  phoneNumber?: string;
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  vendor?: T;
+  message?: string;
+  errors?: { path: string[]; message: string }[];
+  token?: string;
+}
+
+export interface District {
+  id: number;
+  name: string;
 }
 
 class VendorService {

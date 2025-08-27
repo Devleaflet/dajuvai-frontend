@@ -1,9 +1,26 @@
-.shop-container {
-  padding: 20px;
-  max-width: 95%;
+/* Max width container for shop */
+.shop-max-width-container {
+  max-width: 1800px;
   margin: 0 auto;
+  width: 85%;
+  overflow: visible;
+}
+
+.shop-container {
   width: 100%;
   box-sizing: border-box;
+}
+
+.shop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+  padding: 0.5rem 2rem
+
+
+  /* Lower z-index to stay below navbar */
 }
 
 .shop-content {
@@ -15,7 +32,7 @@
 
 .shop {
   display: flex;
-  gap: 30px;
+  gap: 10px;
   width: 100%;
   position: relative;
 }
@@ -23,10 +40,12 @@
 .shop-products {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+  /* tighter spacing */
   width: 100%;
   height: 100%;
+  margin-bottom: 1rem;
 }
 
 .filter-button {
@@ -53,6 +72,7 @@
   margin-right: 8px;
 }
 
+/* Default state - positioned normally in the flow */
 .filter-sidebar {
   width: 280px;
   background: #ffffff;
@@ -60,8 +80,33 @@
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   height: fit-content;
-  position: sticky;
+  position: relative;
+  /* max-height: calc(100vh - 40px); */
+  overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
+/* When sidebar becomes sticky/fixed */
+.filter-sidebar.is-sticky {
+  position: fixed;
   top: 20px;
+  /* Adjust based on your navbar height */
+  left: auto;
+  /* Will be calculated by JavaScript */
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Placeholder to maintain layout when sidebar becomes fixed */
+.filter-sidebar-placeholder {
+  width: 280px;
+  height: 0;
+  transition: height 0.3s ease;
+  flex-shrink: 0;
+}
+
+.filter-sidebar-placeholder.active {
+  height: var(--sidebar-height);
 }
 
 .filter-sidebar__header {
@@ -207,7 +252,9 @@
     margin-bottom: 16px;
   }
 
-  .filter-sidebar {
+  /* Override sticky behavior on mobile */
+  .filter-sidebar,
+  .filter-sidebar.is-sticky {
     position: fixed;
     top: 0;
     left: -140%;
@@ -216,6 +263,8 @@
     z-index: 999;
     transition: left 0.3s ease;
     overflow-y: auto;
+    max-height: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 
   .filter-sidebar.open {
@@ -230,9 +279,48 @@
     display: block;
   }
 
+  /* Hide placeholder on mobile */
+  .filter-sidebar-placeholder {
+    display: none;
+  }
+
   .shop-products {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* Exactly 2 equal columns */
     gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Ensure each product card takes exactly half the available width */
+  .shop-products>* {
+    width: 100%;
+    min-width: 0;
+    /* Allow shrinking */
+    box-sizing: border-box;
+  }
+
+  /* Ensure search header is responsive on mobile */
+  .shop-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+    z-index: 5;
+    /* Lower z-index on mobile */
+  }
+
+  .shop-header>div:first-child {
+    order: 1;
+  }
+
+  .search-bar-container {
+    order: 2;
+  }
+
+  .shop-header>div:last-child {
+    order: 3;
+    align-self: center;
   }
 }
 
@@ -242,12 +330,23 @@
   }
 
   .shop-products {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180, 1fr));
     gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
-  .filter-sidebar {
-   
+  /* Ensure equal width cards */
+  .shop-products>* {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .filter-sidebar,
+  .filter-sidebar.is-sticky {
     left: -100%;
   }
 
@@ -258,18 +357,17 @@
 
 /* Search Bar Styles */
 .search-bar-container {
-  padding: 40px;
-  max-width: 95%;
-  /* margin: 0 auto; */
   width: 100%;
   box-sizing: border-box;
+  position: relative;
+  z-index: 5;
+  /* Lower z-index to stay below navbar */
 }
 
 .search-form {
   display: flex;
   gap: 12px;
-  max-width: 600px;
-  /* margin: 0 auto; */
+  max-width: 800px;
   align-items: center;
 }
 
@@ -341,16 +439,29 @@
   background-color: #f97316;
   transform: translateY(-1px);
 }
+.search-icon{
+  display:none;
+}
+.search-text{
+  display:inline;
+}
 
 /* Search Bar Responsive Styles */
 @media (max-width: 768px) {
   .search-bar-container {
-    padding: 16px;
+    width:100%;
   }
-
+  .shop-header{
+    padding:0px;
+  }
+.search-icon{
+  display:inline;
+}
+.search-text{
+  display:none;
+}
   .search-form {
-    flex-direction: column;
-    gap: 8px;
+    width:100%;
   }
 
   .search-input-container {
@@ -358,7 +469,7 @@
   }
 
   .search-button {
-    width: 100%;
+
     padding: 12px;
   }
 }
@@ -366,10 +477,15 @@
 @media (max-width: 480px) {
   .search-bar-container {
     padding: 12px;
+    z-index: 5;
+    /* Keep lower than navbar */
   }
 
   .search-form {
     max-width: 100%;
+  }
+  .shop-max-width-container{
+    width: 95%;
   }
 }
 
@@ -378,6 +494,7 @@
   from {
     transform: translateX(-100%);
   }
+
   to {
     transform: translateX(0);
   }
@@ -385,4 +502,18 @@
 
 .filter-sidebar.open {
   animation: slideIn 0.3s ease forwards;
+}
+
+/* Prevent zoom out issues */
+@media (max-width: 1440px) {
+  .shop-max-width-container {
+    max-width: 100%;
+  }
+}
+
+/* Hide content when zoomed out */
+@media (max-width: 1024px) {
+  .shop-max-width-container {
+    overflow: hidden;
+  }
 }

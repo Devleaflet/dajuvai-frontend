@@ -4,8 +4,9 @@ import { Product } from '../Components/Types/Product';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext'; // Added for token
-import defaultProductImage from '../assets/default-product.png';
+
 import { convertApiProductToDisplayProduct } from '../Components/Types/ApiProduct';
+import { getProductPrimaryImage } from '../utils/getProductPrimaryImage';
 import '../Styles/Catalog.css';
 
 const Catalog: React.FC = () => {
@@ -15,6 +16,8 @@ const Catalog: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const navigate = useNavigate();
+
+  // Using shared helper for consistent variant-first image selection across app
 
   const productService = ProductService.getInstance();
 
@@ -54,8 +57,8 @@ const Catalog: React.FC = () => {
   };
 
   const handleProductClick = (product: Product) => {
-    // Align navigation with ProductCard.tsx
-    navigate(`/product-page/${product.category?.id || 1}/${product.subcategory?.id || 1}/${product.id}`);
+    // Navigate using product ID only; ProductPage derives category/subcategory from product
+    navigate(`/product-page/${product.id}`);
   };
 
   const calculateDiscountedPrice = (product: Product) => {
@@ -101,7 +104,7 @@ const Catalog: React.FC = () => {
           >
             <div className="catalog__product-image">
               <img
-                src={product.productImages?.[0] || product.image || defaultProductImage}
+                src={getProductPrimaryImage(product, defaultProductImage)}
                 alt={product.title || product.name || 'Product'}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
@@ -113,13 +116,13 @@ const Catalog: React.FC = () => {
               <h3 className="catalog__product-name">{product.title || product.name}</h3>
               <p className="catalog__product-description">{product.description}</p>
               <div className="product-price">
-                {product.discount !== undefined && Number(product.discount) > 0 ? (
+                {product.originalPrice && Number(product.originalPrice) > Number(product.price) ? (
                   <>
-                    <span className="original-price">Rs. {(Number(product.price)).toFixed(2)}</span>
-                    <span className="discounted-price">Rs. {(calculateDiscountedPrice(product)).toFixed(2)}</span>
+                    <span className="original-price">Rs. {Number(product.originalPrice).toFixed(2)}</span>
+                    <span className="discounted-price">Rs. {Number(product.price).toFixed(2)}</span>
                   </>
                 ) : (
-                  <span className="price">Rs. {(Number(product.price)).toFixed(2)}</span>
+                  <span className="price">Rs. {Number(product.price).toFixed(2)}</span>
                 )}
               </div>
               {product.brand && (
