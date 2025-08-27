@@ -79,15 +79,16 @@
 .navbar__top-link {
     margin-left: 14px;
     font-weight: bolder;
-    font-size: 13px;
+    font-size: 14px;
     text-decoration: none;
-    color: #42504b;
+    color: #000;
     font-weight: 500;
     transition: color 0.2s ease;
 }
 
 .navbar__top-link:hover {
     color: #ff6b00;
+    cursor:pointer;
 }
 
 /* Update Cart Icon Size */
@@ -285,7 +286,7 @@
 
 .navbar__account {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 5px;
 }
 
@@ -1772,7 +1773,12 @@
   position: relative;
   display: inline-block;
   cursor: pointer;
+  font-size: 23px;
 }
+
+/* .tooltip_wishlist{
+    font-size: 24px;
+} */
 
 /* Hidden tooltip text */
 .tooltip .tooltip-text {

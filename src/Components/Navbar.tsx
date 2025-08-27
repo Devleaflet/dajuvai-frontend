@@ -932,7 +932,9 @@ const Navbar: React.FC = () => {
                 onClick={toggleCart}
                 ref={cartButtonRef}
               >
-                <FaShoppingCart className="navbar__account-icon" />
+                <FaShoppingCart className="navbar__account-icon" style={{
+                  'fontSize':'24px'
+                }} />
 
                 {cartItems.length > 0 && (
                   <span className="navbar__cart-count">{cartItems.length}</span>
@@ -975,7 +977,7 @@ const Navbar: React.FC = () => {
 
               <NavLink
                 to="/wishlist"
-                className="navbar__account-icon-link tooltip"
+                className="navbar__account-icon-link tooltip tooltip_wishlist"
                 style={({ isActive }) => ({
                   color: isActive ? "#f97316" : "inherit",
                 })}
