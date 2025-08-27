@@ -117,25 +117,18 @@ const CategorySection: React.FC<CategorySectionProps> = ({
   const handleCategoryClick = (mainCategoryId: string, itemId: string) => {
     const newUrl = `/shop?categoryId=${mainCategoryId}&subcategoryId=${itemId}`
 
-    // If already on shop page, dispatch a custom event to update filters
     if (location.pathname === "/shop") {
-      // Update the URL first
       navigate(newUrl, { replace: true })
-
-      // Then dispatch a custom event that the shop page will listen to
       const event = new CustomEvent("shopFiltersChanged", {
         detail: {
           categoryId: Number(mainCategoryId),
           subcategoryId: Number(itemId),
         },
       })
-
-      // Dispatch the event after a small delay to ensure URL is updated
       setTimeout(() => {
         window.dispatchEvent(event)
       }, 10)
     } else {
-      // Normal navigation when coming from other pages
       navigate(newUrl)
     }
   }
@@ -150,7 +143,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
     const carousel = carouselRefs.current[categoryId]
     if (!carousel) return
 
-    const scrollAmount = 300 // Adjust scroll distance
+    const scrollAmount = 300
     const newScrollLeft = direction === 'left' 
       ? carousel.scrollLeft - scrollAmount 
       : carousel.scrollLeft + scrollAmount
@@ -174,8 +167,8 @@ const CategorySection: React.FC<CategorySectionProps> = ({
   if (showLoading) {
     return (
       <div className="category-section">
-        {/* Skeleton for category sections */}
-        {Array.from({ length: 2 }).map((_, sectionIndex) => (
+        {/* Skeleton for 3 category sections */}
+        {Array.from({ length: 3 }).map((_, sectionIndex) => (
           <div key={`section-skeleton-${sectionIndex}`} className="category-section__category">
             <div className="category-section__header">
               <div className="category-section__title-skeleton skeleton-text"></div>
@@ -183,7 +176,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
             </div>
             <div className="category-section__carousel-container">
               <div className="category-section__subcategories category-section__subcategories--carousel">
-                {Array.from({ length: 6 }).map((_, index) => (
+                {Array.from({ length: maxItemsToShow }).map((_, index) => (
                   <SubcategorySkeleton key={`sub-skeleton-${sectionIndex}-${index}`} />
                 ))}
               </div>
@@ -196,23 +189,22 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 
   return (
     <div className="category-section">
-      {/* Category sections with subcategories */}
-      {categories.map((maincategory: Category) => (
+      {/* Show only 3 categories */}
+      {categories.slice(0, 3).map((maincategory: Category) => (
         <div key={`section-${maincategory.id}`} className="category-section__category">
           <div className="category-section__header">
             <h2 className="category-section__title">{maincategory.name}</h2>
-            {/* {showViewAll && (
+            {showViewAll && (
               <button
                 className="category-section__view-all"
                 onClick={() => handleViewAllClick(maincategory.id)}
               >
                 View All
               </button>
-            )} */}
+            )}
           </div>
           
           <div className="category-section__carousel-container">
-            {/* Navigation arrows */}
             <button 
               className="category-section__nav-arrow category-section__nav-arrow--left"
               onClick={() => scrollCarousel(maincategory.id, 'left')}
@@ -230,33 +222,34 @@ const CategorySection: React.FC<CategorySectionProps> = ({
               onMouseLeave={() => handleMouseLeave(maincategory.id)}
             >
               {maincategory.items.map((item) => (
-                <div style={{
-                  display:"flex",
-                  flexDirection:"column",
-                  gap:"10px",
-                  justifyContent:"center",
-                  alignItems:"center",
-                  maxWidth:"280px"
-                }}
->
                 <div
-                  key={`sub-${maincategory.id}-${item.id}`}
-                  className="category-section__subcategory-item"
-                  onClick={(e) => handleItemClick(maincategory.id, item.id, e)}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    maxWidth: "280px"
+                  }}
                 >
-                  <div className="category-section__subcategory-image-container">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="category-section__subcategory-image"
-                      loading="lazy"
-                      decoding="async"
-                      draggable={false} // Prevent image dragging
-                    />
+                  <div
+                    key={`sub-${maincategory.id}-${item.id}`}
+                    className="category-section__subcategory-item"
+                    onClick={(e) => handleItemClick(maincategory.id, item.id, e)}
+                  >
+                    <div className="category-section__subcategory-image-container">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="category-section__subcategory-image"
+                        loading="lazy"
+                        decoding="async"
+                        draggable={false}
+                      />
+                    </div>
                   </div>
-                </div>
                   <p className="category-section__subcategory-name">{item.name}</p>
-              </div>
+                </div>
               ))}
             </div>
 

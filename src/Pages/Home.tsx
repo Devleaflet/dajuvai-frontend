@@ -100,7 +100,7 @@ const Home = () => {
       <CategorySlider />
       <HomepageSections />
       <SpecialOffers />
-      <CategorySection />
+      <CategorySection showViewAll={false}/>
       <Footer />
     </div>
   );
