@@ -282,6 +282,9 @@ const Checkout: React.FC = () => {
 
     try {
       const orderData = {
+        fullName:{
+          fullName:billingDetails.fullName
+        },
         shippingAddress: {
           province: billingDetails.province,
           city: billingDetails.city,

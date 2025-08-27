@@ -287,17 +287,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             loading="lazy"
           />
         </div>
-
-        <div className="product__info">
-          <div className="product-card__rating">
-            <div className="product-card__rating-info">
-              <span className="product-card__rating-score">{rating}</span>
-              <span className="product-card__rating-star">
-                <img src={star} alt="Rating" />
-              </span>
-              <span className="product-card__rating-count">({ratingCount})</span>
-            </div>
-            <div className="product-card__cart-button">
+<div className="product-card__cart-button">
               <FaCartPlus
                 style={{ color: "#ea5f0a", width: "25px" }}
                 onClick={e => {
@@ -313,6 +303,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 }}
               />
             </div>
+        <div className="product__info">
+          <div className="product-card__rating">
+            <span className="product-card__rating-star">
+                <img src={star} alt="Rating" />
+              </span>
+            <div className="product-card__rating-info">
+              
+              <span className="product-card__rating-score">{rating} |</span>
+              
+              <span className="product-card__rating-count"> Sold {ratingCount}</span>
+            </div>
+            
           </div>
 
           {/* Pagination dots - only show if there are multiple images */}
