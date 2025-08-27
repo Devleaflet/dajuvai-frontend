@@ -14,6 +14,8 @@ import type { Product } from "../Components/Types/Product";
 import ProductCard1 from "../ALT/ProductCard1";
 import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
 import { API_BASE_URL } from "../config";
+import { Search } from "lucide-react";
+import ProductCard from "../Components/ProductCard";
 
 interface Category {
   id: number;
@@ -934,7 +936,6 @@ const Shop: React.FC = () => {
 
           <div style={{
             marginBottom: '0.5rem',
-            padding: '0.5rem 2rem',
             borderBottom: '1px solid #e9ecef',
             display: 'flex',
             justifyContent: 'space-between',
@@ -943,6 +944,7 @@ const Shop: React.FC = () => {
             gap: '1rem', // Increased gap for better spacing
             width: '100%',
             minHeight: '60px' // Added min height for consistency
+
           }} className="shop-header">
             <div style={{
               flex: '0 0 auto', // Don't grow or shrink
@@ -973,7 +975,7 @@ const Shop: React.FC = () => {
             </div>
 
             <div className="search-bar-container" style={{
-              flex: '1 1 auto', // Allow to grow and shrink
+              flex: '1 1 auto',
               display: 'flex',
               justifyContent: 'center', // Center the search form
               maxWidth: '500px', // Limit maximum width
@@ -1028,7 +1030,8 @@ const Shop: React.FC = () => {
                   fontSize: '0.9rem',
                   whiteSpace: 'nowrap'
                 }}>
-                  Search
+                  <span className="search-text">Search</span>
+                  <Search size={15} color="white" className="search-icon"/>
                 </button>
               </form>
             </div>

@@ -213,6 +213,7 @@ const Checkout: React.FC = () => {
     else if(name ==="province"){
       fetchDistricts(value)
       setBillingDetails((prev) => ({ ...prev, [name]: value }));
+      billingDetails.district = ""
     } else {
       setBillingDetails((prev) => ({ ...prev, [name]: value }));
     }
@@ -252,6 +253,55 @@ const Checkout: React.FC = () => {
     setEnteredPromoCode('');
     setPromoError('');
   };
+  const user = useAuth()
+  const fetchUser = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/users/${user.user.id}`, {
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+        Authorization: `Bearer ${user.token}`,
+      },
+    });
+    if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+    const data = await response.json();
+    if (data.success && data.data) {
+      setBillingDetails((prev) => {
+        const newPhone = data.data.phoneNumber && validatePhoneNumber(data.data.phoneNumber) ? data.data.phoneNumber : prev.phoneNumber;
+        const newProvince = data.data.address?.province || prev.province;
+        return {
+          ...prev,
+          fullName: data.data.fullName || prev.fullName,
+          province: newProvince,
+          district: data.data.address?.district || prev.district,
+          streetAddress: data.data.address?.localAddress || prev.streetAddress,
+          phoneNumber: newPhone,
+          city: data.data.address?.city || prev.city,
+        };
+      });
+      if (data.data.address?.province) {
+        fetchDistricts(data.data.address.province);
+      }
+      console.log("Data stored", data.data);
+    } else {
+      console.log("Bad response");
+      setAlertMessage("Failed to fetch user data.");
+      setShowAlert(true);
+    }
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    setAlertMessage("An error occurred while fetching user data.");
+    setShowAlert(true);
+  }
+};
+
+useEffect(() => {
+  if (user?.user?.id && user?.token) {
+    fetchUser();
+  } else {
+    console.warn("User or token not available, skipping user data fetch");
+  }
+}, [user?.user?.id, user?.token]);
 
   const handlePlaceOrder = async () => {
     if (!termsAgreed) {
@@ -282,9 +332,7 @@ const Checkout: React.FC = () => {
 
     try {
       const orderData = {
-        fullName:{
-          fullName:billingDetails.fullName
-        },
+          fullName:billingDetails.fullName,
         shippingAddress: {
           province: billingDetails.province,
           city: billingDetails.city,
@@ -293,9 +341,8 @@ const Checkout: React.FC = () => {
         },
         paymentMethod: selectedPaymentMethod,
         phoneNumber: billingDetails.phoneNumber,
-        ...(appliedPromoCode && { promoCode: appliedPromoCode.promoCode })
       };
-
+      console.log(orderData)
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };

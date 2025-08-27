@@ -279,14 +279,31 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </svg>
           </button>
           
-              <div className="product-card__image">
-          <img
-            src={displayImage}
-            alt={title || "Product image"}
-            onError={handleImageError}
-            loading="lazy"
+          <div className="product-card__image">
+  <img
+    src={displayImage}
+    alt={title || "Product image"}
+    onError={handleImageError}
+    loading="lazy"
+  />
+
+  {productImages.length > 1 && (
+    <div className="product-card__pagination product-card__pagination--inside">
+      <div className="product-card__dots">
+        {productImages.slice(0, 5).map((_, index) => (
+          <span
+            key={index}
+            className={`product-card__dot ${
+              index === currentImageIndex ? "product-card__dot--active" : ""
+            }`}
+            onClick={(e) => handleDotClick(index, e)}
           />
-        </div>
+        ))}
+      </div>
+    </div>
+  )}
+</div>
+
 <div className="product-card__cart-button">
               <FaCartPlus
                 style={{ color: "#ea5f0a", width: "25px" }}
@@ -316,8 +333,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </div>
             
           </div>
-
-          {/* Pagination dots - only show if there are multiple images */}
+{/* 
+          Pagination dots - only show if there are multiple images
           {productImages.length > 1 && (
             <div className="product-card__pagination">
               <div className="product-card__dots">
@@ -332,7 +349,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 ))}
               </div>
             </div>
-          )}
+          )} */}
 
           <div className="product-card__info">
             <h3 className="product-card__title">{title}</h3>

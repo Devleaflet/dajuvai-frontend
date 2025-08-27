@@ -17,6 +17,9 @@
   align-items: center;
   position: relative;
   z-index: 10;
+  padding: 0.5rem 2rem
+
+
   /* Lower z-index to stay below navbar */
 }
 
@@ -436,18 +439,29 @@
   background-color: #f97316;
   transform: translateY(-1px);
 }
+.search-icon{
+  display:none;
+}
+.search-text{
+  display:inline;
+}
 
 /* Search Bar Responsive Styles */
 @media (max-width: 768px) {
   .search-bar-container {
-    padding: 16px;
-    z-index: 5;
-    /* Keep lower than navbar */
+    width:100%;
   }
-
+  .shop-header{
+    padding:0px;
+  }
+.search-icon{
+  display:inline;
+}
+.search-text{
+  display:none;
+}
   .search-form {
-    flex-direction: column;
-    gap: 8px;
+    width:100%;
   }
 
   .search-input-container {
@@ -455,7 +469,7 @@
   }
 
   .search-button {
-    width: 100%;
+
     padding: 12px;
   }
 }

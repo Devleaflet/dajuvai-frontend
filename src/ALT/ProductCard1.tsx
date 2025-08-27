@@ -162,15 +162,6 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
             onError={handleImageError}
             loading="lazy"
           />
-        </div>
-        <div className="product1__rating">
-          <div className="product1__rating-info">
-            <span className="product1__rating-score">{rating}</span>
-            <span className="product1__rating-star">
-              <img src={star} alt="Rating" />
-            </span>
-            <span className="product1__rating-count">({ratingCount})</span>
-          </div>
           <div className="product1__cart-button">
             <FaCartPlus
               onClick={e => {
@@ -186,6 +177,18 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
               }}
             />
           </div>
+        </div>
+        <div className="product1__rating">
+          <div className="product1__rating-info">
+            
+            <span className="product1__rating-star">
+              <img src={star} alt="Rating" />
+            </span>
+            <span className="product1__rating-score">{rating} |</span>
+            
+            <span className="product1__rating-count">Sold {ratingCount}</span>
+          </div>
+          
         </div>
         <div className="product1__info">
           <h3 className="product1__title">{title}</h3>
