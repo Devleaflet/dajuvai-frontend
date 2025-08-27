@@ -47,12 +47,13 @@ html {
   width: 100%;
   aspect-ratio: 1;
   border-radius: 0.5rem;
-  overflow: hidden;
+  overflow: visible; /* Changed from hidden to visible */
   background-color: #f8f9fa;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  cursor: crosshair; /* Better cursor for zoom */
 }
 
 .product-gallery__main-image img {
@@ -60,13 +61,45 @@ html {
   height: 100%;
   object-fit: contain;
   padding: 1rem;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Remove all transitions for zoom */
+  transition: none;
+  pointer-events: none; /* Prevent image dragging */
+}
+
+/* Remove hover effects that interfere with zoom */
+.product-gallery__main-image:hover {
+  cursor: crosshair;
 }
 
 .product-gallery__main-image:hover img {
-  transform: scale(1.15);
-  box-shadow: 0 0.5rem 2rem 0 rgba(0, 0, 0, 0.12);
-  z-index: 2;
+  /* Remove all hover transforms */
+  transform: none;
+  box-shadow: none;
+}
+
+/* Fixed zoom box */
+.product-gallery__zoom-box {
+  position: absolute;
+  left: calc(100% + 1.5rem);
+  top: 0;
+  width: 400px;
+  height: 400px;
+  border: 2px solid black;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  background: #fff;
+  z-index: 1000;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  display: block; /* Ensure it's always rendered */
+}
+
+.product-gallery__zoom-box.active {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .product-gallery__thumbnails {
@@ -521,7 +554,6 @@ html {
 .product-page__recommended {
   max-width: 75rem;
   margin: 0.5rem auto 3rem;
-  /* Increased bottom margin for footer spacing */
   padding: 0 1.5rem;
 }
 
@@ -542,7 +574,6 @@ html {
 .recommended-products__grid {
   display: grid;
   gap: 0.5rem;
-  /* Reduced gap between products */
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -555,7 +586,6 @@ html {
   text-decoration: none;
   color: inherit;
   margin-bottom: 0.25rem;
-  /* Small margin between product rows */
 }
 
 .recommended-products__item:hover {
@@ -628,32 +658,12 @@ html {
     transform: translateX(100%);
     opacity: 0;
   }
-
   to {
     transform: translateX(0);
     opacity: 1;
   }
 }
 
-.product-gallery__zoom-box {
-  position: absolute;
-  left: calc(100% + 1.5rem);
-  top: 0;
-  width: 16.25rem;
-  height: 16.25rem;
-  border: 0.125rem solid #ff9800;
-  border-radius: 0.5rem;
-  box-shadow: 0 0.125rem 1rem #0002;
-  background: #fff;
-  z-index: 20;
-  pointer-events: none;
-  display: block;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
-}
-
-/* Enhanced Mobile Responsive Design */
 @media (max-width: 768px) {
   .product-page {
     max-width: 100%;
@@ -681,6 +691,13 @@ html {
     aspect-ratio: 1;
     border-radius: 1rem;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  .product-gallery__zoom-box {
+    width: 300px;
+    height: 300px;
+    left: 0;
+    top: calc(100% + 1rem);
   }
 
   .product-gallery__thumbnails {
@@ -797,7 +814,6 @@ html {
 
   .product-page__recommended {
     margin: 1rem auto 4rem;
-    /* Increased bottom margin */
     padding: 0 0.5rem;
   }
 
@@ -903,25 +919,11 @@ html {
   .recommended-products__image {
     height: 12rem;
   }
-}
 
-@media (max-width: 56.25rem) {
   .product-gallery__zoom-box {
-    display: none !important;
-  }
-}
-
-/* Recommended Products responsive styles */
-@media (max-width: 22.5rem) {
-  .recommended-products__grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-}
-
-@media (max-width: 30rem) {
-  .recommended-products {
-    padding: 1rem;
+    width: 200px;
+    height: 200px;
+    top: calc(100% + 0.5rem);
   }
 }
 
@@ -929,7 +931,6 @@ html {
   .recommended-products__grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 0.75rem;
-    /* Reduced gap */
   }
 }
 
@@ -937,7 +938,6 @@ html {
   .recommended-products__grid {
     grid-template-columns: repeat(4, 1fr);
     gap: 0.75rem;
-    /* Reduced gap */
   }
 }
 
@@ -945,7 +945,6 @@ html {
   .recommended-products__grid {
     grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
-    /* Slightly larger gap for very large screens */
   }
 }
 
@@ -984,14 +983,12 @@ html {
   font-weight: 600;
 }
 
-/* Search Bar Styles - Added for navbar */
 .navbar__search {
   display: flex;
   justify-content: center;
   align-items: center;
   flex: 1;
   max-width: 600px;
-  /* Increased max-width */
   margin: 0 2rem;
 }
 
@@ -999,7 +996,6 @@ html {
   position: relative;
   width: 100%;
   max-width: 500px;
-  /* Increased search bar width */
 }
 
 .navbar__search-input {
@@ -1046,7 +1042,6 @@ html {
   color: white;
 }
 
-/* Mobile search form improvements */
 @media (max-width: 768px) {
   .navbar__search {
     order: 3;
@@ -1077,7 +1072,6 @@ html {
     height: 1.2rem;
   }
 
-  /* Shop header improvements for mobile */
   .shop-header {
     flex-direction: column;
     align-items: flex-start;
