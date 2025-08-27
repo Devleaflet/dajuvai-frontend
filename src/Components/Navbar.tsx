@@ -507,7 +507,7 @@ const Navbar: React.FC = () => {
 
       const sku = item?.variant?.sku || item?.sku || item?.variantSku;
       if (sku) return `SKU: ${sku}`;
-    } catch {}
+    } catch { }
     return null;
   };
 
@@ -708,17 +708,17 @@ const Navbar: React.FC = () => {
     <nav className="navbar">
       <div className="navbar__container">
         <div className="nav_bar_right">
-          
-           {!isLoading && !isAuthenticated && (
-                <a
-                  // href="/vendor-login"
-                  className="navbar__top-link"
-                  onClick={toggleVendorAuthModal}
-              
-                >
-             Vendor Login
-                </a>
-              )}
+
+          {!isLoading && !isAuthenticated && (
+            <a
+              // href="/vendor-login"
+              className="navbar__top-link"
+              onClick={toggleVendorAuthModal}
+
+            >
+              Vendor Login
+            </a>
+          )}
           <a href="/becomevendor" className="navbar__top-link">Become a Vendor</a>
 
         </div>
@@ -783,7 +783,7 @@ const Navbar: React.FC = () => {
                   {getUserAvatar()}
                 </div>
               </div>
-             
+
               <span className="navbar__social-link navbar__social-link--nepal">
                 <img
                   src={nepal}
@@ -815,7 +815,7 @@ const Navbar: React.FC = () => {
                   className="navbar__search-input"
                   autoComplete="off"
                   style={{
-                      outline: 'none'
+                    outline: 'none'
                   }}
                 />
                 <button type="submit" className="navbar__search-button">
@@ -873,7 +873,7 @@ const Navbar: React.FC = () => {
               >
                 Shop
               </NavLink>
-            
+
               <NavLink
                 to="/contact"
                 className={({ isActive }) =>
@@ -885,7 +885,7 @@ const Navbar: React.FC = () => {
               >
                 Contact <span className="navbar__link-icon"></span>
               </NavLink>
-                
+
               <div className="navbar__more-dropdown" ref={moreDropdownRef}>
                 <button
                   className="navbar__link navbar__more-trigger"
@@ -909,7 +909,7 @@ const Navbar: React.FC = () => {
                       className="navbar__more-dropdown-link"
                       onClick={showComingSoon}
                       style={{
-                        cursor:'pointer'
+                        cursor: 'pointer'
                       }}
                     >
                       DajuVai Rental
@@ -928,19 +928,22 @@ const Navbar: React.FC = () => {
             <div className="navbar__account">
               <a
                 href="/cart"
-                className="navbar__account-link"
+                className="navbar__account-link tooltip"
                 onClick={toggleCart}
                 ref={cartButtonRef}
               >
-                
                 <FaShoppingCart className="navbar__account-icon" />
+
                 {cartItems.length > 0 && (
                   <span className="navbar__cart-count">{cartItems.length}</span>
                 )}
+
+                <span className="tooltip-text">View Cart</span>
               </a>
+
               <div className="navbar__user-profile" ref={dropdownTriggerRef}>
                 <div
-                  className="navbar__user-avatar"
+                  className="navbar__user-avatar tooltip"
                   tabIndex={0}
                   onClick={
                     isAuthenticated
@@ -950,10 +953,7 @@ const Navbar: React.FC = () => {
                   onKeyDown={(e) => {
                     if (isAuthenticated && (e.key === "Enter" || e.key === " "))
                       setProfileDropdownOpen((v) => !v);
-                    if (
-                      !isAuthenticated &&
-                      (e.key === "Enter" || e.key === " ")
-                    ) {
+                    if (!isAuthenticated && (e.key === "Enter" || e.key === " ")) {
                       toggleAuthModal({
                         preventDefault: () => { },
                         stopPropagation: () => { },
@@ -966,19 +966,24 @@ const Navbar: React.FC = () => {
                   aria-label="Profile"
                 >
                   {getUserAvatar()}
+                  <span className="tooltip-text">
+                    {isAuthenticated ? "Profile" : "Login"}
+                  </span>
                 </div>
               </div>
-            
-               
+
+
               <NavLink
                 to="/wishlist"
-                className="navbar__account-icon-link"
+                className="navbar__account-icon-link tooltip"
                 style={({ isActive }) => ({
-                  color: isActive ? '#f97316' : 'inherit'
+                  color: isActive ? "#f97316" : "inherit",
                 })}
               >
                 <FaHeart />
+                <span className="tooltip-text">Wishlist</span>
               </NavLink>
+
             </div>
           </div>
 
@@ -1008,17 +1013,17 @@ const Navbar: React.FC = () => {
             <h3 className="navbar__side-menu-title">Menu</h3>
           </div>
           <div className="navbar__side-menu-category">
-             {!isLoading && !isAuthenticated && (
-                <a
-                  href="/vendor-login"
-                  className="navbar__side-menu-category-button"
-                  onClick={toggleVendorAuthModal}
-              
-                >
-             Vendor Login
-                </a>
-              )}
-          <a href="/becomevendor" className="navbar__side-menu-category-button">Become a Vendor</a>
+            {!isLoading && !isAuthenticated && (
+              <a
+                href="/vendor-login"
+                className="navbar__side-menu-category-button"
+                onClick={toggleVendorAuthModal}
+
+              >
+                Vendor Login
+              </a>
+            )}
+            <a href="/becomevendor" className="navbar__side-menu-category-button">Become a Vendor</a>
             <button
               className="navbar__side-menu-category-button"
               onClick={() => setSideMoreOpen(!sideMoreOpen)}
@@ -1027,28 +1032,27 @@ const Navbar: React.FC = () => {
               <span>More</span>
               <FaChevronDown
                 size={20}
-                className={`navbar__side-menu-category-icon ${
-                  sideMoreOpen ? "navbar__side-menu-category-icon--open" : ""
-                }`}
+                className={`navbar__side-menu-category-icon ${sideMoreOpen ? "navbar__side-menu-category-icon--open" : ""
+                  }`}
               />
             </button>
             {sideMoreOpen && (
               <div className="navbar__side-menu-subcategories">
                 <div
                   className="navbar__side-menu-subcategory"
-                  style={{cursor:'pointer'}}
+                  style={{ cursor: 'pointer' }}
                   onClick={(e) => {
                     e.preventDefault();
                     showComingSoon();
                     setSideMenuOpen(false);
-                    
+
                   }}
                 >
                   DajuVai Rental
                 </div>
                 <div
                   className="navbar__side-menu-subcategory"
-                  style={{cursor:'pointer'}}
+                  style={{ cursor: 'pointer' }}
                   onClick={(e) => {
                     e.preventDefault();
                     showComingSoon();
@@ -1060,7 +1064,7 @@ const Navbar: React.FC = () => {
               </div>
             )}
           </div>
-         
+
           {renderSideMenuCategories()}
 
           <div className="navbar__side-menu-social">
@@ -1403,10 +1407,10 @@ const Navbar: React.FC = () => {
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
       />
-    <VendorLogin
-  isOpen={vendorAuthModalOpen}
-  onClose={() => setVendorAuthModalOpen(false)}
-/>
+      <VendorLogin
+        isOpen={vendorAuthModalOpen}
+        onClose={() => setVendorAuthModalOpen(false)}
+      />
     </nav>
   );
 };

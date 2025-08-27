@@ -1,6 +1,7 @@
-.navbar__side-menu-category a{
+.navbar__side-menu-category a {
     text-decoration: none;
 }
+
 .navbar {
     width: 100%;
     background-color: #ffffff;
@@ -13,7 +14,7 @@
 .navbar__container {
     max-width: 1800px;
     margin: 0 auto;
-    width:85%;
+    width: 85%;
 }
 
 .nav_bar_right {
@@ -665,7 +666,7 @@
 .navbar__nepal-flag {
     height: 40px;
     width: auto;
-    margin-left:20px;
+    margin-left: 20px;
 }
 
 /* Hide Nepal flag by default (mobile first) */
@@ -679,11 +680,13 @@
         display: block;
     }
 }
+
 @media (max-width: 1200px) {
-    .navbar__container{
+    .navbar__container {
         width: 95%;
     }
 }
+
 /* Mobile dock */
 .navbar__mobile-dock {
     display: none;
@@ -1761,4 +1764,50 @@
 .navbar__more-trigger:focus {
     outline: 2px solid #ff6b00;
     outline-offset: 2px;
+}
+
+
+/* Tooltip container (reusable) */
+.tooltip {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+/* Hidden tooltip text */
+.tooltip .tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  position: absolute;
+  z-index: 10;
+  bottom: 125%; /* position above element */
+  left: 50%;
+  transform: translateX(-50%);
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+/* Show on hover or keyboard focus */
+.tooltip:hover .tooltip-text,
+.tooltip:focus .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Tooltip arrow */
+.tooltip .tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%; /* at bottom of tooltip box */
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent;
 }
