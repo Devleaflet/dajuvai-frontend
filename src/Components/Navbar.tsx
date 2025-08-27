@@ -930,19 +930,22 @@ const Navbar: React.FC = () => {
             <div className="navbar__account">
               <a
                 href="/cart"
-                className="navbar__account-link"
+                className="navbar__account-link tooltip"
                 onClick={toggleCart}
                 ref={cartButtonRef}
               >
-
                 <FaShoppingCart className="navbar__account-icon" />
+
                 {cartItems.length > 0 && (
                   <span className="navbar__cart-count">{cartItems.length}</span>
                 )}
+
+                <span className="tooltip-text">View Cart</span>
               </a>
+
               <div className="navbar__user-profile" ref={dropdownTriggerRef}>
                 <div
-                  className="navbar__user-avatar"
+                  className="navbar__user-avatar tooltip"
                   tabIndex={0}
                   onClick={
                     isAuthenticated
@@ -952,10 +955,7 @@ const Navbar: React.FC = () => {
                   onKeyDown={(e) => {
                     if (isAuthenticated && (e.key === "Enter" || e.key === " "))
                       setProfileDropdownOpen((v) => !v);
-                    if (
-                      !isAuthenticated &&
-                      (e.key === "Enter" || e.key === " ")
-                    ) {
+                    if (!isAuthenticated && (e.key === "Enter" || e.key === " ")) {
                       toggleAuthModal({
                         preventDefault: () => { },
                         stopPropagation: () => { },
@@ -968,18 +968,22 @@ const Navbar: React.FC = () => {
                   aria-label="Profile"
                 >
                   {getUserAvatar()}
+                  <span className="tooltip-text">
+                    {isAuthenticated ? "Profile" : "Login"}
+                  </span>
                 </div>
               </div>
 
 
               <NavLink
                 to="/wishlist"
-                className="navbar__account-icon-link"
+                className="navbar__account-icon-link tooltip"
                 style={({ isActive }) => ({
-                  color: isActive ? '#f97316' : 'inherit'
+                  color: isActive ? "#f97316" : "inherit",
                 })}
               >
                 <FaHeart />
+                <span className="tooltip-text">Wishlist</span>
               </NavLink>
 
             </div>

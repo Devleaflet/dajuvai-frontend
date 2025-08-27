@@ -25,7 +25,6 @@ interface Subcategory {
 import React from "react";
 import axiosInstance from "../api/axiosInstance";
 import { addToWishlist } from "../api/wishlist";
-import defaultProductImage from "../assets/logo.webp";
 import AuthModal from "../Components/AuthModal";
 import Footer from "../Components/Footer";
 import Navbar from "../Components/Navbar";
@@ -61,15 +60,13 @@ interface ReviewsResponse {
 }
 
 const ProductPage = () => {
-  // Helper to normalize any relative URL to an absolute URL
   const toFullUrl = (imgUrl: string): string => {
-    if (!imgUrl) return "";
+    if (!imgUrl) return ""; // Return empty string if no image URL
     return imgUrl.startsWith("http")
       ? imgUrl
       : `${window.location.origin}${imgUrl.startsWith("/") ? "" : "/"}${imgUrl}`;
   };
 
-  // Extract productId, categoryId, and subcategoryId from URL
   const {
     id: productId,
     categoryId,
@@ -79,7 +76,7 @@ const ProductPage = () => {
     categoryId?: string;
     subcategoryId?: string;
   }>();
-  const id = productId; // For backward compatibility
+  const id = productId;
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
@@ -90,21 +87,18 @@ const ProductPage = () => {
   const [imageError, setImageError] = useState<boolean[]>([]);
   const [currentReviewPage, setCurrentReviewPage] = useState(1);
 
-  // Enhanced Amazon-style zoom state
   const [isZoomActive, setIsZoomActive] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
   const mainImageRef = useRef<HTMLDivElement>(null);
   const quantityInputRef = useRef<HTMLInputElement>(null);
 
-  // Amazon-like zoom configuration
-  const ZOOM_LEVEL = 3.0; // Increased zoom level for better detail
-  const ZOOM_BOX_SIZE = 450; // Size of the zoomed-in box
+  const ZOOM_LEVEL = 3.0;
+  const ZOOM_BOX_SIZE = 450;
 
   const { handleCartOnAdd } = useCart();
   const { token, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // Fetch product data using React Query with the new API structure
   const { data: productData, isLoading: isProductLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
@@ -117,39 +111,29 @@ const ProductPage = () => {
         throw new Error("Product not found");
       }
 
-      // Process variants and images
       const variantImages: string[] = [];
       let allVariants = [];
       let defaultVariant = null;
 
-      // Process each variant
       if (apiProduct.variants && Array.isArray(apiProduct.variants)) {
         allVariants = apiProduct.variants.map((variant: any) => {
-          // Parse variant images
           const variantImgUrls: string[] = [];
           if (variant.variantImages && Array.isArray(variant.variantImages)) {
             variant.variantImages.forEach((img: any) => {
               try {
-                // Handle both string URLs and object formats
                 let imgUrl = "";
                 if (typeof img === "string") {
-                  // If it's a string, it might be a direct URL or a JSON string
                   try {
                     const parsed = JSON.parse(img);
                     imgUrl = parsed.url || parsed.imageUrl || img;
                   } catch {
-                    imgUrl = img; // It's already a URL string
+                    imgUrl = img;
                   }
                 } else if (img && typeof img === "object") {
-                  // Handle image object
                   imgUrl = img.url || img.imageUrl || "";
                 }
-
                 if (imgUrl) {
-                  // Ensure we have a full URL
-                  const fullUrl = imgUrl.startsWith("http")
-                    ? imgUrl
-                    : `${window.location.origin}${imgUrl.startsWith("/") ? "" : "/"}${imgUrl}`;
+                  const fullUrl = toFullUrl(imgUrl);
                   variantImgUrls.push(fullUrl);
                   if (!variantImages.includes(fullUrl)) {
                     variantImages.push(fullUrl);
@@ -161,7 +145,6 @@ const ProductPage = () => {
             });
           }
 
-          // Calculate variant pricing
           const basePrice = parseFloat(variant.basePrice) || 0;
           const discount = parseFloat(variant.discount) || 0;
           let price = basePrice;
@@ -185,7 +168,6 @@ const ProductPage = () => {
             status: variant.status || "AVAILABLE",
           };
 
-          // Set first variant as default
           if (!defaultVariant) {
             defaultVariant = variantData;
           }
@@ -194,48 +176,43 @@ const ProductPage = () => {
         });
       }
 
-      // Process product images
       const productImages = Array.isArray(apiProduct.productImages)
         ? apiProduct.productImages
-          .map((img: any) => {
-            try {
-              let imgUrl = "";
-              if (typeof img === "string") {
-                // Could be a direct URL or a JSON string
-                try {
-                  const parsed = JSON.parse(img);
-                  imgUrl = parsed.url || parsed.imageUrl || img;
-                } catch {
-                  imgUrl = img; // already a URL string
+            .map((img: any) => {
+              try {
+                let imgUrl = "";
+                if (typeof img === "string") {
+                  try {
+                    const parsed = JSON.parse(img);
+                    imgUrl = parsed.url || parsed.imageUrl || img;
+                  } catch {
+                    imgUrl = img;
+                  }
+                } else if (img && typeof img === "object") {
+                  imgUrl = img.url || img.imageUrl || "";
                 }
-              } else if (img && typeof img === "object") {
-                imgUrl = img.url || img.imageUrl || "";
+                return imgUrl ? toFullUrl(imgUrl) : "";
+              } catch (e) {
+                console.error("Error parsing product image:", e, img);
+                return "";
               }
-              return imgUrl ? toFullUrl(imgUrl) : "";
-            } catch (e) {
-              console.error("Error parsing product image:", e, img);
-              return "";
-            }
-          })
-          .filter(Boolean)
+            })
+            .filter(Boolean)
         : [];
 
-      const allImages = [
-        ...new Set([...productImages, ...variantImages]),
-      ].filter(Boolean);
+      const allImages = [...new Set([...productImages, ...variantImages])].filter(
+        Boolean
+      );
 
-      // Calculate product-level pricing if no variants
       let productPrice = 0;
       let productOriginalPrice = 0;
 
       if (apiProduct.hasVariants) {
-        // Use default variant for pricing if available
         if (defaultVariant) {
           productPrice = defaultVariant.calculatedPrice;
           productOriginalPrice = defaultVariant.originalPrice;
         }
       } else {
-        // Use product-level pricing
         const basePrice = parseFloat(apiProduct.basePrice) || 0;
         const discount = parseFloat(apiProduct.discount) || 0;
 
@@ -249,7 +226,6 @@ const ProductPage = () => {
         }
       }
 
-      // Extract size and color options from variants
       const sizeOptions = new Set<string>();
       const colorOptions = new Set<{ name: string; img: string }>();
 
@@ -270,21 +246,20 @@ const ProductPage = () => {
         }
       });
 
-      // Derive category/subcategory IDs robustly
       const derivedCategoryId =
         apiProduct?.category?.id != null
           ? Number(apiProduct.category.id)
           : (apiProduct as any)?.categoryId != null
-            ? Number((apiProduct as any).categoryId)
-            : undefined;
+          ? Number((apiProduct as any).categoryId)
+          : undefined;
       const derivedCategoryName = apiProduct?.category?.name;
 
       const derivedSubcategoryId =
         apiProduct?.subcategory?.id != null
           ? Number(apiProduct.subcategory.id)
           : (apiProduct as any)?.subcategoryId != null
-            ? Number((apiProduct as any).subcategoryId)
-            : undefined;
+          ? Number((apiProduct as any).subcategoryId)
+          : undefined;
       const derivedSubcategoryName = apiProduct?.subcategory?.name;
 
       return {
@@ -297,23 +272,23 @@ const ProductPage = () => {
             productOriginalPrice > productPrice
               ? productOriginalPrice.toFixed(2)
               : undefined,
-          rating: 0, // Will be populated from reviews
-          ratingCount: "0", // Will be populated from reviews
-          image: allImages[0] || defaultProductImage,
+          rating: 0,
+          ratingCount: "0",
+          image: allImages[0] || "",
           brand: apiProduct.brand?.name || "Unknown Brand",
           category:
             derivedCategoryId != null
               ? {
-                id: derivedCategoryId,
-                name: derivedCategoryName || "Category",
-              }
+                  id: derivedCategoryId,
+                  name: derivedCategoryName || "Category",
+                }
               : undefined,
           subcategory:
             derivedSubcategoryId != null
               ? {
-                id: derivedSubcategoryId,
-                name: derivedSubcategoryName || "Subcategory",
-              }
+                  id: derivedSubcategoryId,
+                  name: derivedSubcategoryName || "Subcategory",
+                }
               : undefined,
           vendor: apiProduct.vendor || {
             id: null,
@@ -331,11 +306,10 @@ const ProductPage = () => {
         vendorId: apiProduct.vendorId || null,
       };
     },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    gcTime: 10 * 60 * 1000, // Keep unused data for 10 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
-  // Fetch reviews data using React Query with pagination
   const { data: reviewsData, isLoading: isReviewsLoading } = useQuery({
     queryKey: ["reviews", id, currentReviewPage],
     queryFn: async () => {
@@ -354,14 +328,13 @@ const ProductPage = () => {
         totalPages: response.data.data.totalPages || 1,
       };
     },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    gcTime: 10 * 60 * 1000, // Keep unused data for 10 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const product = productData?.product;
   const vendorId = productData?.vendorId;
 
-  // Determine effective category/subcategory for recommendations
   const effectiveCategoryId =
     categoryId ??
     (product?.category?.id != null ? String(product.category.id) : undefined);
@@ -371,7 +344,6 @@ const ProductPage = () => {
       ? String(product.subcategory.id)
       : undefined);
 
-  // Fetch recommended products
   const { data: recommendedProducts, isLoading: isLoadingRecommended } = useQuery({
     queryKey: [
       "recommendedProducts",
@@ -397,7 +369,6 @@ const ProductPage = () => {
       };
 
       try {
-        // 1) Try most-specific: subcategory + category
         if (effectiveCategoryId && effectiveSubcategoryId) {
           const params = new URLSearchParams();
           params.append("categoryId", String(effectiveCategoryId));
@@ -414,7 +385,6 @@ const ProductPage = () => {
           return data;
         }
 
-        // 2) If only subcategory
         if (effectiveSubcategoryId && !effectiveCategoryId) {
           const params = new URLSearchParams();
           params.append("subcategoryId", String(effectiveSubcategoryId));
@@ -425,7 +395,6 @@ const ProductPage = () => {
           return data;
         }
 
-        // 3) If only category
         if (effectiveCategoryId && !effectiveSubcategoryId) {
           const params = new URLSearchParams();
           params.append("categoryId", String(effectiveCategoryId));
@@ -436,7 +405,6 @@ const ProductPage = () => {
           return data;
         }
 
-        // 4) Fallback: no filters
         return await fetchWithParams(new URLSearchParams());
       } catch (error) {
         console.error("Failed to fetch recommended products:", error);
@@ -447,7 +415,6 @@ const ProductPage = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Safely format variant attributes
   const formatVariantAttributes = (attributes: any): string => {
     if (!attributes) return "";
     if (Array.isArray(attributes)) {
@@ -457,10 +424,10 @@ const ProductPage = () => {
           const vals = Array.isArray(attr?.values)
             ? attr.values.map((v: any) => String(v?.value ?? v)).filter(Boolean)
             : Array.isArray(attr?.attributeValues)
-              ? attr.attributeValues
+            ? attr.attributeValues
                 .map((v: any) => String(v?.value ?? v))
                 .filter(Boolean)
-              : [];
+            : [];
           return label && vals.length ? `${label}: ${vals.join(", ")}` : "";
         })
         .filter(Boolean)
@@ -490,7 +457,6 @@ const ProductPage = () => {
     return String(attributes);
   };
 
-  // Fetch category data
   const { data: categoryData } = useQuery<{ data: Category }>({
     queryKey: ["category", categoryId],
     queryFn: async () => {
@@ -509,12 +475,10 @@ const ProductPage = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Find the subcategory
   const subcategory = categoryData?.data?.subcategories?.find(
     (sub: any) => sub.id === Number(subcategoryId)
   );
 
-  // Fallback to product data
   const displayCategory = categoryData?.data || product?.category;
   const displaySubcategory = subcategory || product?.subcategory;
   const reviews = (reviewsData?.reviews || []).map((review: Review) => ({
@@ -540,8 +504,8 @@ const ProductPage = () => {
       setSelectedVariant(defaultVar);
       const imgs =
         defaultVar &&
-          defaultVar.variantImgUrls &&
-          defaultVar.variantImgUrls.length > 0
+        defaultVar.variantImgUrls &&
+        defaultVar.variantImgUrls.length > 0
           ? defaultVar.variantImgUrls
           : product.productImages || [];
       setImageError(
@@ -550,12 +514,10 @@ const ProductPage = () => {
     }
   }, [product]);
 
-  // Handle image selection
   const handleImageSelect = (index: number) => {
     setSelectedImageIndex(index);
   };
 
-  // Get current images
   const getCurrentImages = () => {
     if (selectedVariant?.variantImgUrls?.length > 0) {
       return selectedVariant.variantImgUrls;
@@ -569,7 +531,6 @@ const ProductPage = () => {
     return product?.productImages || [];
   };
 
-  // Sync error-state array and selected image index
   useEffect(() => {
     const imgs = getCurrentImages();
     setImageError(new Array(imgs && imgs.length ? imgs.length : 1).fill(false));
@@ -578,7 +539,6 @@ const ProductPage = () => {
     }
   }, [selectedVariant, product]);
 
-  // Get current stock
   const getCurrentStock = () => {
     if (selectedVariant) {
       return selectedVariant.stock || 0;
@@ -586,7 +546,6 @@ const ProductPage = () => {
     return product?.stock || 0;
   };
 
-  // Get current price
   const getCurrentPrice = () => {
     if (selectedVariant) {
       return selectedVariant.calculatedPrice || 0;
@@ -594,7 +553,6 @@ const ProductPage = () => {
     return parseFloat(product?.price || "0");
   };
 
-  // Get original price
   const getOriginalPrice = () => {
     if (selectedVariant) {
       return (
@@ -604,7 +562,6 @@ const ProductPage = () => {
     return parseFloat(product?.originalPrice || product?.price || "0");
   };
 
-  // Handle variant selection
   const handleVariantSelect = (variant: any) => {
     setSelectedVariant(variant);
     if (variant.variantImgUrls && variant.variantImgUrls.length > 0) {
@@ -614,29 +571,34 @@ const ProductPage = () => {
     }
   };
 
-  // Zoom handlers
-  const handleMouseEnter = () => {
+ const handleMouseEnter = () => {
+  const currentImages = getCurrentImages();
+  if (currentImages[selectedImageIndex] && !imageError[selectedImageIndex]) {
     setIsZoomActive(true);
-  };
+  }
+};
 
-  const handleMouseLeave = () => {
-    setIsZoomActive(false);
-  };
+const handleMouseLeave = () => {
+  setIsZoomActive(false);
+};
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!mainImageRef.current) return;
-
-    const rect = mainImageRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const constrainedX = Math.max(0, Math.min(x, rect.width));
-    const constrainedY = Math.max(0, Math.min(y, rect.height));
-
-    const percentX = (constrainedX / rect.width) * 100;
-    const percentY = (constrainedY / rect.height) * 100;
-    setZoomPosition({ x: percentX, y: percentY });
-  };
+const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  if (!isZoomActive || !mainImageRef.current) return;
+  
+  const rect = mainImageRef.current.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  
+  // Calculate relative position (0-1)
+  const relativeX = Math.max(0, Math.min(1, x / rect.width));
+  const relativeY = Math.max(0, Math.min(1, y / rect.top));
+  
+  // Convert to percentage for background-position
+  const percentX = relativeX * 100;
+  const percentY = relativeY * 100;
+  
+  setZoomPosition({ x: percentX, y: percentY });
+};
 
   const showNotification = (message: string) => {
     setToastMessage(message);
@@ -741,8 +703,21 @@ const ProductPage = () => {
       quantityInputRef.current.select();
     }
   };
-
+  useEffect(() => {
+  setZoomPosition({ x: 50, y: 50 }); // Center the zoom initially
+}, [selectedImageIndex, selectedVariant]);
+useEffect(() => {
+  return () => {
+    setIsZoomActive(false);
+    setZoomPosition({ x: 50, y: 50 });
+  };
+}, []);
+const handleImageLoad = () => {
+  // Reset zoom when image loads
+  setZoomPosition({ x: 50, y: 50 });
+};
   const handleImageError = (index: number) => {
+    console.warn(`Image failed to load: ${getCurrentImages()[index]}`);
     setImageError((prev) => {
       const newState = [...prev];
       newState[index] = true;
@@ -769,9 +744,9 @@ const ProductPage = () => {
 
   const currentImages = getCurrentImages();
   const currentImage =
-    imageError[selectedImageIndex] || !currentImages[selectedImageIndex]
-      ? defaultProductImage
-      : currentImages[selectedImageIndex];
+    currentImages[selectedImageIndex] && !imageError[selectedImageIndex]
+      ? currentImages[selectedImageIndex]
+      : "";
 
   return (
     <div className="app">
@@ -782,44 +757,61 @@ const ProductPage = () => {
             <div className="product-gallery">
               <div className="product-gallery__images">
                 <div
-                  className="product-gallery__main-image"
-                  ref={mainImageRef}
-                  onMouseEnter={handleMouseEnter}
-                  onMouseLeave={handleMouseLeave}
-                  onMouseMove={handleMouseMove}
-                >
-                  <img
-                    src={currentImage}
-                    alt={product.name}
-                    onError={() => handleImageError(selectedImageIndex)}
-                  />
-                  {isZoomActive && (
-                    <div
-                      className="product-gallery__zoom-box"
-                      style={{
-                        backgroundImage: `url(${currentImage})`,
-                        backgroundSize: `${ZOOM_LEVEL * 100}%`,
-                        backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
-                      }}
-                    />
-                  )}
-                </div>
+  className="product-gallery__main-image"
+  ref={mainImageRef}
+  onMouseEnter={handleMouseEnter}
+  onMouseLeave={handleMouseLeave}
+  onMouseMove={handleMouseMove}
+>
+  {currentImage ? (
+    <img
+      src={currentImage}
+      alt={product.name}
+      onError={() => handleImageError(selectedImageIndex)}
+      onLoad={handleImageLoad}
+      draggable={false} // Prevent dragging
+    />
+  ) : (
+    <div className="product-gallery__no-image">
+      No image available
+    </div>
+  )}
+  {isZoomActive && currentImage && (
+    <div
+      className={`product-gallery__zoom-box ${isZoomActive ? 'active' : ''}`}
+      style={{
+        backgroundImage: `url(${currentImage})`,
+        backgroundSize: '300%',
+        backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
+        backgroundRepeat: 'no-repeat'
+      }}
+    />
+  )}
+</div>
+
                 {currentImages && currentImages.length > 1 && (
                   <div className="product-gallery__thumbnails">
                     {currentImages.map((image: string, index: number) => (
                       <button
                         key={index}
-                        className={`product-gallery__thumbnail ${selectedImageIndex === index
+                        className={`product-gallery__thumbnail ${
+                          selectedImageIndex === index
                             ? "product-gallery__thumbnail--active"
                             : ""
-                          }`}
+                        }`}
                         onClick={() => handleImageSelect(index)}
                       >
-                        <img
-                          src={imageError[index] ? defaultProductImage : image}
-                          alt={`Product view ${index + 1}`}
-                          onError={() => handleImageError(index)}
-                        />
+                        {image && !imageError[index] ? (
+                          <img
+                            src={image}
+                            alt={`Product view ${index + 1}`}
+                            onError={() => handleImageError(index)}
+                          />
+                        ) : (
+                          <div className="product-gallery__thumbnail-no-image">
+                            No image
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -832,12 +824,17 @@ const ProductPage = () => {
                 <h1 className="product-info__title">{product.name}</h1>
 
                 <div className="product-price">
-                  <span className="product-price__current">Rs. {getCurrentPrice().toFixed(2)}</span>
+                  <span className="product-price__current">
+                    Rs. {getCurrentPrice().toFixed(2)}
+                  </span>
                   {getOriginalPrice() > getCurrentPrice() && (
                     <>
-                      <span className="product-price__original">Rs. {getOriginalPrice().toFixed(2)}</span>
+                      <span className="product-price__original">
+                        Rs. {getOriginalPrice().toFixed(2)}
+                      </span>
                       <span className="product-price__savings">
-                        Save Rs. {(getOriginalPrice() - getCurrentPrice()).toFixed(2)}
+                        Save Rs.{" "}
+                        {(getOriginalPrice() - getCurrentPrice()).toFixed(2)}
                       </span>
                     </>
                   )}
@@ -860,10 +857,11 @@ const ProductPage = () => {
                       {product.variants.map((variant: any) => (
                         <div
                           key={variant.id}
-                          className={`product-options__variant ${selectedVariant?.id === variant.id
+                          className={`product-options__variant ${
+                            selectedVariant?.id === variant.id
                               ? "product-options__variant--active"
                               : ""
-                            }`}
+                          }`}
                           onClick={() =>
                             variant.stock > 0 && handleVariantSelect(variant)
                           }
@@ -873,9 +871,7 @@ const ProductPage = () => {
                             <div className="product-options__variant-sku">
                               Rs. {variant.calculatedPrice?.toFixed(2) || "0.00"}
                             </div>
-                            {variant.stock <= 0 && (
-                              <div>Out of Stock</div>
-                            )}
+                            {variant.stock <= 0 && <div>Out of Stock</div>}
                           </div>
                         </div>
                       ))}
