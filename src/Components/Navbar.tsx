@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import "../Styles/Navbar.css";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-
 import {
   FaSearch,
   FaShoppingCart,
@@ -850,8 +848,6 @@ const Navbar: React.FC = () => {
             </div>
           </div>
 
-
-          {/* Nav bar desktop link  */}
           <div className="navbar__desktop-links">
             <div className="navbar__links">
               <NavLink
@@ -936,7 +932,9 @@ const Navbar: React.FC = () => {
                 onClick={toggleCart}
                 ref={cartButtonRef}
               >
-                <FaShoppingCart className="navbar__account-icon" />
+                <FaShoppingCart className="navbar__account-icon" style={{
+                  'fontSize': '24px'
+                }} />
 
                 {cartItems.length > 0 && (
                   <span className="navbar__cart-count">{cartItems.length}</span>
@@ -979,7 +977,7 @@ const Navbar: React.FC = () => {
 
               <NavLink
                 to="/wishlist"
-                className="navbar__account-icon-link tooltip"
+                className="navbar__account-icon-link tooltip tooltip_wishlist"
                 style={({ isActive }) => ({
                   color: isActive ? "#f97316" : "inherit",
                 })}
@@ -1227,67 +1225,63 @@ const Navbar: React.FC = () => {
           }}
         ></div>
 
-<div className="navbar__bottom">
-  <div className="navbar__categories">
-    <button
-      type="button"
-      className="navbar__scroll-arrow navbar__scroll-arrow--left"
-      onClick={() => {
-        const el = document.querySelector('.navbar__categories-inner');
-        if (el) el.scrollBy({ left: -200, behavior: 'smooth' });
-      }}
-    >
-      <FaChevronLeft size={16} />
-    </button>
-
-    <div className="navbar__categories-wrapper">
-      <div className="navbar__categories-inner">
-        {categories.map((category: any) => (
-          <div
-            key={category.id}
-            className={`navbar__category${
-              activeDropdown === category.id ? " active" : ""
-            }`}
-            onMouseEnter={() => setActiveDropdown(category.id)}
-            onMouseLeave={() => setActiveDropdown(null)}
-          >
-            <div className="navbar__category-link">
-              {category.name}
-              <FaChevronDown
-                size={16}
-                className={`navbar__category-icon ${
-                  activeDropdown === category.id
-                    ? "navbar__category-icon--active"
-                    : ""
-                }`}
-              />
-            </div>
-            {activeDropdown === category.id &&
-              renderCategoryDropdown(category)}
+        <div className="navbar__bottom">
+          <div className="navbar__categories">
+            {categories.map((category: any) => (
+              <div
+                key={category.id}
+                className={`navbar__category${activeDropdown === category.id ? " active" : ""}`}
+                onMouseEnter={() => setActiveDropdown(category.id)}
+                onMouseLeave={() => setActiveDropdown(null)}
+              >
+                <div className="navbar__category-link">
+                  {category.name}
+                  <FaChevronDown
+                    size={16}
+                    className={`navbar__category-icon ${activeDropdown === category.id
+                      ? "navbar__category-icon--active"
+                      : ""
+                      }`}
+                  />
+                </div>
+                {activeDropdown === category.id &&
+                  renderCategoryDropdown(category)}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-    </div>
 
-    <button
-      type="button"
-      className="navbar__scroll-arrow navbar__scroll-arrow--right"
-      onClick={() => {
-        const el = document.querySelector('.navbar__categories-inner');
-        if (el) el.scrollBy({ left: 200, behavior: 'smooth' });
-      }}
-    >
-      <FaChevronRight size={16} />
-    </button>
-  </div>
-</div>
-
-
-
-
-
-
-
+          <div className="navbar__social navbar__social--desktop">
+            <a
+              href="https://www.facebook.com/"
+              target="_blank"
+              className="navbar__social-link navbar__social-link--facebook"
+            >
+              <FaFacebook />
+            </a>
+            <a
+              href="https://www.instagram.com/dajuvai_/"
+              target="_blank"
+              className="navbar__social-link navbar__social-link--instagram"
+            >
+              <FaInstagram />
+            </a>
+            <a
+              href="https://www.tiktok.com/@www.dajuvai.com"
+              target="_blank"
+              className="navbar__social-link navbar__social-link--tiktok"
+            >
+              <FaTiktok />
+            </a>
+            <a
+              href="https://wa.me/9779700620004"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="navbar__social-link navbar__social-link--whatsapp"
+            >
+              <FaWhatsapp />
+            </a>
+          </div>
+        </div>
       </div>
 
       {/* Unified profile drop-down rendered at top level */}

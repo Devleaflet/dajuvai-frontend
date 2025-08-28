@@ -924,3 +924,7 @@
     overflow: hidden;
   }
 }
+
+.footer__links-section{
+  text-align: left;
+}
