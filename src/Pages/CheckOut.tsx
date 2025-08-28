@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect,  } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import CryptoJS from 'crypto-js';
 import '../Styles/CheckOut.css';
@@ -9,15 +9,12 @@ import Footer from '../Components/Footer';
 import logo from '../assets/logo.webp';
 import esewa from '../assets/esewa.png';
 import npx from '../assets/npx.png';
-import khalti from '../assets/khalti1.png';
+
 import { useAuth } from '../context/AuthContext';
 import AlertModal from '../Components/Modal/AlertModal';
 import { API_BASE_URL } from '../config';
 
-interface District {
-  id: number;
-  name: string;
-}
+
 
 interface PromoCode {
   id: number;
@@ -32,7 +29,6 @@ interface CartItem {
   name: string;
   description?: string;
   image: string | null;
-  // Optional variant-related fields
   variantId?: number;
   variant?: {
     id?: number;
@@ -42,13 +38,19 @@ interface CartItem {
     attributeValues?: any;
     attrs?: any;
     attributeSpecs?: any;
+    stock?: number;
   };
   attributes?: any;
   variantAttributes?: any;
   product?: {
     id: number;
     name: string;
-    vendorId?: number
+    vendorId?: number;
+    vendor?: {
+      id?: number;
+      businessName?: string;
+      district?: { name: string };
+    };
   };
 }
 
@@ -58,49 +60,63 @@ interface ShippingGroup {
   items: CartItem[];
   shippingCost: number;
   subtotal: number;
-  lineTotal: number; // Added line total (subtotal + shipping)
+  lineTotal: number;
 }
 
 const Checkout: React.FC = () => {
   const location = useLocation();
   const { cartItems: contextCartItems, handleIncreaseQuantity, handleDecreaseQuantity } = useCart();
-  let cartItems = contextCartItems;
-  // If coming from Buy Now, override cartItems with the single product from state
-  if (location.state && location.state.buyNow && location.state.product) {
-    const p = location.state.product;
+  let cartItems: CartItem[] = contextCartItems;
+
+  // State for managing Buy Now quantities
+  const [buyNowQuantities, setBuyNowQuantities] = useState<{[key: number]: number}>({});
+
+  // Handle "Buy Now" case
+  if (location.state?.buyNow && location.state?.products?.length > 0) {
+    const buyNowProduct = location.state.products[0];
+    const { product, quantity } = buyNowProduct;
     cartItems = [{
-      id: p.id,
-      quantity: p.quantity,
-      price: p.price,
-      name: p.name,
-      image: p.image || null,
+      id: product.id,
+      quantity,
+      price: product.price,
+      name: product.name,
+      description: product.description || '',
+      image: product.image || null,
+      variantId: product.selectedVariant?.id,
+      variant: product.selectedVariant ? {
+        id: product.selectedVariant.id,
+        attributes: product.selectedVariant.attributes,
+        calculatedPrice: product.selectedVariant.calculatedPrice,
+        originalPrice: product.selectedVariant.originalPrice,
+        stock: product.selectedVariant.stock,
+        variantImgUrls: product.selectedVariant.variantImgUrls,
+      } : undefined,
       product: {
-        id: p.id,
-        name: p.name,
-        vendor: p.vendor?.businessName || undefined,
-        description: p.description || '',
-        price: Number(p.price),
-        rating: p.rating || 0,
-        ratingCount: p.ratingCount || '0',
-        image: p.image || '',
+        id: product.id,
+        name: product.name,
+        vendorId: product.vendor?.id,
+        vendor: product.vendor ? {
+          id: product.vendor.id,
+          businessName: product.vendor.businessName || 'Unknown Vendor',
+          district: product.vendor.district || { name: 'Unknown District' },
+        } : undefined,
       },
     }];
   }
+
   const navigate = useNavigate();
-  
+
   const [billingDetails, setBillingDetails] = useState({
-    fullName:"",
+    fullName: '',
     province: '',
     district: '',
     city: '',
+        landmark: "",
     streetAddress: '',
     phoneNumber: '',
   });
 
-  const auth = useAuth();
-  const token = auth?.token;
- 
-  // const [districts, setDistricts] = useState<District[]>([]);
+  const { user, token } = useAuth();
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('CASH_ON_DELIVERY');
@@ -112,62 +128,66 @@ const Checkout: React.FC = () => {
   const [enteredPromoCode, setEnteredPromoCode] = useState('');
   const [appliedPromoCode, setAppliedPromoCode] = useState<PromoCode | null>(null);
   const [promoError, setPromoError] = useState('');
-  const [provinceData, setProvinceData] = useState([]);
+  const [provinceData, setProvinceData] = useState<string[]>([]);
   const [districtData, setDistrictData] = useState<string[]>([]);
 
-  
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const provinceResponse = await fetch('/Nepal-Address-API-main/data/provinces.json');
+        const data = await provinceResponse.json();
+        setProvinceData(data.provinces.map(capitalizeFirstLetter));
+      } catch (error) {
+        console.error('Error fetching provinces:', error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  function capitalizeFirstLetter(string: string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
+
+  async function fetchDistricts(province: string) {
+    try {
+      const districtResponse = await fetch(`/Nepal-Address-API-main/data/districtsByProvince/${province.toLowerCase()}.json`);
+      const data = await districtResponse.json();
+      setDistrictData(data.districts.map(capitalizeFirstLetter));
+    } catch (error) {
+      console.error('Error fetching district data:', error);
+      setDistrictData([]);
+    }
+  }
 
   useEffect(() => {
-        const fetchData = async () => {
-            const provinceResponse = await fetch("/Nepal-Address-API-main/data/provinces.json");
-            const data = await provinceResponse.json();
-            setProvinceData(data.provinces.map(capitalizeFirstLetter));
-        };
-        fetchData();
-    }, []);
-    function capitalizeFirstLetter(string) {
-        return string.charAt(0).toUpperCase() + string.slice(1);
+    if (billingDetails.province) {
+      fetchDistricts(billingDetails.province);
+    } else {
+      setDistrictData([]);
     }
+  }, [billingDetails.province]);
 
-    // useEffect(() => {
-    //     if (province) {
-    //         const filtered = provinceData.filter(p =>
-    //             p.toLowerCase().includes(province.toLowerCase())
-    //         );
-    //         setFilteredProvinces(filtered.map(capitalizeFirstLetter));
-    //     } else {
-    //         setFilteredProvinces([]);
-    //     }
-    // }, [province, provinceData]);
-        async function fetchDistricts(province:string) {
-        try {
-            const districtResponse = await fetch(`/Nepal-Address-API-main/data/districtsByProvince/${province.toLowerCase()}.json`);
-            const data = await districtResponse.json();
-            setDistrictData(data.districts.map(capitalizeFirstLetter));
-        } catch (error) {
-            console.error('Error fetching district data:', error);
-        }
-
-            
-    }
-
-
-  const [formData, setformData] = useState({
-    amount: "10",
-    tax_amount: "0",
-    total_amount: "10",
+  const [formData, setFormData] = useState({
+    amount: '10',
+    tax_amount: '0',
+    total_amount: '10',
     transaction_uuid: uuidv4(),
-    product_service_charge: "0",
-    product_delivery_charge: "0",
-    product_code: "EPAYTEST",
+    product_service_charge: '0',
+    product_delivery_charge: '0',
+    product_code: 'EPAYTEST',
     success_url: `https://dajuvai-frontend-ykrq.vercel.app/order/esewa-payment-success`,
     failure_url: `https://dajuvai-frontend-ykrq.vercel.app/esewa-payment-failure`,
-    signed_field_names: "total_amount,transaction_uuid,product_code",
-    signature: "",
-    secret: "8gBm/:&EnhH.1/q",
+    signed_field_names: 'total_amount,transaction_uuid,product_code',
+    signature: '',
+    secret: '8gBm/:&EnhH.1/q',
   });
 
-  // Generate eSewa signature
+  useEffect(() => {
+    const { total_amount, transaction_uuid, product_code, secret } = formData;
+    const hashedSignature = generateSignature(total_amount, transaction_uuid, product_code, secret);
+    setFormData(prev => ({ ...prev, signature: hashedSignature }));
+  }, [formData.total_amount]);
+
   const generateSignature = (
     total_amount: string,
     transaction_uuid: string,
@@ -176,21 +196,8 @@ const Checkout: React.FC = () => {
   ): string => {
     const hashString = `total_amount=${total_amount},transaction_uuid=${transaction_uuid},product_code=${product_code}`;
     const hash = CryptoJS.HmacSHA256(hashString, secret);
-    const hashedSignature = CryptoJS.enc.Base64.stringify(hash);
-    return hashedSignature;
+    return CryptoJS.enc.Base64.stringify(hash);
   };
-
-  // Update signature when amount changes
-  useEffect(() => {
-    const { total_amount, transaction_uuid, product_code, secret } = formData;
-    const hashedSignature = generateSignature(
-      total_amount,
-      transaction_uuid,
-      product_code,
-      secret
-    );
-    setformData(prev => ({ ...prev, signature: hashedSignature }));
-  }, [formData.amount]);
 
   const validatePhoneNumber = (phone: string): boolean => {
     const phoneRegex = /^9\d{9}$/;
@@ -199,23 +206,15 @@ const Checkout: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     if (name === 'phoneNumber') {
       const numericValue = value.replace(/\D/g, '').slice(0, 10);
-      setBillingDetails((prev) => ({ ...prev, [name]: numericValue }));
-      
-      if (numericValue && !validatePhoneNumber(numericValue)) {
-        setPhoneError('Phone number must start with 9 and be exactly 10 digits long');
-      } else {
-        setPhoneError('');
-      }
-    }
-    else if(name ==="province"){
-      fetchDistricts(value)
-      setBillingDetails((prev) => ({ ...prev, [name]: value }));
-      billingDetails.district = ""
+      setBillingDetails(prev => ({ ...prev, [name]: numericValue }));
+      setPhoneError(numericValue && !validatePhoneNumber(numericValue)
+        ? 'Phone number must start with 9 and be exactly 10 digits long'
+        : '');
     } else {
-      setBillingDetails((prev) => ({ ...prev, [name]: value }));
+      setBillingDetails(prev => ({ ...prev, [name]: value }));
     }
   };
 
@@ -253,145 +252,190 @@ const Checkout: React.FC = () => {
     setEnteredPromoCode('');
     setPromoError('');
   };
-  const user = useAuth()
+
   const fetchUser = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/users/${user.user.id}`, {
-      credentials: 'include',
-      headers: {
-        'Accept': 'application/json',
-        Authorization: `Bearer ${user.token}`,
-      },
-    });
-    if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-    const data = await response.json();
-    if (data.success && data.data) {
-      setBillingDetails((prev) => {
-        const newPhone = data.data.phoneNumber && validatePhoneNumber(data.data.phoneNumber) ? data.data.phoneNumber : prev.phoneNumber;
-        const newProvince = data.data.address?.province || prev.province;
-        return {
-          ...prev,
-          fullName: data.data.fullName || prev.fullName,
-          province: newProvince,
-          district: data.data.address?.district || prev.district,
-          streetAddress: data.data.address?.localAddress || prev.streetAddress,
-          phoneNumber: newPhone,
-          city: data.data.address?.city || prev.city,
-        };
-      });
-      if (data.data.address?.province) {
-        fetchDistricts(data.data.address.province);
-      }
-      console.log("Data stored", data.data);
-    } else {
-      console.log("Bad response");
-      setAlertMessage("Failed to fetch user data.");
-      setShowAlert(true);
-    }
-  } catch (error) {
-    console.error("Error fetching user data:", error);
-    setAlertMessage("An error occurred while fetching user data.");
-    setShowAlert(true);
-  }
-};
-
-useEffect(() => {
-  if (user?.user?.id && user?.token) {
-    fetchUser();
-  } else {
-    console.warn("User or token not available, skipping user data fetch");
-  }
-}, [user?.user?.id, user?.token]);
-
-  const handlePlaceOrder = async () => {
-    if (!termsAgreed) {
-      setAlertMessage('Please agree to the terms and conditions');
-      setShowAlert(true);
+    if (!user?.id || !token) {
+      console.warn('User or token not available, skipping user data fetch');
       return;
     }
-
-    if (!billingDetails.district || !billingDetails.city || !billingDetails.streetAddress || !billingDetails.phoneNumber) {
-      setAlertMessage('Please fill in all required fields including phone number');
-      setShowAlert(true);
-      return;
-    }
-
-    if (!validatePhoneNumber(billingDetails.phoneNumber)) {
-      setAlertMessage('Please enter a valid phone number (must start with 9 and be exactly 10 digits long)');
-      setShowAlert(true);
-      return;
-    }
-
-    if (cartItems.length === 0) {
-      setAlertMessage('Your cart is empty');
-      setShowAlert(true);
-      return;
-    }
-
-    setIsPlacingOrder(true);
 
     try {
-      const orderData = {
-          fullName:billingDetails.fullName,
-        shippingAddress: {
-          province: billingDetails.province,
-          city: billingDetails.city,
-          streetAddress: billingDetails.streetAddress,
-          district: billingDetails.district
-        },
-        paymentMethod: selectedPaymentMethod,
-        phoneNumber: billingDetails.phoneNumber,
-      };
-      console.log(orderData)
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      const response = await fetch(`${API_BASE_URL}/api/order`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(orderData),
+      const response = await fetch(`${API_BASE_URL}/api/auth/users/${user.id}`, {
         credentials: 'include',
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        if (selectedPaymentMethod === 'CASH_ON_DELIVERY') {
-          setAlertMessage('Order placed successfully!');
-          setShowAlert(true);
-        }
-       setTimeout(() => {
-  if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod !== 'ESEWA') {
-    navigate('/order-page', {
-      state: {
-        orderDetails: {
-          orderId: result.data?.id || null,
-          totalAmount: finalTotal,
+        headers: {
+          'Accept': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-      },
-    });
-  } else {
-    // For Cash on Delivery and other payment methods, redirect to user profile orders tab
-    navigate('/user-profile', {
-      state: {
-        activeTab: 'orders'
-      }
-    });
-  }
-}, 1500);
+      });
+      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+      const data = await response.json();
+      if (data.success && data.data) {
+        setBillingDetails(prev => ({
+          ...prev,
+          fullName: data.data.fullName || prev.fullName,
+          province: data.data.address?.province || prev.province,
+          district: data.data.address?.district || prev.district,
+            landmark : data.data.address?.landmark || prev.landmark,
+          streetAddress: data.data.address?.localAddress || prev.streetAddress,
+          phoneNumber: data.data.phoneNumber && validatePhoneNumber(data.data.phoneNumber)
+            ? data.data.phoneNumber
+            : prev.phoneNumber,
+          city: data.data.address?.city || prev.city,
+        }));
+        if (data.data.address?.province) {
+          fetchDistricts(data.data.address.province);
+        }
       } else {
-        setAlertMessage('Failed to place order. Please try again.');
+        setAlertMessage('Failed to fetch user data.');
         setShowAlert(true);
       }
     } catch (error) {
-      console.error('Error placing order:', error);
-      setAlertMessage('An error occurred while placing your order. Please try again.');
+      console.error('Error fetching user data:', error);
+      setAlertMessage('An error occurred while fetching user data.');
       setShowAlert(true);
-    } finally {
-      setIsPlacingOrder(false);
     }
   };
+
+  useEffect(() => {
+    if (user?.id && token) {
+      fetchUser();
+    }
+  }, [user?.id, token]);
+
+const handlePlaceOrder = async () => {
+  if (!termsAgreed) {
+    setAlertMessage('Please agree to the terms and conditions');
+    setShowAlert(true);
+    return;
+  }
+
+  if (
+    !billingDetails.fullName ||
+    !billingDetails.district ||
+    !billingDetails.city ||
+    !billingDetails.streetAddress ||
+    !billingDetails.phoneNumber
+  ) {
+    setAlertMessage('Please fill in all required fields including phone number');
+    setShowAlert(true);
+    return;
+  }
+
+  if (!validatePhoneNumber(billingDetails.phoneNumber)) {
+    setAlertMessage('Please enter a valid phone number (must start with 9 and be exactly 10 digits long)');
+    setShowAlert(true);
+    return;
+  }
+
+  if (cartItems.length === 0) {
+    setAlertMessage('Your cart is empty');
+    setShowAlert(true);
+    return;
+  }
+
+  setIsPlacingOrder(true);
+
+  try {
+    let orderData;
+
+    if (location.state?.buyNow && cartItems.length === 1) {
+      const buyNowItem = cartItems[0];
+      const finalQuantity = buyNowQuantities[buyNowItem.id] || buyNowItem.quantity;
+      
+      orderData = {
+        isBuyNow: true,
+        productId: buyNowItem.id,
+        variantId: buyNowItem.variantId || undefined, // Include only if variantId exists
+        quantity: finalQuantity,
+        shippingAddress: {
+          province: billingDetails.province,
+          city: billingDetails.city,
+          district: billingDetails.district,
+          streetAddress: billingDetails.streetAddress,
+          landmark: billingDetails.landmark || undefined,
+        },
+        paymentMethod: selectedPaymentMethod,
+        phoneNumber: billingDetails.phoneNumber,
+        fullName: billingDetails.fullName,
+      };
+
+      // Remove variantId from payload if it doesn't exist
+      if (!orderData.variantId) {
+        delete orderData.variantId;
+      }
+    } else {
+      const orderItems = cartItems.map(item => ({
+        productId: item.id,
+        quantity: item.quantity,
+        variantId: item.variantId || undefined,
+      }));
+
+      orderData = {
+        fullName: billingDetails.fullName,
+        shippingAddress: {
+          province: billingDetails.province,
+          city: billingDetails.city,
+          district: billingDetails.district,
+          streetAddress: billingDetails.streetAddress,
+          landmark: billingDetails.landmark || undefined,
+        },
+        paymentMethod: selectedPaymentMethod,
+        phoneNumber: billingDetails.phoneNumber,
+        items: orderItems,
+        promoCodeId: appliedPromoCode?.id || undefined,
+      };
+    }
+
+    console.log('Sending order data:', JSON.stringify(orderData, null, 2)); // Debug payload
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${API_BASE_URL}/api/order`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(orderData),
+      credentials: 'include',
+    });
+
+    const result = await response.json();
+    console.log('Server response:', result); // Debug response
+
+    if (result.success) {
+      if (selectedPaymentMethod === 'CASH_ON_DELIVERY') {
+        setAlertMessage('Order placed successfully!');
+        setShowAlert(true);
+      }
+      setTimeout(() => {
+        if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod !== 'ESEWA') {
+          navigate('/order-page', {
+            state: {
+              orderDetails: {
+                orderId: result.data?.id || null,
+                totalAmount: finalTotal,
+              },
+            },
+          });
+        } else {
+          navigate('/user-profile', {
+            state: { activeTab: 'orders' },
+          });
+        }
+      }, 1500);
+    } else {
+      setAlertMessage(`Failed to place order: ${result.message || 'Unknown error'}`);
+      setShowAlert(true);
+    }
+  } catch (error) {
+    console.error('Error placing order:', error);
+    setAlertMessage('An error occurred while placing your order. Please try again.');
+    setShowAlert(true);
+  } finally {
+    setIsPlacingOrder(false);
+  }
+};
 
   const normalizeDistrict = (district: string): string => {
     const kathmandu_valley = ['kathmandu', 'lalitpur', 'bhaktapur'];
@@ -401,64 +445,70 @@ useEffect(() => {
     return district;
   };
 
-const [vendorCache, setVendorCache] = useState<{ [key: number]: { businessName: string; district: { name: string } } }>({});
+  const [vendorCache, setVendorCache] = useState<{ [key: number]: { businessName: string; district: { name: string } } }>({});
 
-useEffect(() => {
-  const fetchVendorDetails = async (vendorId: number) => {
-    if (!vendorCache[vendorId]) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/vendors/${vendorId}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        const result = await response.json();
-        if (result.success && result.data) {
-          setVendorCache((prev) => ({
-            ...prev,
-            [vendorId]: {
-              businessName: result.data.businessName,
-              district: result.data.district,
-            },
-          }));
+  useEffect(() => {
+    const fetchVendorDetails = async (vendorId: number) => {
+      if (!vendorCache[vendorId]) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/vendors/${vendorId}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          const result = await response.json();
+          if (result.success && result.data) {
+            setVendorCache(prev => ({
+              ...prev,
+              [vendorId]: {
+                businessName: result.data.businessName,
+                district: result.data.district,
+              },
+            }));
+          }
+        } catch (error) {
+          console.error(`Error fetching vendor ${vendorId}:`, error);
         }
-      } catch (error) {
-        console.error(`Error fetching vendor ${vendorId}:`, error);
       }
-    }
-  };
-
-  // Fetch vendor details for all cart items with vendorId
-  cartItems.forEach((item) => {
-    if (item.product?.vendorId && !vendorCache[item.product.vendorId]) {
-      fetchVendorDetails(item.product.vendorId);
-    }
-  });
-}, [cartItems, token]);
-
-const getVendorInfo = (item: any) => {
-  if (item.product?.vendorId && vendorCache[item.product.vendorId]) {
-    return {
-      businessName: vendorCache[item.product.vendorId].businessName,
-      district: vendorCache[item.product.vendorId].district.name,
     };
-  }
 
-  return {
-    businessName: item.product?.vendor || item.vendor?.businessName || 'Unknown Vendor',
-    district: item.product?.vendor?.district?.name || item.vendor?.district?.name || 'Unknown District',
+    cartItems.forEach(item => {
+      if (item.product?.vendorId && !vendorCache[item.product.vendorId]) {
+        fetchVendorDetails(item.product.vendorId);
+      }
+    });
+  }, [cartItems, token]);
+
+  const getVendorInfo = (item: CartItem) => {
+    if (item.product?.vendorId && vendorCache[item.product.vendorId]) {
+      return {
+        businessName: vendorCache[item.product.vendorId].businessName,
+        district: vendorCache[item.product.vendorId].district.name,
+      };
+    }
+
+    return {
+      businessName: item.product?.vendor?.businessName || 'Unknown Vendor',
+      district: item.product?.vendor?.district?.name || 'Unknown District',
+    };
   };
-};
+
+  // Helper function to get the current quantity for display
+  const getCurrentQuantity = (item: CartItem): number => {
+    if (location.state?.buyNow) {
+      return buyNowQuantities[item.id] || item.quantity;
+    }
+    return item.quantity;
+  };
 
   const groupItemsByVendor = (): ShippingGroup[] => {
     if (cartItems.length === 0) {
       return [];
     }
 
-    const vendorGroups: { [key: string]: any[] } = {};
+    const vendorGroups: { [key: string]: CartItem[] } = {};
 
-    cartItems.forEach((item) => {
+    cartItems.forEach(item => {
       const vendorInfo = getVendorInfo(item);
       const key = `${vendorInfo.businessName}-${vendorInfo.district}`;
-      
       if (!vendorGroups[key]) {
         vendorGroups[key] = [];
       }
@@ -466,17 +516,18 @@ const getVendorInfo = (item: any) => {
     });
 
     return Object.entries(vendorGroups).map(([key, items]) => {
-      const subtotal = items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
-      const vendorInfo = getVendorInfo(items[0]);
+      const subtotal = items.reduce((sum, item) => {
+        const quantity = getCurrentQuantity(item);
+        return sum + Number(item.price) * quantity;
+      }, 0);
       
+      const vendorInfo = getVendorInfo(items[0]);
       let shippingCost = 0;
       if (billingDetails.district) {
         const customerDistrict = normalizeDistrict(billingDetails.district);
         const normalizedVendorDistrict = normalizeDistrict(vendorInfo.district);
-        const isSameDistrict = customerDistrict === normalizedVendorDistrict;
-        shippingCost = isSameDistrict ? 100 : 200;
+        shippingCost = customerDistrict === normalizedVendorDistrict ? 100 : 200;
       }
-
       const lineTotal = subtotal + shippingCost;
 
       return {
@@ -485,63 +536,56 @@ const getVendorInfo = (item: any) => {
         items,
         shippingCost,
         subtotal,
-        lineTotal
+        lineTotal,
       };
     });
   };
 
   const vendorGroups = groupItemsByVendor();
-  const subtotal = cartItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+  
+  // Update subtotal calculation to use current quantities
+  const subtotal = cartItems.reduce((sum, item) => {
+    const quantity = getCurrentQuantity(item);
+    return sum + Number(item.price) * quantity;
+  }, 0);
+  
   const totalShipping = vendorGroups.reduce((sum, group) => sum + group.shippingCost, 0);
   const total = subtotal + totalShipping;
-
   const discountPercentage = appliedPromoCode ? appliedPromoCode.discountPercentage : 0;
   const discountAmount = appliedPromoCode ? Math.round((total * discountPercentage) / 100) : 0;
   const finalTotal = total - discountAmount;
 
-  // Format a human-readable label for the item's selected variant
-  const getVariantLabel = (item: any): string => {
+  const getVariantLabel = (item: CartItem): string => {
     const v = item?.variant || item?.selectedVariant || null;
     if (!v) {
-      // Some APIs put attributes at the item root
-      const rootAttrs = (item && (item.variantAttributes || item.attributes)) || null;
-      const fromRoot = rootAttrs ? formatAttributes(rootAttrs) : '';
-      return fromRoot;
+      const rootAttrs = item && (item.variantAttributes || item.attributes) || null;
+      return rootAttrs ? formatAttributes(rootAttrs) : '';
     }
 
-    // Prefer variant name if present
     if (typeof v.name === 'string' && v.name.trim()) return v.name.trim();
-
-    // Build label from attributes on the variant
     const byAttrs = formatAttributes(v.attributes || v.attributeValues || v.attributeSpecs || v.attrs || null);
     if (byAttrs) return byAttrs;
-
-    // Fallbacks
     if (v.sku) return `SKU: ${String(v.sku)}`;
     return '';
   };
 
-  // Helper: formats different shapes of attributes into "Color: Red, Size: M"
   const formatAttributes = (attrs: any): string => {
     if (!attrs) return '';
 
-    // Case 1: Array of attribute entries
     if (Array.isArray(attrs)) {
       const parts = attrs.map((a: any) => {
         const label = String(a?.type ?? a?.attributeType ?? a?.name ?? '').trim();
         const valuesSrc: any = a?.values ?? a?.attributeValues ?? a?.value ?? a?.name ?? [];
         const valuesArr = Array.isArray(valuesSrc) ? valuesSrc : [valuesSrc];
         const valueText = valuesArr
-          .map((v: any) => String((v && typeof v === 'object') ? (v.value ?? v.name ?? JSON.stringify(v)) : v))
+          .map((v: any) => String(v && typeof v === 'object' ? (v.value ?? v.name ?? JSON.stringify(v)) : v))
           .filter(Boolean)
           .join('/');
-        if (!label && !valueText) return '';
-        return label ? `${label}: ${valueText}` : valueText;
+        return label && valueText ? `${label}: ${valueText}` : valueText || '';
       }).filter(Boolean);
       return parts.join(', ');
     }
 
-    // Case 2: Object map { Color: 'Red', Size: 'M' }
     if (typeof attrs === 'object') {
       const parts = Object.entries(attrs).map(([k, v]) => {
         const label = String(k).trim();
@@ -553,33 +597,45 @@ const getVendorInfo = (item: any) => {
       return parts.join(', ');
     }
 
-    // Fallback: treat as plain text
     return String(attrs);
   };
 
-  const handleIncrease = (item: any) => {
-    // Use cartItemId (item.id) with new API contract
-    handleIncreaseQuantity(item.id, 1);
+  const handleIncrease = (item: CartItem) => {
+    if (location.state?.buyNow) {
+      const currentQty = buyNowQuantities[item.id] || item.quantity;
+      const stock = item.variant?.stock ?? Infinity;
+      if (currentQty + 1 > stock) {
+        setAlertMessage('Failed to update quantity. Stock limit reached.');
+        setShowAlert(true);
+        return;
+      }
+      setBuyNowQuantities(prev => ({
+        ...prev,
+        [item.id]: currentQty + 1
+      }));
+    } else {
+      handleIncreaseQuantity(item.id, 1);
+    }
   };
 
-  const handleDecrease = (item: any) => {
-    // Use cartItemId (item.id) with new API contract
-    handleDecreaseQuantity(item.id, 1);
+  const handleDecrease = (item: CartItem) => {
+    if (location.state?.buyNow) {
+      const currentQty = buyNowQuantities[item.id] || item.quantity;
+      if (currentQty > 1) {
+        setBuyNowQuantities(prev => ({
+          ...prev,
+          [item.id]: currentQty - 1
+        }));
+      } else {
+        setAlertMessage('Quantity cannot be less than 1.');
+        setShowAlert(true);
+      }
+    } else {
+      handleDecreaseQuantity(item.id, 1);
+    }
   };
 
   useEffect(() => {
-    // const fetchDistricts = async () => {
-    //   try {
-    //     const response = await fetch(`${API_BASE_URL}/api/district`);
-    //     const result = await response.json();
-    //     if (result.success) {
-    //       setDistricts(result.data);
-    //     }
-    //   } catch (error) {
-    //     console.error('Error fetching districts:', error);
-    //   }
-    // };
-
     const fetchPromoCodes = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/promo`);
@@ -591,8 +647,6 @@ const getVendorInfo = (item: any) => {
         console.error('Error fetching promo codes:', error);
       }
     };
-
-    // fetchDistricts();
     fetchPromoCodes();
   }, []);
 
@@ -600,8 +654,7 @@ const getVendorInfo = (item: any) => {
     <>
       <Navbar />
       <AlertModal open={showAlert} message={alertMessage} onClose={() => setShowAlert(false)} />
-      
-      {/* Hidden eSewa form */}
+
       <form
         id="esewa-form"
         action="https://rc-epay.esewa.com.np/api/epay/main/v2/form"
@@ -621,10 +674,9 @@ const getVendorInfo = (item: any) => {
         <input type="hidden" name="signature" value={formData.signature} />
       </form>
 
-      {/* Order placed alert for Cash on Delivery only */}
       {showAlert && alertMessage && selectedPaymentMethod === 'CASH_ON_DELIVERY' && (
         <div className="checkout-container__alert">
-          <span role="img" aria-label="success" style={{fontSize: '1.5em', marginRight: '0.5em'}}>✅</span>
+          <span role="img" aria-label="success" style={{ fontSize: '1.5em', marginRight: '0.5em' }}>✅</span>
           {alertMessage}
         </div>
       )}
@@ -633,7 +685,7 @@ const getVendorInfo = (item: any) => {
         <h2>Billing Details</h2>
         <div className="checkout-container__content">
           <div className="checkout-container__billing-details">
-             <div className="checkout-container__form-group">
+            <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Full Name *</label>
               <input
                 type="text"
@@ -654,20 +706,10 @@ const getVendorInfo = (item: any) => {
                 className="checkout-container__form-group-select"
                 required
               >
-              <option value="" selected >Select Province</option>
-          {provinceData.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-
-                {/* <option value="Province 1">Province 1</option>
-                <option value="Madhesh">Madhesh</option>
-                <option value="Bagmati">Bagmati</option>
-                <option value="Gandaki">Gandaki</option>
-                <option value="Lumbini">Lumbini</option>
-                <option value="Karnali">Karnali</option>
-                <option value="Sudurpashchim">Sudurpashchim</option> */}
+                <option value="">Select Province</option>
+                {provinceData.map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
               </select>
             </div>
             <div className="checkout-container__form-group">
@@ -680,10 +722,8 @@ const getVendorInfo = (item: any) => {
                 required
               >
                 <option value="">Select District</option>
-                {districtData.map((district) => (
-                  <option key={district} value={district}>
-                    {district}
-                  </option>
+                {districtData.map(district => (
+                  <option key={district} value={district}>{district}</option>
                 ))}
               </select>
             </div>
@@ -711,6 +751,18 @@ const getVendorInfo = (item: any) => {
                 required
               />
             </div>
+              <div className="checkout-container__form-group">
+              <label className="checkout-container__form-label">Landmark *</label>
+              <input
+                type="text"
+                name="landmark"
+                value={billingDetails.landmark}
+                onChange={handleInputChange}
+                placeholder="Enter Nearest Landmark"
+                className="checkout-container__form-group-input"
+                required
+              />
+            </div>
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Phone Number *</label>
               <input
@@ -729,8 +781,7 @@ const getVendorInfo = (item: any) => {
                 </span>
               )}
             </div>
-            
-            {/* Promo Code Section */}
+
             <div className="checkout-container__promo-section-left">
               <h3 style={{ marginBottom: '1rem', color: '#333' }}>🎉 Have a Promo Code?</h3>
               {!showPromoField ? (
@@ -750,7 +801,7 @@ const getVendorInfo = (item: any) => {
                     transition: 'all 0.3s ease',
                     boxShadow: '0 4px 12px rgba(255, 107, 53, 0.3)',
                     width: '100%',
-                    maxWidth: '300px'
+                    maxWidth: '300px',
                   }}
                 >
                   ✨ Apply Promo Code
@@ -762,7 +813,7 @@ const getVendorInfo = (item: any) => {
                       type="text"
                       placeholder="Enter your promo code"
                       value={enteredPromoCode}
-                      onChange={(e) => setEnteredPromoCode(e.target.value)}
+                      onChange={e => setEnteredPromoCode(e.target.value)}
                       style={{
                         flex: 1,
                         padding: '12px',
@@ -770,7 +821,7 @@ const getVendorInfo = (item: any) => {
                         borderRadius: '6px',
                         fontSize: '16px',
                         outline: 'none',
-                        transition: 'border-color 0.3s ease'
+                        transition: 'border-color 0.3s ease',
                       }}
                     />
                     <button
@@ -786,7 +837,7 @@ const getVendorInfo = (item: any) => {
                         fontWeight: '600',
                         cursor: 'pointer',
                         transition: 'all 0.3s ease',
-                        boxShadow: '0 2px 8px rgba(255, 107, 53, 0.3)'
+                        boxShadow: '0 2px 8px rgba(255, 107, 53, 0.3)',
                       }}
                     >
                       Apply
@@ -799,7 +850,6 @@ const getVendorInfo = (item: any) => {
                   )}
                 </div>
               )}
-              
               {appliedPromoCode && (
                 <div style={{
                   display: 'flex',
@@ -809,7 +859,7 @@ const getVendorInfo = (item: any) => {
                   border: '2px solid #22c55e',
                   borderRadius: '8px',
                   padding: '12px',
-                  marginTop: '15px'
+                  marginTop: '15px',
                 }}>
                   <span style={{ color: '#22c55e', fontSize: '16px', fontWeight: '600' }}>
                     ✅ "{appliedPromoCode.promoCode}" applied ({appliedPromoCode.discountPercentage}% off)
@@ -825,7 +875,7 @@ const getVendorInfo = (item: any) => {
                       borderRadius: '4px',
                       fontSize: '12px',
                       cursor: 'pointer',
-                      transition: 'background-color 0.3s ease'
+                      transition: 'background-color 0.3s ease',
                     }}
                   >
                     Remove
@@ -840,81 +890,80 @@ const getVendorInfo = (item: any) => {
             <div className="checkout-container__order-details">
               <h4 className="checkout-container__order-details-heading">Product details</h4>
               {cartItems.length > 0 ? (
-                <>
-                  {vendorGroups.map((group, groupIndex) => (
-                    <div key={groupIndex} className="checkout-container__vendor-group">
-                      <div className="checkout-container__vendor-info">
-                        <h5 className="checkout-container__vendor-name">
-                          Vendor: {group.vendorName}
-                        </h5>
-                        <p className="checkout-container__vendor-location">
-                          Location: {group.vendorDistrict}
-                        </p>
+                vendorGroups.map((group, groupIndex) => (
+                  <div key={groupIndex} className="checkout-container__vendor-group">
+                    <div className="checkout-container__vendor-info">
+                      <h5 className="checkout-container__vendor-name">
+                        Vendor: {group.vendorName}
+                      </h5>
+                      <p className="checkout-container__vendor-location">
+                        Location: {group.vendorDistrict}
+                      </p>
+                    </div>
+                    {group.items.map(item => (
+                      <div key={item.id} className="checkout-container__product-item">
+                        <img
+                          src={item.image || logo}
+                          alt={item.name}
+                          className="checkout-container__product-item-img"
+                        />
+                        <div className="checkout-container__product-info">
+                          <span className="checkout-container__product-info-text">{item.name}</span>
+                          {(() => {
+                            const label = getVariantLabel(item);
+                            return label ? (
+                              <small style={{ display: 'block', color: '#666', marginTop: 4 }}>
+                                Variant: {label}
+                              </small>
+                            ) : null;
+                          })()}
+                          <div className="checkout-container__quantity-controls">
+                            <button
+                              className="checkout-container__quantity-controls-button"
+                              onClick={() => handleDecrease(item)}
+                            >
+                              -
+                            </button>
+                            <span>{getCurrentQuantity(item)}</span>
+                            <button
+                              className="checkout-container__quantity-controls-button"
+                              onClick={() => handleIncrease(item)}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                        <span className="checkout-container__product-price">
+                          Rs {(Number(item.price) * getCurrentQuantity(item)).toLocaleString()}
+                        </span>
                       </div>
-                      
-                      {group.items.map((item) => (
-                        <div key={item.id} className="checkout-container__product-item">
-                          <img
-                            src={item.image || logo}
-                            alt={item.name}
-                            className="checkout-container__product-item-img"
-                          />
-                          <div className="checkout-container__product-info">
-                            <span className="checkout-container__product-info-text">{item.name}</span>
-                            {(() => {
-                              const label = getVariantLabel(item);
-                              return label ? (
-                                <small style={{ display: 'block', color: '#666', marginTop: 4 }}>Variant: {label}</small>
-                              ) : null;
-                            })()}
-                            <div className="checkout-container__quantity-controls">
-                              <button
-                                className="checkout-container__quantity-controls-button"
-                                onClick={() => handleDecrease(item)}
-                              >
-                                -
-                              </button>
-                              <span>{item.quantity}</span>
-                              <button
-                                className="checkout-container__quantity-controls-button"
-                                onClick={() => handleIncrease(item)}
-                              >
-                                +
-                              </button>
-                            </div>
-                          </div>
-                          <span className="checkout-container__product-price">Rs {(Number(item.price) * item.quantity).toLocaleString()}</span>
+                    ))}
+                    <div className="checkout-container__group-summary">
+                      <div className="checkout-container__group-subtotal">
+                        <span>Linetotal ({group.vendorName}):</span>
+                        <span>Rs {group.subtotal.toLocaleString()}</span>
+                      </div>
+                      {billingDetails.district && (
+                        <div className="checkout-container__group-shipping">
+                          <span>Shipping from {group.vendorDistrict}:</span>
+                          <span className="checkout-container__shipping-cost">
+                            Rs {group.shippingCost.toLocaleString()}
+                            {normalizeDistrict(billingDetails.district) === normalizeDistrict(group.vendorDistrict) && (
+                              <small> (Same district)</small>
+                            )}
+                          </span>
                         </div>
-                      ))}
-                      
-                      <div className="checkout-container__group-summary">
-                        <div className="checkout-container__group-subtotal">
-                          <span>Linetotal ({group.vendorName}):</span>
-                          <span>Rs {group.subtotal.toLocaleString()}</span>
-                        </div>
-                        {billingDetails.district && (
-                          <div className="checkout-container__group-shipping">
-                            <span>Shipping from {group.vendorDistrict}:</span>
-                            <span className="checkout-container__shipping-cost">
-                              Rs {group.shippingCost.toLocaleString()}
-                              {normalizeDistrict(billingDetails.district) === normalizeDistrict(group.vendorDistrict) && 
-                                <small> (Same district)</small>
-                              }
-                            </span>
-                          </div>
-                        )}
-                        <div className="checkout-container__group-line-total">
-                          <span><strong>Sub Total ({group.vendorName}):</strong></span>
-                          <span><strong>Rs {group.lineTotal.toLocaleString()}</strong></span>
-                        </div>
+                      )}
+                      <div className="checkout-container__group-line-total">
+                        <span><strong>Sub Total ({group.vendorName}):</strong></span>
+                        <span><strong>Rs {group.lineTotal.toLocaleString()}</strong></span>
                       </div>
                     </div>
-                  ))}
-                </>
+                  </div>
+                ))
               ) : (
                 <p>No items in cart.</p>
               )}
-              
               <div className="checkout-container__order-total">
                 <span>Sub Total:</span>
                 <span>Rs {subtotal.toLocaleString()}</span>
@@ -925,7 +974,6 @@ const getVendorInfo = (item: any) => {
                   <span>Rs {totalShipping.toLocaleString()}</span>
                 </div>
               )}
-
               {appliedPromoCode && (
                 <div className="checkout-container__order-total">
                   <span>Discount ({discountPercentage}%):</span>
@@ -946,13 +994,10 @@ const getVendorInfo = (item: any) => {
                   className="checkout-container__payment-methods-input"
                   checked={selectedPaymentMethod === 'CASH_ON_DELIVERY'}
                   onChange={handlePaymentMethodChange}
-                  style={{
-                  boxShadow:"none"
-                }}
+                  style={{ boxShadow: 'none' }}
                 />
                 Cash on delivery
               </label>
-            
               <label className="checkout-container__payment-methods-label">
                 <input
                   type="radio"
@@ -961,9 +1006,7 @@ const getVendorInfo = (item: any) => {
                   className="checkout-container__payment-methods-input"
                   checked={selectedPaymentMethod === 'ONLINE_PAYMENT'}
                   onChange={handlePaymentMethodChange}
-                  style={{
-                  boxShadow:"none"
-                }}
+                  style={{ boxShadow: 'none' }}
                 />
                 <img src={npx} alt="NPX" className="checkout-container__payment-methods-img" />
               </label>
@@ -975,12 +1018,10 @@ const getVendorInfo = (item: any) => {
                   className="checkout-container__payment-methods-input"
                   checked={selectedPaymentMethod === 'ESEWA'}
                   onChange={handlePaymentMethodChange}
-                  style={{
-                  boxShadow:"none"
-                }}
+                  style={{ boxShadow: 'none' }}
                 />
-                <img src={esewa} alt="eSewa" className="checkout-container__payment-methods-img"/>
-                </label>
+                <img src={esewa} alt="eSewa" className="checkout-container__payment-methods-img" />
+              </label>
             </div>
             <p className="checkout-container__privacy-note">
               Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our privacy policy.
@@ -992,11 +1033,9 @@ const getVendorInfo = (item: any) => {
                 onChange={handleTermsChange}
                 className="checkout-container__terms-checkbox-input"
                 required
-                style={{
-                  boxShadow:"none"
-                }}
+                style={{ boxShadow: 'none' }}
               />
-             <p>I have read and agree to the website terms and conditions *</p> 
+              <p>I have read and agree to the website terms and conditions *</p>
             </label>
             <button
               className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''}`}
