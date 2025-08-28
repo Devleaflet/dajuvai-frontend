@@ -120,12 +120,12 @@ const Footer: React.FC = () => {
                     </li>
                     <li>
                       <Link to="/terms" className="footer__link">
-                        Terms & Condition
+                        Terms & <br />Condition
                       </Link>
                     </li>
                     <li>
                       <Link to="/becomevendor" className="footer__link">
-                        Become a vendor
+                        Become a <br />vendor
                       </Link>
                     </li>
                   </ul>
@@ -247,7 +247,7 @@ const Footer: React.FC = () => {
                   href="https://wa.me/+9779700620004"
                   className="footer__social-link"
                   target="_blank"
-                  rel="noopener noreferrer"
+                  rel="noooopener noreferrer"
                 >
                   <IoLogoWhatsapp />
                 </a>

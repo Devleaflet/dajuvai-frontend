@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
@@ -571,34 +572,34 @@ const ProductPage = () => {
     }
   };
 
- const handleMouseEnter = () => {
-  const currentImages = getCurrentImages();
-  if (currentImages[selectedImageIndex] && !imageError[selectedImageIndex]) {
-    setIsZoomActive(true);
-  }
-};
+  const handleMouseEnter = () => {
+    const currentImages = getCurrentImages();
+    if (currentImages[selectedImageIndex] && !imageError[selectedImageIndex]) {
+      setIsZoomActive(true);
+    }
+  };
 
-const handleMouseLeave = () => {
-  setIsZoomActive(false);
-};
+  const handleMouseLeave = () => {
+    setIsZoomActive(false);
+  };
 
-const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-  if (!isZoomActive || !mainImageRef.current) return;
-  
-  const rect = mainImageRef.current.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  
-  // Calculate relative position (0-1)
-  const relativeX = Math.max(0, Math.min(1, x / rect.width));
-  const relativeY = Math.max(0, Math.min(1, y / rect.top));
-  
-  // Convert to percentage for background-position
-  const percentX = relativeX * 100;
-  const percentY = relativeY * 100;
-  
-  setZoomPosition({ x: percentX, y: percentY });
-};
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isZoomActive || !mainImageRef.current) return;
+
+    const rect = mainImageRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Calculate relative position (0-1)
+    const relativeX = Math.max(0, Math.min(1, x / rect.width));
+    const relativeY = Math.max(0, Math.min(1, y / rect.top));
+
+    // Convert to percentage for background-position
+    const percentX = relativeX * 100;
+    const percentY = relativeY * 100;
+
+    setZoomPosition({ x: percentX, y: percentY });
+  };
 
   const showNotification = (message: string) => {
     setToastMessage(message);
@@ -650,11 +651,30 @@ const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     navigate("/checkout", {
       state: {
         buyNow: true,
-        product: {
-          ...product,
-          selectedColor,
-          quantity,
-        },
+        products: [
+          {
+            product: {
+              ...product,
+              selectedColor,
+              price: getCurrentPrice().toFixed(2),
+              originalPrice:
+                getOriginalPrice() > getCurrentPrice()
+                  ? getOriginalPrice().toFixed(2)
+                  : undefined,
+              selectedVariant: selectedVariant
+                ? {
+                    id: selectedVariant.id,
+                    attributes: selectedVariant.attributes,
+                    calculatedPrice: selectedVariant.calculatedPrice,
+                    originalPrice: selectedVariant.originalPrice,
+                    stock: selectedVariant.stock,
+                    variantImgUrls: selectedVariant.variantImgUrls,
+                  }
+                : undefined,
+            },
+            quantity,
+          },
+        ],
       },
     });
   };
@@ -703,19 +723,23 @@ const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
       quantityInputRef.current.select();
     }
   };
+
   useEffect(() => {
-  setZoomPosition({ x: 50, y: 50 }); // Center the zoom initially
-}, [selectedImageIndex, selectedVariant]);
-useEffect(() => {
-  return () => {
-    setIsZoomActive(false);
+    setZoomPosition({ x: 50, y: 50 }); // Center the zoom initially
+  }, [selectedImageIndex, selectedVariant]);
+
+  useEffect(() => {
+    return () => {
+      setIsZoomActive(false);
+      setZoomPosition({ x: 50, y: 50 });
+    };
+  }, []);
+
+  const handleImageLoad = () => {
+    // Reset zoom when image loads
     setZoomPosition({ x: 50, y: 50 });
   };
-}, []);
-const handleImageLoad = () => {
-  // Reset zoom when image loads
-  setZoomPosition({ x: 50, y: 50 });
-};
+
   const handleImageError = (index: number) => {
     console.warn(`Image failed to load: ${getCurrentImages()[index]}`);
     setImageError((prev) => {
@@ -757,37 +781,37 @@ const handleImageLoad = () => {
             <div className="product-gallery">
               <div className="product-gallery__images">
                 <div
-  className="product-gallery__main-image"
-  ref={mainImageRef}
-  onMouseEnter={handleMouseEnter}
-  onMouseLeave={handleMouseLeave}
-  onMouseMove={handleMouseMove}
->
-  {currentImage ? (
-    <img
-      src={currentImage}
-      alt={product.name}
-      onError={() => handleImageError(selectedImageIndex)}
-      onLoad={handleImageLoad}
-      draggable={false} // Prevent dragging
-    />
-  ) : (
-    <div className="product-gallery__no-image">
-      No image available
-    </div>
-  )}
-  {isZoomActive && currentImage && (
-    <div
-      className={`product-gallery__zoom-box ${isZoomActive ? 'active' : ''}`}
-      style={{
-        backgroundImage: `url(${currentImage})`,
-        backgroundSize: '300%',
-        backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
-        backgroundRepeat: 'no-repeat'
-      }}
-    />
-  )}
-</div>
+                  className="product-gallery__main-image"
+                  ref={mainImageRef}
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                  onMouseMove={handleMouseMove}
+                >
+                  {currentImage ? (
+                    <img
+                      src={currentImage}
+                      alt={product.name}
+                      onError={() => handleImageError(selectedImageIndex)}
+                      onLoad={handleImageLoad}
+                      draggable={false} // Prevent dragging
+                    />
+                  ) : (
+                    <div className="product-gallery__no-image">
+                      No image available
+                    </div>
+                  )}
+                  {isZoomActive && currentImage && (
+                    <div
+                      className={`product-gallery__zoom-box ${isZoomActive ? "active" : ""}`}
+                      style={{
+                        backgroundImage: `url(${currentImage})`,
+                        backgroundSize: "300%",
+                        backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                        backgroundRepeat: "no-repeat",
+                      }}
+                    />
+                  )}
+                </div>
 
                 {currentImages && currentImages.length > 1 && (
                   <div className="product-gallery__thumbnails">
@@ -966,6 +990,14 @@ const handleImageLoad = () => {
                   disabled={getCurrentStock() <= 0}
                 >
                   {getCurrentStock() > 0 ? "Add to Cart" : "Out of Stock"}
+                </button>
+
+                <button
+                  className="product-actions__button product-actions__button--secondary"
+                  onClick={handleBuyNow}
+                  disabled={getCurrentStock() <= 0}
+                >
+                  Buy Now
                 </button>
                 <button
                   className="product-actions__button product-actions__button--secondary"

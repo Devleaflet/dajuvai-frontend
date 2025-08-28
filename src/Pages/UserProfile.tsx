@@ -13,10 +13,17 @@ import { useLocation } from "react-router-dom";
 
 interface UserDetails {
   id: number;
+  fullName: string;
   username: string;
   email: string;
   role: string;
   isVerified: boolean;
+  phoneNumber: string;
+  province: string;
+  district: string;
+  city: string;
+  localAddress: string;
+  landmark: string;
 }
 
 interface Product {
@@ -36,10 +43,6 @@ interface FormState {
 type Tab = "details" | "credentials" | "orders";
 type CredentialsMode = "change" | "forgot" | "reset";
 
-
-
-
-
 const UserProfile: React.FC = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<Tab>(() => {
@@ -58,7 +61,6 @@ const UserProfile: React.FC = () => {
   const [credentialsMode, setCredentialsMode] = useState<CredentialsMode>("change");
   const [isLoading, setIsLoading] = useState<{ [key: string]: boolean }>({});
   const [popup, setPopup] = useState<{ type: "success" | "error"; content: string } | null>(null);
-  // Removed unused wishlist state
   const [orders, setOrders] = useState<OrderDetail[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState<string | null>(null);
@@ -78,6 +80,8 @@ const UserProfile: React.FC = () => {
   };
 
   const validateUsername = (username: string) => username.trim().length >= 3 && /^[a-zA-Z0-9_]+$/.test(username);
+  const validatePhoneNumber = (phoneNumber: string) => /^[0-9]{10}$/.test(phoneNumber);
+  const validateFullName = (fullName: string) => fullName.trim().length >= 2;
 
   const handleError = (error: unknown, defaultMsg: string) => {
     if (!axios.isAxiosError(error)) return showPopup("error", defaultMsg);
@@ -100,7 +104,6 @@ const UserProfile: React.FC = () => {
   useEffect(() => {
     if (isAuthLoading) return;
     if (!userId) {
-      // Try to recover user from /api/auth/me (cookie session)
       fetch(`${API_BASE_URL}/api/auth/me`, {
         credentials: 'include',
         headers: { 'Accept': 'application/json' }
@@ -108,7 +111,6 @@ const UserProfile: React.FC = () => {
         .then(res => res.json())
         .then(data => {
           if (data.success && data.data) {
-            // Set user in context
             login(null, {
               id: data.data.userId,
               email: data.data.email,
@@ -133,10 +135,7 @@ const UserProfile: React.FC = () => {
       
       setIsLoading((prev) => ({ ...prev, fetchUser: true }));
       try {
-        // Try to use token if available, otherwise rely on cookies
         const headers: Record<string, string> = {};
-        
-        // Try to get token from context or localStorage
         const authToken = token || localStorage.getItem("authToken");
         
         if (authToken) {
@@ -150,14 +149,32 @@ const UserProfile: React.FC = () => {
         
         const response = await axiosInstance.get(`/api/auth/users/${userId}`, {
           headers,
-          withCredentials: true, // Always include cookies
+          withCredentials: true,
           timeout: 5000,
         });
         
         console.log("[UserProfile] fetchUserDetails - Response:", response.data);
         
-        setUserDetails(response.data.data);
-        setOriginalDetails(response.data.data);
+        setUserDetails({
+          ...response.data.data,
+          fullName: response.data.data.fullName || "",
+          phoneNumber: response.data.data.phoneNumber || "",
+          province: response.data.data.address?.province || "",
+          district: response.data.data.address?.district || "",
+          city: response.data.data.address?.city || "",
+          localAddress: response.data.data.address?.localAddress || "",
+          landmark: response.data.data.address?.landmark || ""
+        });
+        setOriginalDetails({
+          ...response.data.data,
+          fullName: response.data.data.fullName || "",
+          phoneNumber: response.data.data.phoneNumber || "",
+          province: response.data.data.address?.province || "",
+          district: response.data.data.address?.district || "",
+          city: response.data.data.address?.city || "",
+          localAddress: response.data.data.address?.localAddress || "",
+          landmark: response.data.data.address?.landmark || ""
+        });
         setFormState((prev) => ({ ...prev, email: response.data.data.email }));
       } catch (error) {
         console.error("[UserProfile] fetchUserDetails - Error:", error);
@@ -172,7 +189,6 @@ const UserProfile: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      // Update wishlist to use cookie-based auth
       console.log('[Wishlist] document.cookie:', document.cookie);
       fetch(`${API_BASE_URL}/api/wishlist`, {
         credentials: 'include'
@@ -180,7 +196,7 @@ const UserProfile: React.FC = () => {
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          // setWishlist(data.data); // This line was removed as per the edit hint
+          // setWishlist(data.data);
         }
       })
       .catch(err => console.error('Failed to fetch wishlist:', err));
@@ -224,7 +240,6 @@ const UserProfile: React.FC = () => {
       .finally(() => setOrdersLoading(false));
   }, [user, token]);
 
-  // Update activeTab if navigation state changes (e.g., user navigates again with a different tab)
   useEffect(() => {
     if (location.state && typeof location.state.activeTab === 'string') {
       const tab = location.state.activeTab;
@@ -239,8 +254,8 @@ const UserProfile: React.FC = () => {
     section: keyof FormState | keyof UserDetails
   ) => {
     const value = e.target.value;
-    if (section === "username") {
-      setUserDetails((prev) => prev ? { ...prev, username: value } : null);
+    if (section in userDetails!) {
+      setUserDetails((prev) => prev ? { ...prev, [section]: value } : null);
     } else {
       setFormState((prev) => ({ ...prev, [section]: value }));
     }
@@ -259,8 +274,11 @@ const UserProfile: React.FC = () => {
   const handleSave = async () => {
     if (!userDetails) return showPopup("error", "User details missing.");
     if (!validateUsername(userDetails.username)) return showPopup("error", "Username must be 3+ characters and alphanumeric.");
+    if (!validateFullName(userDetails.fullName)) return showPopup("error", "Full name must be at least 2 characters.");
+    if (userDetails.phoneNumber && !validatePhoneNumber(userDetails.phoneNumber)) 
+      return showPopup("error", "Phone number must be 10 digits.");
 
-    console.log("[UserProfile] handleSave - Starting username update");
+    console.log("[UserProfile] handleSave - Starting update");
     console.log("[UserProfile] handleSave - User details:", userDetails);
     console.log("[UserProfile] handleSave - User ID:", userId);
     console.log("[UserProfile] handleSave - Token from context:", token);
@@ -271,13 +289,10 @@ const UserProfile: React.FC = () => {
 
     setIsLoading((prev) => ({ ...prev, saveUser: true }));
     try {
-      // Try to use token if available, otherwise rely on cookies
       const headers: Record<string, string> = {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       };
-      
-      // Try to get token from context or localStorage
       const authToken = token || localStorage.getItem("authToken");
       
       if (authToken) {
@@ -289,9 +304,20 @@ const UserProfile: React.FC = () => {
       
       const response = await axiosInstance.put(
         `/api/auth/users/${userId}`,
-        { username: userDetails.username },
         { 
-          withCredentials: true, // Always include cookies
+          fullName: userDetails.fullName,
+          username: userDetails.username,
+          phoneNumber: userDetails.phoneNumber,
+          address: {
+            province: userDetails.province,
+            district: userDetails.district,
+            city: userDetails.city,
+            localAddress: userDetails.localAddress,
+            landmark: userDetails.landmark
+          }
+        },
+        { 
+          withCredentials: true,
           headers
         }
       );
@@ -302,7 +328,7 @@ const UserProfile: React.FC = () => {
         setUserDetails(response.data.data || response.data.user);
         setOriginalDetails(response.data.data || response.data.user);
         setIsEditing(false);
-        showPopup("success", "Username updated successfully! Changes will apply the next time you login.");
+        showPopup("success", "Profile updated successfully! Changes will apply the next time you login.");
       } else {
         showPopup("error", response.data.message || "Failed to update profile");
       }
@@ -348,14 +374,12 @@ const UserProfile: React.FC = () => {
     }
   };
 
-
-
   const renderUserDetails = () => {
     if (isLoading.fetchUser) {
       return (
         <div className="profile-form">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="skeleton skeleton-form-group" style={{ height: i === 0 ? "40px" : i === 4 ? "48px" : "auto" }} />
+          {[...Array(9)].map((_, i) => (
+            <div key={i} className="skeleton skeleton-form-group" style={{ height: i === 0 ? "40px" : i === 8 ? "48px" : "auto" }} />
           ))}
         </div>
       );
@@ -366,6 +390,20 @@ const UserProfile: React.FC = () => {
     return (
       <div className="profile-form">
         <h2 className="profile-form__title">User Details</h2>
+        <div className="profile-form__group">
+          <label>Full Name</label>
+          {isEditing ? (
+            <input
+              type="text"
+              name="fullName"
+              value={userDetails.fullName ?? ""}
+              onChange={(e) => handleInputChange(e, "fullName")}
+              className="profile-form__input"
+            />
+          ) : (
+            <div>{userDetails.fullName || "Not provided"}</div>
+          )}
+        </div>
         <div className="profile-form__group">
           <label>Username</label>
           {isEditing ? (
@@ -384,13 +422,90 @@ const UserProfile: React.FC = () => {
           <label>Email Address</label>
           <div>{userDetails.email}</div>
         </div>
-        
-        {/* <div className="profile-form__group">
-          <label>Account Status</label>
-          <div className={userDetails.isVerified ? "verified-yes" : "verified-no"}>
-            {userDetails.isVerified ? "✓ Verified" : "⚠ Not Verified"}
-          </div>
-        </div> */}
+        <div className="profile-form__group">
+          <label>Phone Number</label>
+          {isEditing ? (
+            <input
+              type="text"
+              name="phoneNumber"
+              value={userDetails.phoneNumber ?? ""}
+              onChange={(e) => handleInputChange(e, "phoneNumber")}
+              className="profile-form__input"
+            />
+          ) : (
+            <div>{userDetails.phoneNumber || "Not provided"}</div>
+          )}
+        </div>
+        <div className="profile-form__group">
+          <label>Province</label>
+          {isEditing ? (
+            <input
+              type="text"
+              name="province"
+              value={userDetails.province ?? ""}
+              onChange={(e) => handleInputChange(e, "province")}
+              className="profile-form__input"
+            />
+          ) : (
+            <div>{userDetails.province || "Not provided"}</div>
+          )}
+        </div>
+        <div className="profile-form__group">
+          <label>District</label>
+          {isEditing ? (
+            <input
+              type="text"
+              name="district"
+              value={userDetails.district ?? ""}
+              onChange={(e) => handleInputChange(e, "district")}
+              className="profile-form__input"
+            />
+          ) : (
+            <div>{userDetails.district || "Not provided"}</div>
+          )}
+        </div>
+        <div className="profile-form__group">
+          <label>City</label>
+          {isEditing ? (
+            <input
+              type="text"
+              name="city"
+              value={userDetails.city ?? ""}
+              onChange={(e) => handleInputChange(e, "city")}
+              className="profile-form__input"
+            />
+          ) : (
+            <div>{userDetails.city || "Not provided"}</div>
+          )}
+        </div>
+        <div className="profile-form__group">
+          <label>Local Address</label>
+          {isEditing ? (
+            <input
+              type="text"
+              name="localAddress"
+              value={userDetails.localAddress ?? ""}
+              onChange={(e) => handleInputChange(e, "localAddress")}
+              className="profile-form__input"
+            />
+          ) : (
+            <div>{userDetails.localAddress || "Not provided"}</div>
+          )}
+        </div>
+        <div className="profile-form__group">
+          <label>Landmark</label>
+          {isEditing ? (
+            <input
+              type="text"
+              name="landmark"
+              value={userDetails.landmark ?? ""}
+              onChange={(e) => handleInputChange(e, "landmark")}
+              className="profile-form__input"
+            />
+          ) : (
+            <div>{userDetails.landmark || "Not provided"}</div>
+          )}
+        </div>
         {isEditing ? (
           <div className="profile-form__actions">
             <button className="btn btn--primary" onClick={handleSave} disabled={isLoading.saveUser}>

@@ -1,6 +1,6 @@
+
 /* General Profile Container */
 .profile {
- 
   margin: 0 auto;
   padding: 32px 16px;
   background-color: #f9fafb;
@@ -19,13 +19,14 @@
 /* Profile Card */
 .profile-card {
   max-width: 1000px;
+  width: 100%;
+  height: 600px; /* Fixed height for the profile card */
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   display: flex;
   margin: 0 auto;
-  min-height: 500px;
 }
 
 /* Sidebar */
@@ -38,6 +39,7 @@
   flex-direction: column;
   align-items: center;
   gap: 24px;
+  overflow-y: auto; /* Scrollable if sidebar content exceeds height */
 }
 
 .profile-sidebar__avatar {
@@ -45,9 +47,15 @@
   height: 120px;
   border-radius: 50%;
   overflow: hidden;
-  background-color: #fef3c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: 700;
+  color: #ffffff;
   border: 4px solid #f97316;
   transition: transform 0.3s ease;
+  text-transform: uppercase;
 }
 
 .profile-sidebar__avatar:hover {
@@ -99,12 +107,16 @@
   flex: 1;
   padding: 32px;
   background-color: #ffffff;
+  overflow-y: auto; /* Make the content area scrollable */
+  height: 100%; /* Ensure it takes full height of profile-card */
 }
 
 /* Form Elements for Details Section */
 .profile-form {
   max-width: 700px;
   margin: 0 auto;
+  overflow-y: auto; /* Make user details scrollable */
+  max-height: 100%; /* Restrict to parent height */
 }
 
 .profile-form__title {
@@ -209,7 +221,15 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Input field styling removed to fix focus issues */
+/* Input field styling */
+.profile-form__input {
+  outline: none;
+}
+
+.profile-form__input:focus {
+  outline: 2px solid #4285F4;
+  box-shadow: 0 0 5px rgba(66, 133, 244, 0.5);
+}
 
 .profile-form__static-text {
   color: #4b5563;
@@ -243,6 +263,8 @@
 .credentials {
   max-width: 600px;
   margin: 0 auto;
+  overflow-y: auto; /* Make credentials section scrollable */
+  max-height: 100%; /* Restrict to parent height */
 }
 
 .credentials__header {
@@ -331,6 +353,8 @@
 .orders {
   max-width: 800px;
   margin: 0 auto;
+  overflow-y: auto; /* Make orders section scrollable */
+  max-height: 100%; /* Restrict to parent height */
 }
 
 .orders__title {
@@ -463,24 +487,24 @@
 
 /* Popup Styles */
 .popup-content {
-  background: #ffffff; /* Pure white for a clean look */
-  border-radius: 16px; /* Softer, modern corners */
-  padding: 20px; /* Reduced padding for minimalism */
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
   min-width: 300px;
-  max-width: 500px; /* Constrained width for focus */
+  max-width: 500px;
   margin: 0 auto;
   position: relative;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); /* Subtle, modern shadow */
-  animation: popupSlideIn 0.3s ease-out; /* Smoother animation */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  animation: popupSlideIn 0.3s ease-out;
 }
 
 /* Success and Error States */
 .popup-success {
-  border-left: 4px solid #22c55e; /* Slim accent border */
+  border-left: 4px solid #22c55e;
 }
 
 .popup-error {
-  border-left: 4px solid #ef4444; /* Slim accent border */
+  border-left: 4px solid #ef4444;
 }
 
 /* Popup Header */
@@ -495,9 +519,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px; /* Slightly smaller icon */
+  width: 32px;
   height: 32px;
-  border-radius: 8px; /* Rectangular with soft corners */
+  border-radius: 8px;
   background-color: rgba(0, 0, 0, 0.05);
 }
 
@@ -510,9 +534,9 @@
 }
 
 .popup-title {
-  font-size: 16px; /* Smaller, cleaner title */
-  font-weight: 600; /* Medium weight for balance */
-  color: #111827; /* Darker for contrast */
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
 }
 
 /* Popup Body */
@@ -521,9 +545,9 @@
 }
 
 .popup-body p {
-  font-size: 14px; /* Compact text */
-  color: #6b7280; /* Softer gray for readability */
-  line-height: 1.4; /* Tighter line height */
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.4;
   margin: 0;
 }
 
@@ -534,28 +558,28 @@
 }
 
 .popup-close-btn {
-  background-color: transparent; /* No background for minimalism */
-  color: #f97316; /* Consistent brand color */
-  border: 1px solid #f97316; /* Light border */
+  background-color: transparent;
+  color: #f97316;
+  border: 1px solid #f97316;
   border-radius: 8px;
   padding: 8px 16px;
   font-size: 14px;
-  font-weight: 500; /* Lighter weight */
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .popup-close-btn:hover {
-  background-color: #f97316; /* Fill on hover */
+  background-color: #f97316;
   color: #ffffff;
-  transform: translateY(-1px); /* Subtle lift */
+  transform: translateY(-1px);
 }
 
 /* Animation */
 @keyframes popupSlideIn {
   0% {
     opacity: 0;
-    transform: translateY(10px); /* Slide up effect */
+    transform: translateY(10px);
   }
   100% {
     opacity: 1;
@@ -567,10 +591,12 @@
 @media (max-width: 1024px) {
   .profile-card {
     flex-direction: column;
+    height: auto; /* Allow height to adjust for smaller screens */
+    max-height: 80vh; /* Limit height to viewport */
   }
 
   .profile-sidebar {
-    width: 90%;
+    width: 100%;
     border-right: none;
     border-bottom: 1px solid #e5e7eb;
     padding: 24px;
@@ -578,6 +604,15 @@
 
   .profile-content {
     padding: 24px;
+    height: auto; /* Allow content to adjust */
+    max-height: 50vh; /* Limit content height */
+    overflow-y: auto; /* Ensure scrollable */
+  }
+
+  .profile-form,
+  .credentials,
+  .orders {
+    max-height: 100%; /* Ensure sections respect parent height */
   }
 }
 
@@ -594,6 +629,8 @@
     box-shadow: none;
     border-radius: 0;
     min-width: 0;
+    height: auto; /* Adjust height for mobile */
+    max-height: 90vh; /* Limit to viewport */
   }
   .profile-sidebar {
     border-right: none;
@@ -602,6 +639,8 @@
     border-radius: 0;
     gap: 8px;
     align-items: flex-start;
+    max-height: 30vh; /* Limit sidebar height */
+    overflow-y: auto; /* Scrollable sidebar */
   }
   .profile-sidebar__avatar {
     width: 64px;
@@ -622,11 +661,19 @@
   }
   .profile-content {
     padding: 8px 2px;
+    height: auto; /* Adjust height */
+    max-height: 60vh; /* Limit content height */
+    overflow-y: auto; /* Scrollable content */
   }
-  .profile-form {
+  .profile-form,
+  .credentials,
+  .orders {
     padding: 0;
+    max-height: 100%; /* Respect parent height */
   }
-  .profile-form__title {
+  .profile-form__title,
+  .credentials__title,
+  .orders__title {
     font-size: 15px;
     padding-bottom: 4px;
     margin-bottom: 8px;
@@ -646,9 +693,6 @@
   .btn, .profile-sidebar__button {
     min-width: 44px;
     min-height: 44px;
-    font-size: 14px;
-  }
-  .orders__title {
     font-size: 14px;
   }
   .order-item__content {
@@ -684,12 +728,16 @@
     min-width: 0;
     box-shadow: none;
     border-radius: 0;
+    height: auto; /* Adjust height */
+    max-height: 85vh; /* Limit to viewport */
   }
   .profile-sidebar {
     width: 100%;
     padding: 12px 8px;
     border-radius: 0;
     gap: 12px;
+    max-height: 25vh; /* Limit sidebar height */
+    overflow-y: auto; /* Scrollable sidebar */
   }
   .profile-sidebar__avatar {
     width: 80px;
@@ -702,11 +750,19 @@
   }
   .profile-content {
     padding: 12px 4px;
+    height: auto; /* Adjust height */
+    max-height: 60vh; /* Limit content height */
+    overflow-y: auto; /* Scrollable content */
   }
-  .profile-form {
+  .profile-form,
+  .credentials,
+  .orders {
     padding: 0;
+    max-height: 100%; /* Respect parent height */
   }
-  .profile-form__title {
+  .profile-form__title,
+  .credentials__title,
+  .orders__title {
     font-size: 16px;
     padding-bottom: 6px;
     margin-bottom: 12px;
@@ -728,9 +784,6 @@
     min-height: 44px;
     font-size: 15px;
   }
-  .orders__title {
-    font-size: 16px;
-  }
   .order-item__content {
     flex-direction: column;
     align-items: flex-start;
@@ -751,80 +804,6 @@
   }
 }
 
-.profile-sidebar__avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48px;
-  font-weight: 700;
-  color: #ffffff;
-  border: 4px solid #f97316;
-  transition: transform 0.3s ease;
-  text-transform: uppercase;
-}
-
-.profile-sidebar__avatar:hover {
-  transform: scale(1.05);
-}
-/* Skeleton Loader Styles */
-.skeleton {
-  background: #e5e7eb; /* Light gray background */
-  border-radius: 8px;
-  position: relative;
-  overflow: hidden;
-}
-
-.skeleton::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-.skeleton-avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  border: 4px solid #e5e7eb;
-}
-
-.skeleton-button {
-  width: 100%;
-  height: 48px;
-  border-radius: 8px;
-  margin-top: 24px;
-}
-
-.skeleton-form-group {
-  width: 100%;
-  height: 80px;
-  border-radius: 10px;
-  margin-bottom: 24px;
-}
-
-.skeleton-order-item {
-  width: 100%;
-  height: 120px;
-  border-radius: 8px;
-  margin-bottom: 24px;
-}
 /* Skeleton Loader Styles */
 .skeleton {
   background: #e5e7eb;
@@ -881,44 +860,61 @@
   margin-bottom: 24px;
 }
 
-/* Ensure profile-sidebar__avatar styles are included */
-.profile-sidebar__avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 48px;
-  font-weight: 700;
-  color: #ffffff;
-  border: 4px solid #f97316;
-  transition: transform 0.3s ease;
-  text-transform: uppercase;
-}
-
-.profile-sidebar__avatar:hover {
-  transform: scale(1.05);
-}
-
 /* Add spacing for multiple buttons in credentials__actions */
 .credentials__actions {
   display: flex;
   gap: 16px;
 }
+
 .profile-form__input-wrapper {
-  
+  /* Placeholder for potential wrapper styling */
 }
+
 .profile-form__input {
   outline: none;
-  
 }
+
 .profile-form__input:focus {
   outline: 2px solid #4285F4;
   box-shadow: 0 0 5px rgba(66, 133, 244, 0.5);
 }
+
 .credentials__actions-row:focus,
 .credentials__actions-row button:focus {
   outline: 2px solid red !important;
+}
+
+/* Scrollbar Styling */
+.profile-sidebar::-webkit-scrollbar,
+.profile-content::-webkit-scrollbar,
+.profile-form::-webkit-scrollbar,
+.credentials::-webkit-scrollbar,
+.orders::-webkit-scrollbar {
+  width: 8px;
+}
+
+.profile-sidebar::-webkit-scrollbar-track,
+.profile-content::-webkit-scrollbar-track,
+.profile-form::-webkit-scrollbar-track,
+.credentials::-webkit-scrollbar-track,
+.orders::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.profile-sidebar::-webkit-scrollbar-thumb,
+.profile-content::-webkit-scrollbar-thumb,
+.profile-form::-webkit-scrollbar-thumb,
+.credentials::-webkit-scrollbar-thumb,
+.orders::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+
+.profile-sidebar::-webkit-scrollbar-thumb:hover,
+.profile-content::-webkit-scrollbar-thumb:hover,
+.profile-form::-webkit-scrollbar-thumb:hover,
+.credentials::-webkit-scrollbar-thumb:hover,
+.orders::-webkit-scrollbar-thumb:hover {
+  background: #ea580c;
 }

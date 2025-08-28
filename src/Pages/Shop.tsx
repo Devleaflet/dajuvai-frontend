@@ -188,7 +188,8 @@ const fetchProductsWithFilters = async (filters: ProductFilters, token: string |
 const Shop: React.FC = () => {
   const { token } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-
+const [categorySearch, setCategorySearch] = useState<string>('');
+const [subcategorySearch, setSubcategorySearch] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<number | undefined>(undefined);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | undefined>(undefined);
   const [selectedPriceRange, setSelectedPriceRange] = useState<string | undefined>(undefined);
@@ -202,6 +203,7 @@ const Shop: React.FC = () => {
   const prevSearchInputValueRef = useRef<string>('');
   const prevSelectedCategoryRef = useRef<number | undefined>(undefined);
   const prevSelectedSubcategoryRef = useRef<number | undefined>(undefined);
+const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
 
   // Initialize filters from URL parameters
   useEffect(() => {
@@ -558,37 +560,54 @@ const Shop: React.FC = () => {
   });
 
   // Event handlers
-  const handleCategoryChange = (categoryId: number | undefined): void => {
-    // Update URL parameters instead of directly setting state
-    const newSearchParams = new URLSearchParams(searchParams);
+const handleCategoryChange = (categoryId: number | undefined): void => {
+  // Update URL parameters instead of directly setting state
+  const newSearchParams = new URLSearchParams(searchParams);
 
-    if (categoryId) {
-      newSearchParams.set('categoryId', categoryId.toString());
-    } else {
-      newSearchParams.delete('categoryId');
+  if (categoryId) {
+    newSearchParams.set('categoryId', categoryId.toString());
+
+    // 👇 also set categorySearch text to the selected category name
+    const selectedCat = categories.find((c: Category) => c.id === categoryId);
+    if (selectedCat) {
+      setCategorySearch(selectedCat.name);
     }
+  } else {
+    newSearchParams.delete('categoryId');
+    setCategorySearch(''); // clear search field
+  }
 
-    // Clear subcategory when changing category
+  // Clear subcategory when changing category
+  newSearchParams.delete('subcategoryId');
+  setSubcategorySearch(''); // also clear subcategory search field
+
+  // Clear search when changing categories
+  newSearchParams.delete('search');
+
+  setSearchParams(newSearchParams);
+};
+
+
+const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
+  // Update URL parameters instead of directly setting state
+  const newSearchParams = new URLSearchParams(searchParams);
+
+  if (subcategoryId) {
+    newSearchParams.set('subcategoryId', subcategoryId.toString());
+
+    // 👇 also set subcategorySearch text to the selected subcategory name
+    const selectedSub = subcategories.find((s: Subcategory) => s.id === subcategoryId);
+    if (selectedSub) {
+      setSubcategorySearch(selectedSub.name);
+    }
+  } else {
     newSearchParams.delete('subcategoryId');
+    setSubcategorySearch(''); // clear search field
+  }
 
-    // Clear search when changing categories
-    newSearchParams.delete('search');
+  setSearchParams(newSearchParams);
+};
 
-    setSearchParams(newSearchParams);
-  };
-
-  const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
-    // Update URL parameters instead of directly setting state
-    const newSearchParams = new URLSearchParams(searchParams);
-
-    if (subcategoryId) {
-      newSearchParams.set('subcategoryId', subcategoryId.toString());
-    } else {
-      newSearchParams.delete('subcategoryId');
-    }
-
-    setSearchParams(newSearchParams);
-  };
 
   const handleSortChange = (newSort: string | undefined): void => {
     setSortBy(newSort || 'all');
@@ -602,6 +621,8 @@ const Shop: React.FC = () => {
     setSelectedPriceRange(undefined);
     setSortBy('all');
     setSearchInputValue('');
+  setCategorySearch('');      // clear category search field
+  setSubcategorySearch('');   // clear subcategory search field
 
     // Clear URL parameters - let useEffect handle state updates
     const newSearchParams = new URLSearchParams();
@@ -1077,7 +1098,15 @@ const Shop: React.FC = () => {
                     ×
                   </button>
                 </div>
-
+{categories
+  .filter((category: Category) => 
+    category.name.toLowerCase().includes(categorySearch.toLowerCase())
+  )
+  .map((category: Category) => (
+    <div key={category.id} className="filter-sidebar__category-group">
+      {/* ... existing category code ... */}
+    </div>
+  ))}
                 {hasActiveFilters && (
                   <div className="filter-sidebar__section">
                     <button
@@ -1146,77 +1175,147 @@ const Shop: React.FC = () => {
                 </div>
 
                 <div className="filter-sidebar__section">
-                  <h4 className="filter-sidebar__section-title">Categories</h4>
-                  <div className="filter-sidebar__checkbox-list">
-                    {isLoadingCategories ? (
-                      <p className="filter-sidebar__loading">Loading categories...</p>
-                    ) : (
-                      <>
-                        <div className="filter-sidebar__checkbox-item">
-                          <input
-                            type="radio"
-                            id="category-all"
-                            name="category"
-                            checked={selectedCategory === undefined}
-                            onChange={() => handleCategoryChange(undefined)}
-                          />
-                          <label htmlFor="category-all">All Categories</label>
-                        </div>
-                        {categories.map((category: Category) => (
-                          <div key={category.id} className="filter-sidebar__category-group">
-                            <div className="filter-sidebar__checkbox-item">
-                              <input
-                                type="radio"
-                                id={`category-${category.id}`}
-                                name="category"
-                                checked={selectedCategory === category.id}
-                                onChange={() => handleCategoryChange(category.id)}
-                              />
-                              <label htmlFor={`category-${category.id}`}>{category.name}</label>
-                            </div>
-                          </div>
-                        ))}
-                      </>
-                    )}
-                  </div>
-                </div>
+  <h4 className="filter-sidebar__section-title">Categories</h4>
+<div className="filter-sidebar__search-container filter-sidebar__search-container--categories">
+  {/* Add this after the Categories title */}
+<input
+  type="text"
+  placeholder="Search categories..."
+  value={categorySearch}
+  onChange={(e) => setCategorySearch(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const match = categories.find((cat: Category) =>
+        cat.name.toLowerCase().includes(categorySearch.toLowerCase())
+      );
+      if (match) {
+        handleCategoryChange(match.id);
+        // 👇 move focus to subcategory field
+        if (subcategoryInputRef.current) {
+          subcategoryInputRef.current.focus();
+        }
+      }
+    }
+  }}
+  className="filter-sidebar__search-input"
+/>
+</div>
+
+
+
+
+
+
+  <div className="filter-sidebar__checkbox-list">
+    {isLoadingCategories ? (
+      <p className="filter-sidebar__loading">Loading categories...</p>
+    ) : (
+      <>
+        <div className="filter-sidebar__checkbox-item">
+          <input
+            type="radio"
+            id="category-all"
+            name="category"
+            checked={selectedCategory === undefined}
+            onChange={() => handleCategoryChange(undefined)}
+          />
+          <label htmlFor="category-all">All Categories</label>
+        </div>
+{categories
+  .filter((category: Category) =>
+    category.name.toLowerCase().includes(categorySearch.toLowerCase())
+  )
+  .map((category: Category) => (
+          <div key={category.id} className="filter-sidebar__category-group">
+            <div className="filter-sidebar__checkbox-item">
+              <input
+                type="radio"
+                id={`category-${category.id}`}
+                name="category"
+                checked={selectedCategory === category.id}
+                onChange={() => handleCategoryChange(category.id)}
+              />
+              <label htmlFor={`category-${category.id}`}>{category.name}</label>
+            </div>
+          </div>
+        ))}
+      </>
+    )}
+  </div>
+</div>
+
 
                 {selectedCategory !== undefined && (
                   <div className="filter-sidebar__section">
-                    <h4 className="filter-sidebar__section-title">Subcategories</h4>
-                    <div className="filter-sidebar__checkbox-list">
-                      {isLoadingSubcategories ? (
-                        <p className="filter-sidebar__loading">Loading subcategories...</p>
-                      ) : subcategories.length > 0 ? (
-                        <>
-                          <div className="filter-sidebar__checkbox-item">
-                            <input
-                              type="radio"
-                              id="subcategory-all"
-                              name="subcategory"
-                              checked={selectedSubcategory === undefined}
-                              onChange={() => handleSubcategoryChange(undefined)}
-                            />
-                            <label htmlFor="subcategory-all">All Subcategories</label>
-                          </div>
-                          {subcategories.map((subcategory: Subcategory) => (
-                            <div key={subcategory.id} className="filter-sidebar__checkbox-item">
-                              <input
-                                type="radio"
-                                id={`subcategory-${subcategory.id}`}
-                                name="subcategory"
-                                checked={selectedSubcategory === subcategory.id}
-                                onChange={() => handleSubcategoryChange(subcategory.id)}
-                              />
-                              <label htmlFor={`subcategory-${subcategory.id}`}>{subcategory.name}</label>
-                            </div>
-                          ))}
-                        </>
-                      ) : (
-                        <p className="filter-sidebar__no-data">No subcategories available</p>
-                      )}
-                    </div>
-                  </div>
+  <h4 className="filter-sidebar__section-title">Subcategories</h4>
+
+  {/* Add this after the Subcategories title */}
+  <div className="filter-sidebar__search-container">
+<input
+ ref={subcategoryInputRef} 
+  type="text"
+  placeholder="Search subcategories..."
+  value={subcategorySearch}
+  onChange={(e) => setSubcategorySearch(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const match = subcategories.find((sub: Subcategory) =>
+        sub.name.toLowerCase().includes(subcategorySearch.toLowerCase())
+      );
+      if (match) {
+        handleSubcategoryChange(match.id);
+      }
+    }
+  }}
+  className="filter-sidebar__search-input"
+/>
+
+  </div>
+
+  <div className="filter-sidebar__checkbox-list">
+  {isLoadingSubcategories ? (
+    <p className="filter-sidebar__loading">Loading subcategories...</p>
+  ) : subcategories.length > 0 ? (
+    <>
+      <div className="filter-sidebar__checkbox-item">
+        <input
+          type="radio"
+          id="subcategory-all"
+          name="subcategory"
+          checked={selectedSubcategory === undefined}
+          onChange={() => handleSubcategoryChange(undefined)}
+        />
+        <label htmlFor="subcategory-all">All Subcategories</label>
+      </div>
+
+      {subcategories
+        .filter((sub: Subcategory) =>
+          sub.name.toLowerCase().includes(subcategorySearch.toLowerCase())
+        )
+        .map((subcategory: Subcategory) => (
+          <div key={subcategory.id} className="filter-sidebar__checkbox-item">
+            <input
+              type="radio"
+              id={`subcategory-${subcategory.id}`}
+              name="subcategory"
+              checked={selectedSubcategory === subcategory.id}
+              onChange={() => handleSubcategoryChange(subcategory.id)}
+            />
+            <label htmlFor={`subcategory-${subcategory.id}`}>
+              {subcategory.name}
+            </label>
+          </div>
+        ))}
+    </>
+  ) : (
+    <p className="filter-sidebar__no-data">No subcategories available</p>
+  )}
+</div>
+
+</div>
+
                 )}
               </div>
 

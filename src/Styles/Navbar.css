@@ -79,15 +79,16 @@
 .navbar__top-link {
     margin-left: 14px;
     font-weight: bolder;
-    font-size: 13px;
+    font-size: 14px;
     text-decoration: none;
-    color: #42504b;
+    color: #000;
     font-weight: 500;
     transition: color 0.2s ease;
 }
 
 .navbar__top-link:hover {
     color: #ff6b00;
+    cursor:pointer;
 }
 
 /* Update Cart Icon Size */
@@ -285,7 +286,7 @@
 
 .navbar__account {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 5px;
 }
 
@@ -1104,7 +1105,8 @@
     border-radius: 50%;
     background: #f5f5f5;
     color: #ff6600;
-    font-size: 1.5rem;
+    font-size: 6rem;
+        border: #000 2px solid black ;
     font-weight: bold;
     cursor: pointer;
     transition: box-shadow 0.2s;
@@ -1117,19 +1119,23 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 25px;
-    height: 25px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
-    background: #f5f5f5;
+    border: #000 2px solid black ;
+    padding: 5px;
+
     color: #ff6600;
     font-size: 1.5rem;
     font-weight: bold;
+
 }
 
 .navbar__avatar-image {
     width: 40px;
     height: 40px;
     border-radius: 50%;
+        border:2px solid black ;
     object-fit: cover;
 }
 
@@ -1773,7 +1779,12 @@
   position: relative;
   display: inline-block;
   cursor: pointer;
+  font-size: 23px;
 }
+
+/* .tooltip_wishlist{
+    font-size: 24px;
+} */
 
 /* Hidden tooltip text */
 .tooltip .tooltip-text {
@@ -1811,4 +1822,193 @@
   border-width: 5px;
   border-style: solid;
   border-color: #333 transparent transparent transparent;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* --- Category scrolling helpers --- */
+.navbar__categories {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.navbar__categories-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 0; /* Important for flexbox overflow */
+}
+
+.navbar__categories-inner {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  padding: 5px 0;
+}
+
+.navbar__categories-inner::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+.navbar__scroll-arrow {
+  background: white;
+  border: none;
+  cursor: pointer;
+  color: #333;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+.navbar__scroll-arrow:hover {
+  background: #f8f9fa;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+}
+
+.navbar__scroll-arrow:active {
+  transform: scale(0.95);
+}
+
+.navbar__scroll-arrow:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Make sure categories are properly spaced */
+.navbar__category {
+  white-space: nowrap;
+  position: relative;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Add these new styles */
+.navbar__categories-wrapper {
+  position: relative;
+  flex: 1;
+  overflow-y: visible;
+}
+
+.navbar__categories-inner {
+  display: flex;
+  gap: 12px;
+  overflow-x: visible;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 5px 0;
+}
+
+.navbar__categories-inner::-webkit-scrollbar {
+  display: none;
+}
+
+/* Enhanced arrow styles */
+.navbar__scroll-arrow {
+  background: white;
+  border: none;
+  cursor: pointer;
+  color: #333;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+.navbar__scroll-arrow:hover {
+  background: #f8f9fa;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+}
+
+.navbar__scroll-arrow:active {
+  transform: scale(0.95);
+}
+
+.navbar__scroll-arrow:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Update the existing categories styles */
+.navbar__categories {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  width: 100%;
+}
+
+/* Make sure categories are properly spaced */
+.navbar__category {
+  white-space: nowrap;
+  position: relative;
+}
+
+.navbar__account-link.tooltip{
+    display: flex;
+    align-items: center;
+}
+.tooltip{
+    display: flex;
+    align-items: center;
+}
+
+@media (max-width: 1099px) {
+    .navbar__account-icon-link{
+        margin-left: 10px;
+
+    }
+
+    .navbar__mobile-avatar {
+        display: flex;
+    align-items: center;
+
+    }
 }

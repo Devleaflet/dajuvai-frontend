@@ -262,12 +262,12 @@
   font-weight: 700;
   margin-bottom: 2px;
   color: #222;
-  font-size: 13px;
+  font-size: 18px;
 }
 
 .footer__service-value {
   color: #666;
-  font-size: 11px;
+  font-size: 13px;
   margin-top: 0;
   font-weight: 500;
 }
@@ -613,48 +613,86 @@
 /* Small screens */
 @media (max-width: 768px) {
   .footer__top-links {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 15px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 10px 15px;
   }
 
-  .footer__section {
-    width: auto;
-    flex: 1;
+  /* Place Useful Links and Quick Access in first row */
+  .footer__section:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .footer__section:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  /* Place Account in second row, spanning both columns */
+  .footer__section:nth-child(3) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  /* Left-align all section titles and content on mobile */
+  .footer__section-title {
+    text-align: left;
+    margin-bottom: 12px;
+    font-size: 16px;
+  }
+
+  .footer__links-section {
+    text-align: left;
+    margin-bottom: 15px;
+  }
+
+  .footer__list {
+    text-align: left;
+  }
+
+  .footer__list li {
+    margin-bottom: 8px;
+  }
+
+  .footer__account-section {
+    text-align: left;
+    margin-bottom: 15px;
   }
 
   .footer__copyright {
-    padding-bottom: 80px;
+    padding-bottom: 60px;
   }
 
   .footer__container {
-    padding: 0 15px;
+    padding: 0 10px;
   }
 
   .footer__form-row {
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
   }
 
   .footer__form-group {
     width: 100%;
-  }
-
-  .footer__top-links {
-    grid-template-columns: 1fr;
+    margin-bottom: 12px;
   }
 
   .footer__bottom-links-section {
     flex-direction: column;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
     width: 100%;
+    padding-top: 25px;
+    margin-top: 15px;
   }
 
   .footer__bottom {
     flex-direction: column;
     text-align: center;
+    margin: 20px auto 0;
+    padding: 15px 10px;
   }
 
   .footer__bottom-links {
@@ -678,18 +716,30 @@
   .footer__payment-section {
     width: 100%;
     max-width: 100%;
-    min-height: 220px;
-    padding: 25px 20px;
+    min-height: 180px;
+    padding: 20px 15px;
+    margin-bottom: 15px;
   }
 
-  .footer__bottom-links-section {
-    gap: 25px;
+  .footer__services-section .footer__section-title,
+  .footer__contact-section .footer__section-title,
+  .footer__payment-section .footer__section-title {
+    margin-bottom: 15px;
+    font-size: 16px;
   }
 
   .footer__services-list {
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: 10px;
     max-width: 100%;
+  }
+
+  .footer__main-content {
+    gap: 20px;
+  }
+
+  .footer__section {
+    margin-bottom: 20px;
   }
 }
 
@@ -697,19 +747,23 @@
 @media (max-width: 480px) {
   .footer__heading {
     font-size: 20px;
+    margin-bottom: 10px;
   }
 
   .footer__section-title {
-    font-size: 16px;
+    font-size: 15px;
+    text-align: left;
+    margin-bottom: 10px;
   }
 
   .footer__description {
     font-size: 14px;
+    margin-bottom: 15px;
   }
 
   .footer__track-button {
     width: 100%;
-    padding: 16px 24px;
+    padding: 14px 20px;
     font-size: 15px;
   }
 
@@ -718,69 +772,142 @@
   }
 
   .footer__service-icon {
-    width: 28px;
-    height: 28px;
-    min-width: 28px;
-    font-size: 14px;
-    margin-right: 2px;
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    font-size: 13px;
+    margin-right: 6px;
   }
 
   .footer__social-link {
-    width: 44px;
-    height: 44px;
-    font-size: 18px;
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
   }
 
   .footer__payment-image {
-    height: 44px;
-    max-width: 75px;
+    height: 36px;
+    max-width: 65px;
+    padding: 8px 10px;
   }
 
   .footer__payment-icons {
     justify-content: center;
-    gap: 10px;
-  }
-
-  .footer__payment-image {
-    height: 40px;
-    max-width: 70px;
+    gap: 8px;
   }
 
   .footer__services-section,
   .footer__contact-section,
   .footer__payment-section {
     width: 100%;
-    padding: 20px 15px;
-    min-height: 200px;
+    padding: 15px 12px;
+    min-height: 160px;
+    margin-bottom: 12px;
+  }
+
+  .footer__services-section .footer__section-title,
+  .footer__contact-section .footer__section-title,
+  .footer__payment-section .footer__section-title {
+    margin-bottom: 12px;
+    font-size: 15px;
   }
 
   .footer__services-list {
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: 8px;
     max-width: 100%;
   }
 
   .footer__social-icons {
-    gap: 12px;
+    gap: 10px;
   }
 
   .footer__payment-icons {
-    gap: 12px;
+    gap: 10px;
   }
 
   .footer__bottom-links-section {
-    gap: 15px;
+    gap: 12px;
     width: 100%;
+    padding-top: 20px;
+    margin-top: 12px;
   }
 
   .footer__bottom-links {
-    gap: 10px;
+    gap: 8px;
     flex-direction: column;
   }
 
   .footer__input {
-    padding: 14px 16px;
+    padding: 12px 14px;
     font-size: 16px;
+  }
+
+  .footer__form-group {
+    margin-bottom: 10px;
+  }
+
+  .footer__form-row {
+    gap: 10px;
+  }
+
+  .footer__list li {
+    margin-bottom: 6px;
+  }
+
+  .footer__links-section {
+    margin-bottom: 12px;
+  }
+
+  .footer__account-section {
+    margin-bottom: 12px;
+  }
+
+  .footer__main-content {
+    gap: 15px;
+  }
+
+  .footer__section {
+    margin-bottom: 15px;
+  }
+
+  .footer__bottom {
+    margin: 15px auto 0;
+    padding: 12px 8px;
+  }
+
+  .footer__copyright {
+    padding-bottom: 50px;
+    font-size: 13px;
+  }
+
+  .footer__container {
+    padding: 0 8px;
+  }
+
+  /* Mobile layout for top links */
+  .footer__top-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 10px 12px;
+  }
+
+  /* Place Useful Links and Quick Access in first row */
+  .footer__section:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .footer__section:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  /* Place Account in second row, spanning both columns */
+  .footer__section:nth-child(3) {
+    grid-column: 1 / -1;
+    grid-row: 2;
   }
 }
 
