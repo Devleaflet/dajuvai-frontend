@@ -891,23 +891,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                         />
                         I accept the <Link to="/terms" target="_blank">terms and conditions</Link>
                       </label>
-                      <label className="auth-modal__checkbox" style={{ background: "transparent" }}>
-                        <input
-                          type="checkbox"
-                          checked={acceptListingFee}
-                          onChange={(e) => {
-                            setAcceptListingFee(e.target.checked);
-                            console.log("Accept listing fee toggled:", e.target.checked);
-                          }}
-                          disabled={isLoading}
-                          style={{ background: "transparent", border: "1px solid #ddd" }}
-                        />
-                        I accept the listing fee (
-                        <Link to="/commission-list" target="_blank" className="auth-modal__link">
-                          View Commission List
-                        </Link>
-                        )
-                      </label>
+
                     </div>
                   </>
                 )}
@@ -1245,6 +1229,23 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                         </div>
                       </div>
                     </div>
+                    <label className="auth-modal__checkbox" style={{ background: "transparent" }}>
+                      <input
+                        type="checkbox"
+                        checked={acceptListingFee}
+                        onChange={(e) => {
+                          setAcceptListingFee(e.target.checked);
+                          console.log("Accept listing fee toggled:", e.target.checked);
+                        }}
+                        disabled={isLoading}
+                        style={{ background: "transparent", border: "1px solid #ddd" }}
+                      />
+                      I accept the listing fee (
+                      <Link to="/commission-list" target="_blank" className="auth-modal__link">
+                        View Commission List
+                      </Link>
+                      )
+                    </label>
                   </>
                 )}
 

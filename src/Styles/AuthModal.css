@@ -23,7 +23,6 @@
 .auth-modal__content {
   position: relative;
   width: 100%;
-  
   max-width: 450px;
   background-color: #fff;
   border-radius: 10px;
@@ -31,6 +30,9 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   z-index: 1;
   animation: auth-modal-fade-in 0.3s ease;
+  max-height: 90vh;
+  overflow-y: scroll;
+  border-radius: 14px;
 }
 
 @keyframes auth-modal-fade-in {
