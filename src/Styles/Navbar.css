@@ -561,7 +561,7 @@
 .navbar__categories {
     display: flex;
     align-items: center;
-
+    flex-wrap: wrap;
     padding-left: 15px;
 }
 
@@ -1124,6 +1124,7 @@
     color: #ff6600;
     font-size: 1.5rem;
     font-weight: bold;
+
 }
 
 .navbar__avatar-image {
@@ -1817,88 +1818,192 @@
   border-style: solid;
   border-color: #333 transparent transparent transparent;
 }
-.navbar__categories-container {
-  position: relative;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* --- Category scrolling helpers --- */
+.navbar__categories {
   display: flex;
   align-items: center;
+  gap: 8px;
   width: 100%;
 }
 
-.navbar__categories {
+.navbar__categories-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 0; /* Important for flexbox overflow */
+}
+
+.navbar__categories-inner {
   display: flex;
+  gap: 12px;
   overflow-x: auto;
-  white-space: nowrap;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
+  padding: 5px 0;
 }
 
-.navbar__categories::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+.navbar__categories-inner::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
 }
 
-.navbar__category {
-  flex: 0 0 auto;
-  padding: 10px 20px;
+.navbar__scroll-arrow {
+  background: white;
+  border: none;
   cursor: pointer;
-  font-size: 16px;
-  color: #42504b;
-  transition: color 0.3s ease;
-}
-
-.navbar__category:hover,
-.navbar__category.active {
-  color: #f97316;
-}
-
-.navbar__category-link {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.navbar__scroll-button {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #ddd;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
+  color: #333;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  font-size: 14px;
-  color: #42504b;
-  z-index: 10;
-  transition: background-color 0.3s ease, opacity 0.3s ease;
-
+  flex-shrink: 0;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  z-index: 2;
 }
 
-.navbar__scroll-button:hover {
-  background: #f97316;
-  color: #fff;
+.navbar__scroll-arrow:hover {
+  background: #f8f9fa;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
 }
 
-.navbar__scroll-button--left {
-  left: 0;
+.navbar__scroll-arrow:active {
+  transform: scale(0.95);
 }
 
-.navbar__scroll-button--right {
-  right: 0;
-}
-
-.navbar__scroll-button:disabled {
+.navbar__scroll-arrow:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
-/* Optional: Hide buttons on small screens or when not needed */
-@media (max-width: 768px) {
-  .navbar__scroll-button {
-    display: none; /* Hide buttons on mobile, rely on touch scrolling */
-  }
+/* Make sure categories are properly spaced */
+.navbar__category {
+  white-space: nowrap;
+  position: relative;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Add these new styles */
+.navbar__categories-wrapper {
+  position: relative;
+  flex: 1;
+  overflow-y: visible;
+}
+
+.navbar__categories-inner {
+  display: flex;
+  gap: 12px;
+  overflow-x: visible;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 5px 0;
+}
+
+.navbar__categories-inner::-webkit-scrollbar {
+  display: none;
+}
+
+/* Enhanced arrow styles */
+.navbar__scroll-arrow {
+  background: white;
+  border: none;
+  cursor: pointer;
+  color: #333;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+.navbar__scroll-arrow:hover {
+  background: #f8f9fa;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+}
+
+.navbar__scroll-arrow:active {
+  transform: scale(0.95);
+}
+
+.navbar__scroll-arrow:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Update the existing categories styles */
+.navbar__categories {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  width: 100%;
+}
+
+/* Make sure categories are properly spaced */
+.navbar__category {
+  white-space: nowrap;
+  position: relative;
+}
+
+.navbar__account-link.tooltip{
+    display: flex;
+    align-items: center;
+}
+.tooltip{
+    display: flex;
+    align-items: center;
+}
+
+@media (max-width: 1099px) {
+    .navbar__account-icon-link{
+        margin-left: 10px;
+
+    }
+
+    .navbar__mobile-avatar {
+        display: flex;
+    align-items: center;
+
+    }
 }
