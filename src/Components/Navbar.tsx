@@ -93,7 +93,23 @@ const Navbar: React.FC = () => {
     handleDecreaseQuantity,
     updatingItems,
   } = useCart();
+const categoriesRef = useRef<HTMLDivElement>(null);
 
+const handleScroll = (direction: "left" | "right") => {
+  if (categoriesRef.current) {
+    const scrollAmount = 200; // Adjust scroll distance as needed
+    const currentScroll = categoriesRef.current.scrollLeft;
+    const targetScroll =
+      direction === "left"
+        ? currentScroll - scrollAmount
+        : currentScroll + scrollAmount;
+
+    categoriesRef.current.scrollTo({
+      left: targetScroll,
+      behavior: "smooth",
+    });
+  }
+};
   // Maintain a stable render order for cart items to avoid reordering on refresh
   const cartOrderRef = useRef<Map<number, number>>(new Map());
   const nextOrderIndexRef = useRef(0);
@@ -725,7 +741,7 @@ const Navbar: React.FC = () => {
         <div className="navbar__top">
           <div className="navbar__top-row">
             <div className="navbar__logo">
-              <Link to="/">
+              <Link to="/">   
                 <img src={logo} alt="DajuVai" className="navbar__logo-img" />
               </Link>
             </div>
@@ -1225,63 +1241,75 @@ const Navbar: React.FC = () => {
           }}
         ></div>
 
-        <div className="navbar__bottom">
-          <div className="navbar__categories">
-            {categories.map((category: any) => (
-              <div
-                key={category.id}
-                className={`navbar__category${activeDropdown === category.id ? " active" : ""}`}
-                onMouseEnter={() => setActiveDropdown(category.id)}
-                onMouseLeave={() => setActiveDropdown(null)}
-              >
-                <div className="navbar__category-link">
-                  {category.name}
-                  <FaChevronDown
-                    size={16}
-                    className={`navbar__category-icon ${activeDropdown === category.id
-                      ? "navbar__category-icon--active"
-                      : ""
-                      }`}
-                  />
-                </div>
-                {activeDropdown === category.id &&
-                  renderCategoryDropdown(category)}
-              </div>
-            ))}
+<div className="navbar__bottom">
+  <div className="navbar__categories-container">
+    <button
+      className="navbar__scroll-button navbar__scroll-button--left"
+      onClick={() => handleScroll("left")}
+      aria-label="Scroll categories left"
+    >
+      &lt;
+    </button>
+    <div className="navbar__categories" ref={categoriesRef}>
+      {categories.map((category: any) => (
+        <div
+          key={category.id}
+          className={`navbar__category${activeDropdown === category.id ? " active" : ""}`}
+          onMouseEnter={() => setActiveDropdown(category.id)}
+          onMouseLeave={() => setActiveDropdown(null)}
+        >
+          <div className="navbar__category-link">
+            {category.name}
+            <FaChevronDown
+              size={16}
+              className={`navbar__category-icon ${activeDropdown === category.id ? "navbar__category-icon--active" : ""}`}
+            />
           </div>
-
-          <div className="navbar__social navbar__social--desktop">
-            <a
-              href="https://www.facebook.com/"
-              target="_blank"
-              className="navbar__social-link navbar__social-link--facebook"
-            >
-              <FaFacebook />
-            </a>
-            <a
-              href="https://www.instagram.com/dajuvai_/"
-              target="_blank"
-              className="navbar__social-link navbar__social-link--instagram"
-            >
-              <FaInstagram />
-            </a>
-            <a
-              href="https://www.tiktok.com/@www.dajuvai.com"
-              target="_blank"
-              className="navbar__social-link navbar__social-link--tiktok"
-            >
-              <FaTiktok />
-            </a>
-            <a
-              href="https://wa.me/9779700620004"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="navbar__social-link navbar__social-link--whatsapp"
-            >
-              <FaWhatsapp />
-            </a>
-          </div>
+          {activeDropdown === category.id && renderCategoryDropdown(category)}
         </div>
+      ))}
+    </div>
+    <button
+      className="navbar__scroll-button navbar__scroll-button--right"
+      onClick={() => handleScroll("right")}
+      aria-label="Scroll categories right"
+    >
+      &gt;
+    </button>
+  </div>
+
+  <div className="navbar__social navbar__social--desktop">
+    <a
+      href="https://www.facebook.com/"
+      target="_blank"
+      className="navbar__social-link navbar__social-link--facebook"
+    >
+      <FaFacebook />
+    </a>
+    <a
+      href="https://www.instagram.com/dajuvai_/"
+      target="_blank"
+      className="navbar__social-link navbar__social-link--instagram"
+    >
+      <FaInstagram />
+    </a>
+    <a
+      href="https://www.tiktok.com/@www.dajuvai.com"
+      target="_blank"
+      className="navbar__social-link navbar__social-link--tiktok"
+    >
+      <FaTiktok />
+    </a>
+    <a
+      href="https://wa.me/9779700620004"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="navbar__social-link navbar__social-link--whatsapp"
+    >
+      <FaWhatsapp />
+    </a>
+  </div>
+</div>
       </div>
 
       {/* Unified profile drop-down rendered at top level */}

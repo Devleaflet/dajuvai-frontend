@@ -561,7 +561,7 @@
 .navbar__categories {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+
     padding-left: 15px;
 }
 
@@ -1816,4 +1816,89 @@
   border-width: 5px;
   border-style: solid;
   border-color: #333 transparent transparent transparent;
+}
+.navbar__categories-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.navbar__categories {
+  display: flex;
+  overflow-x: auto;
+  white-space: nowrap;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.navbar__categories::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.navbar__category {
+  flex: 0 0 auto;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #42504b;
+  transition: color 0.3s ease;
+}
+
+.navbar__category:hover,
+.navbar__category.active {
+  color: #f97316;
+}
+
+.navbar__category-link {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.navbar__scroll-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  color: #42504b;
+  z-index: 10;
+  transition: background-color 0.3s ease, opacity 0.3s ease;
+
+}
+
+.navbar__scroll-button:hover {
+  background: #f97316;
+  color: #fff;
+}
+
+.navbar__scroll-button--left {
+  left: 0;
+}
+
+.navbar__scroll-button--right {
+  right: 0;
+}
+
+.navbar__scroll-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Optional: Hide buttons on small screens or when not needed */
+@media (max-width: 768px) {
+  .navbar__scroll-button {
+    display: none; /* Hide buttons on mobile, rely on touch scrolling */
+  }
 }
