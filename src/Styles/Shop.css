@@ -166,8 +166,11 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding-top: 4px;
 }
-
+.filter-sidebar__search-container--categories {
+  margin-bottom: 24px; /* only categories search box */
+}
 .filter-sidebar__radio-item,
 .filter-sidebar__checkbox-item {
   display: flex;
@@ -354,7 +357,23 @@
     left: 0;
   }
 }
+.filter-sidebar__search-container {
+  margin-bottom: 16px;
+}
 
+.filter-sidebar__search-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.filter-sidebar__search-input:focus {
+  border-color: #1976d2;
+}
 /* Search Bar Styles */
 .search-bar-container {
   width: 100%;
