@@ -1,4 +1,4 @@
-import React, { useState, useEffect,  } from 'react';
+import React, { useState, useEffect, } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import CryptoJS from 'crypto-js';
 import '../Styles/CheckOut.css';
@@ -69,7 +69,7 @@ const Checkout: React.FC = () => {
   let cartItems: CartItem[] = contextCartItems;
 
   // State for managing Buy Now quantities
-  const [buyNowQuantities, setBuyNowQuantities] = useState<{[key: number]: number}>({});
+  const [buyNowQuantities, setBuyNowQuantities] = useState<{ [key: number]: number }>({});
 
   // Handle "Buy Now" case
   if (location.state?.buyNow && location.state?.products?.length > 0) {
@@ -111,7 +111,7 @@ const Checkout: React.FC = () => {
     province: '',
     district: '',
     city: '',
-        landmark: "",
+    landmark: "",
     streetAddress: '',
     phoneNumber: '',
   });
@@ -175,8 +175,8 @@ const Checkout: React.FC = () => {
     product_service_charge: '0',
     product_delivery_charge: '0',
     product_code: 'EPAYTEST',
-    success_url: `https://dajuvai-frontend-ykrq.vercel.app/order/esewa-payment-success`,
-    failure_url: `https://dajuvai-frontend-ykrq.vercel.app/esewa-payment-failure`,
+    success_url: `https://dev.dajuvai.com/order/esewa-payment-success`,
+    failure_url: `https://dev.dajuvai.com/esewa-payment-failure`,
     signed_field_names: 'total_amount,transaction_uuid,product_code',
     signature: '',
     secret: '8gBm/:&EnhH.1/q',
@@ -275,7 +275,7 @@ const Checkout: React.FC = () => {
           fullName: data.data.fullName || prev.fullName,
           province: data.data.address?.province || prev.province,
           district: data.data.address?.district || prev.district,
-            landmark : data.data.address?.landmark || prev.landmark,
+          landmark: data.data.address?.landmark || prev.landmark,
           streetAddress: data.data.address?.localAddress || prev.streetAddress,
           phoneNumber: data.data.phoneNumber && validatePhoneNumber(data.data.phoneNumber)
             ? data.data.phoneNumber
@@ -302,140 +302,160 @@ const Checkout: React.FC = () => {
     }
   }, [user?.id, token]);
 
-const handlePlaceOrder = async () => {
-  if (!termsAgreed) {
-    setAlertMessage('Please agree to the terms and conditions');
-    setShowAlert(true);
-    return;
-  }
-
-  if (
-    !billingDetails.fullName ||
-    !billingDetails.district ||
-    !billingDetails.city ||
-    !billingDetails.streetAddress ||
-    !billingDetails.phoneNumber
-  ) {
-    setAlertMessage('Please fill in all required fields including phone number');
-    setShowAlert(true);
-    return;
-  }
-
-  if (!validatePhoneNumber(billingDetails.phoneNumber)) {
-    setAlertMessage('Please enter a valid phone number (must start with 9 and be exactly 10 digits long)');
-    setShowAlert(true);
-    return;
-  }
-
-  if (cartItems.length === 0) {
-    setAlertMessage('Your cart is empty');
-    setShowAlert(true);
-    return;
-  }
-
-  setIsPlacingOrder(true);
-
-  try {
-    let orderData;
-
-    if (location.state?.buyNow && cartItems.length === 1) {
-      const buyNowItem = cartItems[0];
-      const finalQuantity = buyNowQuantities[buyNowItem.id] || buyNowItem.quantity;
-      
-      orderData = {
-        isBuyNow: true,
-        productId: buyNowItem.id,
-        variantId: buyNowItem.variantId || undefined, // Include only if variantId exists
-        quantity: finalQuantity,
-        shippingAddress: {
-          province: billingDetails.province,
-          city: billingDetails.city,
-          district: billingDetails.district,
-          streetAddress: billingDetails.streetAddress,
-          landmark: billingDetails.landmark || undefined,
-        },
-        paymentMethod: selectedPaymentMethod,
-        phoneNumber: billingDetails.phoneNumber,
-        fullName: billingDetails.fullName,
-      };
-
-      // Remove variantId from payload if it doesn't exist
-      if (!orderData.variantId) {
-        delete orderData.variantId;
-      }
-    } else {
-      const orderItems = cartItems.map(item => ({
-        productId: item.id,
-        quantity: item.quantity,
-        variantId: item.variantId || undefined,
-      }));
-
-      orderData = {
-        fullName: billingDetails.fullName,
-        shippingAddress: {
-          province: billingDetails.province,
-          city: billingDetails.city,
-          district: billingDetails.district,
-          streetAddress: billingDetails.streetAddress,
-          landmark: billingDetails.landmark || undefined,
-        },
-        paymentMethod: selectedPaymentMethod,
-        phoneNumber: billingDetails.phoneNumber,
-        items: orderItems,
-        promoCodeId: appliedPromoCode?.id || undefined,
-      };
+  const handlePlaceOrder = async () => {
+    if (!termsAgreed) {
+      setAlertMessage('Please agree to the terms and conditions');
+      setShowAlert(true);
+      return;
     }
 
-    console.log('Sending order data:', JSON.stringify(orderData, null, 2)); // Debug payload
+    if (
+      !billingDetails.fullName ||
+      !billingDetails.district ||
+      !billingDetails.city ||
+      !billingDetails.streetAddress ||
+      !billingDetails.phoneNumber
+    ) {
+      setAlertMessage('Please fill in all required fields including phone number');
+      setShowAlert(true);
+      return;
+    }
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (!validatePhoneNumber(billingDetails.phoneNumber)) {
+      setAlertMessage('Please enter a valid phone number (must start with 9 and be exactly 10 digits long)');
+      setShowAlert(true);
+      return;
+    }
 
-    const response = await fetch(`${API_BASE_URL}/api/order`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(orderData),
-      credentials: 'include',
-    });
+    if (cartItems.length === 0) {
+      setAlertMessage('Your cart is empty');
+      setShowAlert(true);
+      return;
+    }
 
-    const result = await response.json();
-    console.log('Server response:', result); // Debug response
+    setIsPlacingOrder(true);
 
-    if (result.success) {
-      if (selectedPaymentMethod === 'CASH_ON_DELIVERY') {
-        setAlertMessage('Order placed successfully!');
-        setShowAlert(true);
+    try {
+      let orderData;
+
+      if (location.state?.buyNow && cartItems.length === 1) {
+        const buyNowItem = cartItems[0];
+        const finalQuantity = buyNowQuantities[buyNowItem.id] || buyNowItem.quantity;
+
+        orderData = {
+          isBuyNow: true,
+          productId: buyNowItem.id,
+          variantId: buyNowItem.variantId || undefined, // Include only if variantId exists
+          quantity: finalQuantity,
+          shippingAddress: {
+            province: billingDetails.province,
+            city: billingDetails.city,
+            district: billingDetails.district,
+            streetAddress: billingDetails.streetAddress,
+            landmark: billingDetails.landmark || undefined,
+          },
+          paymentMethod: selectedPaymentMethod,
+          phoneNumber: billingDetails.phoneNumber,
+          fullName: billingDetails.fullName,
+        };
+
+        // Remove variantId from payload if it doesn't exist
+        if (!orderData.variantId) {
+          delete orderData.variantId;
+        }
+      } else {
+        const orderItems = cartItems.map(item => ({
+          productId: item.id,
+          quantity: item.quantity,
+          variantId: item.variantId || undefined,
+        }));
+
+        orderData = {
+          fullName: billingDetails.fullName,
+          shippingAddress: {
+            province: billingDetails.province,
+            city: billingDetails.city,
+            district: billingDetails.district,
+            streetAddress: billingDetails.streetAddress,
+            landmark: billingDetails.landmark || undefined,
+          },
+          paymentMethod: selectedPaymentMethod,
+          phoneNumber: billingDetails.phoneNumber,
+          items: orderItems,
+          promoCodeId: appliedPromoCode?.id || undefined,
+        };
       }
-      setTimeout(() => {
-        if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod !== 'ESEWA') {
-          navigate('/order-page', {
-            state: {
-              orderDetails: {
-                orderId: result.data?.id || null,
-                totalAmount: finalTotal,
-              },
-            },
-          });
-        } else {
+
+      console.log('Sending order data:', JSON.stringify(orderData, null, 2)); // Debug payload
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const response = await fetch(`${API_BASE_URL}/api/order`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(orderData),
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+      console.log('Server response:', result); // Debug response
+
+      if (result.success) {
+        if (selectedPaymentMethod === 'CASH_ON_DELIVERY') {
+          setAlertMessage('Order placed successfully!');
           navigate('/user-profile', {
             state: { activeTab: 'orders' },
           });
+          setShowAlert(true);
         }
-      }, 1500);
-    } else {
-      setAlertMessage(`Failed to place order: ${result.message || 'Unknown error'}`);
+        else if (selectedPaymentMethod === 'ESEWA') {
+          // Update form data with actual order values
+          setFormData(prev => ({
+            ...prev,
+            amount: finalTotal.toString(),
+            total_amount: finalTotal.toString(),
+            transaction_uuid: result.data?.id?.toString() || uuidv4(), // Use order ID or generate new UUID
+          }));
+
+          // Wait for form data to update, then submit
+          setTimeout(() => {
+            const form = document.getElementById('esewa-form') as HTMLFormElement;
+            if (form) {
+              form.submit();
+            }
+          }, 100);
+        }
+        setTimeout(() => {
+          if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod !== 'ESEWA') {
+            navigate('/order-page', {
+              state: {
+                orderDetails: {
+                  orderId: result.data?.id || null,
+                  totalAmount: finalTotal,
+                },
+              },
+            });
+          } else {
+            navigate('/user-profile', {
+              state: { activeTab: 'orders' },
+            });
+          }
+        }, 1500);
+      } else {
+        setAlertMessage(`Failed to place order: ${result.message || 'Unknown error'}`);
+        setShowAlert(true);
+      }
+    } catch (error) {
+      console.error('Error placing order:', error);
+      setAlertMessage('An error occurred while placing your order. Please try again.');
       setShowAlert(true);
+    } finally {
+      setIsPlacingOrder(false);
     }
-  } catch (error) {
-    console.error('Error placing order:', error);
-    setAlertMessage('An error occurred while placing your order. Please try again.');
-    setShowAlert(true);
-  } finally {
-    setIsPlacingOrder(false);
-  }
-};
+  };
 
   const normalizeDistrict = (district: string): string => {
     const kathmandu_valley = ['kathmandu', 'lalitpur', 'bhaktapur'];
@@ -520,7 +540,7 @@ const handlePlaceOrder = async () => {
         const quantity = getCurrentQuantity(item);
         return sum + Number(item.price) * quantity;
       }, 0);
-      
+
       const vendorInfo = getVendorInfo(items[0]);
       let shippingCost = 0;
       if (billingDetails.district) {
@@ -542,13 +562,13 @@ const handlePlaceOrder = async () => {
   };
 
   const vendorGroups = groupItemsByVendor();
-  
+
   // Update subtotal calculation to use current quantities
   const subtotal = cartItems.reduce((sum, item) => {
     const quantity = getCurrentQuantity(item);
     return sum + Number(item.price) * quantity;
   }, 0);
-  
+
   const totalShipping = vendorGroups.reduce((sum, group) => sum + group.shippingCost, 0);
   const total = subtotal + totalShipping;
   const discountPercentage = appliedPromoCode ? appliedPromoCode.discountPercentage : 0;
@@ -751,7 +771,7 @@ const handlePlaceOrder = async () => {
                 required
               />
             </div>
-              <div className="checkout-container__form-group">
+            <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Landmark *</label>
               <input
                 type="text"

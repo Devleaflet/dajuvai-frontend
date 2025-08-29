@@ -80,7 +80,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
             phoneNumber.trim().length >= 10 &&
             province.trim().length > 0 &&
             district.trim().length > 0 &&
-            acceptTerms          );
+            acceptTerms);
           console.log("Step 1 validation:", { businessName, phoneNumber, province, district, acceptTerms, isValid });
           return isValid;
         } else if (currentStep === 2) {
