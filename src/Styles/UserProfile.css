@@ -30,7 +30,7 @@
 }
 
 .profile-card--wide {
-  max-width: 1600px;
+max-width: min(80vw, 1600px);
 }
 
 /* Sidebar */
