@@ -27,6 +27,8 @@ interface ImageUploadResponse {
 }
 
 const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
+  // const navigate = useNavigate();
+
   // Form states
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -64,89 +66,77 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [isVerificationComplete, setIsVerificationComplete] = useState<boolean>(false);
   const [isStepValid, setIsStepValid] = useState<boolean>(false);
-  // New state for field-specific errors
-  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
-const [touched, setTouched] = useState<{ [key: string]: boolean }>({});
+
   const modalRef = useRef<HTMLDivElement | null>(null);
 
   // Validate current step
-useEffect(() => {
-  if (!showVerification && !isVerificationComplete) {
-    const validateCurrentStep = () => {
-      console.log(`Validating step ${currentStep}...`);
-      const errors: { [key: string]: string } = {};
-
-      if (currentStep === 1) {
-        if (touched.businessName && !businessName.trim()) errors.businessName = "Business name is required";
-        if (touched.businessName && businessName.length < 3) errors.businessName = "Business name must be at least 3 characters";
-        if (touched.phoneNumber && !phoneNumber.trim()) errors.phoneNumber = "Phone number is required";
-        if (touched.phoneNumber && phoneNumber && !/^\+?[\d\s-]{10}$/.test(phoneNumber)) errors.phoneNumber = "Please enter a valid phone number";
-        if (touched.province && !province.trim()) errors.province = "Province is required";
-        if (touched.district && !district.trim()) errors.district = "District is required";
-        if (touched.acceptTerms && !acceptTerms) errors.acceptTerms = "You must accept the terms and conditions";
-        setIsStepValid(Object.keys(errors).length === 0);
-      } else if (currentStep === 2) {
-        if (touched.businessRegNumber && !businessRegNumber.trim()) errors.businessRegNumber = "Business registration number is required";
-        if (touched.taxNumber && !taxNumber.trim()) errors.taxNumber = "Pan/Vat number is required";
-        if (touched.taxNumber && taxNumber && taxNumber.length !== 9) errors.taxNumber = "Pan/Vat number must be 9 characters";
-        if (touched.email && !email.trim()) errors.email = "Email is required";
-        if (touched.email && email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Please enter a valid email";
-        if (touched.password && !password.trim()) errors.password = "Password is required";
-        if (touched.password && password && password.length < 8) errors.password = "Password must be at least 8 characters";
-        if (touched.password && password && !/[a-z]/.test(password)) errors.password = "Password must contain at least one lowercase letter";
-        if (touched.password && password && !/[A-Z]/.test(password)) errors.password = "Password must contain at least one uppercase letter";
-        if (touched.password && password && !/[^a-zA-Z0-9]/.test(password)) errors.password = "Password must contain at least one special character";
-        if (touched.confirmPassword && !confirmPassword.trim()) errors.confirmPassword = "Please confirm your password";
-        if (touched.confirmPassword && password && confirmPassword && password !== confirmPassword) errors.confirmPassword = "Passwords do not match";
-        setIsStepValid(Object.keys(errors).length === 0);
-      } else if (currentStep === 3) {
-        if (touched.taxDocuments && taxDocuments.length === 0) errors.taxDocuments = "At least one Pan/Vat document is required";
-        setIsStepValid(Object.keys(errors).length === 0);
-      } else if (currentStep === 4) {
-        if (touched.accountName && !accountName.trim()) errors.accountName = "Account name is required";
-        if (touched.bankName && !bankName.trim()) errors.bankName = "Bank name is required";
-        if (touched.accountNumber && !accountNumber.trim()) errors.accountNumber = "Account number is required";
-        if (touched.bankBranch && !bankBranch.trim()) errors.bankBranch = "Bank branch is required";
-        if (touched.blankChequePhoto && !blankChequePhoto) errors.blankChequePhoto = "Blank cheque photo is required";
-        if (touched.blankChequePhoto && blankChequePhoto && ![
-          'image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/avif', 'image/heic', 'image/heif', 'image/x-canon-cr2'
-        ].includes(blankChequePhoto.type)) {
-          errors.blankChequePhoto = "Cheque photo must be JPEG, PNG, JPG, WebP, AVIF, HEIC, HEIF, or Canon CR2";
+  useEffect(() => {
+    if (!showVerification && !isVerificationComplete) {
+      const validateCurrentStep = () => {
+        console.log(`Validating step ${currentStep}...`);
+        if (currentStep === 1) {
+          const isValid = (
+            businessName.trim().length >= 3 &&
+            phoneNumber.trim().length >= 10 &&
+            province.trim().length > 0 &&
+            district.trim().length > 0 &&
+            acceptTerms);
+          console.log("Step 1 validation:", { businessName, phoneNumber, province, district, acceptTerms, isValid });
+          return isValid;
+        } else if (currentStep === 2) {
+          const isValid = (
+            businessRegNumber.trim().length > 0 &&
+            taxNumber.trim().length === 9 &&
+            email.trim().length > 0 &&
+            password.trim().length >= 8 &&
+            confirmPassword.trim().length >= 8 &&
+            password === confirmPassword
+          );
+          console.log("Step 2 validation:", { businessRegNumber, taxNumber, email, password, confirmPassword, isValid });
+          return isValid;
+        } else if (currentStep === 3) {
+          const isValid = taxDocuments.length > 0;
+          console.log("Step 3 validation:", { taxDocumentsLength: taxDocuments.length, isValid });
+          return isValid;
+        } else if (currentStep === 4) {
+          const isValid = (
+            accountName.trim().length > 0 &&
+            bankName.trim().length > 0 &&
+            accountNumber.trim().length > 0 &&
+            bankBranch.trim().length > 0 &&
+            blankChequePhoto !== null
+          );
+          console.log("Step 4 validation:", { accountName, bankName, accountNumber, bankBranch, blankChequePhoto, isValid });
+          return isValid;
         }
-        if (touched.acceptListingFee && !acceptListingFee) errors.acceptListingFee = "You must accept the listing fee";
-        setIsStepValid(Object.keys(errors).length === 0);
-      }
+        return true;
+      };
+      setIsStepValid(validateCurrentStep());
+    }
+  }, [
+    businessName,
+    phoneNumber,
+    businessRegNumber,
+    province,
+    district,
+    acceptTerms,
+    acceptListingFee,
+    email,
+    password,
+    confirmPassword,
+    taxNumber,
+    taxDocuments,
+    citizenshipDocuments,
+    accountName,
+    bankName,
+    accountNumber,
+    bankBranch,
+    blankChequePhoto,
+    currentStep,
+    showVerification,
+    isVerificationComplete,
+  ]);
 
-      setFieldErrors(errors);
-      console.log("Step validation:", { errors, isValid: Object.keys(errors).length === 0 });
-      return Object.keys(errors).length === 0;
-    };
-    validateCurrentStep();
-  }
-}, [
-  businessName,
-  phoneNumber,
-  businessRegNumber,
-  province,
-  district,
-  acceptTerms,
-  acceptListingFee,
-  email,
-  password,
-  confirmPassword,
-  taxNumber,
-  taxDocuments,
-  citizenshipDocuments,
-  accountName,
-  bankName,
-  accountNumber,
-  bankBranch,
-  blankChequePhoto,
-  currentStep,
-  showVerification,
-  isVerificationComplete,
-  touched,
-]);
   // Fetch provinces
   useEffect(() => {
     if (isOpen && !showVerification && !isVerificationComplete) {
@@ -277,57 +267,54 @@ useEffect(() => {
     }
   }
 
-// Modified validateSignup function to use fieldErrors
   const validateSignup = (): boolean => {
-    const errors: { [key: string]: string } = {};
+    const errors: string[] = [];
     console.log("Running full form validation...");
 
-    if (!businessName.trim()) errors.businessName = "Business name is required";
-    if (businessName.length < 3) errors.businessName = "Business name must be at least 3 characters";
-    if (!businessRegNumber.trim()) errors.businessRegNumber = "Business registration number is required";
-    if (!province.trim()) errors.province = "Province is required";
-    if (!district.trim()) errors.district = "District is required";
-    if (!email.trim()) errors.email = "Email is required";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Please enter a valid email";
-    if (!phoneNumber.trim()) errors.phoneNumber = "Phone number is required";
-    if (!/^\+?[\d\s-]{10,}$/.test(phoneNumber)) errors.phoneNumber = "Please enter a valid phone number";
-    if (!taxNumber.trim()) errors.taxNumber = "Pan/Vat number is required";
-    if (taxNumber.length !== 9) errors.taxNumber = "Pan/Vat number must be 9 characters";
-    if (taxDocuments.length === 0) errors.taxDocuments = "At least one Pan/Vat document is required";
+    if (!businessName.trim()) errors.push("Business name is required");
+    if (businessName.length < 3) errors.push("Business name must be at least 3 characters");
+    if (!businessRegNumber.trim()) errors.push("Business registration number is required");
+    if (!province.trim()) errors.push("Province is required");
+    if (!district.trim()) errors.push("District is required");
+    if (!email.trim()) errors.push("Email is required");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push("Please enter a valid email");
+    if (!phoneNumber.trim()) errors.push("Phone number is required");
+    if (!/^\+?[\d\s-]{10,}$/.test(phoneNumber)) errors.push("Please enter a valid phone number");
+    if (!taxNumber.trim()) errors.push("Pan/Vat number is required");
+    if (taxNumber.length !== 9) errors.push("Pan/Vat number must be 9 characters");
+    if (taxDocuments.length === 0) errors.push("At least one Pan/Vat document is required");
     taxDocuments.forEach((doc, index) => {
       if (!/\.(jpg|jpeg|png|pdf)$/i.test(doc.name)) {
-        errors.taxDocuments = `Pan/Vat document ${index + 1} must be an image (JPG, JPEG, PNG) or PDF`;
+        errors.push(`Pan/Vat document ${index + 1} must be an image (JPG, JPEG, PNG) or PDF`);
       }
     });
     citizenshipDocuments.forEach((doc, index) => {
       if (!/\.(jpg|jpeg|png|pdf)$/i.test(doc.name)) {
-        errors.citizenshipDocuments = `Citizenship document ${index + 1} must be an image (JPG, JPEG, PNG) or PDF`;
+        errors.push(`Citizenship document ${index + 1} must be an image (JPG, JPEG, PNG) or PDF`);
       }
     });
-    if (!accountName.trim()) errors.accountName = "Account name is required";
-    if (!bankName.trim()) errors.bankName = "Bank name is required";
-    if (!accountNumber.trim()) errors.accountNumber = "Account number is required";
-    if (!bankBranch.trim()) errors.bankBranch = "Bank branch is required";
-    if (!blankChequePhoto) errors.blankChequePhoto = "Blank cheque photo is required";
+    if (!accountName.trim()) errors.push("Account name is required");
+    if (!bankName.trim()) errors.push("Bank name is required");
+    if (!accountNumber.trim()) errors.push("Account number is required");
+    if (!bankBranch.trim()) errors.push("Bank branch is required");
+    if (!blankChequePhoto) errors.push("Blank cheque photo is required");
     if (blankChequePhoto && !/\.(jpg|jpeg|png)$/i.test(blankChequePhoto.name)) {
-      errors.blankChequePhoto = "Blank cheque photo must be an image (JPG, JPEG, PNG)";
+      errors.push("Blank cheque photo must be an image (JPG, JPEG, PNG)");
     }
-    if (!password.trim()) errors.password = "Password is required";
-    if (password.length < 8) errors.password = "Password must be at least 8 characters";
-    if (!/[a-z]/.test(password)) errors.password = "Password must contain at least one lowercase letter";
-    if (!/[A-Z]/.test(password)) errors.password = "Password must contain at least one uppercase letter";
-    if (!/[^a-zA-Z0-9]/.test(password)) errors.password = "Password must contain at least one special character";
-    if (!confirmPassword.trim()) errors.confirmPassword = "Please confirm your password";
-    if (password !== confirmPassword) errors.confirmPassword = "Passwords do not match";
-    if (!acceptTerms) errors.acceptTerms = "You must accept the terms and conditions";
-    if (!acceptListingFee) errors.acceptListingFee = "You must accept the listing fee";
+    if (!password.trim()) errors.push("Password is required");
+    if (password.length < 8) errors.push("Password must be at least 8 characters");
+    if (!/[a-z]/.test(password)) errors.push("Password must contain at least one lowercase letter");
+    if (!/[A-Z]/.test(password)) errors.push("Password must contain at least one uppercase letter");
+    if (!/[^a-zA-Z0-9]/.test(password)) errors.push("Password must contain at least one special character");
+    if (!confirmPassword.trim()) errors.push("Please confirm your password");
+    if (password !== confirmPassword) errors.push("Passwords do not match");
+    if (!acceptTerms) errors.push("You must accept the terms and conditions");
+    if (!acceptListingFee) errors.push("You must accept the listing fee");
 
-    setFieldErrors(errors);
-
-    if (Object.keys(errors).length > 0) {
+    if (errors.length > 0) {
       console.log("Validation errors:", errors);
-      Object.values(errors).forEach((err) => toast.error(err));
-      setError(Object.values(errors)[0]);
+      errors.forEach((err) => toast.error(err));
+      setError(errors[0]);
       return false;
     }
 
@@ -453,103 +440,98 @@ useEffect(() => {
     }
   };
 
-const handleSignup = async (userData: {
-  businessName: string;
-  email: string;
-  password: string;
-  phoneNumber: string;
-  businessRegNumber: string;
-  province: string;
-  district: string;
-  taxNumber: string;
-  taxDocuments: string[];
-  citizenshipDocuments: string[];
-  chequePhoto: string;
-  bankDetails: {
-    accountName: string;
-    bankName: string;
-    accountNumber: string;
-    bankBranch: string;
-    bankCode?: string;
-    bankAddress?: string;
-  };
-}) => {
-  try {
-    setIsLoading(true);
-    setError("");
-    console.log("Sending userData:", JSON.stringify(userData, null, 2));
-    const response = await axios.post<SignupResponse>(
-      `${API_BASE_URL}/api/vendors/request/register`,
-      userData,
-      { headers: { "Content-Type": "application/json" } }
-    );
-    console.log("Signup response:", response.data);
-    setSuccess(response.data.message);
-    toast.success("Registration successful! Please check your email for verification code.");
+  const handleSignup = async (userData: {
+    businessName: string;
+    email: string;
+    password: string;
+    phoneNumber: string;
+    businessRegNumber: string;
+    province: string;
+    district: string;
+    taxNumber: string;
+    taxDocuments: string[];
+    citizenshipDocuments: string[];
+    chequePhoto: string;
+    bankDetails: {
+      accountName: string;
+      bankName: string;
+      accountNumber: string;
+      bankBranch: string;
+      bankCode?: string;
+      bankAddress?: string;
+    };
+  }) => {
+    try {
+      setIsLoading(true);
+      setError("");
+      console.log("Submitting signup data:", userData);
+      const response = await axios.post<SignupResponse>(
+        `${API_BASE_URL}/api/vendors/request/register`,
+        userData,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      console.log("Signup response:", response.data);
+      setSuccess(response.data.message);
+      toast.success("Registration successful! Please check your email for verification code.");
 
-    setPendingVerificationEmail(userData.email);
-    setShowVerification(true);
-    setCountdown(120);
+      setPendingVerificationEmail(userData.email);
+      setShowVerification(true);
+      setCountdown(120);
 
-    // Reset form after successful signup
-    console.log("Resetting form after successful signup");
-    setPassword("");
-    setConfirmPassword("");
-    setBusinessName("");
-    setPhoneNumber("");
-    setBusinessRegNumber("");
-    setProvince("");
-    setDistrict("");
-    setTaxNumber("");
-    setTaxDocuments([]);
-    setCitizenshipDocuments([]);
-    setAccountName("");
-    setBankName("");
-    setAccountNumber("");
-    setBankBranch("");
-    setBankCode("");
-    setBankAddress("");
-    setBlankChequePhoto(null);
-    setAcceptTerms(false);
-    setAcceptListingFee(false);
-    setCurrentStep(1);
-    setTouched({});
-  } catch (err) {
-    console.error("Signup error:", err);
-    if (axios.isAxiosError(err)) {
-      if (err.response?.status === 400 && err.response?.data?.errors) {
-        const errorMessages = Object.entries(err.response.data.errors)
-          .map(([field, message]) => `${field}: ${message}`)
-          .join("\n");
-        setError(`Validation errors:\n${errorMessages}`);
-        toast.error("Please check your form data");
-        console.log("Validation errors from server:", errorMessages);
-      } else if (err.response?.status === 400 && err.response?.data?.message) {
-        setError(err.response.data.message);
-        toast.error(err.response.data.message);
-        console.log("Server error message:", err.response.data.message);
-      } else if (err.response?.status === 409) {
-        setError(err.response.data.message);
-        toast.error(err.response.data.message);
-        console.log("Conflict error:", err.response.data.message);
-      } else if (err.response?.status === 500) {
-        setError("Server error occurred. Please try again later.");
-        toast.error("Server error occurred. Please try again later.");
-        console.log("Server 500 error:", err.response?.data);
+      // Reset form after successful signup
+      console.log("Resetting form after successful signup");
+      setPassword("");
+      setConfirmPassword("");
+      setBusinessName("");
+      setPhoneNumber("");
+      setBusinessRegNumber("");
+      setProvince("");
+      setDistrict("");
+      setTaxNumber("");
+      setTaxDocuments([]);
+      setCitizenshipDocuments([]);
+      setAccountName("");
+      setBankName("");
+      setAccountNumber("");
+      setBankBranch("");
+      setBankCode("");
+      setBankAddress("");
+      setBlankChequePhoto(null);
+      setAcceptTerms(false);
+      setAcceptListingFee(false);
+      setCurrentStep(1);
+    } catch (err) {
+      console.error("Signup error:", err);
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 400 && err.response?.data?.errors) {
+          const errorMessages = Object.entries(err.response.data.errors)
+            .map(([field, message]) => `${field}: ${message}`)
+            .join("\n");
+          setError(`Validation errors:\n${errorMessages}`);
+          toast.error("Please check your form data");
+          console.log("Validation errors from server:", errorMessages);
+        } else if (err.response?.status === 400 && err.response?.data?.message) {
+          setError(err.response.data.message);
+          toast.error(err.response.data.message);
+          console.log("Server error message:", err.response.data.message);
+        } else if (err.response?.status === 409) {
+          setError(err.response.data.message);
+          toast.error(err.response.data.message);
+          console.log("Conflict error:", err.response.data.message);
+        } else {
+          setError(`Signup failed (${err.response?.status || "unknown error"}). Please try again.`);
+          toast.error("Signup failed. Please try again.");
+          console.log("Unknown signup error:", err.response?.status);
+        }
       } else {
-        setError(`Signup failed (${err.response?.status || "unknown error"}). Please try again.`);
-        toast.error("Signup failed. Please try again.");
-        console.log("Unknown signup error:", err.response?.status, err.response?.data);
+        setError("An unexpected error occurred");
+        toast.error("An unexpected error occurred");
+        console.log("Unexpected error:", err);
       }
-    } else {
-      setError("An unexpected error occurred");
-      toast.error("An unexpected error occurred");
-      console.log("Unexpected error:", err);
+    } finally {
+      setIsLoading(false);
     }
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleVerifyEmail = async () => {
     try {
@@ -724,7 +706,7 @@ const handleSignup = async (userData: {
     console.log("Toggled confirm password visibility:", !showConfirmPassword);
   };
 
- if (!isOpen) return null;
+  if (!isOpen) return null;
 
   return (
     <div className={`auth-modal${isOpen ? " auth-modal--open" : ""}`}>
@@ -780,7 +762,7 @@ const handleSignup = async (userData: {
                 <div className="auth-modal__form-group">
                   <input
                     type="text"
-                    className={`auth-modal__input auth-modal__input--verification ${fieldErrors.verificationToken ? 'error' : ''}`}
+                    className="auth-modal__input auth-modal__input--verification"
                     placeholder="______"
                     value={verificationToken}
                     onChange={(e) => setVerificationToken(e.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -791,12 +773,6 @@ const handleSignup = async (userData: {
                     pattern="\d{6}"
                     style={{ width: '200px', textAlign: 'center' }}
                   />
-                  {fieldErrors.verificationToken && (
-                    <div className="error-message">
-                      <span className="error-icon">!</span>
-                      {fieldErrors.verificationToken}
-                    </div>
-                  )}
                 </div>
                 <button
                   type="submit"
@@ -824,626 +800,472 @@ const handleSignup = async (userData: {
               </>
             ) : (
               <>
-           {currentStep === 1 && (
-  <>
-    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
-      <div>
-        <label className="auth-modal__label">Business Name</label>
-        <input
-          type="text"
-          className={`auth-modal__input ${fieldErrors.businessName ? 'error' : ''}`}
-          placeholder="Enter business name"
-          value={businessName}
-          onChange={(e) => {
-            setBusinessName(e.target.value);
-            setTouched((prev) => ({ ...prev, businessName: true }));
-          }}
-          onBlur={() => setTouched((prev) => ({ ...prev, businessName: true }))}
-          required
-          disabled={isLoading}
-          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-        />
-        {fieldErrors.businessName && touched.businessName && (
-          <div className="error-message">
-            <span className="error-icon">!</span>
-            {fieldErrors.businessName}
-          </div>
-        )}
-      </div>
-      <div>
-        <label className="auth-modal__label">Phone Number</label>
-        <input
-          type="text"
-          className={`auth-modal__input ${fieldErrors.phoneNumber ? 'error' : ''}`}
-          placeholder="Enter phone number"
-          value={phoneNumber}
-          onChange={(e) => {
-            setPhoneNumber(e.target.value);
-            setTouched((prev) => ({ ...prev, phoneNumber: true }));
-          }}
-          onBlur={() => setTouched((prev) => ({ ...prev, phoneNumber: true }))}
-          required
-          disabled={isLoading}
-          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-        />
-        {fieldErrors.phoneNumber && touched.phoneNumber && (
-          <div className="error-message">
-            <span className="error-icon">!</span>
-            {fieldErrors.phoneNumber}
-          </div>
-        )}
-      </div>
-    </div>
-    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
-      <div>
-        <label className="auth-modal__label">Province</label>
-        <select
-          className={`auth-modal__input ${fieldErrors.province ? 'error' : ''}`}
-          value={province}
-          onChange={(e) => {
-            setProvince(e.target.value);
-            setTouched((prev) => ({ ...prev, province: true }));
-            console.log("Province selected:", e.target.value);
-            fetchDistricts(e.target.value);
-          }}
-          onBlur={() => setTouched((prev) => ({ ...prev, province: true }))}
-          required
-          disabled={isLoading || provinceData.length === 0}
-          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-        >
-          <option value="">Select Province</option>
-          {provinceData.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
-        {fieldErrors.province && touched.province && (
-          <div className="error-message">
-            <span className="error-icon">!</span>
-            {fieldErrors.province}
-          </div>
-        )}
-      </div>
-      <div>
-        <label className="auth-modal__label">District</label>
-        <select
-          className={`auth-modal__input ${fieldErrors.district ? 'error' : ''}`}
-          value={district}
-          onChange={(e) => {
-            setDistrict(e.target.value);
-            setTouched((prev) => ({ ...prev, district: true }));
-            console.log("District selected:", e.target.value);
-          }}
-          onBlur={() => setTouched((prev) => ({ ...prev, district: true }))}
-          required
-          disabled={isLoading || districtData.length === 0}
-          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-        >
-          <option value="">Select District</option>
-          {districtData.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </select>
-        {fieldErrors.district && touched.district && (
-          <div className="error-message">
-            <span className="error-icon">!</span>
-            {fieldErrors.district}
-          </div>
-        )}
-      </div>
-    </div>
-    <div className="auth-modal__form-group" style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
-      <label className="auth-modal__checkbox" style={{ background: "transparent" }}>
-        <input
-          type="checkbox"
-          checked={acceptTerms}
-          onChange={(e) => {
-            setAcceptTerms(e.target.checked);
-            setTouched((prev) => ({ ...prev, acceptTerms: true }));
-            console.log("Accept terms toggled:", e.target.checked);
-          }}
-          disabled={isLoading}
-          style={{ background: "transparent", border: "1px solid #ddd" }}
-        />
-        I accept the <Link to="/terms" target="_blank">terms and conditions</Link>
-      </label>
-      {fieldErrors.acceptTerms && touched.acceptTerms && (
-        <div className="error-message">
-          <span className="error-icon">!</span>
-          {fieldErrors.acceptTerms}
-        </div>
-      )}
-    </div>
-  </>
-)}
+                {currentStep === 1 && (
+                  <>
+                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
+                      <div>
+                        <label className="auth-modal__label">Business Name</label>
+                        <input
+                          type="text"
+                          className="auth-modal__input"
+                          placeholder="Enter business name"
+                          value={businessName}
+                          onChange={(e) => setBusinessName(e.target.value)}
+                          required
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                      </div>
+                      <div>
+                        <label className="auth-modal__label">Phone Number</label>
+                        <input
+                          type="text"
+                          className="auth-modal__input"
+                          placeholder="Enter phone number"
+                          value={phoneNumber}
+                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          required
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                      </div>
+                    </div>
+                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
+                      <div>
+                        <label className="auth-modal__label">Province</label>
+                        <select
+                          className="auth-modal__input"
+                          value={province}
+                          onChange={(e) => {
+                            setProvince(e.target.value);
+                            console.log("Province selected:", e.target.value);
+                            fetchDistricts(e.target.value);
+                          }}
+                          required
+                          disabled={isLoading || provinceData.length === 0}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        >
+                          <option value="">Select Province</option>
+                          {provinceData.map((p) => (
+                            <option key={p} value={p}>
+                              {p}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="auth-modal__label">District</label>
+                        <select
+                          className="auth-modal__input"
+                          value={district}
+                          onChange={(e) => {
+                            setDistrict(e.target.value);
+                            console.log("District selected:", e.target.value);
+                          }}
+                          required
+                          disabled={isLoading || districtData.length === 0}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        >
+                          <option value="">Select District</option>
+                          {districtData.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="auth-modal__form-group" style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
+                      <label className="auth-modal__checkbox" style={{ background: "transparent" }}>
+                        <input
+                          type="checkbox"
+                          checked={acceptTerms}
+                          onChange={(e) => {
+                            setAcceptTerms(e.target.checked);
+                            console.log("Accept terms toggled:", e.target.checked);
+                          }}
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd" }}
+                        />
+                        I accept the <Link to="/vendor/terms" target="_blank">terms and conditions</Link>
+                      </label>
 
-             {currentStep === 2 && (
-  <>
-    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
-      <div>
-        <label className="auth-modal__label">Business Registration Number</label>
-        <input
-          type="text"
-          className={`auth-modal__input ${fieldErrors.businessRegNumber ? 'error' : ''}`}
-          placeholder="Enter business registration number"
-          value={businessRegNumber}
-          onChange={(e) => {
-            setBusinessRegNumber(e.target.value);
-            setTouched((prev) => ({ ...prev, businessRegNumber: true }));
-          }}
-          onBlur={() => setTouched((prev) => ({ ...prev, businessRegNumber: true }))}
-          required
-          disabled={isLoading}
-          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-        />
-        {fieldErrors.businessRegNumber && touched.businessRegNumber && (
-          <div className="error-message">
-            <span className="error-icon">!</span>
-            {fieldErrors.businessRegNumber}
-          </div>
-        )}
-      </div>
-      <div>
-        <label className="auth-modal__label">
-          Vat/Pan Number{" "}
-          <span style={{ fontSize: "9px" }}>(Pan/Vat no must be 9)</span>
-        </label>
-        <input
-          type="text"
-          className={`auth-modal__input ${fieldErrors.taxNumber ? 'error' : ''}`}
-          placeholder="Enter pan/vat number"
-          value={taxNumber}
-          onChange={(e) => {
-            setTaxNumber(e.target.value);
-            setTouched((prev) => ({ ...prev, taxNumber: true }));
-          }}
-          onBlur={() => setTouched((prev) => ({ ...prev, taxNumber: true }))}
-          required
-          disabled={isLoading}
-          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-        />
-        {fieldErrors.taxNumber && touched.taxNumber && (
-          <div className="error-message">
-            <span className="error-icon">!</span>
-            {fieldErrors.taxNumber}
-          </div>
-        )}
-      </div>
-    </div>
-    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
-      <div>
-        <label className="auth-modal__label">Email</label>
-        <input
-          type="email"
-          className={`auth-modal__input ${fieldErrors.email ? 'error' : ''}`}
-          placeholder="Enter email"
-          value={email}
-          onChange={(e) => {
-            setEmail(e.target.value);
-            setTouched((prev) => ({ ...prev, email: true }));
-          }}
-          onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
-          required
-          disabled={isLoading}
-          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-        />
-        {fieldErrors.email && touched.email && (
-          <div className="error-message">
-            <span className="error-icon">!</span>
-            {fieldErrors.email}
-          </div>
-        )}
-      </div>
-      <div style={{ position: "relative" }}>
-        <label className="auth-modal__label">Password</label>
-        <input
-          type={showPassword ? "text" : "password"}
-          className={`auth-modal__input ${fieldErrors.password ? 'error' : ''}`}
-          placeholder="Enter password"
-          value={password}
-          onChange={(e) => {
-            setPassword(e.target.value);
-            setTouched((prev) => ({ ...prev, password: true }));
-          }}
-          onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
-          required
-          disabled={isLoading}
-          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-        />
-        <button
-          type="button"
-          onClick={togglePasswordVisibility}
-          className="auth-modal__password-toggle"
-          aria-label={showPassword ? "Hide password" : "Show password"}
-        >
-          {showPassword ? (
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#888"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <ellipse cx="12" cy="12" rx="10" ry="7" />
-              <circle cx="12" cy="12" r="3.5" />
-            </svg>
-          ) : (
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#888"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M1 1l22 22" />
-              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" />
-              <path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" />
-            </svg>
-          )}
-        </button>
-        {fieldErrors.password && touched.password && (
-          <div className="error-message">
-            <span className="error-icon">!</span>
-            {fieldErrors.password}
-          </div>
-        )}
-      </div>
-    </div>
-    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px", width: "100%" }}>
-      <div style={{ position: "relative" }}>
-        <label className="auth-modal__label">Confirm Password</label>
-        <input
-          type={showConfirmPassword ? "text" : "password"}
-          className={`auth-modal__input ${fieldErrors.confirmPassword ? 'error' : ''}`}
-          placeholder="Confirm password"
-          value={confirmPassword}
-          onChange={(e) => {
-            setConfirmPassword(e.target.value);
-            setTouched((prev) => ({ ...prev, confirmPassword: true }));
-          }}
-          onBlur={() => setTouched((prev) => ({ ...prev, confirmPassword: true }))}
-          required
-          disabled={isLoading}
-          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-        />
-        <button
-          type="button"
-          onClick={toggleConfirmPasswordVisibility}
-          className="auth-modal__password-toggle"
-          aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-        >
-          {showConfirmPassword ? (
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#888"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <ellipse cx="12" cy="12" rx="10" ry="7" />
-              <circle cx="12" cy="12" r="3.5" />
-            </svg>
-          ) : (
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#888"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M1 1l22 22" />
-              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" />
-              <path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" />
-            </svg>
-          )}
-        </button>
-        {fieldErrors.confirmPassword && touched.confirmPassword && (
-          <div className="error-message">
-            <span className="error-icon">!</span>
-            {fieldErrors.confirmPassword}
-          </div>
-        )}
-      </div>
-    </div>
-  </>
-)}
+                    </div>
+                  </>
+                )}
 
-           {currentStep === 3 && (
-  <>
-  <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px", width: "100%" }}>
-  <div>
-    <label className="auth-modal__label">
-      Please attach your business and PAN/VAT document(s) (Image or PDF)
-    </label>
-    <div className={`auth-modal__file-upload ${fieldErrors.taxDocuments ? 'error' : ''}`}>
-      <label htmlFor="taxDocument" className="auth-modal__file-label">
-        Choose File(s)
-      </label>
-      <input
-        id="taxDocument"
-        type="file"
-        className="auth-modal__file-input"
-        accept="image/jpeg,image/png,image/jpg,image/webp,image/avif,image/heic,image/heif,image/x-canon-cr2,application/pdf"
-        onChange={(e) => {
-          handleFileChange(e, "tax");
-          setTouched((prev) => ({ ...prev, taxDocuments: true }));
-        }}
-        onClick={() => setTouched((prev) => ({ ...prev, taxDocuments: true }))}
-        multiple
-        disabled={isLoading}
-      />
-    </div>
-    {fieldErrors.taxDocuments && touched.taxDocuments && (
-      <div className="error-message">
-        <span className="error-icon">!</span>
-        {fieldErrors.taxDocuments}
-      </div>
-    )}
-    {taxDocuments.length > 0 && (
-      <div className="auth-modal__file-list" style={{ marginTop: "15px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
-        {taxDocuments.map((doc, index) => renderFilePreview(doc, index, "tax"))}
-      </div>
-    )}
-  </div>
-</div>
-<div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px", width: "100%" }}>
-  <div>
-    <label className="auth-modal__label">
-      Ownership Citizenship Document(s) (Optional, Image or PDF)
-    </label>
-    <div className={`auth-modal__file-upload ${fieldErrors.citizenshipDocuments ? 'error' : ''}`}>
-      <label htmlFor="citizenshipDocument" className="auth-modal__file-label">
-        Choose File(s)
-      </label>
-      <input
-        id="citizenshipDocument"
-        type="file"
-        className="auth-modal__file-input"
-        accept="image/jpeg,image/png,image/jpg,image/webp,image/avif,image/heic,image/heif,image/x-canon-cr2,application/pdf"
-        onChange={(e) => {
-          handleFileChange(e, "citizenship");
-          setTouched((prev) => ({ ...prev, citizenshipDocuments: true }));
-        }}
-        onClick={() => setTouched((prev) => ({ ...prev, citizenshipDocuments: true }))}
-        multiple
-        disabled={isLoading}
-      />
-    </div>
-    {fieldErrors.citizenshipDocuments && touched.citizenshipDocuments && (
-      <div className="error-message">
-        <span className="error-icon">!</span>
-        {fieldErrors.citizenshipDocuments}
-      </div>
-    )}
-    {citizenshipDocuments.length > 0 && (
-      <div className="auth-modal__file-list" style={{ marginTop: "15px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
-        {citizenshipDocuments.map((doc, index) => renderFilePreview(doc, index, "citizenship"))}
-      </div>
-    )}
-  </div>
-</div>
-  </>
-)}
+                {currentStep === 2 && (
+                  <>
+                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
+                      <div>
+                        <label className="auth-modal__label">Business Registration Number</label>
+                        <input
+                          type="text"
+                          className="auth-modal__input"
+                          placeholder="Enter business registration number"
+                          value={businessRegNumber}
+                          onChange={(e) => setBusinessRegNumber(e.target.value)}
+                          required
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                      </div>
+                      <div>
+                        <label className="auth-modal__label">
+                          Vat/Pan Number{" "}
+                          <span style={{ fontSize: "9px" }}>(Pan/Vat no must be 9)</span>
+                        </label>
+                        <input
+                          type="text"
+                          className="auth-modal__input"
+                          placeholder="Enter pan/vat number"
+                          value={taxNumber}
+                          onChange={(e) => setTaxNumber(e.target.value)}
+                          required
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                      </div>
+                    </div>
+                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
+                      <div>
+                        <label className="auth-modal__label">Email</label>
+                        <input
+                          type="email"
+                          className="auth-modal__input"
+                          placeholder="Enter email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                      </div>
+                      <div style={{ position: "relative" }}>
+                        <label className="auth-modal__label">Password</label>
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          className="auth-modal__input"
+                          placeholder="Enter password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                        <button
+                          type="button"
+                          onClick={togglePasswordVisibility}
+                          style={{
+                            position: "absolute",
+                            right: "10px",
+                            top: "70%",
+                            marginRight: "15px",
+                            transform: "translateY(-70%)",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "0",
+                            fontSize: "16px",
+                          }}
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                          {showPassword ? (
+                            <svg
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="#888"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <ellipse cx="12" cy="12" rx="10" ry="7" />
+                              <circle cx="12" cy="12" r="3.5" />
+                            </svg>
+                          ) : (
+                            <svg
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="#888"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M1 1l22 22" />
+                              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" />
+                              <path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px", width: "100%" }}>
+                      <div style={{ position: "relative" }}>
+                        <label className="auth-modal__label">Confirm Password</label>
+                        <input
+                          type={showConfirmPassword ? "text" : "password"}
+                          className="auth-modal__input"
+                          placeholder="Confirm password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                        <button
+                          type="button"
+                          onClick={toggleConfirmPasswordVisibility}
+                          style={{
+                            position: "absolute",
+                            right: "10px",
+                            top: "70%",
+                            marginRight: "350px",
+                            transform: "translateY(-70%)",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "0",
+                            fontSize: "16px",
+                          }}
+                          aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                        >
+                          {showConfirmPassword ? (
+                            <svg
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="#888"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <ellipse cx="12" cy="12" rx="10" ry="7" />
+                              <circle cx="12" cy="12" r="3.5" />
+                            </svg>
+                          ) : (
+                            <svg
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="#888"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M1 1l22 22" />
+                              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" />
+                              <path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {currentStep === 3 && (
+                  <>
+                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px", width: "100%" }}>
+                      <div>
+                        <label className="auth-modal__label">
+                          Please attach your business and PAN/VAT document(s) (Image or PDF)
+                        </label>
+                        <div className="auth-modal__file-upload">
+                          <label htmlFor="taxDocument" className="auth-modal__file-label">
+                            Choose File(s)
+                          </label>
+                          <input
+                            id="taxDocument"
+                            type="file"
+                            className="auth-modal__file-input"
+                            accept="image/*,application/pdf"
+                            onChange={(e) => handleFileChange(e, "tax")}
+                            multiple
+                            disabled={isLoading}
+                          />
+                        </div>
+                        {taxDocuments.length > 0 && (
+                          <div className="auth-modal__file-list" style={{ marginTop: "15px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                            {taxDocuments.map((doc, index) => renderFilePreview(doc, index, "tax"))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px", width: "100%" }}>
+                      <div>
+                        <label className="auth-modal__label">
+                          Ownership Citizenship Document(s) (Optional, Image or PDF)
+                        </label>
+                        <div className="auth-modal__file-upload">
+                          <label htmlFor="citizenshipDocument" className="auth-modal__file-label">
+                            Choose File(s)
+                          </label>
+                          <input
+                            id="citizenshipDocument"
+                            type="file"
+                            className="auth-modal__file-input"
+                            accept="image/*,application/pdf"
+                            onChange={(e) => handleFileChange(e, "citizenship")}
+                            multiple
+                            disabled={isLoading}
+                          />
+                        </div>
+                        {citizenshipDocuments.length > 0 && (
+                          <div className="auth-modal__file-list" style={{ marginTop: "15px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                            {citizenshipDocuments.map((doc, index) => renderFilePreview(doc, index, "citizenship"))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {currentStep === 4 && (
-  <>
-    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
-      <div>
-        <label className="auth-modal__label">Account Name</label>
-        <input
-          type="text"
-          className={`auth-modal__input ${fieldErrors.accountName ? 'error' : ''}`}
-          placeholder="Enter account name"
-          value={accountName}
-          onChange={(e) => {
-            setAccountName(e.target.value);
-            setTouched((prev) => ({ ...prev, accountName: true }));
-          }}
-          onBlur={() => setTouched((prev) => ({ ...prev, accountName: true }))}
-          required
-          disabled={isLoading}
-          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-        />
-        {fieldErrors.accountName && touched.accountName && (
-          <div className="error-message">
-            <span className="error-icon">!</span>
-            {fieldErrors.accountName}
-          </div>
-        )}
-      </div>
-      <div>
-        <label className="auth-modal__label">Bank Name</label>
-        <input
-          type="text"
-          className={`auth-modal__input ${fieldErrors.bankName ? 'error' : ''}`}
-          placeholder="Enter bank name"
-          value={bankName}
-          onChange={(e) => {
-            setBankName(e.target.value);
-            setTouched((prev) => ({ ...prev, bankName: true }));
-          }}
-          onBlur={() => setTouched((prev) => ({ ...prev, bankName: true }))}
-          required
-          disabled={isLoading}
-          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-        />
-        {fieldErrors.bankName && touched.bankName && (
-          <div className="error-message">
-            <span className="error-icon">!</span>
-            {fieldErrors.bankName}
-          </div>
-        )}
-      </div>
-    </div>
-    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
-      <div>
-        <label className="auth-modal__label">Account Number</label>
-        <input
-          type="text"
-          className={`auth-modal__input ${fieldErrors.accountNumber ? 'error' : ''}`}
-          placeholder="Enter account number"
-          value={accountNumber}
-          onChange={(e) => {
-            setAccountNumber(e.target.value);
-            setTouched((prev) => ({ ...prev, accountNumber: true }));
-          }}
-          onBlur={() => setTouched((prev) => ({ ...prev, accountNumber: true }))}
-          required
-          disabled={isLoading}
-          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-        />
-        {fieldErrors.accountNumber && touched.accountNumber && (
-          <div className="error-message">
-            <span className="error-icon">!</span>
-            {fieldErrors.accountNumber}
-          </div>
-        )}
-      </div>
-      <div>
-        <label className="auth-modal__label">Bank Branch</label>
-        <input
-          type="text"
-          className={`auth-modal__input ${fieldErrors.bankBranch ? 'error' : ''}`}
-          placeholder="Enter bank branch"
-          value={bankBranch}
-          onChange={(e) => {
-            setBankBranch(e.target.value);
-            setTouched((prev) => ({ ...prev, bankBranch: true }));
-          }}
-          onBlur={() => setTouched((prev) => ({ ...prev, bankBranch: true }))}
-          required
-          disabled={isLoading}
-          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-        />
-        {fieldErrors.bankBranch && touched.bankBranch && (
-          <div className="error-message">
-            <span className="error-icon">!</span>
-            {fieldErrors.bankBranch}
-          </div>
-        )}
-      </div>
-    </div>
-    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
-      <div>
-        <label className="auth-modal__label">Bank Code (Optional)</label>
-        <input
-          type="text"
-          className="auth-modal__input"
-          placeholder="Enter bank code"
-          value={bankCode}
-          onChange={(e) => {
-            setBankCode(e.target.value);
-            setTouched((prev) => ({ ...prev, bankCode: true }));
-          }}
-          onBlur={() => setTouched((prev) => ({ ...prev, bankCode: true }))}
-          disabled={isLoading}
-          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-        />
-      </div>
-    </div>
-<div className="document-section">
-  <h3 className="cheque-header">
-    Cheque Photo
-    {blankChequePhoto && <span className="file-name">{blankChequePhoto.name}</span>}
-  </h3>
-  <div
-    className={`document-container cheque-container ${fieldErrors.blankChequePhoto ? 'error' : ''}`}
-    onClick={() => document.getElementById("chequePhoto")?.click()}
-    style={{ cursor: "pointer" }}
-  >
-    <div className="document-item file-upload">
-      <input
-        type="file"
-        id="chequePhoto"
-        accept="image/jpeg,image/png,image/jpg,image/webp,image/avif,image/heic,image/heif,image/x-canon-cr2"
-        onChange={(e) => {
-          const files = e.target.files;
-          if (files && files.length > 0) {
-            setBlankChequePhoto(files[0]);
-            setTouched((prev) => ({ ...prev, blankChequePhoto: true }));
-            console.log("Cheque photo selected:", files[0].name, files[0].type);
-          }
-        }}
-        onClick={() => setTouched((prev) => ({ ...prev, blankChequePhoto: true }))}
-  
-        aria-label="Upload Cheque Photo"
-        style={{ display: "none" }}
-      />
-    </div>
-  </div>
-  {fieldErrors.blankChequePhoto && touched.blankChequePhoto && (
-    <div className="error-message">
-      <span className="error-icon">!</span>
-      {fieldErrors.blankChequePhoto}
-    </div>
-  )}
-</div>
-    <label className="auth-modal__checkbox" style={{ background: "transparent" }}>
-      <input
-        type="checkbox"
-        checked={acceptListingFee}
-        onChange={(e) => {
-          setAcceptListingFee(e.target.checked);
-          setTouched((prev) => ({ ...prev, acceptListingFee: true }));
-          console.log("Accept listing fee toggled:", e.target.checked);
-        }}
-        disabled={isLoading}
-        style={{ background: "transparent", border: "1px solid #ddd" }}
-      />
-      I accept the listing fee (
-      <Link to="/commission-list" target="_blank" className="auth-modal__link">
-        View Commission List
-      </Link>
-      )
-    </label>
-    {fieldErrors.acceptListingFee && touched.acceptListingFee && (
-      <div className="error-message">
-        <span className="error-icon">!</span>
-        {fieldErrors.acceptListingFee}
-      </div>
-    )}
-  </>
-)}
-<div className="auth-modal__step-buttons">
-  {currentStep > 1 && (
-    <button
-      type="button"
-      className="auth-modal__back-button-improved"
-      onClick={handleBack}
-      disabled={isLoading}
-    >
-      Back
-    </button>
-  )}
+                  <>
+                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
+                      <div>
+                        <label className="auth-modal__label">Account Name</label>
+                        <input
+                          type="text"
+                          className="auth-modal__input"
+                          placeholder="Enter account name"
+                          value={accountName}
+                          onChange={(e) => setAccountName(e.target.value)}
+                          required
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                      </div>
+                      <div>
+                        <label className="auth-modal__label">Bank Name</label>
+                        <input
+                          type="text"
+                          className="auth-modal__input"
+                          placeholder="Enter bank name"
+                          value={bankName}
+                          onChange={(e) => setBankName(e.target.value)}
+                          required
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                      </div>
+                    </div>
+                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
+                      <div>
+                        <label className="auth-modal__label">Account Number</label>
+                        <input
+                          type="text"
+                          className="auth-modal__input"
+                          placeholder="Enter account number"
+                          value={accountNumber}
+                          onChange={(e) => setAccountNumber(e.target.value)}
+                          required
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                      </div>
+                      <div>
+                        <label className="auth-modal__label">Bank Branch</label>
+                        <input
+                          type="text"
+                          className="auth-modal__input"
+                          placeholder="Enter bank branch"
+                          value={bankBranch}
+                          onChange={(e) => setBankBranch(e.target.value)}
+                          required
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                      </div>
+                    </div>
+                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
+                      <div>
+                        <label className="auth-modal__label">Bank Code (Optional)</label>
+                        <input
+                          type="text"
+                          className="auth-modal__input"
+                          placeholder="Enter bank code"
+                          value={bankCode}
+                          onChange={(e) => setBankCode(e.target.value)}
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                      </div>
+                    </div>
+                    <div className="document-section">
+                      <h3 className="cheque-header">
+                        Cheque Photo
+                        {blankChequePhoto && <span className="file-name">{blankChequePhoto.name}</span>}
+                      </h3>
+                      <div
+                        className="document-container cheque-container"
+                        onClick={() => document.getElementById("chequePhoto")?.click()}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <div className="document-item file-upload">
+                          <input
+                            type="file"
+                            id="chequePhoto"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const files = e.target.files;
+                              if (files && files.length > 0) {
+                                setBlankChequePhoto(files[0]);
+                                console.log("Cheque photo selected:", files[0].name);
+                              }
+                            }}
+                            required
+                            aria-label="Upload Cheque Photo"
+                            style={{ display: "none" }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <label className="auth-modal__checkbox" style={{ background: "transparent" }}>
+                      <input
+                        type="checkbox"
+                        checked={acceptListingFee}
+                        onChange={(e) => {
+                          setAcceptListingFee(e.target.checked);
+                          console.log("Accept listing fee toggled:", e.target.checked);
+                        }}
+                        disabled={isLoading}
+                        style={{ background: "transparent", border: "1px solid #ddd" }}
+                      />
+                      I accept the listing fee (
+                      <Link to="/commission-list" target="_blank" className="auth-modal__link">
+                        View Commission List
+                      </Link>
+                      )
+                    </label>
+                  </>
+                )}
 
-<button
-  type="submit"
-  className={`auth-modal__submit ${isLoading ? 'loading' : ''}`}
-  disabled={isLoading || !isStepValid}
->
-  {isLoading ? (
-    currentStep === 4 ? "Submitting Registration..." : "Loading..."
-  ) : (
-    currentStep === 4 ? "Submit Registration" : "Next"
-  )}
-</button>
-
-</div>
+                <div className="auth-modal__step-buttons">
+                  {currentStep > 1 && (
+                    <button
+                      type="button"
+                      className="auth-modal__back-button-improved"
+                      onClick={handleBack}
+                      disabled={isLoading}
+                    >
+                      Back
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="auth-modal__submit"
+                    disabled={isLoading || !isStepValid}
+                  >
+                    {isLoading ? "Loading..." : currentStep === 4 ? "Submit Registration" : "Next"}
+                  </button>
+                </div>
               </>
             )}
           </form>

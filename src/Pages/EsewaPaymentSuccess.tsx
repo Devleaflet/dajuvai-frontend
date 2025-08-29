@@ -16,10 +16,6 @@ const PaymentSuccess: React.FC = () => {
     const resObject = JSON.parse(resData);
     console.log(resObject);
 
-    if(resObject.status=='COMPLETE'){
-        
-    }
-
     setData(resObject);
   }, [search]);
 

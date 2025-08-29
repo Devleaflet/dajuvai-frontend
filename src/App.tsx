@@ -51,6 +51,7 @@ import CommissionList from "./Pages/ComissionList";
 // import VendorLogin from "./Pages/VendorLogin"
 import SectionProducts from "./Components/SectionProducts";
 import WebsiteComingSoon from "./Pages/WebsiteComingSoon";
+import VendorTerms from "./Pages/VendorTerms";
 // import VendorLoginPage from "./Pages/VendorLoginPage";
 // import VendorSignupPage from "./Pages/VendorSignupPage";
 
@@ -109,6 +110,7 @@ function App() {
         <Route path="/contact" element={<About />} />
         <Route path="/faq" element={<EcommerceFAQ />} />
         <Route path="/terms" element={<TermsAndConditions />} />
+        <Route path="/vendor/terms" element={<VendorTerms />} />
         <Route path="/commission-list" element={<CommissionList />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/becomevendor" element={<BecomeVendor />} />
