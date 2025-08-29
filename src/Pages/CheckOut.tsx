@@ -175,8 +175,8 @@ const Checkout: React.FC = () => {
     product_service_charge: '0',
     product_delivery_charge: '0',
     product_code: 'EPAYTEST',
-    success_url: `https://dajuvai-frontend-ykrq.vercel.app/order/esewa-payment-success`,
-    failure_url: `https://dajuvai-frontend-ykrq.vercel.app/esewa-payment-failure`,
+    success_url: `https://dev.dajuvai.com/order/esewa-payment-success`,
+    failure_url: `https://dev.dajuvai.com/esewa-payment-failure`,
     signed_field_names: 'total_amount,transaction_uuid,product_code',
     signature: '',
     secret: '8gBm/:&EnhH.1/q',
@@ -406,6 +406,9 @@ const Checkout: React.FC = () => {
       if (result.success) {
         if (selectedPaymentMethod === 'CASH_ON_DELIVERY') {
           setAlertMessage('Order placed successfully!');
+          navigate('/user-profile', {
+            state: { activeTab: 'orders' },
+          });
           setShowAlert(true);
         }
         setTimeout(() => {
@@ -418,12 +421,11 @@ const Checkout: React.FC = () => {
                 },
               },
             });
-          } else {
-            navigate('/user-profile', {
-              state: { activeTab: 'orders' },
-            });
-            window.location.reload();
           }
+          // else {
+
+          //   window.location.reload();
+          // }
         }, 1500);
       } else {
         setAlertMessage(`Failed to place order: ${result.message || 'Unknown error'}`);
