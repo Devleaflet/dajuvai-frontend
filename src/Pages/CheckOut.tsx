@@ -438,10 +438,6 @@ const Checkout: React.FC = () => {
                 },
               },
             });
-          } else {
-            navigate('/user-profile', {
-              state: { activeTab: 'orders' },
-            });
           }
         }, 1500);
       } else {
