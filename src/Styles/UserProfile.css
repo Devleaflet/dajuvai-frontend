@@ -1,9 +1,9 @@
-
 /* General Profile Container */
 .profile {
   margin: 0 auto;
   padding: 32px 16px;
   background-color: #f9fafb;
+  max-width: 1800px;
 }
 
 /* Profile Title */
@@ -27,6 +27,10 @@
   overflow: hidden;
   display: flex;
   margin: 0 auto;
+}
+
+.profile-card--wide {
+max-width: min(80vw, 1600px);
 }
 
 /* Sidebar */
@@ -113,8 +117,8 @@
 
 /* Form Elements for Details Section */
 .profile-form {
-  max-width: 700px;
-  margin: 0 auto;
+width: 100%;
+margin: 0;
   overflow-y: auto; /* Make user details scrollable */
   max-height: 100%; /* Restrict to parent height */
 }
@@ -261,7 +265,7 @@
 
 /* Credentials Section */
 .credentials {
-  max-width: 600px;
+  max-width: 100%;
   margin: 0 auto;
   overflow-y: auto; /* Make credentials section scrollable */
   max-height: 100%; /* Restrict to parent height */
@@ -273,6 +277,22 @@
   align-items: center;
   margin-bottom: 24px;
 }
+
+.credentials__main-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 24px;
+  border-bottom: 3px solid #f97316;
+  padding-bottom: 12px;
+}
+
+.credentials__description {
+  margin: 0;
+  font-size: 16px;
+  color: #6b7280;
+}
+
 
 .credentials__title {
   font-size: 20px;
@@ -293,20 +313,301 @@
 .credentials__form-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1f2937;
+  color: 1f2937;
   margin-bottom: 16px;
 }
 
-.credentials__description {
+/* .credentials__description {
   font-size: 14px;
   color: #4b5563;
   margin-bottom: 24px;
-}
+} */
 
 .credentials__actions-row {
   display: flex;
   gap: 16px;
   margin-top: 24px;
+}
+
+/* Orders Section */
+.orders {
+  width: 100%;
+  margin: 0 auto;
+  overflow-y: auto; /* Make orders section scrollable */
+  max-height: 100%; /* Restrict to parent height */
+}
+
+.orders__title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 24px;
+  border-bottom: 3px solid #f97316;
+  padding-bottom: 12px;
+}
+
+.orders__header {
+  display: grid;
+  grid-template-columns: 80px 100px 100px 1fr 120px 120px;
+  gap: 16px;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+.orders__header-col {
+  display: flex;
+  align-items: center;
+}
+
+.orders__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.order-item {
+  display: grid;
+  grid-template-columns: 80px 100px 100px 1fr 120px 120px;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  transition: all 0.3s ease;
+  align-items: start;
+}
+
+.order-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.order-item__id {
+  font-weight: 600;
+  color: #f97316;
+  font-size: 14px;
+}
+
+.order-item__date {
+  font-size: 14px;
+  color: 6b7280;
+}
+
+.order-item__status {
+  display: flex;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-confirmed {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.status-pending {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.status-canceled {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-cancelled {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-delivered {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.order-item__products {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.order-products {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.order-product {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: #f9fafb;
+  border-radius: 6px;
+}
+
+.order-product__image {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.order-product__placeholder {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e5e7eb;
+  border-radius: 6px;
+  color: #9ca3af;
+  font-weight: 600;
+  border: 1px solid #d1d5db;
+}
+
+.order-product__name {
+  font-size: 14px;
+  color: #374151;
+  flex: 1;
+}
+
+.order-product__quantity {
+  font-size: 13px;
+  color: #6b7280;
+  background: #ffffff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+}
+
+.order-product-more {
+  font-size: 13px;
+  color: #6b7280;
+  padding: 4px 8px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.order-item__payment {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.order-payment__method {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 6px;
+  text-align: left;
+  /* box-shadow: 0 2px 6px rgba(249, 115, 22, 0.3); */
+  margin-bottom: 6px;
+}
+
+/* Payment Method Types */
+.payment-method-cash-on-delivery {
+  background-color: #fef3c7;
+  color: #92400e;
+  border-color: #f59e0b;
+}
+
+.payment-method-credit-card,
+.payment-method-debit-card {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-color: #3b82f6;
+}
+
+.payment-method-bank-transfer {
+  background-color: #e0f2fe;
+  color: #0f766e;
+  border-color: #06b6d4;
+}
+
+.payment-method-digital-wallet,
+.payment-method-paypal,
+.payment-method-stripe,
+.payment-method-esewa,
+.payment-method-khalti {
+  background-color: #f3e8ff;
+  color: #7c3aed;
+  border-color: #8b5cf6;
+}
+
+.order-payment__status {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.payment-confirmed,
+.payment-paid {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.payment-pending {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.payment-failed{
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.order-item__total {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: right;
+}
+
+.order-total__amount {
+  font-size: 16px;
+  font-weight: 700;
+  color: red;
+}
+
+.order-total__shipping {
+  font-size: 12px;
+  color: green;
+}
+
+.orders__error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: #ef4444;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.orders__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: #6b7280;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 /* Button Styles */
@@ -347,142 +648,6 @@
 .btn--secondary:hover {
   background-color: #fff7ed;
   color: #ea580c;
-}
-
-/* Orders Section */
-.orders {
-  max-width: 800px;
-  margin: 0 auto;
-  overflow-y: auto; /* Make orders section scrollable */
-  max-height: 100%; /* Restrict to parent height */
-}
-
-.orders__title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 24px;
-}
-
-.orders__header {
-  display: flex;
-  padding: 12px 0;
-  border-bottom: 2px solid #e5e7eb;
-  margin-bottom: 16px;
-}
-
-.orders__header-col {
-  font-weight: 600;
-  color: #4b5563;
-  font-size: 14px;
-}
-
-.orders__header-col--product {
-  flex: 3;
-}
-
-.orders__header-col--price {
-  flex: 1;
-  text-align: right;
-}
-
-.orders__list {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.order-item {
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 24px;
-  transition: all 0.3s ease;
-}
-
-.order-item:hover {
-  background-color: #f9fafb;
-  border-radius: 8px;
-}
-
-.order-item__content {
-  display: flex;
-  align-items: center;
-}
-
-.order-item__image {
-  width: 80px;
-  height: 80px;
-  background-color: #f3f4f6;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.order-item__image-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.order-item__details {
-  margin-left: 24px;
-  flex-grow: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.order-item__info {
-  flex: 3;
-}
-
-.order-item__name {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 8px;
-}
-
-.order-item__description {
-  font-size: 14px;
-  color: #6b7280;
-  margin-bottom: 12px;
-}
-
-.order-item__quantity {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid #d1d5db;
-  background-color: #ffffff;
-  font-size: 14px;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.order-item__price-section {
-  flex: 1;
-  text-align: right;
-}
-
-.order-item__price {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1f2937;
-}
-
-.order-item__delete {
-  color: #6b7280;
-  background: none;
-  border: none;
-  cursor: pointer;
-  margin-top: 12px;
-  transition: color 0.2s ease;
-}
-
-.order-item__delete:hover {
-  color: #ef4444;
 }
 
 /* Popup Styles */

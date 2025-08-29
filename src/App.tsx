@@ -50,6 +50,8 @@ import UnapprovedVendors from "./Components/UnapprovedVendors";
 import CommissionList from "./Pages/ComissionList";
 // import VendorLogin from "./Pages/VendorLogin"
 import SectionProducts from "./Components/SectionProducts";
+import WebsiteComingSoon from "./Pages/WebsiteComingSoon";
+import VendorTerms from "./Pages/VendorTerms";
 // import VendorLoginPage from "./Pages/VendorLoginPage";
 // import VendorSignupPage from "./Pages/VendorSignupPage";
 
@@ -91,6 +93,9 @@ const ProtectedVendorRoute = ({ children }: { children: ReactElement }) => {
   return children;
 };
 
+const SHOW_COMING_SOON = false;
+
+
 function App() {
   return (
     <>
@@ -98,10 +103,14 @@ function App() {
       <ScrollToTop />
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Home />} />
+        <Route
+          path="/"
+          element={SHOW_COMING_SOON ? <WebsiteComingSoon /> : <Home />}
+        />
         <Route path="/contact" element={<About />} />
         <Route path="/faq" element={<EcommerceFAQ />} />
         <Route path="/terms" element={<TermsAndConditions />} />
+        <Route path="/vendor/terms" element={<VendorTerms />} />
         <Route path="/commission-list" element={<CommissionList />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/becomevendor" element={<BecomeVendor />} />

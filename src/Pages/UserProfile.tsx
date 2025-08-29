@@ -73,7 +73,21 @@ const UserProfile: React.FC = () => {
     const charCodeSum = username.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
     return colors[charCodeSum % colors.length];
   };
-
+const formatPaymentMethod = (method: string) => {
+  const methodMap: { [key: string]: string } = {
+    'CASH_ON_DELIVERY': 'Cash on Delivery',
+    'COD': 'Cash on Delivery',
+    'CREDIT_CARD': 'Credit Card',
+    'DEBIT_CARD': 'Debit Card',
+    'BANK_TRANSFER': 'Bank Transfer',
+    'DIGITAL_WALLET': 'Digital Wallet',
+    'PAYPAL': 'PayPal',
+    'STRIPE': 'Stripe',
+    'ESEWA': 'eSewa',
+    'KHALTI': 'Khalti'
+  };
+  return methodMap[method] || method;
+};
   const showPopup = (type: "success" | "error", content: string) => {
     setPopup({ type, content });
     setTimeout(() => setPopup(null), 3000);
@@ -532,25 +546,29 @@ const UserProfile: React.FC = () => {
     );
   };
 
-  const renderCredentials = () => {
-    if (isLoading.fetchUser) {
-      return (
-        <div className="credentials">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="skeleton skeleton-form-group" style={{ height: i === 0 ? "40px" : i === 4 ? "48px" : "auto" }} />
-          ))}
-        </div>
-      );
-    }
-
+const renderCredentials = () => {
+  if (isLoading.fetchUser) {
     return (
       <div className="credentials">
-        <div className="credentials__header">
-          <div>
-            <h3 className="credentials__title">Account Security</h3>
-            <p>Manage your password and account security</p>
-          </div>
-          <div className="credentials__actions">
+        {[...Array(5)].map((_, i) => (
+          <div
+            key={i}
+            className="skeleton skeleton-form-group"
+            style={{ height: i === 0 ? "40px" : i === 4 ? "48px" : "auto" }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="credentials">
+      <h2 className="credentials__main-title">Account Security</h2>
+      <div className="credentials__header">
+        <p className="credentials__description">
+          Manage your password and account security
+        </p>
+        <div className="credentials__actions">
             <button
               className={`profile-form__help ${credentialsMode === "forgot" ? "active" : ""}`}
               onClick={() => setCredentialsMode("forgot")}
@@ -678,66 +696,62 @@ const UserProfile: React.FC = () => {
     }
     return (
       <div className="orders">
-        <h2 className="orders__title">Order</h2>
+        <h2 className="orders__title">Order History</h2>
+        <div className="orders__header">
+          <div className="orders__header-col orders__header-col--id">Order ID</div>
+          <div className="orders__header-col orders__header-col--date">Date</div>
+          <div className="orders__header-col orders__header-col--status">Status</div>
+          <div className="orders__header-col orders__header-col--products">Products</div>
+          <div className="orders__header-col orders__header-col--payment">Payment</div>
+          <div className="orders__header-col orders__header-col--total">Total</div>
+        </div>
         <div className="orders__list">
           {orders.map((order) => (
             <div key={order.id} className="order-item">
-              <div className="order-item__content">
-                <div className="order-item__info" style={{ flex: 2 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span className="order-item__id">Order #{order.id}</span>
-                    <span className="order-item__status" style={{
-                      color: order.status === 'CONFIRMED' ? '#22c55e' : order.status === 'CANCELED' ? '#ef4444' : '#f59e42',
-                      fontWeight: 600,
-                      fontSize: 13,
-                      marginLeft: 8
-                    }}>{order.status}</span>
-                  </div>
-                  <div className="order-item__date" style={{ fontSize: 13, color: '#6b7280', marginBottom: 6 }}>
-                    {new Date(order.createdAt).toLocaleString()}
-                  </div>
-                  <div className="order-item__address" style={{ fontSize: 13, color: '#6b7280', marginBottom: 6 }}>
-                    {order.shippingAddress ? `${order.shippingAddress.city || ''}${order.shippingAddress.city && order.shippingAddress.localAddress ? ', ' : ''}${order.shippingAddress.localAddress || ''}` : ''}
-                  </div>
-                  <div className="order-item__products">
-                    {order.orderItems && order.orderItems.length > 0 ? (
-                      <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-                        {order.orderItems.slice(0, 2).map((item) => {
-                          const product = item.product as Product;
-                          return (
-                            <li key={item.id} style={{ fontSize: 14, color: '#1f2937', display: 'flex', alignItems: 'center', gap: 8 }}>
-                              {product && product.productImages && product.productImages.length > 0 ? (
-                                <img src={product.productImages[0]} alt={product.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, border: '1px solid #eee' }} />
-                              ) : (
-                                <div style={{ width: 40, height: 40, background: '#f3f4f6', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: 18, border: '1px solid #eee' }}>?</div>
-                              )}
-                              <span>{product?.name || 'Product'} x{item.quantity}</span>
-                            </li>
-                          );
-                        })}
-                        {order.orderItems.length > 2 && (
-                          <li style={{ fontSize: 13, color: '#6b7280' }}>+{order.orderItems.length - 2} more item(s)</li>
-                        )}
-                      </ul>
-                    ) : (
-                      <span>No items</span>
+              <div className="order-item__id">#{order.id}</div>
+              <div className="order-item__date">{new Date(order.createdAt).toLocaleDateString()}</div>
+              <div className="order-item__status">
+                <span className={`status-badge status-${order.status.toLowerCase()}`}>
+                  {order.status}
+                </span>
+              </div>
+              <div className="order-item__products">
+                {order.orderItems && order.orderItems.length > 0 ? (
+                  <div className="order-products">
+                    {order.orderItems.slice(0, 3).map((item) => {
+                      const product = item.product as Product;
+                      return (
+                        <div key={item.id} className="order-product">
+                          {product && product.productImages && product.productImages.length > 0 ? (
+                            <img 
+                              src={product.productImages[0]} 
+                              alt={product.name} 
+                              className="order-product__image" 
+                            />
+                          ) : (
+                            <div className="order-product__placeholder">?</div>
+                          )}
+                          <span className="order-product__name">{product?.name || 'Product'}</span>
+                          <span className="order-product__quantity">x{item.quantity}</span>
+                        </div>
+                      );
+                    })}
+                    {order.orderItems.length > 3 && (
+                      <div className="order-product-more">+{order.orderItems.length - 3} more</div>
                     )}
                   </div>
-                  <div className="order-item__payment" style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>
-                    Payment: {order.paymentMethod}
-                  </div>
+                ) : (
+                  <span>No items</span>
+                )}
+              </div>
+              <div className="order-item__payment">
+                <div className={`order-payment__method payment-method-${order.paymentMethod?.toLowerCase().replace('_', '-')}`}>
+                  {formatPaymentMethod(order.paymentMethod)}
                 </div>
-                <div className="order-item__price-section" style={{ flex: 1, textAlign: 'right' }}>
-                  <div className="order-item__price" style={{ fontSize: 16, fontWeight: 700, color: '#1f2937' }}>
-                    Rs. {parseFloat(order.totalPrice).toLocaleString()}
-                  </div>
-                  <div className="order-item__shipping" style={{ fontSize: 13, color: '#6b7280' }}>
-                    Shipping: Rs. {parseFloat(order.shippingFee).toLocaleString()}
-                  </div>
-                  <div className="order-item__payment-status" style={{ fontSize: 13, color: order.status === 'PAID' ? '#22c55e' : '#ef4444', fontWeight: 600 }}>
-                    {order.status}
-                  </div>
-                </div>
+              </div>
+              <div className="order-item__total">
+                <div className="order-total__amount">Rs. {parseFloat(order.totalPrice).toLocaleString()}</div>
+                <div className="order-total__shipping">Shipping: Rs. {parseFloat(order.shippingFee).toLocaleString()}</div>
               </div>
             </div>
           ))}
@@ -788,7 +802,7 @@ const UserProfile: React.FC = () => {
         </div>
       </Popup>
       <div className="profile">
-        <div className="profile-card">
+        <div className={`profile-card ${activeTab === 'details' || activeTab === 'credentials' || activeTab === 'orders' ? 'profile-card--wide' : ''}`}>
           <div className="profile-sidebar">
             {isLoading.fetchUser ? (
               <>
@@ -808,7 +822,7 @@ const UserProfile: React.FC = () => {
                     onFocus={() => console.log(`${tab} sidebar button focused`)}
                     tabIndex={-1}
                   >
-                    {tab === "details" ? "Manage Details" : tab === "credentials" ? "Change Credentials" : "Order"}
+                    {tab === "details" ? "Manage Details" : tab === "credentials" ? "Change Credentials" : "Order History"}
                   </button>
                 ))}
               </>

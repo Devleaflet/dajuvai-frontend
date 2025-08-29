@@ -3,7 +3,7 @@
   color: #000000;
 
   min-height: 100%;
-  max-width: 1800px;
+  max-width: min(80vw, 1600px);
   margin-inline: auto;
 }
 
@@ -153,6 +153,10 @@
   overflow: hidden;
   white-space: nowrap;
   background: linear-gradient(90deg, transparent, rgba(255, 98, 0, 0.02), transparent);
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .about__ribbon-chip {
@@ -430,5 +434,23 @@
 
   .btn {
     width: 100%;
+  }
+}
+
+/* Ribbon mobile responsiveness */
+@media (max-width: 768px) {
+  .about__ribbon {
+    white-space: normal;
+    padding: 12px 0;
+    gap: 4px;
+  }
+  
+  .about__ribbon-chip {
+    margin: 4px;
+    white-space: nowrap;
+  }
+  
+  .about__ribbon-dot {
+    display: none;
   }
 }

@@ -2,10 +2,9 @@ import axiosInstance from "./axiosInstance";
 
 export const fetchCategory = async () => {
   try {
-    const response = await axiosInstance.get("/api/categories");
-    console.log("cat = :", response.data.data);
+    const response = await axiosInstance.get("/api/home/category/section");
     return response.data.data;
   } catch (error: any) {
-    console.log(error.message);
+    throw new Error(`Failed to fetch categories: ${error.message}`);
   }
 };

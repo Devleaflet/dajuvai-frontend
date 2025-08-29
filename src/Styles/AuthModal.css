@@ -26,7 +26,7 @@
   max-width: 450px;
   background-color: #fff;
   border-radius: 10px;
-  overflow: hidden;
+  overflow: auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   z-index: 1;
   animation: auth-modal-fade-in 0.3s ease;
@@ -194,9 +194,11 @@
   border-radius: 4px;
   font-size: 16px;
   font-weight: bold;
+
   cursor: pointer;
   transition: background-color 0.3s;
   margin-top: 10px;
+  margin-bottom: 20px;
 }
 
 .auth-modal__submit:hover {
@@ -879,4 +881,159 @@ body.auth-modal--open {
     max-width: 150px;
     max-height: 100px;
   }
+}
+
+
+/* Add to AuthModal.css */
+
+/* Input and select error states */
+.auth-modal__input.error,
+.auth-modal__input--verification.error,
+select.auth-modal__input.error {
+  border-color: #dc3545 !important;
+  background-color: #fff5f5;
+}
+
+/* Focus states for inputs and selects */
+.auth-modal__input:focus,
+.auth-modal__input--verification:focus,
+select.auth-modal__input:focus {
+  border: 2px solid #f47a42 !important;
+  box-shadow: 0 4px 16px rgba(244, 122, 66, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Error message styling */
+.error-message {
+  display: flex;
+  align-items: flex-start;
+  color: #dc3545;
+  font-size: 0.85rem;
+  margin-top: 8px;
+  font-weight: 500;
+  line-height: 1.4;
+  padding: 0 2px;
+}
+
+.error-icon {
+  margin-right: 6px;
+  margin-top: 1px;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+/* Label animation on focus */
+.auth-modal__form-group:focus-within .auth-modal__label {
+  color: #f47a42;
+  font-weight: 600;
+}
+
+/* Password toggle button positioning */
+.auth-modal__password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 70%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 16px;
+}
+
+/* Update existing styles for consistency */
+.auth-modal__input,
+select.auth-modal__input {
+  padding: 16px 20px;
+  border: 2px solid #ffd8c8 !important;
+  border-radius: 12px;
+  font-size: 1rem;
+  background: #ffffff;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.auth-modal__input::placeholder {
+  color: #aaaaaa;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.auth-modal__input:focus::placeholder {
+  opacity: 0.7;
+  transform: translateX(5px);
+}
+
+/* File upload container */
+.auth-modal__file-upload {
+  border: 2px dashed #ffd8c8;
+  border-radius: 12px;
+  padding: 20px;
+  background-color: #fff;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.auth-modal__file-upload:hover {
+  border-color: #f47a42;
+}
+
+/* Cheque container */
+.cheque-container {
+  border: 2px dashed #ffd8c8;
+  border-radius: 12px;
+  padding: 20px;
+  background-color: #fff;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.cheque-container:hover {
+  border-color: #f47a42;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .auth-modal__input,
+  select.auth-modal__input {
+    padding: 14px 16px;
+    border-width: 1.5px !important;
+  }
+
+  .auth-modal__input:focus,
+  select.auth-modal__input:focus {
+    border-width: 1.5px !important;
+  }
+
+  .error-message {
+    font-size: 0.8rem;
+    margin-top: 6px;
+  }
+}
+
+.auth-modal__submit.loading {
+  position: relative;
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.auth-modal__submit.loading::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: 2px solid #fff;
+  border-top-color: #f47a42;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
+.auth-modal__submit.loading span {
+  margin-left: 30px;
 }

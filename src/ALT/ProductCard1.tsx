@@ -1,7 +1,3 @@
-
-
-
-
 /* ==========================================================================
    PRODUCT CARD (ProductCard1)
    --------------------------------------------------------------------------
@@ -11,9 +7,6 @@
    - Vendor Product Page
    - Recommend product 
    ========================================================================== */
-
-
-
 
 import React, { useState } from "react";
 import { toast } from "react-hot-toast";
@@ -42,7 +35,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 
   const {
     title,
-    // description,
+    description,
     price,
     originalPrice,
     discount,
@@ -102,7 +95,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 
   // Check if original price should be shown (only if there's a discount or original price differs)
   const originalPriceNum = toNumber(originalPrice);
-  const showOriginalPrice = originalPrice && discount && discount > 0 && originalPriceNum !== displayPriceNum;
+  const showOriginalPrice = originalPrice && discount && Number(discount) > 0 && originalPriceNum !== displayPriceNum;
   const formattedOriginalPrice = showOriginalPrice ? formatPrice(originalPriceNum) : '';
 
   const handleWishlist = async () => {
@@ -192,7 +185,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
         </div>
         <div className="product1__info">
           <h3 className="product1__title">{title}</h3>
-          {/* <p className="product1__description">{description}</p> */}
+          {description && <p className="product1__description">{description}</p>}
           <div className="product1__price">
             <div className="product1__price-row">
               <span className="product1__current-price">{displayPrice}</span>

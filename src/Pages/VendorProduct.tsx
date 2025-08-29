@@ -1,17 +1,17 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
-import { Sidebar } from '../Components/Sidebar';
+import { toast } from 'react-hot-toast';
+import { fetchProducts, updateProduct } from '../api/products';
 import Header from '../Components/Header';
-import ProductList from '../Components/ProductList';
-import NewProductModal from '../Components/NewProductModalRedesigned';
 import EditProductModal from '../Components/Modal/EditProductModalRedesigned';
+import NewProductModal from '../Components/NewProductModalRedesigned';
+import Pagination from '../Components/Pagination';
+import ProductList from '../Components/ProductList';
+import { Sidebar } from '../Components/Sidebar';
+import { Product } from '../Components/Types/Product';
+import { useVendorAuth } from '../context/VendorAuthContext';
 import '../Styles/VendorProduct.css';
 import { Product as ApiProduct, ProductFormData } from '../types/product';
-import { fetchProducts, updateProduct } from '../api/products';
-import { useVendorAuth } from '../context/VendorAuthContext';
-import Pagination from '../Components/Pagination';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
-import { Product } from '../Components/Types/Product';
 // Add XLSX import for Excel export
 import * as XLSX from 'xlsx';
 

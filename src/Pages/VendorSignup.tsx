@@ -80,10 +80,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
             phoneNumber.trim().length >= 10 &&
             province.trim().length > 0 &&
             district.trim().length > 0 &&
-            acceptTerms &&
-            acceptListingFee
-          );
-          console.log("Step 1 validation:", { businessName, phoneNumber, province, district, acceptTerms, acceptListingFee, isValid });
+            acceptTerms);
+          console.log("Step 1 validation:", { businessName, phoneNumber, province, district, acceptTerms, isValid });
           return isValid;
         } else if (currentStep === 2) {
           const isValid = (
@@ -889,7 +887,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd" }}
                         />
-                        I accept the <Link to="/terms" target="_blank">terms and conditions</Link>
+                        I accept the <Link to="/vendor/terms" target="_blank">terms and conditions</Link>
                       </label>
 
                     </div>
