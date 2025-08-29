@@ -1,0 +1,43 @@
+.coming-soon-container {
+    height: 100vh;
+    width: 100vw;
+    background: linear-gradient(135deg,
+            #6c757d,
+            #ff6b00,
+            #6c757d);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.coming-soon-content {
+    text-align: center;
+}
+
+.coming-soon-content h1 {
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 16px;
+}
+
+.coming-soon-content p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin-bottom: 20px;
+}
+
+.dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.dots span {
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 50%;
+    display: inline-block;
+}
