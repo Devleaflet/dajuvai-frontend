@@ -412,22 +412,36 @@ const Checkout: React.FC = () => {
           setShowAlert(true);
         }
         else if (selectedPaymentMethod === 'ESEWA') {
-          // Update form data with actual order values
-          setFormData(prev => ({
-            ...prev,
-            amount: finalTotal.toString(),
-            total_amount: finalTotal.toString(),
-            transaction_uuid: result.data?.id?.toString() || uuidv4(), // Use order ID or generate new UUID
-          }));
+  // Generate a fresh UUID for this transaction
+  const freshTransactionUuid = uuidv4();
+  const amount = finalTotal.toString();
+  
+  // Generate signature for the new transaction
+  const hashString = `total_amount=${amount},transaction_uuid=${freshTransactionUuid},product_code=EPAYTEST`;
+  const hash = CryptoJS.HmacSHA256(hashString, '8gBm/:&EnhH.1/q');
+  const signature = CryptoJS.enc.Base64.stringify(hash);
 
-          // Wait for form data to update, then submit
-          setTimeout(() => {
-            const form = document.getElementById('esewa-form') as HTMLFormElement;
-            if (form) {
-              form.submit();
-            }
-          }, 100);
-        }
+  // Update form data with fresh values
+  const updatedFormData = {
+    ...formData,
+    amount: amount,
+    total_amount: amount,
+    transaction_uuid: freshTransactionUuid,
+    signature: signature,
+  };
+
+  // Update form fields directly
+  const form = document.getElementById('esewa-form') as HTMLFormElement;
+  if (form) {
+    (form.querySelector('input[name="amount"]') as HTMLInputElement).value = updatedFormData.amount;
+    (form.querySelector('input[name="total_amount"]') as HTMLInputElement).value = updatedFormData.total_amount;
+    (form.querySelector('input[name="transaction_uuid"]') as HTMLInputElement).value = updatedFormData.transaction_uuid;
+    (form.querySelector('input[name="signature"]') as HTMLInputElement).value = updatedFormData.signature;
+    
+    // Submit immediately
+    form.submit();
+  }
+}
         setTimeout(() => {
           if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod !== 'ESEWA') {
             navigate('/order-page', {
@@ -439,6 +453,11 @@ const Checkout: React.FC = () => {
               },
             });
           }
+          // else {
+          //   navigate('/user-profile', {
+          //     state: { activeTab: 'orders' },
+          //   });
+          // }
         }, 1500);
       } else {
         setAlertMessage(`Failed to place order: ${result.message || 'Unknown error'}`);
