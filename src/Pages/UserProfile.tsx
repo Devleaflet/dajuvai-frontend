@@ -73,7 +73,21 @@ const UserProfile: React.FC = () => {
     const charCodeSum = username.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
     return colors[charCodeSum % colors.length];
   };
-
+const formatPaymentMethod = (method: string) => {
+  const methodMap: { [key: string]: string } = {
+    'CASH_ON_DELIVERY': 'Cash on Delivery',
+    'COD': 'Cash on Delivery',
+    'CREDIT_CARD': 'Credit Card',
+    'DEBIT_CARD': 'Debit Card',
+    'BANK_TRANSFER': 'Bank Transfer',
+    'DIGITAL_WALLET': 'Digital Wallet',
+    'PAYPAL': 'PayPal',
+    'STRIPE': 'Stripe',
+    'ESEWA': 'eSewa',
+    'KHALTI': 'Khalti'
+  };
+  return methodMap[method] || method;
+};
   const showPopup = (type: "success" | "error", content: string) => {
     setPopup({ type, content });
     setTimeout(() => setPopup(null), 3000);
@@ -731,9 +745,8 @@ const renderCredentials = () => {
                 )}
               </div>
               <div className="order-item__payment">
-                <div className="order-payment__method">{order.paymentMethod}</div>
-                <div className={`order-payment__status payment-${order.status.toLowerCase()}`}>
-                  {order.status}
+                <div className={`order-payment__method payment-method-${order.paymentMethod?.toLowerCase().replace('_', '-')}`}>
+                  {formatPaymentMethod(order.paymentMethod)}
                 </div>
               </div>
               <div className="order-item__total">
