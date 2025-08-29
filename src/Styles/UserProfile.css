@@ -425,6 +425,11 @@ margin: 0;
   color: #b91c1c;
 }
 
+.status-cancelled {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
 .status-delivered {
   background-color: #dbeafe;
   color: #1e40af;
@@ -527,7 +532,8 @@ margin: 0;
   color: #b45309;
 }
 
-.payment-failed {
+.payment-failed,
+.payment-cancelled {
   background-color: #fee2e2;
   color: #b91c1c;
 }
