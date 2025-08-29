@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { ProductFormData, ProductVariant, Attribute } from "../../types/product";
-import "../../Styles/NewProductModal.css";
-import { useVendorAuth } from "../../context/VendorAuthContext";
-import { fetchCategories, fetchSubcategories, Category, Subcategory } from '../../api/categories';
-import { updateProduct, uploadProductImages } from '../../api/products';
-import axiosInstance from '../../api/axiosInstance';
-import { ApiProduct } from "../Types/ApiProduct";
-import { API_BASE_URL } from "../../config";
+import React, { useEffect, useState } from "react";
 import { toast } from 'react-hot-toast';
+import "../../Styles/NewProductModal.css";
+import axiosInstance from '../../api/axiosInstance';
+import { Category, fetchCategories, fetchSubcategories, Subcategory } from '../../api/categories';
+import { updateProduct, uploadProductImages } from '../../api/products';
+import { API_BASE_URL } from "../../config";
 import { dealApiService } from '../../services/apiDeals';
+import { Attribute, ProductFormData, ProductVariant } from "../../types/product";
+import { ApiProduct } from "../Types/ApiProduct";
 import { Deal } from '../Types/Deal';
 
 export enum InventoryStatus {

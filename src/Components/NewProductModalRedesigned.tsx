@@ -1166,14 +1166,24 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                 <button type="button" onClick={handleClose} className="btn btn-secondary">
                   Cancel
                 </button>
-                <button 
+<button 
                   type="submit" 
                   disabled={isLoading} 
                   className="btn btn-primary"
                 >
-                  {isLoading && <div className="loading-spinner"></div>}
-                  {isLoading ? 'Creating Product...' : 'Create Product'}
-                </button>
+                  <div className="btn-content">
+                    {isLoading && (
+                      <div className="loading-spinner">
+                        <div className="loading-dots">
+                          <div className="dot"></div>
+                          <div className="dot"></div>
+                          <div className="dot"></div>
+                        </div>
+                      </div>
+                    )}
+                    <span>{isLoading ? 'Creating Product...' : 'Create Product'}</span>
+                  </div>
+                </button> 
               </div>
             </div>
           </form>
