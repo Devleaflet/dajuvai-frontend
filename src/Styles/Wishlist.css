@@ -11,10 +11,12 @@
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   padding: 2rem;
-  max-width: 1600px; /* Added */
-  margin: 0 auto; /* Added */
+  max-width: min(85vw, 1600px);
+  width: 85vw;
+  margin: 0 auto;
   margin-top: 20px;
   margin-bottom: 50px;
+  box-sizing: border-box;
 }
   
   .wishlist__title {
@@ -538,4 +540,3 @@
 
 
 
-}
