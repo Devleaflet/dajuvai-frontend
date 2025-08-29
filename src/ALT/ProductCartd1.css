@@ -288,7 +288,7 @@
   top: 0;
 }
 
-/* ===== Mobile Responsive - UPDATED ===== */
+/* ===== Mobile Responsive - FIXED TO MATCH DESKTOP LAYOUT ===== */
 @media (max-width: 768px) {
   .product1__link-wrapper {
     display: block;
@@ -300,21 +300,21 @@
   .product1 {
     max-width: 100%;
     width: 100%;
-    height: 420px;
-    padding: 5px 5px 10px;
+    height: 380px; /* Same as desktop */
+    padding: 5px 5px 10px; /* Same as desktop */
     margin: 0;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 10px; /* Same as desktop */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Same as desktop */
   }
 
   .product1__header {
-    height: 32px;
+    height: 30px; /* Same as desktop */
     margin-bottom: 0;
   }
 
   .product1__wishlist-button {
-    width: 32px;
-    height: 32px;
+    width: 30px; /* Same as desktop */
+    height: 30px; /* Same as desktop */
   }
 
   .product1__wishlist-button svg {
@@ -323,35 +323,34 @@
   }
 
   .product1__image {
-    height: 70%;
-    margin-bottom: 5px;
-    border-radius: 10px;
+    height: 70%; /* Same as desktop */
+    margin-bottom: 5px; /* Same as desktop */
+    border-radius: 8px; /* Same as desktop */
   }
 
   .product1__rating {
-    height: 28px;
-    margin-bottom: 6px;
+    margin-bottom: 5px; /* Same as desktop */
     padding: 0 5px;
   }
 
   .product1__rating-info {
-    padding: 4px 10px;
+    gap: 3px; /* Same as desktop */
   }
 
   .product1__rating-score {
-    font-size: 13px;
+    font-size: 12px; /* Same as desktop */
   }
 
   .product1__rating-count {
-    font-size: 13px;
+    font-size: 12px; /* Same as desktop */
   }
 
   .product1__cart-button {
-    width: 34px;
-    height: 34px;
-    padding: 7px;
-    bottom: 8px;
-    left: 8px;
+    width: 36px; /* Same as desktop */
+    height: 36px; /* Same as desktop */
+    padding: 8px; /* Same as desktop */
+    bottom: 10px; /* Same as desktop */
+    right: 10px; /* Same as desktop */
   }
 
   .product1__cart-button svg,
@@ -363,15 +362,16 @@
 
   .product1__info {
     padding: 0 5px;
-    height: 30%;
+    height: 30%; /* Same as desktop */
   }
 
   .product1__title {
-    font-size: 16px;
-    min-height: 44px;
-    max-height: 44px;
-    margin-bottom: 8px;
-    line-height: 1.4;
+    font-size: 15px; /* Same as desktop */
+    font-weight: 600; /* Same as desktop */
+    margin: 0 0 8px 0; /* Same as desktop */
+    line-height: 1.4; /* Same as desktop */
+    height: 42px; /* Same as desktop */
+    color: #2d2d2d; /* Same as desktop */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -383,10 +383,11 @@
 
   .product1__description {
     display: block;
-    font-size: 14px;
-    margin: 0 0 10px 0;
-    height: 40px;
-    line-height: 1.4;
+    font-size: 10px; /* Same as desktop */
+    color: #666; /* Same as desktop */
+    margin: 0 0 10px 0; /* Same as desktop */
+    line-height: 1.4; /* Same as desktop */
+    height: 30px; /* Same as desktop */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -396,125 +397,165 @@
   }
 
   .product1__price {
-    gap: 4px;
-    flex-direction: column;
-    align-items: flex-start;
-    position: relative;
-    height: auto;
-    min-height: 60px;
+    display: flex; /* Same as desktop */
+    align-items: center; /* Same as desktop */
+    gap: 6px; /* Same as desktop */
+    flex-wrap: nowrap; /* Same as desktop */
+    padding-top: 2px; /* Same as desktop */
+    position: relative; /* Same as desktop */
+    min-height: 20px; /* Same as desktop */
+    margin-top: auto; /* Same as desktop */
   }
 
   .product1__price-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    gap: 8px;
-    order: 1;
+    display: contents; /* Same as desktop */
   }
-
-  .product1__current-price {
-    font-size: 18px;
+.product1__current-price {
+    font-size: 16px; /* Reduced from 20px */
+    font-weight: bold;
+    color: #2d2d2d;
+    white-space: nowrap;
     order: 1;
-    margin: 0;
   }
 
   .product1__discount {
-    font-size: 13px;
-    padding: 5px 10px;
-    border-radius: 6px;
-    order: 2;
-    margin: 0;
-    position: relative;
-    right: auto;
-    top: auto;
+    font-size: 10px; /* Reduced from 11px */
+    color: #4caf50;
+    font-weight: 600;
+    background: rgba(76, 175, 80, 0.1);
+    padding: 1px 4px; /* Reduced from 2px 6px */
+    border-radius: 4px; /* Reduced from 6px */
+    white-space: nowrap;
+    order: 3;
+    position: static; /* Changed from absolute */
+    margin-left: auto; /* Push to right */
   }
 
   .product1__original-price {
-    font-size: 12px;
+    font-size: 10px; /* Reduced from 11px */
+    color: #ff0000;
+    text-decoration: line-through;
+    white-space: nowrap;
     order: 2;
-    margin: 0;
-    text-align: left;
-    width: 100%;
-    display: block;
+    margin-left: 4px;
   }
 }
 
 @media (max-width: 576px) {
   .product1 {
-    height: 380px;
-    padding: 5px 5px 8px;
+    height: 380px; /* Same as desktop */
+    padding: 5px 5px 10px; /* Same as desktop */
   }
 
   .product1__image {
-    height: 70%;
+    height: 70%; /* Same as desktop */
   }
 
   .product1__title {
-    font-size: 15px;
-    min-height: 42px;
-    max-height: 42px;
-    line-height: 1.4;
+    font-size: 15px; /* Same as desktop */
+    font-weight: 600; /* Same as desktop */
+    margin: 0 0 8px 0; /* Same as desktop */
+    line-height: 1.4; /* Same as desktop */
+    height: 42px; /* Same as desktop */
+    color: #2d2d2d; /* Same as desktop */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
     hyphens: auto;
   }
 
   .product1__description {
-    font-size: 13px;
-    margin: 0 0 8px 0;
-    height: 36px;
+    display: block;
+    font-size: 10px; /* Same as desktop */
+    color: #666; /* Same as desktop */
+    margin: 0 0 10px 0; /* Same as desktop */
+    line-height: 1.4; /* Same as desktop */
+    height: 30px; /* Same as desktop */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
   }
 
   .product1__current-price {
-    font-size: 17px;
+    font-size: 20px; /* Same as desktop */
   }
 
   .product1__original-price {
-    font-size: 11px;
+    font-size: 11px; /* Same as desktop */
   }
 
   .product1__discount {
-    font-size: 12px;
-    border-radius: 5px;
+    font-size: 11px; /* Same as desktop */
+    border-radius: 6px; /* Same as desktop */
   }
 
   .product1__price {
-    min-height: 55px;
+    min-height: 20px; /* Same as desktop */
   }
 }
 
 @media (max-width: 480px) {
   .product1 {
-    height: 380px;
-    padding: 5px 5px 8px;
+    height: 380px; /* Same as desktop */
+    padding: 5px 5px 10px; /* Same as desktop */
   }
 
   .product1__image {
-    height: 70%;
+    height: 70%; /* Same as desktop */
   }
 
   .product1__title {
-    font-size: 13px;
-    min-height: 40px;
-    max-height: 40px;
-    line-height: 1.4;
+    font-size: 15px; /* Same as desktop */
+    font-weight: 600; /* Same as desktop */
+    margin: 0 0 8px 0; /* Same as desktop */
+    line-height: 1.4; /* Same as desktop */
+    height: 42px; /* Same as desktop */
+    color: #2d2d2d; /* Same as desktop */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
     hyphens: auto;
   }
 
+  .product1__description {
+    display: block;
+    font-size: 10px; /* Same as desktop */
+    color: #666; /* Same as desktop */
+    margin: 0 0 10px 0; /* Same as desktop */
+    line-height: 1.4; /* Same as desktop */
+    height: 30px; /* Same as desktop */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+  }
 
   .product1__current-price {
-    font-size: 14px;
+    font-size: 20px; /* Same as desktop */
   }
 
   .product1__original-price {
-    font-size: 10px;
+    font-size: 11px; /* Same as desktop */
   }
 
   .product1__discount {
-    font-size: 11px;
-    padding: 2px 5px;
-    border-radius: 4px;
+    font-size: 11px; /* Same as desktop */
+    padding: 2px 6px; /* Same as desktop */
+    border-radius: 6px; /* Same as desktop */
   }
+  
   .product1__price {
-    min-height: 50px;
+    min-height: 20px; /* Same as desktop */
   }
 }
