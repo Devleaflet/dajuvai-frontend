@@ -959,7 +959,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                           style={{
                             position: "absolute",
                             right: "10px",
-                            top: "70%",
+                            top: "60px",
                             marginRight: "15px",
                             transform: "translateY(-70%)",
                             background: "none",
@@ -1022,8 +1022,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                           style={{
                             position: "absolute",
                             right: "10px",
-                            top: "70%",
-                            marginRight: "350px",
+                            top: "60px",
+
                             transform: "translateY(-70%)",
                             background: "none",
                             border: "none",
