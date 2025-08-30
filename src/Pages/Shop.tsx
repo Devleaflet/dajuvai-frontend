@@ -949,290 +949,506 @@ const Shop: React.FC = () => {
             Refresh Page
           </button>
         </div>
-        {hasActiveFilters && (
-          <div className="filter-sidebar__section">
-            <button
-              onClick={clearAllFilters}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                backgroundColor: "#ff6b00",
-                border: "1px solid #ff6b00",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontSize: "0.95rem",
-                color: "white",
-                transition: "all 0.2s ease",
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = "#e05a00";
-                e.currentTarget.style.borderColor = "#e05a00";
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = "#ff6b00";
-                e.currentTarget.style.borderColor = "#ff6b00";
-              }}
-            >
-              Clear All Filters
-            </button>
-          </div>
-        )}
-        {searchQuery.trim() && (
-          <div className="filter-sidebar__section">
-            <h4 className="filter-sidebar__section-title">Search</h4>
-            <div
-              style={{
-                padding: "0.75rem",
-                backgroundColor: "#f8f9fa",
-                borderRadius: "6px",
-                border: "1px solid #e9ecef",
-                fontSize: "0.9rem",
-                color: "#495057",
-              }}
-            >
-              <strong>Searching for:</strong> "{searchQuery}"
-            </div>
-          </div>
-        )}
-        <div className="filter-sidebar__section">
-          <h4 className="filter-sidebar__section-title">Sort By</h4>
-          <div className="filter-sidebar__radio-list">
-            {[
-              { value: "all", label: "Default" },
-              { value: "low-to-high", label: "Price: Low to High" },
-              { value: "high-to-low", label: "Price: High to Low" },
-            ].map((option) => (
-              <div key={option.value} className="filter-sidebar__radio-item">
-                <input
-                  type="radio"
-                  id={`sort-${option.value}`}
-                  name="sort"
-                  checked={sortBy === option.value}
-                  onChange={() => handleSortChange(option.value)}
-                />
-                <label htmlFor={`sort-${option.value}`}>{option.label}</label>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="filter-sidebar__section">
-          <h4 className="filter-sidebar__section-title">Categories</h4>
-          <div className="filter-sidebar__search-container filter-sidebar__search-container--categories">
-            <input
-              type="text"
-              placeholder="Search categories..."
-              value={categorySearch}
-              onChange={(e) => setCategorySearch(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  const match = categories.find((cat: Category) =>
-                    cat.name.toLowerCase().includes(categorySearch.toLowerCase())
-                  );
-                  if (match) {
-                    handleCategoryChange(match.id);
-                    if (subcategoryInputRef.current) {
-                      subcategoryInputRef.current.focus();
-                    }
-                  }
-                }
-              }}
-              className="filter-sidebar__search-input"
-            />
-          </div>
-          <div className="filter-sidebar__checkbox-list">
-            {isLoadingCategories ? (
-              <p className="filter-sidebar__loading">Loading categories...</p>
-            ) : (
-              <>
-                <div className="filter-sidebar__checkbox-item">
-                  <input
-                    type="radio"
-                    id="category-all"
-                    name="category"
-                    checked={selectedCategory === undefined}
-                    onChange={() => handleCategoryChange(undefined)}
-                  />
-                  <label htmlFor="category-all">All Categories</label>
-                </div>
-                {categories
-                  .filter((category: Category) =>
-                    category.name.toLowerCase().includes(categorySearch.toLowerCase())
-                  )
-                  .slice(
-                    0,
-                    selectedCategory === undefined ? (showMoreCategories ? undefined : 5) : undefined
-                  )
-                  .map((category: Category) => (
-                    <div key={category.id} className="filter-sidebar__category-group">
-                      <div className="filter-sidebar__checkbox-item">
-                        <input
-                          type="radio"
-                          id={`category-${category.id}`}
-                          name="category"
-                          checked={selectedCategory === category.id}
-                          onChange={() => handleCategoryChange(category.id)}
-                        />
-                        <label htmlFor={`category-${category.id}`}>{category.name}</label>
-                      </div>
-                    </div>
-                  ))}
-                {selectedCategory === undefined && categories.length > 5 && (
-                  <button
-                    onClick={() => setShowMoreCategories(!showMoreCategories)}
+        <Footer />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Navbar />
+      <ProductBanner />
+      <CategorySlider />
+      <div className="shop-max-width-container">
+        <div className="shop-container" ref={containerRef}>
+          <div
+            style={{
+              marginBottom: "0.5rem",
+              borderBottom: "1px solid #e9ecef",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "nowrap",
+              gap: "1rem",
+              width: "100%",
+              minHeight: "60px",
+            }}
+            className="shop-header"
+          >
+            <div style={{ flex: "0 0 auto", minWidth: "200px" }}>
+              <h2
+                style={{
+                  fontSize: "2rem",
+                  margin: "0",
+                  color: "#222",
+                  fontWeight: "700",
+                  letterSpacing: "-1px",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {getDisplayTitle()}
+                {getCurrentSubcategoryName() && (
+                  <span
                     style={{
-                      width: "100%",
-                      padding: "0.75rem",
-                      backgroundColor: "#f8f9fa",
-                      border: "1px solid #e9ecef",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      fontSize: "0.95rem",
-                      color: "#ff6b00",
-                      textAlign: "center",
-                      marginTop: "0.5rem",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = "#e9ecef";
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f8f9fa";
+                      fontSize: "1.1rem",
+                      color: "#666",
+                      fontWeight: "normal",
+                      marginLeft: "0.5rem",
                     }}
                   >
-                    {showMoreCategories ? "View Less" : "View More"}
-                  </button>
+                    {" > "}{getCurrentSubcategoryName()}
+                  </span>
                 )}
-              </>
-            )}
-          </div>
-        </div>
-        {selectedCategory !== undefined && (
-          <div className="filter-sidebar__section">
-            <h4 className="filter-sidebar__section-title">Subcategories</h4>
-            <div className="filter-sidebar__search-container">
-              <input
-                ref={subcategoryInputRef}
-                type="text"
-                placeholder="Search subcategories..."
-                value={subcategorySearch}
-                onChange={(e) => setSubcategorySearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    const match = subcategories.find((sub: Subcategory) =>
-                      sub.name.toLowerCase().includes(subcategorySearch.toLowerCase())
-                    );
-                    if (match) {
-                      handleSubcategoryChange(match.id);
-                    }
-                  }
-                }}
-                className="filter-sidebar__search-input"
-              />
+              </h2>
             </div>
-            <div className="filter-sidebar__checkbox-list">
-              {isLoadingSubcategories ? (
-                <p className="filter-sidebar__loading">Loading subcategories...</p>
-              ) : subcategories.length > 0 ? (
-                <>
-                  <div className="filter-sidebar__checkbox-item">
-                    <input
-                      type="radio"
-                      id="subcategory-all"
-                      name="subcategory"
-                      checked={selectedSubcategory === undefined}
-                      onChange={() => handleSubcategoryChange(undefined)}
-                    />
-                    <label htmlFor="subcategory-all">All Subcategories</label>
-                  </div>
-                  {subcategories
-                    .filter((sub: Subcategory) =>
-                      sub.name.toLowerCase().includes(subcategorySearch.toLowerCase())
-                    )
-                    .slice(0, showMoreSubcategories ? undefined : 5)
-                    .map((subcategory: Subcategory) => (
-                      <div key={subcategory.id} className="filter-sidebar__checkbox-item">
-                        <input
-                          type="radio"
-                          id={`subcategory-${subcategory.id}`}
-                          name="subcategory"
-                          checked={selectedSubcategory === subcategory.id}
-                          onChange={() => handleSubcategoryChange(subcategory.id)}
-                        />
-                        <label htmlFor={`subcategory-${subcategory.id}`}>{subcategory.name}</label>
-                      </div>
-                    ))}
-                  {subcategories.length > 5 && (
+            <div
+              className="search-bar-container"
+              style={{
+                flex: "1 1 auto",
+                display: "flex",
+                justifyContent: "center",
+                maxWidth: "500px",
+                minWidth: "250px",
+              }}
+            >
+              <form onSubmit={handleSearchSubmit} className="search-form" style={{ width: "100%", display: "flex" }}>
+                <div
+                  className={`search-input-container ${searchInputValue ? "has-clear-button" : ""}`}
+                  style={{ position: "relative", flex: "1" }}
+                >
+                  <input
+                    type="text"
+                    value={searchInputValue}
+                    onChange={handleSearchInputChange}
+                    placeholder="Search for products, brands, or categories..."
+                    className="search-input"
+                    style={{ outline: "none" }}
+                  />
+                  {searchInputValue && (
                     <button
-                      onClick={() => setShowMoreSubcategories(!showMoreSubcategories)}
+                      type="button"
+                      onClick={handleClearSearch}
+                      className="search-clear-button"
+                      style={{
+                        position: "absolute",
+                        right: "8px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "none",
+                        border: "none",
+                        fontSize: "1.2rem",
+                        cursor: "pointer",
+                        color: "#999",
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  className="search-button"
+                  style={{
+                    padding: "0.75rem 1rem",
+                    backgroundColor: "#ff6b00",
+                    color: "white",
+                    border: "1px solid #ff6b00",
+                    borderRadius: "0 4px 4px 0",
+                    cursor: "pointer",
+                    fontSize: "0.9rem",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <span className="search-text">Search</span>
+                  <Search size={15} color="white" className="search-icon" />
+                </button>
+              </form>
+            </div>
+            <div
+              style={{
+                flex: "0 0 auto",
+                fontSize: "1rem",
+                color: "#666",
+                backgroundColor: "#f8f9fa",
+                padding: "0.5rem 1rem",
+                borderRadius: "6px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {isLoadingProducts ? "Loading..." : `${filteredProducts.length} products`}
+            </div>
+          </div>
+          <div className="shop-content">
+            <div className="shop">
+              <button className="filter-button" onClick={toggleSidebar} aria-label="Toggle filters">
+                <span className="filter-icon">⚙</span>
+              </button>
+              {isSidebarOpen && <div className="filter-sidebar-overlay" onClick={toggleSidebar} aria-label="Close filters" />}
+              <div
+                className={`filter-sidebar ${isSidebarOpen ? "open" : ""}`}
+                ref={sidebarRef}
+                style={{
+                  // Ensure proper width and positioning for sticky behavior
+                  width: window.innerWidth > 768 ? "280px" : "100%",
+                  maxHeight: isSticky ? "calc(100vh - 40px)" : "none",
+                  overflowY: isSticky ? "auto" : "visible",
+                  backgroundColor: "#fff",
+                  border: "1px solid #e9ecef",
+                  borderRadius: "8px",
+                  boxShadow: isSticky ? "0 4px 12px rgba(0, 0, 0, 0.15)" : "0 2px 4px rgba(0, 0, 0, 0.1)",
+                }}
+                key={`${selectedCategory}-${selectedSubcategory}-${selectedPriceRange}-${sortBy}`}
+              >
+                <div className="filter-sidebar__header">
+                  <h3>Filters</h3>
+                  <button className="filter-sidebar__close" onClick={toggleSidebar} aria-label="Close filters">
+                    ×
+                  </button>
+                </div>
+                {hasActiveFilters && (
+                  <div className="filter-sidebar__section">
+                    <button
+                      onClick={clearAllFilters}
                       style={{
                         width: "100%",
                         padding: "0.75rem",
-                        backgroundColor: "#f8f9fa",
-                        border: "1px solid #e9ecef",
+                        backgroundColor: "#ff6b00",
+                        border: "1px solid #ff6b00",
                         borderRadius: "8px",
                         cursor: "pointer",
                         fontSize: "0.95rem",
-                        color: "#ff6b00",
-                        textAlign: "center",
-                        marginTop: "0.5rem",
+                        color: "white",
                         transition: "all 0.2s ease",
                       }}
                       onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = "#e9ecef";
+                        e.currentTarget.style.backgroundColor = "#e05a00";
+                        e.currentTarget.style.borderColor = "#e05a00";
                       }}
                       onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f8f9fa";
+                        e.currentTarget.style.backgroundColor = "#ff6b00";
+                        e.currentTarget.style.borderColor = "#ff6b00";
                       }}
                     >
-                      {showMoreSubcategories ? "View Less" : "View More"}
+                      Clear All Filters
                     </button>
-                  )}
-                </>
-              ) : (
-                <p className="filter-sidebar__no-data">No subcategories available</p>
-              )}
+                  </div>
+                )}
+                {searchQuery.trim() && (
+                  <div className="filter-sidebar__section">
+                    <h4 className="filter-sidebar__section-title">Search</h4>
+                    <div
+                      style={{
+                        padding: "0.75rem",
+                        backgroundColor: "#f8f9fa",
+                        borderRadius: "6px",
+                        border: "1px solid #e9ecef",
+                        fontSize: "0.9rem",
+                        color: "#495057",
+                      }}
+                    >
+                      <strong>Searching for:</strong> "{searchQuery}"
+                    </div>
+                  </div>
+                )}
+                <div className="filter-sidebar__section">
+                  <h4 className="filter-sidebar__section-title">Sort By</h4>
+                  <div className="filter-sidebar__radio-list">
+                    {[
+                      { value: "all", label: "Default" },
+                      { value: "low-to-high", label: "Price: Low to High" },
+                      { value: "high-to-low", label: "Price: High to Low" },
+                    ].map((option) => (
+                      <div key={option.value} className="filter-sidebar__radio-item">
+                        <input
+                          type="radio"
+                          id={`sort-${option.value}`}
+                          name="sort"
+                          checked={sortBy === option.value}
+                          onChange={() => handleSortChange(option.value)}
+                        />
+                        <label htmlFor={`sort-${option.value}`}>{option.label}</label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="filter-sidebar__section">
+                  <h4 className="filter-sidebar__section-title">Categories</h4>
+                  <div className="filter-sidebar__search-container filter-sidebar__search-container--categories">
+                    <input
+                      type="text"
+                      placeholder="Search categories..."
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const match = categories.find((cat: Category) =>
+                            cat.name.toLowerCase().includes(categorySearch.toLowerCase())
+                          );
+                          if (match) {
+                            handleCategoryChange(match.id);
+                            if (subcategoryInputRef.current) {
+                              subcategoryInputRef.current.focus();
+                            }
+                          }
+                        }
+                      }}
+                      className="filter-sidebar__search-input"
+                    />
+                  </div>
+                  <div className="filter-sidebar__checkbox-list">
+                    {isLoadingCategories ? (
+                      <p className="filter-sidebar__loading">Loading categories...</p>
+                    ) : (
+                      <>
+                        <div className="filter-sidebar__checkbox-item">
+                          <input
+                            type="radio"
+                            id="category-all"
+                            name="category"
+                            checked={selectedCategory === undefined}
+                            onChange={() => handleCategoryChange(undefined)}
+                          />
+                          <label htmlFor="category-all">All Categories</label>
+                        </div>
+                        {categories
+                          .filter((category: Category) =>
+                            category.name.toLowerCase().includes(categorySearch.toLowerCase())
+                          )
+                          .slice(
+                            0,
+                            selectedCategory === undefined ? (showMoreCategories ? undefined : 5) : undefined
+                          )
+                          .map((category: Category) => (
+                            <div key={category.id} className="filter-sidebar__category-group">
+                              <div className="filter-sidebar__checkbox-item">
+                                <input
+                                  type="radio"
+                                  id={`category-${category.id}`}
+                                  name="category"
+                                  checked={selectedCategory === category.id}
+                                  onChange={() => handleCategoryChange(category.id)}
+                                />
+                                <label htmlFor={`category-${category.id}`}>{category.name}</label>
+                              </div>
+                            </div>
+                          ))}
+                        {selectedCategory === undefined && categories.length > 5 && (
+                          <button
+                            onClick={() => setShowMoreCategories(!showMoreCategories)}
+                            style={{
+                              width: "100%",
+                              padding: "0.75rem",
+                              backgroundColor: "#f8f9fa",
+                              border: "1px solid #e9ecef",
+                              borderRadius: "8px",
+                              cursor: "pointer",
+                              fontSize: "0.95rem",
+                              color: "#ff6b00",
+                              textAlign: "center",
+                              marginTop: "0.5rem",
+                              transition: "all 0.2s ease",
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.backgroundColor = "#e9ecef";
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.backgroundColor = "#f8f9fa";
+                            }}
+                          >
+                            {showMoreCategories ? "View Less" : "View More"}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+                {selectedCategory !== undefined && (
+                  <div className="filter-sidebar__section">
+                    <h4 className="filter-sidebar__section-title">Subcategories</h4>
+                    <div className="filter-sidebar__search-container">
+                      <input
+                        ref={subcategoryInputRef}
+                        type="text"
+                        placeholder="Search subcategories..."
+                        value={subcategorySearch}
+                        onChange={(e) => setSubcategorySearch(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            const match = subcategories.find((sub: Subcategory) =>
+                              sub.name.toLowerCase().includes(subcategorySearch.toLowerCase())
+                            );
+                            if (match) {
+                              handleSubcategoryChange(match.id);
+                            }
+                          }
+                        }}
+                        className="filter-sidebar__search-input"
+                      />
+                    </div>
+                    <div className="filter-sidebar__checkbox-list">
+                      {isLoadingSubcategories ? (
+                        <p className="filter-sidebar__loading">Loading subcategories...</p>
+                      ) : subcategories.length > 0 ? (
+                        <>
+                          <div className="filter-sidebar__checkbox-item">
+                            <input
+                              type="radio"
+                              id="subcategory-all"
+                              name="subcategory"
+                              checked={selectedSubcategory === undefined}
+                              onChange={() => handleSubcategoryChange(undefined)}
+                            />
+                            <label htmlFor="subcategory-all">All Subcategories</label>
+                          </div>
+                          {subcategories
+                            .filter((sub: Subcategory) =>
+                              sub.name.toLowerCase().includes(subcategorySearch.toLowerCase())
+                            )
+                            .slice(0, showMoreSubcategories ? undefined : 5)
+                            .map((subcategory: Subcategory) => (
+                              <div key={subcategory.id} className="filter-sidebar__checkbox-item">
+                                <input
+                                  type="radio"
+                                  id={`subcategory-${subcategory.id}`}
+                                  name="subcategory"
+                                  checked={selectedSubcategory === subcategory.id}
+                                  onChange={() => handleSubcategoryChange(subcategory.id)}
+                                />
+                                <label htmlFor={`subcategory-${subcategory.id}`}>{subcategory.name}</label>
+                              </div>
+                            ))}
+                          {subcategories.length > 5 && (
+                            <button
+                              onClick={() => setShowMoreSubcategories(!showMoreSubcategories)}
+                              style={{
+                                width: "100%",
+                                padding: "0.75rem",
+                                backgroundColor: "#f8f9fa",
+                                border: "1px solid #e9ecef",
+                                borderRadius: "8px",
+                                cursor: "pointer",
+                                fontSize: "0.95rem",
+                                color: "#ff6b00",
+                                textAlign: "center",
+                                marginTop: "0.5rem",
+                                transition: "all 0.2s ease",
+                              }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor = "#e9ecef";
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = "#f8f9fa";
+                              }}
+                            >
+                              {showMoreSubcategories ? "View Less" : "View More"}
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <p className="filter-sidebar__no-data">No subcategories available</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="shop-products">
+                {isLoadingProducts ? (
+                  Array(8)
+                    .fill(null)
+                    .map((_, index) => <ProductCardSkeleton key={index} count={1} />)
+                ) : filteredProducts.length > 0 ? (
+                  filteredProducts.map((product) => <ProductCard1 key={product.id} product={product} />)
+                ) : (
+                  <div
+                    className="no-products"
+                    style={{
+                      textAlign: "center",
+                      padding: "3rem 2rem",
+                      backgroundColor: "#f8f9fa",
+                      borderRadius: "12px",
+                      border: "1px solid #e9ecef",
+                      margin: "2rem 0",
+                      gridColumn: "1 / -1",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "3rem",
+                        marginBottom: "1rem",
+                        opacity: 0.3,
+                        animation: "bounce 1s infinite",
+                      }}
+                    >
+                      📦
+                    </div>
+                    <h3
+                      style={{
+                        color: "#333",
+                        marginBottom: "0.75rem",
+                        fontSize: "1.5rem",
+                      }}
+                    >
+                      No products found
+                    </h3>
+                    <p
+                      style={{
+                        color: "#666",
+                        marginBottom: "1.5rem",
+                        fontSize: "1rem",
+                        maxWidth: "400px",
+                        margin: "0 auto 1.5rem",
+                      }}
+                    >
+                      {searchQuery.trim()
+                        ? `No products found matching "${searchQuery}". Try adjusting your search terms or browse categories.`
+                        : selectedCategory === undefined
+                        ? "No products available at the moment."
+                        : `No products found in ${getCurrentCategoryName()}${
+                            getCurrentSubcategoryName() ? ` > ${getCurrentSubcategoryName()}` : ""
+                          }.`}
+                    </p>
+                    {hasActiveFilters && (
+                      <button
+                        onClick={clearAllFilters}
+                        style={{
+                          padding: "0.75rem 1.5rem",
+                          backgroundColor: "#ff6b00",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "8px",
+                          cursor: "pointer",
+                          fontSize: "1rem",
+                          transition: "all 0.2s ease",
+                          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.backgroundColor = "#e05a00";
+                          e.currentTarget.style.transform = "translateY(-1px)";
+                          e.currentTarget.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.backgroundColor = "#ff6b00";
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "0 2px 4px rgba(0, 0, 0, 0.1)";
+                        }}
+                      >
+                        Clear All Filters
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        )}
-      </aside>
-      <div className="shop-content">
-        <div className="shop-products">
-          {isLoadingProducts ? (
-            Array(8)
-              .fill(null)
-              .map((_, index) => <ProductCardSkeleton key={index} count={1} />)
-          ) : filteredProducts.length > 0 ? (
-            filteredProducts.map((product) => (
-              <ProductCard1 key={product.id} product={product} />
-            ))
-          ) : (
-            <div className="no-products">
-              <div className="no-products-icon">📦</div>
-              <h3>No products found</h3>
-              <p>
-                {searchQuery.trim()
-                  ? `No products found matching "${searchQuery}". Try adjusting your search terms or browse categories.`
-                  : selectedCategory === undefined
-                  ? "No products available at the moment."
-                  : `No products found in ${getCurrentCategoryName()}${
-                      getCurrentSubcategoryName() ? ` > ${getCurrentSubcategoryName()}` : ""
-                    }.`}
-              </p>
-              {hasActiveFilters && (
-                <button
-                  onClick={clearAllFilters}
-                  className="clear-filters-button"
-                >
-                  Clear All Filters
-                </button>
-              )}
-            </div>
-          )}
         </div>
       </div>
-    </div>
-  </div>
-  <Footer />
-</>;
+      <Footer />
+    </>
+  );
+};
+
+export default Shop;

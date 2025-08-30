@@ -35,11 +35,12 @@
   gap: 20px;
   width: 100%;
   position: relative;
-  min-height: 100vh;
-  padding: 20px 0;
+  min-height: calc(100vh - 200px);
+  padding: 20px 0 60px; /* Add bottom padding to prevent content from being hidden behind footer */
   align-items: start;
-  align-content: start;
   grid-template-areas: "sidebar products";
+  margin-bottom: 40px;
+  overflow: visible;
 }
 
 /* Ensure the parent container has proper height */
@@ -47,6 +48,10 @@
   width: 100%;
   min-height: 100vh;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  padding-bottom: 60px; /* Add padding to prevent content from being hidden behind footer */
 }
 
 /* Products grid */
@@ -87,23 +92,19 @@
   margin-right: 8px;
 }
 
-/* Default state - sticky behavior for desktop */
 /* Sidebar container */
 .filter-sidebar {
-  position: sticky;
-  top: 100px;
-  height: calc(100vh - 120px);
-  overflow-y: auto;
+  position: relative;
   width: 280px;
   background: #ffffff;
   padding: 24px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   z-index: 90;
-  align-self: start;
-  margin-bottom: 20px;
   grid-area: sidebar;
-  -webkit-overflow-scrolling: touch;
+  margin-top: 0;
+  transition: transform 0.2s ease;
+  z-index: -111 !important;
   
   /* Custom scrollbar */
   scrollbar-width: thin;
