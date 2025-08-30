@@ -52,6 +52,7 @@ import CommissionList from "./Pages/ComissionList";
 import SectionProducts from "./Components/SectionProducts";
 import WebsiteComingSoon from "./Pages/WebsiteComingSoon";
 import VendorTerms from "./Pages/VendorTerms";
+import PasswordProtectedRoute from "./Components/SiteProtection/PasswordProtectedRoute";
 // import VendorLoginPage from "./Pages/VendorLoginPage";
 // import VendorSignupPage from "./Pages/VendorSignupPage";
 
@@ -93,7 +94,8 @@ const ProtectedVendorRoute = ({ children }: { children: ReactElement }) => {
   return children;
 };
 
-const SHOW_COMING_SOON = true;
+// const SHOW_COMING_SOON = true;
+const isAuthenticated = localStorage.getItem("authenticated") === "true";
 
 
 function App() {
@@ -102,44 +104,195 @@ function App() {
       <Toaster />
       <ScrollToTop />
       <Routes>
-        {/* Public Routes */}
+        {/* Root "/" → Coming Soon until unlocked */}
         <Route
           path="/"
-          element={SHOW_COMING_SOON ? <WebsiteComingSoon /> : <Home />}
+          element={
+            !isAuthenticated ? <WebsiteComingSoon /> : <Home />
+          }
         />
-        <Route path="/contact" element={<About />} />
-        <Route path="/faq" element={<EcommerceFAQ />} />
-        <Route path="/terms" element={<TermsAndConditions />} />
-        <Route path="/vendor/terms" element={<VendorTerms />} />
-        <Route path="/commission-list" element={<CommissionList />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/becomevendor" element={<BecomeVendor />} />
-        <Route path="/about" element={<AboutUs />} />
-        <Route path="/wishlist" element={<Wishlist />} />
-        <Route path="/checkout" element={<Checkout />} />
-        <Route path="/product-page/:id" element={<ProductPage />} />
-        <Route path="/product-page/:categoryId/:subcategoryId/:id" element={<ProductPage />} />
-        <Route path="/section/:sectionId" element={<SectionProducts />} />
 
-        <Route path="/user-profile" element={<UserProfile />} />
-        <Route path="/shop" element={<Shop />} />
-        <Route path="/vendor/:vendorId" element={<VendorStore />} />
-        <Route path="/order-page" element={<NepalPaymentGateway />} />
-        <Route path="/order/payment-response" element={<TransactionSuccess />} />
-        <Route path="/order/esewa-payment-success" element={<PaymentSuccess />} />
+        {/* All other public routes require password */}
+        <Route
+          path="/contact"
+          element={
+            <PasswordProtectedRoute>
+              <About />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/faq"
+          element={
+            <PasswordProtectedRoute>
+              <EcommerceFAQ />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/terms"
+          element={
+            <PasswordProtectedRoute>
+              <TermsAndConditions />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/vendor/terms"
+          element={
+            <PasswordProtectedRoute>
+              <VendorTerms />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/commission-list"
+          element={
+            <PasswordProtectedRoute>
+              <CommissionList />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/privacy"
+          element={
+            <PasswordProtectedRoute>
+              <Privacy />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/becomevendor"
+          element={
+            <PasswordProtectedRoute>
+              <BecomeVendor />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/about"
+          element={
+            <PasswordProtectedRoute>
+              <AboutUs />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/wishlist"
+          element={
+            <PasswordProtectedRoute>
+              <Wishlist />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/checkout"
+          element={
+            <PasswordProtectedRoute>
+              <Checkout />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/product-page/:id"
+          element={
+            <PasswordProtectedRoute>
+              <ProductPage />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/product-page/:categoryId/:subcategoryId/:id"
+          element={
+            <PasswordProtectedRoute>
+              <ProductPage />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/section/:sectionId"
+          element={
+            <PasswordProtectedRoute>
+              <SectionProducts />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/user-profile"
+          element={
+            <PasswordProtectedRoute>
+              <UserProfile />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/shop"
+          element={
+            <PasswordProtectedRoute>
+              <Shop />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/vendor/:vendorId"
+          element={
+            <PasswordProtectedRoute>
+              <VendorStore />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/order-page"
+          element={
+            <PasswordProtectedRoute>
+              <NepalPaymentGateway />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/order/payment-response"
+          element={
+            <PasswordProtectedRoute>
+              <TransactionSuccess />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/order/esewa-payment-success"
+          element={
+            <PasswordProtectedRoute>
+              <PaymentSuccess />
+            </PasswordProtectedRoute>
+          }
+        />
+
+        {/* OAuth routes */}
         <Route path="/auth/google/callback" element={<GoogleAuthCallback />} />
         <Route path="/auth/google/direct" element={<GoogleAuthDirect />} />
         <Route path="/auth/google/json" element={<GoogleAuthJson />} />
         <Route path="/auth/google/backend" element={<GoogleAuthBackend />} />
         <Route path="/auth/facebook/callback" element={<FacebookAuthCallback />} />
         <Route path="/google-auth-callback" element={<GoogleAuthCallback />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        <Route path="/data-deletion" element={<DataDeletion />} />
 
-        {/* Vendor Routes (protected) */}
-        {/* <Route path="/vendor/login" element={<VendorLoginPage />} />
-        <Route path="/vendor/signup" element={<VendorSignupPage />} /> */}
+        {/* More public routes with password */}
+        <Route
+          path="/privacy-policy"
+          element={
+            <PasswordProtectedRoute>
+              <PrivacyPolicy />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/data-deletion"
+          element={
+            <PasswordProtectedRoute>
+              <DataDeletion />
+            </PasswordProtectedRoute>
+          }
+        />
 
+        {/* Vendor Routes (already protected) */}
         <Route
           path="/dashboard"
           element={
@@ -173,7 +326,7 @@ function App() {
           }
         />
 
-        {/* Admin Routes (protected) */}
+        {/* Admin Routes (already protected) */}
         <Route
           path="/admin-dashboard"
           element={
@@ -278,10 +431,9 @@ function App() {
             </AdminOnlyRoute>
           }
         />
-
         {/* Fallback Route */}
         <Route path="*" element={<PageNotFound />} />
-      </Routes>
+      </Routes >
     </>
   );
 }
