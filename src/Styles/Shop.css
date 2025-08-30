@@ -1,9 +1,9 @@
-/* Max width container for shop */
 .shop-max-width-container {
   max-width: 1800px;
   margin: 0 auto;
   width: 85%;
   overflow: visible;
+  position: relative; /* Critical for sticky positioning context */
 }
 
 .shop-container {
@@ -18,32 +18,49 @@
   position: relative;
   z-index: 10;
   padding: 0.5rem 2rem;
-  /* Lower z-index to stay below navbar */
 }
 
 .shop-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  display: contents;
   width: 100%;
+  position: relative;
+  z-index: 1;
+  grid-column: 2;
 }
 
+/* Main shop container */
 .shop {
-  display: flex;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
   width: 100%;
+  position: relative;
+  min-height: 100vh;
+  padding: 20px 0;
+  align-items: start;
+  align-content: start;
+  grid-template-areas: "sidebar products";
+}
+
+/* Ensure the parent container has proper height */
+.shop-container {
+  width: 100%;
+  min-height: 100vh;
   position: relative;
 }
 
+/* Products grid */
 .shop-products {
-  flex: 1;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 12px;
-  /* tighter spacing */
+  gap: 20px;
   width: 100%;
-  height: 100%;
-  margin-bottom: 1rem;
+  padding: 10px 0;
+  align-content: start;
+  grid-auto-rows: minmax(400px, auto);
+  min-height: 100%;
+  grid-area: products;
+  align-self: stretch;
 }
 
 .filter-button {
@@ -70,43 +87,73 @@
   margin-right: 8px;
 }
 
-/* Default state - positioned normally in the flow */
+/* Default state - sticky behavior for desktop */
+/* Sidebar container */
 .filter-sidebar {
+  position: sticky;
+  top: 100px;
+  height: calc(100vh - 120px);
+  overflow-y: auto;
   width: 280px;
   background: #ffffff;
   padding: 24px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  height: fit-content;
-  position: relative;
-  max-height: calc(100vh - 100px); /* Allow scrolling, account for navbar and padding */
-  overflow-y: auto; /* Enable scrolling */
-  transition: all 0.3s ease;
+  z-index: 90;
+  align-self: start;
+  margin-bottom: 20px;
+  grid-area: sidebar;
+  -webkit-overflow-scrolling: touch;
+  
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: #e0e0e0 transparent;
+  
+  /* For WebKit browsers */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: #e0e0e0;
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #bdbdbd;
+  }
 }
 
-/* When sidebar becomes sticky/fixed */
+/* Custom scrollbar for Webkit browsers */
+.filter-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.filter-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.filter-sidebar::-webkit-scrollbar-thumb {
+  background-color: #e0e0e0;
+  border-radius: 3px;
+}
+
+.filter-sidebar::-webkit-scrollbar-thumb:hover {
+  background-color: #bdbdbd;
+}
+
+/* Remove the .is-sticky class since we're always sticky */
 .filter-sidebar.is-sticky {
-  position: fixed;
-  top: 20px;
-  /* Adjust based on your navbar height */
-  left: auto;
-  /* Will be calculated by JavaScript */
-  z-index: 100;
-  max-height: calc(100vh - 40px); /* Adjusted for sticky state */
-  overflow-y: auto; /* Ensure scrolling remains */
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  /* No longer needed */
 }
 
-/* Placeholder to maintain layout when sidebar becomes fixed */
+/* Remove placeholder styles entirely */
 .filter-sidebar-placeholder {
-  width: 280px;
-  height: 0;
-  transition: height 0.3s ease;
-  flex-shrink: 0;
-}
-
-.filter-sidebar-placeholder.active {
-  height: var(--sidebar-height);
+  display: none; /* Remove placeholder */
 }
 
 .filter-sidebar__header {
@@ -119,7 +166,7 @@
   position: sticky;
   top: 0;
   background: #ffffff;
-  z-index: 101; /* Above content but below close button if needed */
+  z-index: 101; /* Above the sidebar content */
 }
 
 .filter-sidebar__header h3 {
@@ -172,9 +219,11 @@
   gap: 12px;
   padding-top: 4px;
 }
+
 .filter-sidebar__search-container--categories {
-  margin-bottom: 24px; /* only categories search box */
+  margin-bottom: 24px;
 }
+
 .filter-sidebar__radio-item,
 .filter-sidebar__checkbox-item {
   display: flex;
@@ -228,27 +277,10 @@
 }
 
 /* Responsive Design */
-@media (max-width: 1200px) {
-  .shop-container {
-    padding: 16px;
-  }
-
-  .shop-products {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 20px;
-  }
-}
-
 @media (max-width: 992px) {
-  .shop-products {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 16px;
-  }
-}
-
-@media (max-width: 768px) {
   .shop {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+    padding: 10px;
   }
 
   .filter-button {
@@ -259,23 +291,39 @@
     margin-bottom: 16px;
   }
 
-  /* Override sticky behavior on mobile */
-  .filter-sidebar,
-  .filter-sidebar.is-sticky {
+  .filter-sidebar {
     position: fixed;
     top: 0;
-    left: -140%;
+    left: -280px;
     width: 280px;
-    height: 100vh;
-    z-index: 999;
+    height: 100vh !important;
+    z-index: 1000;
     transition: left 0.3s ease;
-    overflow-y: auto; /* Enable scrolling on mobile */
-    max-height: 100vh; /* Full height on mobile */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin: 0;
+    border-radius: 0;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   }
 
   .filter-sidebar.open {
     left: 0;
+  }
+  
+  .filter-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #ff6b00;
+    color: white;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 999;
+    cursor: pointer;
   }
 
   .filter-sidebar__close {
@@ -286,38 +334,26 @@
     display: block;
   }
 
-  /* Hide placeholder on mobile */
-  .filter-sidebar-placeholder {
-    display: none;
-  }
-
   .shop-products {
-    display: grid;
     grid-template-columns: 1fr 1fr;
-    /* Exactly 2 equal columns */
     gap: 12px;
     width: 100%;
-    box-sizing: border-box;
   }
 
-  /* Ensure each product card takes exactly half the available width */
-  .shop-products>* {
+  .shop-products > * {
     width: 100%;
     min-width: 0;
-    /* Allow shrinking */
     box-sizing: border-box;
   }
 
-  /* Ensure search header is responsive on mobile */
   .shop-header {
     flex-direction: column;
     gap: 1rem;
     align-items: stretch;
     z-index: 5;
-    /* Lower z-index on mobile */
   }
 
-  .shop-header>div:first-child {
+  .shop-header > div:first-child {
     order: 1;
   }
 
@@ -325,7 +361,7 @@
     order: 2;
   }
 
-  .shop-header>div:last-child {
+  .shop-header > div:last-child {
     order: 3;
     align-self: center;
   }
@@ -337,23 +373,18 @@
   }
 
   .shop-products {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 8px;
-    width: 100%;
-    box-sizing: border-box;
   }
 
-  /* Ensure equal width cards */
-  .shop-products>* {
+  .shop-products > * {
     width: 100%;
     min-width: 0;
     max-width: 100%;
     box-sizing: border-box;
   }
 
-  .filter-sidebar,
-  .filter-sidebar.is-sticky {
+  .filter-sidebar {
     left: -100%;
   }
 
@@ -361,6 +392,7 @@
     left: 0;
   }
 }
+
 .filter-sidebar__search-container {
   margin-bottom: 16px;
 }
@@ -378,13 +410,13 @@
 .filter-sidebar__search-input:focus {
   border-color: #1976d2;
 }
+
 /* Search Bar Styles */
 .search-bar-container {
   width: 100%;
   box-sizing: border-box;
   position: relative;
   z-index: 5;
-  /* Lower z-index to stay below navbar */
 }
 
 .search-form {
@@ -415,7 +447,6 @@
   border-color: #1976d2;
 }
 
-/* Adjust padding when clear button is present */
 .search-input-container.has-clear-button .search-input {
   padding-right: 40px;
 }
@@ -462,29 +493,35 @@
   background-color: #f97316;
   transform: translateY(-1px);
 }
-.search-icon{
-  display:none;
+
+.search-icon {
+  display: none;
 }
-.search-text{
-  display:inline;
+
+.search-text {
+  display: inline;
 }
 
 /* Search Bar Responsive Styles */
 @media (max-width: 768px) {
   .search-bar-container {
-    width:100%;
+    width: 100%;
   }
-  .shop-header{
-    padding:0px;
+
+  .shop-header {
+    padding: 0px;
   }
-.search-icon{
-  display:inline;
-}
-.search-text{
-  display:none;
-}
+
+  .search-icon {
+    display: inline;
+  }
+
+  .search-text {
+    display: none;
+  }
+
   .search-form {
-    width:100%;
+    width: 100%;
   }
 
   .search-input-container {
@@ -500,13 +537,13 @@
   .search-bar-container {
     padding: 12px;
     z-index: 5;
-    /* Keep lower than navbar */
   }
 
   .search-form {
     max-width: 100%;
   }
-  .shop-max-width-container{
+
+  .shop-max-width-container {
     width: 95%;
   }
 }
@@ -516,7 +553,6 @@
   from {
     transform: translateX(-100%);
   }
-
   to {
     transform: translateX(0);
   }
@@ -533,7 +569,6 @@
   }
 }
 
-/* Hide content when zoomed out */
 @media (max-width: 1024px) {
   .shop-max-width-container {
     overflow: hidden;
