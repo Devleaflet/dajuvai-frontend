@@ -533,44 +533,52 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleVerifyEmail = async () => {
-    try {
-      setIsLoading(true);
-      setError("");
-      console.log("Verifying email with token:", verificationToken);
-      // Simulate verification (replace with actual API call)
-      setShowVerification(false);
-      setIsVerificationComplete(true);
-      setVerificationToken("");
-      setCountdown(0);
-      toast.success("Email verified successfully! Waiting for admin approval.");
-      console.log("Email verification successful");
-    } catch (err) {
-      console.error("Verification error:", err);
-      if (axios.isAxiosError(err)) {
-        const errorMessage = err.response?.data?.message || err.response?.data?.error || "Verification failed";
-        if (errorMessage.toLowerCase().includes("token") && errorMessage.toLowerCase().includes("invalid")) {
-          setError("The verification code is invalid. Please check the code or request a new one.");
-          toast.error("Invalid verification code. Please try again.");
-          console.log("Invalid verification token");
-        } else if (errorMessage.toLowerCase().includes("token") && errorMessage.toLowerCase().includes("expired")) {
-          setError("The verification code has expired. Please request a new code.");
-          toast.error("Verification code expired. Please request a new one.");
-          console.log("Expired verification token");
-        } else {
-          setError(errorMessage);
-          toast.error(errorMessage);
-          console.log("Verification error message:", errorMessage);
-        }
+const handleVerifyEmail = async () => {
+  try {
+    setIsLoading(true);
+    setError("");
+    console.log("Verifying email with token:", verificationToken);
+
+
+    const response = await axios.post(
+      `${API_BASE_URL}/api/auth/verify`,
+      { email: pendingVerificationEmail, token: verificationToken },
+      { headers: { "Content-Type": "application/json", Accept: "application/json" } }
+    );
+
+    console.log("Verification response:", response.data);
+    setShowVerification(false);
+    setIsVerificationComplete(true);
+    setVerificationToken("");
+    setCountdown(0);
+    toast.success("Email verified successfully! Waiting for admin approval.");
+    console.log("Email verification successful");
+  } catch (err) {
+    console.error("Verification error:", err);
+    if (axios.isAxiosError(err)) {
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || "Verification failed";
+      if (errorMessage.toLowerCase().includes("token") && errorMessage.toLowerCase().includes("invalid")) {
+        setError("The verification code is invalid. Please check the code or request a new one.");
+        toast.error("Invalid verification code. Please try again.");
+        console.log("Invalid verification token");
+      } else if (errorMessage.toLowerCase().includes("token") && errorMessage.toLowerCase().includes("expired")) {
+        setError("The verification code has expired. Please request a new code.");
+        toast.error("Verification code expired. Please request a new one.");
+        console.log("Expired verification token");
       } else {
-        setError("An unexpected error occurred during verification");
-        toast.error("Verification failed. Please try again.");
-        console.log("Unexpected verification error:", err);
+        setError(errorMessage);
+        toast.error(errorMessage);
+        console.log("Verification error message:", errorMessage);
       }
-    } finally {
-      setIsLoading(false);
+    } else {
+      setError("An unexpected error occurred during verification");
+      toast.error("Verification failed. Please try again.");
+      console.log("Unexpected verification error:", err);
     }
-  };
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleResendVerification = async () => {
     try {
