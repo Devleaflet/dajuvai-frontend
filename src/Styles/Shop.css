@@ -17,9 +17,7 @@
   align-items: center;
   position: relative;
   z-index: 10;
-  padding: 0.5rem 2rem
-
-
+  padding: 0.5rem 2rem;
   /* Lower z-index to stay below navbar */
 }
 
@@ -81,8 +79,8 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   height: fit-content;
   position: relative;
-  /* max-height: calc(100vh - 40px); */
-  overflow-y: auto;
+  max-height: calc(100vh - 100px); /* Allow scrolling, account for navbar and padding */
+  overflow-y: auto; /* Enable scrolling */
   transition: all 0.3s ease;
 }
 
@@ -94,6 +92,8 @@
   left: auto;
   /* Will be calculated by JavaScript */
   z-index: 100;
+  max-height: calc(100vh - 40px); /* Adjusted for sticky state */
+  overflow-y: auto; /* Ensure scrolling remains */
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
@@ -116,6 +116,10 @@
   margin-bottom: 24px;
   padding-bottom: 16px;
   border-bottom: 1px solid #e9ecef;
+  position: sticky;
+  top: 0;
+  background: #ffffff;
+  z-index: 101; /* Above content but below close button if needed */
 }
 
 .filter-sidebar__header h3 {
@@ -265,8 +269,8 @@
     height: 100vh;
     z-index: 999;
     transition: left 0.3s ease;
-    overflow-y: auto;
-    max-height: none;
+    overflow-y: auto; /* Enable scrolling on mobile */
+    max-height: 100vh; /* Full height on mobile */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 
@@ -488,7 +492,6 @@
   }
 
   .search-button {
-
     padding: 12px;
   }
 }
