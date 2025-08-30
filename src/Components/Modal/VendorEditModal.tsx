@@ -294,7 +294,7 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
               </div>
               <div className="detail-item">
                 <label>
-                  <strong>Tax Number</strong>
+                  <strong>PAN Number</strong>
                   <input
                     type="text"
                     name="taxNumber"
@@ -423,7 +423,7 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
           
 
             <div className="document-section">
-              <h3>Tax Documents</h3>
+              <h3>PAN Documents</h3>
               <div className="document-container">
                 {formData.taxDocuments && formData.taxDocuments.length > 0 && (
                   <div className="document-preview">

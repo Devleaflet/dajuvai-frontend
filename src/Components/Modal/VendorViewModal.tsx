@@ -94,7 +94,7 @@ const VendorViewModal: React.FC<VendorViewModalProps> = ({ show, onClose, vendor
           </div>
 
           <div className="detail-grid">
-            {renderDetailItem("Tax Number: ", vendor.taxNumber, "business")}
+            {renderDetailItem("PAN Number: ", vendor.taxNumber, "business")}
             {renderDetailItem("Business Reg Number: ", vendor.businessRegNumber, "business")}
             {renderDetailItem("Account Name: ", vendor.accountName, "financial")}
             {renderDetailItem("Bank Name: ", vendor.bankName, "financial")}
@@ -104,7 +104,7 @@ const VendorViewModal: React.FC<VendorViewModalProps> = ({ show, onClose, vendor
     
           </div>
 
-          {renderDocumentSection("Tax Documents", vendor.taxDocuments)}
+          {renderDocumentSection("PAN Documents", vendor.taxDocuments)}
           {renderDocumentSection("Citizenship Documents", vendor.citizenshipDocuments)}
           {renderDocumentSection("Cheque Photo", vendor.chequePhoto)}
         </div>
