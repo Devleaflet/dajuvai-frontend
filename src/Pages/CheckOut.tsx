@@ -793,7 +793,7 @@ const Checkout: React.FC = () => {
                 name="landmark"
                 value={billingDetails.landmark}
                 onChange={handleInputChange}
-                placeholder="Enter Nearest Landmark"
+                placeholder="Enter Nearest Landmark (Eg: Apartments, Hospital, School etc)"
                 className="checkout-container__form-group-input"
                 required
               />

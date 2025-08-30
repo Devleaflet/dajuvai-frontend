@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../Components/Navbar";
@@ -188,8 +189,8 @@ const fetchProductsWithFilters = async (filters: ProductFilters, token: string |
 const Shop: React.FC = () => {
   const { token } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-const [categorySearch, setCategorySearch] = useState<string>('');
-const [subcategorySearch, setSubcategorySearch] = useState<string>('');
+  const [categorySearch, setCategorySearch] = useState<string>('');
+  const [subcategorySearch, setSubcategorySearch] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<number | undefined>(undefined);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | undefined>(undefined);
   const [selectedPriceRange, setSelectedPriceRange] = useState<string | undefined>(undefined);
@@ -197,13 +198,26 @@ const [subcategorySearch, setSubcategorySearch] = useState<string>('');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchInputValue, setSearchInputValue] = useState<string>('');
+  const [showMoreCategories, setShowMoreCategories] = useState<boolean>(false);
+  const [showMoreSubcategories, setShowMoreSubcategories] = useState<boolean>(false);
+
+  // Refs for sticky sidebar
+  const sidebarRef = useRef<HTMLDivElement | null>(null);
+  const placeholderRef = useRef<HTMLDivElement | null>(null);
 
   // Use refs to track previous values and prevent unnecessary updates
   const prevSearchQueryRef = useRef<string>('');
   const prevSearchInputValueRef = useRef<string>('');
   const prevSelectedCategoryRef = useRef<number | undefined>(undefined);
   const prevSelectedSubcategoryRef = useRef<number | undefined>(undefined);
-const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
+  const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Current filters object
+  const currentFilters: ProductFilters = {
+    categoryId: selectedCategory,
+    subcategoryId: selectedSubcategory,
+    sort: sortBy,
+  };
 
   // Initialize filters from URL parameters
   useEffect(() => {
@@ -211,21 +225,12 @@ const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
     const subcategoryIdParam = searchParams.get('subcategoryId');
     const searchParam = searchParams.get('search');
 
-    // console.log('🏪 Shop useEffect triggered with searchParams:', {
-    //   categoryIdParam,
-    //   subcategoryIdParam,
-    //   searchParam,
-    //   allParams: Object.fromEntries(searchParams.entries())
-    // });
-
-    // Only update category if it's different from previous value
     const newCategoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
     if (newCategoryId !== prevSelectedCategoryRef.current) {
       setSelectedCategory(newCategoryId);
       prevSelectedCategoryRef.current = newCategoryId;
     }
 
-    // Only update subcategory if it's different from previous value
     const newSubcategoryId = subcategoryIdParam ? Number(subcategoryIdParam) : undefined;
     if (newSubcategoryId !== prevSelectedSubcategoryRef.current) {
       setSelectedSubcategory(newSubcategoryId);
@@ -234,11 +239,6 @@ const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
 
     if (searchParam) {
       const decodedSearch = decodeURIComponent(searchParam);
-      // console.log('🔍 Setting search values:', {
-      //   original: searchParam,
-      //   decoded: decodedSearch
-      // });
-      // Only update if the search value is different from previous values
       if (decodedSearch !== prevSearchQueryRef.current) {
         setSearchQuery(decodedSearch);
         prevSearchQueryRef.current = decodedSearch;
@@ -248,8 +248,6 @@ const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
         prevSearchInputValueRef.current = decodedSearch;
       }
     } else {
-      // console.log('❌ No search parameter found, clearing search values');
-      // Only clear if the values are not already empty
       if (prevSearchQueryRef.current !== '') {
         setSearchQuery('');
         prevSearchQueryRef.current = '';
@@ -259,47 +257,85 @@ const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
         prevSearchInputValueRef.current = '';
       }
     }
-  }, [searchParams]); // Only depend on searchParams to prevent infinite loops
+  }, [searchParams]);
 
   // Listen for custom events from CategorySlider
   useEffect(() => {
     const handleShopFiltersChanged = (event: CustomEvent) => {
       const { categoryId, subcategoryId } = event.detail;
 
-      // Update URL parameters instead of directly setting state
       const newSearchParams = new URLSearchParams(searchParams);
-
       if (categoryId) {
         newSearchParams.set('categoryId', categoryId.toString());
       } else {
         newSearchParams.delete('categoryId');
       }
-
       if (subcategoryId) {
         newSearchParams.set('subcategoryId', subcategoryId.toString());
       } else {
         newSearchParams.delete('subcategoryId');
       }
-
-      // Clear search when changing categories
       newSearchParams.delete('search');
-
       setSearchParams(newSearchParams);
     };
 
     window.addEventListener('shopFiltersChanged', handleShopFiltersChanged as EventListener);
-
     return () => {
       window.removeEventListener('shopFiltersChanged', handleShopFiltersChanged as EventListener);
     };
-  }, [searchParams]);
+  }, [searchParams, setSearchParams]);
 
-  // Current filters object
-  const currentFilters: ProductFilters = {
-    categoryId: selectedCategory,
-    subcategoryId: selectedSubcategory,
-    sort: sortBy,
-  };
+  // Sticky sidebar logic
+  useEffect(() => {
+    const sidebar = sidebarRef.current;
+    const placeholder = placeholderRef.current;
+    if (!sidebar || !placeholder) return;
+
+    const handleScroll = () => {
+      // Only apply sticky behavior on desktop (width > 768px)
+      if (window.innerWidth <= 768) {
+        sidebar.classList.remove('is-sticky');
+        placeholder.classList.remove('active');
+        return;
+      }
+
+      const sidebarRect = sidebar.getBoundingClientRect();
+      const container = document.querySelector('.shop-max-width-container');
+      if (!container) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const offsetTop = containerRect.top + scrollTop;
+      const navbarHeight = 80; // Adjust based on your navbar height
+
+      // Check if we should make the sidebar sticky
+      if (scrollTop > offsetTop - navbarHeight) {
+        sidebar.classList.add('is-sticky');
+        placeholder.classList.add('active');
+        // Set placeholder height to match sidebar
+        placeholder.style.height = `${sidebar.offsetHeight}px`;
+        // Position sidebar relative to container
+        sidebar.style.left = `${containerRect.left}px`;
+        sidebar.style.width = `${sidebarRect.width}px`;
+      } else {
+        sidebar.classList.remove('is-sticky');
+        placeholder.classList.remove('active');
+        placeholder.style.height = `${sidebar.offsetHeight}px`; // Maintain height in normal flow
+        sidebar.style.left = `${containerRect.left}px`; // Align with container initially
+        sidebar.style.width = '280px'; // Reset to default width
+      }
+    };
+
+    // Run on mount and scroll
+    handleScroll();
+    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, []);
 
   // Query for categories
   const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
@@ -352,11 +388,9 @@ const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
     queryKey: ["products", currentFilters],
     queryFn: async () => {
       console.log('🔄 Starting products query with filters:', currentFilters);
-
       try {
         const response = await fetchProductsWithFilters(currentFilters, token);
         let productsArray: ApiProduct[] = [];
-
         console.log('📦 Processing products response:', {
           hasResponse: !!response,
           responseType: typeof response,
@@ -377,7 +411,6 @@ const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
           productsArray = [];
         }
 
-        // Process products with review data
         console.log('🔄 Processing products with reviews, count:', productsArray.length);
         const processedProducts = await Promise.all(productsArray.map(async (item, index) => {
           try {
@@ -386,7 +419,6 @@ const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
             return processed;
           } catch (error) {
             console.error(`❌ Error processing product ${index + 1}:`, item.name, error);
-            // Return a fallback product
             return {
               id: item.id,
               title: item.name || 'Unknown Product',
@@ -409,8 +441,6 @@ const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
         return processedProducts;
       } catch (error) {
         console.error('❌ Fatal error in products query:', error);
-
-        // Debug the fallback condition
         console.log('🔍 Fallback condition check:', {
           hasCategoryId: !!currentFilters.categoryId,
           hasSubcategoryId: !!currentFilters.subcategoryId,
@@ -420,22 +450,17 @@ const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
           currentFilters
         });
 
-        // If we have any filters and the request failed, try without filters as fallback
         if (currentFilters.categoryId || currentFilters.subcategoryId || currentFilters.brandId || currentFilters.dealId || currentFilters.sort) {
           console.log('🔄 Trying fallback: fetching all products without filters');
           try {
             const fallbackResponse = await fetchProductsWithFilters({}, token);
             let fallbackProductsArray: ApiProduct[] = [];
-
             if (fallbackResponse?.success && Array.isArray(fallbackResponse.data)) {
               fallbackProductsArray = fallbackResponse.data;
             } else if (Array.isArray(fallbackResponse)) {
               fallbackProductsArray = fallbackResponse;
             }
-
             console.log('✅ Fallback successful, got products:', fallbackProductsArray.length);
-
-            // Process fallback products
             const processedFallbackProducts = await Promise.all(fallbackProductsArray.map(async (item) => {
               try {
                 const processed = await processProductWithReview(item);
@@ -458,12 +483,9 @@ const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
                 };
               }
             }));
-
             return processedFallbackProducts;
           } catch (fallbackError) {
             console.error('❌ Fallback also failed:', fallbackError);
-
-            // Try one more fallback - just category without subcategory
             if (currentFilters.categoryId && currentFilters.subcategoryId) {
               console.log('🔄 Trying second fallback: category only without subcategory');
               try {
@@ -471,16 +493,12 @@ const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
                   categoryId: currentFilters.categoryId
                 }, token);
                 let secondFallbackProductsArray: ApiProduct[] = [];
-
                 if (secondFallbackResponse?.success && Array.isArray(secondFallbackResponse.data)) {
                   secondFallbackProductsArray = secondFallbackResponse.data;
                 } else if (Array.isArray(secondFallbackResponse)) {
                   secondFallbackProductsArray = secondFallbackResponse;
                 }
-
                 console.log('✅ Second fallback successful, got products:', secondFallbackProductsArray.length);
-
-                // Process second fallback products
                 const processedSecondFallbackProducts = await Promise.all(secondFallbackProductsArray.map(async (item) => {
                   try {
                     const processed = await processProductWithReview(item);
@@ -503,19 +521,16 @@ const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
                     };
                   }
                 }));
-
                 return processedSecondFallbackProducts;
               } catch (secondFallbackError) {
                 console.error('❌ Second fallback also failed:', secondFallbackError);
               }
             }
-
-            throw error; // Throw the original error
+            throw error;
           }
         } else {
           console.log('⚠️ No filters detected, not attempting fallback');
         }
-
         throw error;
       }
     },
@@ -524,14 +539,13 @@ const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
     refetchOnWindowFocus: false,
     retry: (failureCount, error) => {
       console.log(`🔄 Retrying products query (attempt ${failureCount + 1}/3):`, error);
-      return failureCount < 2; // Retry up to 2 times (3 total attempts)
+      return failureCount < 2;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   // Client-side filtering for price and search
   const filteredProducts = (productsData || []).filter((product) => {
-    // Price filtering
     if (selectedPriceRange) {
       const maxPrice = parseFloat(selectedPriceRange);
       const productPrice = typeof product.price === 'string'
@@ -541,73 +555,53 @@ const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
         return false;
       }
     }
-
-    // Search filtering
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       const productName = product.title?.toLowerCase() || '';
       const productDescription = product.description?.toLowerCase() || '';
       const productCategory = product.category?.toLowerCase() || '';
       const productBrand = product.brand?.toLowerCase() || '';
-
       return productName.includes(query) ||
         productDescription.includes(query) ||
         productCategory.includes(query) ||
         productBrand.includes(query);
     }
-
     return true;
   });
 
   // Event handlers
-const handleCategoryChange = (categoryId: number | undefined): void => {
-  // Update URL parameters instead of directly setting state
-  const newSearchParams = new URLSearchParams(searchParams);
-
-  if (categoryId) {
-    newSearchParams.set('categoryId', categoryId.toString());
-
-    // 👇 also set categorySearch text to the selected category name
-    const selectedCat = categories.find((c: Category) => c.id === categoryId);
-    if (selectedCat) {
-      setCategorySearch(selectedCat.name);
+  const handleCategoryChange = (categoryId: number | undefined): void => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (categoryId) {
+      newSearchParams.set('categoryId', categoryId.toString());
+      const selectedCat = categories.find((c: Category) => c.id === categoryId);
+      if (selectedCat) {
+        setCategorySearch(selectedCat.name);
+      }
+    } else {
+      newSearchParams.delete('categoryId');
+      setCategorySearch('');
     }
-  } else {
-    newSearchParams.delete('categoryId');
-    setCategorySearch(''); // clear search field
-  }
-
-  // Clear subcategory when changing category
-  newSearchParams.delete('subcategoryId');
-  setSubcategorySearch(''); // also clear subcategory search field
-
-  // Clear search when changing categories
-  newSearchParams.delete('search');
-
-  setSearchParams(newSearchParams);
-};
-
-
-const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
-  // Update URL parameters instead of directly setting state
-  const newSearchParams = new URLSearchParams(searchParams);
-
-  if (subcategoryId) {
-    newSearchParams.set('subcategoryId', subcategoryId.toString());
-
-    // 👇 also set subcategorySearch text to the selected subcategory name
-    const selectedSub = subcategories.find((s: Subcategory) => s.id === subcategoryId);
-    if (selectedSub) {
-      setSubcategorySearch(selectedSub.name);
-    }
-  } else {
     newSearchParams.delete('subcategoryId');
-    setSubcategorySearch(''); // clear search field
-  }
+    setSubcategorySearch('');
+    newSearchParams.delete('search');
+    setSearchParams(newSearchParams);
+  };
 
-  setSearchParams(newSearchParams);
-};
-
+  const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (subcategoryId) {
+      newSearchParams.set('subcategoryId', subcategoryId.toString());
+      const selectedSub = subcategories.find((s: Subcategory) => s.id === subcategoryId);
+      if (selectedSub) {
+        setSubcategorySearch(selectedSub.name);
+      }
+    } else {
+      newSearchParams.delete('subcategoryId');
+      setSubcategorySearch('');
+    }
+    setSearchParams(newSearchParams);
+  };
 
   const handleSortChange = (newSort: string | undefined): void => {
     setSortBy(newSort || 'all');
@@ -621,50 +615,37 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
     setSelectedPriceRange(undefined);
     setSortBy('all');
     setSearchInputValue('');
-  setCategorySearch('');      // clear category search field
-  setSubcategorySearch('');   // clear subcategory search field
-
-    // Clear URL parameters - let useEffect handle state updates
+    setCategorySearch('');
+    setSubcategorySearch('');
     const newSearchParams = new URLSearchParams();
     setSearchParams(newSearchParams);
   };
 
-  // Handle search input change
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInputValue(e.target.value);
   };
 
-  // Handle search form submission
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedSearch = searchInputValue.trim();
-
-    // Update URL parameters
     const newSearchParams = new URLSearchParams(searchParams);
     if (trimmedSearch) {
       newSearchParams.set('search', encodeURIComponent(trimmedSearch));
     } else {
       newSearchParams.delete('search');
     }
-
-    // Clear category filters when searching
     newSearchParams.delete('categoryId');
     newSearchParams.delete('subcategoryId');
-
     setSearchParams(newSearchParams);
-    // Remove direct state update - let useEffect handle it
   };
 
-  // Handle clear search
   const handleClearSearch = () => {
     setSearchInputValue('');
-    // Remove direct state update - let useEffect handle it
     const newSearchParams = new URLSearchParams(searchParams);
     newSearchParams.delete('search');
     setSearchParams(newSearchParams);
   };
 
-  // Helper functions
   const getCurrentCategoryName = (): string => {
     if (selectedCategory === undefined) return "All Categories";
     const category = categories.find((cat: Category) => cat.id === selectedCategory);
@@ -677,7 +658,6 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
     return subcategory ? subcategory.name : "Selected Subcategory";
   };
 
-  // Get display title based on search or category
   const getDisplayTitle = (): string => {
     if (searchQuery.trim()) {
       return `Search Results for "${searchQuery}"`;
@@ -685,18 +665,15 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
     return getCurrentCategoryName();
   };
 
-  // Constants
   const hasActiveFilters = selectedCategory !== undefined ||
     selectedSubcategory !== undefined ||
     selectedPriceRange !== undefined ||
     sortBy !== 'all' ||
     searchQuery.trim() !== '';
 
-  // Update the product processing
   const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
     try {
       const { averageRating, reviews } = await fetchReviewOf(item.id);
-
       const isDev = Boolean((import.meta as any)?.env?.DEV);
       if (isDev) console.log('Processing product:', {
         id: item.id,
@@ -710,47 +687,38 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
         }))
       });
 
-      // Helper function to process image URLs
       const processImageUrl = (imgUrl: string): string => {
         if (!imgUrl) return '';
         const trimmed = imgUrl.trim();
         if (!trimmed) return '';
-        // Protocol-relative URL
         if (trimmed.startsWith('//')) return `https:${trimmed}`;
-        // Already absolute or root-relative
         if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
           return trimmed;
         }
-        // Normalize joining base without /api and ensure single slash
         const base = API_BASE_URL.replace(/\/?api\/?$/, '');
         const needsSlash = !trimmed.startsWith('/');
         const url = `${base}${needsSlash ? '/' : ''}${trimmed}`;
         return url.replace(/([^:]\/)\/+/g, '$1/');
       };
 
-      // Process all images to ensure they have proper URLs
       const processedProductImages = (item.productImages || [])
         .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
         .map(processImageUrl)
         .filter(Boolean);
 
       const processedVariants = (item.variants || []).map(variant => {
-        // Normalize images from either variant.images or variant.variantImages
         const rawImages = Array.isArray((variant as any).images)
           ? (variant as any).images
           : Array.isArray((variant as any).variantImages)
             ? (variant as any).variantImages
             : [];
-
         const normalizedImages = rawImages
           .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
           .map(processImageUrl)
           .filter(Boolean);
-
         const primaryImage = (typeof (variant as any).image === 'string' && (variant as any).image.trim())
           ? processImageUrl((variant as any).image)
           : (normalizedImages[0] || undefined);
-
         return {
           ...variant,
           image: primaryImage,
@@ -758,24 +726,17 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
         };
       });
 
-      // Flatten variant images for thumbnail/productImages fallback
       const variantImagePool = processedVariants
         .flatMap(v => [v.image, ...(v.images || [])])
         .filter((x): x is string => typeof x === 'string' && x.length > 0);
 
-      // Get the display image - prioritize product images first, then variants
       const getDisplayImage = () => {
-        // 1. Check product images first
         if (processedProductImages.length > 0) {
           return processedProductImages[0];
         }
-
-        // 2. Flatten all variant images (image + images[]), pick first valid
         const allVariantImages = processedVariants.flatMap(v => [v.image, ...(v.images || [])])
           .filter((x): x is string => typeof x === 'string' && x.length > 0);
         if (allVariantImages.length > 0) return allVariantImages[0];
-
-        // 3. Fallback to default image if no valid images found
         if (isDev) console.log('No valid images found for product, using default image');
         return phone;
       };
@@ -811,7 +772,6 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
     } catch (error) {
       const isDev = Boolean((import.meta as any)?.env?.DEV);
       if (isDev) console.error('Error processing product:', error);
-      // Fallback product data without reviews
       const processImageUrl = (imgUrl: string): string => {
         if (!imgUrl) return '';
         const trimmed = imgUrl.trim();
@@ -826,29 +786,24 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
         return url.replace(/([^:]\/)\/+/g, '$1/');
       };
 
-      // Process product images
       const processedProductImages = (item.productImages || [])
         .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
         .map(processImageUrl)
         .filter(Boolean);
 
-      // Process variants (normalize variantImages/images and derive primary image)
       const processedVariants = (item.variants || []).map(variant => {
         const rawImages = Array.isArray((variant as any).images)
           ? (variant as any).images
           : Array.isArray((variant as any).variantImages)
             ? (variant as any).variantImages
             : [];
-
         const normalizedImages = rawImages
           .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
           .map(processImageUrl)
           .filter(Boolean);
-
         const primaryImage = (typeof (variant as any).image === 'string' && (variant as any).image.trim())
           ? processImageUrl((variant as any).image)
           : (normalizedImages[0] || undefined);
-
         return {
           ...variant,
           image: primaryImage,
@@ -856,23 +811,17 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
         };
       });
 
-      // Flatten variant images for thumbnail/productImages fallback
       const variantImagePool = processedVariants
         .flatMap(v => [v.image, ...(v.images || [])])
         .filter((x): x is string => typeof x === 'string' && x.length > 0);
 
-      // Get display image using the same logic as in the try block
       const getFallbackImage = () => {
-        // 1. Check product images first
         if (processedProductImages.length > 0) {
           return processedProductImages[0];
         }
-
-        // 2. Flatten variant images
         const allVariantImages = processedVariants.flatMap(v => [v.image, ...(v.images || [])])
           .filter((x): x is string => typeof x === 'string' && x.length > 0);
         if (allVariantImages.length > 0) return allVariantImages[0];
-        // 3. Fallback to default image
         return phone;
       };
       const displayImage = getFallbackImage();
@@ -906,7 +855,6 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
     }
   };
 
-  // Error states
   if (productsError) {
     return (
       <div className="shop-error">
@@ -948,28 +896,26 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
       <Navbar />
       <ProductBanner />
       <CategorySlider />
-
       <div className="shop-max-width-container">
-        {/* Search Bar */}
-
-
         <div className="shop-container">
+           <div
+  style={{
+    marginBottom: '0.5rem',
+    borderBottom: '1px solid #e9ecef',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'nowrap',
+    gap: '1rem',
+    width: '100%',
+    minHeight: '60px'
+  }}
+  className="shop-header"
+>
 
-          <div style={{
-            marginBottom: '0.5rem',
-            borderBottom: '1px solid #e9ecef',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'nowrap', // Changed from 'wrap' to 'nowrap'
-            gap: '1rem', // Increased gap for better spacing
-            width: '100%',
-            minHeight: '60px' // Added min height for consistency
-
-          }} className="shop-header">
             <div style={{
-              flex: '0 0 auto', // Don't grow or shrink
-              minWidth: '200px' // Minimum width for title
+              flex: '0 0 auto',
+              minWidth: '200px'
             }}>
               <h2 style={{
                 fontSize: '2rem',
@@ -977,7 +923,7 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
                 color: '#222',
                 fontWeight: '700',
                 letterSpacing: '-1px',
-                whiteSpace: 'nowrap', // Prevent title wrapping
+                whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis'
               }}>
@@ -994,13 +940,12 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
                 )}
               </h2>
             </div>
-
             <div className="search-bar-container" style={{
               flex: '1 1 auto',
               display: 'flex',
-              justifyContent: 'center', // Center the search form
-              maxWidth: '500px', // Limit maximum width
-              minWidth: '250px' // Minimum width for usability
+              justifyContent: 'center',
+              maxWidth: '500px',
+              minWidth: '250px'
             }}>
               <form onSubmit={handleSearchSubmit} className="search-form" style={{
                 width: '100%',
@@ -1016,9 +961,7 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
                     onChange={handleSearchInputChange}
                     placeholder="Search for products, brands, or categories..."
                     className="search-input"
-                    style={{
-                     outline:'none'
-                    }}
+                    style={{ outline: 'none' }}
                   />
                   {searchInputValue && (
                     <button
@@ -1030,8 +973,8 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
                         right: '8px',
                         top: '50%',
                         transform: 'translateY(-50%)',
-                        background: 'none',
-                        border: 'none',
+                        background: none,
+                        border: none,
                         fontSize: '1.2rem',
                         cursor: 'pointer',
                         color: '#999'
@@ -1056,15 +999,14 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
                 </button>
               </form>
             </div>
-
             <div style={{
-              flex: '0 0 auto', // Don't grow or shrink
+              flex: '0 0 auto',
               fontSize: '1rem',
               color: '#666',
               backgroundColor: '#f8f9fa',
               padding: '0.5rem 1rem',
               borderRadius: '6px',
-              whiteSpace: 'nowrap' // Prevent wrapping
+              whiteSpace: 'nowrap'
             }}>
               {isLoadingProducts ? 'Loading...' : `${filteredProducts.length} products`}
             </div>
@@ -1078,7 +1020,6 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
               >
                 <span className="filter-icon">⚙</span>
               </button>
-
               {isSidebarOpen && (
                 <div
                   className="filter-sidebar-overlay"
@@ -1086,8 +1027,8 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
                   aria-label="Close filters"
                 />
               )}
-
-              <div className={`filter-sidebar ${isSidebarOpen ? "open" : ""}`} key={`${selectedCategory}-${selectedSubcategory}-${selectedPriceRange}-${sortBy}`}>
+              <div className="filter-sidebar-placeholder" ref={placeholderRef}></div>
+              <div className={`filter-sidebar ${isSidebarOpen ? "open" : ""}`} ref={sidebarRef} key={`${selectedCategory}-${selectedSubcategory}-${selectedPriceRange}-${sortBy}`}>
                 <div className="filter-sidebar__header">
                   <h3>Filters</h3>
                   <button
@@ -1098,15 +1039,6 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
                     ×
                   </button>
                 </div>
-{categories
-  .filter((category: Category) => 
-    category.name.toLowerCase().includes(categorySearch.toLowerCase())
-  )
-  .map((category: Category) => (
-    <div key={category.id} className="filter-sidebar__category-group">
-      {/* ... existing category code ... */}
-    </div>
-  ))}
                 {hasActiveFilters && (
                   <div className="filter-sidebar__section">
                     <button
@@ -1135,7 +1067,6 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
                     </button>
                   </div>
                 )}
-
                 {searchQuery.trim() && (
                   <div className="filter-sidebar__section">
                     <h4 className="filter-sidebar__section-title">Search</h4>
@@ -1151,7 +1082,6 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
                     </div>
                   </div>
                 )}
-
                 <div className="filter-sidebar__section">
                   <h4 className="filter-sidebar__section-title">Sort By</h4>
                   <div className="filter-sidebar__radio-list">
@@ -1173,152 +1103,187 @@ const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
                     ))}
                   </div>
                 </div>
-
                 <div className="filter-sidebar__section">
-  <h4 className="filter-sidebar__section-title">Categories</h4>
-<div className="filter-sidebar__search-container filter-sidebar__search-container--categories">
-  {/* Add this after the Categories title */}
-<input
-  type="text"
-  placeholder="Search categories..."
-  value={categorySearch}
-  onChange={(e) => setCategorySearch(e.target.value)}
-  onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const match = categories.find((cat: Category) =>
-        cat.name.toLowerCase().includes(categorySearch.toLowerCase())
-      );
-      if (match) {
-        handleCategoryChange(match.id);
-        // 👇 move focus to subcategory field
-        if (subcategoryInputRef.current) {
-          subcategoryInputRef.current.focus();
-        }
-      }
-    }
-  }}
-  className="filter-sidebar__search-input"
-/>
-</div>
-
-
-
-
-
-
-  <div className="filter-sidebar__checkbox-list">
-    {isLoadingCategories ? (
-      <p className="filter-sidebar__loading">Loading categories...</p>
-    ) : (
-      <>
-        <div className="filter-sidebar__checkbox-item">
-          <input
-            type="radio"
-            id="category-all"
-            name="category"
-            checked={selectedCategory === undefined}
-            onChange={() => handleCategoryChange(undefined)}
-          />
-          <label htmlFor="category-all">All Categories</label>
-        </div>
-{categories
-  .filter((category: Category) =>
-    category.name.toLowerCase().includes(categorySearch.toLowerCase())
-  )
-  .map((category: Category) => (
-          <div key={category.id} className="filter-sidebar__category-group">
-            <div className="filter-sidebar__checkbox-item">
-              <input
-                type="radio"
-                id={`category-${category.id}`}
-                name="category"
-                checked={selectedCategory === category.id}
-                onChange={() => handleCategoryChange(category.id)}
-              />
-              <label htmlFor={`category-${category.id}`}>{category.name}</label>
-            </div>
-          </div>
-        ))}
-      </>
-    )}
-  </div>
-</div>
-
-
+                  <h4 className="filter-sidebar__section-title">Categories</h4>
+                  <div className="filter-sidebar__search-container filter-sidebar__search-container--categories">
+                    <input
+                      type="text"
+                      placeholder="Search categories..."
+                      value={categorySearch}
+                      onChange={(e) => setCategorySearch(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const match = categories.find((cat: Category) =>
+                            cat.name.toLowerCase().includes(categorySearch.toLowerCase())
+                          );
+                          if (match) {
+                            handleCategoryChange(match.id);
+                            if (subcategoryInputRef.current) {
+                              subcategoryInputRef.current.focus();
+                            }
+                          }
+                        }
+                      }}
+                      className="filter-sidebar__search-input"
+                    />
+                  </div>
+                  <div className="filter-sidebar__checkbox-list">
+                    {isLoadingCategories ? (
+                      <p className="filter-sidebar__loading">Loading categories...</p>
+                    ) : (
+                      <>
+                        <div className="filter-sidebar__checkbox-item">
+                          <input
+                            type="radio"
+                            id="category-all"
+                            name="category"
+                            checked={selectedCategory === undefined}
+                            onChange={() => handleCategoryChange(undefined)}
+                          />
+                          <label htmlFor="category-all">All Categories</label>
+                        </div>
+                        {categories
+                          .filter((category: Category) =>
+                            category.name.toLowerCase().includes(categorySearch.toLowerCase())
+                          )
+                          .slice(0, selectedCategory === undefined ? (showMoreCategories ? undefined : 5) : undefined)
+                          .map((category: Category) => (
+                            <div key={category.id} className="filter-sidebar__category-group">
+                              <div className="filter-sidebar__checkbox-item">
+                                <input
+                                  type="radio"
+                                  id={`category-${category.id}`}
+                                  name="category"
+                                  checked={selectedCategory === category.id}
+                                  onChange={() => handleCategoryChange(category.id)}
+                                />
+                                <label htmlFor={`category-${category.id}`}>{category.name}</label>
+                              </div>
+                            </div>
+                          ))}
+                        {selectedCategory === undefined && categories.length > 5 && (
+                          <button
+                            onClick={() => setShowMoreCategories(!showMoreCategories)}
+                            style={{
+                              width: '100%',
+                              padding: '0.75rem',
+                              backgroundColor: '#f8f9fa',
+                              border: '1px solid #e9ecef',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '0.95rem',
+                              color: '#ff6b00',
+                              textAlign: 'center',
+                              marginTop: '0.5rem',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseOver={(e) => {
+                              e.currentTarget.style.backgroundColor = '#e9ecef';
+                            }}
+                            onMouseOut={(e) => {
+                              e.currentTarget.style.backgroundColor = '#f8f9fa';
+                            }}
+                          >
+                            {showMoreCategories ? 'View Less' : 'View More'}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
                 {selectedCategory !== undefined && (
                   <div className="filter-sidebar__section">
-  <h4 className="filter-sidebar__section-title">Subcategories</h4>
-
-  {/* Add this after the Subcategories title */}
-  <div className="filter-sidebar__search-container">
-<input
- ref={subcategoryInputRef} 
-  type="text"
-  placeholder="Search subcategories..."
-  value={subcategorySearch}
-  onChange={(e) => setSubcategorySearch(e.target.value)}
-  onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      const match = subcategories.find((sub: Subcategory) =>
-        sub.name.toLowerCase().includes(subcategorySearch.toLowerCase())
-      );
-      if (match) {
-        handleSubcategoryChange(match.id);
-      }
-    }
-  }}
-  className="filter-sidebar__search-input"
-/>
-
-  </div>
-
-  <div className="filter-sidebar__checkbox-list">
-  {isLoadingSubcategories ? (
-    <p className="filter-sidebar__loading">Loading subcategories...</p>
-  ) : subcategories.length > 0 ? (
-    <>
-      <div className="filter-sidebar__checkbox-item">
-        <input
-          type="radio"
-          id="subcategory-all"
-          name="subcategory"
-          checked={selectedSubcategory === undefined}
-          onChange={() => handleSubcategoryChange(undefined)}
-        />
-        <label htmlFor="subcategory-all">All Subcategories</label>
-      </div>
-
-      {subcategories
-        .filter((sub: Subcategory) =>
-          sub.name.toLowerCase().includes(subcategorySearch.toLowerCase())
-        )
-        .map((subcategory: Subcategory) => (
-          <div key={subcategory.id} className="filter-sidebar__checkbox-item">
-            <input
-              type="radio"
-              id={`subcategory-${subcategory.id}`}
-              name="subcategory"
-              checked={selectedSubcategory === subcategory.id}
-              onChange={() => handleSubcategoryChange(subcategory.id)}
-            />
-            <label htmlFor={`subcategory-${subcategory.id}`}>
-              {subcategory.name}
-            </label>
-          </div>
-        ))}
-    </>
-  ) : (
-    <p className="filter-sidebar__no-data">No subcategories available</p>
-  )}
-</div>
-
-</div>
-
+                    <h4 className="filter-sidebar__section-title">Subcategories</h4>
+                    <div className="filter-sidebar__search-container">
+                      <input
+                        ref={subcategoryInputRef}
+                        type="text"
+                        placeholder="Search subcategories..."
+                        value={subcategorySearch}
+                        onChange={(e) => setSubcategorySearch(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            const match = subcategories.find((sub: Subcategory) =>
+                              sub.name.toLowerCase().includes(subcategorySearch.toLowerCase())
+                            );
+                            if (match) {
+                              handleSubcategoryChange(match.id);
+                            }
+                          }
+                        }}
+                        className="filter-sidebar__search-input"
+                      />
+                    </div>
+                    <div className="filter-sidebar__checkbox-list">
+                      {isLoadingSubcategories ? (
+                        <p className="filter-sidebar__loading">Loading subcategories...</p>
+                      ) : subcategories.length > 0 ? (
+                        <>
+                          <div className="filter-sidebar__checkbox-item">
+                            <input
+                              type="radio"
+                              id="subcategory-all"
+                              name="subcategory"
+                              checked={selectedSubcategory === undefined}
+                              onChange={() => handleSubcategoryChange(undefined)}
+                            />
+                            <label htmlFor="subcategory-all">All Subcategories</label>
+                          </div>
+                          {subcategories
+                            .filter((sub: Subcategory) =>
+                              sub.name.toLowerCase().includes(subcategorySearch.toLowerCase())
+                            )
+                            .slice(0, showMoreSubcategories ? undefined : 5)
+                            .map((subcategory: Subcategory) => (
+                              <div key={subcategory.id} className="filter-sidebar__checkbox-item">
+                                <input
+                                  type="radio"
+                                  id={`subcategory-${subcategory.id}`}
+                                  name="subcategory"
+                                  checked={selectedSubcategory === subcategory.id}
+                                  onChange={() => handleSubcategoryChange(subcategory.id)}
+                                />
+                                <label htmlFor={`subcategory-${subcategory.id}`}>
+                                  {subcategory.name}
+                                </label>
+                              </div>
+                            ))}
+                          {subcategories.length > 5 && (
+                            <button
+                              onClick={() => setShowMoreSubcategories(!showMoreSubcategories)}
+                              style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                backgroundColor: '#f8f9fa',
+                                border: '1px solid #e9ecef',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontSize: '0.95rem',
+                                color: '#ff6b00',
+                                textAlign: 'center',
+                                marginTop: '0.5rem',
+                                transition: 'all 0.2s ease'
+                              }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor = '#e9ecef';
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = '#f8f9fa';
+                              }}
+                            >
+                              {showMoreSubcategories ? 'View Less' : 'View More'}
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <p className="filter-sidebar__no-data">No subcategories available</p>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
-
               <div className="shop-products">
                 {isLoadingProducts ? (
                   Array(8).fill(null).map((_, index) => (

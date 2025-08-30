@@ -592,10 +592,10 @@ const ProductPage = () => {
 
     // Calculate relative position (0-1)
     const relativeX = Math.max(0, Math.min(1, x / rect.width));
-    const relativeY = Math.max(0, Math.min(1, y / rect.top));
+    const relativeY = Math.max(0, Math.min(1, y / rect.height));
 
     // Convert to percentage for background-position
-    const percentX = relativeX * 100;
+    const percentX = relativeX  * 100;
     const percentY = relativeY * 100;
 
     setZoomPosition({ x: percentX, y: percentY });
@@ -805,7 +805,7 @@ const ProductPage = () => {
                       className={`product-gallery__zoom-box ${isZoomActive ? "active" : ""}`}
                       style={{
                         backgroundImage: `url(${currentImage})`,
-                        backgroundSize: "300%",
+                        backgroundSize: `${ZOOM_LEVEL * 100}`,
                         backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
                         backgroundRepeat: "no-repeat",
                       }}

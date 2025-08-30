@@ -591,8 +591,8 @@ const AdminVendor: React.FC = () => {
                     <th>Email</th>
                     <th>District</th>
                     <th>Phone Number</th>
-                    <th>Tax Number</th>
-                    <th>Tax Document</th>
+                    <th>PAT Number</th>
+                    <th>PAN Document</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -658,9 +658,9 @@ const AdminVendor: React.FC = () => {
                     Phone Number {sortConfig?.key === "phoneNumber" && (sortConfig.direction === "asc" ? "↑" : "↓")}
                   </th>
                   <th onClick={() => handleSort("taxNumber")} className="sortable">
-                    Tax Number {sortConfig?.key === "taxNumber" && (sortConfig.direction === "asc" ? "↑" : "↓")}
+                    PAN Number {sortConfig?.key === "taxNumber" && (sortConfig.direction === "asc" ? "↑" : "↓")}
                   </th>
-                  <th>Tax Document</th>
+                  <th>PAN Document</th>
                   <th>Action</th>
                 </tr>
               </thead>

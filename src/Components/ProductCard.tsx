@@ -278,6 +278,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
             </svg>
           </button>
+
           
           <div className="product-card__image">
   <img
@@ -358,11 +359,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               <span className="product-card__current-price">Rs {currentPrice.toFixed(2)}</span>
               <div className="product-card__price-details">
                 {typeof originalPriceDisplay === "number" && originalPriceDisplay > currentPrice && (
-                  <span className="product-card__original-price">Rs {originalPriceDisplay.toFixed(2)}</span>
+                  <span className="product-card__original-price">{originalPriceDisplay.toFixed(2)}</span>
                 )}
-                {Number(discount)==0 ?null : (
-                  <span className="product-card__discount">{discountLabel} off</span>
+                          {Number(discount)==0 ?null : (
+                  <span className="product-card__discount">{discountLabel}</span>
                 )}
+                
               </div>
             </div>
           </div>

@@ -324,7 +324,8 @@ const AdminProduct: React.FC = () => {
                       }
                       return undefined;
                     })();
-                    const displayPrice = (typeof product.basePrice === 'number' && product.basePrice > 0)
+                    console.log(typeof product.basePrice)
+                    const displayPrice = ((typeof product.basePrice === 'number' || typeof Number(product.basePrice) === "number" )&& product.basePrice > 0)
                       ? product.basePrice
                       : (variantPrice ?? 0);
                     const displayStock = product.stock && product.stock > 0 ? product.stock : (firstVariant?.stock ?? 0);

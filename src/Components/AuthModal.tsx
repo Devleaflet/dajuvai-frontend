@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import VendorService from "../services/vendorService";
 import { API_BASE_URL } from "../config";
+import { FaInfoCircle } from 'react-icons/fa';
 import "../Styles/AuthModal.css";
 import popup from "../assets/auth.jpg";
 import close from "../assets/close.png";
@@ -51,18 +52,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [success, setSuccess] = useState<string>("");
   const [verificationToken, setVerificationToken] = useState<string>("");
   const [showVerification, setShowVerification] = useState<boolean>(false);
-  const [pendingVerificationEmail, setPendingVerificationEmail] =
-    useState<string>("");
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string>("");
   const [countdown, setCountdown] = useState<number>(0);
-  const [forgotMode, setForgotMode] = useState<"none" | "request" | "reset">(
-    "none"
-  );
+  const [forgotMode, setForgotMode] = useState<"none" | "request" | "reset">("none");
   const [resetToken, setResetToken] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmNewPassword, setConfirmNewPassword] = useState<string>("");
   const [showForgotPopup, setShowForgotPopup] = useState(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+  
+  // Validation states
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  
   const modalRef = useRef<HTMLDivElement | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
 
@@ -104,6 +107,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     setError("");
     setSuccess("");
+    setErrors({});
+    setTouched({});
   }, [isLoginMode]);
 
   useEffect(() => {
@@ -124,57 +129,174 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       setConfirmNewPassword("");
       setShowPassword(false);
       setShowConfirmPassword(false);
+      setErrors({});
+      setTouched({});
     }
   }, [isOpen]);
 
-  const validateSignup = (): boolean => {
-    const errors: string[] = [];
-
-    // Username validation
-    if (!username.trim()) errors.push("Username is required");
-    if (username.length < 3)
-      errors.push("Username must be at least 3 characters");
-    if (username.length > 30)
-      errors.push("Username must be less than 30 characters");
-    if (!/^[a-zA-Z0-9_]+$/.test(username))
-      errors.push(
-        "Username can only contain letters, numbers, and underscores"
-      );
-
-    // Email validation
-    if (!email.trim()) errors.push("Email is required");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      errors.push("Please enter a valid email");
-    if (email.length > 255) errors.push("Email is too long");
-
-    // Password validation
-    if (!password.trim()) errors.push("Password is required");
-    if (password.length < 8)
-      errors.push("Password must be at least 8 characters");
-    if (!/[a-z]/.test(password))
-      errors.push("Password must contain at least one lowercase letter");
-    if (!/[A-Z]/.test(password))
-      errors.push("Password must contain at least one uppercase letter");
-    if (!/[^a-zA-Z0-9]/.test(password))
-      errors.push("Password must contain at least one special character");
-    if (password.length > 128) errors.push("Password is too long");
-
-    // Confirm password validation
-    if (!confirmPassword.trim()) errors.push("Please confirm your password");
-    if (password !== confirmPassword) errors.push("Passwords do not match");
-    if (!/[a-z]/.test(confirmPassword))
-      errors.push("Confirm password must contain at least one lowercase letter");
-    if (!/[A-Z]/.test(confirmPassword))
-      errors.push("Confirm password must contain at least one uppercase letter");
-    if (!/[^a-zA-Z0-9]/.test(confirmPassword))
-      errors.push("Confirm password must contain at least one special character");
-
-    if (errors.length > 0) {
-      errors.forEach((err) => toast.error(err));
-      setError(errors[0]);
-      return false;
+  const validateField = (name: string, value: string): string => {
+    switch (name) {
+      case "username":
+        if (!value.trim()) return "Username is required";
+        if (value.length < 3) return "Username must be at least 3 characters";
+        if (value.length > 30) return "Username must be less than 30 characters";
+        if (!/^[a-zA-Z0-9_]+$/.test(value))
+          return "Username can only contain letters, numbers, and underscores";
+        return "";
+      
+      case "email":
+        if (!value.trim()) return "Email is required";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Invalid email format";
+        if (value.length > 255) return "Email is too long";
+        return "";
+      
+      case "password":
+        if (!value.trim()) return "Password is required";
+        if (value.length < 8) return "Password must be at least 8 characters";
+        if (!/[a-z]/.test(value)) return "Password must contain at least one lowercase letter";
+        if (!/[A-Z]/.test(value)) return "Password must contain at least one uppercase letter";
+        if (!/[^a-zA-Z0-9]/.test(value)) return "Password must contain at least one special character";
+        if (value.length > 128) return "Password is too long";
+        return "";
+      
+      case "confirmPassword":
+        if (!value.trim()) return "Please confirm your password";
+        if (value !== password) return "Passwords do not match";
+        return "";
+      
+      case "resetToken":
+        if (!value.trim()) return "Reset token is required";
+        return "";
+      
+      case "newPassword":
+        if (!value.trim()) return "New password is required";
+        if (value.length < 8) return "Password must be at least 8 characters";
+        if (!/[a-z]/.test(value)) return "Password must contain at least one lowercase letter";
+        if (!/[A-Z]/.test(value)) return "Password must contain at least one uppercase letter";
+        if (!/[^a-zA-Z0-9]/.test(value)) return "Password must contain at least one special character";
+        return "";
+      
+      case "confirmNewPassword":
+        if (!value.trim()) return "Please confirm your new password";
+        if (value !== newPassword) return "Passwords do not match";
+        return "";
+      
+      default:
+        return "";
     }
-    return true;
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    
+    const error = validateField(name, value);
+    setErrors(prev => ({ ...prev, [name]: error }));
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    // Update the corresponding state
+    switch (name) {
+      case "username":
+        setUsername(value);
+        break;
+      case "email":
+        setEmail(value);
+        break;
+      case "password":
+        setPassword(value);
+        break;
+      case "confirmPassword":
+        setConfirmPassword(value);
+        break;
+      case "resetToken":
+        setResetToken(value);
+        break;
+      case "newPassword":
+        setNewPassword(value);
+        break;
+      case "confirmNewPassword":
+        setConfirmNewPassword(value);
+        break;
+    }
+
+    // Clear the error for this field when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+    
+    // Validate field in real-time if it's been touched before
+    if (touched[name]) {
+      const error = validateField(name, value);
+      setErrors(prev => ({ ...prev, [name]: error }));
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    let isValid = true;
+
+    const fieldsToValidate = isLoginMode 
+      ? ["email", "password"]
+      : ["username", "email", "password", "confirmPassword"];
+
+    fieldsToValidate.forEach(field => {
+      const value = field === "username" ? username :
+                    field === "email" ? email :
+                    field === "password" ? password :
+                    field === "confirmPassword" ? confirmPassword : "";
+      
+      const error = validateField(field, value);
+      if (error) {
+        newErrors[field] = error;
+        isValid = false;
+      }
+    });
+
+    setErrors(newErrors);
+    
+    // Mark all relevant fields as touched to show errors
+    const allTouched = fieldsToValidate.reduce((acc, field) => {
+      acc[field] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+    
+    setTouched(prev => ({ ...prev, ...allTouched }));
+    return isValid;
+  };
+
+  const validateResetForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    let isValid = true;
+
+    const fieldsToValidate = forgotMode === "request" 
+      ? ["email"]
+      : ["resetToken", "newPassword", "confirmNewPassword"];
+
+    fieldsToValidate.forEach(field => {
+      const value = field === "email" ? email :
+                    field === "resetToken" ? resetToken :
+                    field === "newPassword" ? newPassword :
+                    field === "confirmNewPassword" ? confirmNewPassword : "";
+      
+      const error = validateField(field, value);
+      if (error) {
+        newErrors[field] = error;
+        isValid = false;
+      }
+    });
+
+    setErrors(newErrors);
+    
+    const allTouched = fieldsToValidate.reduce((acc, field) => {
+      acc[field] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+    
+    setTouched(prev => ({ ...prev, ...allTouched }));
+    return isValid;
   };
 
   const handleSignup = async (userData: {
@@ -213,6 +335,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       setPassword("");
       setConfirmPassword("");
       setUsername("");
+      setErrors({});
+      setTouched({});
     } catch (err) {
       if (axios.isAxiosError(err)) {
         console.error("Signup error details:", {
@@ -223,10 +347,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         });
 
         if (err.response?.status === 400 && err.response?.data?.errors) {
-          const errorMessages = Object.entries(err.response.data.errors)
-            .map(([field, message]) => `${field}: ${message}`)
-            .join("\n");
-          setError(`Validation errors:\n${errorMessages}`);
+          const serverErrors = err.response.data.errors;
+          const newErrors: Record<string, string> = {};
+          
+          Object.keys(serverErrors).forEach(key => {
+            if (serverErrors[key] && serverErrors[key][0]) {
+              newErrors[key] = serverErrors[key][0];
+            }
+          });
+          
+          setErrors(newErrors);
+          setError("Please correct the validation errors");
         } else if (
           err.response?.status === 400 &&
           err.response?.data?.message
@@ -382,7 +513,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
         login(response.data.token, userData);
 
-        // Optionally hydrate full user profile
         if (response.data.data.userId) {
           try {
             await fetchUserData(response.data.data.userId);
@@ -391,7 +521,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           }
         }
 
-        // Redirect by role: admin and staff -> admin dashboard; vendor -> vendor dashboard
         const role = response.data.data.role;
         if (role === "admin" || role === "staff") {
           navigate("/admin-dashboard");
@@ -440,9 +569,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     window.location.href = redirectUrl;
   };
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ): Promise<void> => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -452,29 +579,27 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
+    if (!validateForm()) {
+      toast.error("Please fix the errors in the form", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      return;
+    }
+
     if (isLoginMode) {
-      if (!email.trim()) {
-        setError("Email is required");
-        return;
-      }
-      if (!password.trim()) {
-        setError("Password is required");
-        return;
-      }
       await handleLogin({ email: email.trim(), password });
     } else {
-      if (!validateSignup()) return;
-
-      try {
-        await handleSignup({
-          username: username.trim(),
-          email: email.trim(),
-          password,
-          confirmPassword,
-        });
-      } catch {
-        // Errors are already handled in handleSignup
-      }
+      await handleSignup({
+        username: username.trim(),
+        email: email.trim(),
+        password,
+        confirmPassword,
+      });
     }
   };
 
@@ -482,10 +607,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-    if (!email) {
-      setError("Please enter your email address.");
+    
+    if (!validateResetForm()) {
+      toast.error("Please fix the errors in the form", {
+        position: "top-right",
+        autoClose: 5000,
+      });
       return;
     }
+
     setIsLoading(true);
     try {
       await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email });
@@ -502,18 +632,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-    if (!resetToken) {
-      setError("Please enter the reset token.");
+    
+    if (!validateResetForm()) {
+      toast.error("Please fix the errors in the form", {
+        position: "top-right",
+        autoClose: 5000,
+      });
       return;
     }
-    if (!newPassword || !confirmNewPassword) {
-      setError("Please enter and confirm your new password.");
-      return;
-    }
-    if (newPassword !== confirmNewPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
+
     setIsLoading(true);
     try {
       await axios.post(`${API_BASE_URL}/api/auth/reset-password`, {
@@ -663,6 +790,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   inputMode="numeric"
                   pattern="\d*"
                 />
+                  
               </div>
 
               <button
@@ -698,11 +826,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     type="text"
                     className="auth-modal__input"
                     placeholder="Please enter username"
+                    name="username"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={handleInputChange}
+                  onBlur={handleBlur}
                     required
                     disabled={isLoading}
                   />
+                  {errors.username && touched.username && (
+      <div className="error-message">
+        <FaInfoCircle className="error-icon" />
+        {errors.username}
+      </div>
+    )}
                 </div>
               )}
 
@@ -711,11 +847,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   type="email"
                   className="auth-modal__input"
                   placeholder="Please enter email"
+                name="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
                   required
                   disabled={isLoading}
                 />
+                {errors.email && touched.email && (
+    <div className="error-message">
+      <FaInfoCircle className="error-icon" />
+      {errors.email}
+      </div>
+                  )}
               </div>
 
               <div className="auth-modal__form-group" style={{ position: 'relative' }}>
@@ -723,13 +867,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   type={showPassword ? "text" : "password"}
                   className="auth-modal__input"
                   placeholder="Please enter password"
+                  name="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
                   required
                   disabled={isLoading}
                   style={{ paddingRight: '40px' }}
                 />
-                <span style={{ position: 'absolute', right: '10px', top: isLoginMode ? '50%' : '25%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', height: '100%' }}>
+                <span style={{ position: 'absolute', right: '10px', top:  '25px', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', height: '100%' }}>
                   <button
                     type="button"
                     onClick={togglePasswordVisibility}
@@ -751,11 +897,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     )}
                   </button>
                 </span>
-                {!isLoginMode && (
-                  <div className="auth-modal__hint" style={{ color: '#888', fontSize: '0.9em', marginTop: '4px' }}>
-                    Password must be at least 8 characters and contain at least one lowercase, one uppercase letter, and one special character
-                  </div>
-                )}
+                {errors.password && touched.password && (
+    <div className="error-message">
+      <FaInfoCircle className="error-icon" />
+      {errors.password}
+      </div>
+                  )}
               </div>
 
               {isLoginMode && !showVerification && (
@@ -778,12 +925,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     className="auth-modal__input"
                     placeholder="Confirm password"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    name="confirmPassword"
+                    onChange={handleInputChange}
+                  onBlur={handleBlur}
                     required
                     disabled={isLoading}
                     style={{ paddingRight: '40px' }}
                   />
-                  <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', height: '100%' }}>
+                  <span style={{ position: 'absolute', right: '10px', top: '25px', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', height: '100%' }}>
                     <button
                       type="button"
                       onClick={toggleConfirmPasswordVisibility}
@@ -805,6 +954,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       )}
                     </button>
                   </span>
+                  {errors.confirmPassword && touched.confirmPassword && (
+    <div className="error-message">
+      <FaInfoCircle className="error-icon" />
+      {errors.confirmPassword}
+      </div>
+                  )}
                 </div>
               )}
 
@@ -869,7 +1024,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   className="auth-modal__input"
                   placeholder="Email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
                   required
                 />
                 {error && <div className="auth-modal__error">{error}</div>}
