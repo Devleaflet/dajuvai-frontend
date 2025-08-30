@@ -93,7 +93,7 @@ const ProtectedVendorRoute = ({ children }: { children: ReactElement }) => {
   return children;
 };
 
-const SHOW_COMING_SOON = false;
+const SHOW_COMING_SOON = true;
 
 
 function App() {
