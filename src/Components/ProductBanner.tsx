@@ -8,12 +8,14 @@ import { API_BASE_URL } from '../config';
 
 interface Slide {
   id: number;
-  image: string;
   name: string;
+  desktopImage: string | null;
+  mobileImage: string | null;
   status?: string;
   startDate?: string;
   endDate?: string;
 }
+
 
 const fetchProductBanners = async (): Promise<Slide[]> => {
   const response = await fetch(`${API_BASE_URL}/api/banners`);
@@ -21,14 +23,26 @@ const fetchProductBanners = async (): Promise<Slide[]> => {
     throw new Error(`Failed to fetch banners: ${response.statusText}`);
   }
   const data = await response.json();
-  // Filter only active banners (HERO and SIDEBAR) that are not expired
-  return data.data.filter((banner: Slide & { type: string; status: string; startDate?: string; endDate?: string }) => 
-    (banner.type === 'HERO' || banner.type === 'SIDEBAR') && 
-    banner.status === 'ACTIVE' &&
-    (!banner.startDate || new Date(banner.startDate) <= new Date()) &&
-    (!banner.endDate || new Date(banner.endDate) >= new Date())
-  );
+
+  return data.data
+    .filter(
+      (banner: any) =>
+        (banner.type === 'HERO' || banner.type === 'SIDEBAR') &&
+        banner.status === 'ACTIVE' &&
+        (!banner.startDate || new Date(banner.startDate) <= new Date()) &&
+        (!banner.endDate || new Date(banner.endDate) >= new Date())
+    )
+    .map((banner: any) => ({
+      id: banner.id,
+      name: banner.name,
+      desktopImage: banner.desktopImage,
+      mobileImage: banner.mobileImage,
+      status: banner.status,
+      startDate: banner.startDate,
+      endDate: banner.endDate,
+    }));
 };
+
 
 const ProductBanner: React.FC = () => {
   const navigate = useNavigate();
@@ -132,14 +146,14 @@ const ProductBanner: React.FC = () => {
       >
         {slides.map((slide) => (
           <div key={slide.id} className="hero-slider__slide">
-            <img 
-              src={slide.image} 
-              alt={slide.name}
-              className="hero-slider__image"
-              loading="lazy"
-              onClick={() => handleBannerClick(slide)}
-              style={{ cursor: 'pointer' }}
-            />
+            <img
+  src={window.innerWidth < 768 ? slide.mobileImage || slide.desktopImage : slide.desktopImage}
+  alt={slide.name}
+  className="hero-slider__image"
+  loading="lazy"
+  onClick={() => handleBannerClick(slide)}
+  style={{ cursor: 'pointer' }}
+/>
           </div>
         ))}
       </div>

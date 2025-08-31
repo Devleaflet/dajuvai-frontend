@@ -190,7 +190,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
             <div className="product1__price-row">
               <span className="product1__current-price">{displayPrice}</span>
               {discount && Number(discount) > 0 && (
-                <span className="product1__discount">{discount}% off</span>
+                <span className="product1__discount">{discount}%</span>
               )}
             </div>
             {showOriginalPrice && (

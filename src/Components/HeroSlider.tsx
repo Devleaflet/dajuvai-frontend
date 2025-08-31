@@ -8,12 +8,14 @@ import { API_BASE_URL } from '../config';
 
 interface Slide {
   id: number;
-  image: string;
   name: string;
+  desktopImage: string | null;
+  mobileImage: string | null;
   status?: string;
   startDate?: string;
   endDate?: string;
 }
+
 
 interface HeroSliderProps {
   onLoad?: () => void;
@@ -25,15 +27,27 @@ const fetchHeroBanners = async (): Promise<Slide[]> => {
     throw new Error(`Failed to fetch banners: ${response.statusText}`);
   }
   const data = await response.json();
-  console.log('Fetched banners:', data); // Debug API response
-  return data.data.filter(
-    (banner: Slide & { type: string; status: string; startDate?: string; endDate?: string }) =>
-      banner.type === 'HERO' &&
-      banner.status === 'ACTIVE' &&
-      (!banner.startDate || new Date(banner.startDate) <= new Date()) &&
-      (!banner.endDate || new Date(banner.endDate) >= new Date())
-  );
+  console.log('Fetched banners:', data);
+
+  return data.data
+    .filter(
+      (banner: any) =>
+        banner.type === 'HERO' &&
+        banner.status === 'ACTIVE' &&
+        (!banner.startDate || new Date(banner.startDate) <= new Date()) &&
+        (!banner.endDate || new Date(banner.endDate) >= new Date())
+    )
+    .map((banner: any) => ({
+      id: banner.id,
+      name: banner.name,
+      desktopImage: banner.desktopImage,
+      mobileImage: banner.mobileImage,
+      status: banner.status,
+      startDate: banner.startDate,
+      endDate: banner.endDate,
+    }));
 };
+
 
 const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   const navigate = useNavigate();
@@ -194,18 +208,14 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
           <div key={slide.id} className="hero-slider__slide">
             <div className="hero-slider__image-container">
               <img
-                src={slide.image}
-                alt={slide.name}
-                className="hero-slider__image"
-                loading="lazy"
-                onClick={() => handleImageClick(slide)}
-                style={{
-                  cursor: 'pointer',
-                  transform: isDragging ? `scale(0.98)` : 'scale(1)',
-                  transition: isDragging ? 'transform 0.1s ease' : 'transform 0.3s ease',
-                }}
-                draggable={false}
-              />
+  src={window.innerWidth < 768 ? slide.mobileImage || slide.desktopImage : slide.desktopImage}
+  alt={slide.name}
+  className="hero-slider__image"
+  loading="lazy"
+  onClick={() => handleImageClick(slide)}
+  draggable={false}
+/>
+
               <button
                 className="hero-slider__nav-button hero-slider__nav-button--prev"
                 onClick={goToPrevSlide}

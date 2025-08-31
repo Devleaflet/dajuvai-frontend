@@ -15,8 +15,8 @@ import ProductCard1 from "../ALT/ProductCard1";
 import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
 import { API_BASE_URL } from "../config";
 import { Search } from "lucide-react";
-import ProductCard from "../Components/ProductCard";
 
+// Interfaces and API functions remain unchanged
 interface Category {
   id: number;
   name: string;
@@ -105,10 +105,8 @@ interface ApiProduct {
   } | null;
 }
 
-// Unified API fetch function
 const apiRequest = async (endpoint: string, token: string | null | undefined = undefined) => {
   const url = endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`;
-
   const response = await fetch(url, {
     headers: {
       Authorization: token ? `Bearer ${token}` : "",
@@ -116,26 +114,20 @@ const apiRequest = async (endpoint: string, token: string | null | undefined = u
       Accept: "application/json",
     },
   });
-
   if (!response.ok) {
     throw new Error(`API request failed: ${response.status} ${response.statusText}`);
   }
-
   const contentType = response.headers.get("content-type");
   if (!contentType || !contentType.includes("application/json")) {
     const textResponse = await response.text();
-
     if (textResponse.trim().startsWith("<!doctype html") || textResponse.trim().startsWith("<html")) {
       throw new Error(`API endpoint not found. The server returned HTML instead of JSON.`);
     }
-
     throw new Error(`Expected JSON response but received ${contentType}`);
   }
-
   return await response.json();
 };
 
-// Build query parameters for the API
 const buildQueryParams = (filters: ProductFilters): string => {
   const params = new URLSearchParams();
   if (filters.categoryId !== undefined && filters.categoryId !== null) {
@@ -156,11 +148,9 @@ const buildQueryParams = (filters: ProductFilters): string => {
   return params.toString();
 };
 
-// Fetch products with filters
 const fetchProductsWithFilters = async (filters: ProductFilters, token: string | null | undefined = undefined) => {
   const queryParams = buildQueryParams(filters);
   const endpoint = `/api/categories/all/products${queryParams ? `?${queryParams}` : ""}`;
-
   console.log("🔍 Fetching products with filters:", {
     filters,
     queryParams,
@@ -168,7 +158,6 @@ const fetchProductsWithFilters = async (filters: ProductFilters, token: string |
     fullUrl: `${API_BASE_URL}${endpoint}`,
     token: token ? "Present" : "Not present",
   });
-
   try {
     const response = await apiRequest(endpoint, token);
     console.log("✅ Products API response:", response);
@@ -200,27 +189,20 @@ const Shop: React.FC = () => {
   const [showMoreCategories, setShowMoreCategories] = useState<boolean>(false);
   const [showMoreSubcategories, setShowMoreSubcategories] = useState<boolean>(false);
 
-  // Refs for sticky sidebar implementation
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [sidebarTop, setSidebarTop] = useState<number>(20);
-  const [isSticky, setIsSticky] = useState<boolean>(false);
-
-  // Use refs to track previous values and prevent unnecessary updates
   const prevSearchQueryRef = useRef<string>("");
   const prevSearchInputValueRef = useRef<string>("");
   const prevSelectedCategoryRef = useRef<number | undefined>(undefined);
   const prevSelectedSubcategoryRef = useRef<number | undefined>(undefined);
   const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Current filters object
   const currentFilters: ProductFilters = {
     categoryId: selectedCategory,
     subcategoryId: selectedSubcategory,
     sort: sortBy,
   };
 
-  // Initialize filters from URL parameters
   useEffect(() => {
     const categoryIdParam = searchParams.get("categoryId");
     const subcategoryIdParam = searchParams.get("subcategoryId");
@@ -260,11 +242,9 @@ const Shop: React.FC = () => {
     }
   }, [searchParams]);
 
-  // Listen for custom events from CategorySlider
   useEffect(() => {
     const handleShopFiltersChanged = (event: CustomEvent) => {
       const { categoryId, subcategoryId } = event.detail;
-
       const newSearchParams = new URLSearchParams(searchParams);
       if (categoryId) {
         newSearchParams.set("categoryId", categoryId.toString());
@@ -286,60 +266,49 @@ const Shop: React.FC = () => {
     };
   }, [searchParams, setSearchParams]);
 
-  // Enhanced sticky sidebar logic
   useEffect(() => {
     const sidebar = sidebarRef.current;
     const container = containerRef.current;
-    
+
     if (!sidebar || !container) return;
 
     const handleScroll = () => {
-      // Only apply sticky behavior on desktop
       if (window.innerWidth <= 768) {
-        setIsSticky(false);
+        sidebar.style.position = "fixed";
+        sidebar.style.top = "0";
+        sidebar.style.left = isSidebarOpen ? "0" : "-100%";
+        sidebar.style.zIndex = "1000";
         return;
       }
 
       const containerRect = container.getBoundingClientRect();
       const sidebarRect = sidebar.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
-      
-      // Calculate if sidebar should be sticky
+
       const shouldBeSticky = containerRect.top <= 20;
-      
-      // Calculate maximum scroll position to prevent sidebar from going below container
       const containerBottom = containerRect.bottom;
       const sidebarHeight = sidebarRect.height;
       const maxTop = Math.max(20, containerBottom - sidebarHeight - 20);
-      
-      // Update sticky state
-      setIsSticky(shouldBeSticky);
-      
-      // Calculate the top position for the sidebar
-      let newTop = 20;
-      if (shouldBeSticky) {
-        // Make sure sidebar doesn't go below the container
-        if (containerBottom < viewportHeight && sidebarHeight > containerBottom - 40) {
-          newTop = Math.max(20, containerBottom - sidebarHeight - 20);
-        }
-      }
-      
-      setSidebarTop(newTop);
+
+      const newTop = shouldBeSticky ? Math.min(20, maxTop) : 20;
+
+      sidebar.style.position = shouldBeSticky ? "fixed" : "relative";
+      sidebar.style.top = shouldBeSticky ? `${newTop}px` : "0";
+      sidebar.style.zIndex = shouldBeSticky ? "999" : "1";
     };
 
     const handleResize = () => {
       if (window.innerWidth <= 768) {
-        setIsSticky(false);
-        setSidebarTop(20);
+        sidebar.style.position = "fixed";
+        sidebar.style.top = "0";
+        sidebar.style.left = isSidebarOpen ? "0" : "-100%";
+        sidebar.style.zIndex = "1000";
       } else {
         handleScroll();
       }
     };
 
-    // Initial setup
     handleScroll();
-    
-    // Add event listeners
     window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", handleResize);
 
@@ -347,28 +316,8 @@ const Shop: React.FC = () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleResize);
     };
-  }, []);
+  }, [isSidebarOpen]);
 
-  // Apply sticky positioning to sidebar
-  useEffect(() => {
-    const sidebar = sidebarRef.current;
-    if (!sidebar) return;
-
-    if (window.innerWidth <= 768) {
-      // Mobile: reset to default positioning
-      sidebar.style.position = "relative";
-      sidebar.style.top = "0";
-      sidebar.style.zIndex = "1000";
-    } else {
-      // Desktop: apply sticky positioning
-      sidebar.style.position = isSticky ? "fixed" : "relative";
-      sidebar.style.top = isSticky ? `${sidebarTop}px` : "0";
-      sidebar.style.zIndex = isSticky ? "999" : "1";
-      sidebar.style.transition = "all 0.2s ease";
-    }
-  }, [isSticky, sidebarTop]);
-
-  // Query for categories
   const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
@@ -387,7 +336,6 @@ const Shop: React.FC = () => {
     gcTime: 10 * 60 * 1000,
   });
 
-  // Query for subcategories
   const { data: subcategories = [], isLoading: isLoadingSubcategories } = useQuery({
     queryKey: ["subcategories", selectedCategory],
     queryFn: async () => {
@@ -412,7 +360,6 @@ const Shop: React.FC = () => {
     gcTime: 10 * 60 * 1000,
   });
 
-  // Query for products with filters
   const {
     data: productsData,
     isLoading: isLoadingProducts,
@@ -592,7 +539,6 @@ const Shop: React.FC = () => {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  // Client-side filtering for price and search
   const filteredProducts = (productsData || []).filter((product) => {
     if (selectedPriceRange) {
       const maxPrice = parseFloat(selectedPriceRange);
@@ -619,7 +565,6 @@ const Shop: React.FC = () => {
     return true;
   });
 
-  // Event handlers
   const handleCategoryChange = (categoryId: number | undefined): void => {
     const newSearchParams = new URLSearchParams(searchParams);
     if (categoryId) {
@@ -1085,21 +1030,14 @@ const Shop: React.FC = () => {
               <button className="filter-button" onClick={toggleSidebar} aria-label="Toggle filters">
                 <span className="filter-icon">⚙</span>
               </button>
-              {isSidebarOpen && <div className="filter-sidebar-overlay" onClick={toggleSidebar} aria-label="Close filters" />}
+              <div
+                className={`filter-sidebar-overlay ${isSidebarOpen ? "open" : ""}`}
+                onClick={toggleSidebar}
+                aria-label="Close filters"
+              />
               <div
                 className={`filter-sidebar ${isSidebarOpen ? "open" : ""}`}
                 ref={sidebarRef}
-                style={{
-                  // Ensure proper width and positioning for sticky behavior
-                  width: window.innerWidth > 768 ? "280px" : "100%",
-                  maxHeight: isSticky ? "calc(100vh - 40px)" : "none",
-                  overflowY: isSticky ? "auto" : "visible",
-                  backgroundColor: "#fff",
-                  border: "1px solid #e9ecef",
-                  borderRadius: "8px",
-                  boxShadow: isSticky ? "0 4px 12px rgba(0, 0, 0, 0.15)" : "0 2px 4px rgba(0, 0, 0, 0.1)",
-                }}
-                key={`${selectedCategory}-${selectedSubcategory}-${selectedPriceRange}-${sortBy}`}
               >
                 <div className="filter-sidebar__header">
                   <h3>Filters</h3>
