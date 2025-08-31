@@ -283,7 +283,7 @@
   }
 }
 
-@media (max-width: 1098px) {
+@media (max-width: 1100px) {
   .shop {
     grid-template-columns: 1fr;
     padding: 10px;
