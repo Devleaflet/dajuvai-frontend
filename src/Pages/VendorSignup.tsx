@@ -891,7 +891,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                             console.log("Accept terms toggled:", e.target.checked);
                           }}
                           disabled={isLoading}
-                          style={{ background: "transparent", border: "1px solid #ddd" }}
+                          style={{ background: "transparent", border: "1px solid #ddd", height:"fit-content" }}
                         />
                         I accept the <Link to="/vendor/terms" target="_blank">terms and conditions</Link>
                       </label>
