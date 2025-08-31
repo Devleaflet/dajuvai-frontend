@@ -16,7 +16,7 @@ const AboutUs = () => {
               <div className="about__hero-text">
                 <p className="about__eyebrow">About DajuVai</p>
                 <h1 className="about__title">
-                  Nepal's Fastest-Growing E-Commerce Marketplace
+                  Nepal's Fastest <br />Growing E-Commerce Marketplace
                 </h1>
                 <p className="about__subtitle">
                   Founded in 2022 by two brothers in Kathmandu, DajuVai began as a
@@ -67,25 +67,67 @@ const AboutUs = () => {
           </div>
         </section>
 
-        {/* Why Choose Us */}
+        {/* About Dajuvai.com */}
         <section className="about__section">
           <div className="about__container">
-            <h2 className="about__heading">Why Choose Us?</h2>
+            <h2 className="about__heading">About Dajuvai.com</h2>
+            <p className="about__text">
+              Dajuvai.com is a multi-vendor online marketplace designed to connect sellers and buyers across Nepal. The name "Daju Vai" (meaning elder brother & younger brother) symbolizes trust, unity, and family values, reflecting the founders bond as two brothers starting the business together.
+            </p>
+
+            <h3 className="about__subheading">Business Model</h3>
+            <div className="about__business-model">
+              <div className="about__model-item">
+                <h4>B2C (Business-to-Consumer)</h4>
+                <ul>
+                  <li>Individual vendors list their products (fashion, electronics, groceries, handicrafts, etc.) directly for consumers.</li>
+                  <li>Customers browse, compare, and buy from multiple sellers in one platform.</li>
+                </ul>
+              </div>
+              <div className="about__model-item">
+                <h4>B2B (Business-to-Business)</h4>
+                <ul>
+                  <li>Wholesalers, manufacturers, and distributors can connect with retailers or businesses.</li>
+                  <li>Bulk order system, wholesale pricing, and direct supply chain deals.</li>
+                </ul>
+              </div>
+              <div className="about__model-item">
+                <h4>Multi-Vendor System</h4>
+                <ul>
+                  <li>Any verified vendor (small business, wholesaler or brand) can register and sell.</li>
+                  <li>Vendors can manage their own store, inventory, and pricing.</li>
+                  <li>Dajuvai.com provides logistics, payment gateway, and customer support.</li>
+                </ul>
+              </div>
+            </div>
+
+            <h3 className="about__subheading">Key Features of the Platform</h3>
             <ul className="about__featurelist">
               <li className="about__feature">
-                <IconCheck /> <span>100% Nepal-Made Technology</span>
+                <IconCheck /> <span>User-friendly website & mobile app</span>
               </li>
               <li className="about__feature">
-                <IconCheck />{" "}
-                <span>Zero Commission for Women & Youth Sellers</span>
+                <IconCheck /> <span>Vendor dashboard for managing sales</span>
               </li>
               <li className="about__feature">
-                <IconCheck /> <span>24/7 Nepali-speaking support</span>
+                <IconCheck /> <span>Secure payment gateway (Esewa, NPX & COD)</span>
               </li>
               <li className="about__feature">
-                <IconCheck />{" "}
-                <span>First platform with sign language checkout</span>
+                <IconCheck /> <span>Logistics & delivery support</span>
               </li>
+              <li className="about__feature">
+                <IconCheck /> <span>B2B bulk ordering system</span>
+              </li>
+              <li className="about__feature">
+                <IconCheck /> <span>Customer loyalty rewards</span>
+              </li>
+            </ul>
+
+            <h3 className="about__subheading">Vision</h3>
+            <ul className="about__vision-list">
+              <li>To become Nepal's most trusted online marketplace, connecting local businesses with consumers.</li>
+              <li>To empower Nepali entrepreneurs, SMEs, and wholesalers by giving them digital reach.</li>
+              <li>To bridge the gap between traditional markets and modern e-commerce.</li>
             </ul>
           </div>
         </section>
