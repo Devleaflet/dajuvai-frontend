@@ -1,0 +1,236 @@
+/* Main shop container */
+.shop-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.shop-container {
+  max-width: 1440px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 20px;
+  flex: 1;
+}
+
+.shop-content {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  position: relative;
+  padding: 24px 0;
+}
+
+/* Mobile filter button */
+.mobile-filter-button {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: #ff6b00;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 16px 0;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.mobile-filter-button:hover {
+  background-color: #e05a00;
+  transform: translateY(-1px);
+}
+
+/* Sidebar styles */
+.filter-sidebar {
+  position: sticky;
+  top: 100px;
+  height: calc(100vh - 140px);
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  transition: transform 0.3s ease;
+  z-index: 100;
+  scrollbar-width: thin;
+  scrollbar-color: #e0e0e0 transparent;
+}
+
+.filter-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.filter-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.filter-sidebar::-webkit-scrollbar-thumb {
+  background-color: #e0e0e0;
+  border-radius: 3px;
+}
+
+.filter-sidebar__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.filter-sidebar__header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.filter-sidebar__close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+  padding: 4px;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.filter-sidebar__close:hover {
+  color: #333;
+}
+
+.filter-sidebar__section {
+  margin-bottom: 24px;
+}
+
+.filter-sidebar__section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #444;
+  margin: 0 0 12px 0;
+}
+
+/* Products container */
+.products-container {
+  width: 100%;
+}
+
+.products-header {
+  margin-bottom: 24px;
+}
+
+.products-header h1 {
+  font-size: 1.75rem;
+  margin: 0 0 8px 0;
+  color: #222;
+}
+
+.products-header h2 {
+  font-size: 1.1rem;
+  margin: 0;
+  color: #666;
+  font-weight: 400;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+/* No products message */
+.no-products {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+.no-products p {
+  color: #666;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+}
+
+.clear-filters-button {
+  padding: 10px 20px;
+  background-color: #ff6b00;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.clear-filters-button:hover {
+  background-color: #e05a00;
+  transform: translateY(-1px);
+}
+
+/* Sidebar overlay for mobile */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+/* Responsive styles */
+@media (max-width: 1024px) {
+  .shop-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-sidebar {
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 300px;
+    height: 100vh;
+    z-index: 100;
+    transition: transform 0.3s ease;
+  }
+  
+  .filter-sidebar.open {
+    transform: translateX(320px);
+  }
+  
+  .mobile-filter-button {
+    display: flex;
+  }
+  
+  .sidebar-overlay.open {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+@media (max-width: 480px) {
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  
+  .filter-sidebar {
+    width: 280px;
+    left: -280px;
+  }
+  
+  .filter-sidebar.open {
+    transform: translateX(280px);
+  }
+}

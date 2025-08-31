@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
@@ -93,7 +92,7 @@ const ProductPage = () => {
   const mainImageRef = useRef<HTMLDivElement>(null);
   const quantityInputRef = useRef<HTMLInputElement>(null);
 
-  const ZOOM_LEVEL = 3.0;
+  const ZOOM_LEVEL = 3;
   const ZOOM_BOX_SIZE = 450;
 
   const { handleCartOnAdd } = useCart();
@@ -179,26 +178,26 @@ const ProductPage = () => {
 
       const productImages = Array.isArray(apiProduct.productImages)
         ? apiProduct.productImages
-            .map((img: any) => {
-              try {
-                let imgUrl = "";
-                if (typeof img === "string") {
-                  try {
-                    const parsed = JSON.parse(img);
-                    imgUrl = parsed.url || parsed.imageUrl || img;
-                  } catch {
-                    imgUrl = img;
-                  }
-                } else if (img && typeof img === "object") {
-                  imgUrl = img.url || img.imageUrl || "";
+          .map((img: any) => {
+            try {
+              let imgUrl = "";
+              if (typeof img === "string") {
+                try {
+                  const parsed = JSON.parse(img);
+                  imgUrl = parsed.url || parsed.imageUrl || img;
+                } catch {
+                  imgUrl = img;
                 }
-                return imgUrl ? toFullUrl(imgUrl) : "";
-              } catch (e) {
-                console.error("Error parsing product image:", e, img);
-                return "";
+              } else if (img && typeof img === "object") {
+                imgUrl = img.url || img.imageUrl || "";
               }
-            })
-            .filter(Boolean)
+              return imgUrl ? toFullUrl(imgUrl) : "";
+            } catch (e) {
+              console.error("Error parsing product image:", e, img);
+              return "";
+            }
+          })
+          .filter(Boolean)
         : [];
 
       const allImages = [...new Set([...productImages, ...variantImages])].filter(
@@ -251,16 +250,16 @@ const ProductPage = () => {
         apiProduct?.category?.id != null
           ? Number(apiProduct.category.id)
           : (apiProduct as any)?.categoryId != null
-          ? Number((apiProduct as any).categoryId)
-          : undefined;
+            ? Number((apiProduct as any).categoryId)
+            : undefined;
       const derivedCategoryName = apiProduct?.category?.name;
 
       const derivedSubcategoryId =
         apiProduct?.subcategory?.id != null
           ? Number(apiProduct.subcategory.id)
           : (apiProduct as any)?.subcategoryId != null
-          ? Number((apiProduct as any).subcategoryId)
-          : undefined;
+            ? Number((apiProduct as any).subcategoryId)
+            : undefined;
       const derivedSubcategoryName = apiProduct?.subcategory?.name;
 
       return {
@@ -280,16 +279,16 @@ const ProductPage = () => {
           category:
             derivedCategoryId != null
               ? {
-                  id: derivedCategoryId,
-                  name: derivedCategoryName || "Category",
-                }
+                id: derivedCategoryId,
+                name: derivedCategoryName || "Category",
+              }
               : undefined,
           subcategory:
             derivedSubcategoryId != null
               ? {
-                  id: derivedSubcategoryId,
-                  name: derivedSubcategoryName || "Subcategory",
-                }
+                id: derivedSubcategoryId,
+                name: derivedSubcategoryName || "Subcategory",
+              }
               : undefined,
           vendor: apiProduct.vendor || {
             id: null,
@@ -425,10 +424,10 @@ const ProductPage = () => {
           const vals = Array.isArray(attr?.values)
             ? attr.values.map((v: any) => String(v?.value ?? v)).filter(Boolean)
             : Array.isArray(attr?.attributeValues)
-            ? attr.attributeValues
+              ? attr.attributeValues
                 .map((v: any) => String(v?.value ?? v))
                 .filter(Boolean)
-            : [];
+              : [];
           return label && vals.length ? `${label}: ${vals.join(", ")}` : "";
         })
         .filter(Boolean)
@@ -505,8 +504,8 @@ const ProductPage = () => {
       setSelectedVariant(defaultVar);
       const imgs =
         defaultVar &&
-        defaultVar.variantImgUrls &&
-        defaultVar.variantImgUrls.length > 0
+          defaultVar.variantImgUrls &&
+          defaultVar.variantImgUrls.length > 0
           ? defaultVar.variantImgUrls
           : product.productImages || [];
       setImageError(
@@ -595,7 +594,7 @@ const ProductPage = () => {
     const relativeY = Math.max(0, Math.min(1, y / rect.height));
 
     // Convert to percentage for background-position
-    const percentX = relativeX  * 100;
+    const percentX = relativeX * 100;
     const percentY = relativeY * 100;
 
     setZoomPosition({ x: percentX, y: percentY });
@@ -663,13 +662,13 @@ const ProductPage = () => {
                   : undefined,
               selectedVariant: selectedVariant
                 ? {
-                    id: selectedVariant.id,
-                    attributes: selectedVariant.attributes,
-                    calculatedPrice: selectedVariant.calculatedPrice,
-                    originalPrice: selectedVariant.originalPrice,
-                    stock: selectedVariant.stock,
-                    variantImgUrls: selectedVariant.variantImgUrls,
-                  }
+                  id: selectedVariant.id,
+                  attributes: selectedVariant.attributes,
+                  calculatedPrice: selectedVariant.calculatedPrice,
+                  originalPrice: selectedVariant.originalPrice,
+                  stock: selectedVariant.stock,
+                  variantImgUrls: selectedVariant.variantImgUrls,
+                }
                 : undefined,
             },
             quantity,
@@ -786,6 +785,7 @@ const ProductPage = () => {
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                   onMouseMove={handleMouseMove}
+                  id="imageZoom"
                 >
                   {currentImage ? (
                     <img
@@ -793,7 +793,7 @@ const ProductPage = () => {
                       alt={product.name}
                       onError={() => handleImageError(selectedImageIndex)}
                       onLoad={handleImageLoad}
-                      draggable={false} // Prevent dragging
+                      draggable={false}
                     />
                   ) : (
                     <div className="product-gallery__no-image">
@@ -805,7 +805,7 @@ const ProductPage = () => {
                       className={`product-gallery__zoom-box ${isZoomActive ? "active" : ""}`}
                       style={{
                         backgroundImage: `url(${currentImage})`,
-                        backgroundSize: `${ZOOM_LEVEL * 100}`,
+                        backgroundSize: `${ZOOM_LEVEL * 100}%`,
                         backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
                         backgroundRepeat: "no-repeat",
                       }}
@@ -818,11 +818,10 @@ const ProductPage = () => {
                     {currentImages.map((image: string, index: number) => (
                       <button
                         key={index}
-                        className={`product-gallery__thumbnail ${
-                          selectedImageIndex === index
+                        className={`product-gallery__thumbnail ${selectedImageIndex === index
                             ? "product-gallery__thumbnail--active"
                             : ""
-                        }`}
+                          }`}
                         onClick={() => handleImageSelect(index)}
                       >
                         {image && !imageError[index] ? (
@@ -881,11 +880,10 @@ const ProductPage = () => {
                       {product.variants.map((variant: any) => (
                         <div
                           key={variant.id}
-                          className={`product-options__variant ${
-                            selectedVariant?.id === variant.id
+                          className={`product-options__variant ${selectedVariant?.id === variant.id
                               ? "product-options__variant--active"
                               : ""
-                          }`}
+                            }`}
                           onClick={() =>
                             variant.stock > 0 && handleVariantSelect(variant)
                           }

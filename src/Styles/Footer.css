@@ -6,6 +6,8 @@
   box-sizing: border-box;
   overflow: hidden;
   width: 100%;
+  position: relative;
+  z-index: 1111;
   /* max-width: 1800px; */
 }
 

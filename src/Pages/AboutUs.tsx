@@ -16,7 +16,7 @@ const AboutUs = () => {
               <div className="about__hero-text">
                 <p className="about__eyebrow">About DajuVai</p>
                 <h1 className="about__title">
-                  Nepal's Fastest <br /> Growing E-Commerce Marketplace
+                  Nepal's Fastest <br />Growing E-Commerce Marketplace
                 </h1>
                 <p className="about__subtitle">
                   Founded in 2022 by two brothers in Kathmandu, DajuVai began as a

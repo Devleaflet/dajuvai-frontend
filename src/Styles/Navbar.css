@@ -88,7 +88,7 @@
 
 .navbar__top-link:hover {
     color: #ff6b00;
-    cursor:pointer;
+    cursor: pointer;
 }
 
 /* Update Cart Icon Size */
@@ -1095,6 +1095,10 @@
     position: relative;
 }
 
+.navbar__user-profile {
+    margin-top: 0;
+}
+
 /* Avatar styles */
 .navbar__user-avatar {
     display: flex;
@@ -1106,7 +1110,7 @@
     background: #f5f5f5;
     color: #ff6600;
     font-size: 6rem;
-        border: #000 2px solid black ;
+    border: #000 2px solid black;
     font-weight: bold;
     cursor: pointer;
     transition: box-shadow 0.2s;
@@ -1122,11 +1126,11 @@
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    border: #000 2px solid black ;
+    border: #000 2px solid black;
     padding: 5px;
 
     color: #ff6600;
-    font-size: 1.5rem;
+    font-size: 2rem;
     font-weight: bold;
 
 }
@@ -1135,7 +1139,7 @@
     width: 40px;
     height: 40px;
     border-radius: 50%;
-        border:2px solid black ;
+    border: 2px solid black;
     object-fit: cover;
 }
 
@@ -1776,10 +1780,10 @@
 
 /* Tooltip container (reusable) */
 .tooltip {
-  position: relative;
-  display: inline-block;
-  cursor: pointer;
-  font-size: 23px;
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    font-size: 23px;
 }
 
 /* .tooltip_wishlist{
@@ -1788,40 +1792,42 @@
 
 /* Hidden tooltip text */
 .tooltip .tooltip-text {
-  visibility: hidden;
-  opacity: 0;
-  background-color: #333;
-  color: #fff;
-  text-align: center;
-  padding: 2px 6px;
-  border-radius: 6px;
-  position: absolute;
-  z-index: 10;
-  bottom: 125%; /* position above element */
-  left: 50%;
-  transform: translateX(-50%);
-  transition: opacity 0.3s ease;
-  white-space: nowrap;
-  font-size: 0.85rem;
+    visibility: hidden;
+    opacity: 0;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 2px 6px;
+    border-radius: 6px;
+    position: absolute;
+    z-index: 10;
+    bottom: 125%;
+    /* position above element */
+    left: 50%;
+    transform: translateX(-50%);
+    transition: opacity 0.3s ease;
+    white-space: nowrap;
+    font-size: 0.85rem;
 }
 
 /* Show on hover or keyboard focus */
 .tooltip:hover .tooltip-text,
 .tooltip:focus .tooltip-text {
-  visibility: visible;
-  opacity: 1;
+    visibility: visible;
+    opacity: 1;
 }
 
 /* Tooltip arrow */
 .tooltip .tooltip-text::after {
-  content: "";
-  position: absolute;
-  top: 100%; /* at bottom of tooltip box */
-  left: 50%;
-  margin-left: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: #333 transparent transparent transparent;
+    content: "";
+    position: absolute;
+    top: 100%;
+    /* at bottom of tooltip box */
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
 }
 
 
@@ -1842,68 +1848,71 @@
 
 /* --- Category scrolling helpers --- */
 .navbar__categories {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
 }
 
 .navbar__categories-wrapper {
-  position: relative;
-  flex: 1;
-  min-width: 0; /* Important for flexbox overflow */
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    /* Important for flexbox overflow */
 }
 
 .navbar__categories-inner {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* Firefox */
-  padding: 5px 0;
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    /* Firefox */
+    padding: 5px 0;
 }
 
 .navbar__categories-inner::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Edge */
+    display: none;
+    /* Chrome, Safari, Edge */
 }
 
 .navbar__scroll-arrow {
-  background: white;
-  border: none;
-  cursor: pointer;
-  color: #333;
-  padding: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: all 0.2s ease;
-  z-index: 2;
+    background: white;
+    border: none;
+    cursor: pointer;
+    color: #333;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+    z-index: 2;
 }
 
 .navbar__scroll-arrow:hover {
-  background: #f8f9fa;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transform: scale(1.05);
+    background: #f8f9fa;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: scale(1.05);
 }
 
 .navbar__scroll-arrow:active {
-  transform: scale(0.95);
+    transform: scale(0.95);
 }
 
 .navbar__scroll-arrow:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  box-shadow: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 
 /* Make sure categories are properly spaced */
 .navbar__category {
-  white-space: nowrap;
-  position: relative;
+    white-space: nowrap;
+    position: relative;
 }
 
 
@@ -1924,91 +1933,93 @@
 
 /* Add these new styles */
 .navbar__categories-wrapper {
-  position: relative;
-  flex: 1;
-  overflow-y: visible;
+    position: relative;
+    flex: 1;
+    overflow-y: visible;
 }
 
 .navbar__categories-inner {
-  display: flex;
-  gap: 12px;
-  overflow-x: visible;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  padding: 5px 0;
+    display: flex;
+    gap: 12px;
+    overflow-x: visible;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 5px 0;
 }
 
 .navbar__categories-inner::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
 
 /* Enhanced arrow styles */
 .navbar__scroll-arrow {
-  background: white;
-  border: none;
-  cursor: pointer;
-  color: #333;
-  padding: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: all 0.2s ease;
-  z-index: 2;
+    background: white;
+    border: none;
+    cursor: pointer;
+    color: #333;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+    z-index: 2;
 }
 
 .navbar__scroll-arrow:hover {
-  background: #f8f9fa;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transform: scale(1.05);
+    background: #f8f9fa;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: scale(1.05);
 }
 
 .navbar__scroll-arrow:active {
-  transform: scale(0.95);
+    transform: scale(0.95);
 }
 
 .navbar__scroll-arrow:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  box-shadow: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 
-/* Update the existing categories styles */
+
 .navbar__categories {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  position: relative;
-  width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    width: 100%;
 }
 
-/* Make sure categories are properly spaced */
 .navbar__category {
-  white-space: nowrap;
-  position: relative;
+    white-space: nowrap;
+    position: relative;
 }
 
-.navbar__account-link.tooltip{
+.navbar__account-link.tooltip {
     display: flex;
     align-items: center;
 }
-.tooltip{
+
+.tooltip {
     display: flex;
     align-items: center;
 }
+
+.navbar__user-avatar {}
 
 @media (max-width: 1099px) {
-    .navbar__account-icon-link{
+    .navbar__account-icon-link {
         margin-left: 10px;
 
     }
 
     .navbar__mobile-avatar {
         display: flex;
-    align-items: center;
+        align-items: center;
 
     }
 }
