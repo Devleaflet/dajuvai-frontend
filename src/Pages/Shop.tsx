@@ -15,6 +15,8 @@ import ProductCard1 from "../ALT/ProductCard1";
 import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
 import { API_BASE_URL } from "../config";
 import { Search } from "lucide-react";
+import { Settings2 } from 'lucide-react';
+
 
 // Interfaces and API functions remain unchanged
 interface Category {
@@ -1028,7 +1030,7 @@ const Shop: React.FC = () => {
           <div className="shop-content">
             <div className="shop">
               <button className="filter-button" onClick={toggleSidebar} aria-label="Toggle filters">
-                <span className="filter-icon">⚙</span>
+                <span className="filter-icon" style={{marginTop:'5px'}}><Settings2/></span>
               </button>
               <div
                 className={`filter-sidebar-overlay ${isSidebarOpen ? "open" : ""}`}
