@@ -11,13 +11,17 @@
   touch-action: pan-y;
   padding-bottom: 0;
 }
+
 .product-carousel__title-container {
   display: flex;
   justify-content: space-between;
-  gap:10px;
+  gap: 0px;
   align-items: center;
   flex-wrap: nowrap;
+  margin-bottom: -15px;
+  margin-top: 10px;
 }
+
 .product-carousel__title {
   font-size: 24px;
   font-weight: bold;
@@ -85,7 +89,8 @@
 
 .product-card__wrapper {
   flex: 0 0 auto;
-  pointer-events: auto; /* Ensure wrapper is clickable */
+  pointer-events: auto;
+  /* Ensure wrapper is clickable */
 }
 
 .product-card {
@@ -98,7 +103,8 @@
   position: relative;
   transition: transform 0.3s ease;
   height: fit-content;
-  pointer-events: auto; /* Ensure card is clickable */
+  pointer-events: auto;
+  /* Ensure card is clickable */
 }
 
 .product-card--skeleton {
@@ -229,7 +235,7 @@
 .product-card__rating-info {
   display: flex;
   align-items: center;
-  gap:5px;
+  gap: 5px;
 }
 
 .product-card__rating-skeleton {
@@ -258,10 +264,10 @@
 }
 
 .product-card__cart-button {
-  position:absolute;
-  right:10px;
-  top:200px;
-  z-index:2;
+  position: absolute;
+  right: 10px;
+  top: 200px;
+  z-index: 2;
   border: none;
   border-radius: 4px;
   padding: 4px;
@@ -306,7 +312,7 @@
 .product-card__dot--active {
   background-color: #333;
   transform: scale(1.2);
-  border:2px solid orange
+  border: 2px solid orange
 }
 
 .product-card__info {
@@ -353,9 +359,9 @@
 
 .product-card__price {
   display: flex;
-  gap:5px;
+  gap: 5px;
   align-items: center;
-  margin-top:auto;
+  margin-top: auto;
 }
 
 .product-card__current-price {
@@ -395,7 +401,7 @@
 .product-card__discount {
   font-size: 11px;
   font-weight: 600;
-  color:rgba(76, 175, 80, 1);
+  color: rgba(76, 175, 80, 1);
 
 }
 
@@ -450,6 +456,7 @@
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
@@ -459,20 +466,25 @@
   .product-carousel {
     width: 95%;
   }
+
   .product-card {
     width: 240px;
     min-height: 380px;
   }
+
   .product-carousel__products {
     min-height: 400px;
   }
-  .product-card__current-price{
+
+  .product-card__current-price {
     font-size: 11px;
   }
-  .product-card__original-price{
-    font-size:9px;
+
+  .product-card__original-price {
+    font-size: 9px;
   }
-  .product-card__discount{
+
+  .product-card__discount {
     font-size: 8px;
   }
 }
@@ -482,6 +494,7 @@
     width: 220px;
     min-height: 360px;
   }
+
   .product-carousel__products {
     min-height: 380px;
   }
@@ -492,12 +505,15 @@
     width: 200px;
     min-height: 340px;
   }
+
   .product-carousel__products {
     min-height: 360px;
   }
+
   .product-carousel__scroll-button {
     display: none;
   }
+
   .product-carousel__title {
     font-size: 20px;
   }
@@ -509,15 +525,19 @@
     padding: 10px;
     min-height: 320px;
   }
+
   .product-card__image {
     height: 180px;
   }
-  .product-card__cart-button{
-    top:140px
+
+  .product-card__cart-button {
+    top: 140px
   }
+
   .product-card__title {
     font-size: 14px;
   }
+
   .product-card__description {
     font-size: 12px;
   }
@@ -525,22 +545,27 @@
   .product-carousel {
     padding: 10px;
   }
+
   .product-carousel__products {
     gap: 10px;
     min-height: 340px;
   }
+
   .product-card__dot {
     width: 6px;
     height: 6px;
   }
+
   .product-card__dots {
     gap: 4px;
   }
+
   .product-card__wishlist-button {
     top: 8px;
     right: 8px;
     padding: 6px;
   }
+
   .product-card__wishlist-button svg {
     width: 14px;
     height: 14px;
@@ -552,9 +577,11 @@
     width: 160px;
     min-height: 300px;
   }
+
   .product-card__image {
     height: 160px;
   }
+
   .product-carousel__products {
     min-height: 320px;
   }
@@ -574,9 +601,11 @@
   display: flex;
   justify-content: center;
   width: 100%;
-  pointer-events: none; /* So clicks go through except dots */
+  pointer-events: none;
+  /* So clicks go through except dots */
 }
 
 .product-card__pagination--inside .product-card__dot {
-  pointer-events: auto; /* Allow dots to be clickable */
+  pointer-events: auto;
+  /* Allow dots to be clickable */
 }

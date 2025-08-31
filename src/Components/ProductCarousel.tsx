@@ -1,10 +1,10 @@
 import type React from "react";
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { IoIosArrowDropleftCircle, IoIosArrowDroprightCircle } from "react-icons/io";
 import { Link } from "react-router-dom";
-import ProductCard from "./ProductCard";
 import "../Styles/ProductCarousel.css";
+import ProductCard from "./ProductCard";
 import type { Product } from "./Types/Product";
-import { IoIosArrowDroprightCircle, IoIosArrowDropleftCircle } from "react-icons/io";
 
 interface ProductCarouselProps {
   title: string;
@@ -120,7 +120,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
     <div className="product-card product-card--skeleton">
       <div className="product-card__header">
         <div className="product-card__tag-skeleton skeleton"></div>
-        <div classodym className="product-card__wishlist-skeleton skeleton"></div>
+        <div className="product-card__wishlist-skeleton skeleton"></div>
       </div>
       <div className="product-card__image">
         <div className="product-card__image-skeleton skeleton"></div>
@@ -152,14 +152,14 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
           <Link
             to={`/section/${sectionId}?sectionname=${title}`}
             style={{
-              padding: "0.5rem 1rem",
+              padding: "0.4rem 2rem",
               backgroundColor: "#ff6b00",
               color: "white",
               borderRadius: "6px",
               textDecoration: "none",
-              fontSize: "0.95rem",
-              transition: "all 0.2s ease",
-              flexShrink:"0"
+              fontSize: "0.85rem",
+              transition: "all 0.2s ease ",
+              flexShrink: "0"
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.backgroundColor = "#e05a00";
@@ -198,10 +198,10 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
           {isLoading
             ? Array.from({ length: 6 }).map((_, index) => <ProductCardSkeleton key={`skeleton-${index}`} />)
             : displayedProducts.map((product) => (
-                <div key={product.id} className="product-card__wrapper">
-                  <ProductCard product={product} />
-                </div>
-              ))}
+              <div key={product.id} className="product-card__wrapper">
+                <ProductCard product={product} />
+              </div>
+            ))}
         </div>
 
         {showScrollButtons && !isLoading && (
