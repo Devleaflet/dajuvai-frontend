@@ -208,7 +208,7 @@ const Footer: React.FC = () => {
                   </div>
                   <div className="footer__service-text">
                     <div className="footer__service-label">Landline</div>
-                    <div className="footer__service-value">01-4720234</div>
+                    <div className="footer__service-value landline">01-4720234</div>
                   </div>
                 </div>
                 <div className="footer__service-item">

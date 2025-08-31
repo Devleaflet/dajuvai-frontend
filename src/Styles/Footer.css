@@ -264,7 +264,7 @@
   font-weight: 700;
   margin-bottom: 2px;
   color: #222;
-  font-size: 15px;
+  font-size: 13px;
 }
 
 .footer__service-value {
@@ -528,6 +528,10 @@
   max-width: 95%;
 }
 
+.footer__service-value.landline {
+  white-space: nowrap;
+}
+
 .footer__copyright {
   font-size: 14px;
   color: #666;
@@ -730,6 +734,13 @@
     font-size: 16px;
   }
 
+  .footer__service-value {
+    color: #666;
+    font-size: 13px;
+    margin-top: 0;
+    font-weight: 500;
+  }
+
   .footer__services-list {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
@@ -750,6 +761,13 @@
   .footer__heading {
     font-size: 20px;
     margin-bottom: 10px;
+  }
+
+  .footer__service-value {
+    color: #666;
+    font-size: 11px;
+    margin-top: 0;
+    font-weight: 500;
   }
 
   .footer__section-title {
