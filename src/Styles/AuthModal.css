@@ -33,6 +33,25 @@
   max-height: 90vh;
   overflow-y: auto;
   border-radius: 14px;
+  margin: 0 10px;
+  /* Added for small screens */
+}
+
+/* Add this new media query for very small devices */
+@media (max-width: 340px) {
+  .auth-modal__content {
+    max-width: 310px;
+    margin: 0 5px;
+  }
+
+  .auth-modal__form {
+    padding: 0 15px;
+  }
+
+  .auth-modal__title {
+    font-size: 20px;
+    padding: 0 10px;
+  }
 }
 
 @keyframes auth-modal-fade-in {
@@ -40,6 +59,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -88,12 +108,102 @@
   top: 0;
 }
 
+/* Mobile responsive grid layouts */
+.auth-modal__form-group--grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+}
+
+.auth-modal__form-group--single {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .auth-modal__form-group--grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .auth-modal__input--verification {
+    width: 180px !important;
+    font-size: 18px;
+    letter-spacing: 6px;
+  }
+
+  .cheque-container {
+    padding: 15px;
+  }
+
+  .auth-modal__file-preview-container {
+    max-width: 130px;
+  }
+
+  .auth-modal__file-preview {
+    max-width: 130px;
+    max-height: 100px;
+  }
+}
+
+/* Very small device adjustments (iPhone SE) */
+@media (max-width: 340px) {
+
+  .auth-modal__form-group--grid,
+  .auth-modal__form-group--single {
+    gap: 12px;
+  }
+
+  .auth-modal__input {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .auth-modal__label {
+    font-size: 13px;
+  }
+
+  .auth-modal__submit {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .auth-modal__file-label {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .auth-modal__file-preview-container {
+    max-width: 110px;
+  }
+
+  .auth-modal__file-preview {
+    max-width: 110px;
+    max-height: 90px;
+  }
+
+  .auth-modal__verification-info {
+    font-size: 13px;
+    padding: 0 10px;
+  }
+
+  .auth-modal__verification-info strong {
+    font-size: 14px;
+  }
+}
+
 @keyframes bounceBackground {
+
   0%,
   100% {
     transform: translateX(0);
     animation-timing-function: ease-out;
   }
+
   50% {
     transform: translateX(-50%);
     animation-timing-function: ease-in;
@@ -156,7 +266,7 @@
   margin-bottom: 15px;
 }
 
-.auth-modal__form-group-login{
+.auth-modal__form-group-login {
   width: 300px;
 
 }
@@ -171,7 +281,7 @@
 
 
 .auth-modal__input {
-  min-width:100%;
+  min-width: 100%;
   padding: 12px 15px;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -421,11 +531,13 @@ body.auth-modal--open {
   }
 
   @keyframes bounceBackground {
+
     0%,
     100% {
       transform: translateX(0);
       animation-timing-function: ease-out;
     }
+
     50% {
       transform: translateX(-50%);
       animation-timing-function: ease-in;
@@ -448,6 +560,7 @@ body.auth-modal--open {
     opacity: 0;
     transform: translateX(-50%) translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -502,6 +615,7 @@ body.auth-modal--open {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -512,6 +626,7 @@ body.auth-modal--open {
     transform: translateY(40px) scale(0.98);
     opacity: 0;
   }
+
   to {
     transform: translateY(0) scale(1);
     opacity: 1;
@@ -779,7 +894,7 @@ body.auth-modal--open {
   align-items: center;
   justify-content: space-between;
   margin-top: 5px;
-  background-color:  #fff;
+  background-color: #fff;
   padding: 5px 10px;
   border-radius: 4px;
 }
@@ -815,14 +930,18 @@ body.auth-modal--open {
   max-height: 150px;
   object-fit: contain;
   border-radius: 4px;
-  filter: blur(4px); /* Blur effect for cheque image */
-  opacity: 0.8; /* Image cover effect */
+  filter: blur(4px);
+  /* Blur effect for cheque image */
+  opacity: 0.8;
+  /* Image cover effect */
   transition: filter 0.3s, opacity 0.3s;
 }
 
 .auth-modal__file-preview-container:hover .auth-modal__file-preview {
-  filter: blur(0); /* Remove blur on hover */
-  opacity: 1; /* Full opacity on hover */
+  filter: blur(0);
+  /* Remove blur on hover */
+  opacity: 1;
+  /* Full opacity on hover */
 }
 
 /* Updated cheque photo styles */
@@ -920,33 +1039,36 @@ body.auth-modal--open {
   line-height: 1.3;
 }
 
-.auth-modal__content::-webkit-scrollbar-button{
-  display:none;
+.auth-modal__content::-webkit-scrollbar-button {
+  display: none;
 
 }
+
 /* Apply to your modal only */
 .auth-modal__content::-webkit-scrollbar {
-  width: 8px; /* Thickness */
+  width: 8px;
+  /* Thickness */
 }
 
 .auth-modal__content::-webkit-scrollbar-track {
-  background: #f1f1f1; /* Track background */
+  background: #f1f1f1;
+  /* Track background */
   border-radius: 10px;
 }
 
 .auth-modal__content::-webkit-scrollbar-thumb {
-  background: #434242; 
+  background: #434242;
   border-radius: 10px;
 
 }
 
-.auth-modal__content::-webkit-scrollbar-thumb:hover {
-
-}
+.auth-modal__content::-webkit-scrollbar-thumb:hover {}
 
 /* Firefox support */
 .auth-modal__content {
-  scrollbar-width: auto9; /* auto | thin | none */
+  scrollbar-width: auto9;
+  /* auto | thin | none */
   scroll-behavior: smooth;
-  scrollbar-color: #919090 #f1f1f1; /* thumb | track */
+  scrollbar-color: #919090 #f1f1f1;
+  /* thumb | track */
 }

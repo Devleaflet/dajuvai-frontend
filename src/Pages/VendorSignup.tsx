@@ -533,52 +533,52 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     }
   };
 
-const handleVerifyEmail = async () => {
-  try {
-    setIsLoading(true);
-    setError("");
-    console.log("Verifying email with token:", verificationToken);
+  const handleVerifyEmail = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+      console.log("Verifying email with token:", verificationToken);
 
 
-    const response = await axios.post(
-      `${API_BASE_URL}/api/auth/verify`,
-      { email: pendingVerificationEmail, token: verificationToken },
-      { headers: { "Content-Type": "application/json", Accept: "application/json" } }
-    );
+      const response = await axios.post(
+        `${API_BASE_URL}/api/auth/verify`,
+        { email: pendingVerificationEmail, token: verificationToken },
+        { headers: { "Content-Type": "application/json", Accept: "application/json" } }
+      );
 
-    console.log("Verification response:", response.data);
-    setShowVerification(false);
-    setIsVerificationComplete(true);
-    setVerificationToken("");
-    setCountdown(0);
-    toast.success("Email verified successfully! Waiting for admin approval.");
-    console.log("Email verification successful");
-  } catch (err) {
-    console.error("Verification error:", err);
-    if (axios.isAxiosError(err)) {
-      const errorMessage = err.response?.data?.message || err.response?.data?.error || "Verification failed";
-      if (errorMessage.toLowerCase().includes("token") && errorMessage.toLowerCase().includes("invalid")) {
-        setError("The verification code is invalid. Please check the code or request a new one.");
-        toast.error("Invalid verification code. Please try again.");
-        console.log("Invalid verification token");
-      } else if (errorMessage.toLowerCase().includes("token") && errorMessage.toLowerCase().includes("expired")) {
-        setError("The verification code has expired. Please request a new code.");
-        toast.error("Verification code expired. Please request a new one.");
-        console.log("Expired verification token");
+      console.log("Verification response:", response.data);
+      setShowVerification(false);
+      setIsVerificationComplete(true);
+      setVerificationToken("");
+      setCountdown(0);
+      toast.success("Email verified successfully! Waiting for admin approval.");
+      console.log("Email verification successful");
+    } catch (err) {
+      console.error("Verification error:", err);
+      if (axios.isAxiosError(err)) {
+        const errorMessage = err.response?.data?.message || err.response?.data?.error || "Verification failed";
+        if (errorMessage.toLowerCase().includes("token") && errorMessage.toLowerCase().includes("invalid")) {
+          setError("The verification code is invalid. Please check the code or request a new one.");
+          toast.error("Invalid verification code. Please try again.");
+          console.log("Invalid verification token");
+        } else if (errorMessage.toLowerCase().includes("token") && errorMessage.toLowerCase().includes("expired")) {
+          setError("The verification code has expired. Please request a new code.");
+          toast.error("Verification code expired. Please request a new one.");
+          console.log("Expired verification token");
+        } else {
+          setError(errorMessage);
+          toast.error(errorMessage);
+          console.log("Verification error message:", errorMessage);
+        }
       } else {
-        setError(errorMessage);
-        toast.error(errorMessage);
-        console.log("Verification error message:", errorMessage);
+        setError("An unexpected error occurred during verification");
+        toast.error("Verification failed. Please try again.");
+        console.log("Unexpected verification error:", err);
       }
-    } else {
-      setError("An unexpected error occurred during verification");
-      toast.error("Verification failed. Please try again.");
-      console.log("Unexpected verification error:", err);
+    } finally {
+      setIsLoading(false);
     }
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleResendVerification = async () => {
     try {
@@ -810,20 +810,19 @@ const handleVerifyEmail = async () => {
               <>
                 {currentStep === 1 && (
                   <>
-                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
-                      <div>
-                        <label className="auth-modal__label">Business Name</label>
-                        <input
-                          type="text"
-                          className="auth-modal__input"
-                          placeholder="Enter business name"
-                          value={businessName}
-                          onChange={(e) => setBusinessName(e.target.value)}
-                          required
-                          disabled={isLoading}
-                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-                        />
-                      </div>
+                    <div className="auth-modal__form-group auth-modal__form-group--grid">                      <div>
+                      <label className="auth-modal__label">Business Name</label>
+                      <input
+                        type="text"
+                        className="auth-modal__input"
+                        placeholder="Enter business name"
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
+                        required
+                        disabled={isLoading}
+                        style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                      />
+                    </div>
                       <div>
                         <label className="auth-modal__label">Phone Number</label>
                         <input
@@ -838,29 +837,28 @@ const handleVerifyEmail = async () => {
                         />
                       </div>
                     </div>
-                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
-                      <div>
-                        <label className="auth-modal__label">Province</label>
-                        <select
-                          className="auth-modal__input"
-                          value={province}
-                          onChange={(e) => {
-                            setProvince(e.target.value);
-                            console.log("Province selected:", e.target.value);
-                            fetchDistricts(e.target.value);
-                          }}
-                          required
-                          disabled={isLoading || provinceData.length === 0}
-                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-                        >
-                          <option value="">Select Province</option>
-                          {provinceData.map((p) => (
-                            <option key={p} value={p}>
-                              {p}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                    <div className="auth-modal__form-group auth-modal__form-group--grid">                      <div>
+                      <label className="auth-modal__label">Province</label>
+                      <select
+                        className="auth-modal__input"
+                        value={province}
+                        onChange={(e) => {
+                          setProvince(e.target.value);
+                          console.log("Province selected:", e.target.value);
+                          fetchDistricts(e.target.value);
+                        }}
+                        required
+                        disabled={isLoading || provinceData.length === 0}
+                        style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                      >
+                        <option value="">Select Province</option>
+                        {provinceData.map((p) => (
+                          <option key={p} value={p}>
+                            {p}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                       <div>
                         <label className="auth-modal__label">District</label>
                         <select
@@ -904,20 +902,19 @@ const handleVerifyEmail = async () => {
 
                 {currentStep === 2 && (
                   <>
-                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
-                      <div>
-                        <label className="auth-modal__label">Business Registration Number</label>
-                        <input
-                          type="text"
-                          className="auth-modal__input"
-                          placeholder="Enter business registration number"
-                          value={businessRegNumber}
-                          onChange={(e) => setBusinessRegNumber(e.target.value)}
-                          required
-                          disabled={isLoading}
-                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-                        />
-                      </div>
+                    <div className="auth-modal__form-group auth-modal__form-group--grid">                      <div>
+                      <label className="auth-modal__label">Business Registration Number</label>
+                      <input
+                        type="text"
+                        className="auth-modal__input"
+                        placeholder="Enter business registration number"
+                        value={businessRegNumber}
+                        onChange={(e) => setBusinessRegNumber(e.target.value)}
+                        required
+                        disabled={isLoading}
+                        style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                      />
+                    </div>
                       <div>
                         <label className="auth-modal__label">
                           Vat/Pan Number{" "}
@@ -935,7 +932,7 @@ const handleVerifyEmail = async () => {
                         />
                       </div>
                     </div>
-                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
+                    <div className="auth-modal__form-group auth-modal__form-group--grid">
                       <div>
                         <label className="auth-modal__label">Email</label>
                         <input
@@ -1136,20 +1133,19 @@ const handleVerifyEmail = async () => {
 
                 {currentStep === 4 && (
                   <>
-                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
-                      <div>
-                        <label className="auth-modal__label">Account Name</label>
-                        <input
-                          type="text"
-                          className="auth-modal__input"
-                          placeholder="Enter account name"
-                          value={accountName}
-                          onChange={(e) => setAccountName(e.target.value)}
-                          required
-                          disabled={isLoading}
-                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-                        />
-                      </div>
+                    <div className="auth-modal__form-group auth-modal__form-group--grid">                      <div>
+                      <label className="auth-modal__label">Account Name</label>
+                      <input
+                        type="text"
+                        className="auth-modal__input"
+                        placeholder="Enter account name"
+                        value={accountName}
+                        onChange={(e) => setAccountName(e.target.value)}
+                        required
+                        disabled={isLoading}
+                        style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                      />
+                    </div>
                       <div>
                         <label className="auth-modal__label">Bank Name</label>
                         <input
@@ -1164,20 +1160,19 @@ const handleVerifyEmail = async () => {
                         />
                       </div>
                     </div>
-                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
-                      <div>
-                        <label className="auth-modal__label">Account Number</label>
-                        <input
-                          type="text"
-                          className="auth-modal__input"
-                          placeholder="Enter account number"
-                          value={accountNumber}
-                          onChange={(e) => setAccountNumber(e.target.value)}
-                          required
-                          disabled={isLoading}
-                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-                        />
-                      </div>
+                    <div className="auth-modal__form-group auth-modal__form-group--grid">                      <div>
+                      <label className="auth-modal__label">Account Number</label>
+                      <input
+                        type="text"
+                        className="auth-modal__input"
+                        placeholder="Enter account number"
+                        value={accountNumber}
+                        onChange={(e) => setAccountNumber(e.target.value)}
+                        required
+                        disabled={isLoading}
+                        style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                      />
+                    </div>
                       <div>
                         <label className="auth-modal__label">Bank Branch</label>
                         <input
@@ -1192,19 +1187,18 @@ const handleVerifyEmail = async () => {
                         />
                       </div>
                     </div>
-                    <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", width: "100%" }}>
-                      <div>
-                        <label className="auth-modal__label">Bank Code (Optional)</label>
-                        <input
-                          type="text"
-                          className="auth-modal__input"
-                          placeholder="Enter bank code"
-                          value={bankCode}
-                          onChange={(e) => setBankCode(e.target.value)}
-                          disabled={isLoading}
-                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-                        />
-                      </div>
+                    <div className="auth-modal__form-group auth-modal__form-group--grid">                      <div>
+                      <label className="auth-modal__label">Bank Code (Optional)</label>
+                      <input
+                        type="text"
+                        className="auth-modal__input"
+                        placeholder="Enter bank code"
+                        value={bankCode}
+                        onChange={(e) => setBankCode(e.target.value)}
+                        disabled={isLoading}
+                        style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                      />
+                    </div>
                     </div>
                     <div className="document-section">
                       <h3 className="cheque-header">
