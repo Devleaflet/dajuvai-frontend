@@ -156,3 +156,50 @@
     height: 20px;
   }
 }
+
+/* Product Card Wishlist Button  */
+
+.product-card {
+  position: relative;
+}
+
+.product-card__wishlist-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  z-index: 3;
+  backdrop-filter: blur(4px);
+}
+
+.product-card__wishlist-button:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+}
+
+.product-card__wishlist-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.product-card__wishlist-button svg {
+  width: 18px;
+  height: 18px;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Critical: This ensures the heart icon is red when wishlisted */
+.product-card__wishlist-button svg[fill="red"] {
+  fill: #ff0000 !important;
+  stroke: #ff0000 !important;
+}
