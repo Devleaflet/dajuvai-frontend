@@ -819,8 +819,8 @@ const ProductPage = () => {
                       <button
                         key={index}
                         className={`product-gallery__thumbnail ${selectedImageIndex === index
-                            ? "product-gallery__thumbnail--active"
-                            : ""
+                          ? "product-gallery__thumbnail--active"
+                          : ""
                           }`}
                         onClick={() => handleImageSelect(index)}
                       >
@@ -881,11 +881,14 @@ const ProductPage = () => {
                         <div
                           key={variant.id}
                           className={`product-options__variant ${selectedVariant?.id === variant.id
-                              ? "product-options__variant--active"
-                              : ""
+                            ? "product-options__variant--active"
+                            : ""
                             }`}
-                          onClick={() =>
-                            variant.stock > 0 && handleVariantSelect(variant)
+                          onClick={() => {
+                            setQuantity(1)
+                            if (variant.stock > 0) handleVariantSelect(variant)
+
+                          }
                           }
                         >
                           <div className="product-options__variant-info">
