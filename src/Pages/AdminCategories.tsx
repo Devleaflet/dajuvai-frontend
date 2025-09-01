@@ -1,6 +1,7 @@
 import type React from "react";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { toast } from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../config";
 import { AdminSidebar } from "../Components/AdminSidebar";
@@ -9,6 +10,7 @@ import Pagination from "../Components/Pagination";
 import DeleteModal from "../Components/Modal/DeleteModal";
 import CategoryEditModal from "../Components/Modal/CategoryEditModal";
 import SubCategoryModal from "../Components/Modal/SubCategoryModal";
+import SubcategoriesViewModal from "../Components/Modal/SubcategoriesViewModal";
 import "../Styles/AdminCategories.css";
 import placeholder from "../assets/earphones.png";
 import { Plus } from "lucide-react";
@@ -152,6 +154,7 @@ const AdminCategories: React.FC = () => {
   const [showCategoryEditModal, setShowCategoryEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
+  const [showSubcategoriesViewModal, setShowSubcategoriesViewModal] = useState(false);
   const [showHomepageModal, setShowHomepageModal] = useState(false);
   const [homepageCategories, setHomepageCategories] = useState<string[]>([]);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
@@ -159,7 +162,14 @@ const AdminCategories: React.FC = () => {
   const [isAddingSubCategory, setIsAddingSubCategory] = useState(false);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubCategoryLoading, setIsSubCategoryLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [categoryImageChanging, setCategoryImageChanging] = useState<string | null>(null);
+  const [subcategoryImageChanging, setSubcategoryImageChanging] = useState<string | null>(null);
+  const [newCategoryImage, setNewCategoryImage] = useState<File | null>(null);
+  const [newSubcategoryImage, setNewSubcategoryImage] = useState<File | null>(null);
+  const [categoryImagePreview, setCategoryImagePreview] = useState<string | null>(null);
+  const [subcategoryImagePreview, setSubcategoryImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -491,8 +501,17 @@ const AdminCategories: React.FC = () => {
   };
 
   const handleSaveSubCategory = async (categoryId: string, subCategory: SubCategory, imageFile?: File) => {
-    setIsLoading(true);
+    setIsSubCategoryLoading(true);
     setError(null);
+    
+    // Show loading toast
+    const loadingToast = toast.loading(
+      isAddingSubCategory ? 'Creating subcategory...' : 'Updating subcategory...',
+      {
+        position: 'top-right',
+      }
+    );
+    
     try {
       if (isAddingSubCategory) {
         const formData = new FormData();
@@ -529,6 +548,13 @@ const AdminCategories: React.FC = () => {
           CACHE_KEY,
           JSON.stringify({ data: updatedCategories, timestamp: Date.now() })
         );
+        
+        // Dismiss loading toast and show success
+        toast.dismiss(loadingToast);
+        toast.success('Subcategory created successfully! 🎉', {
+          position: 'top-right',
+          duration: 3000,
+        });
       } else if (subCategory.id) {
         const formData = new FormData();
         formData.append("name", subCategory.name);
@@ -569,23 +595,42 @@ const AdminCategories: React.FC = () => {
           CACHE_KEY,
           JSON.stringify({ data: updatedCategories, timestamp: Date.now() })
         );
+        
+        // Dismiss loading toast and show success
+        toast.dismiss(loadingToast);
+        toast.success('Subcategory updated successfully! ✨', {
+          position: 'top-right',
+          duration: 3000,
+        });
       }
     } catch (err) {
       console.error("Save subcategory error:", err);
+      
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+      
       if (axios.isAxiosError(err)) {
         const status = err.response?.status;
         const message = (err.response?.data as ApiErrorResponse)?.message || "Unknown error";
+        let errorMessage = "Failed to save subcategory";
+        
         if (status === 400) {
-          setError("Invalid subcategory name or ID.");
+          errorMessage = "Invalid subcategory name or ID.";
         } else if (status === 401) {
-          setError("Unauthorized. Please log in as an admin.");
+          errorMessage = "Unauthorized. Please log in as an admin.";
         } else if (status === 403) {
-          setError("Forbidden. Admin access required.");
+          errorMessage = "Forbidden. Admin access required.";
         } else if (status === 404) {
-          setError("Category or subcategory not found.");
+          errorMessage = "Category or subcategory not found.";
         } else {
-          setError(message || "Failed to save subcategory");
+          errorMessage = message || "Failed to save subcategory";
         }
+        
+        setError(errorMessage);
+        toast.error(errorMessage, {
+          position: 'top-right',
+          duration: 4000,
+        });
         if (isAddingSubCategory) {
           const newSubCategoryId = `${categoryId}-${Date.now()}`;
           const updatedCategories = categories.map((category) =>
@@ -621,10 +666,15 @@ const AdminCategories: React.FC = () => {
           );
         }
       } else {
-        setError("An unexpected error occurred while saving subcategory");
+        const errorMessage = "An unexpected error occurred while saving subcategory";
+        setError(errorMessage);
+        toast.error(errorMessage, {
+          position: 'top-right',
+          duration: 4000,
+        });
       }
     } finally {
-      setIsLoading(false);
+      setIsSubCategoryLoading(false);
       setShowSubCategoryModal(false);
       setIsAddingSubCategory(false);
     }
@@ -640,6 +690,222 @@ const AdminCategories: React.FC = () => {
         setIsAddingSubCategory(false);
         setShowSubCategoryModal(true);
       }
+    }
+  };
+
+  // Image change handlers
+  const handleChangeCategoryImage = (categoryId: string) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handleCategoryImageChange(categoryId, file);
+      }
+    };
+    input.click();
+  };
+
+  const handleCategoryImageChange = async (categoryId: string, file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    setCategoryImageChanging(categoryId);
+    setNewCategoryImage(file);
+    setCategoryImagePreview(URL.createObjectURL(file));
+
+    const loadingToast = toast.loading('Updating category image...', {
+      position: 'top-right',
+    });
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await axios.put(
+        `${API_BASE_URL}/api/categories/${categoryId}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (response.data.success) {
+        const updatedCategories = categories.map((category) =>
+          category.id === categoryId
+            ? { ...category, image: response.data.data.image }
+            : category
+        );
+        setCategories(updatedCategories);
+        setFilteredCategories(updatedCategories);
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({ data: updatedCategories, timestamp: Date.now() })
+        );
+
+        toast.dismiss(loadingToast);
+        toast.success('Category image updated successfully! ✨', {
+          position: 'top-right',
+          duration: 3000,
+        });
+      }
+    } catch (err) {
+      console.error('Update category image error:', err);
+      toast.dismiss(loadingToast);
+      
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
+        const message = (err.response?.data as ApiErrorResponse)?.message || 'Unknown error';
+        let errorMessage = 'Failed to update category image';
+        
+        if (status === 400) {
+          errorMessage = 'Invalid image file.';
+        } else if (status === 401) {
+          errorMessage = 'Unauthorized. Please log in as an admin.';
+        } else if (status === 403) {
+          errorMessage = 'Forbidden. Admin access required.';
+        } else if (status === 404) {
+          errorMessage = 'Category not found.';
+        } else {
+          errorMessage = message || 'Failed to update category image';
+        }
+        
+        toast.error(errorMessage, {
+          position: 'top-right',
+          duration: 4000,
+        });
+      } else {
+        toast.error('An unexpected error occurred while updating image', {
+          position: 'top-right',
+          duration: 4000,
+        });
+      }
+    } finally {
+      setCategoryImageChanging(null);
+      setNewCategoryImage(null);
+      setCategoryImagePreview(null);
+    }
+  };
+
+  const handleChangeSubcategoryImage = (categoryId: string, subcategoryId: string) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handleSubcategoryImageChange(categoryId, subcategoryId, file);
+      }
+    };
+    input.click();
+  };
+
+  const handleSubcategoryImageChange = async (categoryId: string, subcategoryId: string, file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB');
+      return;
+    }
+
+    setSubcategoryImageChanging(subcategoryId);
+    setNewSubcategoryImage(file);
+    setSubcategoryImagePreview(URL.createObjectURL(file));
+
+    const loadingToast = toast.loading('Updating subcategory image...', {
+      position: 'top-right',
+    });
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await axios.put(
+        `${API_BASE_URL}/api/categories/${categoryId}/subcategories/${subcategoryId}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (response.data.success) {
+        const updatedCategories = categories.map((category) =>
+          category.id === categoryId
+            ? {
+                ...category,
+                subCategories: category.subCategories.map((sub) =>
+                  sub.id === subcategoryId
+                    ? { ...sub, image: response.data.data.image }
+                    : sub
+                ),
+              }
+            : category
+        );
+        setCategories(updatedCategories);
+        setFilteredCategories(updatedCategories);
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({ data: updatedCategories, timestamp: Date.now() })
+        );
+
+        toast.dismiss(loadingToast);
+        toast.success('Subcategory image updated successfully! ✨', {
+          position: 'top-right',
+          duration: 3000,
+        });
+      }
+    } catch (err) {
+      console.error('Update subcategory image error:', err);
+      toast.dismiss(loadingToast);
+      
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
+        const message = (err.response?.data as ApiErrorResponse)?.message || 'Unknown error';
+        let errorMessage = 'Failed to update subcategory image';
+        
+        if (status === 400) {
+          errorMessage = 'Invalid image file.';
+        } else if (status === 401) {
+          errorMessage = 'Unauthorized. Please log in as an admin.';
+        } else if (status === 403) {
+          errorMessage = 'Forbidden. Admin access required.';
+        } else if (status === 404) {
+          errorMessage = 'Subcategory not found.';
+        } else {
+          errorMessage = message || 'Failed to update subcategory image';
+        }
+        
+        toast.error(errorMessage, {
+          position: 'top-right',
+          duration: 4000,
+        });
+      } else {
+        toast.error('An unexpected error occurred while updating image', {
+          position: 'top-right',
+          duration: 4000,
+        });
+      }
+    } finally {
+      setSubcategoryImageChanging(null);
+      setNewSubcategoryImage(null);
+      setSubcategoryImagePreview(null);
     }
   };
 
@@ -788,15 +1054,27 @@ const AdminCategories: React.FC = () => {
                     <tr key={category.id} className="admin-categories__table-row">
                       <td className="admin-categories__name-cell">
                         <div className="admin-categories__category-container">
-                          <div className="admin-categories__category-image">
-                            {category.image ? (
-                              <img
-                                src={category.image || placeholder || "/placeholder.svg"}
-                                alt={category.name}
-                              />
-                            ) : (
-                              <div className="admin-categories__no-image">No Image</div>
-                            )}
+                          <div className="admin-categories__image-container">
+                            <div className="admin-categories__category-image">
+                              {(categoryImagePreview && categoryImageChanging === category.id) || category.image ? (
+                                <img
+                                  src={(categoryImagePreview && categoryImageChanging === category.id) ? categoryImagePreview : (category.image || placeholder || "/placeholder.svg")}
+                                  alt={category.name}
+                                />
+                              ) : (
+                                <div className="admin-categories__no-image">No Image</div>
+                              )}
+                              <button 
+                                className="admin-categories__change-image-btn"
+                                onClick={() => handleChangeCategoryImage(category.id)}
+                                title="Change image"
+                              >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                            </div>
                           </div>
                           <span>{category.name}</span>
                         </div>
@@ -841,7 +1119,10 @@ const AdminCategories: React.FC = () => {
                         </button>
                         <button
                           className="admin-categories__action-btn admin-categories__view-btn"
-                          onClick={() => setSelectedCategory(category)}
+                          onClick={() => {
+                            setSelectedCategory(category);
+                            setShowSubcategoriesViewModal(true);
+                          }}
                           aria-label="View category"
                         >
                           <svg
@@ -910,97 +1191,7 @@ const AdminCategories: React.FC = () => {
             </table>
           </div>
 
-          {selectedCategory && (
-            <div className="admin-categories__subcategories">
-              <h3>Subcategories for {selectedCategory.name}</h3>
-              <table className="admin-categories__subcategories-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Image</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedCategory.subCategories.map((sub) => (
-                    <tr key={sub.id}>
-                      <td>{sub.name}</td>
-                      <td>
-                        <div className="admin-categories__subcategory-image">
-                          {sub.image ? (
-                            <img
-                              src={sub.image || placeholder || "/placeholder.svg"}
-                              alt={sub.name}
-                            />
-                          ) : (
-                            <div className="admin-categories__no-image">No Image</div>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="admin-categories__actions">
-                          <button
-                            onClick={() => editSubCategory(selectedCategory.id, sub.id)}
-                            className="admin-categories__action-btn admin-categories__edit-btn"
-                          >
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                              <path
-                                d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => confirmDeleteSubCategory(selectedCategory.id, sub.id)}
-                            className="admin-categories__action-btn admin-categories__delete-btn"
-                          >
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M3 6H5H21"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                              <path
-                                d="M8 6V4C8 2.96957 8.21071 2.46086 8.58579 2.08579C8.96086 1.71071 9.46957 1.5 10 1.5H14C14.5304 1.5 15.0391 1.71071 15.4142 2.08579C15.7893 2.46086 16 2.96957 16 3.5V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+
 
           <div className="admin-categories__pagination-container">
             <div className="admin-categories__pagination-info">
@@ -1060,6 +1251,18 @@ const AdminCategories: React.FC = () => {
         subCategory={selectedSubCategory}
         categoryName={selectedCategory?.name || ""}
         isAdding={isAddingSubCategory}
+        isLoading={isSubCategoryLoading}
+      />
+
+      <SubcategoriesViewModal
+        show={showSubcategoriesViewModal}
+        onClose={() => setShowSubcategoriesViewModal(false)}
+        category={selectedCategory}
+        onEditSubCategory={editSubCategory}
+        onDeleteSubCategory={confirmDeleteSubCategory}
+        onChangeSubcategoryImage={handleChangeSubcategoryImage}
+        subcategoryImagePreview={subcategoryImagePreview}
+        subcategoryImageChanging={subcategoryImageChanging}
       />
 
       <DeleteModal

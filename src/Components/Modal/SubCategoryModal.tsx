@@ -15,6 +15,7 @@ interface SubCategoryModalProps {
   subCategory: SubCategory | null;
   categoryName: string;
   isAdding: boolean;
+  isLoading?: boolean;
 }
 
 const SubCategoryModal: React.FC<SubCategoryModalProps> = ({
@@ -24,6 +25,7 @@ const SubCategoryModal: React.FC<SubCategoryModalProps> = ({
   subCategory,
   categoryName,
   isAdding,
+  isLoading = false,
 }) => {
   const [formData, setFormData] = useState<SubCategory>({
     id: "",
@@ -108,13 +110,26 @@ const SubCategoryModal: React.FC<SubCategoryModalProps> = ({
 
           <div className="category-modal__form-group">
             <label htmlFor="image">Subcategory Image</label>
-            <input
-              type="file"
-              id="image"
-              name="image"
-              onChange={handleImageChange}
-              accept="image/*"
-            />
+            <div className="category-modal__file-upload-container">
+              <input
+                type="file"
+                id="image"
+                name="image"
+                onChange={handleImageChange}
+                accept="image/*"
+                style={{ display: 'none' }}
+              />
+              <button
+                type="button"
+                className="category-modal__file-upload-btn"
+                onClick={() => document.getElementById('image')?.click()}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>Add Image</span>
+              </button>
+            </div>
             {imagePreview && (
               <div className="category-modal__image-preview">
                 <img src={imagePreview} alt="Subcategory Preview" />
@@ -127,11 +142,49 @@ const SubCategoryModal: React.FC<SubCategoryModalProps> = ({
               type="button"
               className="category-modal__cancel-btn"
               onClick={onClose}
+              disabled={isLoading}
             >
               Cancel
             </button>
-            <button type="submit" className="category-modal__save-btn">
-              {isAdding ? "Create Subcategory" : "Save Changes"}
+            <button 
+              type="submit" 
+              className="category-modal__save-btn"
+              disabled={isLoading}
+              style={{
+                opacity: isLoading ? 0.7 : 1,
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                position: 'relative'
+              }}
+            >
+              {isLoading ? (
+                <>
+                  <span style={{ opacity: 0.5 }}>
+                    {isAdding ? "Creating..." : "Saving..."}
+                  </span>
+                  <span 
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid #ffffff',
+                      borderTop: '2px solid transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}
+                  />
+                  <style>{`
+                    @keyframes spin {
+                      0% { transform: translateY(-50%) rotate(0deg); }
+                      100% { transform: translateY(-50%) rotate(360deg); }
+                    }
+                  `}</style>
+                </>
+              ) : (
+                isAdding ? "Create Subcategory" : "Save Changes"
+              )}
             </button>
           </div>
         </form>

@@ -63,6 +63,7 @@ const AdminCategory: React.FC = () => {
   const [showEditSubcategoryModal, setShowEditSubcategoryModal] = useState<{ show: boolean; categoryId: number | null; subcategory: Subcategory | null }>({ show: false, categoryId: null, subcategory: null });
   const [showDeleteSubcategoryModal, setShowDeleteSubcategoryModal] = useState<{ show: boolean; categoryId: number | null; subcategory: Subcategory | null }>({ show: false, categoryId: null, subcategory: null });
   const [editSubcategoryName, setEditSubcategoryName] = useState('');
+  const [isSubcategoryLoading, setIsSubcategoryLoading] = useState(false);
 
   useEffect(() => {
     const cached = localStorage.getItem(CACHE_KEY);
@@ -268,6 +269,11 @@ const AdminCategory: React.FC = () => {
     if (!showSubcategoryModal.categoryId) return;
     if (!newSubcategoryName.trim()) return showToast('Subcategory name required', 'error');
 
+    setIsSubcategoryLoading(true);
+    const loadingToast = toast.loading('Adding subcategory...', {
+      position: 'top-right',
+    });
+
     try {
       const formData = new FormData();
       formData.append('name', newSubcategoryName.trim());
@@ -302,13 +308,18 @@ const AdminCategory: React.FC = () => {
         setNewSubcategoryName('');
         setNewCategoryImage(null);
         setNewCategoryImagePreview(null);
+        toast.dismiss(loadingToast);
         showToast('Subcategory added successfully! 🎉', 'success');
       } else {
+        toast.dismiss(loadingToast);
         showToast(data.message || 'Failed to add subcategory', 'error');
       }
     } catch (err) {
       console.error('Save subcategory error:', err);
+      toast.dismiss(loadingToast);
       showToast('Failed to add subcategory', 'error');
+    } finally {
+      setIsSubcategoryLoading(false);
     }
   };
 
@@ -316,6 +327,11 @@ const AdminCategory: React.FC = () => {
     e.preventDefault();
     if (!showEditSubcategoryModal.subcategory) return;
     if (!editSubcategoryName.trim()) return showToast('Subcategory name required', 'error');
+
+    setIsSubcategoryLoading(true);
+    const loadingToast = toast.loading('Updating subcategory...', {
+      position: 'top-right',
+    });
 
     try {
       const formData = new FormData();
@@ -356,13 +372,18 @@ const AdminCategory: React.FC = () => {
         setEditSubcategoryName('');
         setEditCategoryImage(null);
         setEditCategoryImagePreview(null);
+        toast.dismiss(loadingToast);
         showToast('Subcategory updated successfully! ✨', 'success');
       } else {
+        toast.dismiss(loadingToast);
         showToast(data.message || 'Failed to update subcategory', 'error');
       }
     } catch (err) {
       console.error('Update subcategory error:', err);
+      toast.dismiss(loadingToast);
       showToast('Failed to update subcategory', 'error');
+    } finally {
+      setIsSubcategoryLoading(false);
     }
   };
 
@@ -747,13 +768,55 @@ const AdminCategory: React.FC = () => {
                   )}
                 </div>
                 <div className="admin-category__modal-actions">
-                  <button type="submit">Add</button>
-                  <button type="button" onClick={() => {
-                    setShowSubcategoryModal({ show: false, categoryId: null });
-                    setNewSubcategoryName('');
-                    setNewCategoryImage(null);
-                    setNewCategoryImagePreview(null);
-                  }}>Cancel</button>
+                  <button 
+                    type="submit"
+                    disabled={isSubcategoryLoading}
+                    style={{
+                      opacity: isSubcategoryLoading ? 0.7 : 1,
+                      cursor: isSubcategoryLoading ? 'not-allowed' : 'pointer',
+                      position: 'relative'
+                    }}
+                  >
+                    {isSubcategoryLoading ? (
+                      <>
+                        <span style={{ opacity: 0.5 }}>Adding...</span>
+                        <span 
+                          style={{
+                            position: 'absolute',
+                            right: '10px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid #ffffff',
+                            borderTop: '2px solid transparent',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite'
+                          }}
+                        />
+                        <style>{`
+                          @keyframes spin {
+                            0% { transform: translateY(-50%) rotate(0deg); }
+                            100% { transform: translateY(-50%) rotate(360deg); }
+                          }
+                        `}</style>
+                      </>
+                    ) : (
+                      'Add'
+                    )}
+                  </button>
+                  <button 
+                    type="button" 
+                    disabled={isSubcategoryLoading}
+                    onClick={() => {
+                      setShowSubcategoryModal({ show: false, categoryId: null });
+                      setNewSubcategoryName('');
+                      setNewCategoryImage(null);
+                      setNewCategoryImagePreview(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </form>
             </div>
@@ -804,13 +867,55 @@ const AdminCategory: React.FC = () => {
                   )}
                 </div>
                 <div className="admin-category__modal-actions">
-                  <button type="submit">Save</button>
-                  <button type="button" onClick={() => {
-                    setShowEditSubcategoryModal({ show: false, categoryId: null, subcategory: null });
-                    setEditSubcategoryName('');
-                    setEditCategoryImage(null);
-                    setEditCategoryImagePreview(null);
-                  }}>Cancel</button>
+                  <button 
+                    type="submit"
+                    disabled={isSubcategoryLoading}
+                    style={{
+                      opacity: isSubcategoryLoading ? 0.7 : 1,
+                      cursor: isSubcategoryLoading ? 'not-allowed' : 'pointer',
+                      position: 'relative'
+                    }}
+                  >
+                    {isSubcategoryLoading ? (
+                      <>
+                        <span style={{ opacity: 0.5 }}>Saving...</span>
+                        <span 
+                          style={{
+                            position: 'absolute',
+                            right: '10px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            width: '16px',
+                            height: '16px',
+                            border: '2px solid #ffffff',
+                            borderTop: '2px solid transparent',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite'
+                          }}
+                        />
+                        <style>{`
+                          @keyframes spin {
+                            0% { transform: translateY(-50%) rotate(0deg); }
+                            100% { transform: translateY(-50%) rotate(360deg); }
+                          }
+                        `}</style>
+                      </>
+                    ) : (
+                      'Save'
+                    )}
+                  </button>
+                  <button 
+                    type="button" 
+                    disabled={isSubcategoryLoading}
+                    onClick={() => {
+                      setShowEditSubcategoryModal({ show: false, categoryId: null, subcategory: null });
+                      setEditSubcategoryName('');
+                      setEditCategoryImage(null);
+                      setEditCategoryImagePreview(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </form>
             </div>

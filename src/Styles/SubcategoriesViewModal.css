@@ -1,0 +1,336 @@
+/* SubcategoriesViewModal.css */
+.subcategories-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.subcategories-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 800px;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.subcategories-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 32px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.subcategories-modal__title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.subcategories-modal__close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  color: #6b7280;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.subcategories-modal__close-btn:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.subcategories-modal__content {
+  padding: 24px 32px;
+  max-height: calc(80vh - 120px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.subcategories-modal__empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+.subcategories-modal__empty p {
+  font-size: 16px;
+  margin: 0;
+}
+
+.subcategories-modal__table-container {
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.subcategories-modal__table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  table-layout: fixed;
+}
+
+.subcategories-modal__table th {
+  background: #f9fafb;
+  padding: 16px 20px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.subcategories-modal__table th:nth-child(1) {
+  width: 50%;
+}
+
+.subcategories-modal__table th:nth-child(2) {
+  width: 25%;
+}
+
+.subcategories-modal__table th:nth-child(3) {
+  width: 25%;
+}
+
+.subcategories-modal__table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.subcategories-modal__table tr:last-child td {
+  border-bottom: none;
+}
+
+.subcategories-modal__table tr:hover {
+  background: #f9fafb;
+}
+
+.subcategories-modal__name {
+  font-weight: 500;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.subcategories-modal__image {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.subcategories-modal__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.subcategories-modal__no-image {
+  font-size: 10px;
+  color: #9ca3af;
+  text-align: center;
+  padding: 4px;
+  background: #f3f4f6;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.subcategories-modal__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.subcategories-modal__action-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.subcategories-modal__edit-btn {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.subcategories-modal__edit-btn:hover {
+  background: #bfdbfe;
+  transform: translateY(-1px);
+}
+
+.subcategories-modal__delete-btn {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.subcategories-modal__delete-btn:hover {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .subcategories-modal {
+    width: 95%;
+    max-height: 90vh;
+    margin: 20px;
+  }
+
+  .subcategories-modal__header {
+    padding: 20px 24px;
+  }
+
+  .subcategories-modal__title {
+    font-size: 20px;
+  }
+
+  .subcategories-modal__content {
+    padding: 20px 24px;
+    max-height: calc(90vh - 100px);
+  }
+
+  .subcategories-modal__table th,
+  .subcategories-modal__table td {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+
+  .subcategories-modal__image {
+    width: 50px;
+    height: 50px;
+  }
+
+  .subcategories-modal__action-btn {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .subcategories-modal {
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .subcategories-modal__header {
+    padding: 16px 20px;
+  }
+
+  .subcategories-modal__title {
+    font-size: 18px;
+  }
+
+  .subcategories-modal__content {
+    padding: 16px 20px;
+    max-height: calc(100vh - 80px);
+  }
+
+  .subcategories-modal__table th,
+  .subcategories-modal__table td {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .subcategories-modal__image {
+    width: 40px;
+    height: 40px;
+  }
+
+  .subcategories-modal__action-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .subcategories-modal__actions {
+    gap: 6px;
+  }
+}
+
+/* Change Image Button Styles */
+.subcategories-modal__change-image-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+  opacity: 0.8;
+}
+
+.subcategories-modal__change-image-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  color: #ff6b35;
+  transform: scale(1.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  opacity: 1;
+}
+
+.subcategories-modal__change-image-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.subcategories-modal__image {
+  position: relative;
+}
+
+.subcategories-modal__image:hover .subcategories-modal__change-image-btn {
+  opacity: 1;
+}

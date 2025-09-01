@@ -123,13 +123,26 @@ const CategoryEditModal: React.FC<CategoryEditModalProps> = ({
 
           <div className="category-modal__form-group">
             <label htmlFor="image">Category Image</label>
-            <input
-              type="file"
-              id="image"
-              name="image"
-              onChange={handleImageChange}
-              accept="image/*"
-            />
+            <div className="category-modal__file-upload-container">
+              <input
+                type="file"
+                id="image"
+                name="image"
+                onChange={handleImageChange}
+                accept="image/*"
+                style={{ display: 'none' }}
+              />
+              <button
+                type="button"
+                className="category-modal__file-upload-btn"
+                onClick={() => document.getElementById('image')?.click()}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>Add Image</span>
+              </button>
+            </div>
             {imagePreview && (
               <div className="category-modal__image-preview">
                 <img src={imagePreview} alt="Category Preview" />

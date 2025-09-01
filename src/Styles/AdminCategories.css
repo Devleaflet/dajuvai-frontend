@@ -595,3 +595,47 @@
 .admin-categories__checkbox-label input {
   margin: 0;
 }
+
+/* Change Image Button Styles */
+.admin-categories__change-image-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a5568;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.admin-categories__change-image-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  color: #f56a2c;
+  transform: scale(1.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.admin-categories__change-image-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.admin-categories__image-container {
+  position: relative;
+  display: inline-block;
+}
+
+.admin-categories__image-container:hover .admin-categories__change-image-btn {
+  opacity: 1;
+}
+
+.admin-categories__change-image-btn {
+  opacity: 0.8;
+}
