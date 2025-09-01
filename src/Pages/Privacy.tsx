@@ -9,26 +9,56 @@ const PrivacyPolicy = () => {
       <Navbar />
       <div className="privacy">
         <header className="privacy__header">
-          <h1 className="privacy__title">Privacy</h1>
+          <h1 className="privacy__title">Privacy Policy</h1>
           <p className="privacy__subtitle">DajuVai - Your Trusted E-Commerce Platform in Nepal</p>
         </header>
 
         <div className="privacy__toc">
-          <h2 className="privacy__toc-title">Table of Contents</h2>
+          <h2 className="privacy__toc-title">
+            <span className="privacy__icon">📑</span>
+            Table of Contents
+          </h2>
           <ul className="privacy__toc-list">
-            <li className="privacy__toc-item"><a href="#privacy-confidentiality">Privacy and Confidentiality</a></li>
-            <li className="privacy__toc-item"><a href="#data-collected">Data that we collect</a></li>
-            <li className="privacy__toc-item"><a href="#data-usage">How we use your data</a></li>
-            <li className="privacy__toc-item"><a href="#data-disclosure">Disclosure of personal data</a></li>
-            <li className="privacy__toc-item"><a href="#cookies">Cookies</a></li>
-            <li className="privacy__toc-item"><a href="#security">Security</a></li>
-            <li className="privacy__toc-item"><a href="#your-rights">Your rights</a></li>
-            <li className="privacy__toc-item"><a href="#minors">Minors</a></li>
+            <li className="privacy__toc-item">
+              <span className="privacy__toc-icon">🔒</span>
+              <a href="#privacy-confidentiality">Privacy and Confidentiality</a>
+            </li>
+            <li className="privacy__toc-item">
+              <span className="privacy__toc-icon">📊</span>
+              <a href="#data-collected">Data that we collect</a>
+            </li>
+            <li className="privacy__toc-item">
+              <span className="privacy__toc-icon">🔄</span>
+              <a href="#data-usage">How we use your data</a>
+            </li>
+            <li className="privacy__toc-item">
+              <span className="privacy__toc-icon">📤</span>
+              <a href="#data-disclosure">Disclosure of personal data</a>
+            </li>
+            <li className="privacy__toc-item">
+              <span className="privacy__toc-icon">🍪</span>
+              <a href="#cookies">Cookies</a>
+            </li>
+            <li className="privacy__toc-item">
+              <span className="privacy__toc-icon">🛡️</span>
+              <a href="#security">Security</a>
+            </li>
+            <li className="privacy__toc-item">
+              <span className="privacy__toc-icon">👤</span>
+              <a href="#your-rights">Your rights</a>
+            </li>
+            <li className="privacy__toc-item">
+              <span className="privacy__toc-icon">🚸</span>
+              <a href="#minors">Minors</a>
+            </li>
           </ul>
         </div>
 
         <section className="privacy__section" id="privacy-confidentiality">
-          <h2 className="privacy__section-title">Privacy and Confidentiality</h2>
+          <h2 className="privacy__section-title">
+            <span className="privacy__icon">🔒</span>
+            Privacy and Confidentiality
+          </h2>
           <p className="privacy__text">
             Welcome to the dajuvai.com website (the "Site"), run by Daju Vai. We care about your privacy and work to protect your personal information. Read this Privacy Policy to learn more.
           </p>
@@ -43,7 +73,7 @@ const PrivacyPolicy = () => {
               We keep your data only as long as required by law or needed for our purposes.
             </li>
             <li className="privacy__list-item">
-              We delete your data or remove links to it when it’s no longer needed, following legal and practical guidelines.
+              We delete your data or remove links to it when it's no longer needed, following legal and practical guidelines.
             </li>
             <li className="privacy__list-item">
               You can browse the Site anonymously without providing personal details, unless you log in with your account.
@@ -52,7 +82,10 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="privacy__section" id="data-collected">
-          <h2 className="privacy__section-title">Data that we collect</h2>
+          <h2 className="privacy__section-title">
+            <span className="privacy__icon">📊</span>
+            Data that we collect
+          </h2>
           <ol className="privacy__list">
             <li className="privacy__list-item">
               We may collect information when you order a product on the Site.
@@ -83,7 +116,10 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="privacy__section" id="data-usage">
-          <h2 className="privacy__section-title">How we use your data</h2>
+          <h2 className="privacy__section-title">
+            <span className="privacy__icon">🔄</span>
+            How we use your data
+          </h2>
           <p className="privacy__text">
             We use your data to run the Site, show ads, and improve our services. Examples include:
           </p>
@@ -108,7 +144,10 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="privacy__section" id="data-disclosure">
-          <h2 className="privacy__section-title">Disclosure of personal data</h2>
+          <h2 className="privacy__section-title">
+            <span className="privacy__icon">📤</span>
+            Disclosure of personal data
+          </h2>
           <ol className="privacy__list">
             <li className="privacy__list-item">
               We keep your data confidential but may share it with service providers, agents, or affiliates (in Nepal or abroad) for the purposes above. This includes:
@@ -119,7 +158,7 @@ const PrivacyPolicy = () => {
               </ol>
             </li>
             <li className="privacy__list-item">
-              We may transfer data if we sell our business, following data protection laws. We won’t sell or share your data otherwise without your consent, unless required by law.
+              We may transfer data if we sell our business, following data protection laws. We won't sell or share your data otherwise without your consent, unless required by law.
             </li>
             <li className="privacy__list-item">
               We ensure third parties protect your data and use it only as outlined here.
@@ -134,13 +173,16 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="privacy__section" id="cookies">
-          <h2 className="privacy__section-title">Cookies</h2>
+          <h2 className="privacy__section-title">
+            <span className="privacy__icon">🍪</span>
+            Cookies
+          </h2>
           <ol className="privacy__list">
             <li className="privacy__list-item">
               We or our providers use cookies and web beacons to track Site use.
             </li>
             <li className="privacy__list-item">
-              Cookies are optional but needed for features like your shopping cart. They help us recognize your device but don’t store personal details or viruses. You can disable them, though some Site functions may not work.
+              Cookies are optional but needed for features like your shopping cart. They help us recognize your device but don't store personal details or viruses. You can disable them, though some Site functions may not work.
             </li>
             <li className="privacy__list-item">
               We use Google Analytics, which uses cookies to analyze Site use. Data is stored by Google, and you can opt out via browser settings.
@@ -149,7 +191,10 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="privacy__section" id="security">
-          <h2 className="privacy__section-title">Security</h2>
+          <h2 className="privacy__section-title">
+            <span className="privacy__icon">🛡️</span>
+            Security
+          </h2>
           <ol className="privacy__list">
             <li className="privacy__list-item">
               We use secure servers, firewalls, and encryption (e.g., SSL/TLS) to protect your data. We may verify your identity before sharing information.
@@ -161,7 +206,10 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="privacy__section" id="your-rights">
-          <h2 className="privacy__section-title">Your rights</h2>
+          <h2 className="privacy__section-title">
+            <span className="privacy__icon">👤</span>
+            Your rights
+          </h2>
           <ol className="privacy__list">
             <li className="privacy__list-item">
               You can request access to or correction of your data, or ask us to stop marketing emails. We may charge a small fee for access requests. To withdraw consent or delete data, contact support@dajuvai.com or use the <a href="https://dajuvai.com/deletion-form" className="privacy__highlight">Account Deactivation/Deletion Request Form</a>. Deletion takes up to 15 working days after verification. Note that withdrawing consent may affect our services.
@@ -173,10 +221,13 @@ const PrivacyPolicy = () => {
         </section>
 
         <section className="privacy__section" id="minors">
-          <h2 className="privacy__section-title">Minors</h2>
+          <h2 className="privacy__section-title">
+            <span className="privacy__icon">🚸</span>
+            Minors
+          </h2>
           <ol className="privacy__list">
             <li className="privacy__list-item">
-              We don’t sell to or collect data from those under 18. You confirm you’re over 18. If a minor uses your account, you’re responsible for their actions and agree to this policy.
+              We don't sell to or collect data from those under 18. You confirm you're over 18. If a minor uses your account, you're responsible for their actions and agree to this policy.
             </li>
           </ol>
         </section>
