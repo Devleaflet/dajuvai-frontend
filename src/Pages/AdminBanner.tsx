@@ -7,6 +7,7 @@ import DeleteModal from "../Components/Modal/DeleteModal";
 import { API_BASE_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
 import Header from "../Components/Header";
+import toast from "react-hot-toast";
 
 // Types
 interface Banner {
@@ -470,8 +471,10 @@ const AdminBannerWithTabs = () => {
           banner.id === transformedBanner.id ? transformedBanner : banner
         )
       );
+      toast.success("Banner updated successfully!");
     } else {
       setBanners([transformedBanner, ...banners]);
+      toast.success("Banner created successfully!");
     }
     setShowCreateForm(false);
     setEditingBanner(null);
