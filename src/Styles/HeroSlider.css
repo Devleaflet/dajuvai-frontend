@@ -411,9 +411,24 @@
   }
 }
 
-@media (min-width: 1584px) {
+@media (min-width: 1500px) {
   .hero-slider__track {
-    height: 265px;
+    height: calc(100vw / 4.5);
+    min-height: 320px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .hero-slider__track {
+    height: calc(100vw / 4.2);
+    min-height: 350px;
+  }
+}
+
+@media (min-width: 1800px) {
+  .hero-slider__track {
+    height: calc(100vw / 4.0);
+    min-height: 400px;
   }
 }
 
