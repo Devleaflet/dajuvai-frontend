@@ -8,11 +8,11 @@
    - Recommend product 
    ========================================================================== */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { FaCartPlus } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { addToWishlist } from "../api/wishlist";
+import { addToWishlist, removeFromWishlist, getWishlist } from "../api/wishlist";
 import defaultProductImage from "../assets/logo.webp";
 import star from "../assets/star.png";
 import AuthModal from "../Components/AuthModal";
@@ -32,6 +32,8 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistItemId, setWishlistItemId] = useState<number | null>(null);
 
   const {
     title,
@@ -46,6 +48,45 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
   } = product;
 
   const displayImage = imageError ? defaultProductImage : getProductPrimaryImage(product, defaultProductImage);
+
+  // Check if product is already in wishlist when component mounts or auth changes
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      if (isAuthenticated && token) {
+        try {
+          const wishlistItems = await getWishlist(token);
+          const variantCount = product.variants?.length || 0;
+          const variantId = variantCount > 0 ? product.variants![0].id : undefined;
+          
+          const wishlistItem = wishlistItems.find((item: any) => {
+            const productMatch = item.productId === id || item.product?.id === id;
+            const variantMatch = variantId 
+              ? (item.variantId === variantId || item.variant?.id === variantId)
+              : (!item.variantId && !item.variant?.id);
+            
+            return productMatch && variantMatch;
+          });
+          
+          if (wishlistItem) {
+            setIsWishlisted(true);
+            setWishlistItemId(wishlistItem.id);
+          } else {
+            setIsWishlisted(false);
+            setWishlistItemId(null);
+          }
+        } catch (error) {
+          console.warn("Failed to check wishlist status:", error);
+          setIsWishlisted(false);
+          setWishlistItemId(null);
+        }
+      } else {
+        setIsWishlisted(false);
+        setWishlistItemId(null);
+      }
+    };
+
+    checkWishlistStatus();
+  }, [id, product.variants, isAuthenticated, token]);
 
   const handleImageError = () => {
     setImageError(true);
@@ -103,19 +144,55 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
       setAuthModalOpen(true);
       return;
     }
+    
     setWishlistLoading(true);
     try {
       const variantCount = product.variants?.length || 0;
       const variantId = variantCount > 0 ? product.variants![0].id : undefined;
-      await addToWishlist(id, variantId, token);
-      toast.success("Added to wishlist");
+      
+      if (isWishlisted && wishlistItemId) {
+        // Remove from wishlist
+        await removeFromWishlist(wishlistItemId, token);
+        toast.success("Removed from wishlist");
+        setIsWishlisted(false);
+        setWishlistItemId(null);
+      } else {
+        // Add to wishlist
+        const addedItem = await addToWishlist(id, variantId, token);
+        toast.success("Added to wishlist");
+        setIsWishlisted(true);
+        setWishlistItemId(addedItem?.id || null);
+      }
     } catch (e: any) {
       const status = e?.response?.status;
       const msg: string = e?.response?.data?.message || e?.response?.data?.error || e?.message || "";
+      
       if (status === 409 || /already/i.test(msg)) {
         toast("Already present in the wishlist");
+        setIsWishlisted(true);
+        // Try to get the wishlist item ID if we don't have it
+        if (!wishlistItemId) {
+          try {
+            const wishlistItems = await getWishlist(token);
+            const wishlistItem = wishlistItems.find((item: any) => {
+              const productMatch = item.productId === id || item.product?.id === id;
+              const variantMatch = variantId 
+                ? (item.variantId === variantId || item.variant?.id === variantId)
+                : (!item.variantId && !item.variant?.id);
+              
+              return productMatch && variantMatch;
+            });
+            
+            if (wishlistItem) {
+              setWishlistItemId(wishlistItem.id);
+            }
+          } catch (getError) {
+            console.warn("Failed to get wishlist item ID:", getError);
+          }
+        }
       } else {
-        toast.error("Failed to add to wishlist");
+        toast.error(isWishlisted ? "Failed to remove from wishlist" : "Failed to add to wishlist");
+        console.error("Wishlist operation failed:", e);
       }
     } finally {
       setWishlistLoading(false);
@@ -128,7 +205,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
         <div className="product1__header">
           <button
             className="product1__wishlist-button"
-            aria-label="Add to wishlist"
+            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -139,8 +216,8 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
+              fill={isWishlisted ? "red" : "none"}
+              stroke={isWishlisted ? "red" : "currentColor"}
               strokeWidth="2"
             >
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
@@ -173,15 +250,12 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
         </div>
         <div className="product1__rating">
           <div className="product1__rating-info">
-            
             <span className="product1__rating-star">
               <img src={star} alt="Rating" />
             </span>
             <span className="product1__rating-score">{rating} |</span>
-            
             <span className="product1__rating-count">Sold {ratingCount}</span>
           </div>
-          
         </div>
         <div className="product1__info">
           <h3 className="product1__title">{title}</h3>
