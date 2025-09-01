@@ -388,7 +388,7 @@ const formatPaymentMethod = (method: string) => {
     }
   };
 
-  const renderUserDetails = () => {
+const renderUserDetails = () => {
     if (isLoading.fetchUser) {
       return (
         <div className="profile-form">
@@ -404,38 +404,74 @@ const formatPaymentMethod = (method: string) => {
     return (
       <div className="profile-form">
         <h2 className="profile-form__title">User Details</h2>
-        <div className="profile-form__group">
-          <label>Full Name</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="fullName"
-              value={userDetails.fullName ?? ""}
-              onChange={(e) => handleInputChange(e, "fullName")}
-              className="profile-form__input"
-            />
-          ) : (
-            <div>{userDetails.fullName || "Not provided"}</div>
-          )}
+        
+        {/* First Row: Full Name and Username */}
+        <div className="profile-form__row">
+          <div className="profile-form__group profile-form__group--half">
+            <label>Full Name</label>
+            {isEditing ? (
+              <input
+                type="text"
+                name="fullName"
+                value={userDetails.fullName ?? ""}
+                onChange={(e) => handleInputChange(e, "fullName")}
+                className="profile-form__input"
+              />
+            ) : (
+              <div>{userDetails.fullName || "Not provided"}</div>
+            )}
+          </div>
+          <div className="profile-form__group profile-form__group--half">
+            <label>Username</label>
+            {isEditing ? (
+              <input
+                type="text"
+                name="username"
+                value={userDetails.username ?? ""}
+                onChange={(e) => handleInputChange(e, "username")}
+                className="profile-form__input"
+              />
+            ) : (
+              <div>{userDetails.username || "Not provided"}</div>
+            )}
+          </div>
         </div>
-        <div className="profile-form__group">
-          <label>Username</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="username"
-              value={userDetails.username ?? ""}
-              onChange={(e) => handleInputChange(e, "username")}
-              className="profile-form__input"
-            />
-          ) : (
-            <div>{userDetails.username}</div>
-          )}
-        </div>
-        <div className="profile-form__group">
-          <label>Email Address</label>
-          <div>{userDetails.email}</div>
-        </div>
+
+        {/* Email - Full width */}
+{/* Second Row: Email and Phone Number */}
+
+<div className="profile-form__row">
+  <div className="profile-form__group profile-form__group--half">
+    <label>Email Address</label>
+    {isEditing ? (
+      <input
+        type="email"
+        name="email"
+        value={userDetails.email ?? ""}
+        onChange={(e) => handleInputChange(e, "email")}
+        className="profile-form__input"
+      />
+    ) : (
+      <div>{userDetails.email}</div>
+    )}
+  </div>
+  <div className="profile-form__group profile-form__group--half">
+    <label>Phone Number</label>
+    {isEditing ? (
+      <input
+        type="text"
+        name="phoneNumber"
+        value={userDetails.phoneNumber ?? ""}
+        onChange={(e) => handleInputChange(e, "phoneNumber")}
+        className="profile-form__input"
+      />
+    ) : ( 
+      <div>{userDetails.phoneNumber || "Not provided"}</div>
+    )}
+  </div>
+</div>
+
+        {/* Phone Number - Full width
         <div className="profile-form__group">
           <label>Phone Number</label>
           {isEditing ? (
@@ -449,63 +485,73 @@ const formatPaymentMethod = (method: string) => {
           ) : (
             <div>{userDetails.phoneNumber || "Not provided"}</div>
           )}
+        </div> */}
+
+        {/* Second Row: Province and District */}
+        <div className="profile-form__row">
+          <div className="profile-form__group profile-form__group--half">
+            <label>Province</label>
+            {isEditing ? (
+              <input
+                type="text"
+                name="province"
+                value={userDetails.province ?? ""}
+                onChange={(e) => handleInputChange(e, "province")}
+                className="profile-form__input"
+              />
+            ) : (
+              <div>{userDetails.province || "Not provided"}</div>
+            )}
+          </div>
+          <div className="profile-form__group profile-form__group--half">
+            <label>District</label>
+            {isEditing ? (
+              <input
+                type="text"
+                name="district"
+                value={userDetails.district ?? ""}
+                onChange={(e) => handleInputChange(e, "district")}
+                className="profile-form__input"
+              />
+            ) : (
+              <div>{userDetails.district || "Not provided"}</div>
+            )}
+          </div>
         </div>
-        <div className="profile-form__group">
-          <label>Province</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="province"
-              value={userDetails.province ?? ""}
-              onChange={(e) => handleInputChange(e, "province")}
-              className="profile-form__input"
-            />
-          ) : (
-            <div>{userDetails.province || "Not provided"}</div>
-          )}
+
+        {/* Third Row: City and Local Address */}
+        <div className="profile-form__row">
+          <div className="profile-form__group profile-form__group--half">
+            <label>City</label>
+            {isEditing ? (
+              <input
+                type="text"
+                name="city"
+                value={userDetails.city ?? ""}
+                onChange={(e) => handleInputChange(e, "city")}
+                className="profile-form__input"
+              />
+            ) : (
+              <div>{userDetails.city || "Not provided"}</div>
+            )}
+          </div>
+          <div className="profile-form__group profile-form__group--half">
+            <label>Local Address</label>
+            {isEditing ? (
+              <input
+                type="text"
+                name="localAddress"
+                value={userDetails.localAddress ?? ""}
+                onChange={(e) => handleInputChange(e, "localAddress")}
+                className="profile-form__input"
+              />
+            ) : (
+              <div>{userDetails.localAddress || "Not provided"}</div>
+            )}
+          </div>
         </div>
-        <div className="profile-form__group">
-          <label>District</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="district"
-              value={userDetails.district ?? ""}
-              onChange={(e) => handleInputChange(e, "district")}
-              className="profile-form__input"
-            />
-          ) : (
-            <div>{userDetails.district || "Not provided"}</div>
-          )}
-        </div>
-        <div className="profile-form__group">
-          <label>City</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="city"
-              value={userDetails.city ?? ""}
-              onChange={(e) => handleInputChange(e, "city")}
-              className="profile-form__input"
-            />
-          ) : (
-            <div>{userDetails.city || "Not provided"}</div>
-          )}
-        </div>
-        <div className="profile-form__group">
-          <label>Local Address</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="localAddress"
-              value={userDetails.localAddress ?? ""}
-              onChange={(e) => handleInputChange(e, "localAddress")}
-              className="profile-form__input"
-            />
-          ) : (
-            <div>{userDetails.localAddress || "Not provided"}</div>
-          )}
-        </div>
+
+        {/* Landmark - Full width */}
         <div className="profile-form__group">
           <label>Landmark</label>
           {isEditing ? (
@@ -520,6 +566,8 @@ const formatPaymentMethod = (method: string) => {
             <div>{userDetails.landmark || "Not provided"}</div>
           )}
         </div>
+
+        {/* Action Buttons */}
         {isEditing ? (
           <div className="profile-form__actions">
             <button className="btn btn--primary" onClick={handleSave} disabled={isLoading.saveUser}>

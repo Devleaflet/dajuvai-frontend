@@ -61,11 +61,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [showForgotPopup, setShowForgotPopup] = useState(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
-  
+
   // Validation states
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  
+
   const modalRef = useRef<HTMLDivElement | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
 
@@ -77,11 +77,23 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     }
 
     const handleClickOutside = (event: MouseEvent): void => {
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node) &&
-        (!popupRef.current || !popupRef.current.contains(event.target as Node))
-      ) {
+      // Prevent default behavior to avoid unexpected propagation
+      event.stopPropagation();
+
+      // If the forgot password popup is open
+      if (showForgotPopup && popupRef.current && !popupRef.current.contains(event.target as Node)) {
+        // Close only the popup
+        console.log("Closing forgot password popup");
+        setShowForgotPopup(false);
+        setForgotMode("none");
+        setError("");
+        setSuccess("");
+        return;
+      }
+
+      // If the popup is not open and the click is outside the main modal
+      if (!showForgotPopup && modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        console.log("Closing main modal");
         onClose();
       }
     };
@@ -90,8 +102,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen, onClose]);
-
+  }, [isOpen, onClose, showForgotPopup]);
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
@@ -143,13 +154,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         if (!/^[a-zA-Z0-9_]+$/.test(value))
           return "Username can only contain letters, numbers, and underscores";
         return "";
-      
+
       case "email":
         if (!value.trim()) return "Email is required";
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Invalid email format";
         if (value.length > 255) return "Email is too long";
         return "";
-      
+
       case "password":
         if (!value.trim()) return "Password is required";
         if (value.length < 8) return "Password must be at least 8 characters";
@@ -158,16 +169,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         if (!/[^a-zA-Z0-9]/.test(value)) return "Password must contain at least one special character";
         if (value.length > 128) return "Password is too long";
         return "";
-      
+
       case "confirmPassword":
         if (!value.trim()) return "Please confirm your password";
         if (value !== password) return "Passwords do not match";
         return "";
-      
+
       case "resetToken":
         if (!value.trim()) return "Reset token is required";
         return "";
-      
+
       case "newPassword":
         if (!value.trim()) return "New password is required";
         if (value.length < 8) return "Password must be at least 8 characters";
@@ -175,12 +186,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         if (!/[A-Z]/.test(value)) return "Password must contain at least one uppercase letter";
         if (!/[^a-zA-Z0-9]/.test(value)) return "Password must contain at least one special character";
         return "";
-      
+
       case "confirmNewPassword":
         if (!value.trim()) return "Please confirm your new password";
         if (value !== newPassword) return "Passwords do not match";
         return "";
-      
+
       default:
         return "";
     }
@@ -189,14 +200,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setTouched(prev => ({ ...prev, [name]: true }));
-    
+
     const error = validateField(name, value);
     setErrors(prev => ({ ...prev, [name]: error }));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
+
     // Update the corresponding state
     switch (name) {
       case "username":
@@ -226,7 +237,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
     }
-    
+
     // Validate field in real-time if it's been touched before
     if (touched[name]) {
       const error = validateField(name, value);
@@ -238,16 +249,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     const newErrors: Record<string, string> = {};
     let isValid = true;
 
-    const fieldsToValidate = isLoginMode 
+    const fieldsToValidate = isLoginMode
       ? ["email", "password"]
       : ["username", "email", "password", "confirmPassword"];
 
     fieldsToValidate.forEach(field => {
       const value = field === "username" ? username :
-                    field === "email" ? email :
-                    field === "password" ? password :
-                    field === "confirmPassword" ? confirmPassword : "";
-      
+        field === "email" ? email :
+          field === "password" ? password :
+            field === "confirmPassword" ? confirmPassword : "";
+
       const error = validateField(field, value);
       if (error) {
         newErrors[field] = error;
@@ -256,13 +267,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     });
 
     setErrors(newErrors);
-    
+
     // Mark all relevant fields as touched to show errors
     const allTouched = fieldsToValidate.reduce((acc, field) => {
       acc[field] = true;
       return acc;
     }, {} as Record<string, boolean>);
-    
+
     setTouched(prev => ({ ...prev, ...allTouched }));
     return isValid;
   };
@@ -271,16 +282,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     const newErrors: Record<string, string> = {};
     let isValid = true;
 
-    const fieldsToValidate = forgotMode === "request" 
+    const fieldsToValidate = forgotMode === "request"
       ? ["email"]
       : ["resetToken", "newPassword", "confirmNewPassword"];
 
     fieldsToValidate.forEach(field => {
       const value = field === "email" ? email :
-                    field === "resetToken" ? resetToken :
-                    field === "newPassword" ? newPassword :
-                    field === "confirmNewPassword" ? confirmNewPassword : "";
-      
+        field === "resetToken" ? resetToken :
+          field === "newPassword" ? newPassword :
+            field === "confirmNewPassword" ? confirmNewPassword : "";
+
       const error = validateField(field, value);
       if (error) {
         newErrors[field] = error;
@@ -289,12 +300,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     });
 
     setErrors(newErrors);
-    
+
     const allTouched = fieldsToValidate.reduce((acc, field) => {
       acc[field] = true;
       return acc;
     }, {} as Record<string, boolean>);
-    
+
     setTouched(prev => ({ ...prev, ...allTouched }));
     return isValid;
   };
@@ -349,13 +360,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         if (err.response?.status === 400 && err.response?.data?.errors) {
           const serverErrors = err.response.data.errors;
           const newErrors: Record<string, string> = {};
-          
+
           Object.keys(serverErrors).forEach(key => {
             if (serverErrors[key] && serverErrors[key][0]) {
               newErrors[key] = serverErrors[key][0];
             }
           });
-          
+
           setErrors(newErrors);
           setError("Please correct the validation errors");
         } else if (
@@ -371,8 +382,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           setError(err.response.data.message);
         } else {
           setError(
-            `Signup failed (${
-              err.response?.status || "unknown error"
+            `Signup failed (${err.response?.status || "unknown error"
             }). Please try again.`
           );
         }
@@ -564,7 +574,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const handleGoogleLogin = () => {
     const callbackUrl = `${window.location.origin}/auth/google/callback`;
     const redirectUrl = `${API_BASE_URL}/api/auth/google?redirect_uri=${encodeURIComponent(callbackUrl)}`;
-    
+
     console.log('Redirecting to backend Google OAuth:', redirectUrl);
     window.location.href = redirectUrl;
   };
@@ -607,7 +617,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-    
+
     if (!validateResetForm()) {
       toast.error("Please fix the errors in the form", {
         position: "top-right",
@@ -632,7 +642,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-    
+
     if (!validateResetForm()) {
       toast.error("Please fix the errors in the form", {
         position: "top-right",
@@ -696,17 +706,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         {!showVerification && (
           <div className="auth-modal__tabs">
             <button
-              className={`auth-modal__tab ${
-                isLoginMode ? "auth-modal__tab--active" : ""
-              }`}
+              className={`auth-modal__tab ${isLoginMode ? "auth-modal__tab--active" : ""
+                }`}
               onClick={() => setIsLoginMode(true)}
             >
               LOG IN
             </button>
             <button
-              className={`auth-modal__tab ${
-                !isLoginMode ? "auth-modal__tab--active" : ""
-              }`}
+              className={`auth-modal__tab ${!isLoginMode ? "auth-modal__tab--active" : ""
+                }`}
               onClick={() => setIsLoginMode(false)}
             >
               SIGN UP
@@ -790,7 +798,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   inputMode="numeric"
                   pattern="\d*"
                 />
-                  
+
               </div>
 
               <button
@@ -829,16 +837,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     name="username"
                     value={username}
                     onChange={handleInputChange}
-                  onBlur={handleBlur}
+                    onBlur={handleBlur}
                     required
                     disabled={isLoading}
                   />
                   {errors.username && touched.username && (
-      <div className="error-message">
-        <FaInfoCircle className="error-icon" />
-        {errors.username}
-      </div>
-    )}
+                    <div className="error-message">
+                      <FaInfoCircle className="error-icon" />
+                      {errors.username}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -847,7 +855,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   type="email"
                   className="auth-modal__input"
                   placeholder="Please enter email"
-                name="email"
+                  name="email"
                   value={email}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
@@ -855,11 +863,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   disabled={isLoading}
                 />
                 {errors.email && touched.email && (
-    <div className="error-message">
-      <FaInfoCircle className="error-icon" />
-      {errors.email}
-      </div>
-                  )}
+                  <div className="error-message">
+                    <FaInfoCircle className="error-icon" />
+                    {errors.email}
+                  </div>
+                )}
               </div>
 
               <div className="auth-modal__form-group" style={{ position: 'relative' }}>
@@ -875,7 +883,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   disabled={isLoading}
                   style={{ paddingRight: '40px' }}
                 />
-                <span style={{ position: 'absolute', right: '10px', top:  '25px', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', height: '100%' }}>
+                <span style={{ position: 'absolute', right: '10px', top: '25px', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', height: '100%' }}>
                   <button
                     type="button"
                     onClick={togglePasswordVisibility}
@@ -891,18 +899,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7" /><circle cx="12" cy="12" r="3.5" /></svg>
                     ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22" /><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" /><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" /></svg>
                     )}
                   </button>
                 </span>
                 {errors.password && touched.password && (
-    <div className="error-message">
-      <FaInfoCircle className="error-icon" />
-      {errors.password}
-      </div>
-                  )}
+                  <div className="error-message">
+                    <FaInfoCircle className="error-icon" />
+                    {errors.password}
+                  </div>
+                )}
               </div>
 
               {isLoginMode && !showVerification && (
@@ -927,7 +935,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     value={confirmPassword}
                     name="confirmPassword"
                     onChange={handleInputChange}
-                  onBlur={handleBlur}
+                    onBlur={handleBlur}
                     required
                     disabled={isLoading}
                     style={{ paddingRight: '40px' }}
@@ -948,17 +956,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                     >
                       {showConfirmPassword ? (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7" /><circle cx="12" cy="12" r="3.5" /></svg>
                       ) : (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22" /><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" /><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" /></svg>
                       )}
                     </button>
                   </span>
                   {errors.confirmPassword && touched.confirmPassword && (
-    <div className="error-message">
-      <FaInfoCircle className="error-icon" />
-      {errors.confirmPassword}
-      </div>
+                    <div className="error-message">
+                      <FaInfoCircle className="error-icon" />
+                      {errors.confirmPassword}
+                    </div>
                   )}
                 </div>
               )}
@@ -1004,7 +1012,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </div>
         )}
 
-       
+
       </div>
 
       {showForgotPopup && (
@@ -1026,6 +1034,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   value={email}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
+                  name="email"
                   required
                 />
                 {error && <div className="auth-modal__error">{error}</div>}
@@ -1093,10 +1102,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   >
                     {showPassword ? (
                       // Open eye SVG
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7" /><circle cx="12" cy="12" r="3.5" /></svg>
                     ) : (
                       // Slashed eye SVG
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22" /><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" /><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" /></svg>
                     )}
                   </button>
                 </div>
@@ -1126,10 +1135,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   >
                     {showConfirmPassword ? (
                       // Open eye SVG
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7"/><circle cx="12" cy="12" r="3.5"/></svg>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7" /><circle cx="12" cy="12" r="3.5" /></svg>
                     ) : (
                       // Slashed eye SVG
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22"/><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33"/><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33"/></svg>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22" /><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" /><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" /></svg>
                     )}
                   </button>
                 </div>
