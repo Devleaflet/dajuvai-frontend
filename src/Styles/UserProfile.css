@@ -1,3 +1,4 @@
+/* General Profile Container */
 .profile {
   margin: 0 auto;
   padding: 32px 16px;
@@ -19,7 +20,7 @@
 .profile-card {
   max-width: 1000px;
   width: 100%;
-  height:750px; /* Fixed height for the profile card */
+  height: 750px; /* Fixed height for the profile card */
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -29,7 +30,7 @@
 }
 
 .profile-card--wide {
-max-width: min(80vw, 1600px);
+  max-width: min(80vw, 1600px);
 }
 
 /* Sidebar */
@@ -116,8 +117,8 @@ max-width: min(80vw, 1600px);
 
 /* Form Elements for Details Section */
 .profile-form {
-width: 100%;
-margin: 0;
+  width: 100%;
+  margin: 0;
   overflow-y: auto; /* Make user details scrollable */
   max-height: 100%; /* Restrict to parent height */
 }
@@ -131,11 +132,10 @@ margin: 0;
   padding-bottom: 12px;
 }
 
-
 .profile-form__row {
   display: flex;
-  gap: 16px;
   margin-bottom: 24px;
+  gap: 12px;
 }
 
 .profile-form__group--half {
@@ -143,37 +143,59 @@ margin: 0;
   margin-bottom: 0;
 }
 
-
 @media (max-width: 640px) {
   .profile-form__row {
     flex-direction: column;
-    gap: 0;
+    margin-bottom: -5px;
+    gap: 0px;
   }
-  
+
   .profile-form__group--half {
     margin-bottom: 16px;
+    width: 100%;
   }
 }
-
 
 .profile-sidebar::-webkit-scrollbar,
 .profile-content::-webkit-scrollbar,
 .profile-form::-webkit-scrollbar,
-.credentials::-webkit-scrollbar,
-.orders::-webkit-scrollbar {
+.credentials::-webkit-scrollbar {
   display: none;
 }
 
 .profile-sidebar,
 .profile-content,
 .profile-form,
-.credentials,
-.orders {
+.credentials {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-.profile-form_group{
+/* Orders section gets visible scrollbar */
+.orders::-webkit-scrollbar {
+  width: 8px;
+}
+
+.orders::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.orders::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.orders::-webkit-scrollbar-thumb:hover {
+  background: #f97316;
+}
+
+.orders {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f1f1f1;
+}
+
+.profile-form_group {
   margin-top: 24px;
 }
 
@@ -196,6 +218,28 @@ margin: 0;
   border-radius: 8px;
   border: 1px solid #d1d5db;
   min-height: 24px;
+  word-break: break-word; /* Added for better text handling on mobile */
+}
+
+/* Input field styling for edit mode */
+.profile-form__group input {
+  font-size: 16px;
+  color: #1f2937;
+  line-height: 1.6;
+  background: #ffffff;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  min-height: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.profile-form__group input:focus {
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
 .profile-form__group--highlight {
@@ -268,8 +312,9 @@ margin: 0;
 }
 
 .profile-form__input:focus {
-  outline: 2px solid #4285F4;
-  box-shadow: 0 0 5px rgba(66, 133, 244, 0.5);
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
 .profile-form__static-text {
@@ -292,12 +337,6 @@ margin: 0;
 .profile-form__action:hover,
 .profile-form__help:hover {
   color: #ea580c;
-}
-
-.profile-form__actions {
-  display: flex;
-  gap: 16px;
-  margin-top: 24px;
 }
 
 /* Credentials Section */
@@ -330,7 +369,6 @@ margin: 0;
   color: #6b7280;
 }
 
-
 .credentials__title {
   font-size: 20px;
   font-weight: 700;
@@ -355,9 +393,9 @@ margin: 0;
 }
 
 /* .credentials__description {
-  font-size: 14px;
-  color: #4b5563;
-  margin-bottom: 24px;
+font-size: 14px;
+color: #4b5563;
+margin-bottom: 24px;
 } */
 
 .credentials__actions-row {
@@ -604,7 +642,7 @@ margin: 0;
   color: #b45309;
 }
 
-.payment-failed{
+.payment-failed {
   background-color: #fee2e2;
   color: #b91c1c;
 }
@@ -656,12 +694,16 @@ margin: 0;
   font-size: 16px;
   padding: 12px 24px;
   transition: all 0.3s ease;
-  margin-top: 25px;
+  margin-top: 20px;
+  padding-left: 10px;
+  margin-left: 10px;
+  margin-bottom: 10px;
 }
 
 .btn--primary {
   background-color: #f97316;
   color: #ffffff;
+  padding-left: 10px;
 }
 
 .btn--primary:hover {
@@ -675,6 +717,29 @@ margin: 0;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+/* Fix button container to prevent cut-off */
+.profile-form__actions {
+  padding-top: 8px;
+  padding-bottom: 16px;
+  padding-left: 10px;
+  margin-bottom: 16px;
+  gap: 16px;
+  padding-left: 10px;
+}
+
+.profile-form__actions {
+  display: flex;
+  gap: 16px;
+}
+
+.btn btn--primary {
+  padding-left: 10px;
+}
+
+.btn btn--secondary {
+  padding-left: 10px;
 }
 
 .btn--secondary {
@@ -808,8 +873,8 @@ margin: 0;
   .profile-content {
     padding: 24px;
     height: auto; /* Allow content to adjust */
-    max-height: 50vh; /* Limit content height */
-    overflow-y: auto; /* Ensure scrollable */
+    max-height: 50vh; /* Limit content height /
+  overflow-y: auto; / Ensure scrollable */
   }
 
   .profile-form,
@@ -827,183 +892,265 @@ margin: 0;
     box-sizing: border-box;
     overflow-x: hidden !important;
   }
+
+  .profile {
+    padding: 8px 0;
+  }
+
+  .profile__title {
+    font-size: 22px;
+    margin-bottom: 16px;
+    padding: 0 8px;
+  }
+
   .profile-card {
     flex-direction: column !important;
     box-shadow: none;
     border-radius: 0;
     min-width: 0;
-    height: auto; /* Adjust height for mobile */
-    max-height: 90vh; /* Limit to viewport */
+    height: auto;
+    max-height: none;
   }
+
   .profile-sidebar {
     border-right: none;
     border-bottom: 1px solid #e5e7eb;
-    padding: 12px 4px;
+    padding: 16px 8px;
     border-radius: 0;
-    gap: 8px;
-    align-items: flex-start;
-    max-height: 30vh; /* Limit sidebar height */
-    overflow-y: auto; /* Scrollable sidebar */
+    gap: 12px;
+    align-items: center;
+    max-height: none;
+    overflow-y: visible;
+    width: 100%;
   }
+
   .profile-sidebar__avatar {
-    width: 64px;
-    height: 64px;
-    font-size: 24px;
-    margin: 0 auto !important;
+    width: 80px;
+    height: 80px;
+    font-size: 32px;
+    margin: 0 auto;
   }
+
   .profile-sidebar__button,
   .btn,
   .profile-sidebar__button--primary,
   .profile-sidebar__button--secondary {
-    width: 80% !important;
+    width: 90% !important;
     min-width: 0;
-    max-width: 80vw;
+    max-width: 300px;
     display: block;
-    margin-left: auto;
-    margin-right: auto;
+    margin: 8px auto;
+    padding: 12px 16px;
+    font-size: 14px;
   }
+
   .profile-content {
-    padding: 8px 2px;
-    height: auto; /* Adjust height */
-    max-height: 60vh; /* Limit content height */
-    overflow-y: auto; /* Scrollable content */
+    padding: 16px 8px;
+    height: auto;
+    max-height: none;
+    overflow-y: visible;
   }
+
   .profile-form,
   .credentials,
   .orders {
     padding: 0;
-    max-height: 100%; /* Respect parent height */
+    max-height: none;
   }
+
   .profile-form__title,
   .credentials__title,
   .orders__title {
-    font-size: 15px;
-    padding-bottom: 4px;
-    margin-bottom: 8px;
+    font-size: 18px;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    text-align: center;
   }
+
   .profile-form__group {
-    padding: 6px;
-    margin-bottom: 8px;
+    padding: 8px 4px;
+    margin-bottom: 12px;
   }
+
   .profile-form__group label {
-    font-size: 11px;
-    margin-bottom: 2px;
+    font-size: 12px;
+    margin-bottom: 4px;
   }
-  .profile-form__group div {
-    font-size: 13px;
-    padding: 6px;
+
+  .profile-form__group div,
+  .profile-form__group input {
+    font-size: 14px;
+    padding: 10px;
   }
+
   .btn, .profile-sidebar__button {
     min-width: 44px;
     min-height: 44px;
     font-size: 14px;
+    margin: 8px 0;
   }
-  .order-item__content {
+
+  .profile-form__actions {
     flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+    margin: 16px 0;
+  }
+
+  .profile-form__actions .btn {
+    width: 100%;
+    max-width: 280px;
+    margin: 4px 0;
+  }
+
+  /* Orders section mobile improvements */
+  .orders__header {
+    display: none; /* Hide the header on mobile */
+  }
+
+  .order-item {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px;
+    position: relative;
+  }
+
+  .order-item > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .order-item > div:last-child {
+    border-bottom: none;
+  }
+
+  .order-item > div::before {
+    content: attr(data-label);
+    font-weight: 600;
+    font-size: 12px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .order-item__id::before { content: "Order ID"; }
+  .order-item__date::before { content: "Date"; }
+  .order-item__status::before { content: "Status"; }
+  .order-item__products::before { content: "Products"; }
+  .order-item__payment::before { content: "Payment"; }
+  .order-item__total::before { content: "Total"; }
+
+  .order-item__status,
+  .order-item__payment,
+  .order-item__total {
     align-items: flex-start;
-    gap: 6px;
   }
-  .order-item__image {
-    width: 48px;
-    height: 48px;
-  }
-  .order-item__details {
-    margin-left: 0;
-    margin-top: 6px;
-    gap: 6px;
-  }
-  .order-item__price-section {
+
+  .order-item__total {
     text-align: left;
+  }
+
+  .order-products {
+    gap: 6px;
+  }
+
+  .order-product {
+    padding: 6px;
+  }
+
+  .order-product__image {
+    width: 32px;
+    height: 32px;
+  }
+
+  .order-product__placeholder {
+    width: 32px;
+    height: 32px;
+  }
+
+  .order-product__name {
     font-size: 13px;
+  }
+
+  .order-product__quantity {
+    font-size: 12px;
+  }
+
+  .order-product-more {
+    font-size: 12px;
+    padding: 3px 6px;
+  }
+
+  .order-payment__method {
+    font-size: 13px;
+    padding: 4px 8px;
+  }
+
+  .order-total__amount {
+    font-size: 15px;
+  }
+
+  .order-total__shipping {
+    font-size: 11px;
   }
 }
 
 @media (max-width: 480px) {
   .profile {
-    padding: 8px;
+    padding: 4px 0;
   }
+
   .profile__title {
-    font-size: 18px;
-    margin-bottom: 16px;
+    font-size: 20px;
+    margin-bottom: 12px;
   }
-  .profile-card {
-    flex-direction: column;
-    min-width: 0;
-    box-shadow: none;
-    border-radius: 0;
-    height: auto; /* Adjust height */
-    max-height: 85vh; /* Limit to viewport */
-  }
+
   .profile-sidebar {
-    width: 100%;
-    padding: 12px 8px;
-    border-radius: 0;
-    gap: 12px;
-    max-height: 25vh; /* Limit sidebar height */
-    overflow-y: auto; /* Scrollable sidebar */
+    padding: 12px 4px;
   }
+
   .profile-sidebar__avatar {
-    width: 80px;
-    height: 80px;
-    font-size: 32px;
+    width: 70px;
+    height: 70px;
+    font-size: 28px;
   }
+
   .profile-sidebar__button {
-    font-size: 14px;
-    padding: 10px 8px;
+    font-size: 13px;
+    padding: 10px 12px;
   }
+
   .profile-content {
     padding: 12px 4px;
-    height: auto; /* Adjust height */
-    max-height: 60vh; /* Limit content height */
-    overflow-y: auto; /* Scrollable content */
   }
-  .profile-form,
-  .credentials,
-  .orders {
-    padding: 0;
-    max-height: 100%; /* Respect parent height */
-  }
+
   .profile-form__title,
   .credentials__title,
   .orders__title {
     font-size: 16px;
-    padding-bottom: 6px;
-    margin-bottom: 12px;
   }
+
   .profile-form__group {
-    padding: 8px;
-    margin-bottom: 12px;
+    padding: 0px 0px;
   }
+
   .profile-form__group label {
-    font-size: 12px;
-    margin-bottom: 4px;
+    font-size: 11px;
   }
-  .profile-form__group div {
-    font-size: 14px;
+
+  .profile-form__group div,
+  .profile-form__group input {
+    font-size: 13px;
     padding: 8px;
   }
-  .btn, .profile-sidebar__button {
-    min-width: 44px;
-    min-height: 44px;
-    font-size: 15px;
-  }
-  .order-item__content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  .order-item__image {
-    width: 60px;
-    height: 60px;
-  }
-  .order-item__details {
-    margin-left: 0;
-    margin-top: 8px;
-    gap: 8px;
-  }
-  .order-item__price-section {
-    text-align: left;
-    font-size: 14px;
+
+  .btn {
+    font-size: 13px;
+    padding: 10px 16px;
   }
 }
 
@@ -1027,12 +1174,8 @@ margin: 0;
 }
 
 @keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 .skeleton-avatar {
@@ -1073,15 +1216,6 @@ margin: 0;
   /* Placeholder for potential wrapper styling */
 }
 
-.profile-form__input {
-  outline: none;
-}
-
-.profile-form__input:focus {
-  outline: 2px solid #4285F4;
-  box-shadow: 0 0 5px rgba(66, 133, 244, 0.5);
-}
-
 .credentials__actions-row:focus,
 .credentials__actions-row button:focus {
   outline: 2px solid red !important;
@@ -1118,6 +1252,40 @@ margin: 0;
 .profile-content::-webkit-scrollbar-thumb:hover,
 .profile-form::-webkit-scrollbar-thumb:hover,
 .credentials::-webkit-scrollbar-thumb:hover,
-.orders::-webkit-scrollbar-thumb:hover {
+.orders::-webkit-scrollbar-thuØmb:hover {
   background: #ea580c;
+}
+
+.credentials__email-display {
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background-color: #f9fafb;
+  color: #374151;
+  font-size: 16px;
+  min-height: 20px;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .credentials__email-display {
+    font-size: 14px;
+    padding: 10px;
+  }
+}
+
+.order-product-more.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.order-product-more.clickable:hover {
+  background-color: #f97316;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.order-product-more.clickable:active {
+  transform: translateY(0);
 }

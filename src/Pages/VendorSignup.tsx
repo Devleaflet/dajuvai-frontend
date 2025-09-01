@@ -6,6 +6,7 @@ import "../Styles/AuthModal.css";
 import close from "../assets/close.png";
 import { Toaster, toast } from "react-hot-toast";
 import popup from "../assets/auth.jpg";
+import { FaInfoCircle } from "react-icons/fa";
 
 interface VendorSignupProps {
   isOpen: boolean;
@@ -27,8 +28,6 @@ interface ImageUploadResponse {
 }
 
 const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
-  // const navigate = useNavigate();
-
   // Form states
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -65,77 +64,12 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [isVerificationComplete, setIsVerificationComplete] = useState<boolean>(false);
-  const [isStepValid, setIsStepValid] = useState<boolean>(false);
+
+  // Validation states
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const modalRef = useRef<HTMLDivElement | null>(null);
-
-  // Validate current step
-  useEffect(() => {
-    if (!showVerification && !isVerificationComplete) {
-      const validateCurrentStep = () => {
-        console.log(`Validating step ${currentStep}...`);
-        if (currentStep === 1) {
-          const isValid = (
-            businessName.trim().length >= 3 &&
-            phoneNumber.trim().length >= 10 &&
-            province.trim().length > 0 &&
-            district.trim().length > 0 &&
-            acceptTerms);
-          console.log("Step 1 validation:", { businessName, phoneNumber, province, district, acceptTerms, isValid });
-          return isValid;
-        } else if (currentStep === 2) {
-          const isValid = (
-            businessRegNumber.trim().length > 0 &&
-            taxNumber.trim().length === 9 &&
-            email.trim().length > 0 &&
-            password.trim().length >= 8 &&
-            confirmPassword.trim().length >= 8 &&
-            password === confirmPassword
-          );
-          console.log("Step 2 validation:", { businessRegNumber, taxNumber, email, password, confirmPassword, isValid });
-          return isValid;
-        } else if (currentStep === 3) {
-          const isValid = taxDocuments.length > 0;
-          console.log("Step 3 validation:", { taxDocumentsLength: taxDocuments.length, isValid });
-          return isValid;
-        } else if (currentStep === 4) {
-          const isValid = (
-            accountName.trim().length > 0 &&
-            bankName.trim().length > 0 &&
-            accountNumber.trim().length > 0 &&
-            bankBranch.trim().length > 0 &&
-            blankChequePhoto !== null
-          );
-          console.log("Step 4 validation:", { accountName, bankName, accountNumber, bankBranch, blankChequePhoto, isValid });
-          return isValid;
-        }
-        return true;
-      };
-      setIsStepValid(validateCurrentStep());
-    }
-  }, [
-    businessName,
-    phoneNumber,
-    businessRegNumber,
-    province,
-    district,
-    acceptTerms,
-    acceptListingFee,
-    email,
-    password,
-    confirmPassword,
-    taxNumber,
-    taxDocuments,
-    citizenshipDocuments,
-    accountName,
-    bankName,
-    accountNumber,
-    bankBranch,
-    blankChequePhoto,
-    currentStep,
-    showVerification,
-    isVerificationComplete,
-  ]);
 
   // Fetch provinces
   useEffect(() => {
@@ -236,6 +170,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
       setShowPassword(false);
       setShowConfirmPassword(false);
       setCurrentStep(1);
+      setErrors({});
+      setTouched({});
     }
   }, [isOpen]);
 
@@ -267,59 +203,332 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     }
   }
 
-  const validateSignup = (): boolean => {
-    const errors: string[] = [];
-    console.log("Running full form validation...");
+  // Validation function for individual fields
+  const validateField = (name: string, value: any): string => {
+    switch (name) {
+      case "businessName":
+        if (!value.trim()) return "Business name is required";
+        if (value.length < 3) return "Business name must be at least 3 characters";
+        if (value.length > 50) return "Business name must be less than 50 characters";
+        return "";
 
-    if (!businessName.trim()) errors.push("Business name is required");
-    if (businessName.length < 3) errors.push("Business name must be at least 3 characters");
-    if (!businessRegNumber.trim()) errors.push("Business registration number is required");
-    if (!province.trim()) errors.push("Province is required");
-    if (!district.trim()) errors.push("District is required");
-    if (!email.trim()) errors.push("Email is required");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push("Please enter a valid email");
-    if (!phoneNumber.trim()) errors.push("Phone number is required");
-    if (!/^\+?[\d\s-]{10,}$/.test(phoneNumber)) errors.push("Please enter a valid phone number");
-    if (!taxNumber.trim()) errors.push("Pan/Vat number is required");
-    if (taxNumber.length !== 9) errors.push("Pan/Vat number must be 9 characters");
-    if (taxDocuments.length === 0) errors.push("At least one Pan/Vat document is required");
-    taxDocuments.forEach((doc, index) => {
-      if (!/\.(jpg|jpeg|png|pdf)$/i.test(doc.name)) {
-        errors.push(`Pan/Vat document ${index + 1} must be an image (JPG, JPEG, PNG) or PDF`);
+      case "phoneNumber":
+        if (!value.trim()) return "Phone number is required";
+        if (!/^\+?[\d\s-]{10,}$/.test(value)) return "Invalid phone number format";
+        return "";
+
+      case "businessRegNumber":
+        if (!value.trim()) return "Business registration number is required";
+        if (!/^\d+$/.test(value)) return "Business registration number must contain only numbers";
+        if (value.length < 3) return "Business registration number must be at least 3 characters";
+        return "";
+
+      case "province":
+        if (!value.trim()) return "Province is required";
+        return "";
+
+      case "district":
+        if (!value.trim()) return "District is required";
+        return "";
+
+      case "taxNumber":
+        if (!value.trim()) return "Pan/VAT number is required";
+        if (value.length !== 9) return "Pan/VAT number must be exactly 9 characters";
+        if (!/^\d{9}$/.test(value)) return "Pan/VAT number must be numeric";
+        return "";
+
+      case "email":
+        if (!value.trim()) return "Email is required";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Invalid email format";
+        if (value.length > 255) return "Email is too long";
+        return "";
+
+      case "password":
+        if (!value.trim()) return "Password is required";
+        if (value.length < 8) return "Password must be at least 8 characters";
+        if (!/[a-z]/.test(value)) return "Password must contain at least one lowercase letter";
+        if (!/[A-Z]/.test(value)) return "Password must contain at least one uppercase letter";
+        if (!/[^a-zA-Z0-9]/.test(value)) return "Password must contain at least one special character";
+        if (value.length > 128) return "Password is too long";
+        return "";
+
+      case "confirmPassword":
+        if (!value.trim()) return "Please confirm your password";
+        if (value !== password) return "Passwords do not match";
+        return "";
+
+      case "accountName":
+        if (!value.trim()) return "Account name is required";
+        if (value.length < 3) return "Account name must be at least 3 characters";
+        return "";
+
+      case "bankName":
+        if (!value.trim()) return "Bank name is required";
+        if (value.length < 3) return "Bank name must be at least 3 characters";
+        return "";
+
+      case "accountNumber":
+        if (!value.trim()) return "Account number is required";
+        if (!/^\d{8,}$/.test(value)) return "Account number must be at least 8 digits";
+        return "";
+
+      case "bankBranch":
+        if (!value.trim()) return "Bank branch is required";
+        if (value.length < 3) return "Bank branch must be at least 3 characters";
+        return "";
+
+      case "bankCode":
+        if (value && !/^[A-Za-z0-9]{4,}$/.test(value)) return "Invalid bank code format";
+        return "";
+
+      case "bankAddress":
+        if (value && value.length < 5) return "Bank address must be at least 5 characters";
+        return "";
+
+      case "taxDocuments":
+        if (value.length === 0) return "At least one PAN/VAT document is required";
+        for (const doc of value) {
+          if (!/\.(jpg|jpeg|png|pdf)$/i.test(doc.name)) {
+            return "PAN/VAT documents must be JPG, JPEG, PNG, or PDF";
+          }
+          if (doc.size > 5 * 1024 * 1024) {
+            return "PAN/VAT document size exceeds 5MB limit";
+          }
+        }
+        if (value.length > 5) return "Cannot upload more than 5 PAN/VAT documents";
+        return "";
+
+      case "citizenshipDocuments":
+        for (const doc of value) {
+          if (!/\.(jpg|jpeg|png|pdf)$/i.test(doc.name)) {
+            return "Citizenship documents must be JPG, JPEG, PNG, or PDF";
+          }
+          if (doc.size > 5 * 1024 * 1024) {
+            return "Citizenship document size exceeds 5MB limit";
+          }
+        }
+        if (value.length > 5) return "Cannot upload more than 5 citizenship documents";
+        return "";
+
+      case "blankChequePhoto":
+        if (!value) return "Blank cheque photo is required";
+        if (!/\.(jpg|jpeg|png)$/i.test(value.name)) return "Blank cheque photo must be JPG, JPEG, or PNG";
+        if (value.size > 5 * 1024 * 1024) return "Blank cheque photo size exceeds 5MB limit";
+        return "";
+
+      case "acceptTerms":
+        if (!value) return "You must accept the terms and conditions";
+        return "";
+
+      case "acceptListingFee":
+        if (!value) return "You must accept the listing fee";
+        return "";
+
+      case "verificationToken":
+        if (!value.trim()) return "Verification code is required";
+        if (!/^\d{6}$/.test(value)) return "Verification code must be a 6-digit number";
+        return "";
+
+      default:
+        return "";
+    }
+  };
+
+  // Handle input blur for validation
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+
+    const error = validateField(name, value);
+    setErrors(prev => ({ ...prev, [name]: error }));
+  };
+
+  // Handle input change with real-time validation
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+
+    // Update the corresponding state
+    switch (name) {
+      case "businessName":
+        setBusinessName(value);
+        break;
+      case "phoneNumber":
+        setPhoneNumber(value);
+        break;
+      case "businessRegNumber":
+        setBusinessRegNumber(value);
+        break;
+      case "province":
+        setProvince(value);
+        if (value) fetchDistricts(value);
+        break;
+      case "district":
+        setDistrict(value);
+        break;
+      case "taxNumber":
+        setTaxNumber(value);
+        break;
+      case "email":
+        setEmail(value);
+        break;
+      case "password":
+        setPassword(value);
+        break;
+      case "confirmPassword":
+        setConfirmPassword(value);
+        break;
+      case "accountName":
+        setAccountName(value);
+        break;
+      case "bankName":
+        setBankName(value);
+        break;
+      case "accountNumber":
+        setAccountNumber(value);
+        break;
+      case "bankBranch":
+        setBankBranch(value);
+        break;
+      case "bankCode":
+        setBankCode(value);
+        break;
+      case "bankAddress":
+        setBankAddress(value);
+        break;
+    }
+
+    // Clear the error for this field when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
+
+    // Validate field in real-time if it's been touched before
+    if (touched[name]) {
+      const error = validateField(name, value);
+      setErrors(prev => ({ ...prev, [name]: error }));
+    }
+  };
+
+  // Validate current step
+  const validateStep = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    let isValid = true;
+
+    const fieldsToValidate = currentStep === 1
+      ? ["businessName", "phoneNumber", "province", "district", "acceptTerms"]
+      : currentStep === 2
+        ? ["businessRegNumber", "taxNumber", "email", "password", "confirmPassword"]
+        : currentStep === 3
+          ? ["taxDocuments", "citizenshipDocuments"]
+          : ["accountName", "bankName", "accountNumber", "bankBranch", "bankCode", "bankAddress", "blankChequePhoto", "acceptListingFee"];
+
+    fieldsToValidate.forEach(field => {
+      const value = field === "businessName" ? businessName :
+        field === "phoneNumber" ? phoneNumber :
+          field === "businessRegNumber" ? businessRegNumber :
+            field === "province" ? province :
+              field === "district" ? district :
+                field === "taxNumber" ? taxNumber :
+                  field === "email" ? email :
+                    field === "password" ? password :
+                      field === "confirmPassword" ? confirmPassword :
+                        field === "accountName" ? accountName :
+                          field === "bankName" ? bankName :
+                            field === "accountNumber" ? accountNumber :
+                              field === "bankBranch" ? bankBranch :
+                                field === "bankCode" ? bankCode :
+                                  field === "bankAddress" ? bankAddress :
+                                    field === "taxDocuments" ? taxDocuments :
+                                      field === "citizenshipDocuments" ? citizenshipDocuments :
+                                        field === "blankChequePhoto" ? blankChequePhoto :
+                                          field === "acceptTerms" ? acceptTerms :
+                                            field === "acceptListingFee" ? acceptListingFee : null;
+
+      const error = validateField(field, value);
+      if (error) {
+        newErrors[field] = error;
+        isValid = false;
       }
     });
-    citizenshipDocuments.forEach((doc, index) => {
-      if (!/\.(jpg|jpeg|png|pdf)$/i.test(doc.name)) {
-        errors.push(`Citizenship document ${index + 1} must be an image (JPG, JPEG, PNG) or PDF`);
+
+    setErrors(prev => ({ ...prev, ...newErrors }));
+
+    // Mark all relevant fields as touched
+    const allTouched = fieldsToValidate.reduce((acc, field) => {
+      acc[field] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+
+    setTouched(prev => ({ ...prev, ...allTouched }));
+    return isValid;
+  };
+
+  // Validate entire form before submission
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    let isValid = true;
+
+    const fieldsToValidate = [
+      "businessName",
+      "phoneNumber",
+      "businessRegNumber",
+      "province",
+      "district",
+      "taxNumber",
+      "email",
+      "password",
+      "confirmPassword",
+      "accountName",
+      "bankName",
+      "accountNumber",
+      "bankBranch",
+      "bankCode",
+      "bankAddress",
+      "taxDocuments",
+      "citizenshipDocuments",
+      "blankChequePhoto",
+      "acceptTerms",
+      "acceptListingFee"
+    ];
+
+    fieldsToValidate.forEach(field => {
+      const value = field === "businessName" ? businessName :
+        field === "phoneNumber" ? phoneNumber :
+          field === "businessRegNumber" ? businessRegNumber :
+            field === "province" ? province :
+              field === "district" ? district :
+                field === "taxNumber" ? taxNumber :
+                  field === "email" ? email :
+                    field === "password" ? password :
+                      field === "confirmPassword" ? confirmPassword :
+                        field === "accountName" ? accountName :
+                          field === "bankName" ? bankName :
+                            field === "accountNumber" ? accountNumber :
+                              field === "bankBranch" ? bankBranch :
+                                field === "bankCode" ? bankCode :
+                                  field === "bankAddress" ? bankAddress :
+                                    field === "taxDocuments" ? taxDocuments :
+                                      field === "citizenshipDocuments" ? citizenshipDocuments :
+                                        field === "blankChequePhoto" ? blankChequePhoto :
+                                          field === "acceptTerms" ? acceptTerms :
+                                            field === "acceptListingFee" ? acceptListingFee : null;
+
+      const error = validateField(field, value);
+      if (error) {
+        newErrors[field] = error;
+        isValid = false;
       }
     });
-    if (!accountName.trim()) errors.push("Account name is required");
-    if (!bankName.trim()) errors.push("Bank name is required");
-    if (!accountNumber.trim()) errors.push("Account number is required");
-    if (!bankBranch.trim()) errors.push("Bank branch is required");
-    if (!blankChequePhoto) errors.push("Blank cheque photo is required");
-    if (blankChequePhoto && !/\.(jpg|jpeg|png)$/i.test(blankChequePhoto.name)) {
-      errors.push("Blank cheque photo must be an image (JPG, JPEG, PNG)");
-    }
-    if (!password.trim()) errors.push("Password is required");
-    if (password.length < 8) errors.push("Password must be at least 8 characters");
-    if (!/[a-z]/.test(password)) errors.push("Password must contain at least one lowercase letter");
-    if (!/[A-Z]/.test(password)) errors.push("Password must contain at least one uppercase letter");
-    if (!/[^a-zA-Z0-9]/.test(password)) errors.push("Password must contain at least one special character");
-    if (!confirmPassword.trim()) errors.push("Please confirm your password");
-    if (password !== confirmPassword) errors.push("Passwords do not match");
-    if (!acceptTerms) errors.push("You must accept the terms and conditions");
-    if (!acceptListingFee) errors.push("You must accept the listing fee");
 
-    if (errors.length > 0) {
-      console.log("Validation errors:", errors);
-      errors.forEach((err) => toast.error(err));
-      setError(errors[0]);
-      return false;
-    }
+    setErrors(newErrors);
 
-    console.log("Validation passed");
-    return true;
+    const allTouched = fieldsToValidate.reduce((acc, field) => {
+      acc[field] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
+
+    setTouched(prev => ({ ...prev, ...allTouched }));
+    return isValid;
   };
 
   const handleFileChange = (
@@ -328,21 +537,65 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
   ) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     console.log(`File change for ${documentType}:`, files.map(f => f.name));
+
+    // Validate file count and size
+    if (documentType === "tax" || documentType === "citizenship") {
+      const currentDocs = documentType === "tax" ? taxDocuments : citizenshipDocuments;
+      if (files.length + currentDocs.length > 5) {
+        setErrors(prev => ({ ...prev, [documentType + "Documents"]: "Cannot upload more than 5 documents" }));
+        toast.error("Cannot upload more than 5 documents");
+        return;
+      }
+      for (const file of files) {
+        if (file.size > 5 * 1024 * 1024) {
+          setErrors(prev => ({ ...prev, [documentType + "Documents"]: "File size exceeds 5MB limit" }));
+          toast.error("File size exceeds 5MB limit");
+          return;
+        }
+      }
+    } else if (documentType === "cheque" && files.length > 0) {
+      if (files[0].size > 5 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, blankChequePhoto: "File size exceeds 5MB limit" }));
+        toast.error("File size exceeds 5MB limit");
+        return;
+      }
+    }
+
+    // Update state and validate
     if (documentType === "tax") {
-      setTaxDocuments((prev) => [...prev, ...files]);
+      const newFiles = [...taxDocuments, ...files];
+      setTaxDocuments(newFiles);
+      setTouched(prev => ({ ...prev, taxDocuments: true }));
+      const error = validateField("taxDocuments", newFiles);
+      setErrors(prev => ({ ...prev, taxDocuments: error }));
     } else if (documentType === "citizenship") {
-      setCitizenshipDocuments((prev) => [...prev, ...files]);
+      const newFiles = [...citizenshipDocuments, ...files];
+      setCitizenshipDocuments(newFiles);
+      setTouched(prev => ({ ...prev, citizenshipDocuments: true }));
+      const error = validateField("citizenshipDocuments", newFiles);
+      setErrors(prev => ({ ...prev, citizenshipDocuments: error }));
     } else if (documentType === "cheque" && files.length > 0) {
       setBlankChequePhoto(files[0]);
+      setTouched(prev => ({ ...prev, blankChequePhoto: true }));
+      const error = validateField("blankChequePhoto", files[0]);
+      setErrors(prev => ({ ...prev, blankChequePhoto: error }));
     }
   };
 
   const removeFile = (index: number, documentType: "tax" | "citizenship") => {
     console.log(`Removing ${documentType} file at index ${index}`);
     if (documentType === "tax") {
-      setTaxDocuments((prev) => prev.filter((_, i) => i !== index));
+      const newFiles = taxDocuments.filter((_, i) => i !== index);
+      setTaxDocuments(newFiles);
+      setTouched(prev => ({ ...prev, taxDocuments: true }));
+      const error = validateField("taxDocuments", newFiles);
+      setErrors(prev => ({ ...prev, taxDocuments: error }));
     } else {
-      setCitizenshipDocuments((prev) => prev.filter((_, i) => i !== index));
+      const newFiles = citizenshipDocuments.filter((_, i) => i !== index);
+      setCitizenshipDocuments(newFiles);
+      setTouched(prev => ({ ...prev, citizenshipDocuments: true }));
+      const error = validateField("citizenshipDocuments", newFiles);
+      setErrors(prev => ({ ...prev, citizenshipDocuments: error }));
     }
   };
 
@@ -408,6 +661,20 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 
   const handleFileUpload = async (files: File[]): Promise<string[] | null> => {
     try {
+      // Validate files before uploading
+      for (const file of files) {
+        if (!/\.(jpg|jpeg|png|pdf)$/i.test(file.name)) {
+          setError("Invalid file type. Only JPG, JPEG, PNG, or PDF files are allowed.");
+          toast.error("Invalid file type. Only JPG, JPEG, PNG, or PDF files are allowed.");
+          return null;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          setError("File size exceeds 5MB limit.");
+          toast.error("File size exceeds 5MB limit.");
+          return null;
+        }
+      }
+
       console.log("Uploading files:", files.map(f => f.name));
       const uploadPromises = files.map(async (file) => {
         const formData = new FormData();
@@ -500,16 +767,25 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
       setAcceptTerms(false);
       setAcceptListingFee(false);
       setCurrentStep(1);
+      setErrors({});
+      setTouched({});
     } catch (err) {
       console.error("Signup error:", err);
       if (axios.isAxiosError(err)) {
         if (err.response?.status === 400 && err.response?.data?.errors) {
-          const errorMessages = Object.entries(err.response.data.errors)
-            .map(([field, message]) => `${field}: ${message}`)
-            .join("\n");
-          setError(`Validation errors:\n${errorMessages}`);
-          toast.error("Please check your form data");
-          console.log("Validation errors from server:", errorMessages);
+          const serverErrors = err.response.data.errors;
+          const newErrors: Record<string, string> = {};
+
+          Object.keys(serverErrors).forEach(key => {
+            if (serverErrors[key] && serverErrors[key][0]) {
+              newErrors[key] = serverErrors[key][0];
+            }
+          });
+
+          setErrors(prev => ({ ...prev, ...newErrors }));
+          setError("Please correct the validation errors");
+          toast.error("Please correct the validation errors");
+          console.log("Validation errors from server:", newErrors);
         } else if (err.response?.status === 400 && err.response?.data?.message) {
           setError(err.response.data.message);
           toast.error(err.response.data.message);
@@ -537,9 +813,16 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     try {
       setIsLoading(true);
       setError("");
+
+      const error = validateField("verificationToken", verificationToken);
+      if (error) {
+        setErrors(prev => ({ ...prev, verificationToken: error }));
+        setTouched(prev => ({ ...prev, verificationToken: true }));
+        toast.error(error);
+        return;
+      }
+
       console.log("Verifying email with token:", verificationToken);
-
-
       const response = await axios.post(
         `${API_BASE_URL}/api/auth/verify`,
         { email: pendingVerificationEmail, token: verificationToken },
@@ -613,6 +896,11 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
   };
 
   const handleNext = () => {
+    if (!validateStep()) {
+      toast.error("Please fix the errors in the form before proceeding.");
+      console.log("Step validation failed, cannot proceed");
+      return;
+    }
     console.log(`Moving to step ${currentStep + 1}`);
     setCurrentStep((prev) => Math.min(prev + 1, 4));
   };
@@ -629,35 +917,28 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     console.log("Form submitted, current step:", currentStep);
 
     if (showVerification) {
-      if (verificationToken.length !== 6 || !/^\d{6}$/.test(verificationToken)) {
-        setError("Please enter a valid 6-digit verification code");
-        toast.error("Please enter a valid 6-digit verification code");
-        console.log("Invalid verification token:", verificationToken);
-        return;
-      }
       await handleVerifyEmail();
       return;
     }
 
     if (currentStep < 4) {
-      if (!isStepValid) {
-        toast.error("Please complete all required fields before proceeding.");
-        console.log("Step validation failed, cannot proceed");
-        return;
-      }
       handleNext();
       return;
     }
 
-    if (!validateSignup()) {
+    if (!validateForm()) {
+      toast.error("Please fix the errors in the form");
       console.log("Full form validation failed");
       return;
     }
 
-    if (taxDocuments.length === 0 || !blankChequePhoto) {
-      setError("Please upload at least one Pan/Vat document and a blank cheque photo");
-      toast.error("Please upload at least one Pan/Vat document and a blank cheque photo");
-      console.log("Missing required documents");
+    // Revalidate files explicitly
+    const taxDocsError = validateField("taxDocuments", taxDocuments);
+    const chequeError = validateField("blankChequePhoto", blankChequePhoto);
+    if (taxDocsError || chequeError) {
+      setErrors(prev => ({ ...prev, taxDocuments: taxDocsError, blankChequePhoto: chequeError }));
+      setTouched(prev => ({ ...prev, taxDocuments: true, blankChequePhoto: true }));
+      toast.error("Please upload valid PAN/VAT documents and cheque photo");
       return;
     }
 
@@ -770,10 +1051,19 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                 <div className="auth-modal__form-group">
                   <input
                     type="text"
-                    className="auth-modal__input auth-modal__input--verification"
+                    className={`auth-modal__input auth-modal__input--verification ${errors.verificationToken && touched.verificationToken ? "error" : ""}`}
                     placeholder="______"
+                    name="verificationToken"
                     value={verificationToken}
-                    onChange={(e) => setVerificationToken(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                      setVerificationToken(value);
+                      if (touched.verificationToken) {
+                        const error = validateField("verificationToken", value);
+                        setErrors(prev => ({ ...prev, verificationToken: error }));
+                      }
+                    }}
+                    onBlur={handleBlur}
                     required
                     disabled={isLoading}
                     maxLength={6}
@@ -781,6 +1071,12 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                     pattern="\d{6}"
                     style={{ width: '200px', textAlign: 'center' }}
                   />
+                  {errors.verificationToken && touched.verificationToken && (
+                    <div className="error-message">
+                      <FaInfoCircle className="error-icon" />
+                      {errors.verificationToken}
+                    </div>
+                  )}
                 </div>
                 <button
                   type="submit"
@@ -810,64 +1106,85 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
               <>
                 {currentStep === 1 && (
                   <>
-                    <div className="auth-modal__form-group auth-modal__form-group--grid">                      <div>
-                      <label className="auth-modal__label">Business Name</label>
-                      <input
-                        type="text"
-                        className="auth-modal__input"
-                        placeholder="Enter business name"
-                        value={businessName}
-                        onChange={(e) => setBusinessName(e.target.value)}
-                        required
-                        disabled={isLoading}
-                        style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-                      />
-                    </div>
+                    <div className="auth-modal__form-group auth-modal__form-group--grid">
                       <div>
-                        <label className="auth-modal__label">Phone Number</label>
+                        <label className="auth-modal__label">Business Name</label>
                         <input
                           type="text"
-                          className="auth-modal__input"
-                          placeholder="Enter phone number"
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          className={`auth-modal__input ${errors.businessName && touched.businessName ? "error" : ""}`}
+                          placeholder="Enter business name"
+                          name="businessName"
+                          value={businessName}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
                           required
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
+                        {errors.businessName && touched.businessName && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.businessName}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <label className="auth-modal__label">Phone Number</label>
+                        <input
+                          type="text"
+                          className={`auth-modal__input ${errors.phoneNumber && touched.phoneNumber ? "error" : ""}`}
+                          placeholder="Enter phone number"
+                          name="phoneNumber"
+                          value={phoneNumber}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          required
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                        {errors.phoneNumber && touched.phoneNumber && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.phoneNumber}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="auth-modal__form-group auth-modal__form-group--grid">                      <div>
-                      <label className="auth-modal__label">Province</label>
-                      <select
-                        className="auth-modal__input"
-                        value={province}
-                        onChange={(e) => {
-                          setProvince(e.target.value);
-                          console.log("Province selected:", e.target.value);
-                          fetchDistricts(e.target.value);
-                        }}
-                        required
-                        disabled={isLoading || provinceData.length === 0}
-                        style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-                      >
-                        <option value="">Select Province</option>
-                        {provinceData.map((p) => (
-                          <option key={p} value={p}>
-                            {p}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <div className="auth-modal__form-group auth-modal__form-group--grid">
+                      <div>
+                        <label className="auth-modal__label">Province</label>
+                        <select
+                          className={`auth-modal__input ${errors.province && touched.province ? "error" : ""}`}
+                          name="province"
+                          value={province}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          required
+                          disabled={isLoading || provinceData.length === 0}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        >
+                          <option value="">Select Province</option>
+                          {provinceData.map((p) => (
+                            <option key={p} value={p}>
+                              {p}
+                            </option>
+                          ))}
+                        </select>
+                        {errors.province && touched.province && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.province}
+                          </div>
+                        )}
+                      </div>
                       <div>
                         <label className="auth-modal__label">District</label>
                         <select
-                          className="auth-modal__input"
+                          className={`auth-modal__input ${errors.district && touched.district ? "error" : ""}`}
+                          name="district"
                           value={district}
-                          onChange={(e) => {
-                            setDistrict(e.target.value);
-                            console.log("District selected:", e.target.value);
-                          }}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
                           required
                           disabled={isLoading || districtData.length === 0}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
@@ -879,42 +1196,66 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                             </option>
                           ))}
                         </select>
+                        {errors.district && touched.district && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.district}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="auth-modal__form-group" style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
                       <label className="auth-modal__checkbox" style={{ background: "transparent" }}>
                         <input
                           type="checkbox"
+                          name="acceptTerms"
                           checked={acceptTerms}
                           onChange={(e) => {
                             setAcceptTerms(e.target.checked);
+                            setTouched(prev => ({ ...prev, acceptTerms: true }));
+                            const error = validateField("acceptTerms", e.target.checked);
+                            setErrors(prev => ({ ...prev, acceptTerms: error }));
                             console.log("Accept terms toggled:", e.target.checked);
                           }}
                           disabled={isLoading}
-                          style={{ background: "transparent", border: "1px solid #ddd", height:"fit-content" }}
+                          style={{ background: "transparent", border: "1px solid #ddd", height: "fit-content" }}
                         />
                         I accept the <Link to="/vendor/terms" target="_blank">terms and conditions</Link>
                       </label>
-
+                      {errors.acceptTerms && touched.acceptTerms && (
+                        <div className="error-message">
+                          <FaInfoCircle className="error-icon" />
+                          {errors.acceptTerms}
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
 
                 {currentStep === 2 && (
                   <>
-                    <div className="auth-modal__form-group auth-modal__form-group--grid">                      <div>
-                      <label className="auth-modal__label">Business Registration Number</label>
-                      <input
-                        type="text"
-                        className="auth-modal__input"
-                        placeholder="Enter business registration number"
-                        value={businessRegNumber}
-                        onChange={(e) => setBusinessRegNumber(e.target.value)}
-                        required
-                        disabled={isLoading}
-                        style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-                      />
-                    </div>
+                    <div className="auth-modal__form-group auth-modal__form-group--grid">
+                      <div>
+                        <label className="auth-modal__label">Business Registration Number</label>
+                        <input
+                          type="text"
+                          className={`auth-modal__input ${errors.businessRegNumber && touched.businessRegNumber ? "error" : ""}`}
+                          placeholder="Enter business registration number"
+                          name="businessRegNumber"
+                          value={businessRegNumber}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          required
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                        {errors.businessRegNumber && touched.businessRegNumber && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.businessRegNumber}
+                          </div>
+                        )}
+                      </div>
                       <div>
                         <label className="auth-modal__label">
                           Vat/Pan Number{" "}
@@ -922,14 +1263,22 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                         </label>
                         <input
                           type="text"
-                          className="auth-modal__input"
+                          className={`auth-modal__input ${errors.taxNumber && touched.taxNumber ? "error" : ""}`}
                           placeholder="Enter pan/vat number"
+                          name="taxNumber"
                           value={taxNumber}
-                          onChange={(e) => setTaxNumber(e.target.value)}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
                           required
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
+                        {errors.taxNumber && touched.taxNumber && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.taxNumber}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="auth-modal__form-group auth-modal__form-group--grid">
@@ -937,23 +1286,33 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                         <label className="auth-modal__label">Email</label>
                         <input
                           type="email"
-                          className="auth-modal__input"
+                          className={`auth-modal__input ${errors.email && touched.email ? "error" : ""}`}
                           placeholder="Enter email"
+                          name="email"
                           value={email}
-                          onChange={(e) => setEmail(e.target.value)}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
                           required
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
+                        {errors.email && touched.email && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.email}
+                          </div>
+                        )}
                       </div>
                       <div style={{ position: "relative" }}>
                         <label className="auth-modal__label">Password</label>
                         <input
                           type={showPassword ? "text" : "password"}
-                          className="auth-modal__input"
+                          className={`auth-modal__input ${errors.password && touched.password ? "error" : ""}`}
                           placeholder="Enter password"
+                          name="password"
                           value={password}
-                          onChange={(e) => setPassword(e.target.value)}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
                           required
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
@@ -1006,6 +1365,12 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                             </svg>
                           )}
                         </button>
+                        {errors.password && touched.password && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.password}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px", width: "100%" }}>
@@ -1013,10 +1378,12 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                         <label className="auth-modal__label">Confirm Password</label>
                         <input
                           type={showConfirmPassword ? "text" : "password"}
-                          className="auth-modal__input"
+                          className={`auth-modal__input ${errors.confirmPassword && touched.confirmPassword ? "error" : ""}`}
                           placeholder="Confirm password"
+                          name="confirmPassword"
                           value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
                           required
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
@@ -1028,7 +1395,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                             position: "absolute",
                             right: "10px",
                             top: "60px",
-
                             transform: "translateY(-70%)",
                             background: "none",
                             border: "none",
@@ -1069,6 +1435,12 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                             </svg>
                           )}
                         </button>
+                        {errors.confirmPassword && touched.confirmPassword && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.confirmPassword}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </>
@@ -1079,7 +1451,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                     <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px", width: "100%" }}>
                       <div>
                         <label className="auth-modal__label">
-                          Please attach your business and PAN/VAT document(s) (Image or PDF)
+                          Please attach your business and PAN/VAT document(s) (JPG, JPEG, PNG, or PDF, required)
                         </label>
                         <div className="auth-modal__file-upload">
                           <label htmlFor="taxDocument" className="auth-modal__file-label">
@@ -1089,12 +1461,19 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                             id="taxDocument"
                             type="file"
                             className="auth-modal__file-input"
-                            accept="image/*,application/pdf"
+                            accept="image/jpeg,image/png,application/pdf"
                             onChange={(e) => handleFileChange(e, "tax")}
                             multiple
                             disabled={isLoading}
+                            required
                           />
                         </div>
+                        {errors.taxDocuments && touched.taxDocuments && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.taxDocuments}
+                          </div>
+                        )}
                         {taxDocuments.length > 0 && (
                           <div className="auth-modal__file-list" style={{ marginTop: "15px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
                             {taxDocuments.map((doc, index) => renderFilePreview(doc, index, "tax"))}
@@ -1105,7 +1484,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                     <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px", width: "100%" }}>
                       <div>
                         <label className="auth-modal__label">
-                          Ownership Citizenship Document(s) (Optional, Image or PDF)
+                          Ownership Citizenship Document(s) (Optional, JPG, JPEG, PNG, or PDF)
                         </label>
                         <div className="auth-modal__file-upload">
                           <label htmlFor="citizenshipDocument" className="auth-modal__file-label">
@@ -1115,7 +1494,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                             id="citizenshipDocument"
                             type="file"
                             className="auth-modal__file-input"
-                            accept="image/*,application/pdf"
+                            accept="image/jpeg,image/png,application/pdf"
                             onChange={(e) => handleFileChange(e, "citizenship")}
                             multiple
                             disabled={isLoading}
@@ -1126,6 +1505,12 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                             {citizenshipDocuments.map((doc, index) => renderFilePreview(doc, index, "citizenship"))}
                           </div>
                         )}
+                        {errors.citizenshipDocuments && touched.citizenshipDocuments && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.citizenshipDocuments}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </>
@@ -1133,76 +1518,139 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 
                 {currentStep === 4 && (
                   <>
-                    <div className="auth-modal__form-group auth-modal__form-group--grid">                      <div>
-                      <label className="auth-modal__label">Account Name</label>
-                      <input
-                        type="text"
-                        className="auth-modal__input"
-                        placeholder="Enter account name"
-                        value={accountName}
-                        onChange={(e) => setAccountName(e.target.value)}
-                        required
-                        disabled={isLoading}
-                        style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-                      />
-                    </div>
+                    <div className="auth-modal__form-group auth-modal__form-group--grid">
+                      <div>
+                        <label className="auth-modal__label">Bank Account Name</label>
+                        <input
+                          type="text"
+                          className={`auth-modal__input ${errors.accountName && touched.accountName ? "error" : ""}`}
+                          placeholder="Enter account name"
+                          name="accountName"
+                          value={accountName}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          required
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                        {errors.accountName && touched.accountName && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.accountName}
+                          </div>
+                        )}
+                      </div>
                       <div>
                         <label className="auth-modal__label">Bank Name</label>
                         <input
                           type="text"
-                          className="auth-modal__input"
+                          className={`auth-modal__input ${errors.bankName && touched.bankName ? "error" : ""}`}
                           placeholder="Enter bank name"
+                          name="bankName"
                           value={bankName}
-                          onChange={(e) => setBankName(e.target.value)}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
                           required
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
+                        {errors.bankName && touched.bankName && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.bankName}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="auth-modal__form-group auth-modal__form-group--grid">                      <div>
-                      <label className="auth-modal__label">Account Number</label>
-                      <input
-                        type="text"
-                        className="auth-modal__input"
-                        placeholder="Enter account number"
-                        value={accountNumber}
-                        onChange={(e) => setAccountNumber(e.target.value)}
-                        required
-                        disabled={isLoading}
-                        style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-                      />
-                    </div>
+                    <div className="auth-modal__form-group auth-modal__form-group--grid">
+                      <div>
+                        <label className="auth-modal__label">Bank Account Number</label>
+                        <input
+                          type="text"
+                          className={`auth-modal__input ${errors.accountNumber && touched.accountNumber ? "error" : ""}`}
+                          placeholder="Enter account number"
+                          name="accountNumber"
+                          value={accountNumber}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          required
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                        {errors.accountNumber && touched.accountNumber && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.accountNumber}
+                          </div>
+                        )}
+                      </div>
                       <div>
                         <label className="auth-modal__label">Bank Branch</label>
                         <input
                           type="text"
-                          className="auth-modal__input"
+                          className={`auth-modal__input ${errors.bankBranch && touched.bankBranch ? "error" : ""}`}
                           placeholder="Enter bank branch"
+                          name="bankBranch"
                           value={bankBranch}
-                          onChange={(e) => setBankBranch(e.target.value)}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
                           required
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
+                        {errors.bankBranch && touched.bankBranch && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.bankBranch}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="auth-modal__form-group auth-modal__form-group--grid">                      <div>
-                      <label className="auth-modal__label">Bank Code (Optional)</label>
-                      <input
-                        type="text"
-                        className="auth-modal__input"
-                        placeholder="Enter bank code"
-                        value={bankCode}
-                        onChange={(e) => setBankCode(e.target.value)}
-                        disabled={isLoading}
-                        style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
-                      />
-                    </div>
+                    <div className="auth-modal__form-group auth-modal__form-group--grid">
+                      <div>
+                        <label className="auth-modal__label">Bank Code (Optional)</label>
+                        <input
+                          type="text"
+                          className={`auth-modal__input ${errors.bankCode && touched.bankCode ? "error" : ""}`}
+                          placeholder="Enter bank code"
+                          name="bankCode"
+                          value={bankCode}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                        {errors.bankCode && touched.bankCode && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.bankCode}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <label className="auth-modal__label">Bank Address (Optional)</label>
+                        <input
+                          type="text"
+                          className={`auth-modal__input ${errors.bankAddress && touched.bankAddress ? "error" : ""}`}
+                          placeholder="Enter bank address"
+                          name="bankAddress"
+                          value={bankAddress}
+                          onChange={handleInputChange}
+                          onBlur={handleBlur}
+                          disabled={isLoading}
+                          style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+                        />
+                        {errors.bankAddress && touched.bankAddress && (
+                          <div className="error-message">
+                            <FaInfoCircle className="error-icon" />
+                            {errors.bankAddress}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="document-section">
                       <h3 className="cheque-header">
-                        Cheque Photo
+                        Cheque Photo (JPG, JPEG, or PNG, required)
                         {blankChequePhoto && <span className="file-name">{blankChequePhoto.name}</span>}
                       </h3>
                       <div
@@ -1214,31 +1662,35 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                           <input
                             type="file"
                             id="chequePhoto"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const files = e.target.files;
-                              if (files && files.length > 0) {
-                                setBlankChequePhoto(files[0]);
-                                console.log("Cheque photo selected:", files[0].name);
-                              }
-                            }}
+                            accept="image/jpeg,image/png"
+                            onChange={(e) => handleFileChange(e, "cheque")}
                             required
                             aria-label="Upload Cheque Photo"
                             style={{ display: "none" }}
                           />
                         </div>
                       </div>
+                      {errors.blankChequePhoto && touched.blankChequePhoto && (
+                        <div className="error-message">
+                          <FaInfoCircle className="error-icon" />
+                          {errors.blankChequePhoto}
+                        </div>
+                      )}
                     </div>
                     <label className="auth-modal__checkbox" style={{ background: "transparent" }}>
                       <input
                         type="checkbox"
+                        name="acceptListingFee"
                         checked={acceptListingFee}
                         onChange={(e) => {
                           setAcceptListingFee(e.target.checked);
+                          setTouched(prev => ({ ...prev, acceptListingFee: true }));
+                          const error = validateField("acceptListingFee", e.target.checked);
+                          setErrors(prev => ({ ...prev, acceptListingFee: error }));
                           console.log("Accept listing fee toggled:", e.target.checked);
                         }}
                         disabled={isLoading}
-                        style={{ background: "transparent", border: "1px solid #ddd" }}
+                        style={{ background: "transparent", border: "none", boxShadow: "none" }}
                       />
                       I accept the listing fee (
                       <Link to="/commission-list" target="_blank" className="auth-modal__link">
@@ -1246,6 +1698,12 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                       </Link>
                       )
                     </label>
+                    {errors.acceptListingFee && touched.acceptListingFee && (
+                      <div className="error-message">
+                        <FaInfoCircle className="error-icon" />
+                        {errors.acceptListingFee}
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -1263,7 +1721,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                   <button
                     type="submit"
                     className="auth-modal__submit"
-                    disabled={isLoading || !isStepValid}
+                    disabled={isLoading}
                   >
                     {isLoading ? "Loading..." : currentStep === 4 ? "Submit Registration" : "Next"}
                   </button>

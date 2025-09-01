@@ -831,7 +831,6 @@ body.auth-modal--open {
 
 .auth-modal__back-button-improved {
   flex: 1;
-  padding: 12px;
   background-color: #e0e0e0;
   color: #333;
   border: 1px solid #ccc;
@@ -840,6 +839,7 @@ body.auth-modal--open {
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.3s;
+  margin: 10px 0 20px;
 }
 
 .auth-modal__back-button-improved:hover:not(:disabled) {

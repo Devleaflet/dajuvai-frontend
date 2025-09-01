@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from "react";
-import type { OrderDetail } from "../Components/Types/Order";
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import Popup from "reactjs-popup";
 import "reactjs-popup/dist/index.css";
 import Footer from "../Components/Footer";
 import Navbar from "../Components/Navbar";
+import type { OrderDetail } from "../Components/Types/Order";
 import "../Styles/UserProfile.css";
-import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../api/axiosInstance";
-import axios from "axios";
 import { API_BASE_URL } from "../config";
-import { useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 interface UserDetails {
   id: number;
@@ -54,6 +54,7 @@ const UserProfile: React.FC = () => {
     }
     return "details";
   });
+  const [expandedOrders, setExpandedOrders] = useState<Set<number>>(new Set());
   const [isEditing, setIsEditing] = useState(false);
   const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
   const [originalDetails, setOriginalDetails] = useState<UserDetails | null>(null);
@@ -73,6 +74,21 @@ const UserProfile: React.FC = () => {
     const charCodeSum = username.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
     return colors[charCodeSum % colors.length];
   };
+
+const toggleOrderExpansion = (orderId: number) => {
+  setExpandedOrders(prev => {
+    const newSet = new Set(prev);
+    if (newSet.has(orderId)) {
+      newSet.delete(orderId);
+    } else {
+      newSet.add(orderId);
+    }
+    return newSet;
+  });
+};
+
+
+
 const formatPaymentMethod = (method: string) => {
   const methodMap: { [key: string]: string } = {
     'CASH_ON_DELIVERY': 'Cash on Delivery',
@@ -88,6 +104,7 @@ const formatPaymentMethod = (method: string) => {
   };
   return methodMap[method] || method;
 };
+
   const showPopup = (type: "success" | "error", content: string) => {
     setPopup({ type, content });
     setTimeout(() => setPopup(null), 3000);
@@ -437,57 +454,40 @@ const renderUserDetails = () => {
           </div>
         </div>
 
-        {/* Email - Full width */}
-{/* Second Row: Email and Phone Number */}
+        {/* Second Row: Email and Phone Number */}
+        <div className="profile-form__row">
+          <div className="profile-form__group profile-form__group--half">
+            <label>Email Address</label>
+            {isEditing ? (
+              <input
+                type="email"
+                name="email"
+                value={userDetails.email ?? ""}
+                readOnly
+                // onChange={(e) => handleInputChange(e, "email")}
+                className="profile-form__input"
+              />
+            ) : (
+              <div>{userDetails.email}</div>
+            )}
+          </div>
+          <div className="profile-form__group profile-form__group--half">
+            <label>Phone Number</label>
+            {isEditing ? (
+              <input
+                type="text"
+                name="phoneNumber"
+                value={userDetails.phoneNumber ?? ""}
+                onChange={(e) => handleInputChange(e, "phoneNumber")}
+                className="profile-form__input"
+              />
+            ) : ( 
+              <div>{userDetails.phoneNumber || "Not provided"}</div>
+            )}
+          </div>
+        </div>
 
-<div className="profile-form__row">
-  <div className="profile-form__group profile-form__group--half">
-    <label>Email Address</label>
-    {isEditing ? (
-      <input
-        type="email"
-        name="email"
-        value={userDetails.email ?? ""}
-        onChange={(e) => handleInputChange(e, "email")}
-        className="profile-form__input"
-      />
-    ) : (
-      <div>{userDetails.email}</div>
-    )}
-  </div>
-  <div className="profile-form__group profile-form__group--half">
-    <label>Phone Number</label>
-    {isEditing ? (
-      <input
-        type="text"
-        name="phoneNumber"
-        value={userDetails.phoneNumber ?? ""}
-        onChange={(e) => handleInputChange(e, "phoneNumber")}
-        className="profile-form__input"
-      />
-    ) : ( 
-      <div>{userDetails.phoneNumber || "Not provided"}</div>
-    )}
-  </div>
-</div>
-
-        {/* Phone Number - Full width
-        <div className="profile-form__group">
-          <label>Phone Number</label>
-          {isEditing ? (
-            <input
-              type="text"
-              name="phoneNumber"
-              value={userDetails.phoneNumber ?? ""}
-              onChange={(e) => handleInputChange(e, "phoneNumber")}
-              className="profile-form__input"
-            />
-          ) : (
-            <div>{userDetails.phoneNumber || "Not provided"}</div>
-          )}
-        </div> */}
-
-        {/* Second Row: Province and District */}
+        {/* Third Row: Province and District */}
         <div className="profile-form__row">
           <div className="profile-form__group profile-form__group--half">
             <label>Province</label>
@@ -519,7 +519,7 @@ const renderUserDetails = () => {
           </div>
         </div>
 
-        {/* Third Row: City and Local Address */}
+        {/* Fourth Row: City and Local Address */}
         <div className="profile-form__row">
           <div className="profile-form__group profile-form__group--half">
             <label>City</label>
@@ -579,8 +579,6 @@ const renderUserDetails = () => {
                 setUserDetails(originalDetails);
                 setIsEditing(false);
               }}
-              onFocus={() => console.log("Cancel button focused")}
-              tabIndex={-1}
             >
               Cancel
             </button>
@@ -620,8 +618,6 @@ const renderCredentials = () => {
             <button
               className={`profile-form__help ${credentialsMode === "forgot" ? "active" : ""}`}
               onClick={() => setCredentialsMode("forgot")}
-              onFocus={() => console.log("Forgot Password button focused")}
-              tabIndex={-1}
             >
               Forgot Password
             </button>
@@ -634,16 +630,7 @@ const renderCredentials = () => {
             <p>Enter your email address to receive a reset token.</p>
             <div className="profile-form__group">
               <label className="profile-form__label">Email Address</label>
-              <div style={{ 
-                padding: '12px 16px', 
-                border: '1px solid #d1d5db', 
-                borderRadius: '8px', 
-                backgroundColor: '#f9fafb', 
-                color: '#374151',
-                fontSize: '16px',
-                minHeight: '20px',
-                wordBreak: 'break-all'
-              }}>
+              <div className="credentials__email-display">
                 {formState.email || userDetails?.email || "No email available"}
               </div>
             </div>
@@ -651,8 +638,6 @@ const renderCredentials = () => {
               className="btn btn--primary"
               onClick={handleForgotPassword}
               disabled={isLoading.forgot}
-              onFocus={() => console.log("Send Reset Email button focused")}
-              tabIndex={-1}
             >
               {isLoading.forgot ? "Sending..." : "Send Reset Email"}
             </button>
@@ -692,16 +677,10 @@ const renderCredentials = () => {
                 onChange={(e) => handleInputChange(e, "confirmPassword")}
               />
             </div>
-            <div
-              className="credentials__actions-row"
-              tabIndex={-1}
-              onFocus={() => console.log("credentials__actions-row focused")}
-            >
+            <div className="credentials__actions-row">
               <button
                 className="btn btn--secondary"
                 onClick={() => setCredentialsMode("forgot")}
-                onFocus={() => console.log("Back to Email button focused (reset mode)")}
-                tabIndex={-1}
               >
                 Back to Email
               </button>
@@ -709,8 +688,6 @@ const renderCredentials = () => {
                 className="btn btn--primary"
                 onClick={handleResetPassword}
                 disabled={isLoading.reset}
-                onFocus={() => console.log("Reset Password button focused")}
-                tabIndex={-1}
               >
                 {isLoading.reset ? "Resetting..." : "Reset Password"}
               </button>
@@ -756,48 +733,63 @@ const renderCredentials = () => {
         <div className="orders__list">
           {orders.map((order) => (
             <div key={order.id} className="order-item">
-              <div className="order-item__id">#{order.id}</div>
-              <div className="order-item__date">{new Date(order.createdAt).toLocaleDateString()}</div>
-              <div className="order-item__status">
+              <div className="order-item__id" data-label="Order ID">#{order.id}</div>
+              <div className="order-item__date" data-label="Date">{new Date(order.createdAt).toLocaleDateString()}</div>
+              <div className="order-item__status" data-label="Status">
                 <span className={`status-badge status-${order.status.toLowerCase()}`}>
                   {order.status}
                 </span>
               </div>
-              <div className="order-item__products">
-                {order.orderItems && order.orderItems.length > 0 ? (
-                  <div className="order-products">
-                    {order.orderItems.slice(0, 3).map((item) => {
-                      const product = item.product as Product;
-                      return (
-                        <div key={item.id} className="order-product">
-                          {product && product.productImages && product.productImages.length > 0 ? (
-                            <img 
-                              src={product.productImages[0]} 
-                              alt={product.name} 
-                              className="order-product__image" 
-                            />
-                          ) : (
-                            <div className="order-product__placeholder">?</div>
-                          )}
-                          <span className="order-product__name">{product?.name || 'Product'}</span>
-                          <span className="order-product__quantity">x{item.quantity}</span>
-                        </div>
-                      );
-                    })}
-                    {order.orderItems.length > 3 && (
-                      <div className="order-product-more">+{order.orderItems.length - 3} more</div>
-                    )}
-                  </div>
-                ) : (
-                  <span>No items</span>
-                )}
+              <div className="order-item__products" data-label="Products">
+
+
+
+ {order.orderItems && order.orderItems.length > 0 ? (
+  <div className="order-products">
+    {(expandedOrders.has(order.id) ? order.orderItems : order.orderItems.slice(0, 2)).map((item) => {
+      const product = item.product as Product;
+      return (
+        <div key={item.id} className="order-product">
+          {product && product.productImages && product.productImages.length > 0 ? (
+            <img 
+              src={product.productImages[0]} 
+              alt={product.name} 
+              className="order-product__image" 
+            />
+          ) : (
+            <div className="order-product__placeholder">?</div>
+          )}
+          <span className="order-product__name">{product?.name || 'Product'}</span>
+          <span className="order-product__quantity">x{item.quantity}</span>
+        </div>
+      );
+    })}
+    {order.orderItems.length > 2 && (
+      <div 
+        className="order-product-more clickable" 
+        onClick={() => toggleOrderExpansion(order.id)}
+      >
+        {expandedOrders.has(order.id) 
+          ? 'Show less' 
+          : `+${order.orderItems.length - 2} more`
+        }
+      </div>
+    )}
+  </div>
+) : (
+  <span>No items</span>
+)}
+
+
+
+
               </div>
-              <div className="order-item__payment">
+              <div className="order-item__payment" data-label="Payment">
                 <div className={`order-payment__method payment-method-${order.paymentMethod?.toLowerCase().replace('_', '-')}`}>
                   {formatPaymentMethod(order.paymentMethod)}
                 </div>
               </div>
-              <div className="order-item__total">
+              <div className="order-item__total" data-label="Total">
                 <div className="order-total__amount">Rs. {parseFloat(order.totalPrice).toLocaleString()}</div>
                 <div className="order-total__shipping">Shipping: Rs. {parseFloat(order.shippingFee).toLocaleString()}</div>
               </div>
@@ -842,8 +834,6 @@ const renderCredentials = () => {
           <button
             className="popup-close-btn"
             onClick={() => setPopup(null)}
-            onFocus={() => console.log("Popup close button focused")}
-            tabIndex={-1}
           >
             Close
           </button>
@@ -867,8 +857,6 @@ const renderCredentials = () => {
                     key={tab}
                     onClick={() => handleTabChange(tab)}
                     className={`profile-sidebar__button ${activeTab === tab ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
-                    onFocus={() => console.log(`${tab} sidebar button focused`)}
-                    tabIndex={-1}
                   >
                     {tab === "details" ? "Manage Details" : tab === "credentials" ? "Change Credentials" : "Order History"}
                   </button>
