@@ -69,40 +69,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const modalRef = useRef<HTMLDivElement | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.classList.add("auth-modal--open");
-    } else {
-      document.body.classList.remove("auth-modal--open");
-    }
-
-    const handleClickOutside = (event: MouseEvent): void => {
-      // Prevent default behavior to avoid unexpected propagation
-      event.stopPropagation();
-
-      // If the forgot password popup is open
-      if (showForgotPopup && popupRef.current && !popupRef.current.contains(event.target as Node)) {
-        // Close only the popup
-        console.log("Closing forgot password popup");
-        setShowForgotPopup(false);
-        setForgotMode("none");
-        setError("");
-        setSuccess("");
-        return;
-      }
-
-      // If the popup is not open and the click is outside the main modal
-      if (!showForgotPopup && modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        console.log("Closing main modal");
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen, onClose, showForgotPopup]);
+useEffect(() => {
+  if (isOpen) {
+    document.body.classList.add("auth-modal--open");
+  } else {
+    document.body.classList.remove("auth-modal--open");
+  }
+}, [isOpen]);
   useEffect(() => {
     let timer: NodeJS.Timeout;
 

@@ -22,7 +22,8 @@ interface Banner {
     email: string;
   };
   createdById?: number;
-  image?: string;
+  desktopImage?: string;
+  mobileImage?: string;
   color?: string;
   dateRange?: string;
   createdAt?: string;
@@ -38,7 +39,8 @@ interface TransformedBanner {
   endDate?: string;
   createdBy: string;
   createdById?: number;
-  image?: string;
+  desktopImage?: string;
+  mobileImage?: string;
   color?: string;
   dateRange?: string;
   createdAt?: string;
@@ -422,9 +424,9 @@ const AdminBannerWithTabs = () => {
     }
   };
 
-  const handleViewImage = (image: string | undefined) => {
-    if (image) {
-      setSelectedImage(image);
+  const handleViewImage = (desktopImage: string | undefined) => {
+    if (desktopImage) {
+      setSelectedImage(desktopImage);
       setShowImageModal(true);
     }
   };
@@ -693,7 +695,8 @@ const AdminBannerWithTabs = () => {
                       onClick={() => handleSort("createdBy")}
                       className="sortable"
                     >
-                      Created By{" "}
+                      Created By{" "
+                      }
                       {sortConfig?.key === "createdBy" &&
                         (sortConfig.direction === "asc" ? "↑" : "↓")}
                     </th>
@@ -734,8 +737,8 @@ const AdminBannerWithTabs = () => {
                           <div className="admin-banner__actions">
                             <button
                               className="admin-banner__action-button admin-banner__action-button--view"
-                              onClick={() => handleViewImage(banner.image)}
-                              title="View banner image"
+                              onClick={() => handleViewImage(banner.desktopImage)}
+                              title="View desktop banner image"
                             >
                               <Eye size={18} />
                             </button>
@@ -881,19 +884,35 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
       : ""
   );
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(
-    editingBanner?.image || null
+  const [desktopImage, setDesktopImage] = useState<File | null>(null);
+  const [desktopImagePreview, setDesktopImagePreview] = useState<string | null>(
+    editingBanner?.desktopImage || null
+  );
+  const [mobileImage, setMobileImage] = useState<File | null>(null);
+  const [mobileImagePreview, setMobileImagePreview] = useState<string | null>(
+    editingBanner?.mobileImage || null
   );
   const [loading, setLoading] = useState(false);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDesktopImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedImage(file);
+      setDesktopImage(file);
       const reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
+        setDesktopImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleMobileImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setMobileImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setMobileImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -918,8 +937,11 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
       if (endDate) {
         formData.append("endDate", new Date(endDate).toISOString());
       }
-      if (selectedImage) {
-        formData.append("image", selectedImage);
+      if (desktopImage) {
+        formData.append("desktopImage", desktopImage);
+      }
+      if (mobileImage) {
+        formData.append("mobileImage", mobileImage);
       }
 
       let savedBanner: Banner;
@@ -1086,16 +1108,16 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
           <h3 className="create-banner__section-title">Banner Content</h3>
 
           <div className="create-banner__field">
-            <label className="create-banner__label">Banner Image</label>
+            <label className="create-banner__label">Desktop Image </label>
             <div className="create-banner__image-upload">
-              {imagePreview ? (
+              {desktopImagePreview ? (
                 <div className="create-banner__image-preview">
-                  <img src={imagePreview} alt="Banner preview" />
+                  <img src={desktopImagePreview} alt="Desktop banner preview" />
                   <button
                     className="create-banner__image-remove"
                     onClick={() => {
-                      setSelectedImage(null);
-                      setImagePreview(null);
+                      setDesktopImage(null);
+                      setDesktopImagePreview(null);
                     }}
                     disabled={loading}
                   >
@@ -1111,7 +1133,7 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
                     />
                   </div>
                   <p className="create-banner__upload-text">
-                    Drag and drop your image here, or click to browse
+                    Drag and drop your desktop image here, or click to browse
                   </p>
                   <p className="create-banner__upload-hint">
                     Recommended size: 1200 × 400 pixels (3:1 ratio)
@@ -1119,16 +1141,66 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={handleImageUpload}
+                    onChange={handleDesktopImageUpload}
                     className="create-banner__file-input"
-                    id="banner-image"
+                    id="desktop-banner-image"
                     disabled={loading}
                   />
                   <label
-                    htmlFor="banner-image"
+                    htmlFor="desktop-banner-image"
                     className="create-banner__upload-button"
                   >
-                    Upload Image
+                    Upload Desktop Image
+                  </label>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="create-banner__field">
+            <label className="create-banner__label">Mobile Image</label>
+            <div className="create-banner__image-upload">
+              {mobileImagePreview ? (
+                <div className="create-banner__image-preview">
+                  <img src={mobileImagePreview} alt="Mobile banner preview" />
+                  <button
+                    className="create-banner__image-remove"
+                    onClick={() => {
+                      setMobileImage(null);
+                      setMobileImagePreview(null);
+                    }}
+                    disabled={loading}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="create-banner__upload-area">
+                  <div className="create-banner__upload-icon">
+                    <img
+                      src="/placeholder.svg?height=24&width=24"
+                      alt="Upload"
+                    />
+                  </div>
+                  <p className="create-banner__upload-text">
+                    Drag and drop your mobile image here, or click to browse
+                  </p>
+                  <p className="create-banner__upload-hint">
+                    Recommended size: 600 × 800 pixels (3:4 ratio)
+                  </p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleMobileImageUpload}
+                    className="create-banner__file-input"
+                    id="mobile-banner-image"
+                    disabled={loading}
+                  />
+                  <label
+                    htmlFor="mobile-banner-image"
+                    className="create-banner__upload-button"
+                  >
+                    Upload Mobile Image
                   </label>
                 </div>
               )}

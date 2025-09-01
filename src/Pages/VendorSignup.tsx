@@ -107,18 +107,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
       document.body.classList.remove("auth-modal--open");
     }
 
-    const handleClickOutside = (event: MouseEvent): void => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        console.log("Clicked outside modal, closing...");
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   // Handle countdown timer
   useEffect(() => {

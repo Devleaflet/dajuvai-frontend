@@ -8,7 +8,8 @@ import { API_BASE_URL } from '../config';
 interface Offer {
   id: number;
   name: string;
-  image: string;
+  desktopImage: string;
+  mobileImage?: string;
   discount?: string; // Optional, as API doesn't provide discount
   color: string; // We'll assign colors manually
   status?: string;
@@ -79,7 +80,7 @@ const SpecialOffers: React.FC = () => {
             style={{ backgroundColor: offer.color }}
           >
             <img
-              src={offer.image}
+              src={offer.desktopImage}
               alt={`${offer.name} offer`}
               className="offer-image"
               loading="lazy"
