@@ -510,6 +510,7 @@ body.auth-modal--open {
   .auth-modal__content {
     max-width: 95%;
     margin: 0 10px;
+    max-height: 80vh;
   }
 
   .auth-modal__header {
@@ -827,6 +828,7 @@ body.auth-modal--open {
 .auth-modal__step-buttons {
   display: flex;
   gap: 10px;
+  justify-content: flex-start;
 }
 
 .auth-modal__back-button-improved {

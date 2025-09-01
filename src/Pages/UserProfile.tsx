@@ -55,6 +55,8 @@ const UserProfile: React.FC = () => {
     return "details";
   });
   const [expandedOrders, setExpandedOrders] = useState<Set<number>>(new Set());
+  const [expandedOrderDetails, setExpandedOrderDetails] = useState<Set<number>>(new Set());
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 640);
   const [isEditing, setIsEditing] = useState(false);
   const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
   const [originalDetails, setOriginalDetails] = useState<UserDetails | null>(null);
@@ -86,6 +88,28 @@ const toggleOrderExpansion = (orderId: number) => {
     return newSet;
   });
 };
+
+const toggleOrderDetails = (orderId: number) => {
+  setExpandedOrderDetails(prev => {
+    const newSet = new Set(prev);
+    if (newSet.has(orderId)) {
+      newSet.delete(orderId);
+    } else {
+      newSet.add(orderId);
+    }
+    return newSet;
+  });
+};
+
+// Mobile detection effect
+useEffect(() => {
+  const handleResize = () => {
+    setIsMobile(window.innerWidth <= 640);
+  };
+
+  window.addEventListener('resize', handleResize);
+  return () => window.removeEventListener('resize', handleResize);
+}, []);
 
 
 
@@ -732,67 +756,168 @@ const renderCredentials = () => {
         </div>
         <div className="orders__list">
           {orders.map((order) => (
-            <div key={order.id} className="order-item">
-              <div className="order-item__id" data-label="Order ID">#{order.id}</div>
-              <div className="order-item__date" data-label="Date">{new Date(order.createdAt).toLocaleDateString()}</div>
-              <div className="order-item__status" data-label="Status">
-                <span className={`status-badge status-${order.status.toLowerCase()}`}>
-                  {order.status}
-                </span>
-              </div>
-              <div className="order-item__products" data-label="Products">
+            <div key={order.id} className={`order-item ${isMobile ? 'order-item--mobile' : ''}`}>
+              {isMobile ? (
+                // Mobile view - simplified layout
+                <>
+                  <div className="order-item__mobile-header">
+                    <div className="order-item__id">#{order.id}</div>
+                    <div className="order-item__mobile-products">
+                      {order.orderItems && order.orderItems.length > 0 ? (
+                        <div className="order-mobile-product">
+                          {(() => {
+                            const firstProduct = order.orderItems[0].product as Product;
+                            return (
+                              <>
+                                {firstProduct && firstProduct.productImages && firstProduct.productImages.length > 0 ? (
+                                  <img 
+                                    src={firstProduct.productImages[0]} 
+                                    alt={firstProduct.name} 
+                                    className="order-mobile-product__image" 
+                                  />
+                                ) : (
+                                  <div className="order-mobile-product__placeholder">?</div>
+                                )}
+                                <div className="order-mobile-product__info">
+                                  <span className="order-mobile-product__name">
+                                    {firstProduct?.name || 'Product'}
+                                    {order.orderItems.length > 1 && (
+                                      <span className="order-mobile-product__count"> +{order.orderItems.length - 1} more</span>
+                                    )}
+                                    <span 
+                                      className="order-mobile-product__see-more"
+                                      onClick={() => toggleOrderDetails(order.id)}
+                                    >
+                                      {expandedOrderDetails.has(order.id) ? ' see less' : ' see more'}
+                                    </span>
+                                  </span>
+                                </div>
+                              </>
+                            );
+                          })()} 
+                        </div>
+                      ) : (
+                        <span>No items</span>
+                      )}
+                    </div>
 
-
-
- {order.orderItems && order.orderItems.length > 0 ? (
-  <div className="order-products">
-    {(expandedOrders.has(order.id) ? order.orderItems : order.orderItems.slice(0, 2)).map((item) => {
-      const product = item.product as Product;
-      return (
-        <div key={item.id} className="order-product">
-          {product && product.productImages && product.productImages.length > 0 ? (
-            <img 
-              src={product.productImages[0]} 
-              alt={product.name} 
-              className="order-product__image" 
-            />
-          ) : (
-            <div className="order-product__placeholder">?</div>
-          )}
-          <span className="order-product__name">{product?.name || 'Product'}</span>
-          <span className="order-product__quantity">x{item.quantity}</span>
-        </div>
-      );
-    })}
-    {order.orderItems.length > 2 && (
-      <div 
-        className="order-product-more clickable" 
-        onClick={() => toggleOrderExpansion(order.id)}
-      >
-        {expandedOrders.has(order.id) 
-          ? 'Show less' 
-          : `+${order.orderItems.length - 2} more`
-        }
-      </div>
-    )}
-  </div>
-) : (
-  <span>No items</span>
-)}
-
-
-
-
-              </div>
-              <div className="order-item__payment" data-label="Payment">
-                <div className={`order-payment__method payment-method-${order.paymentMethod?.toLowerCase().replace('_', '-')}`}>
-                  {formatPaymentMethod(order.paymentMethod)}
-                </div>
-              </div>
-              <div className="order-item__total" data-label="Total">
-                <div className="order-total__amount">Rs. {parseFloat(order.totalPrice).toLocaleString()}</div>
-                <div className="order-total__shipping">Shipping: Rs. {parseFloat(order.shippingFee).toLocaleString()}</div>
-              </div>
+                  </div>
+                  
+                  {expandedOrderDetails.has(order.id) && (
+                    <div className="order-item__mobile-details">
+                      <div className="order-item__date" data-label="Date">{new Date(order.createdAt).toLocaleDateString()}</div>
+                      <div className="order-item__status" data-label="Status">
+                        <span className={`status-badge status-${order.status.toLowerCase()}`}>
+                          {order.status}
+                        </span>
+                      </div>
+                      <div className="order-item__products" data-label="Products">
+                        {order.orderItems && order.orderItems.length > 0 ? (
+                          <div className="order-products">
+                            {(expandedOrders.has(order.id) ? order.orderItems : order.orderItems.slice(0, 2)).map((item) => {
+                              const product = item.product as Product;
+                              return (
+                                <div key={item.id} className="order-product">
+                                  {product && product.productImages && product.productImages.length > 0 ? (
+                                    <img 
+                                      src={product.productImages[0]} 
+                                      alt={product.name} 
+                                      className="order-product__image" 
+                                    />
+                                  ) : (
+                                    <div className="order-product__placeholder">?</div>
+                                  )}
+                                  <span className="order-product__name">{product?.name || 'Product'}</span>
+                                  <span className="order-product__quantity">x{item.quantity}</span>
+                                </div>
+                              );
+                            })}
+                            {order.orderItems.length > 2 && (
+                              <div 
+                                className="order-product-more clickable" 
+                                onClick={() => toggleOrderExpansion(order.id)}
+                              >
+                                {expandedOrders.has(order.id) 
+                                  ? 'Show less' 
+                                  : `+${order.orderItems.length - 2} more`
+                                }
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span>No items</span>
+                        )}
+                      </div>
+                      <div className="order-item__payment" data-label="Payment">
+                        <div className={`order-payment__method payment-method-${order.paymentMethod?.toLowerCase().replace('_', '-')}`}>
+                          {formatPaymentMethod(order.paymentMethod)}
+                        </div>
+                      </div>
+                      <div className="order-item__total" data-label="Total">
+                        <div className="order-total__amount">Rs. {parseFloat(order.totalPrice).toLocaleString()}</div>
+                        <div className="order-total__shipping">Shipping: Rs. {parseFloat(order.shippingFee).toLocaleString()}</div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                // Desktop view - original layout
+                <>
+                  <div className="order-item__id" data-label="Order ID">#{order.id}</div>
+                  <div className="order-item__date" data-label="Date">{new Date(order.createdAt).toLocaleDateString()}</div>
+                  <div className="order-item__status" data-label="Status">
+                    <span className={`status-badge status-${order.status.toLowerCase()}`}>
+                      {order.status}
+                    </span>
+                  </div>
+                  <div className="order-item__products" data-label="Products">
+                    {order.orderItems && order.orderItems.length > 0 ? (
+                      <div className="order-products">
+                        {(expandedOrders.has(order.id) ? order.orderItems : order.orderItems.slice(0, 2)).map((item) => {
+                          const product = item.product as Product;
+                          return (
+                            <div key={item.id} className="order-product">
+                              {product && product.productImages && product.productImages.length > 0 ? (
+                                <img 
+                                  src={product.productImages[0]} 
+                                  alt={product.name} 
+                                  className="order-product__image" 
+                                />
+                              ) : (
+                                <div className="order-product__placeholder">?</div>
+                              )}
+                              <span className="order-product__name">{product?.name || 'Product'}</span>
+                              <span className="order-product__quantity">x{item.quantity}</span>
+                            </div>
+                          );
+                        })}
+                        {order.orderItems.length > 2 && (
+                          <div 
+                            className="order-product-more clickable" 
+                            onClick={() => toggleOrderExpansion(order.id)}
+                          >
+                            {expandedOrders.has(order.id) 
+                              ? 'Show less' 
+                              : `+${order.orderItems.length - 2} more`
+                            }
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span>No items</span>
+                    )}
+                  </div>
+                  <div className="order-item__payment" data-label="Payment">
+                    <div className={`order-payment__method payment-method-${order.paymentMethod?.toLowerCase().replace('_', '-')}`}>
+                      {formatPaymentMethod(order.paymentMethod)}
+                    </div>
+                  </div>
+                  <div className="order-item__total" data-label="Total">
+                    <div className="order-total__amount">Rs. {parseFloat(order.totalPrice).toLocaleString()}</div>
+                    <div className="order-total__shipping">Shipping: Rs. {parseFloat(order.shippingFee).toLocaleString()}</div>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
