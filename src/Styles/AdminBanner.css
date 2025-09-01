@@ -198,6 +198,16 @@
   background-color: #e6e6e6;
 }
 
+.admin-banner__action-button:disabled {
+  background-color: #f9f9f9;
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.admin-banner__action-button:disabled:hover {
+  background-color: #f9f9f9;
+}
+
 .admin-banner__action-button--view:hover {
   color: #1890ff;
 }

@@ -1,7 +1,7 @@
 import type React from "react";
 import { useState, useEffect } from "react";
 import { AdminSidebar } from "../Components/AdminSidebar";
-import { Eye, Edit, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, Edit, X, ChevronLeft, ChevronRight, Monitor, Smartphone } from "lucide-react";
 import "../Styles/AdminBanner.css";
 import DeleteModal from "../Components/Modal/DeleteModal";
 import { API_BASE_URL } from "../config";
@@ -425,9 +425,9 @@ const AdminBannerWithTabs = () => {
     }
   };
 
-  const handleViewImage = (desktopImage: string | undefined) => {
-    if (desktopImage) {
-      setSelectedImage(desktopImage);
+  const handleViewImage = (imageUrl: string | undefined, imageType: 'desktop' | 'mobile') => {
+    if (imageUrl) {
+      setSelectedImage(imageUrl);
       setShowImageModal(true);
     }
   };
@@ -740,10 +740,19 @@ const AdminBannerWithTabs = () => {
                           <div className="admin-banner__actions">
                             <button
                               className="admin-banner__action-button admin-banner__action-button--view"
-                              onClick={() => handleViewImage(banner.desktopImage)}
+                              onClick={() => handleViewImage(banner.desktopImage, 'desktop')}
                               title="View desktop banner image"
+                              disabled={!banner.desktopImage}
                             >
-                              <Eye size={18} />
+                              <Monitor size={18} />
+                            </button>
+                            <button
+                              className="admin-banner__action-button admin-banner__action-button--view"
+                              onClick={() => handleViewImage(banner.mobileImage, 'mobile')}
+                              title="View mobile banner image"
+                              disabled={!banner.mobileImage}
+                            >
+                              <Smartphone size={18} />
                             </button>
                             <button
                               className="admin-banner__action-button admin-banner__action-button--edit"
