@@ -1,6 +1,6 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useCallback, useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Popup from "reactjs-popup";
 import "reactjs-popup/dist/index.css";
 import Footer from "../Components/Footer";
@@ -12,18 +12,21 @@ import { API_BASE_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
 
 interface UserDetails {
-  id: number;
+  id?: number;
   fullName: string;
   username: string;
   email: string;
+  provider: string;
   role: string;
-  isVerified: boolean;
+  isVerified?: boolean;
   phoneNumber: string;
-  province: string;
-  district: string;
-  city: string;
-  localAddress: string;
-  landmark: string;
+  address: {
+    province: string;
+    district: string;
+    city: string;
+    localAddress: string;
+    landmark: string;
+  };
 }
 
 interface Product {
@@ -45,6 +48,7 @@ type CredentialsMode = "change" | "forgot" | "reset";
 
 const UserProfile: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     if (location.state && typeof location.state.activeTab === 'string') {
       const tab = location.state.activeTab;
@@ -58,7 +62,20 @@ const UserProfile: React.FC = () => {
   const [expandedOrderDetails, setExpandedOrderDetails] = useState<Set<number>>(new Set());
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 640);
   const [isEditing, setIsEditing] = useState(false);
-  const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
+  const [userDetails, setUserDetails] = useState<UserDetails | null>({
+    fullName: "",
+    username: "",
+    email: "",
+    phoneNumber: "",
+    role: "",
+    address: {
+      province: "",
+      district: "",
+      city: "",
+      localAddress: "",
+      landmark: ""
+    }
+  });
   const [originalDetails, setOriginalDetails] = useState<UserDetails | null>(null);
   const [formState, setFormState] = useState<FormState>({ email: "" });
   const [credentialsMode, setCredentialsMode] = useState<CredentialsMode>("change");
@@ -67,6 +84,8 @@ const UserProfile: React.FC = () => {
   const [orders, setOrders] = useState<OrderDetail[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState<string | null>(null);
+  const [provinceData, setProvinceData] = useState<string[]>([]);
+  const [districtData, setDistrictData] = useState<string[]>([]);
 
   const { user, isLoading: isAuthLoading, login, token } = useAuth();
   const userId = user?.id;
@@ -77,57 +96,75 @@ const UserProfile: React.FC = () => {
     return colors[charCodeSum % colors.length];
   };
 
-const toggleOrderExpansion = (orderId: number) => {
-  setExpandedOrders(prev => {
-    const newSet = new Set(prev);
-    if (newSet.has(orderId)) {
-      newSet.delete(orderId);
-    } else {
-      newSet.add(orderId);
-    }
-    return newSet;
-  });
-};
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const provinceResponse = await fetch('/Nepal-Address-API-main/data/provinces.json');
+        const data = await provinceResponse.json();
+        setProvinceData(data.provinces.map(capitalizeFirstLetter));
+      } catch (error) {
+        console.error('Error fetching provinces:', error);
+      }
+    };
+    fetchData();
+  }, []);
 
-const toggleOrderDetails = (orderId: number) => {
-  setExpandedOrderDetails(prev => {
-    const newSet = new Set(prev);
-    if (newSet.has(orderId)) {
-      newSet.delete(orderId);
-    } else {
-      newSet.add(orderId);
-    }
-    return newSet;
-  });
-};
 
-// Mobile detection effect
-useEffect(() => {
-  const handleResize = () => {
-    setIsMobile(window.innerWidth <= 640);
+  function capitalizeFirstLetter(string: string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
+
+  const fetchDistricts = useCallback(async( province: string) =>{
+   if (!province){
+    setDistrictData([])
+    return
+   }
+    try {
+      const districtResponse = await fetch(`/Nepal-Address-API-main/data/districtsByProvince/${province.toLowerCase()}.json`);
+      const data = await districtResponse.json();
+      setDistrictData(data.districts.map(capitalizeFirstLetter));
+    } catch (error) {
+      console.error('Error fetching district data:', error);
+      setDistrictData([]);
+    }
+  },[])
+  useEffect(() => {
+  if (userDetails?.address?.province) {
+    fetchDistricts(userDetails.address.province);
+  } else {
+    setDistrictData([]);
+  }
+}, [userDetails?.address?.province, fetchDistricts]);
+
+
+
+  const toggleOrderExpansion = (orderId: number) => {
+    setExpandedOrders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
   };
 
-  window.addEventListener('resize', handleResize);
-  return () => window.removeEventListener('resize', handleResize);
-}, []);
-
-
-
-const formatPaymentMethod = (method: string) => {
-  const methodMap: { [key: string]: string } = {
-    'CASH_ON_DELIVERY': 'Cash on Delivery',
-    'COD': 'Cash on Delivery',
-    'CREDIT_CARD': 'Credit Card',
-    'DEBIT_CARD': 'Debit Card',
-    'BANK_TRANSFER': 'Bank Transfer',
-    'DIGITAL_WALLET': 'Digital Wallet',
-    'PAYPAL': 'PayPal',
-    'STRIPE': 'Stripe',
-    'ESEWA': 'eSewa',
-    'KHALTI': 'Khalti'
+  const formatPaymentMethod = (method: string) => {
+    const methodMap: { [key: string]: string } = {
+      'CASH_ON_DELIVERY': 'Cash on Delivery',
+      'COD': 'Cash on Delivery',
+      'CREDIT_CARD': 'Credit Card',
+      'DEBIT_CARD': 'Debit Card',
+      'BANK_TRANSFER': 'Bank Transfer',
+      'DIGITAL_WALLET': 'Digital Wallet',
+      'PAYPAL': 'PayPal',
+      'STRIPE': 'Stripe',
+      'ESEWA': 'eSewa',
+      'KHALTI': 'Khalti'
+    };
+    return methodMap[method] || method;
   };
-  return methodMap[method] || method;
-};
 
   const showPopup = (type: "success" | "error", content: string) => {
     setPopup({ type, content });
@@ -172,6 +209,7 @@ const formatPaymentMethod = (method: string) => {
               role: data.data.role,
               username: data.data.email.split('@')[0],
               isVerified: true,
+              provider: data.data.provider
             });
           } else {
             showPopup("error", "Authentication details missing. Please log in again.");
@@ -182,63 +220,61 @@ const formatPaymentMethod = (method: string) => {
         });
       return;
     }
-    const fetchUserDetails = async () => {
-      console.log("[UserProfile] fetchUserDetails - Starting fetch");
-      console.log("[UserProfile] fetchUserDetails - User ID:", userId);
-      console.log("[UserProfile] fetchUserDetails - Token:", token);
-      console.log("[UserProfile] fetchUserDetails - Document cookie:", document.cookie);
-      
-      setIsLoading((prev) => ({ ...prev, fetchUser: true }));
-      try {
-        const headers: Record<string, string> = {};
-        const authToken = token || localStorage.getItem("authToken");
-        
-        if (authToken) {
-          headers.Authorization = `Bearer ${authToken}`;
-          console.log("[UserProfile] fetchUserDetails - Using token-based auth");
-        } else {
-          console.log("[UserProfile] fetchUserDetails - Using cookie-based auth");
-        }
-        
-        console.log("[UserProfile] fetchUserDetails - Request headers:", headers);
-        
-        const response = await axiosInstance.get(`/api/auth/users/${userId}`, {
-          headers,
-          withCredentials: true,
-          timeout: 5000,
-        });
-        
-        console.log("[UserProfile] fetchUserDetails - Response:", response.data);
-        
-        setUserDetails({
-          ...response.data.data,
-          fullName: response.data.data.fullName || "",
-          phoneNumber: response.data.data.phoneNumber || "",
-          province: response.data.data.address?.province || "",
-          district: response.data.data.address?.district || "",
-          city: response.data.data.address?.city || "",
-          localAddress: response.data.data.address?.localAddress || "",
-          landmark: response.data.data.address?.landmark || ""
-        });
-        setOriginalDetails({
-          ...response.data.data,
-          fullName: response.data.data.fullName || "",
-          phoneNumber: response.data.data.phoneNumber || "",
-          province: response.data.data.address?.province || "",
-          district: response.data.data.address?.district || "",
-          city: response.data.data.address?.city || "",
-          localAddress: response.data.data.address?.localAddress || "",
-          landmark: response.data.data.address?.landmark || ""
-        });
-        setFormState((prev) => ({ ...prev, email: response.data.data.email }));
-      } catch (error) {
-        console.error("[UserProfile] fetchUserDetails - Error:", error);
-        handleError(error, "Failed to load user details");
-        setUserDetails(null);
-      } finally {
-        setIsLoading((prev) => ({ ...prev, fetchUser: false }));
+
+const fetchUserDetails = async () => {
+  console.log("[UserProfile] fetchUserDetails - Starting fetch");
+  console.log("[UserProfile] fetchUserDetails - User ID:", userId);
+  console.log("[UserProfile] fetchUserDetails - Token:", token);
+  console.log("[UserProfile] fetchUserDetails - Document cookie:", document.cookie);
+  
+  setIsLoading((prev) => ({ ...prev, fetchUser: true }));
+  try {
+    const headers: Record<string, string> = {};
+    const authToken = token || localStorage.getItem("authToken");
+    
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`;
+      console.log("[UserProfile] fetchUserDetails - Using token-based auth");
+    } else {
+      console.log("[UserProfile] fetchUserDetails - Using cookie-based auth");
+    }
+    
+    console.log("[UserProfile] fetchUserDetails - Request headers:", headers);
+    
+    const response = await axiosInstance.get(`/api/auth/users/${userId}`, {
+      headers,
+      withCredentials: true,
+      timeout: 5000,
+    });
+    
+    console.log("[UserProfile] fetchUserDetails - Response:", response.data);
+    
+    // Ensure consistent address structure
+    const userData = response.data.data;
+    const normalizedUserData = {
+      ...userData,
+      fullName: userData.fullName || "",
+      phoneNumber: userData.phoneNumber || "",
+      address: {
+        province: userData.address?.province || userData.province || "",
+        district: userData.address?.district || userData.district || "",
+        city: userData.address?.city || userData.city || "",
+        localAddress: userData.address?.localAddress || userData.localAddress || "",
+        landmark: userData.address?.landmark || userData.landmark || ""
       }
     };
+    
+    setUserDetails(normalizedUserData);
+    setOriginalDetails(normalizedUserData);
+    setFormState((prev) => ({ ...prev, email: userData.email }));
+  } catch (error) {
+    console.error("[UserProfile] fetchUserDetails - Error:", error);
+    handleError(error, "Failed to load user details");
+    setUserDetails(null);
+  } finally {
+    setIsLoading((prev) => ({ ...prev, fetchUser: false }));
+  }
+};
     fetchUserDetails();
   }, [userId, isAuthLoading, login, token]);
 
@@ -248,13 +284,13 @@ const formatPaymentMethod = (method: string) => {
       fetch(`${API_BASE_URL}/api/wishlist`, {
         credentials: 'include'
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          // setWishlist(data.data);
-        }
-      })
-      .catch(err => console.error('Failed to fetch wishlist:', err));
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            // setWishlist(data.data);
+          }
+        })
+        .catch(err => console.error('Failed to fetch wishlist:', err));
     }
   }, [user]);
 
@@ -304,17 +340,48 @@ const formatPaymentMethod = (method: string) => {
     }
   }, [location.state]);
 
+// useEffect(() => {
+//   if (popup?.type === "success" && popup?.content.includes("Profile updated successfully")) {
+//     // Refresh the auth context or user data instead of navigating
+//     const timeoutId = setTimeout(() => {
+//       // Maybe call a function to refresh user data
+//       window.location.reload(); // Or use a more elegant refresh method
+//     }, 2000);
+//     return () => clearTimeout(timeoutId);
+//   }
+// }, [popup]);
+
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-    section: keyof FormState | keyof UserDetails
-  ) => {
-    const value = e.target.value;
-    if (section in userDetails!) {
-      setUserDetails((prev) => prev ? { ...prev, [section]: value } : null);
-    } else {
-      setFormState((prev) => ({ ...prev, [section]: value }));
-    }
-  };
+  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  section: keyof FormState | keyof UserDetails | keyof UserDetails['address']
+) => {
+  const value = e.target.value;
+  
+  if (['province', 'district', 'city', 'localAddress', 'landmark'].includes(section)) {
+    setUserDetails((prev) => {
+      if (!prev) return null;
+      
+      const newUserDetails = {
+        ...prev,
+        address: {
+          ...prev.address,
+          [section]: value,
+        },
+      };
+      
+      // Reset district when province changes
+      if (section === 'province') {
+        newUserDetails.address.district = '';
+      }
+      
+      return newUserDetails;
+    });
+  } else if (section in (userDetails || {})) {
+    setUserDetails((prev) => (prev ? { ...prev, [section]: value } : null));
+  } else {
+    setFormState((prev) => ({ ...prev, [section]: value }));
+  }
+};
 
   const handleTabChange = (tab: Tab) => {
     if (isEditing && originalDetails) {
@@ -326,74 +393,85 @@ const formatPaymentMethod = (method: string) => {
     setFormState({ email: formState.email });
   };
 
-  const handleSave = async () => {
-    if (!userDetails) return showPopup("error", "User details missing.");
-    if (!validateUsername(userDetails.username)) return showPopup("error", "Username must be 3+ characters and alphanumeric.");
-    if (!validateFullName(userDetails.fullName)) return showPopup("error", "Full name must be at least 2 characters.");
-    if (userDetails.phoneNumber && !validatePhoneNumber(userDetails.phoneNumber)) 
-      return showPopup("error", "Phone number must be 10 digits.");
+const handleSave = async () => {
+  if (!userDetails) return showPopup("error", "User details missing.");
+  if (!validateUsername(userDetails.username)) return showPopup("error", "Username must be 3+ characters and alphanumeric.");
+  if (!validateFullName(userDetails.fullName)) return showPopup("error", "Full name must be at least 2 characters.");
+  if (userDetails.phoneNumber && !validatePhoneNumber(userDetails.phoneNumber)) 
+    return showPopup("error", "Phone number must be 10 digits.");
 
-    console.log("[UserProfile] handleSave - Starting update");
-    console.log("[UserProfile] handleSave - User details:", userDetails);
-    console.log("[UserProfile] handleSave - User ID:", userId);
-    console.log("[UserProfile] handleSave - Token from context:", token);
-    console.log("[UserProfile] handleSave - Token from localStorage:", localStorage.getItem("authToken"));
-    console.log("[UserProfile] handleSave - Document cookie:", document.cookie);
-    console.log("[UserProfile] handleSave - User authenticated:", !!user);
-    console.log("[UserProfile] handleSave - User ID from context:", user?.id);
+  console.log("[UserProfile] handleSave - Starting update for userId:", userId);
+  setIsLoading((prev) => ({ ...prev, saveUser: true }));
 
-    setIsLoading((prev) => ({ ...prev, saveUser: true }));
-    try {
-      const headers: Record<string, string> = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      };
-      const authToken = token || localStorage.getItem("authToken");
-      
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`;
-        console.log("[UserProfile] handleSave - Using token-based auth");
-      } else {
-        console.log("[UserProfile] handleSave - Using cookie-based auth");
-      }
-      
-      const response = await axiosInstance.put(
-        `/api/auth/users/${userId}`,
-        { 
-          fullName: userDetails.fullName,
-          username: userDetails.username,
-          phoneNumber: userDetails.phoneNumber,
-          address: {
-            province: userDetails.province,
-            district: userDetails.district,
-            city: userDetails.city,
-            localAddress: userDetails.localAddress,
-            landmark: userDetails.landmark
-          }
-        },
-        { 
-          withCredentials: true,
-          headers
-        }
-      );
-      
-      console.log("[UserProfile] handleSave - Response:", response.data);
-      
-      if (response.data.success) {
-        setUserDetails(response.data.data || response.data.user);
-        setOriginalDetails(response.data.data || response.data.user);
-        setIsEditing(false);
-        showPopup("success", "Profile updated successfully! Changes will apply the next time you login.");
-      } else {
-        showPopup("error", response.data.message || "Failed to update profile");
-      }
-    } catch (error) {
-      console.error("[UserProfile] handleSave - Error:", error);
-      handleError(error, "Failed to update profile");
-    } finally {
-      setIsLoading((prev) => ({ ...prev, saveUser: false }));
+  try {
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    };
+    const authToken = token || localStorage.getItem("authToken");
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`;
+      console.log("[UserProfile] handleSave - Using token:", authToken);
     }
-  };
+
+    // Ensure address object structure
+    const requestData = {
+      fullName: userDetails.fullName,
+      username: userDetails.username,
+      phoneNumber: userDetails.phoneNumber,
+      address: {
+        province: userDetails.address?.province || "",
+        district: userDetails.address?.district || "",
+        city: userDetails.address?.city || "",
+        localAddress: userDetails.address?.localAddress || "",
+        landmark: userDetails.address?.landmark || ""
+      }
+    };
+
+    console.log("[UserProfile] handleSave - Request data:", requestData);
+
+    const response = await axiosInstance.put(
+      `/api/auth/users/${userId}`,
+      requestData,
+      { 
+        withCredentials: true,
+        headers
+      }
+    );
+
+    console.log("[UserProfile] handleSave - API response:", response.data);
+
+    if (response.data.success) {
+      console.log("[UserProfile] handleSave - Updating user details and showing success popup");
+      
+      // Normalize the response data structure
+      const updatedData = response.data.data;
+      const normalizedUpdatedData = {
+        ...updatedData,
+        address: {
+          province: updatedData.address?.province || updatedData.province || "",
+          district: updatedData.address?.district || updatedData.district || "",
+          city: updatedData.address?.city || updatedData.city || "",
+          localAddress: updatedData.address?.localAddress || updatedData.localAddress || "",
+          landmark: updatedData.address?.landmark || updatedData.landmark || ""
+        }
+      };
+      
+      setUserDetails(normalizedUpdatedData);
+      setOriginalDetails(normalizedUpdatedData);
+      setIsEditing(false);
+      showPopup("success", "Profile updated successfully!");
+    } else {
+      showPopup("error", response.data.message || "Failed to update profile");
+    }
+  } catch (error) {
+    console.error("[UserProfile] handleSave - Error:", error);
+    handleError(error, "Failed to update profile");
+  } finally {
+    setIsLoading((prev) => ({ ...prev, saveUser: false }));
+  }
+};
+
 
   const handleForgotPassword = async () => {
     if (!formState.email) return showPopup("error", "Please enter your email address");
@@ -429,7 +507,7 @@ const formatPaymentMethod = (method: string) => {
     }
   };
 
-const renderUserDetails = () => {
+  const renderUserDetails = () => {
     if (isLoading.fetchUser) {
       return (
         <div className="profile-form">
@@ -445,7 +523,7 @@ const renderUserDetails = () => {
     return (
       <div className="profile-form">
         <h2 className="profile-form__title">User Details</h2>
-        
+
         {/* First Row: Full Name and Username */}
         <div className="profile-form__row">
           <div className="profile-form__group profile-form__group--half">
@@ -488,7 +566,6 @@ const renderUserDetails = () => {
                 name="email"
                 value={userDetails.email ?? ""}
                 readOnly
-                // onChange={(e) => handleInputChange(e, "email")}
                 className="profile-form__input"
               />
             ) : (
@@ -505,7 +582,7 @@ const renderUserDetails = () => {
                 onChange={(e) => handleInputChange(e, "phoneNumber")}
                 className="profile-form__input"
               />
-            ) : ( 
+            ) : (
               <div>{userDetails.phoneNumber || "Not provided"}</div>
             )}
           </div>
@@ -516,29 +593,39 @@ const renderUserDetails = () => {
           <div className="profile-form__group profile-form__group--half">
             <label>Province</label>
             {isEditing ? (
-              <input
-                type="text"
+              <select
                 name="province"
-                value={userDetails.province ?? ""}
+                value={userDetails.address.province}
                 onChange={(e) => handleInputChange(e, "province")}
-                className="profile-form__input"
-              />
+                className={`profile__form-select`}
+                required
+              >
+                <option value="">Select Province</option>
+                {provinceData.map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
             ) : (
-              <div>{userDetails.province || "Not provided"}</div>
+              <div>{userDetails.address.province || "Not provided"}</div>
             )}
           </div>
           <div className="profile-form__group profile-form__group--half">
             <label>District</label>
             {isEditing ? (
-              <input
-                type="text"
+              <select
                 name="district"
-                value={userDetails.district ?? ""}
+                value={userDetails.address.district ?? ""}
                 onChange={(e) => handleInputChange(e, "district")}
-                className="profile-form__input"
-              />
+                className={`profile__form-select`}
+                required
+              >
+                <option value="">Select District</option>
+                {districtData.map(district => (
+                  <option key={district} value={district}>{district}</option>
+                ))}
+              </select>
             ) : (
-              <div>{userDetails.district || "Not provided"}</div>
+              <div>{userDetails.address.district || "Not provided"}</div>
             )}
           </div>
         </div>
@@ -551,12 +638,12 @@ const renderUserDetails = () => {
               <input
                 type="text"
                 name="city"
-                value={userDetails.city ?? ""}
+                value={userDetails.address.city ?? ""}
                 onChange={(e) => handleInputChange(e, "city")}
                 className="profile-form__input"
               />
             ) : (
-              <div>{userDetails.city || "Not provided"}</div>
+              <div>{userDetails.address.city || "Not provided"}</div>
             )}
           </div>
           <div className="profile-form__group profile-form__group--half">
@@ -565,12 +652,12 @@ const renderUserDetails = () => {
               <input
                 type="text"
                 name="localAddress"
-                value={userDetails.localAddress ?? ""}
+                value={userDetails.address.localAddress ?? ""}
                 onChange={(e) => handleInputChange(e, "localAddress")}
                 className="profile-form__input"
               />
             ) : (
-              <div>{userDetails.localAddress || "Not provided"}</div>
+              <div>{userDetails.address.localAddress || "Not provided"}</div>
             )}
           </div>
         </div>
@@ -582,12 +669,12 @@ const renderUserDetails = () => {
             <input
               type="text"
               name="landmark"
-              value={userDetails.landmark ?? ""}
+              value={userDetails.address.landmark ?? ""}
               onChange={(e) => handleInputChange(e, "landmark")}
               className="profile-form__input"
             />
           ) : (
-            <div>{userDetails.landmark || "Not provided"}</div>
+            <div>{userDetails.address.landmark || "Not provided"}</div>
           )}
         </div>
 
@@ -616,29 +703,29 @@ const renderUserDetails = () => {
     );
   };
 
-const renderCredentials = () => {
-  if (isLoading.fetchUser) {
+  const renderCredentials = () => {
+    if (isLoading.fetchUser) {
+      return (
+        <div className="credentials">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className="skeleton skeleton-form-group"
+              style={{ height: i === 0 ? "40px" : i === 4 ? "48px" : "auto" }}
+            />
+          ))}
+        </div>
+      );
+    }
+
     return (
       <div className="credentials">
-        {[...Array(5)].map((_, i) => (
-          <div
-            key={i}
-            className="skeleton skeleton-form-group"
-            style={{ height: i === 0 ? "40px" : i === 4 ? "48px" : "auto" }}
-          />
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="credentials">
-      <h2 className="credentials__main-title">Account Security</h2>
-      <div className="credentials__header">
-        <p className="credentials__description">
-          Manage your password and account security
-        </p>
-        <div className="credentials__actions">
+        <h2 className="credentials__main-title">Account Security</h2>
+        <div className="credentials__header">
+          <p className="credentials__description">
+            Manage your password and account security
+          </p>
+          <div className="credentials__actions">
             <button
               className={`profile-form__help ${credentialsMode === "forgot" ? "active" : ""}`}
               onClick={() => setCredentialsMode("forgot")}
@@ -647,7 +734,7 @@ const renderCredentials = () => {
             </button>
           </div>
         </div>
-       
+
         {credentialsMode === "forgot" && (
           <div className="credentials__section">
             <h3>Reset Password</h3>
@@ -770,10 +857,10 @@ const renderCredentials = () => {
                             return (
                               <>
                                 {firstProduct && firstProduct.productImages && firstProduct.productImages.length > 0 ? (
-                                  <img 
-                                    src={firstProduct.productImages[0]} 
-                                    alt={firstProduct.name} 
-                                    className="order-mobile-product__image" 
+                                  <img
+                                    src={firstProduct.productImages[0]}
+                                    alt={firstProduct.name}
+                                    className="order-mobile-product__image"
                                   />
                                 ) : (
                                   <div className="order-mobile-product__placeholder">?</div>
@@ -784,7 +871,7 @@ const renderCredentials = () => {
                                     {order.orderItems.length > 1 && (
                                       <span className="order-mobile-product__count"> +{order.orderItems.length - 1} more</span>
                                     )}
-                                    <span 
+                                    <span
                                       className="order-mobile-product__see-more"
                                       onClick={() => toggleOrderDetails(order.id)}
                                     >
@@ -794,7 +881,7 @@ const renderCredentials = () => {
                                 </div>
                               </>
                             );
-                          })()} 
+                          })()}
                         </div>
                       ) : (
                         <span>No items</span>
@@ -802,7 +889,7 @@ const renderCredentials = () => {
                     </div>
 
                   </div>
-                  
+
                   {expandedOrderDetails.has(order.id) && (
                     <div className="order-item__mobile-details">
                       <div className="order-item__date" data-label="Date">{new Date(order.createdAt).toLocaleDateString()}</div>
@@ -819,10 +906,10 @@ const renderCredentials = () => {
                               return (
                                 <div key={item.id} className="order-product">
                                   {product && product.productImages && product.productImages.length > 0 ? (
-                                    <img 
-                                      src={product.productImages[0]} 
-                                      alt={product.name} 
-                                      className="order-product__image" 
+                                    <img
+                                      src={product.productImages[0]}
+                                      alt={product.name}
+                                      className="order-product__image"
                                     />
                                   ) : (
                                     <div className="order-product__placeholder">?</div>
@@ -833,12 +920,12 @@ const renderCredentials = () => {
                               );
                             })}
                             {order.orderItems.length > 2 && (
-                              <div 
-                                className="order-product-more clickable" 
+                              <div
+                                className="order-product-more clickable"
                                 onClick={() => toggleOrderExpansion(order.id)}
                               >
-                                {expandedOrders.has(order.id) 
-                                  ? 'Show less' 
+                                {expandedOrders.has(order.id)
+                                  ? 'Show less'
                                   : `+${order.orderItems.length - 2} more`
                                 }
                               </div>
@@ -878,10 +965,10 @@ const renderCredentials = () => {
                           return (
                             <div key={item.id} className="order-product">
                               {product && product.productImages && product.productImages.length > 0 ? (
-                                <img 
-                                  src={product.productImages[0]} 
-                                  alt={product.name} 
-                                  className="order-product__image" 
+                                <img
+                                  src={product.productImages[0]}
+                                  alt={product.name}
+                                  className="order-product__image"
                                 />
                               ) : (
                                 <div className="order-product__placeholder">?</div>
@@ -892,12 +979,12 @@ const renderCredentials = () => {
                           );
                         })}
                         {order.orderItems.length > 2 && (
-                          <div 
-                            className="order-product-more clickable" 
+                          <div
+                            className="order-product-more clickable"
                             onClick={() => toggleOrderExpansion(order.id)}
                           >
-                            {expandedOrders.has(order.id) 
-                              ? 'Show less' 
+                            {expandedOrders.has(order.id)
+                              ? 'Show less'
                               : `+${order.orderItems.length - 2} more`
                             }
                           </div>
@@ -931,7 +1018,9 @@ const renderCredentials = () => {
       <Popup
         open={!!popup}
         closeOnDocumentClick
-        onClose={() => setPopup(null)}
+        onClose={() =>{ setPopup(null)
+          window.location.reload()
+        }}
         contentStyle={{ borderRadius: "12px", maxWidth: "400px", background: "transparent", padding: 0, border: "none", boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)" }}
         overlayStyle={{ backgroundColor: "rgba(0, 0, 0, 0.6)", backdropFilter: "blur(4px)" }}
       >
@@ -977,15 +1066,19 @@ const renderCredentials = () => {
                 <div className="profile-sidebar__avatar" style={{ backgroundColor: userDetails?.username ? getAvatarColor(userDetails.username) : "#f97316" }}>
                   {userDetails?.username?.[0]?.toUpperCase() || "?"}
                 </div>
-                {(["details", "credentials", "orders"] as Tab[]).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => handleTabChange(tab)}
-                    className={`profile-sidebar__button ${activeTab === tab ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
-                  >
-                    {tab === "details" ? "Manage Details" : tab === "credentials" ? "Change Credentials" : "Order History"}
-                  </button>
-                ))}
+                {(["details", "credentials", "orders"] as Tab[]).map((tab) => {
+                  if (tab === "credentials" && user?.provider === "google") return null; // hide tab
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => handleTabChange(tab)}
+                      className={`profile-sidebar__button ${activeTab === tab ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
+                    >
+                      {tab === "details" ? "Manage Details" : tab === "credentials" ? "Change Credentials" : "Order History"}
+                    </button>
+                  );
+                })}
+
               </>
             )}
           </div>

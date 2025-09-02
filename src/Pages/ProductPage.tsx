@@ -614,7 +614,7 @@ const ProductPage = () => {
     if (!product) return;
     const variantId = selectedVariant?.id;
     handleCartOnAdd(product, quantity, variantId);
-    showNotification("Product added to cart!");
+    // showNotification("");
   };
 
   const handleAddToWishlist = async () => {
@@ -903,43 +903,49 @@ const ProductPage = () => {
                     </div>
                   </div>
                 )}
-
-              <div className="product-quantity">
-                <h4 className="product-quantity__label">Quantity:</h4>
-                <div className="product-quantity__selector">
-                  <button
-                    className="product-quantity__button"
-                    onClick={() => handleQuantityChange(false)}
-                    disabled={quantity <= 1}
-                  >
-                    -
-                  </button>
-                  <input
-                    ref={quantityInputRef}
-                    type="number"
-                    className="product-quantity__input"
-                    value={quantity}
-                    onChange={handleQuantityInputChange}
-                    onBlur={handleQuantityBlur}
-                    onClick={handleQuantitySelect}
-                    onFocus={handleQuantitySelect}
-                    onKeyDown={(e) => {
-                      if (["e", "E", "+", "-", "."].includes(e.key)) {
-                        e.preventDefault();
-                      }
-                    }}
-                    min="1"
-                    max={getCurrentStock()}
-                  />
-                  <button
-                    className="product-quantity__button"
-                    onClick={() => handleQuantityChange(true)}
-                    disabled={quantity >= getCurrentStock()}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+<div className="product-quantity">
+  <h4 className="product-quantity__label">Quantity:</h4>
+  <div className="product-quantity__selector">
+    <button
+      className="product-quantity__button"
+      onClick={() => handleQuantityChange(false)}
+      disabled={quantity <= 1 || getCurrentStock() <= 0}
+    >
+      -
+    </button>
+    <input
+      ref={quantityInputRef}
+      type="number"
+      className="product-quantity__input"
+      value={quantity}
+      onChange={handleQuantityInputChange}
+      onBlur={handleQuantityBlur}
+      onClick={handleQuantitySelect}
+      onFocus={handleQuantitySelect}
+      onKeyDown={(e) => {
+        if (["e", "E", "+", "-", "."].includes(e.key)) {
+          e.preventDefault();
+        }
+      }}
+      min="1"
+      max={getCurrentStock()}
+      disabled={getCurrentStock() <= 0}
+    />
+    <button
+      className="product-quantity__button"
+      onClick={() => handleQuantityChange(true)}
+      disabled={quantity >= getCurrentStock() || getCurrentStock() <= 0}
+    >
+      +
+    </button>
+  </div>
+  {getCurrentStock() <= 0 && (
+    <div className="product-quantity__stock-message">
+      <span className="product-quantity__stock-icon">ⓘ</span>
+      Out of stock
+    </div>
+  )}
+</div>
 
               <div className="seller-info">
                 <div
@@ -983,30 +989,42 @@ const ProductPage = () => {
                   </h4>
                 </div>
               </div>
+<div className="product-actions">
+  <button
+    className="product-actions__button product-actions__button--primary"
+    onClick={handleAddToCart}
+    disabled={getCurrentStock() <= 0}
+  >
+    {getCurrentStock() > 0 ? "Add to Cart" : "Out of Stock"}
+  </button>
 
-              <div className="product-actions">
-                <button
-                  className="product-actions__button product-actions__button--primary"
-                  onClick={handleAddToCart}
-                  disabled={getCurrentStock() <= 0}
-                >
-                  {getCurrentStock() > 0 ? "Add to Cart" : "Out of Stock"}
-                </button>
+  {getCurrentStock() > 0 ? (
+    <button
+      className="product-actions__button product-actions__button--secondary"
+      onClick={handleBuyNow}
+    >
+      Buy Now
+    </button>
+  ) : (
+    <button
+      className="product-actions__button product-actions__button--secondary"
+      onClick={handleAddToWishlist}
+    >
+      Add to Wishlist
+    </button>
+  )}
+  
+  {getCurrentStock() > 0 && (
+    <button
+      className="product-actions__button product-actions__button--secondary"
+      onClick={handleAddToWishlist}
+    >
+      Add to Wishlist
+    </button>
+  )}
+</div>
 
-                <button
-                  className="product-actions__button product-actions__button--secondary"
-                  onClick={handleBuyNow}
-                  disabled={getCurrentStock() <= 0}
-                >
-                  Buy Now
-                </button>
-                <button
-                  className="product-actions__button product-actions__button--secondary"
-                  onClick={handleAddToWishlist}
-                >
-                  Add to Wishlist
-                </button>
-              </div>
+
             </div>
           </div>
         </div>
