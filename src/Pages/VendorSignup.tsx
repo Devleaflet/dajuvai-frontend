@@ -1656,6 +1656,9 @@ const handleNext = () => {
                           setAcceptListingFee(e.target.checked);
                           setTouched(prev => ({ ...prev, acceptListingFee: true }));
                           const error = validateField("acceptListingFee", e.target.checked);
+                          if (error) {
+                            toast.error(error);
+                          }
                           setErrors(prev => ({ ...prev, acceptListingFee: error }));
                           console.log("Accept listing fee toggled:", e.target.checked);
                         }}
