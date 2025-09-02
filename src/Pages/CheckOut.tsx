@@ -1,4 +1,4 @@
-import React, { useState, useEffect, } from 'react';
+import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import CryptoJS from 'crypto-js';
 import '../Styles/CheckOut.css';
@@ -9,12 +9,10 @@ import Footer from '../Components/Footer';
 import logo from '../assets/logo.webp';
 import esewa from '../assets/esewa.png';
 import npx from '../assets/npx.png';
-
 import { useAuth } from '../context/AuthContext';
 import AlertModal from '../Components/Modal/AlertModal';
 import { API_BASE_URL } from '../config';
-
-
+import { FaInfoCircle } from 'react-icons/fa';
 
 interface PromoCode {
   id: number;
@@ -70,6 +68,8 @@ const Checkout: React.FC = () => {
 
   // State for managing Buy Now quantities
   const [buyNowQuantities, setBuyNowQuantities] = useState<{ [key: number]: number }>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   // Handle "Buy Now" case
   if (location.state?.buyNow && location.state?.products?.length > 0) {
@@ -111,7 +111,7 @@ const Checkout: React.FC = () => {
     province: '',
     district: '',
     city: '',
-    landmark: "",
+    landmark: '',
     streetAddress: '',
     phoneNumber: '',
   });
@@ -121,7 +121,6 @@ const Checkout: React.FC = () => {
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('CASH_ON_DELIVERY');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [phoneError, setPhoneError] = useState('');
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [showPromoField, setShowPromoField] = useState(false);
@@ -199,23 +198,63 @@ const Checkout: React.FC = () => {
     return CryptoJS.enc.Base64.stringify(hash);
   };
 
-  const validatePhoneNumber = (phone: string): boolean => {
-    const phoneRegex = /^9\d{9}$/;
-    return phoneRegex.test(phone);
+  const validateField = (name: string, value: string): string => {
+    switch (name) {
+      case 'fullName':
+        if (!value.trim()) return 'Full name is required';
+        if (!/^[a-zA-Z\s]+$/.test(value)) return 'Full name must contain only letters and spaces';
+        if (value.trim().length < 2) return 'Full name must be at least 2 characters';
+        return '';
+      case 'province':
+        if (!value.trim()) return 'Province is required';
+        if (!provinceData.includes(value)) return 'Please select a valid province';
+        return '';
+      case 'district':
+        if (!value.trim()) return 'District is required';
+        if (!districtData.includes(value)) return 'Please select a valid district';
+        return '';
+      case 'city':
+        if (!value.trim()) return 'City is required';
+        if (!/^[a-zA-Z\s]+$/.test(value)) return 'City must contain only letters and spaces';
+        if (value.trim().length < 2) return 'City must be at least 2 characters';
+        return '';
+      case 'streetAddress':
+        if (!value.trim()) return 'Street address is required';
+        if (value.trim().length < 5) return 'Street address must be at least 5 characters';
+        return '';
+      case 'phoneNumber':
+        if (!value.trim()) return 'Phone number is required';
+        if (!/^\d+$/.test(value)) return 'Phone number must contain only numbers';
+        if (!/^9\d{9}$/.test(value)) return 'Phone number must start with 9 and be exactly 10 digits';
+        return '';
+      default:
+        return '';
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
+    let filteredValue = value;
     if (name === 'phoneNumber') {
-      const numericValue = value.replace(/\D/g, '').slice(0, 10);
-      setBillingDetails(prev => ({ ...prev, [name]: numericValue }));
-      setPhoneError(numericValue && !validatePhoneNumber(numericValue)
-        ? 'Phone number must start with 9 and be exactly 10 digits long'
-        : '');
-    } else {
-      setBillingDetails(prev => ({ ...prev, [name]: value }));
+      filteredValue = value.replace(/\D/g, '').slice(0, 10);
+    } else if (name === 'fullName' || name === 'city') {
+      filteredValue = value.replace(/[^a-zA-Z\s]/g, '');
     }
+
+    setBillingDetails(prev => ({ ...prev, [name]: filteredValue }));
+
+    if (touched[name] || errors[name]) {
+      const error = validateField(name, filteredValue);
+      setErrors(prev => ({ ...prev, [name]: error }));
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    const error = validateField(name, value);
+    setErrors(prev => ({ ...prev, [name]: error }));
   };
 
   const handleTermsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -270,18 +309,25 @@ const Checkout: React.FC = () => {
       if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
       const data = await response.json();
       if (data.success && data.data) {
-        setBillingDetails(prev => ({
-          ...prev,
-          fullName: data.data.fullName || prev.fullName,
-          province: data.data.address?.province || prev.province,
-          district: data.data.address?.district || prev.district,
-          landmark: data.data.address?.landmark || prev.landmark,
-          streetAddress: data.data.address?.localAddress || prev.streetAddress,
-          phoneNumber: data.data.phoneNumber && validatePhoneNumber(data.data.phoneNumber)
-            ? data.data.phoneNumber
-            : prev.phoneNumber,
-          city: data.data.address?.city || prev.city,
-        }));
+        const newBillingDetails = {
+          fullName: data.data.fullName || '',
+          province: data.data.address?.province || '',
+          district: data.data.address?.district || '',
+          landmark: data.data.address?.landmark || '',
+          streetAddress: data.data.address?.localAddress || '',
+          phoneNumber: data.data.phoneNumber && validateField('phoneNumber', data.data.phoneNumber) === '' ? data.data.phoneNumber : '',
+          city: data.data.address?.city || '',
+        };
+        setBillingDetails(newBillingDetails);
+
+        // Validate fetched data
+        Object.entries(newBillingDetails).forEach(([key, value]) => {
+          if (touched[key]) {
+            const error = validateField(key, value);
+            setErrors(prev => ({ ...prev, [key]: error }));
+          }
+        });
+
         if (data.data.address?.province) {
           fetchDistricts(data.data.address.province);
         }
@@ -303,33 +349,39 @@ const Checkout: React.FC = () => {
   }, [user?.id, token]);
 
   const handlePlaceOrder = async () => {
+    // Validate all fields
+    const newErrors: Record<string, string> = {};
+    const newTouched: Record<string, boolean> = {};
+    let isValid = true;
+
+    Object.keys(billingDetails).forEach(field => {
+      const error = validateField(field, billingDetails[field as keyof typeof billingDetails]);
+      newErrors[field] = error;
+      newTouched[field] = true;
+      if (error) isValid = false;
+    });
+
+    setErrors(prev => ({ ...prev, ...newErrors }));
+    setTouched(prev => ({ ...prev, ...newTouched }));
+
+    if (!isValid) {
+      setAlertMessage('Please correct the errors in the form before submitting.');
+      setShowAlert(true);
+      setIsPlacingOrder(false);
+      return;
+    }
+
     if (!termsAgreed) {
       setAlertMessage('Please agree to the terms and conditions');
       setShowAlert(true);
-      return;
-    }
-
-    if (
-      !billingDetails.fullName ||
-      !billingDetails.district ||
-      !billingDetails.city ||
-      !billingDetails.streetAddress ||
-      !billingDetails.phoneNumber
-    ) {
-      setAlertMessage('Please fill in all required fields including phone number');
-      setShowAlert(true);
-      return;
-    }
-
-    if (!validatePhoneNumber(billingDetails.phoneNumber)) {
-      setAlertMessage('Please enter a valid phone number (must start with 9 and be exactly 10 digits long)');
-      setShowAlert(true);
+      setIsPlacingOrder(false);
       return;
     }
 
     if (cartItems.length === 0) {
       setAlertMessage('Your cart is empty');
       setShowAlert(true);
+      setIsPlacingOrder(false);
       return;
     }
 
@@ -345,7 +397,7 @@ const Checkout: React.FC = () => {
         orderData = {
           isBuyNow: true,
           productId: buyNowItem.id,
-          variantId: buyNowItem.variantId || undefined, // Include only if variantId exists
+          variantId: buyNowItem.variantId || undefined,
           quantity: finalQuantity,
           shippingAddress: {
             province: billingDetails.province,
@@ -359,7 +411,6 @@ const Checkout: React.FC = () => {
           fullName: billingDetails.fullName,
         };
 
-        // Remove variantId from payload if it doesn't exist
         if (!orderData.variantId) {
           delete orderData.variantId;
         }
@@ -386,7 +437,7 @@ const Checkout: React.FC = () => {
         };
       }
 
-      console.log('Sending order data:', JSON.stringify(orderData, null, 2)); // Debug payload
+      console.log('Sending order data:', JSON.stringify(orderData, null, 2));
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -401,7 +452,7 @@ const Checkout: React.FC = () => {
       });
 
       const result = await response.json();
-      console.log('Server response:', result); // Debug response
+      console.log('Server response:', result);
 
       if (result.success) {
         if (selectedPaymentMethod === 'CASH_ON_DELIVERY') {
@@ -410,18 +461,13 @@ const Checkout: React.FC = () => {
             state: { activeTab: 'orders' },
           });
           setShowAlert(true);
-        }
-        else if (selectedPaymentMethod === 'ESEWA') {
-          // Generate a fresh UUID for this transaction
+        } else if (selectedPaymentMethod === 'ESEWA') {
           const freshTransactionUuid = uuidv4();
           const amount = finalTotal.toString();
-
-          // Generate signature for the new transaction
           const hashString = `total_amount=${amount},transaction_uuid=${freshTransactionUuid},product_code=EPAYTEST`;
           const hash = CryptoJS.HmacSHA256(hashString, '8gBm/:&EnhH.1/q');
           const signature = CryptoJS.enc.Base64.stringify(hash);
 
-          // Update form data with fresh values
           const updatedFormData = {
             ...formData,
             amount: amount,
@@ -430,15 +476,12 @@ const Checkout: React.FC = () => {
             signature: signature,
           };
 
-          // Update form fields directly
           const form = document.getElementById('esewa-form') as HTMLFormElement;
           if (form) {
             (form.querySelector('input[name="amount"]') as HTMLInputElement).value = updatedFormData.amount;
             (form.querySelector('input[name="total_amount"]') as HTMLInputElement).value = updatedFormData.total_amount;
             (form.querySelector('input[name="transaction_uuid"]') as HTMLInputElement).value = updatedFormData.transaction_uuid;
             (form.querySelector('input[name="signature"]') as HTMLInputElement).value = updatedFormData.signature;
-
-            // Submit immediately
             form.submit();
           }
         }
@@ -453,11 +496,6 @@ const Checkout: React.FC = () => {
               },
             });
           }
-          // else {
-          //   navigate('/user-profile', {
-          //     state: { activeTab: 'orders' },
-          //   });
-          // }
         }, 1500);
       } else {
         setAlertMessage(`Failed to place order: ${result.message || 'Unknown error'}`);
@@ -526,7 +564,6 @@ const Checkout: React.FC = () => {
     };
   };
 
-  // Helper function to get the current quantity for display
   const getCurrentQuantity = (item: CartItem): number => {
     if (location.state?.buyNow) {
       return buyNowQuantities[item.id] || item.quantity;
@@ -578,7 +615,6 @@ const Checkout: React.FC = () => {
 
   const vendorGroups = groupItemsByVendor();
 
-  // Update subtotal calculation to use current quantities
   const subtotal = cartItems.reduce((sum, item) => {
     const quantity = getCurrentQuantity(item);
     return sum + Number(item.price) * quantity;
@@ -727,18 +763,26 @@ const Checkout: React.FC = () => {
                 name="fullName"
                 value={billingDetails.fullName}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
                 placeholder="Enter your Full Name"
-                className="checkout-container__form-group-input"
+                className={`checkout-container__form-group-input ${errors.fullName && touched.fullName ? 'error' : ''}`}
                 required
               />
+              {errors.fullName && touched.fullName && (
+                <div className="error-message">
+                  <FaInfoCircle className="error-icon" />
+                  {errors.fullName}
+                </div>
+              )}
             </div>
             <div className="checkout-container__form-group">
-              <label className="checkout-container__form-label">Province</label>
+              <label className="checkout-container__form-label">Province *</label>
               <select
                 name="province"
                 value={billingDetails.province}
                 onChange={handleInputChange}
-                className="checkout-container__form-group-select"
+                onBlur={handleBlur}
+                className={`checkout-container__form-group-select ${errors.province && touched.province ? 'error' : ''}`}
                 required
               >
                 <option value="">Select Province</option>
@@ -746,6 +790,12 @@ const Checkout: React.FC = () => {
                   <option key={p} value={p}>{p}</option>
                 ))}
               </select>
+              {errors.province && touched.province && (
+                <div className="error-message">
+                  <FaInfoCircle className="error-icon" />
+                  {errors.province}
+                </div>
+              )}
             </div>
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">District *</label>
@@ -753,7 +803,8 @@ const Checkout: React.FC = () => {
                 name="district"
                 value={billingDetails.district}
                 onChange={handleInputChange}
-                className="checkout-container__form-group-select"
+                onBlur={handleBlur}
+                className={`checkout-container__form-group-select ${errors.district && touched.district ? 'error' : ''}`}
                 required
               >
                 <option value="">Select District</option>
@@ -761,6 +812,12 @@ const Checkout: React.FC = () => {
                   <option key={district} value={district}>{district}</option>
                 ))}
               </select>
+              {errors.district && touched.district && (
+                <div className="error-message">
+                  <FaInfoCircle className="error-icon" />
+                  {errors.district}
+                </div>
+              )}
             </div>
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">City *</label>
@@ -769,10 +826,17 @@ const Checkout: React.FC = () => {
                 name="city"
                 value={billingDetails.city}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
                 placeholder="Enter your city"
-                className="checkout-container__form-group-input"
+                className={`checkout-container__form-group-input ${errors.city && touched.city ? 'error' : ''}`}
                 required
               />
+              {errors.city && touched.city && (
+                <div className="error-message">
+                  <FaInfoCircle className="error-icon" />
+                  {errors.city}
+                </div>
+              )}
             </div>
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Street Address *</label>
@@ -781,22 +845,35 @@ const Checkout: React.FC = () => {
                 name="streetAddress"
                 value={billingDetails.streetAddress}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
                 placeholder="Enter your street address"
-                className="checkout-container__form-group-input"
+                className={`checkout-container__form-group-input ${errors.streetAddress && touched.streetAddress ? 'error' : ''}`}
                 required
               />
+              {errors.streetAddress && touched.streetAddress && (
+                <div className="error-message">
+                  <FaInfoCircle className="error-icon" />
+                  {errors.streetAddress}
+                </div>
+              )}
             </div>
             <div className="checkout-container__form-group">
-              <label className="checkout-container__form-label">Landmark *</label>
+              <label className="checkout-container__form-label">Landmark </label>
               <input
                 type="text"
                 name="landmark"
                 value={billingDetails.landmark}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
                 placeholder="Enter Nearest Landmark (Eg: Apartments, Hospital, School etc)"
-                className="checkout-container__form-group-input"
-                required
+                className={`checkout-container__form-group-input ${errors.landmark && touched.landmark ? 'error' : ''}`}
               />
+              {errors.landmark && touched.landmark && (
+                <div className="error-message">
+                  <FaInfoCircle className="error-icon" />
+                  {errors.landmark}
+                </div>
+              )}
             </div>
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Phone Number *</label>
@@ -805,15 +882,17 @@ const Checkout: React.FC = () => {
                 name="phoneNumber"
                 value={billingDetails.phoneNumber}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
                 placeholder="9xxxxxxxxx"
-                className="checkout-container__form-group-input"
+                className={`checkout-container__form-group-input ${errors.phoneNumber && touched.phoneNumber ? 'error' : ''}`}
                 maxLength={10}
                 required
               />
-              {phoneError && (
-                <span style={{ color: 'red', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
-                  {phoneError}
-                </span>
+              {errors.phoneNumber && touched.phoneNumber && (
+                <div className="error-message">
+                  <FaInfoCircle className="error-icon" />
+                  {errors.phoneNumber}
+                </div>
               )}
             </div>
 

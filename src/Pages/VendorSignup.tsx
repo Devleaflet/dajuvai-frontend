@@ -203,6 +203,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 
       case "phoneNumber":
         if (!value.trim()) return "Phone number is required";
+        if (value.length != 10) return "Phone number should 10 digits"
         if (!/^\+?[\d\s-]{10,}$/.test(value)) return "Invalid phone number format";
         return "";
 
@@ -258,7 +259,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 
       case "accountNumber":
         if (!value.trim()) return "Account number is required";
-        if (!/^\d{8,}$/.test(value)) return "Account number must be at least 8 digits";
+        if (!/^[0-9 ]+$/.test(value)) return "Only numbers and spaces are allowed";
+        if (value.replace(/\s/g, "").length < 8) return "Account number must be at least 8 digits";
         return "";
 
       case "bankBranch":
@@ -275,7 +277,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
         return "";
 
       case "taxDocuments":
-        if (value.length === 0) return "At least one PAN/VAT document is required";
+        if (Array.isArray(value) && value.length > 0) {
+        console.log("validateField: taxDocuments valid", { length: value.length });
         for (const doc of value) {
           if (!/\.(jpg|jpeg|png|pdf)$/i.test(doc.name)) {
             return "PAN/VAT documents must be JPG, JPEG, PNG, or PDF";
@@ -286,6 +289,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
         }
         if (value.length > 5) return "Cannot upload more than 5 PAN/VAT documents";
         return "";
+      }
+      return "At least one PAN/VAT document is required";
 
       case "citizenshipDocuments":
         for (const doc of value) {
@@ -399,58 +404,106 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
   };
 
   // Validate current step
-  const validateStep = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    let isValid = true;
+const validateStep = (): boolean => {
+  console.log("Validating step", { currentStep, taxDocumentsLength: taxDocuments.length });
+  const newErrors: Record<string, string> = {};
+  let isValid = true;
 
-    const fieldsToValidate = currentStep === 1
-      ? ["businessName", "phoneNumber", "province", "district", "acceptTerms"]
-      : currentStep === 2
-        ? ["businessRegNumber", "taxNumber", "email", "password", "confirmPassword"]
-        : currentStep === 3
-          ? ["taxDocuments", "citizenshipDocuments"]
-          : ["accountName", "bankName", "accountNumber", "bankBranch", "bankCode", "bankAddress", "blankChequePhoto", "acceptListingFee"];
-
-    fieldsToValidate.forEach(field => {
-      const value = field === "businessName" ? businessName :
-        field === "phoneNumber" ? phoneNumber :
-          field === "businessRegNumber" ? businessRegNumber :
-            field === "province" ? province :
-              field === "district" ? district :
-                field === "taxNumber" ? taxNumber :
-                  field === "email" ? email :
-                    field === "password" ? password :
-                      field === "confirmPassword" ? confirmPassword :
-                        field === "accountName" ? accountName :
-                          field === "bankName" ? bankName :
-                            field === "accountNumber" ? accountNumber :
-                              field === "bankBranch" ? bankBranch :
-                                field === "bankCode" ? bankCode :
-                                  field === "bankAddress" ? bankAddress :
-                                    field === "taxDocuments" ? taxDocuments :
-                                      field === "citizenshipDocuments" ? citizenshipDocuments :
-                                        field === "blankChequePhoto" ? blankChequePhoto :
-                                          field === "acceptTerms" ? acceptTerms :
-                                            field === "acceptListingFee" ? acceptListingFee : null;
-
-      const error = validateField(field, value);
+  const fieldsToValidate = currentStep === 1
+    ? ["businessName", "phoneNumber", "province", "district", "acceptTerms"]
+    : currentStep === 2
+      ? ["businessRegNumber", "taxNumber", "email", "password", "confirmPassword"]
+      : currentStep === 3
+        ? ["taxDocuments"]
+        : ["accountName", "bankName", "accountNumber", "bankBranch", "bankCode", "bankAddress", "blankChequePhoto", "acceptListingFee"];
+       if (currentStep === 3) {
+    if (taxDocuments.length === 0) {
+      newErrors.taxDocuments = "At least one PAN/VAT document is required";
+      isValid = false;
+    } else {
+      const error = validateField("taxDocuments", taxDocuments);
       if (error) {
-        newErrors[field] = error;
+        newErrors.taxDocuments = error;
         isValid = false;
       }
-    });
+    }
+  }
 
-    setErrors(prev => ({ ...prev, ...newErrors }));
-
-    // Mark all relevant fields as touched
-    const allTouched = fieldsToValidate.reduce((acc, field) => {
-      acc[field] = true;
-      return acc;
-    }, {} as Record<string, boolean>);
-
-    setTouched(prev => ({ ...prev, ...allTouched }));
-    return isValid;
+  const getFieldValue = (field: string): any => {
+    const fieldValues: Record<string, any> = {
+      businessName,
+      phoneNumber,
+      businessRegNumber,
+      province,
+      district,
+      taxNumber,
+      email,
+      password,
+      confirmPassword,
+      accountName,
+      bankName,
+      accountNumber,
+      bankBranch,
+      bankCode,
+      bankAddress,
+      taxDocuments,
+      citizenshipDocuments,
+      blankChequePhoto,
+      acceptTerms,
+      acceptListingFee,
+    };
+    return fieldValues[field] ?? null;
   };
+
+  fieldsToValidate.forEach(field => {
+    const value = getFieldValue(field);
+    const error = validateField(field, value);
+    if (error) {
+      newErrors[field] = error;
+      isValid = false;
+    }
+  });
+
+  // Update errors only for current step's fields
+  const currentStepErrors = { ...errors };
+  fieldsToValidate.forEach(field => {
+    delete currentStepErrors[field];
+  });
+  setErrors({ ...currentStepErrors, ...newErrors });
+
+  // Mark current step fields as touched
+  const currentStepTouched = fieldsToValidate.reduce((acc: Record<string, boolean>, field: string) => {
+    acc[field] = true;
+    return acc;
+  }, {} as Record<string, boolean>);
+
+  setTouched(prev => ({ ...prev, ...currentStepTouched }));
+  console.log("Validation result", { isValid, errors: { ...currentStepErrors, ...newErrors } });
+  return isValid;
+};
+useEffect(() => {
+  if (currentStep === 3 && taxDocuments.length > 0) {
+    console.log("Step 3: Clearing taxDocuments error", { taxDocumentsLength: taxDocuments.length });
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.taxDocuments; // Clear error
+      return newErrors;
+    });
+    setTouched(prev => ({ ...prev, taxDocuments: true }));
+  }
+}, [currentStep, taxDocuments]);
+
+useEffect(() => {
+  if (currentStep === 3 && citizenshipDocuments.length >= 0) {
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.citizenshipDocuments;
+      return newErrors;
+    });
+    
+    setTouched(prev => ({ ...prev, citizenshipDocuments: true }));
+  }
+}, [currentStep, citizenshipDocuments.length]);
 
   // Validate entire form before submission
   const validateForm = (): boolean => {
@@ -520,57 +573,70 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     return isValid;
   };
 
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    documentType: "tax" | "citizenship" | "cheque"
-  ) => {
-    const files = e.target.files ? Array.from(e.target.files) : [];
-    console.log(`File change for ${documentType}:`, files.map(f => f.name));
+const handleFileChange = (
+  e: React.ChangeEvent<HTMLInputElement>,
+  documentType: "tax" | "citizenship" | "cheque"
+) => {
+  const files = e.target.files ? Array.from(e.target.files) : [];
+  console.log(`File change for ${documentType}:`, files.map(f => f.name));
 
-    // Validate file count and size
-    if (documentType === "tax" || documentType === "citizenship") {
-      const currentDocs = documentType === "tax" ? taxDocuments : citizenshipDocuments;
-      if (files.length + currentDocs.length > 5) {
-        setErrors(prev => ({ ...prev, [documentType + "Documents"]: "Cannot upload more than 5 documents" }));
-        toast.error("Cannot upload more than 5 documents");
-        return;
-      }
-      for (const file of files) {
-        if (file.size > 5 * 1024 * 1024) {
-          setErrors(prev => ({ ...prev, [documentType + "Documents"]: "File size exceeds 5MB limit" }));
-          toast.error("File size exceeds 5MB limit");
-          return;
-        }
-      }
-    } else if (documentType === "cheque" && files.length > 0) {
-      if (files[0].size > 5 * 1024 * 1024) {
-        setErrors(prev => ({ ...prev, blankChequePhoto: "File size exceeds 5MB limit" }));
+  // Validate file count and size
+  if (documentType === "tax" || documentType === "citizenship") {
+    const currentDocs = documentType === "tax" ? taxDocuments : citizenshipDocuments;
+    if (files.length + currentDocs.length > 5) {
+      setErrors(prev => ({ ...prev, [documentType + "Documents"]: "Cannot upload more than 5 documents" }));
+      toast.error("Cannot upload more than 5 documents");
+      return;
+    }
+    for (const file of files) {
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, [documentType + "Documents"]: "File size exceeds 5MB limit" }));
         toast.error("File size exceeds 5MB limit");
         return;
       }
+      if (!/\.(jpg|jpeg|png|pdf)$/i.test(file.name)) {
+        setErrors(prev => ({ ...prev, [documentType + "Documents"]: "Documents must be JPG, JPEG, PNG, or PDF" }));
+        toast.error("Documents must be JPG, JPEG, PNG, or PDF");
+        return;
+      }
     }
+  } else if (documentType === "cheque" && files.length > 0) {
+    if (files[0].size > 5 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, blankChequePhoto: "File size exceeds 5MB limit" }));
+      toast.error("File size exceeds 5MB limit");
+      return;
+    }
+    if (!/\.(jpg|jpeg|png)$/i.test(files[0].name)) {
+      setErrors(prev => ({ ...prev, blankChequePhoto: "Blank cheque photo must be JPG, JPEG, or PNG" }));
+      toast.error("Blank cheque photo must be JPG, JPEG, or PNG");
+      return;
+    }
+  }
 
-    // Update state and validate
-    if (documentType === "tax") {
-      const newFiles = [...taxDocuments, ...files];
-      setTaxDocuments(newFiles);
-      setTouched(prev => ({ ...prev, taxDocuments: true }));
+  // Update state
+  if (documentType === "tax") {
+    const newFiles = files.length > 0 ? [...taxDocuments, ...files] : taxDocuments;
+    setTaxDocuments(newFiles);
+    setTouched(prev => ({ ...prev, taxDocuments: true }));
+    if (newFiles.length > 0) {
       const error = validateField("taxDocuments", newFiles);
       setErrors(prev => ({ ...prev, taxDocuments: error }));
-    } else if (documentType === "citizenship") {
-      const newFiles = [...citizenshipDocuments, ...files];
-      setCitizenshipDocuments(newFiles);
-      setTouched(prev => ({ ...prev, citizenshipDocuments: true }));
-      const error = validateField("citizenshipDocuments", newFiles);
-      setErrors(prev => ({ ...prev, citizenshipDocuments: error }));
-    } else if (documentType === "cheque" && files.length > 0) {
-      setBlankChequePhoto(files[0]);
-      setTouched(prev => ({ ...prev, blankChequePhoto: true }));
-      const error = validateField("blankChequePhoto", files[0]);
-      setErrors(prev => ({ ...prev, blankChequePhoto: error }));
+    } else {
+      setErrors(prev => ({ ...prev, taxDocuments: validateField("taxDocuments", newFiles) }));
     }
-  };
-
+  } else if (documentType === "citizenship") {
+    const newFiles = files.length > 0 ? [...citizenshipDocuments, ...files] : citizenshipDocuments;
+    setCitizenshipDocuments(newFiles);
+    setTouched(prev => ({ ...prev, citizenshipDocuments: true }));
+    const error = validateField("citizenshipDocuments", newFiles);
+    setErrors(prev => ({ ...prev, citizenshipDocuments: error }));
+  } else if (documentType === "cheque" && files.length > 0) {
+    setBlankChequePhoto(files[0]);
+    setTouched(prev => ({ ...prev, blankChequePhoto: true }));
+    const error = validateField("blankChequePhoto", files[0]);
+    setErrors(prev => ({ ...prev, blankChequePhoto: error }));
+  }
+};
   const removeFile = (index: number, documentType: "tax" | "citizenship") => {
     console.log(`Removing ${documentType} file at index ${index}`);
     if (documentType === "tax") {
@@ -884,15 +950,16 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleNext = () => {
-    if (!validateStep()) {
-      toast.error("Please fix the errors in the form before proceeding.");
-      console.log("Step validation failed, cannot proceed");
-      return;
-    }
-    console.log(`Moving to step ${currentStep + 1}`);
-    setCurrentStep((prev) => Math.min(prev + 1, 4));
-  };
+const handleNext = () => {
+  if (!validateStep()) {
+    toast.error("Please fix the errors in the form before proceeding.");
+    console.log("Step validation failed, cannot proceed");
+    return;
+  }
+
+  console.log(`Moving to step ${currentStep + 1}`);
+  setCurrentStep((prev) => Math.min(prev + 1, 4));
+};
 
   const handleBack = () => {
     console.log(`Moving back to step ${currentStep - 1}`);
@@ -904,18 +971,20 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     setError("");
     setSuccess("");
     console.log("Form submitted, current step:", currentStep);
-
+    setIsLoading(true)
     if (showVerification) {
       await handleVerifyEmail();
       return;
     }
 
     if (currentStep < 4) {
+      setIsLoading(false)
       handleNext();
       return;
     }
 
     if (!validateForm()) {
+      setIsLoading(false)
       toast.error("Please fix the errors in the form");
       console.log("Full form validation failed");
       return;
@@ -928,6 +997,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
       setErrors(prev => ({ ...prev, taxDocuments: taxDocsError, blankChequePhoto: chequeError }));
       setTouched(prev => ({ ...prev, taxDocuments: true, blankChequePhoto: true }));
       toast.error("Please upload valid PAN/VAT documents and cheque photo");
+      setIsLoading(false)
       return;
     }
 
@@ -939,6 +1009,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
       setError("Failed to obtain document URLs. Please try again.");
       toast.error("Failed to obtain document URLs. Please try again.");
       console.log("Document upload failed");
+      setIsLoading(false)
       return;
     }
 
@@ -968,6 +1039,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
       setError("Blank cheque photo is required");
       toast.error("Blank cheque photo is required");
       console.log("Cheque photo missing after upload");
+      setIsLoading(false)
       return;
     }
 
@@ -1454,7 +1526,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                             onChange={(e) => handleFileChange(e, "tax")}
                             multiple
                             disabled={isLoading}
-                            required
+              
+                            name="taxDocument"
                           />
                         </div>
                         {errors.taxDocuments && touched.taxDocuments && (
@@ -1597,7 +1670,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                     </div>
                     <div className="auth-modal__form-group auth-modal__form-group--grid">
                       <div>
-                        <label className="auth-modal__label">Bank Code (Optional)</label>
+                        <label className="auth-modal__label">Bank Code </label>
                         <input
                           type="text"
                           className={`auth-modal__input ${errors.bankCode && touched.bankCode ? "error" : ""}`}
@@ -1617,7 +1690,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                         )}
                       </div>
                       <div>
-                        <label className="auth-modal__label">Bank Address (Optional)</label>
+                        <label className="auth-modal__label">Bank Address</label>
                         <input
                           type="text"
                           className={`auth-modal__input ${errors.bankAddress && touched.bankAddress ? "error" : ""}`}
@@ -1653,7 +1726,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                             id="chequePhoto"
                             accept="image/jpeg,image/png"
                             onChange={(e) => handleFileChange(e, "cheque")}
-                            required
                             aria-label="Upload Cheque Photo"
                             style={{ display: "none" }}
                           />
