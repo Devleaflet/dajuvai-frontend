@@ -334,9 +334,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     setTouched(prev => ({ ...prev, [name]: true }));
 
     const error = validateField(name, value);
-    if (error) {
-      toast.error(error);
-    }
     setErrors(prev => ({ ...prev, [name]: error }));
   };
 
@@ -402,9 +399,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     // Validate field in real-time if it's been touched before
     if (touched[name]) {
       const error = validateField(name, value);
-      if (error) {
-        toast.error(error);
-      }
       setErrors(prev => ({ ...prev, [name]: error }));
     }
   };
@@ -958,7 +952,22 @@ const handleFileChange = (
 
 const handleNext = () => {
   if (!validateStep()) {
-    toast.error("Please fix the errors in the form before proceeding.");
+    // Get current step's field errors and show specific messages
+    const fieldsToValidate = currentStep === 1
+      ? ["businessName", "phoneNumber", "province", "district", "acceptTerms"]
+      : currentStep === 2
+        ? ["businessRegNumber", "taxNumber", "email", "password", "confirmPassword"]
+        : currentStep === 3
+          ? ["taxDocuments"]
+          : ["accountName", "bankName", "accountNumber", "bankBranch", "bankCode", "bankAddress", "blankChequePhoto", "acceptListingFee"];
+    
+    // Find the first error to display
+    const firstError = fieldsToValidate.find(field => errors[field]);
+    if (firstError && errors[firstError]) {
+      toast.error(errors[firstError]);
+    } else {
+      toast.error("Please fix the errors in the form before proceeding.");
+    }
     console.log("Step validation failed, cannot proceed");
     return;
   }
@@ -1127,9 +1136,6 @@ const handleNext = () => {
                       setVerificationToken(value);
                       if (touched.verificationToken) {
                         const error = validateField("verificationToken", value);
-                        if (error) {
-                          toast.error(error);
-                        }
                         setErrors(prev => ({ ...prev, verificationToken: error }));
                       }
                     }}
@@ -1656,9 +1662,6 @@ const handleNext = () => {
                           setAcceptListingFee(e.target.checked);
                           setTouched(prev => ({ ...prev, acceptListingFee: true }));
                           const error = validateField("acceptListingFee", e.target.checked);
-                          if (error) {
-                            toast.error(error);
-                          }
                           setErrors(prev => ({ ...prev, acceptListingFee: error }));
                           console.log("Accept listing fee toggled:", e.target.checked);
                         }}
