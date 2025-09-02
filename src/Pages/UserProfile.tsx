@@ -16,6 +16,7 @@ interface UserDetails {
   fullName: string;
   username: string;
   email: string;
+  provider: string;
   role: string;
   isVerified: boolean;
   phoneNumber: string;
@@ -77,57 +78,57 @@ const UserProfile: React.FC = () => {
     return colors[charCodeSum % colors.length];
   };
 
-const toggleOrderExpansion = (orderId: number) => {
-  setExpandedOrders(prev => {
-    const newSet = new Set(prev);
-    if (newSet.has(orderId)) {
-      newSet.delete(orderId);
-    } else {
-      newSet.add(orderId);
-    }
-    return newSet;
-  });
-};
-
-const toggleOrderDetails = (orderId: number) => {
-  setExpandedOrderDetails(prev => {
-    const newSet = new Set(prev);
-    if (newSet.has(orderId)) {
-      newSet.delete(orderId);
-    } else {
-      newSet.add(orderId);
-    }
-    return newSet;
-  });
-};
-
-// Mobile detection effect
-useEffect(() => {
-  const handleResize = () => {
-    setIsMobile(window.innerWidth <= 640);
+  const toggleOrderExpansion = (orderId: number) => {
+    setExpandedOrders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
   };
 
-  window.addEventListener('resize', handleResize);
-  return () => window.removeEventListener('resize', handleResize);
-}, []);
-
-
-
-const formatPaymentMethod = (method: string) => {
-  const methodMap: { [key: string]: string } = {
-    'CASH_ON_DELIVERY': 'Cash on Delivery',
-    'COD': 'Cash on Delivery',
-    'CREDIT_CARD': 'Credit Card',
-    'DEBIT_CARD': 'Debit Card',
-    'BANK_TRANSFER': 'Bank Transfer',
-    'DIGITAL_WALLET': 'Digital Wallet',
-    'PAYPAL': 'PayPal',
-    'STRIPE': 'Stripe',
-    'ESEWA': 'eSewa',
-    'KHALTI': 'Khalti'
+  const toggleOrderDetails = (orderId: number) => {
+    setExpandedOrderDetails(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
   };
-  return methodMap[method] || method;
-};
+
+  // Mobile detection effect
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 640);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+
+
+  const formatPaymentMethod = (method: string) => {
+    const methodMap: { [key: string]: string } = {
+      'CASH_ON_DELIVERY': 'Cash on Delivery',
+      'COD': 'Cash on Delivery',
+      'CREDIT_CARD': 'Credit Card',
+      'DEBIT_CARD': 'Debit Card',
+      'BANK_TRANSFER': 'Bank Transfer',
+      'DIGITAL_WALLET': 'Digital Wallet',
+      'PAYPAL': 'PayPal',
+      'STRIPE': 'Stripe',
+      'ESEWA': 'eSewa',
+      'KHALTI': 'Khalti'
+    };
+    return methodMap[method] || method;
+  };
 
   const showPopup = (type: "success" | "error", content: string) => {
     setPopup({ type, content });
@@ -172,6 +173,7 @@ const formatPaymentMethod = (method: string) => {
               role: data.data.role,
               username: data.data.email.split('@')[0],
               isVerified: true,
+              provider: data.data.provider
             });
           } else {
             showPopup("error", "Authentication details missing. Please log in again.");
@@ -187,29 +189,29 @@ const formatPaymentMethod = (method: string) => {
       console.log("[UserProfile] fetchUserDetails - User ID:", userId);
       console.log("[UserProfile] fetchUserDetails - Token:", token);
       console.log("[UserProfile] fetchUserDetails - Document cookie:", document.cookie);
-      
+
       setIsLoading((prev) => ({ ...prev, fetchUser: true }));
       try {
         const headers: Record<string, string> = {};
         const authToken = token || localStorage.getItem("authToken");
-        
+
         if (authToken) {
           headers.Authorization = `Bearer ${authToken}`;
           console.log("[UserProfile] fetchUserDetails - Using token-based auth");
         } else {
           console.log("[UserProfile] fetchUserDetails - Using cookie-based auth");
         }
-        
+
         console.log("[UserProfile] fetchUserDetails - Request headers:", headers);
-        
+
         const response = await axiosInstance.get(`/api/auth/users/${userId}`, {
           headers,
           withCredentials: true,
           timeout: 5000,
         });
-        
+
         console.log("[UserProfile] fetchUserDetails - Response:", response.data);
-        
+
         setUserDetails({
           ...response.data.data,
           fullName: response.data.data.fullName || "",
@@ -248,13 +250,13 @@ const formatPaymentMethod = (method: string) => {
       fetch(`${API_BASE_URL}/api/wishlist`, {
         credentials: 'include'
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          // setWishlist(data.data);
-        }
-      })
-      .catch(err => console.error('Failed to fetch wishlist:', err));
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            // setWishlist(data.data);
+          }
+        })
+        .catch(err => console.error('Failed to fetch wishlist:', err));
     }
   }, [user]);
 
@@ -330,7 +332,7 @@ const formatPaymentMethod = (method: string) => {
     if (!userDetails) return showPopup("error", "User details missing.");
     if (!validateUsername(userDetails.username)) return showPopup("error", "Username must be 3+ characters and alphanumeric.");
     if (!validateFullName(userDetails.fullName)) return showPopup("error", "Full name must be at least 2 characters.");
-    if (userDetails.phoneNumber && !validatePhoneNumber(userDetails.phoneNumber)) 
+    if (userDetails.phoneNumber && !validatePhoneNumber(userDetails.phoneNumber))
       return showPopup("error", "Phone number must be 10 digits.");
 
     console.log("[UserProfile] handleSave - Starting update");
@@ -349,17 +351,17 @@ const formatPaymentMethod = (method: string) => {
         'Content-Type': 'application/json'
       };
       const authToken = token || localStorage.getItem("authToken");
-      
+
       if (authToken) {
         headers.Authorization = `Bearer ${authToken}`;
         console.log("[UserProfile] handleSave - Using token-based auth");
       } else {
         console.log("[UserProfile] handleSave - Using cookie-based auth");
       }
-      
+
       const response = await axiosInstance.put(
         `/api/auth/users/${userId}`,
-        { 
+        {
           fullName: userDetails.fullName,
           username: userDetails.username,
           phoneNumber: userDetails.phoneNumber,
@@ -371,14 +373,14 @@ const formatPaymentMethod = (method: string) => {
             landmark: userDetails.landmark
           }
         },
-        { 
+        {
           withCredentials: true,
           headers
         }
       );
-      
+
       console.log("[UserProfile] handleSave - Response:", response.data);
-      
+
       if (response.data.success) {
         setUserDetails(response.data.data || response.data.user);
         setOriginalDetails(response.data.data || response.data.user);
@@ -429,7 +431,7 @@ const formatPaymentMethod = (method: string) => {
     }
   };
 
-const renderUserDetails = () => {
+  const renderUserDetails = () => {
     if (isLoading.fetchUser) {
       return (
         <div className="profile-form">
@@ -445,7 +447,7 @@ const renderUserDetails = () => {
     return (
       <div className="profile-form">
         <h2 className="profile-form__title">User Details</h2>
-        
+
         {/* First Row: Full Name and Username */}
         <div className="profile-form__row">
           <div className="profile-form__group profile-form__group--half">
@@ -505,7 +507,7 @@ const renderUserDetails = () => {
                 onChange={(e) => handleInputChange(e, "phoneNumber")}
                 className="profile-form__input"
               />
-            ) : ( 
+            ) : (
               <div>{userDetails.phoneNumber || "Not provided"}</div>
             )}
           </div>
@@ -616,29 +618,29 @@ const renderUserDetails = () => {
     );
   };
 
-const renderCredentials = () => {
-  if (isLoading.fetchUser) {
+  const renderCredentials = () => {
+    if (isLoading.fetchUser) {
+      return (
+        <div className="credentials">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className="skeleton skeleton-form-group"
+              style={{ height: i === 0 ? "40px" : i === 4 ? "48px" : "auto" }}
+            />
+          ))}
+        </div>
+      );
+    }
+
     return (
       <div className="credentials">
-        {[...Array(5)].map((_, i) => (
-          <div
-            key={i}
-            className="skeleton skeleton-form-group"
-            style={{ height: i === 0 ? "40px" : i === 4 ? "48px" : "auto" }}
-          />
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="credentials">
-      <h2 className="credentials__main-title">Account Security</h2>
-      <div className="credentials__header">
-        <p className="credentials__description">
-          Manage your password and account security
-        </p>
-        <div className="credentials__actions">
+        <h2 className="credentials__main-title">Account Security</h2>
+        <div className="credentials__header">
+          <p className="credentials__description">
+            Manage your password and account security
+          </p>
+          <div className="credentials__actions">
             <button
               className={`profile-form__help ${credentialsMode === "forgot" ? "active" : ""}`}
               onClick={() => setCredentialsMode("forgot")}
@@ -647,7 +649,7 @@ const renderCredentials = () => {
             </button>
           </div>
         </div>
-       
+
         {credentialsMode === "forgot" && (
           <div className="credentials__section">
             <h3>Reset Password</h3>
@@ -770,10 +772,10 @@ const renderCredentials = () => {
                             return (
                               <>
                                 {firstProduct && firstProduct.productImages && firstProduct.productImages.length > 0 ? (
-                                  <img 
-                                    src={firstProduct.productImages[0]} 
-                                    alt={firstProduct.name} 
-                                    className="order-mobile-product__image" 
+                                  <img
+                                    src={firstProduct.productImages[0]}
+                                    alt={firstProduct.name}
+                                    className="order-mobile-product__image"
                                   />
                                 ) : (
                                   <div className="order-mobile-product__placeholder">?</div>
@@ -784,7 +786,7 @@ const renderCredentials = () => {
                                     {order.orderItems.length > 1 && (
                                       <span className="order-mobile-product__count"> +{order.orderItems.length - 1} more</span>
                                     )}
-                                    <span 
+                                    <span
                                       className="order-mobile-product__see-more"
                                       onClick={() => toggleOrderDetails(order.id)}
                                     >
@@ -794,7 +796,7 @@ const renderCredentials = () => {
                                 </div>
                               </>
                             );
-                          })()} 
+                          })()}
                         </div>
                       ) : (
                         <span>No items</span>
@@ -802,7 +804,7 @@ const renderCredentials = () => {
                     </div>
 
                   </div>
-                  
+
                   {expandedOrderDetails.has(order.id) && (
                     <div className="order-item__mobile-details">
                       <div className="order-item__date" data-label="Date">{new Date(order.createdAt).toLocaleDateString()}</div>
@@ -819,10 +821,10 @@ const renderCredentials = () => {
                               return (
                                 <div key={item.id} className="order-product">
                                   {product && product.productImages && product.productImages.length > 0 ? (
-                                    <img 
-                                      src={product.productImages[0]} 
-                                      alt={product.name} 
-                                      className="order-product__image" 
+                                    <img
+                                      src={product.productImages[0]}
+                                      alt={product.name}
+                                      className="order-product__image"
                                     />
                                   ) : (
                                     <div className="order-product__placeholder">?</div>
@@ -833,12 +835,12 @@ const renderCredentials = () => {
                               );
                             })}
                             {order.orderItems.length > 2 && (
-                              <div 
-                                className="order-product-more clickable" 
+                              <div
+                                className="order-product-more clickable"
                                 onClick={() => toggleOrderExpansion(order.id)}
                               >
-                                {expandedOrders.has(order.id) 
-                                  ? 'Show less' 
+                                {expandedOrders.has(order.id)
+                                  ? 'Show less'
                                   : `+${order.orderItems.length - 2} more`
                                 }
                               </div>
@@ -878,10 +880,10 @@ const renderCredentials = () => {
                           return (
                             <div key={item.id} className="order-product">
                               {product && product.productImages && product.productImages.length > 0 ? (
-                                <img 
-                                  src={product.productImages[0]} 
-                                  alt={product.name} 
-                                  className="order-product__image" 
+                                <img
+                                  src={product.productImages[0]}
+                                  alt={product.name}
+                                  className="order-product__image"
                                 />
                               ) : (
                                 <div className="order-product__placeholder">?</div>
@@ -892,12 +894,12 @@ const renderCredentials = () => {
                           );
                         })}
                         {order.orderItems.length > 2 && (
-                          <div 
-                            className="order-product-more clickable" 
+                          <div
+                            className="order-product-more clickable"
                             onClick={() => toggleOrderExpansion(order.id)}
                           >
-                            {expandedOrders.has(order.id) 
-                              ? 'Show less' 
+                            {expandedOrders.has(order.id)
+                              ? 'Show less'
                               : `+${order.orderItems.length - 2} more`
                             }
                           </div>
@@ -977,15 +979,19 @@ const renderCredentials = () => {
                 <div className="profile-sidebar__avatar" style={{ backgroundColor: userDetails?.username ? getAvatarColor(userDetails.username) : "#f97316" }}>
                   {userDetails?.username?.[0]?.toUpperCase() || "?"}
                 </div>
-                {(["details", "credentials", "orders"] as Tab[]).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => handleTabChange(tab)}
-                    className={`profile-sidebar__button ${activeTab === tab ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
-                  >
-                    {tab === "details" ? "Manage Details" : tab === "credentials" ? "Change Credentials" : "Order History"}
-                  </button>
-                ))}
+                {(["details", "credentials", "orders"] as Tab[]).map((tab) => {
+                  if (tab === "credentials" && user?.provider === "google") return null; // hide tab
+                  return (
+                    <button
+                      key={tab}
+                      onClick={() => handleTabChange(tab)}
+                      className={`profile-sidebar__button ${activeTab === tab ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
+                    >
+                      {tab === "details" ? "Manage Details" : tab === "credentials" ? "Change Credentials" : "Order History"}
+                    </button>
+                  );
+                })}
+
               </>
             )}
           </div>

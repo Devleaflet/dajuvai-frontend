@@ -10,6 +10,7 @@ interface UserData {
   email: string;
   role: string;
   isVerified: boolean;
+  provider?: string;
   products?: unknown[];
   profilePicture?: string;
 }
@@ -30,8 +31,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
-  login: () => {},
-  logout: () => {},
+  login: () => { },
+  logout: () => { },
   isAuthenticated: false,
   isLoading: false,
   fetchUserData: async () => null,
@@ -57,7 +58,7 @@ const isTokenValid = (token: string): boolean => {
 
 // AuthProvider component to wrap the app
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserData | null>(null);
+  const [user, setUser] = useState<Partial<UserData> | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -71,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log("[Auth Debug] initializeAuth called");
     console.log("[Auth Debug] localStorage.authToken:", storedToken);
     console.log("[Auth Debug] localStorage.authUser:", storedUser);
-    
+
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
@@ -206,7 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       const now = Date.now();
       const timeUntilExpiry = expiration - now;
-      
+
       // Much more conservative refresh threshold - only refresh 30 minutes before expiry
       const refreshThreshold = 30 * 60 * 1000; // 30 minutes
 
@@ -253,9 +254,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     // Call logout API (non-blocking)
     axios
-      .post(`${API_BASE_URL}/api/auth/logout`, {}, { 
+      .post(`${API_BASE_URL}/api/auth/logout`, {}, {
         withCredentials: true,
-        timeout: 5000 
+        timeout: 5000
       })
       .catch((err) => console.error("Logout API error (non-critical):", err));
     // Reload the page to ensure all state is reset
