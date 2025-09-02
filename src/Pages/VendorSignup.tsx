@@ -334,6 +334,9 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     setTouched(prev => ({ ...prev, [name]: true }));
 
     const error = validateField(name, value);
+    if (error) {
+      toast.error(error);
+    }
     setErrors(prev => ({ ...prev, [name]: error }));
   };
 
@@ -399,6 +402,9 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     // Validate field in real-time if it's been touched before
     if (touched[name]) {
       const error = validateField(name, value);
+      if (error) {
+        toast.error(error);
+      }
       setErrors(prev => ({ ...prev, [name]: error }));
     }
   };
@@ -1121,6 +1127,9 @@ const handleNext = () => {
                       setVerificationToken(value);
                       if (touched.verificationToken) {
                         const error = validateField("verificationToken", value);
+                        if (error) {
+                          toast.error(error);
+                        }
                         setErrors(prev => ({ ...prev, verificationToken: error }));
                       }
                     }}
@@ -1132,12 +1141,7 @@ const handleNext = () => {
                     pattern="\d{6}"
                     style={{ width: '200px', textAlign: 'center' }}
                   />
-                  {errors.verificationToken && touched.verificationToken && (
-                    <div className="error-message">
-                      <FaInfoCircle className="error-icon" />
-                      {errors.verificationToken}
-                    </div>
-                  )}
+
                 </div>
                 <button
                   type="submit"
@@ -1182,12 +1186,7 @@ const handleNext = () => {
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
-                        {errors.businessName && touched.businessName && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.businessName}
-                          </div>
-                        )}
+
                       </div>
                       <div>
                         <label className="auth-modal__label">Phone Number</label>
@@ -1203,12 +1202,7 @@ const handleNext = () => {
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
-                        {errors.phoneNumber && touched.phoneNumber && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.phoneNumber}
-                          </div>
-                        )}
+
                       </div>
                     </div>
                     <div className="auth-modal__form-group auth-modal__form-group--grid">
@@ -1231,12 +1225,7 @@ const handleNext = () => {
                             </option>
                           ))}
                         </select>
-                        {errors.province && touched.province && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.province}
-                          </div>
-                        )}
+
                       </div>
                       <div>
                         <label className="auth-modal__label">District</label>
@@ -1257,12 +1246,7 @@ const handleNext = () => {
                             </option>
                           ))}
                         </select>
-                        {errors.district && touched.district && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.district}
-                          </div>
-                        )}
+
                       </div>
                     </div>
                     <div className="auth-modal__form-group" style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
@@ -1283,12 +1267,7 @@ const handleNext = () => {
                         />
                         I accept the <Link to="/vendor/terms" target="_blank">terms and conditions</Link>
                       </label>
-                      {errors.acceptTerms && touched.acceptTerms && (
-                        <div className="error-message">
-                          <FaInfoCircle className="error-icon" />
-                          {errors.acceptTerms}
-                        </div>
-                      )}
+
                     </div>
                   </>
                 )}
@@ -1310,12 +1289,7 @@ const handleNext = () => {
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
-                        {errors.businessRegNumber && touched.businessRegNumber && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.businessRegNumber}
-                          </div>
-                        )}
+
                       </div>
                       <div>
                         <label className="auth-modal__label">
@@ -1334,12 +1308,7 @@ const handleNext = () => {
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
-                        {errors.taxNumber && touched.taxNumber && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.taxNumber}
-                          </div>
-                        )}
+
                       </div>
                     </div>
                     <div className="auth-modal__form-group auth-modal__form-group--grid">
@@ -1357,12 +1326,7 @@ const handleNext = () => {
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
-                        {errors.email && touched.email && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.email}
-                          </div>
-                        )}
+
                       </div>
                       <div style={{ position: "relative" }}>
                         <label className="auth-modal__label">Password</label>
@@ -1426,12 +1390,7 @@ const handleNext = () => {
                             </svg>
                           )}
                         </button>
-                        {errors.password && touched.password && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.password}
-                          </div>
-                        )}
+
                       </div>
                     </div>
                     <div className="auth-modal__form-group" style={{ display: "grid", gridTemplateColumns: "1fr", gap: "20px", width: "100%" }}>
@@ -1496,12 +1455,7 @@ const handleNext = () => {
                             </svg>
                           )}
                         </button>
-                        {errors.confirmPassword && touched.confirmPassword && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.confirmPassword}
-                          </div>
-                        )}
+
                       </div>
                     </div>
                   </>
@@ -1530,12 +1484,7 @@ const handleNext = () => {
                             name="taxDocument"
                           />
                         </div>
-                        {errors.taxDocuments && touched.taxDocuments && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.taxDocuments}
-                          </div>
-                        )}
+
                         {taxDocuments.length > 0 && (
                           <div className="auth-modal__file-list" style={{ marginTop: "15px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
                             {taxDocuments.map((doc, index) => renderFilePreview(doc, index, "tax"))}
@@ -1567,12 +1516,7 @@ const handleNext = () => {
                             {citizenshipDocuments.map((doc, index) => renderFilePreview(doc, index, "citizenship"))}
                           </div>
                         )}
-                        {errors.citizenshipDocuments && touched.citizenshipDocuments && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.citizenshipDocuments}
-                          </div>
-                        )}
+
                       </div>
                     </div>
                   </>
@@ -1595,12 +1539,7 @@ const handleNext = () => {
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
-                        {errors.accountName && touched.accountName && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.accountName}
-                          </div>
-                        )}
+
                       </div>
                       <div>
                         <label className="auth-modal__label">Bank Name</label>
@@ -1616,12 +1555,7 @@ const handleNext = () => {
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
-                        {errors.bankName && touched.bankName && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.bankName}
-                          </div>
-                        )}
+
                       </div>
                     </div>
                     <div className="auth-modal__form-group auth-modal__form-group--grid">
@@ -1639,12 +1573,7 @@ const handleNext = () => {
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
-                        {errors.accountNumber && touched.accountNumber && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.accountNumber}
-                          </div>
-                        )}
+
                       </div>
                       <div>
                         <label className="auth-modal__label">Bank Branch</label>
@@ -1660,12 +1589,7 @@ const handleNext = () => {
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
-                        {errors.bankBranch && touched.bankBranch && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.bankBranch}
-                          </div>
-                        )}
+
                       </div>
                     </div>
                     <div className="auth-modal__form-group auth-modal__form-group--grid">
@@ -1682,12 +1606,7 @@ const handleNext = () => {
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
-                        {errors.bankCode && touched.bankCode && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.bankCode}
-                          </div>
-                        )}
+
                       </div>
                       <div>
                         <label className="auth-modal__label">Bank Address</label>
@@ -1702,12 +1621,7 @@ const handleNext = () => {
                           disabled={isLoading}
                           style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
                         />
-                        {errors.bankAddress && touched.bankAddress && (
-                          <div className="error-message">
-                            <FaInfoCircle className="error-icon" />
-                            {errors.bankAddress}
-                          </div>
-                        )}
+
                       </div>
                     </div>
                     <div className="document-section">
@@ -1731,12 +1645,7 @@ const handleNext = () => {
                           />
                         </div>
                       </div>
-                      {errors.blankChequePhoto && touched.blankChequePhoto && (
-                        <div className="error-message">
-                          <FaInfoCircle className="error-icon" />
-                          {errors.blankChequePhoto}
-                        </div>
-                      )}
+
                     </div>
                     <label className="auth-modal__checkbox" style={{ background: "transparent" }}>
                       <input
@@ -1759,12 +1668,7 @@ const handleNext = () => {
                       </Link>
                       )
                     </label>
-                    {errors.acceptListingFee && touched.acceptListingFee && (
-                      <div className="error-message">
-                        <FaInfoCircle className="error-icon" />
-                        {errors.acceptListingFee}
-                      </div>
-                    )}
+
                   </>
                 )}
 
