@@ -614,7 +614,7 @@ const ProductPage = () => {
     if (!product) return;
     const variantId = selectedVariant?.id;
     handleCartOnAdd(product, quantity, variantId);
-    showNotification("Product added to cart!");
+    // showNotification("");
   };
 
   const handleAddToWishlist = async () => {

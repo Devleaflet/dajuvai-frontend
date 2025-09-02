@@ -269,8 +269,24 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error: any) {
       console.error("=== handleCartOnAdd ERROR ===");
       console.error("Cart POST error:", error?.response?.data || error.message);
-      console.error("Full error object:", error);
-      toast.error("Only customer accounts can perform this action. If you are an admin or vendor, please create a customer account first.");
+
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error.message;
+
+      console.log("-----------Message---------")
+      console.log(message)
+
+      if (message.includes("stock")) {
+        toast.error("Cannot add more than available stock.");
+      } else if (message.includes("customer")) {
+        toast.error("Only customer accounts can perform this action. If you are an admin or vendor, please create a customer account first.");
+      } else if (message.includes("items")) {
+        toast.error(message);
+      } else {
+        toast.error(message)
+      }
     } finally {
       console.log("Removing product ID from addingItems set:", product.id);
       // Remove item from adding set
