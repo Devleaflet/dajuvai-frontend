@@ -59,7 +59,7 @@
   min-height: 100%;
   grid-area: products;
   align-self: stretch;
-  justify-content: center;
+  justify-items: start;
 }
 
 .filter-button {

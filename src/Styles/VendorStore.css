@@ -288,6 +288,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 1rem;
+  justify-items: start;
   /* bigger gap */
   /* margin: 2.2rem !important; */
 }
