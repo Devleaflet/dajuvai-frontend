@@ -36,12 +36,10 @@
   min-width: 100px;
   flex-shrink: 0; /* Prevent shrinking */
   cursor: pointer;
-  transition: transform 0.2s ease-in-out;
+  /* Removed transition to prevent scaling effects */
 }
 
-.top-category__card:hover:not(.top-category__card--skeleton) {
-  transform: scale(1.05);
-}
+/* Removed scale hover effect to prevent conflicts with CategorySlider */
 
 /* Skeleton specific card styling */
 .top-category__card--skeleton {

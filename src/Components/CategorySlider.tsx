@@ -55,8 +55,12 @@ const CategorySlider: React.FC = () => {
   }, [categories])
 
   useEffect(() => {
+    console.log('🔄 CategorySlider: categoryData changed:', categoryData)
+    console.log('🔄 CategorySlider: updateCategoriesWithSubcategories available:', !!updateCategoriesWithSubcategories)
     if (updateCategoriesWithSubcategories && categoryData) {
+      console.log('📊 CategorySlider: Processing category data...')
       updateCategoriesWithSubcategories(categoryData).then(() => {
+        console.log('✅ CategorySlider: Categories ready!')
         setIsCategoriesReady(true)
       })
     }
@@ -64,6 +68,14 @@ const CategorySlider: React.FC = () => {
 
   // Show loading state if either fetching or processing categories
   const showLoading = isCategoryLoading || !isCategoriesReady
+  
+  console.log('🎯 CategorySlider render state:', {
+    isCategoryLoading,
+    isCategoriesReady,
+    showLoading,
+    categoriesCount: categories.length,
+    totalSubcategories: categories.reduce((total, cat) => total + cat.items.length, 0)
+  })
 
   // Prefetch categories on component mount
   useEffect(() => {
@@ -76,6 +88,16 @@ const CategorySlider: React.FC = () => {
     }
     prefetchCategories()
   }, [])
+
+  // Check scroll position when categories are loaded
+  useEffect(() => {
+    if (!showLoading && categories.length > 0) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        checkScroll()
+      }, 100)
+    }
+  }, [showLoading, categories.length])
 
   // Enhanced category click handler to force navigation refresh
   const handleCategoryClick = (mainCategoryId: string, itemId: string) => {
@@ -252,30 +274,35 @@ const CategorySlider: React.FC = () => {
         {showLoading
           ? // Show skeleton loading state with consistent count
             Array.from({ length: 8 }).map((_, index) => <CategorySkeleton key={`skeleton-${index}`} />)
-          : categories.map((maincategory: Category) => (
+          : categories.length === 0 
+            ? <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>No categories available</div>
+            : categories.map((maincategory: Category) => (
               <React.Fragment key={maincategory.id}>
-                {maincategory.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="top-category__card"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => handleCategoryClick(maincategory.id, item.id)}
-                  >
-                    <div className="top-category__image-container">
-                      <img
-                        src={item.image || keyboard}
-                        alt={item.name}
-                        className="top-category__image"
-                        loading="lazy"
-                        decoding="async"
-                        width="200"
-                        height="200"
-                        draggable={false}
-                      />
+                {maincategory.items.map((item) => {
+                  console.log('🏷️ Rendering subcategory:', item.name, 'from category:', maincategory.name)
+                  return (
+                    <div
+                      key={item.id}
+                      className="top-category__card"
+                      style={{ cursor: "pointer" }}
+                      onClick={() => handleCategoryClick(maincategory.id, item.id)}
+                    >
+                      <div className="top-category__image-container">
+                        <img
+                          src={item.image || keyboard}
+                          alt={item.name}
+                          className="top-category__image"
+                          loading="lazy"
+                          decoding="async"
+                          width="200"
+                          height="200"
+                          draggable={false}
+                        />
+                      </div>
+                      <p className="top-category__name">{item.name}</p>
                     </div>
-                    <p className="top-category__name">{item.name}</p>
-                  </div>
-                ))}
+                  )
+                })}
               </React.Fragment>
             ))}
       </div>

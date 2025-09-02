@@ -1,23 +1,27 @@
 .top-category {
   position: relative;
-  width: 85%;
+  width: 100%;
   overflow: hidden;
-  margin-top: 20rem;
+  margin: 2rem auto;
   max-width: 1800px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Slider Container */
 .top-category__slider-container {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   overflow-x: auto;
   scroll-behavior: smooth;
   min-height: 120px;
-  width:85%;
-  max-width: 1800px;
+  width: 100%;
+  max-width: 1400px;
   cursor: grab;
   user-select: none;
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  padding: 0 2rem;
 }
 
 .top-category__slider-container:active {
@@ -42,12 +46,7 @@
   max-width: 150px;
   flex-shrink: 0;
   cursor: pointer;
-  transition: transform 0.2s ease-in-out;
   user-select: none;
-}
-
-.top-category__card:hover:not(.top-category__card--skeleton) {
-  transform: scale(1.05);
 }
 
 /* Skeleton specific card styling */
@@ -68,9 +67,12 @@
   flex-shrink: 0;
   border: 3px solid rgb(229, 150, 2);
   border-radius: 50%;
-  box-shadow: 0 0 12px rgba(255,1   65,0,0.6); 
-  
+  box-shadow: 0 0 12px rgba(255, 165, 0, 0.6);
+  transition: box-shadow 0.2s ease;
+}
 
+.top-category__card:hover:not(.top-category__card--skeleton) .top-category__image-container {
+  box-shadow: 0 0 12px rgba(255, 165, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .top-category__image {
@@ -111,7 +113,7 @@
 /* Navigation Buttons */
 .top-category__nav {
   position: absolute;
-  top: 60%;
+  top: 17%;
   background-color: rgb(255, 255, 255);
   box-shadow: 0px 0px 5px 4px rgba(0, 0, 0, 0.2);
   border: none;
@@ -163,9 +165,26 @@
 }
 
 /* Responsive Styles */
-@media (max-width: 1100px) {
+@media (max-width: 767px) {
   .top-category__nav {
     display: none;
+  }
+  
+  .top-category {
+    width: 100%;
+    margin: 1rem 0;
+    max-width: none;
+  }
+  
+  .top-category__slider-container {
+    gap: 0.25rem;
+    padding: 0 0.5rem;
+    max-width: none;
+    width: 100%;
+  }
+  
+  .top-category__card {
+    max-width: 120px;
   }
 }
 
@@ -194,7 +213,7 @@
 
 @media (min-width: 1100px) {
   .top-category__slider-container {
-    gap: 1.5rem;
+    gap: 0.75rem;
     min-height: 140px;
   }
 
