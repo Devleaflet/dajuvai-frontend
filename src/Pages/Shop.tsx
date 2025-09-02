@@ -1042,7 +1042,7 @@ const Shop: React.FC = () => {
                 ref={sidebarRef}
               >
                 <div className="filter-sidebar__header">
-                  <h3>Filters</h3>
+                 <h3>Filter</h3>
                   <button className="filter-sidebar__close" onClick={toggleSidebar} aria-label="Close filters">
                     ×
                   </button>
