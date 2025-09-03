@@ -17,6 +17,10 @@
   padding-bottom: 60px;
 }
 
+/* .shop-title{
+  max-width: 500px;
+  border: 1px solid black;
+} */
 .shop-header {
   display: flex;
   justify-content: space-between;
@@ -405,7 +409,7 @@
 }
 
 .search-bar-container {
-  width: 100%;
+  width: 65%;
   box-sizing: border-box;
   position: relative;
   z-index: 5;
