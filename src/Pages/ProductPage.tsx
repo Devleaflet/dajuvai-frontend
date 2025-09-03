@@ -897,136 +897,201 @@ const ProductPage = () => {
 							{product.hasVariants &&
 								product.variants &&
 								product.variants.length > 1 && (
-									<div className="product-options">
+									<div
+										className="product-options"
+										style={{
+											display: "flex",
+											justifyContent: "start",
+											flexDirection: "column",
+										}}
+									>
 										<h4 className="product-options__label text-lg font-semibold mb-2">
 											Available Options:
 										</h4>
 										<div className="product-options__variants p-2 rounded overflow-x-auto">
-											<div className="flex gap-2 items-center mb-4">
-												<h5 className="text-md font-medium text-black mr-2 whitespace-nowrap">
-													COLOR
-												</h5>
-												{uniqueColors.map((color) => {
-													const availableSizes = colorSizeMap[color];
-													const isSelected =
-														selectedColor.toLowerCase() === color;
-													// Enable if at least one variant for this color and selected size is in stock
-													const isEnabled = availableSizes.some((size) =>
-														product.variants.some(
-															(v) =>
-																v.attributes?.color?.toLowerCase() === color &&
-																v.attributes?.size === size &&
-																v.stock > 0
-														)
-													);
-													// Out of stock if all variants for this color are out of stock
-													const isOutOfStock = !isEnabled;
+											{(() => {
+												// Dynamically build attribute options from variants
+												const attributeOptions: Record<
+													string,
+													Set<string>
+												> = {};
+												product.variants.forEach((variant: any) => {
+													if (variant.attributes) {
+														Object.entries(variant.attributes).forEach(
+															([key, value]) => {
+																if (!attributeOptions[key])
+																	attributeOptions[key] = new Set();
+																attributeOptions[key].add(String(value));
+															}
+														);
+													}
+												});
+												// Order: color, size, length, then others
+												let attributeTypes = Object.keys(attributeOptions);
+												const order = ["color", "size", "length"];
+												const orderedTypes = [
+													...order.filter((t) => attributeTypes.includes(t)),
+													...attributeTypes
+														.filter((t) => !order.includes(t))
+														.sort(),
+												];
+												// Build selected attributes from selectedVariant
+												const selectedAttributes = orderedTypes.reduce(
+													(acc, key) => {
+														acc[key] =
+															(selectedVariant?.attributes &&
+																selectedVariant.attributes[key]) ||
+															"";
+														return acc;
+													},
+													{} as Record<string, string>
+												);
+												return orderedTypes.map((attrType, idx) => {
+													// Special logic for color buttons
+													if (attrType === "color") {
+														return (
+															<div
+																className="flex gap-2 mb-2"
+																key={attrType}
+															>
+																<span
+																	className="text-md font-medium text-black mr-2 whitespace-nowrap"
+																	style={{
+																		padding: "10px 3px",
+																		fontWeight: "600",
+																	}}
+																>
+																	{attrType.toUpperCase()}
+																</span>
+																<div className={`product-options__variant-row`}>
+																	{[...attributeOptions[attrType]].map(
+																		(optionValue) => {
+																			// Is selected color
+																			const isSelected =
+																				selectedAttributes[attrType] ===
+																				optionValue;
+																			// Is out of stock: only if ALL variants for this color are out of stock
+																			const hasStock = product.variants.some(
+																				(v) =>
+																					v.attributes?.color === optionValue &&
+																					v.stock > 0
+																			);
+																			const isOutOfStock = !hasStock;
+																			return (
+																				<button
+																					key={optionValue}
+																					className={`product-options__button${
+																						isSelected
+																							? " product-options__button--active"
+																							: ""
+																					}${
+																						isOutOfStock
+																							? " product-options__button--disabled"
+																							: ""
+																					}`}
+																					onClick={() => {
+																						if (isOutOfStock) {
+																							toast(
+																								"This color is out of stock."
+																							);
+																							return;
+																						}
+																						// Reset all other attribute selections except color
+																						setSelectedSize("");
+																						setQuantity(1);
+																						// Find first available variant for this color
+																						const variant =
+																							product.variants.find(
+																								(v) =>
+																									v.attributes?.color ===
+																										optionValue && v.stock > 0
+																							);
+																						if (variant) {
+																							handleVariantSelect(variant);
+																						}
+																					}}
+																					disabled={isOutOfStock}
+																				>
+																					{optionValue}
+																				</button>
+																			);
+																		}
+																	)}
+																</div>
+															</div>
+														);
+													}
+													// Default logic for other attributes
 													return (
-														<button
-															key={color}
-															className={`product-options__button${
-																isSelected
-																	? " product-options__button--active"
-																	: ""
-															}${
-																isOutOfStock
-																	? " product-options__button--disabled"
-																	: ""
-															}`}
-															onClick={() => {
-																if (isOutOfStock) {
-																	toast("This color is out of stock.");
-																	return;
-																}
-																setSelectedColor(color);
-																if (!availableSizes.includes(selectedSize)) {
-																	setSelectedSize(""); // Do not auto-select an out-of-stock size
-																}
-																// Only select variant if both color and size are in stock
-																const variant = product.variants.find(
-																	(v) =>
-																		v.attributes?.color?.toLowerCase() ===
-																			color &&
-																		v.attributes?.size === selectedSize &&
-																		v.stock > 0
-																);
-																if (variant) {
-																	setQuantity(1);
-																	handleVariantSelect(variant);
-																}
-															}}
-															disabled={isOutOfStock}
+														<div
+															className="flex gap-2 mb-2"
+															key={attrType}
 														>
-															{color.toUpperCase()}
-														</button>
+															<span
+																className="text-md font-medium text-black mr-2 whitespace-nowrap"
+																style={{
+																	padding: "10px 3px",
+																	fontWeight: "600",
+																}}
+															>
+																{attrType.toUpperCase()}
+															</span>
+															<div className={`product-options__variant-row`}>
+																{[...attributeOptions[attrType]].map(
+																	(optionValue) => {
+																		const isSelected =
+																			selectedAttributes[attrType] ===
+																			optionValue;
+																		// Check if any variant exists with all selected attributes + this one, and is in stock
+																		const selection = {
+																			...selectedAttributes,
+																			[attrType]: optionValue,
+																		};
+																		const variant = product.variants.find(
+																			(v) => {
+																				return (
+																					Object.entries(selection).every(
+																						([k, val]) =>
+																							v.attributes?.[k] === val
+																					) && v.stock > 0
+																				);
+																			}
+																		);
+																		const isOutOfStock = !variant;
+																		return (
+																			<button
+																				key={optionValue}
+																				className={`product-options__button${
+																					isSelected
+																						? " product-options__button--active"
+																						: ""
+																				}${
+																					isOutOfStock
+																						? " product-options__button--disabled"
+																						: ""
+																				}`}
+																				onClick={() => {
+																					if (isOutOfStock) {
+																						toast(
+																							`This ${attrType} is out of stock.`
+																						);
+																						return;
+																					}
+																					setQuantity(1);
+																					handleVariantSelect(variant);
+																				}}
+																				disabled={isOutOfStock}
+																			>
+																				{optionValue}
+																			</button>
+																		);
+																	}
+																)}
+															</div>
+														</div>
 													);
-												})}
-											</div>
-											<div className="flex gap-2 items-center">
-												<h5 className="text-md font-medium text-black mr-2 whitespace-nowrap">
-													SIZE
-												</h5>
-												{sortedSizes.map((size) => {
-													const availableColors = sizeColorMap[size];
-													const isSelected = selectedSize === size;
-													// Only show sizes available for selected color
-													if (
-														selectedColor &&
-														!availableColors.includes(
-															selectedColor.toLowerCase()
-														)
-													)
-														return null;
-													// Disable if selected color+size is out of stock
-													const isOutOfStock = !product.variants.some(
-														(v) =>
-															v.attributes?.size === size &&
-															v.attributes?.color?.toLowerCase() ===
-																selectedColor.toLowerCase() &&
-															v.stock > 0
-													);
-													return (
-														<button
-															key={size}
-															className={`product-options__button${
-																isSelected
-																	? " product-options__button--active"
-																	: ""
-															}${
-																isOutOfStock
-																	? " product-options__button--disabled"
-																	: ""
-															}`}
-															onClick={() => {
-																if (isOutOfStock) {
-																	toast("This size is out of stock.");
-																	return;
-																}
-																setSelectedSize(size);
-																// Find variant for color+size
-																const variant = product.variants.find(
-																	(v) =>
-																		v.attributes?.size === size &&
-																		v.attributes?.color?.toLowerCase() ===
-																			selectedColor.toLowerCase() &&
-																		v.stock > 0
-																);
-																if (variant) {
-																	setQuantity(1);
-																	handleVariantSelect(variant);
-																} else {
-																	toast(
-																		"No available variant for this size and selected color."
-																	);
-																}
-															}}
-															disabled={isOutOfStock}
-														>
-															{size}
-														</button>
-													);
-												})}
-											</div>
+												});
+											})()}
 										</div>
 									</div>
 								)}
