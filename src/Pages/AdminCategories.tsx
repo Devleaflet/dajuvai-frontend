@@ -1213,7 +1213,9 @@ const AdminCategories: React.FC = () => {
                 <div className="admin-categories__homepage-selection">
                   {categories.map((category) => (
                     <label key={category.id} className="admin-categories__checkbox-label">
-                      <input
+                      <input style={{
+                        height: "fit-content"
+                      }}
                         type="checkbox"
                         checked={homepageCategories.includes(category.id)}
                         onChange={() => handleHomepageCategoryChange(category.id)}
