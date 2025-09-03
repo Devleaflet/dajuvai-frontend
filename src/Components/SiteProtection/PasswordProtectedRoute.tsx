@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 const PASSWORD = "this is password";
 
 const PasswordProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    const isLocal = true;  // set true in development
+    const isLocal = false;  // set true in development
 
     // If local, just render without password
     if (isLocal) {
