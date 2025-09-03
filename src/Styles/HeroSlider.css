@@ -10,7 +10,7 @@
   user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
-  touch-action: pan-y;
+  touch-action: pan-x;
 }
 
 @media (max-width: 399px) {

@@ -174,15 +174,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
       )}
 
       <div className="product-carousel__container">
-        {showScrollButtons && !isLoading && (
-          <div
-            className="product-carousel__scroll-button product-carousel__scroll-button--left"
-            onClick={() => scroll("left")}
-            aria-label="Scroll left"
-          >
-            <IoIosArrowDropleftCircle />
-          </div>
-        )}
+        {/* Left arrow button removed */}
 
         <div
           className={`product-carousel__products ${isDragging ? "product-carousel__products--dragging" : ""}`}
@@ -204,15 +196,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
             ))}
         </div>
 
-        {showScrollButtons && !isLoading && (
-          <div
-            className="product-carousel__scroll-button product-carousel__scroll-button--right"
-            onClick={() => scroll("right")}
-            aria-label="Scroll right"
-          >
-            <IoIosArrowDroprightCircle />
-          </div>
-        )}
+        {/* Right arrow button removed */}
       </div>
     </section>
   );

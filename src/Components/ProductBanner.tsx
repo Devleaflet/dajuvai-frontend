@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -49,6 +49,10 @@ const ProductBanner: React.FC = () => {
   const [activeSlide, setActiveSlide] = useState<number>(0);
   const [touchStart, setTouchStart] = useState<number>(0);
   const [touchEnd, setTouchEnd] = useState<number>(0);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [startX, setStartX] = useState<number>(0);
+  const [translateX, setTranslateX] = useState<number>(0);
+  const sliderRef = useRef<HTMLDivElement>(null);
 
   const { data: slides = [], isLoading, error } = useQuery<Slide[], Error>({
     queryKey: ['productBanners'],
@@ -74,17 +78,69 @@ const ProductBanner: React.FC = () => {
 
   const goToSlide = (index: number): void => {
     setActiveSlide(index);
+    setTranslateX(0);
   };
 
   const goToPrevSlide = (): void => {
     setActiveSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+    setTranslateX(0);
   };
 
   const goToNextSlide = (): void => {
     setActiveSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+    setTranslateX(0);
+  };
+
+  const handleDragStart = (clientX: number): void => {
+    setIsDragging(true);
+    setStartX(clientX);
+    setTranslateX(0);
+  };
+
+  const handleDragMove = (clientX: number): void => {
+    if (!isDragging) return;
+    const currentDrag = clientX - startX;
+    const maxDrag = sliderRef.current ? sliderRef.current.offsetWidth / 3 : 200;
+    setTranslateX(Math.max(-maxDrag, Math.min(maxDrag, currentDrag)));
+  };
+
+  const handleDragEnd = (): void => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    const swipeThreshold = sliderRef.current ? sliderRef.current.offsetWidth / 4 : 100;
+
+    if (Math.abs(translateX) > swipeThreshold) {
+      if (translateX > 0) {
+        goToPrevSlide();
+      } else {
+        goToNextSlide();
+      }
+    } else {
+      setTranslateX(0); // Snap back
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
+    if (e.button !== 0) return; // Only left-click
+    handleDragStart(e.clientX);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
+    handleDragMove(e.clientX);
+  };
+
+  const handleMouseUp = (): void => {
+    handleDragEnd();
+  };
+
+  const handleMouseLeave = (): void => {
+    if (isDragging) {
+      handleDragEnd();
+    }
   };
 
   const handleBannerClick = (slide: Slide) => {
+    if (Math.abs(translateX) > 5) return; // Prevent click during drag
     console.log('🎯 ProductBanner clicked:', slide);
     if (slide && slide.name) {
       // Navigate to shop page with banner name as search parameter
@@ -115,20 +171,15 @@ const ProductBanner: React.FC = () => {
   };
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>): void => {
-    setTouchStart(e.targetTouches[0].clientX);
+    handleDragStart(e.touches[0].clientX);
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>): void => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    handleDragMove(e.touches[0].clientX);
   };
 
   const handleTouchEnd = (): void => {
-    if (touchStart - touchEnd > 50) {
-      goToNextSlide();
-    }
-    if (touchStart - touchEnd < -50) {
-      goToPrevSlide();
-    }
+    handleDragEnd();
   };
 
   if (isLoading) return <SliderSkeleton />;
@@ -136,34 +187,40 @@ const ProductBanner: React.FC = () => {
   if (slides.length === 0) return <div>No product banners available</div>;
 
   return (
-    <div className="hero-slider">
+    <div 
+      className="hero-slider"
+      ref={sliderRef}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+    >
       <div 
         className="hero-slider__track"
-        style={{ transform: `translateX(-${activeSlide * 100}%)` }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        style={{
+          transform: `translateX(calc(-${activeSlide * 100}% + ${translateX}px))`,
+          transition: isDragging ? 'none' : 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
       >
         {slides.map((slide) => (
           <div key={slide.id} className="hero-slider__slide">
             <img
-  src={window.innerWidth < 768 ? slide.mobileImage || slide.desktopImage : slide.desktopImage}
-  alt={slide.name}
-  className="hero-slider__image"
-  loading="lazy"
-  onClick={() => handleBannerClick(slide)}
-  style={{ cursor: 'pointer' }}
-/>
+              src={window.innerWidth < 768 ? slide.mobileImage || slide.desktopImage : slide.desktopImage}
+              alt={slide.name}
+              className="hero-slider__image"
+              loading="lazy"
+              onClick={() => handleBannerClick(slide)}
+              draggable={false}
+            />
           </div>
         ))}
       </div>
 
-      <button className="hero-slider__nav-button hero-slider__nav-button--prev" onClick={goToPrevSlide}>
-        <ArrowLeft size={24} color="white" />
-      </button>
-      <button className="hero-slider__nav-button hero-slider__nav-button--next" onClick={goToNextSlide}>
-        <ArrowRight size={24} color="white" />
-      </button>
+      {/* Navigation arrow buttons removed */}
 
       <div className="hero-slider__indicators">
         {slides.map((_, index) => (
@@ -178,4 +235,4 @@ const ProductBanner: React.FC = () => {
   );
 };
 
-export default ProductBanner; 
+export default ProductBanner;

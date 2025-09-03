@@ -251,12 +251,7 @@ const CategorySlider: React.FC = () => {
 
   return (
     <div className="top-category">
-      {/* Show arrows only on desktop and when not loading */}
-      {isDesktop && showPrev && !showLoading && (
-        <button className="top-category__nav top-category__nav--prev" onClick={() => scroll("left")}>
-          <ArrowLeft size={40} />
-        </button>
-      )}
+      {/* Arrow buttons removed */}
 
       <div 
         className="top-category__slider-container" 
@@ -307,11 +302,7 @@ const CategorySlider: React.FC = () => {
             ))}
       </div>
 
-      {isDesktop && showNext && !showLoading && (
-        <button className="top-category__nav top-category__nav--next" onClick={() => scroll("right")}>
-          <ArrowRight size={40} />
-        </button>
-      )}
+      {/* Arrow buttons removed */}
     </div>
   )
 }

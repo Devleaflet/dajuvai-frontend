@@ -216,20 +216,7 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
                 draggable={false}
               />
 
-              <button
-                className="hero-slider__nav-button hero-slider__nav-button--prev"
-                onClick={goToPrevSlide}
-                disabled={slides.length <= 1}
-              >
-                <ArrowLeft size={24} color="white" />
-              </button>
-              <button
-                className="hero-slider__nav-button hero-slider__nav-button--next"
-                onClick={goToNextSlide}
-                disabled={slides.length <= 1}
-              >
-                <ArrowRight size={24} color="white" />
-              </button>
+              {/* Navigation arrow buttons removed */}
             </div>
           </div>
         ))}
