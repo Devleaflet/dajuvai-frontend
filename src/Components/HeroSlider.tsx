@@ -1,4 +1,4 @@
-import React, { useState, useRef , useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -208,13 +208,13 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
           <div key={slide.id} className="hero-slider__slide">
             <div className="hero-slider__image-container">
               <img
-  src={window.innerWidth < 768 ? slide.mobileImage || slide.desktopImage : slide.desktopImage}
-  alt={slide.name}
-  className="hero-slider__image"
-  loading="lazy"
-  onClick={() => handleImageClick(slide)}
-  draggable={false}
-/>
+                src={window.innerWidth < 768 ? slide.mobileImage || slide.desktopImage : slide.desktopImage}
+                alt={slide.name}
+                className="hero-slider__image"
+                loading="lazy"
+                onClick={() => handleImageClick(slide)}
+                draggable={false}
+              />
 
               <button
                 className="hero-slider__nav-button hero-slider__nav-button--prev"
@@ -241,9 +241,8 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className={`hero-slider__indicator ${
-                activeSlide === index ? 'hero-slider__indicator--active' : ''
-              }`}
+              className={`hero-slider__indicator ${activeSlide === index ? 'hero-slider__indicator--active' : ''
+                }`}
             />
           ))}
         </div>

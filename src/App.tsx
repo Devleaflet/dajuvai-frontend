@@ -95,7 +95,8 @@ const ProtectedVendorRoute = ({ children }: { children: ReactElement }) => {
 };
 
 // const SHOW_COMING_SOON = true;
-const isAuthenticated = localStorage.getItem("authenticated") === "true";
+const isAuthenticated = localStorage.getItem("authenticated") === "true";  // comment this line of code and 
+// const isAuthenticated = true; // uncomment this line of code in local 
 
 
 function App() {

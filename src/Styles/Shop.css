@@ -57,8 +57,8 @@
   padding: 10px 0;
   align-content: start;
   grid-auto-rows: minmax(340px, auto);
-  min-height: 100%;
-  align-self: stretch;
+  height: fit fit-content;
+  /* align-self: stretch; */
   justify-items: start;
 }
 
