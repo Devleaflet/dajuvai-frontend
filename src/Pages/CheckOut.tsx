@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import CryptoJS from 'crypto-js';
 import '../Styles/CheckOut.css';
 import { useCart } from '../context/CartContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Navbar from '../Components/Navbar';
 import Footer from '../Components/Footer';
 import logo from '../assets/logo.webp';
@@ -1369,7 +1369,7 @@ const Checkout: React.FC = () => {
                 required
                 style={{ boxShadow: 'none' }}
               />
-              <p>I have read and agree to the website terms and conditions *</p>
+              <p>I have read and agree to the website <Link to="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#ff7e5f', textDecoration: 'underline' }}>terms and conditions</Link> *</p>
             </label>
             <button
               className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''}`}
