@@ -123,6 +123,7 @@
   -webkit-user-drag: none;
   transition: transform 0.4s ease;
   padding: 5px;
+  pointer-events: none;
 }
 
 .product1__rating {

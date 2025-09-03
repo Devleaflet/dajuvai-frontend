@@ -686,33 +686,32 @@ margin-bottom: 24px;
 }
 
 /* Button Styles */
-.btn {
+.btn-edit--primary {
+  display: flex;
+  justify-content: center;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
   font-size: 16px;
-  padding: 12px 24px;
+  padding: 12px;
   transition: all 0.3s ease;
   margin-top: 20px;
-  padding-left: 10px;
-  margin-left: 10px;
   margin-bottom: 10px;
 }
 
-.btn--primary {
+.btn-edit--primary {
   background-color: #f97316;
   color: #ffffff;
   padding-left: 10px;
 }
 
-.btn--primary:hover {
+.btn-edit--primary:hover {
   background-color: #ea580c;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
 }
 
-.btn--primary:disabled {
+.btn-edit--primary:disabled {
   background-color: #d1d5db;
   cursor: not-allowed;
   transform: none;
@@ -734,21 +733,25 @@ margin-bottom: 24px;
   gap: 16px;
 }
 
-.btn btn--primary {
+.btn-edit btn-edit--primary {
   padding-left: 10px;
 }
 
-.btn btn--secondary {
+.btn-edit btn-edit--secondary {
   padding-left: 10px;
 }
 
-.btn--secondary {
+.btn-edit--secondary {
   background-color: transparent;
   color: #f97316;
   border: 2px solid #f97316;
+  padding:10px;
+  border-radius: 8px; 
+  margin-top: 20px;
+  margin-bottom: 10px;
 }
 
-.btn--secondary:hover {
+.btn-edit--secondary:hover {
   background-color: #fff7ed;
   color: #ea580c;
 }
@@ -759,10 +762,8 @@ margin-bottom: 24px;
   border-radius: 16px;
   padding: 20px;
   min-width: 300px;
-  max-width: 500px;
   margin: 0 auto;
   position: relative;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   animation: popupSlideIn 0.3s ease-out;
 }
 
@@ -820,10 +821,10 @@ margin-bottom: 24px;
 }
 
 /* Popup Footer */
-.popup-footer {
+/* .popup-footer {
   display: flex;
   justify-content: flex-end;
-}
+} */
 
 .popup-close-btn {
   background-color: transparent;
@@ -932,7 +933,7 @@ margin-bottom: 24px;
   }
 
   .profile-sidebar__button,
-  .btn,
+  .btn-edit,
   .profile-sidebar__button--primary,
   .profile-sidebar__button--secondary {
     width: 90% !important;
@@ -983,7 +984,7 @@ margin-bottom: 24px;
     padding: 10px;
   }
 
-  .btn, .profile-sidebar__button {
+  .btn-edit, .profile-sidebar__button {
     min-width: 44px;
     min-height: 44px;
     font-size: 14px;
@@ -998,7 +999,7 @@ margin-bottom: 24px;
     margin: 16px 0;
   }
 
-  .profile-form__actions .btn {
+  .profile-form__actions .btn-edit {
     width: 100%;
     max-width: 280px;
     margin: 4px 0;
@@ -1274,7 +1275,7 @@ margin-bottom: 24px;
     padding: 8px;
   }
 
-  .btn {
+  .btn-edit {
     font-size: 13px;
     padding: 10px 16px;
   }
