@@ -619,10 +619,10 @@ html {
 	padding: 0 1.5rem;
 }
 
-.recommended-products {
-	background: white;
-	border-radius: 0.5rem;
-	padding: 1.5rem;
+/* .recommended-products {
+  background: white;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
 }
 
 .recommended-products__title {
@@ -686,11 +686,11 @@ html {
 }
 
 .recommended-products__price {
-	font-size: 1rem;
-	font-weight: 700;
-	color: #f26925;
-	margin: 0;
-}
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f26925;
+  margin: 0;
+} */
 
 .toast {
 	position: fixed;
@@ -883,7 +883,6 @@ html {
 	.recommended-products {
 		padding: 1.5rem;
 		border-radius: 1rem;
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 	}
 
 	.recommended-products__title {

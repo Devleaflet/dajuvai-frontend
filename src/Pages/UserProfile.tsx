@@ -15,9 +15,9 @@ interface UserDetails {
   id?: number;
   fullName: string;
   username: string;
-  email: string;
-  provider: string;
-  role: string;
+  email?: string;
+  provider?: string;
+  role?: string;
   isVerified?: boolean;
   phoneNumber: string;
   address: {
@@ -681,11 +681,11 @@ const handleSave = async () => {
         {/* Action Buttons */}
         {isEditing ? (
           <div className="profile-form__actions">
-            <button className="btn btn--primary" onClick={handleSave} disabled={isLoading.saveUser}>
+            <button className="btn-edit--primary" onClick={handleSave} disabled={isLoading.saveUser}>
               {isLoading.saveUser ? "Saving..." : "Save Changes"}
             </button>
             <button
-              className="btn btn--secondary"
+              className="btn-edit--secondary"
               onClick={() => {
                 setUserDetails(originalDetails);
                 setIsEditing(false);
@@ -695,7 +695,7 @@ const handleSave = async () => {
             </button>
           </div>
         ) : (
-          <button className="btn btn--primary" onClick={() => setIsEditing(true)}>
+          <button className="btn-edit--primary" onClick={() => setIsEditing(true)}>
             Edit Profile
           </button>
         )}
@@ -1021,7 +1021,7 @@ const handleSave = async () => {
         onClose={() =>{ setPopup(null)
           window.location.reload()
         }}
-        contentStyle={{ borderRadius: "12px", maxWidth: "400px", background: "transparent", padding: 0, border: "none", boxShadow: "0 8px 24px rgba(0, 0, 0, 0.15)" }}
+        contentStyle={{ borderRadius: "12px", maxWidth: "400px", background: "transparent", padding: 0, border: "none" }}
         overlayStyle={{ backgroundColor: "rgba(0, 0, 0, 0.6)", backdropFilter: "blur(4px)" }}
       >
         <div className={`popup-content ${popup?.type}`}>
@@ -1067,7 +1067,7 @@ const handleSave = async () => {
                   {userDetails?.username?.[0]?.toUpperCase() || "?"}
                 </div>
                 {(["details", "credentials", "orders"] as Tab[]).map((tab) => {
-                  if (tab === "credentials" && user?.provider === "google") return null; // hide tab
+                  if (tab === "credentials" && user?.provider ==="google") return null; 
                   return (
                     <button
                       key={tab}
@@ -1089,7 +1089,7 @@ const handleSave = async () => {
           </div>
         </div>
       </div>
-      <Footer />
+      {!popup &&<Footer />}
     </>
   );
 };

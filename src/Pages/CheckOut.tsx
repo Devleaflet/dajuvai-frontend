@@ -348,6 +348,170 @@ const Checkout: React.FC = () => {
     }
   }, [user?.id, token]);
 
+  // const handlePlaceOrder = async () => {
+  //   // Validate all fields
+  //   const newErrors: Record<string, string> = {};
+  //   const newTouched: Record<string, boolean> = {};
+  //   let isValid = true;
+
+  //   Object.keys(billingDetails).forEach(field => {
+  //     const error = validateField(field, billingDetails[field as keyof typeof billingDetails]);
+  //     newErrors[field] = error;
+  //     newTouched[field] = true;
+  //     if (error) isValid = false;
+  //   });
+
+  //   setErrors(prev => ({ ...prev, ...newErrors }));
+  //   setTouched(prev => ({ ...prev, ...newTouched }));
+
+  //   if (!isValid) {
+  //     setAlertMessage('Please correct the errors in the form before submitting.');
+  //     setShowAlert(true);
+  //     setIsPlacingOrder(false);
+  //     return;
+  //   }
+
+  //   if (!termsAgreed) {
+  //     setAlertMessage('Please agree to the terms and conditions');
+  //     setShowAlert(true);
+  //     setIsPlacingOrder(false);
+  //     return;
+  //   }
+
+  //   if (cartItems.length === 0) {
+  //     setAlertMessage('Your cart is empty');
+  //     setShowAlert(true);
+  //     setIsPlacingOrder(false);
+  //     return;
+  //   }
+
+  //   setIsPlacingOrder(true);
+
+  //   try {
+  //     let orderData;
+
+  //     if (location.state?.buyNow && cartItems.length === 1) {
+  //       const buyNowItem = cartItems[0];
+  //       const finalQuantity = buyNowQuantities[buyNowItem.id] || buyNowItem.quantity;
+
+  //       orderData = {
+  //         isBuyNow: true,
+  //         productId: buyNowItem.id,
+  //         variantId: buyNowItem.variantId || undefined,
+  //         quantity: finalQuantity,
+  //         shippingAddress: {
+  //           province: billingDetails.province,
+  //           city: billingDetails.city,
+  //           district: billingDetails.district,
+  //           streetAddress: billingDetails.streetAddress,
+  //           landmark: billingDetails.landmark || undefined,
+  //         },
+  //         paymentMethod: selectedPaymentMethod,
+  //         phoneNumber: billingDetails.phoneNumber,
+  //         fullName: billingDetails.fullName,
+  //       };
+
+  //       if (!orderData.variantId) {
+  //         delete orderData.variantId;
+  //       }
+  //     } else {
+  //       const orderItems = cartItems.map(item => ({
+  //         productId: item.id,
+  //         quantity: item.quantity,
+  //         variantId: item.variantId || undefined,
+  //       }));
+
+  //       orderData = {
+  //         fullName: billingDetails.fullName,
+  //         shippingAddress: {
+  //           province: billingDetails.province,
+  //           city: billingDetails.city,
+  //           district: billingDetails.district,
+  //           streetAddress: billingDetails.streetAddress,
+  //           landmark: billingDetails.landmark || undefined,
+  //         },
+  //         paymentMethod: selectedPaymentMethod,
+  //         phoneNumber: billingDetails.phoneNumber,
+  //         items: orderItems,
+  //         promoCodeId: appliedPromoCode?.id || undefined,
+  //       };
+  //     }
+
+  //     console.log('Sending order data:', JSON.stringify(orderData, null, 2));
+
+  //     const headers: Record<string, string> = {
+  //       'Content-Type': 'application/json',
+  //     };
+  //     if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  //     const response = await fetch(`${API_BASE_URL}/api/order`, {
+  //       method: 'POST',
+  //       headers,
+  //       body: JSON.stringify(orderData),
+  //       credentials: 'include',
+  //     });
+
+  //     const result = await response.json();
+  //     console.log('Server response:', result);
+
+  //     if (result.success) {
+  //       if (selectedPaymentMethod === 'CASH_ON_DELIVERY') {
+  //         setAlertMessage('Your order has been placed. Do you want to see full details?');
+  //         setShowAlert(true);
+  //         setAlertMessage('Order placed successfully!');
+  //         navigate('/user-profile', {
+  //           state: { activeTab: 'orders' },
+  //         });
+  //         setShowAlert(true);
+  //       } else if (selectedPaymentMethod === 'ESEWA') {
+  //         const freshTransactionUuid = uuidv4();
+  //         const amount = finalTotal.toString();
+  //         const hashString = `total_amount=${amount},transaction_uuid=${freshTransactionUuid},product_code=EPAYTEST`;
+  //         const hash = CryptoJS.HmacSHA256(hashString, '8gBm/:&EnhH.1/q');
+  //         const signature = CryptoJS.enc.Base64.stringify(hash);
+
+  //         const updatedFormData = {
+  //           ...formData,
+  //           amount: amount,
+  //           total_amount: amount,
+  //           transaction_uuid: freshTransactionUuid,
+  //           signature: signature,
+  //         };
+
+  //         const form = document.getElementById('esewa-form') as HTMLFormElement;
+  //         if (form) {
+  //           (form.querySelector('input[name="amount"]') as HTMLInputElement).value = updatedFormData.amount;
+  //           (form.querySelector('input[name="total_amount"]') as HTMLInputElement).value = updatedFormData.total_amount;
+  //           (form.querySelector('input[name="transaction_uuid"]') as HTMLInputElement).value = updatedFormData.transaction_uuid;
+  //           (form.querySelector('input[name="signature"]') as HTMLInputElement).value = updatedFormData.signature;
+  //           form.submit();
+  //         }
+  //       }
+  //       setTimeout(() => {
+  //         if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod !== 'ESEWA') {
+  //           navigate('/order-page', {
+  //             state: {
+  //               orderDetails: {
+  //                 orderId: result.data?.id || null,
+  //                 totalAmount: finalTotal,
+  //               },
+  //             },
+  //           });
+  //         }
+  //       }, 1500);
+  //     } else {
+  //       setAlertMessage(`Failed to place order: ${result.message || 'Unknown error'}`);
+  //       setShowAlert(true);
+  //     }
+  //   } catch (error) {
+  //     console.error('Error placing order:', error);
+  //     setAlertMessage('An error occurred while placing your order. Please try again.');
+  //     setShowAlert(true);
+  //   } finally {
+  //     setIsPlacingOrder(false);
+  //   }
+  // };
+
   const handlePlaceOrder = async () => {
     // Validate all fields
     const newErrors: Record<string, string> = {};
@@ -456,11 +620,38 @@ const Checkout: React.FC = () => {
 
       if (result.success) {
         if (selectedPaymentMethod === 'CASH_ON_DELIVERY') {
-          setAlertMessage('Order placed successfully!');
-          navigate('/user-profile', {
-            state: { activeTab: 'orders' },
-          });
+          // Show custom popup with navigation options
+          setAlertMessage('Your order has been placed. Do you want to see full details?');
           setShowAlert(true);
+          // Store order details for navigation
+          const orderDetails = {
+            orderId: result.data?.id || null,
+            totalAmount: finalTotal,
+          };
+          // Define buttons for the modal
+          const buttons = [
+            {
+              label: 'Go to Order Details',
+              action: () => {
+                navigate('/user-profile', {
+                  state: { activeTab: 'orders', orderDetails },
+                });
+                setShowAlert(false);
+              },
+              style: { backgroundColor: '#ff6b35', color: 'white' },
+            },
+            {
+              label: 'Shop More',
+              action: () => {
+                navigate('/shop');
+                setShowAlert(false);
+              },
+              style: { backgroundColor: '#22c55e', color: 'white' },
+            },
+          ];
+          // Pass buttons to the AlertModal (you'll need to update its props)
+          // For now, we'll assume AlertModal accepts a buttons prop
+          setShowAlert(true); // This assumes AlertModal will use the buttons
         } else if (selectedPaymentMethod === 'ESEWA') {
           const freshTransactionUuid = uuidv4();
           const amount = finalTotal.toString();
@@ -509,6 +700,8 @@ const Checkout: React.FC = () => {
       setIsPlacingOrder(false);
     }
   };
+
+
 
   const normalizeDistrict = (district: string): string => {
     const kathmandu_valley = ['kathmandu', 'lalitpur', 'bhaktapur'];
@@ -724,7 +917,34 @@ const Checkout: React.FC = () => {
   return (
     <>
       <Navbar />
-      <AlertModal open={showAlert} message={alertMessage} onClose={() => setShowAlert(false)} />
+      {/* <AlertModal open={showAlert} message={alertMessage} onClose={() => setShowAlert(false)} /> */}
+      <AlertModal
+        open={showAlert}
+        message={alertMessage}
+        onClose={() => setShowAlert(false)}
+        buttons={
+          alertMessage.includes('Your order has been placed') ? [
+            {
+              label: 'Go to Order Details',
+              action: () => {
+                navigate('/user-profile', {
+                  state: { activeTab: 'orders' },
+                });
+                setShowAlert(false);
+              },
+              style: { backgroundColor: '#ff6b35', color: 'white' },
+            },
+            {
+              label: 'Shop More',
+              action: () => {
+                navigate('/shop');
+                setShowAlert(false);
+              },
+              style: { backgroundColor: '#22c55e', color: 'white' },
+            },
+          ] : undefined
+        }
+      />
 
       <form
         id="esewa-form"

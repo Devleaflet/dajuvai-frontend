@@ -1,14 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { IoIosArrowDropleftCircle, IoIosArrowDroprightCircle } from "react-icons/io";
+import React, { useRef, useState } from 'react';
+import Slider from 'react-slick';
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
 import { ApiProduct } from '../../types/product';
 import ProductCard1 from '../../ALT/ProductCard1';
 import type { Product as UIProduct } from '../Types/Product';
-import "../../Styles/RecommendedProducts.css";
+import '../../Styles/RecommendedProducts.css';
 
 interface RecommendedProductsProps {
   products: ApiProduct[];
   currentProductId: number;
-  // Optional fallbacks from current page URL if product items miss categoryId/subcategoryId
   fallbackCategoryId?: string | number;
   fallbackSubcategoryId?: string | number;
   isLoading?: boolean;
@@ -19,136 +20,38 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
   currentProductId,
   fallbackCategoryId,
   fallbackSubcategoryId,
-  isLoading = false
+  isLoading = false,
 }) => {
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const [showScrollButtons, setShowScrollButtons] = useState<boolean>(false);
-  const [needsScrolling, setNeedsScrolling] = useState<boolean>(false);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [startX, setStartX] = useState<number>(0);
-  const [scrollLeft, setScrollLeft] = useState<number>(0);
-  const scrollAmount = 300;
+
 
   // Filter out current product from recommendations
-  const filteredProducts = products.filter(p => p.id !== currentProductId);
+  const filteredProducts = products.filter((p) => p.id !== currentProductId);
 
-  useEffect(() => {
-    const checkScrollNeeded = (): void => {
-      if (scrollContainerRef.current) {
-        const container = scrollContainerRef.current;
-        const needsScroll = container.scrollWidth > container.clientWidth;
-        setNeedsScrolling(needsScroll);
-      }
-    };
-
-    const checkWidth = (): void => {
-      setShowScrollButtons(window.innerWidth >= 768);
-      checkScrollNeeded();
-    };
-
-    checkWidth();
-    window.addEventListener("resize", checkWidth);
-
-    return () => {
-      window.removeEventListener("resize", checkWidth);
-    };
-  }, [filteredProducts]);
-
-  useEffect(() => {
-    const checkScrollNeeded = (): void => {
-      if (scrollContainerRef.current) {
-        const container = scrollContainerRef.current;
-        const needsScroll = container.scrollWidth > container.clientWidth;
-        setNeedsScrolling(needsScroll);
-      }
-    };
-
-    // Check after component mounts and products are rendered
-    const timer = setTimeout(checkScrollNeeded, 100);
-    return () => clearTimeout(timer);
-  }, [filteredProducts]);
-
-  const scroll = (direction: "left" | "right"): void => {
-    if (scrollContainerRef.current) {
-      const scrollDistance = direction === "left" ? -scrollAmount : scrollAmount;
-      scrollContainerRef.current.scrollBy({
-        left: scrollDistance,
-        behavior: "smooth",
-      });
-    }
+  // Slider settings
+  const sliderSettings = {
+    dots: true, // Show navigation dots
+    infinite: filteredProducts.length > 3, // Loop only if enough products
+    speed: 500, // Transition speed in ms
+    slidesToShow: Math.min(4, filteredProducts.length), // Show up to 3 products
+    slidesToScroll: 1, // Scroll 1 product at a time
+    arrows: true, // Show next/prev arrows
+    responsive: [
+      {
+        breakpoint: 1024, // For tablets
+        settings: {
+          slidesToShow: Math.min(3, filteredProducts.length),
+          slidesToScroll: 1,
+        },
+      },
+      {
+        breakpoint: 600, // For mobile
+        settings: {
+          slidesToShow: 2,
+          slidesToScroll: 1,
+        },
+      },
+    ],
   };
-
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>): void => {
-    if (scrollContainerRef.current) {
-      setIsDragging(true);
-      setStartX(e.touches[0].clientX);
-      setScrollLeft(scrollContainerRef.current.scrollLeft);
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>): void => {
-    if (!isDragging || !scrollContainerRef.current) return;
-    e.preventDefault();
-    const x = e.touches[0].clientX;
-    const walk = (startX - x) * 2;
-    scrollContainerRef.current.scrollLeft = scrollLeft + walk;
-  };
-
-  const handleTouchEnd = (): void => {
-    setIsDragging(false);
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.style.pointerEvents = "auto";
-    }
-  };
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
-    if (e.button !== 0) return;
-    if (scrollContainerRef.current) {
-      setIsDragging(true);
-      setStartX(e.pageX - scrollContainerRef.current.offsetLeft);
-      setScrollLeft(scrollContainerRef.current.scrollLeft);
-      scrollContainerRef.current.style.cursor = "grabbing";
-      e.preventDefault();
-    }
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
-    if (!isDragging || !scrollContainerRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - scrollContainerRef.current.offsetLeft;
-    const walk = (x - startX) * 2;
-    scrollContainerRef.current.scrollLeft = scrollLeft - walk;
-  };
-
-  const handleMouseUp = (): void => {
-    setIsDragging(false);
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.style.cursor = "grab";
-      scrollContainerRef.current.style.pointerEvents = "auto";
-    }
-  };
-
-  const handleMouseLeave = (): void => {
-    if (isDragging) {
-      setIsDragging(false);
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.style.cursor = "grab";
-        scrollContainerRef.current.style.pointerEvents = "auto";
-      }
-    }
-  };
-  
-  const RecommendedProductSkeleton = () => (
-    <div className="recommended-product-card recommended-product-card--skeleton">
-      <div className="recommended-product-card__image">
-        <div className="recommended-product-card__image-skeleton skeleton"></div>
-      </div>
-      <div className="recommended-product-card__info">
-        <div className="recommended-product-card__title-skeleton skeleton"></div>
-        <div className="recommended-product-card__price-skeleton skeleton"></div>
-      </div>
-    </div>
-  );
 
   if (isLoading) {
     return (
@@ -157,12 +60,17 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
           <h3 className="recommended-products__title">Recommended for you</h3>
           <p className="recommended-products__subtitle">Products you might love ❤️</p>
         </div>
-        <div className="recommended-products__container">
-          <div className="recommended-products__slider">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <RecommendedProductSkeleton key={`skeleton-${i}`} />
-            ))}
-          </div>
+        <div className="recommended-products__grid">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="recommended-skeleton">
+              <div className="skeleton-image"></div>
+              <div className="skeleton-content">
+                <div className="skeleton-line short"></div>
+                <div className="skeleton-line medium"></div>
+                <div className="skeleton-line long"></div>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
     );
@@ -184,44 +92,23 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
         <h3 className="recommended-products__title">Recommended for you</h3>
         <p className="recommended-products__subtitle">Products you might love ❤️</p>
       </div>
-      
-      <div className="recommended-products__container">
-        {showScrollButtons && !isLoading && needsScrolling && (
-          <div
-            className="recommended-products__scroll-button recommended-products__scroll-button--left"
-            onClick={() => scroll("left")}
-            aria-label="Scroll left"
-          >
-            <IoIosArrowDropleftCircle />
-          </div>
-        )}
-
-        <div
-          className={`recommended-products__slider ${isDragging ? "recommended-products__slider--dragging" : ""}`}
-          ref={scrollContainerRef}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          {filteredProducts.map((p) => {
+      <Slider {...sliderSettings}>
+        {filteredProducts.slice(0, 8).map((p) => {
           // Derive IDs from multiple possible shapes
-          const categoryId = (p as any).categoryId
-            ?? (p as any)?.category?.id
-            ?? (fallbackCategoryId != null ? Number(fallbackCategoryId) : undefined);
-          const subcatId = (p as any).subcategoryId
-            ?? (p as any)?.subcategory?.id
-            ?? (fallbackSubcategoryId != null ? Number(fallbackSubcategoryId) : undefined);
+          const categoryId =
+            (p as any).categoryId ??
+            (p as any)?.category?.id ??
+            (fallbackCategoryId != null ? Number(fallbackCategoryId) : undefined);
+          const subcatId =
+            (p as any).subcategoryId ??
+            (p as any)?.subcategory?.id ??
+            (fallbackSubcategoryId != null ? Number(fallbackSubcategoryId) : undefined);
 
           // Map ApiProduct to UI Product expected by ProductCard
           const mapped: UIProduct = {
             id: p.id,
             title: p.name,
             description: p.description || '',
-            // Base values; ProductCard recalculates using variants/discounts
             price: (p as any).price ?? p.basePrice ?? 0,
             basePrice: p.basePrice ?? undefined,
             originalPrice: undefined,
@@ -229,10 +116,10 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
             discountType: p.discountType ?? undefined,
             rating: Number((p as any).avgRating.avg ?? (p as any).rating ?? 0) || 0,
             ratingCount: String(
-              (Array.isArray((p as any).reviews) ? (p as any).reviews.length : undefined)
-              ?? (p as any).avgRating.count
-              ?? (p as any).ratingCount
-              ?? 0
+              (Array.isArray((p as any).reviews) ? (p as any).reviews.length : undefined) ??
+                (p as any).avgRating.count ??
+                (p as any).ratingCount ??
+                0
             ),
             isBestSeller: false,
             freeDelivery: false,
@@ -241,7 +128,6 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
             category: categoryId != null ? { id: Number(categoryId) } as any : undefined,
             subcategory: subcatId != null ? { id: Number(subcatId), name: (p as any)?.subcategory?.name || '' } : undefined,
             productImages: p.productImages || [],
-            // Pass variants through with fields ProductCard may use (variantImages, discount, discountType, price/basePrice)
             variants: (p.variants || []).map((v: any) => ({
               id: v.id,
               price: v.price ?? v.basePrice,
@@ -249,7 +135,7 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
               stock: v.stock,
               sku: v.sku,
               image: Array.isArray(v.variantImages) ? v.variantImages[0] : v.image,
-              images: Array.isArray(v.variantImages) ? v.variantImages : (Array.isArray(v.images) ? v.images : undefined),
+              images: Array.isArray(v.variantImages) ? v.variantImages : Array.isArray(v.images) ? v.images : undefined,
               discount: v.discount,
               discountType: v.discountType,
               attributes: v.attributes,
@@ -262,18 +148,7 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
             </div>
           );
         })}
-        </div>
-
-        {showScrollButtons && !isLoading && needsScrolling && (
-          <div
-            className="recommended-products__scroll-button recommended-products__scroll-button--right"
-            onClick={() => scroll("right")}
-            aria-label="Scroll right"
-          >
-            <IoIosArrowDroprightCircle />
-          </div>
-        )}
-      </div>
+      </Slider>
     </section>
   );
 };
