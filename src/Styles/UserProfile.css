@@ -32,6 +32,14 @@
 .profile-card--wide {
   max-width: min(80vw, 1600px);
 }
+.profile__form-select{
+    height:40px;
+    padding:10px;
+    border: 1px solid #dddd;
+    border-radius:4px;
+    font-size:14px;
+    width:100%;
+  }
 
 /* Sidebar */
 .profile-sidebar {
@@ -143,7 +151,7 @@
   margin-bottom: 0;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 752px) {
   .profile-form__row {
     flex-direction: column;
     margin-bottom: -5px;
@@ -861,7 +869,7 @@ margin-bottom: 24px;
   .profile-card {
     flex-direction: column;
     height: auto; /* Allow height to adjust for smaller screens */
-    max-height: 80vh; /* Limit height to viewport */
+
   }
 
   .profile-sidebar {
@@ -874,8 +882,7 @@ margin-bottom: 24px;
   .profile-content {
     padding: 24px;
     height: auto; /* Allow content to adjust */
-    max-height: 50vh; /* Limit content height /
-  overflow-y: auto; / Ensure scrollable */
+  /* overflow-y: auto; Ensure scrollable */
   }
 
   .profile-form,
@@ -883,9 +890,16 @@ margin-bottom: 24px;
   .orders {
     max-height: 100%; /* Ensure sections respect parent height */
   }
+    .profile-sidebar__avatar {
+    width: 80px;
+    height: 80px;
+    font-size: 32px;
+    margin: 0 auto;
+  }
+  
 }
 
-@media (max-width: 640px) {
+@media (max-width: 752px) {
   .profile, .profile-card, .profile-sidebar, .profile-content, .profile-form {
     width: 100% !important;
     min-width: 0 !important;
@@ -977,7 +991,7 @@ margin-bottom: 24px;
     font-size: 12px;
     margin-bottom: 4px;
   }
-
+  
   .profile-form__group div,
   .profile-form__group input {
     font-size: 14px;
@@ -993,8 +1007,7 @@ margin-bottom: 24px;
 
   .profile-form__actions {
     flex-direction: column;
-    align-items: center;
-    gap: 12px;
+    gap: 5px;
     padding: 0;
     margin: 16px 0;
   }
@@ -1252,7 +1265,7 @@ margin-bottom: 24px;
   }
 
   .profile-content {
-    padding: 12px 4px;
+    padding: 12px 10px;
   }
 
   .profile-form__title,

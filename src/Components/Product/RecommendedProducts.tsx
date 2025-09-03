@@ -22,13 +22,7 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
   fallbackSubcategoryId,
   isLoading = false,
 }) => {
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const [showScrollButtons, setShowScrollButtons] = useState<boolean>(false);
-  const [needsScrolling, setNeedsScrolling] = useState<boolean>(false);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [startX, setStartX] = useState<number>(0);
-  const [scrollLeft, setScrollLeft] = useState<number>(0);
-  const scrollAmount = 300;
+
 
   // Filter out current product from recommendations
   const filteredProducts = products.filter((p) => p.id !== currentProductId);
