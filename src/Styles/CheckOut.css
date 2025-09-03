@@ -757,15 +757,13 @@
   }
 }
 
-/* Ensure no horizontal scroll and proper shadow display */
-body,
-html {
+/* Ensure no horizontal scroll on checkout page specifically */
+.checkout-container {
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: auto;
 }
 
 /* Remove any container overflow that might clip shadows */
-.checkout-container,
 .checkout-container__content,
 .checkout-container__content-wrapper {
   overflow: visible;

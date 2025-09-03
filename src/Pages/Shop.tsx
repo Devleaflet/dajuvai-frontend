@@ -270,53 +270,37 @@ const Shop: React.FC = () => {
 
   useEffect(() => {
     const sidebar = sidebarRef.current;
-    const container = containerRef.current;
 
-    if (!sidebar || !container) return;
-
-    const handleScroll = () => {
-      if (window.innerWidth <= 768) {
-        sidebar.style.position = "fixed";
-        sidebar.style.top = "0";
-        sidebar.style.left = isSidebarOpen ? "0" : "-100%";
-        sidebar.style.zIndex = "1000";
-        return;
-      }
-
-      const containerRect = container.getBoundingClientRect();
-      const sidebarRect = sidebar.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-
-      const shouldBeSticky = containerRect.top <= 20;
-      const containerBottom = containerRect.bottom;
-      const sidebarHeight = sidebarRect.height;
-      const maxTop = Math.max(20, containerBottom - sidebarHeight - 20);
-
-      const newTop = shouldBeSticky ? Math.min(20, maxTop) : 20;
-
-      sidebar.style.position = shouldBeSticky ? "fixed" : "relative";
-      sidebar.style.top = shouldBeSticky ? `${newTop}px` : "0";
-      sidebar.style.zIndex = shouldBeSticky ? "999" : "1";
-    };
+    if (!sidebar) return;
 
     const handleResize = () => {
-      if (window.innerWidth <= 768) {
-        sidebar.style.position = "fixed";
-        sidebar.style.top = "0";
-        sidebar.style.left = isSidebarOpen ? "0" : "-100%";
-        sidebar.style.zIndex = "1000";
+      if (window.innerWidth <= 767) {
+        sidebar.className = `filter-sidebar ${isSidebarOpen ? "open" : ""} mobile-fixed`;
       } else {
-        handleScroll();
+        sidebar.className = `filter-sidebar ${isSidebarOpen ? "open" : ""}`;
       }
     };
 
+    const handleScroll = () => {
+      const sidebar = sidebarRef.current;
+      
+      if (sidebar && window.innerWidth > 767) {
+        // Reset any inline styles to let CSS take control
+        sidebar.style.position = '';
+        sidebar.style.top = '';
+        sidebar.style.left = '';
+        sidebar.style.zIndex = '';
+      }
+    };
+
+    handleResize();
     handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("resize", handleResize);
+    window.addEventListener("scroll", handleScroll);
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, [isSidebarOpen]);
 
@@ -866,32 +850,14 @@ const Shop: React.FC = () => {
     return (
       <div className="shop-error">
         <Navbar />
-        <div
-          className="error-message"
-          style={{
-            padding: "2rem",
-            textAlign: "center",
-            backgroundColor: "#f8f9fa",
-            margin: "2rem",
-            borderRadius: "8px",
-            border: "1px solid #e9ecef",
-          }}
-        >
-          <h2 style={{ color: "#dc3545", marginBottom: "1rem" }}>Unable to Load Products</h2>
-          <p style={{ marginBottom: "1rem" }}>
+        <div className="error-message">
+          <h2 className="error-title">Unable to Load Products</h2>
+          <p className="error-text">
             {productsError instanceof Error ? productsError.message : "Unknown error occurred"}
           </p>
           <button
             onClick={() => window.location.reload()}
-            style={{
-              marginTop: "1rem",
-              padding: "0.5rem 1rem",
-              backgroundColor: "#007bff",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
+            className="error-refresh-button"
           >
             Refresh Page
           </button>
@@ -908,87 +874,32 @@ const Shop: React.FC = () => {
       <CategorySlider />
       <div className="shop-max-width-container">
         <div className="shop-container" ref={containerRef}>
-          <div
-            style={{
-              marginBottom: "0.5rem",
-              borderBottom: "1px solid #e9ecef",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "nowrap",
-              gap: "1rem",
-              width: "100%",
-              minHeight: "60px",
-            }}
-            className="shop-header"
-          >
-            <div style={{ flex: "0 0 auto", minWidth: "200px" }}>
-              <h2
-                style={{
-                  fontSize: "2rem",
-                  margin: "0",
-                  color: "#222",
-                  fontWeight: "700",
-                  letterSpacing: "-1px",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
+          <div className="shop-header">
+            <div className="shop-header-title">
+              <h2 className="shop-title">
                 {getDisplayTitle()}
                 {getCurrentSubcategoryName() && (
-                  <span
-                    style={{
-                      fontSize: "1.1rem",
-                      color: "#666",
-                      fontWeight: "normal",
-                      marginLeft: "0.5rem",
-                    }}
-                  >
+                  <span className="shop-subtitle">
                     {" > "}{getCurrentSubcategoryName()}
                   </span>
                 )}
               </h2>
             </div>
-            <div
-              className="search-bar-container"
-              style={{
-                flex: "1 1 auto",
-                display: "flex",
-                justifyContent: "center",
-                maxWidth: "500px",
-                minWidth: "250px",
-              }}
-            >
-              <form onSubmit={handleSearchSubmit} className="search-form" style={{ width: "100%", display: "flex" }}>
-                <div
-                  className={`search-input-container ${searchInputValue ? "has-clear-button" : ""}`}
-                  style={{ position: "relative", flex: "1" }}
-                >
+            <div className="search-bar-container">
+              <form onSubmit={handleSearchSubmit} className="search-form">
+                <div className={`search-input-container ${searchInputValue ? "has-clear-button" : ""}`}>
                   <input
                     type="text"
                     value={searchInputValue}
                     onChange={handleSearchInputChange}
                     placeholder="Search for products, brands, or categories..."
                     className="search-input"
-                    style={{ outline: "none" }}
                   />
                   {searchInputValue && (
                     <button
                       type="button"
                       onClick={handleClearSearch}
                       className="search-clear-button"
-                      style={{
-                        position: "absolute",
-                        right: "8px",
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        background: "none",
-                        border: "none",
-                        fontSize: "1.2rem",
-                        cursor: "pointer",
-                        color: "#999",
-                      }}
                     >
                       ×
                     </button>
@@ -997,40 +908,20 @@ const Shop: React.FC = () => {
                 <button
                   type="submit"
                   className="search-button"
-                  style={{
-                    padding: "0.75rem 1rem",
-                    backgroundColor: "#ff6b00",
-                    color: "white",
-                    border: "1px solid #ff6b00",
-                    borderRadius: "0 4px 4px 0",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                    whiteSpace: "nowrap",
-                  }}
                 >
                   <span className="search-text">Search</span>
                   <Search size={15} color="white" className="search-icon" />
                 </button>
               </form>
             </div>
-            <div
-              style={{
-                flex: "0 0 auto",
-                fontSize: "1rem",
-                color: "#666",
-                backgroundColor: "#f8f9fa",
-                padding: "0.5rem 1rem",
-                borderRadius: "6px",
-                whiteSpace: "nowrap",
-              }}
-            >
+            <div className="product-count">
               {isLoadingProducts ? "Loading..." : `${filteredProducts.length} products`}
             </div>
           </div>
           <div className="shop-content">
-            <div className="shop">
+            <div className="shop" ref={containerRef}>
               <button className="filter-button" onClick={toggleSidebar} aria-label="Toggle filters">
-                <span className="filter-icon" style={{marginTop:'5px'}}><Settings2/></span>
+                <span className="filter-icon"><Settings2/></span>
               </button>
               <div
                 className={`filter-sidebar-overlay ${isSidebarOpen ? "open" : ""}`}
@@ -1051,25 +942,7 @@ const Shop: React.FC = () => {
                   <div className="filter-sidebar__section">
                     <button
                       onClick={clearAllFilters}
-                      style={{
-                        width: "100%",
-                        padding: "0.75rem",
-                        backgroundColor: "#ff6b00",
-                        border: "1px solid #ff6b00",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        fontSize: "0.95rem",
-                        color: "white",
-                        transition: "all 0.2s ease",
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor = "#e05a00";
-                        e.currentTarget.style.borderColor = "#e05a00";
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.backgroundColor = "#ff6b00";
-                        e.currentTarget.style.borderColor = "#ff6b00";
-                      }}
+                      className="sidebar-clear-all-button"
                     >
                       Clear All Filters
                     </button>
@@ -1078,16 +951,7 @@ const Shop: React.FC = () => {
                 {searchQuery.trim() && (
                   <div className="filter-sidebar__section">
                     <h4 className="filter-sidebar__section-title">Search</h4>
-                    <div
-                      style={{
-                        padding: "0.75rem",
-                        backgroundColor: "#f8f9fa",
-                        borderRadius: "6px",
-                        border: "1px solid #e9ecef",
-                        fontSize: "0.9rem",
-                        color: "#495057",
-                      }}
-                    >
+                    <div className="sidebar-search-display">
                       <strong>Searching for:</strong> "{searchQuery}"
                     </div>
                   </div>
@@ -1178,25 +1042,7 @@ const Shop: React.FC = () => {
                         {selectedCategory === undefined && categories.length > 5 && (
                           <button
                             onClick={() => setShowMoreCategories(!showMoreCategories)}
-                            style={{
-                              width: "100%",
-                              padding: "0.75rem",
-                              backgroundColor: "#f8f9fa",
-                              border: "1px solid #e9ecef",
-                              borderRadius: "8px",
-                              cursor: "pointer",
-                              fontSize: "0.95rem",
-                              color: "#ff6b00",
-                              textAlign: "center",
-                              marginTop: "0.5rem",
-                              transition: "all 0.2s ease",
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.backgroundColor = "#e9ecef";
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.backgroundColor = "#f8f9fa";
-                            }}
+                            className="view-more-categories-button"
                           >
                             {showMoreCategories ? "View Less" : "View More"}
                           </button>
@@ -1264,25 +1110,7 @@ const Shop: React.FC = () => {
                           {subcategories.length > 5 && (
                             <button
                               onClick={() => setShowMoreSubcategories(!showMoreSubcategories)}
-                              style={{
-                                width: "100%",
-                                padding: "0.75rem",
-                                backgroundColor: "#f8f9fa",
-                                border: "1px solid #e9ecef",
-                                borderRadius: "8px",
-                                cursor: "pointer",
-                                fontSize: "0.95rem",
-                                color: "#ff6b00",
-                                textAlign: "center",
-                                marginTop: "0.5rem",
-                                transition: "all 0.2s ease",
-                              }}
-                              onMouseOver={(e) => {
-                                e.currentTarget.style.backgroundColor = "#e9ecef";
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.backgroundColor = "#f8f9fa";
-                              }}
+                              className="view-more-subcategories-button"
                             >
                               {showMoreSubcategories ? "View Less" : "View More"}
                             </button>
@@ -1303,46 +1131,14 @@ const Shop: React.FC = () => {
                 ) : filteredProducts.length > 0 ? (
                   filteredProducts.map((product) => <ProductCard1 key={product.id} product={product} />)
                 ) : (
-                  <div
-                    className="no-products"
-                    style={{
-                      textAlign: "center",
-                      padding: "3rem 2rem",
-                      backgroundColor: "#f8f9fa",
-                      borderRadius: "12px",
-                      border: "1px solid #e9ecef",
-                      margin: "2rem 0",
-                      gridColumn: "1 / -1",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "3rem",
-                        marginBottom: "1rem",
-                        opacity: 0.3,
-                        animation: "bounce 1s infinite",
-                      }}
-                    >
+                  <div className="no-products">
+                    <div className="no-products-icon">
                       📦
                     </div>
-                    <h3
-                      style={{
-                        color: "#333",
-                        marginBottom: "0.75rem",
-                        fontSize: "1.5rem",
-                      }}
-                    >
+                    <h3 className="no-products-title">
                       No products found
                     </h3>
-                    <p
-                      style={{
-                        color: "#666",
-                        marginBottom: "1.5rem",
-                        fontSize: "1rem",
-                        maxWidth: "400px",
-                        margin: "0 auto 1.5rem",
-                      }}
-                    >
+                    <p className="no-products-text">
                       {searchQuery.trim()
                         ? `No products found matching "${searchQuery}". Try adjusting your search terms or browse categories.`
                         : selectedCategory === undefined
@@ -1354,27 +1150,7 @@ const Shop: React.FC = () => {
                     {hasActiveFilters && (
                       <button
                         onClick={clearAllFilters}
-                        style={{
-                          padding: "0.75rem 1.5rem",
-                          backgroundColor: "#ff6b00",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "8px",
-                          cursor: "pointer",
-                          fontSize: "1rem",
-                          transition: "all 0.2s ease",
-                          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                        }}
-                        onMouseOver={(e) => {
-                          e.currentTarget.style.backgroundColor = "#e05a00";
-                          e.currentTarget.style.transform = "translateY(-1px)";
-                          e.currentTarget.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.backgroundColor = "#ff6b00";
-                          e.currentTarget.style.transform = "translateY(0)";
-                          e.currentTarget.style.boxShadow = "0 2px 4px rgba(0, 0, 0, 0.1)";
-                        }}
+                        className="no-products-clear-button"
                       >
                         Clear All Filters
                       </button>

@@ -28,7 +28,7 @@
 }
 
 .shop-content {
-  display: contents;
+  display: block;
   width: 100%;
   position: relative;
   z-index: 1;
@@ -36,16 +36,16 @@
 
 .shop {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 320px 1fr;
   gap: 20px;
   width: 100%;
   position: relative;
-  min-height: calc(100vh - 200px);
+  min-height: 200vh;
   padding: 20px 0 60px;
-  align-items: start;
-  grid-template-areas: "sidebar products";
   margin-bottom: 40px;
   overflow: visible;
+  grid-template-areas: "sidebar products";
+  align-items: start;
 }
 
 .shop-products {
@@ -53,11 +53,11 @@
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
   width: 100%;
+  grid-area: products;
   padding: 10px 0;
   align-content: start;
   grid-auto-rows: minmax(340px, auto);
   min-height: 100%;
-  grid-area: products;
   align-self: stretch;
   justify-items: start;
 }
@@ -94,10 +94,10 @@
 }
 
 .filter-sidebar {
-  position: sticky;
-  top: 20px;
+  position: sticky !important;
+  top: 20px !important;
   width: 280px;
-  height: calc(100vh - 40px);
+  height: fit-content;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
   background: #ffffff;
@@ -105,9 +105,21 @@
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   z-index: 10;
-  grid-area: sidebar;
   scrollbar-width: thin;
   scrollbar-color: #e0e0e0 transparent;
+  align-self: start;
+  grid-area: sidebar;
+}
+
+/* Ensure sticky positioning works on desktop */
+@media (min-width: 768px) {
+  .filter-sidebar {
+    position: sticky !important;
+    top: 20px !important;
+    transform: none !important;
+    left: auto !important;
+    width: 280px !important;
+  }
 }
 
 .filter-sidebar::-webkit-scrollbar {
@@ -285,7 +297,7 @@
   }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 767px) {
   .shop {
     grid-template-columns: 1fr;
     padding: 10px;
@@ -342,9 +354,8 @@
     order: 3;
     align-self: center;
   }
-}
 
-@media (max-width: 768px) {
+  /* Additional mobile styles for smaller screens */
   .shop-products {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
