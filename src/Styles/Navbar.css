@@ -13,8 +13,7 @@
     width: 100%;
     background-color: #ffffff;
     font-family: 'Arial', sans-serif;
-    position: sticky;
-    top: 0;
+    position: static;
     z-index: 100;
 /*
     left: 0;
@@ -50,8 +49,7 @@
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    position: sticky;
-    top:0;
+    position: static;
     background-color: #ffffff;
     z-index: 100;
     padding-bottom: 0;

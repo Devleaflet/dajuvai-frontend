@@ -274,7 +274,7 @@ const Shop: React.FC = () => {
     if (!sidebar) return;
 
     const handleResize = () => {
-      if (window.innerWidth <= 767) {
+      if (window.innerWidth <= 992) {
         sidebar.className = `filter-sidebar ${isSidebarOpen ? "open" : ""} mobile-fixed`;
       } else {
         sidebar.className = `filter-sidebar ${isSidebarOpen ? "open" : ""}`;
@@ -284,7 +284,7 @@ const Shop: React.FC = () => {
     const handleScroll = () => {
       const sidebar = sidebarRef.current;
       
-      if (sidebar && window.innerWidth > 767) {
+      if (sidebar && window.innerWidth > 992) {
         // Reset any inline styles to let CSS take control
         sidebar.style.position = '';
         sidebar.style.top = '';
@@ -301,6 +301,32 @@ const Shop: React.FC = () => {
     return () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isSidebarOpen]);
+
+  // Handle click outside to close sidebar on mobile
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isSidebarOpen && sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
+        // Check if click is on the filter button or overlay
+        const target = event.target as Element;
+        const isFilterButton = target.closest('.filter-button');
+        const isOverlay = target.classList.contains('filter-sidebar-overlay');
+        
+        if (!isFilterButton && !isOverlay) {
+          setIsSidebarOpen(false);
+        }
+      }
+    };
+
+    if (isSidebarOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [isSidebarOpen]);
 
@@ -567,6 +593,11 @@ const Shop: React.FC = () => {
     setSubcategorySearch("");
     newSearchParams.delete("search");
     setSearchParams(newSearchParams);
+    
+    // Close sidebar on mobile after filter selection
+    if (window.innerWidth <= 992) {
+      setIsSidebarOpen(false);
+    }
   };
 
   const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
@@ -582,10 +613,20 @@ const Shop: React.FC = () => {
       setSubcategorySearch("");
     }
     setSearchParams(newSearchParams);
+    
+    // Close sidebar on mobile after filter selection
+    if (window.innerWidth <= 992) {
+      setIsSidebarOpen(false);
+    }
   };
 
   const handleSortChange = (newSort: string | undefined): void => {
     setSortBy(newSort || "all");
+    
+    // Close sidebar on mobile after filter selection
+    if (window.innerWidth <= 992) {
+      setIsSidebarOpen(false);
+    }
   };
 
   const toggleSidebar = (): void => {
@@ -600,6 +641,11 @@ const Shop: React.FC = () => {
     setSubcategorySearch("");
     const newSearchParams = new URLSearchParams();
     setSearchParams(newSearchParams);
+    
+    // Close sidebar on mobile after clearing filters
+    if (window.innerWidth <= 992) {
+      setIsSidebarOpen(false);
+    }
   };
 
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -618,6 +664,11 @@ const Shop: React.FC = () => {
     newSearchParams.delete("categoryId");
     newSearchParams.delete("subcategoryId");
     setSearchParams(newSearchParams);
+    
+    // Close sidebar on mobile after search
+    if (window.innerWidth <= 992) {
+      setIsSidebarOpen(false);
+    }
   };
 
   const handleClearSearch = () => {
