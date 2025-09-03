@@ -1,9 +1,10 @@
-import axiosInstance from "./axiosInstance";
+import axios from "axios";
 
-export const fetchCategory = async () => {
+export const fetchCategoryCatalog = async () => {
 	try {
-		console.log("🌐 Fetching categories from /api/categories...");
-		const response = await axiosInstance.get("/api/categories");
+		console.log("🌐 Fetching categories from /api/home/category/section...");
+		const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+		const response = await axios.get(`${apiBaseUrl}/api/home/category/section`);
 		console.log("📦 Raw API response:", response.data);
 
 		// Handle the response structure based on API documentation
