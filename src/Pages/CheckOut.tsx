@@ -62,6 +62,19 @@ interface ShippingGroup {
 }
 
 const Checkout: React.FC = () => {
+  useEffect(() => {
+    const listener = (event: MessageEvent) => {
+      if (event.data?.action === "refresh") {
+        console.log("----------------Page refresh----------------------")
+        window.location.reload(); 
+      }
+    };
+
+    window.addEventListener("message", listener);
+    return () => window.removeEventListener("message", listener);
+  }, []);
+
+
   const location = useLocation();
   const { cartItems: contextCartItems, handleIncreaseQuantity, handleDecreaseQuantity } = useCart();
   let cartItems: CartItem[] = contextCartItems;
@@ -1369,7 +1382,7 @@ const Checkout: React.FC = () => {
                 required
                 style={{ boxShadow: 'none' }}
               />
-              <p>I have read and agree to the website <Link to="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#ff7e5f', textDecoration: 'underline' }}>terms and conditions</Link> *</p>
+              <p>I have read and agree to the website <Link to="/terms"  rel="noopener noreferrer" style={{ color: '#ff7e5f', textDecoration: 'underline' }}>terms and conditions</Link> *</p>
             </label>
             <button
               className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''}`}

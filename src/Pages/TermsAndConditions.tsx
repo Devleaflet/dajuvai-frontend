@@ -6,9 +6,11 @@ import Footer from '../Components/Footer';
 const TermsAndConditions = () => {
 
   const handleGoBack = () => {
-    window.history.back();
-  }
-  
+    window.location.href = "/checkout"; 
+  };
+
+
+
   return (
     <>
       <Navbar />
@@ -135,7 +137,7 @@ const TermsAndConditions = () => {
               </p>
             </div>
           </section>
-          
+
           <div className="tnc-actions">
             <button className="tnc-button" onClick={handleGoBack}>
               <span className="button-icon">←</span>
