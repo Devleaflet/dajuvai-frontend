@@ -172,6 +172,8 @@
     font-size: 0.8rem;
     color: #777;
     margin: 0;
+    max-height: 40px;
+    overflow: hidden;
   }
   
   .wishlist__item-price {

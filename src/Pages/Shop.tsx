@@ -581,10 +581,6 @@ const Shop: React.FC = () => {
     const newSearchParams = new URLSearchParams(searchParams);
     if (categoryId) {
       newSearchParams.set("categoryId", categoryId.toString());
-      const selectedCat = categories.find((c: Category) => c.id === categoryId);
-      if (selectedCat) {
-        setCategorySearch(selectedCat.name);
-      }
     } else {
       newSearchParams.delete("categoryId");
       setCategorySearch("");
@@ -604,10 +600,6 @@ const Shop: React.FC = () => {
     const newSearchParams = new URLSearchParams(searchParams);
     if (subcategoryId) {
       newSearchParams.set("subcategoryId", subcategoryId.toString());
-      const selectedSub = subcategories.find((s: Subcategory) => s.id === subcategoryId);
-      if (selectedSub) {
-        setSubcategorySearch(selectedSub.name);
-      }
     } else {
       newSearchParams.delete("subcategoryId");
       setSubcategorySearch("");
@@ -1182,14 +1174,14 @@ const Shop: React.FC = () => {
                 ) : filteredProducts.length > 0 ? (
                   filteredProducts.map((product) => <ProductCard1 key={product.id} product={product} />)
                 ) : (
-                  <div className="no-products">
-                    <div className="no-products-icon">
+                  <div className="shop-no-products">
+                    <div className="shop-no-products-icon">
                       📦
                     </div>
-                    <h3 className="no-products-title">
+                    <h3 className="shop-no-products-title">
                       No products found
                     </h3>
-                    <p className="no-products-text">
+                    <p className="shop-no-products-text">
                       {searchQuery.trim()
                         ? `No products found matching "${searchQuery}". Try adjusting your search terms or browse categories.`
                         : selectedCategory === undefined
@@ -1201,7 +1193,7 @@ const Shop: React.FC = () => {
                     {hasActiveFilters && (
                       <button
                         onClick={clearAllFilters}
-                        className="no-products-clear-button"
+                        className="shop-no-products-clear-button"
                       >
                         Clear All Filters
                       </button>

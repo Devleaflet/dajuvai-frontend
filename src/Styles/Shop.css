@@ -250,6 +250,27 @@
   color: #666;
   padding: 8px 0;
 }
+.shop-no-products {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.2rem;
+  background: transparent;
+  border-radius: 0.5rem;
+  color: #666;
+  font-size: 0.9rem;
+  grid-column: 1 / -1; /* Span all grid columns */
+}
+.shop-no-products-clear-button {
+  color:white;
+  background-color: #f97316;
+  padding:10px;
+  font-weight: 600;
+  border: none;
+  border-radius: 5px;
+}
 
 .filter-sidebar-overlay {
   position: fixed;
