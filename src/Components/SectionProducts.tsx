@@ -363,6 +363,7 @@ const SectionProducts: React.FC = () => {
 
   // Client-side filtering for price and search
   const filteredProducts = (sectionData?.products || []).filter((product) => {
+    
     if (selectedPriceRange) {
       const maxPrice = parseFloat(selectedPriceRange);
       const productPrice =
@@ -388,14 +389,18 @@ const SectionProducts: React.FC = () => {
   });
 
   // Sort products
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    const priceA = typeof a.price === "string" ? parseFloat(a.price) : Number(a.price);
-    const priceB = typeof b.price === "string" ? parseFloat(b.price) : Number(b.price);
-    if (sortBy === "low-to-high") return priceA - priceB;
-    if (sortBy === "high-to-low") return priceB - priceA;
-    return 0;
-  });
-
+const sortedProducts = [...filteredProducts].sort((a, b) => {
+  const priceA = typeof a.price === "string" ? parseFloat(a.price.replace(/[^0-9.]/g, "")) : Number(a.price);
+  const priceB = typeof b.price === "string" ? parseFloat(b.price.replace(/[^0-9.]/g, "")) : Number(b.price);
+  // Handle NaN cases
+  console.log("products",typeof(priceA))
+  if (isNaN(priceA) && isNaN(priceB)) return 0;
+  if (isNaN(priceA)) return 1; // Move invalid prices to the end
+  if (isNaN(priceB)) return -1;
+  if (sortBy === "low-to-high") return priceA - priceB;
+  if (sortBy === "high-to-low") return priceB - priceA;
+  return 0;
+});
   // Event handlers
   const handleSortChange = (newSort: string | undefined): void => {
     setSortBy(newSort || "all");

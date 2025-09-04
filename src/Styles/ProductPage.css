@@ -1019,12 +1019,12 @@ html {
 	}
 
 	.product-page__recommended {
-		margin: 1rem auto 4rem;
-		padding: 0 0.5rem;
+		margin: 0rem;
+		padding: 0rem;
 	}
 
 	.recommended-products {
-		padding: 1.5rem;
+		padding: 0.5rem;
 		border-radius: 1rem;
 	}
 
@@ -1076,7 +1076,11 @@ html {
 	}
 }
 
-@media (max-width: 480px) {
+@media (max-width: 498px) {
+		.product-page__recommended {
+		margin:0rem;
+		padding: 0rem;
+	}
 	.product-page__container {
 		padding: 1rem;
 		margin: 0.25rem auto;
@@ -1125,7 +1129,7 @@ html {
 	}
 
 	.recommended-products {
-		padding: 1rem;
+		padding: 0rem;
 	}
 
 	.recommended-products__grid {
