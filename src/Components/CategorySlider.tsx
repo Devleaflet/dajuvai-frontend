@@ -142,9 +142,11 @@ const CategorySlider: React.FC = () => {
 		const slider = sliderRef.current;
 		if (!slider) return;
 
-		setShowPrev(slider.scrollLeft > 0);
+		const hasOverflow = slider.scrollWidth > slider.clientWidth;
+		setShowPrev(hasOverflow && slider.scrollLeft > 0);
 		setShowNext(
-			slider.scrollLeft < slider.scrollWidth - slider.clientWidth - 10
+			hasOverflow &&
+				slider.scrollLeft < slider.scrollWidth - slider.clientWidth - 10
 		);
 	};
 
@@ -225,6 +227,9 @@ const CategorySlider: React.FC = () => {
 	useEffect(() => {
 		const handleResize = () => {
 			setIsDesktop(window.innerWidth >= 768);
+			if (sliderRef.current) {
+				checkScroll();
+			}
 		};
 
 		window.addEventListener("resize", handleResize);

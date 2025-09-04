@@ -1,7 +1,7 @@
 /* Base styles for the category section */
 .top-category {
 	position: relative;
-	width: 90% !important;
+	width: 85% !important;
 	max-width: 1800px;
 	margin-inline: auto;
 	overflow: hidden;
@@ -23,8 +23,7 @@
 	max-width: 1400px;
 	cursor: grab;
 	user-select: none;
-	-webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-	padding: 0 2rem;
+	-webkit-overflow-scrolling: touch;
 }
 
 .top-category__slider-container:active {
@@ -123,10 +122,8 @@
 	box-shadow: 0px 0px 5px 4px rgba(0, 0, 0, 0.2);
 	border: none;
 	border-radius: 50%;
-	width: 40px;
-	/*Smallersize*/
-	height: 40px;
-	/*Smallersize*/
+	width: 40px; /* Smaller size */
+	height: 40px; /* Smaller size */
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -139,14 +136,16 @@
 	-o-transform: translateY(-40%) translateX(15%);
 }
 
+.top-category__nav:hover {
+	opacity: 1; /* Ensure hover effect is visible */
+}
+
 .top-category__nav--prev {
 	left: 0.5rem;
-	bottom: 0.5rem; /* Moved to bottom left */
 }
 
 .top-category__nav--next {
 	right: 0.5rem;
-	bottom: 0.5rem; /* Moved to bottom right */
 }
 
 /* Skeleton Loading Styles */
