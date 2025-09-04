@@ -7,6 +7,7 @@ import Pagination from "../Components/Pagination"
 import { API_BASE_URL } from "../config"
 import { useAuth } from "../context/AuthContext"
 import "../Styles/AdminOrders.css"
+import "../Styles/AdminCustomers.css"
 
 // User interface based on API schema
 interface User {
@@ -71,6 +72,14 @@ const createUserAPI = (token: string | null) => ({
   }
 })
 
+// Role filter options
+const ROLE_OPTIONS = [
+  { value: "all", label: "All Roles" },
+  { value: "user", label: "User" },
+  { value: "vendor", label: "Vendor" },
+  { value: "admin", label: "Admin" }
+];
+
 const AdminCustomers: React.FC = () => {
   const { token, isAuthenticated } = useAuth()
   const [users, setUsers] = useState<User[]>([])
@@ -80,6 +89,10 @@ const AdminCustomers: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sortConfig, setSortConfig] = useState<{ key: keyof User; direction: 'asc' | 'desc' } | null>(null)
+  const [roleFilter, setRoleFilter] = useState("all")
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
 
   const userAPI = createUserAPI(token)
 
@@ -89,13 +102,58 @@ const AdminCustomers: React.FC = () => {
     }
   }, [isAuthenticated, token])
 
+  // Filter users based on search, role, and date
+  useEffect(() => {
+    let filtered = [...users]
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(user => 
+        user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.id.toString().includes(searchQuery.toLowerCase()) ||
+        user.role.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    }
+
+    // Apply role filter
+    if (roleFilter !== "all") {
+      filtered = filtered.filter(user => user.role.toLowerCase() === roleFilter.toLowerCase())
+    }
+
+    // Apply date range filter
+    if (startDate || endDate) {
+      filtered = filtered.filter(user => {
+        const userDate = new Date(user.createdAt)
+        const start = startDate ? new Date(startDate) : null
+        const end = endDate ? new Date(endDate) : null
+        
+        // Set end date to end of day for inclusive filtering
+        if (end) {
+          end.setHours(23, 59, 59, 999)
+        }
+        
+        if (start && end) {
+          return userDate >= start && userDate <= end
+        } else if (start) {
+          return userDate >= start
+        } else if (end) {
+          return userDate <= end
+        }
+        return true
+      })
+    }
+
+    setFilteredUsers(filtered)
+    setCurrentPage(1)
+  }, [users, searchQuery, roleFilter, startDate, endDate])
+
   const loadUsers = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
       const fetchedUsers = await userAPI.getAll()
       setUsers(fetchedUsers)
-      setFilteredUsers(fetchedUsers)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load users')
       console.error('Error loading users:', err)
@@ -105,16 +163,8 @@ const AdminCustomers: React.FC = () => {
   }, [userAPI])
 
   const handleSearch = useCallback((query: string) => {
-    setCurrentPage(1)
-
-    const results = users.filter(user => 
-      user.username.toLowerCase().includes(query.toLowerCase()) ||
-      user.email.toLowerCase().includes(query.toLowerCase()) ||
-      user.id.toString().includes(query.toLowerCase()) ||
-      user.role.toLowerCase().includes(query.toLowerCase())
-    )
-    setFilteredUsers(results)
-  }, [users])
+    setSearchQuery(query)
+  }, [])
 
   const handleSort = useCallback((key: keyof User) => {
     let direction: 'asc' | 'desc' = 'asc'
@@ -180,6 +230,64 @@ const AdminCustomers: React.FC = () => {
           </div>
         )}
         <Header onSearch={handleSearch} showSearch={true} title="User Management" />
+        
+        {/* Filter Section */}
+        <div className="admin-customers__filters">
+          <div className="admin-customers__filter-group">
+            <label htmlFor="roleFilter" className="admin-customers__filter-label">Role:</label>
+            <select 
+              id="roleFilter"
+              value={roleFilter} 
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="admin-customers__filter-select"
+            >
+              {ROLE_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="admin-customers__filter-group">
+             <label htmlFor="startDate" className="admin-customers__filter-label">From Date:</label>
+             <input 
+               type="date"
+               id="startDate"
+               value={startDate} 
+               onChange={(e) => setStartDate(e.target.value)}
+               className="admin-customers__filter-input"
+             />
+           </div>
+
+           <div className="admin-customers__filter-group">
+             <label htmlFor="endDate" className="admin-customers__filter-label">To Date:</label>
+             <input 
+               type="date"
+               id="endDate"
+               value={endDate} 
+               onChange={(e) => setEndDate(e.target.value)}
+               className="admin-customers__filter-input"
+             />
+           </div>
+ 
+           <button 
+              onClick={() => {
+                setRoleFilter("all")
+                setStartDate("")
+                setEndDate("")
+                setSearchQuery("")
+                // Clear the search input in Header component
+                const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement
+                if (searchInput) {
+                  searchInput.value = ''
+                }
+              }}
+              className="admin-customers__clear-filters"
+            >
+              Clear All Filters
+            </button>
+        </div>
         <div className="admin-orders__list-container">
           <div className="admin-orders__table-container">
             <table className="admin-orders__table">
