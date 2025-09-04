@@ -10,12 +10,14 @@ import { useAuth } from "../context/AuthContext";
 import { VendorAuthService } from "../services/vendorAuthService";
 import { Vendor, District, ApiResponse, VendorSignupRequest, VendorUpdateRequest } from "../Components/Types/vendor";
 import "../Styles/AdminVendor.css";
+import "../Styles/AdminCustomers.css";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
 const SkeletonRow: React.FC = () => {
   return (
     <tr>
+      <td><div className="skeleton skeleton-text"></div></td>
       <td><div className="skeleton skeleton-text"></div></td>
       <td><div className="skeleton skeleton-text"></div></td>
       <td><div className="skeleton skeleton-text"></div></td>
@@ -333,6 +335,10 @@ const AdminVendor: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: keyof Vendor; direction: "asc" | "desc" } | null>(null);
   const [unapprovedCount, setUnapprovedCount] = useState(0);
+  const [districtFilter, setDistrictFilter] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const vendorAPI = createVendorAPI(token);
 
@@ -420,18 +426,63 @@ const AdminVendor: React.FC = () => {
     }
   };
 
+  const [searchQuery, setSearchQuery] = useState("");
+
   const handleSearch = (query: string) => {
+    setSearchQuery(query);
     setCurrentPage(1);
-    const results = vendors.filter(
-      (vendor) =>
-        vendor.businessName.toLowerCase().includes(query.toLowerCase()) ||
-        vendor.email.toLowerCase().includes(query.toLowerCase()) ||
-        (vendor.phoneNumber || "").toLowerCase().includes(query.toLowerCase()) ||
-        (vendor.taxNumber || "").toLowerCase().includes(query.toLowerCase()) ||
-        vendor.id.toString().includes(query.toLowerCase())
-    );
-    setFilteredVendors(results);
   };
+
+  // Comprehensive filtering logic
+  useEffect(() => {
+    let filtered = [...vendors];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(
+        (vendor) =>
+          vendor.businessName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          vendor.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (vendor.phoneNumber || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (vendor.taxNumber || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+          vendor.id.toString().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Apply district filter
+    if (districtFilter !== "all") {
+      filtered = filtered.filter(vendor => 
+        vendor.district?.name === districtFilter
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(vendor => 
+        vendor.status.toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
+
+    // Apply date range filter
+    if (startDate) {
+      filtered = filtered.filter(vendor => {
+        const vendorDate = new Date(vendor.createdAt);
+        const filterStartDate = new Date(startDate);
+        return vendorDate >= filterStartDate;
+      });
+    }
+
+    if (endDate) {
+      filtered = filtered.filter(vendor => {
+        const vendorDate = new Date(vendor.createdAt);
+        const filterEndDate = new Date(endDate);
+        filterEndDate.setHours(23, 59, 59, 999); // Include the entire end date
+        return vendorDate <= filterEndDate;
+      });
+    }
+
+    setFilteredVendors(filtered);
+  }, [vendors, searchQuery, districtFilter, statusFilter, startDate, endDate]);
 
   const handleSort = (key: keyof Vendor) => {
     let direction: "asc" | "desc" = "asc";
@@ -452,6 +503,14 @@ const AdminVendor: React.FC = () => {
         if (sortConfig.key === "id") {
           aValue = Number(aValue);
           bValue = Number(bValue);
+        } else if (sortConfig.key === "createdAt" || sortConfig.key === "updatedAt") {
+          // Handle date sorting
+          aValue = new Date(aValue).getTime();
+          bValue = new Date(bValue).getTime();
+        } else if (sortConfig.key === "district") {
+          // Handle district sorting by name
+          aValue = a.district?.name ? a.district.name.toLowerCase() : "";
+          bValue = b.district?.name ? b.district.name.toLowerCase() : "";
         } else {
           aValue = aValue ? aValue.toString().toLowerCase() : "";
           bValue = bValue ? bValue.toString().toLowerCase() : "";
@@ -619,6 +678,79 @@ const AdminVendor: React.FC = () => {
           </div>
         )}
         <Header onSearch={handleSearch} showSearch={true} title="Vendor Management" />
+        
+        {/* Filter Section */}
+        <div className="admin-customers__filters">
+          <div className="admin-customers__filter-group">
+            <label htmlFor="districtFilter" className="admin-customers__filter-label">District:</label>
+            <select 
+              id="districtFilter"
+              value={districtFilter} 
+              onChange={(e) => setDistrictFilter(e.target.value)}
+              className="admin-customers__filter-input"
+            >
+              <option value="all">All Districts</option>
+              {districts.map(district => (
+                <option key={district.id} value={district.name}>{district.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="admin-customers__filter-group">
+            <label htmlFor="statusFilter" className="admin-customers__filter-label">Status:</label>
+            <select 
+              id="statusFilter"
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="admin-customers__filter-input"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+
+          <div className="admin-customers__filter-group">
+            <label htmlFor="startDate" className="admin-customers__filter-label">From Date:</label>
+            <input 
+              type="date"
+              id="startDate"
+              value={startDate} 
+              onChange={(e) => setStartDate(e.target.value)}
+              className="admin-customers__filter-input"
+            />
+          </div>
+
+          <div className="admin-customers__filter-group">
+            <label htmlFor="endDate" className="admin-customers__filter-label">To Date:</label>
+            <input 
+              type="date"
+              id="endDate"
+              value={endDate} 
+              onChange={(e) => setEndDate(e.target.value)}
+              className="admin-customers__filter-input"
+            />
+          </div>
+
+          <button 
+            onClick={() => {
+              setDistrictFilter("all");
+              setStatusFilter("all");
+              setStartDate("");
+              setEndDate("");
+              setSearchQuery("");
+              // Clear the search input in Header component
+              const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
+              if (searchInput) {
+                searchInput.value = '';
+              }
+            }}
+            className="admin-customers__clear-filters"
+          >
+            Clear All Filters
+          </button>
+        </div>
+        
         <div className="admin-vendors__list-container">
           <div className="admin-vendors__header">
             <h2>Vendor Management</h2>
@@ -660,6 +792,9 @@ const AdminVendor: React.FC = () => {
                   <th onClick={() => handleSort("taxNumber")} className="sortable">
                     PAN Number {sortConfig?.key === "taxNumber" && (sortConfig.direction === "asc" ? "↑" : "↓")}
                   </th>
+                  <th onClick={() => handleSort("createdAt")} className="sortable">
+                    Created Date {sortConfig?.key === "createdAt" && (sortConfig.direction === "asc" ? "↑" : "↓")}
+                  </th>
                   <th>PAN Document</th>
                   <th>Action</th>
                 </tr>
@@ -674,6 +809,7 @@ const AdminVendor: React.FC = () => {
                       <td>{vendor.district?.name || "N/A"}</td>
                       <td>{vendor.phoneNumber}</td>
                       <td>{vendor.taxNumber}</td>
+                      <td>{new Date(vendor.createdAt).toLocaleDateString()}</td>
                       <td>
                         {vendor.taxDocuments && vendor.taxDocuments.length > 0 ? (
                           <a href={vendor.taxDocuments[0]} target="_blank" rel="noopener noreferrer">
@@ -775,8 +911,8 @@ const AdminVendor: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="admin-vendors__no-data">
-                      No vendors found
+                    <td colSpan={9} className="admin-vendors__no-data">
+                      {vendors.length === 0 ? 'No vendors registered yet. Click "Add Vendor" to get started.' : 'No vendors match your current filter criteria. Try adjusting your filters.'}
                     </td>
                   </tr>
                 )}

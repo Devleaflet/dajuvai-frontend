@@ -10,7 +10,7 @@
   border-radius: 0.5rem;
   /* border: 1px solid #e5e7eb; */
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
 }
 
 .admin-customers__filter-group {
