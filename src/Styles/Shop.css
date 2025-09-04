@@ -7,14 +7,13 @@
 }
 
 .shop-container {
-	width: 100%;
-	box-sizing: border-box;
-	min-height: 100vh;
-	position: relative;
-	display: flex;
-	flex-direction: column;
-	overflow: visible;
-	padding-bottom: 60px;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  padding-bottom: 60px;
 }
 
 /* .shop-title{

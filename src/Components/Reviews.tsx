@@ -339,8 +339,8 @@ const generatePaginationNumbers = useCallback(() => {
         }
 
         .star {
-          width: 1rem;
-          height: 1rem;
+          width: 0.7rem;
+          height: 0.7rem;
           transition: all 0.2s ease;
         }
 
@@ -649,7 +649,7 @@ const generatePaginationNumbers = useCallback(() => {
         .star-button {
           background: none;
           border: none;
-          padding: 0.25rem;
+          padding:0px;
           cursor: pointer;
           transition: all 0.2s ease;
           border-radius: 0.5rem;
@@ -900,6 +900,11 @@ const generatePaginationNumbers = useCallback(() => {
                   onClick={() => setNewReview({ ...newReview, rating })}
                   className="star-button"
                   disabled={isSubmitting}
+                  style={
+                    {
+                      padding:"4px"
+                    }
+                  }
                 >
                   <Star
                     className={`star ${
