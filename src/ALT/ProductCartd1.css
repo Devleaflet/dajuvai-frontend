@@ -1,5 +1,3 @@
-/* ProductCard1.css - Enhanced product card design with fixed heights */
-
 .product1__link-wrapper {
 	text-decoration: none !important;
 	color: inherit;
@@ -441,13 +439,13 @@
 
 /* Media query for 481px-576px range to prevent title clipping */
 @media (max-width: 698px) and (min-width: 600px) {
-  .product1__link-wrapper{
-    width:200px;
-  }
+	.product1__link-wrapper {
+		width: 200px;
+	}
 	.product1 {
 		height: 400px;
 		padding: 4px 4px 8px;
-    width:100%;
+		width: 100%;
 	}
 
 	.product1__image {
@@ -504,9 +502,9 @@
 }
 
 @media (max-width: 498px) {
-  .product1__link-wrapper{
-    width:180px;
-  }
+	.product1__link-wrapper {
+		width: 180px;
+	}
 	.product1 {
 		height: 400px;
 		padding: 3px 3px 6px;
@@ -648,9 +646,9 @@
 }
 
 @media (max-width: 410px) {
-    .product1__link-wrapper{
-    width:160px;
-  }
+	.product1__link-wrapper {
+		width: 160px;
+	}
 	.product1 {
 		height: 280px; /* Even smaller for very small screens */
 		padding: 2px 2px 4px;

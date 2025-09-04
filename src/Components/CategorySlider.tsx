@@ -1,310 +1,332 @@
-"use client"
+"use client";
 
-import React, { useRef, useState, useEffect } from "react"
-import { ArrowLeft, ArrowRight } from "lucide-react"
-import { useNavigate, useLocation } from "react-router-dom"
-import keyboard from "../assets/keyboard.png"
-import "../Styles/CategorySlider.css"
-import { useCategory } from "../context/Category"
-import { fetchCategory } from "../api/category"
-import { useQuery } from "@tanstack/react-query"
-import type { Category } from "../context/Category"
+import React, { useRef, useState, useEffect } from "react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import keyboard from "../assets/keyboard.png";
+import "../Styles/CategorySlider.css";
+import { useCategory } from "../context/Category";
+import { fetchCategory } from "../api/category";
+import { useQuery } from "@tanstack/react-query";
+import type { Category } from "../context/Category";
 
 const CategorySlider: React.FC = () => {
-  const sliderRef = useRef<HTMLDivElement | null>(null)
-  const [showPrev, setShowPrev] = useState<boolean>(false)
-  const [showNext, setShowNext] = useState<boolean>(true)
-  const [isDesktop, setIsDesktop] = useState<boolean>(window.innerWidth >= 768)
-  const [isCategoriesReady, setIsCategoriesReady] = useState(false)
+	const sliderRef = useRef<HTMLDivElement | null>(null);
+	const [showPrev, setShowPrev] = useState<boolean>(false);
+	const [showNext, setShowNext] = useState<boolean>(true);
+	const [isDesktop, setIsDesktop] = useState<boolean>(window.innerWidth >= 768);
+	const [isCategoriesReady, setIsCategoriesReady] = useState(false);
+	const [isDragging, setIsDragging] = useState(false);
+	const [startX, setStartX] = useState(0);
+	const [scrollLeft, setScrollLeft] = useState(0);
+	const [dragDistance, setDragDistance] = useState(0);
 
-  // Drag functionality state
-  const [isDragging, setIsDragging] = useState(false)
-  const [startX, setStartX] = useState(0)
-  const [scrollLeft, setScrollLeft] = useState(0)
-  const [dragDistance, setDragDistance] = useState(0)
+	const categoryContext = useCategory();
+	const updateCategoriesWithSubcategories =
+		categoryContext?.updateCategoriesWithSubcategories;
+	const categories = categoryContext?.categories || [];
+	const navigate = useNavigate();
+	const location = useLocation();
 
-  const categoryContext = useCategory()
-  const updateCategoriesWithSubcategories = categoryContext?.updateCategoriesWithSubcategories
-  const categories = categoryContext?.categories || []
-  const navigate = useNavigate()
-  const location = useLocation()
+	const { data: categoryData, isLoading: isCategoryLoading } = useQuery({
+		queryKey: ["cat"],
+		queryFn: fetchCategory,
+		staleTime: 5 * 60 * 1000,
+		gcTime: 30 * 60 * 1000,
+		refetchOnWindowFocus: false,
+		refetchOnMount: false,
+		refetchOnReconnect: false,
+	});
 
-  // Optimize category fetching with React Query
-  const { data: categoryData, isLoading: isCategoryLoading } = useQuery({
-    queryKey: ["cat"],
-    queryFn: fetchCategory,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-  })
+	useEffect(() => {
+		if (categories) {
+			categories.forEach((maincategory) => {
+				maincategory.items.forEach((item) => {
+					if (item.image) {
+						const img = new Image();
+						img.src = item.image;
+					}
+				});
+			});
+		}
+	}, [categories]);
 
-  // Preload images for better performance
-  useEffect(() => {
-    if (categories) {
-      categories.forEach((maincategory) => {
-        maincategory.items.forEach((item) => {
-          if (item.image) {
-            const img = new Image()
-            img.src = item.image
-          }
-        })
-      })
-    }
-  }, [categories])
+	useEffect(() => {
+		console.log("🔄 CategorySlider: categoryData changed:", categoryData);
+		console.log(
+			"🔄 CategorySlider: updateCategoriesWithSubcategories available:",
+			!!updateCategoriesWithSubcategories
+		);
+		if (updateCategoriesWithSubcategories && categoryData) {
+			console.log("📊 CategorySlider: Processing category data...");
+			updateCategoriesWithSubcategories(categoryData).then(() => {
+				console.log("✅ CategorySlider: Categories ready!");
+				setIsCategoriesReady(true);
+			});
+		}
+	}, [categoryData, updateCategoriesWithSubcategories]);
 
-  useEffect(() => {
-    console.log('🔄 CategorySlider: categoryData changed:', categoryData)
-    console.log('🔄 CategorySlider: updateCategoriesWithSubcategories available:', !!updateCategoriesWithSubcategories)
-    if (updateCategoriesWithSubcategories && categoryData) {
-      console.log('📊 CategorySlider: Processing category data...')
-      updateCategoriesWithSubcategories(categoryData).then(() => {
-        console.log('✅ CategorySlider: Categories ready!')
-        setIsCategoriesReady(true)
-      })
-    }
-  }, [categoryData, updateCategoriesWithSubcategories])
+	const showLoading = isCategoryLoading || !isCategoriesReady;
 
-  // Show loading state if either fetching or processing categories
-  const showLoading = isCategoryLoading || !isCategoriesReady
-  
-  console.log('🎯 CategorySlider render state:', {
-    isCategoryLoading,
-    isCategoriesReady,
-    showLoading,
-    categoriesCount: categories.length,
-    totalSubcategories: categories.reduce((total, cat) => total + cat.items.length, 0)
-  })
+	console.log("🎯 CategorySlider render state:", {
+		isCategoryLoading,
+		isCategoriesReady,
+		showLoading,
+		categoriesCount: categories.length,
+		totalSubcategories: categories.reduce(
+			(total, cat) => total + cat.items.length,
+			0
+		),
+	});
 
-  // Prefetch categories on component mount
-  useEffect(() => {
-    const prefetchCategories = async () => {
-      try {
-        await fetchCategory()
-      } catch (error) {
-        console.error("Error prefetching categories:", error)
-      }
-    }
-    prefetchCategories()
-  }, [])
+	useEffect(() => {
+		const prefetchCategories = async () => {
+			try {
+				await fetchCategory();
+			} catch (error) {
+				console.error("Error prefetching categories:", error);
+			}
+		};
+		prefetchCategories();
+	}, []);
 
-  // Check scroll position when categories are loaded
-  useEffect(() => {
-    if (!showLoading && categories.length > 0) {
-      // Small delay to ensure DOM is updated
-      setTimeout(() => {
-        checkScroll()
-      }, 100)
-    }
-  }, [showLoading, categories.length])
+	useEffect(() => {
+		if (!showLoading && categories.length > 0) {
+			setTimeout(() => {
+				checkScroll();
+			}, 100);
+		}
+	}, [showLoading, categories.length]);
 
-  // Enhanced category click handler to force navigation refresh
-  const handleCategoryClick = (mainCategoryId: string, itemId: string) => {
-    // Prevent navigation if user was dragging
-    if (Math.abs(dragDistance) > 5) {
-      return
-    }
+	const handleCategoryClick = (mainCategoryId: string, itemId: string) => {
+		if (Math.abs(dragDistance) > 5) {
+			return;
+		}
 
-    const newUrl = `/shop?categoryId=${mainCategoryId}&subcategoryId=${itemId}`
+		const newUrl = `/shop?categoryId=${mainCategoryId}&subcategoryId=${itemId}`;
 
-    // If already on shop page, dispatch a custom event to update filters
-    if (location.pathname === "/shop") {
-      // Update the URL first
-      navigate(newUrl, { replace: true })
+		if (location.pathname === "/shop") {
+			navigate(newUrl, { replace: true });
 
-      // Then dispatch a custom event that the shop page will listen to
-      const event = new CustomEvent("shopFiltersChanged", {
-        detail: {
-          categoryId: Number(mainCategoryId),
-          subcategoryId: Number(itemId),
-        },
-      })
+			const event = new CustomEvent("shopFiltersChanged", {
+				detail: {
+					categoryId: Number(mainCategoryId),
+					subcategoryId: Number(itemId),
+				},
+			});
 
-      // Dispatch the event after a small delay to ensure URL is updated
-      setTimeout(() => {
-        window.dispatchEvent(event)
-      }, 10)
-    } else {
-      // Normal navigation when coming from other pages
-      navigate(newUrl)
-    }
-  }
+			setTimeout(() => {
+				window.dispatchEvent(event);
+			}, 10);
+		} else {
+			navigate(newUrl);
+		}
+	};
 
-  const scroll = (direction: "left" | "right"): void => {
-    const slider = sliderRef.current
-    if (!slider) return
+	const scroll = (direction: "left" | "right"): void => {
+		const slider = sliderRef.current;
+		if (!slider) return;
 
-    const scrollAmount =
-      direction === "left" ? slider.scrollLeft - slider.offsetWidth : slider.scrollLeft + slider.offsetWidth
+		const scrollAmount =
+			direction === "left"
+				? slider.scrollLeft - slider.offsetWidth
+				: slider.scrollLeft + slider.offsetWidth;
 
-    slider.scrollTo({
-      left: scrollAmount,
-      behavior: "smooth",
-    })
-  }
+		slider.scrollTo({
+			left: scrollAmount,
+			behavior: "smooth",
+		});
+	};
 
-  const checkScroll = () => {
-    const slider = sliderRef.current
-    if (!slider) return
+	const checkScroll = () => {
+		const slider = sliderRef.current;
+		if (!slider) return;
 
-    setShowPrev(slider.scrollLeft > 0)
-    setShowNext(slider.scrollLeft < slider.scrollWidth - slider.clientWidth - 10)
-  }
+		setShowPrev(slider.scrollLeft > 0);
+		setShowNext(
+			slider.scrollLeft < slider.scrollWidth - slider.clientWidth - 10
+		);
+	};
 
-  // Mouse drag handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    const slider = sliderRef.current
-    if (!slider) return
+	const handleMouseDown = (e: React.MouseEvent) => {
+		const slider = sliderRef.current;
+		if (!slider) return;
 
-    setIsDragging(true)
-    setStartX(e.pageX - slider.offsetLeft)
-    setScrollLeft(slider.scrollLeft)
-    setDragDistance(0)
-    slider.style.cursor = 'grabbing'
-    slider.style.userSelect = 'none'
-  }
+		setIsDragging(true);
+		setStartX(e.pageX - slider.offsetLeft);
+		setScrollLeft(slider.scrollLeft);
+		setDragDistance(0);
+		slider.style.cursor = "grabbing";
+		slider.style.userSelect = "none";
+	};
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return
-    
-    e.preventDefault()
-    const slider = sliderRef.current
-    if (!slider) return
+	const handleMouseMove = (e: React.MouseEvent) => {
+		if (!isDragging) return;
 
-    const x = e.pageX - slider.offsetLeft
-    const walk = (x - startX) * 2 // Multiply by 2 for faster scrolling
-    const newScrollLeft = scrollLeft - walk
-    
-    setDragDistance(Math.abs(walk))
-    slider.scrollLeft = newScrollLeft
-  }
+		e.preventDefault();
+		const slider = sliderRef.current;
+		if (!slider) return;
 
-  const handleMouseUp = () => {
-    const slider = sliderRef.current
-    if (!slider) return
+		const x = e.pageX - slider.offsetLeft;
+		const walk = (x - startX) * 2;
+		const newScrollLeft = scrollLeft - walk;
 
-    setIsDragging(false)
-    slider.style.cursor = 'grab'
-    slider.style.userSelect = ''
-    
-    // Reset drag distance after a short delay
-    setTimeout(() => setDragDistance(0), 100)
-  }
+		setDragDistance(Math.abs(walk));
+		slider.scrollLeft = newScrollLeft;
+	};
 
-  const handleMouseLeave = () => {
-    if (isDragging) {
-      handleMouseUp()
-    }
-  }
+	const handleMouseUp = () => {
+		const slider = sliderRef.current;
+		if (!slider) return;
 
-  // Touch handlers for mobile devices
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const slider = sliderRef.current
-    if (!slider) return
+		setIsDragging(false);
+		slider.style.cursor = "grab";
+		slider.style.userSelect = "";
 
-    setIsDragging(true)
-    setStartX(e.touches[0].pageX - slider.offsetLeft)
-    setScrollLeft(slider.scrollLeft)
-    setDragDistance(0)
-  }
+		setTimeout(() => setDragDistance(0), 100);
+	};
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return
-    
-    const slider = sliderRef.current
-    if (!slider) return
+	const handleMouseLeave = () => {
+		if (isDragging) {
+			handleMouseUp();
+		}
+	};
 
-    const x = e.touches[0].pageX - slider.offsetLeft
-    const walk = (x - startX) * 1.5
-    const newScrollLeft = scrollLeft - walk
-    
-    setDragDistance(Math.abs(walk))
-    slider.scrollLeft = newScrollLeft
-  }
+	const handleTouchStart = (e: React.TouchEvent) => {
+		const slider = sliderRef.current;
+		if (!slider) return;
 
-  const handleTouchEnd = () => {
-    setIsDragging(false)
-    
-    // Reset drag distance after a short delay
-    setTimeout(() => setDragDistance(0), 100)
-  }
+		setIsDragging(true);
+		setStartX(e.touches[0].pageX - slider.offsetLeft);
+		setScrollLeft(slider.scrollLeft);
+		setDragDistance(0);
+	};
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 768)
-    }
+	const handleTouchMove = (e: React.TouchEvent) => {
+		if (!isDragging) return;
 
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+		const slider = sliderRef.current;
+		if (!slider) return;
 
-  // Skeleton loading component with consistent sizing
-  const CategorySkeleton = () => (
-    <div className="top-category__card top-category__card--skeleton">
-      <div className="top-category__image-container">
-        <div className="top-category__image-skeleton skeleton"></div>
-      </div>
-      <div className="top-category__name-skeleton skeleton-text"></div>
-    </div>
-  )
+		const x = e.touches[0].pageX - slider.offsetLeft;
+		const walk = (x - startX) * 1.5;
+		const newScrollLeft = scrollLeft - walk;
 
-  return (
-    <div className="top-category">
-      {/* Arrow buttons removed */}
+		setDragDistance(Math.abs(walk));
+		slider.scrollLeft = newScrollLeft;
+	};
 
-      <div 
-        className="top-category__slider-container" 
-        ref={sliderRef} 
-        onScroll={checkScroll}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-      >
-        {showLoading
-          ? // Show skeleton loading state with consistent count
-            Array.from({ length: 8 }).map((_, index) => <CategorySkeleton key={`skeleton-${index}`} />)
-          : categories.length === 0 
-            ? <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>No categories available</div>
-            : categories.map((maincategory: Category) => (
-              <React.Fragment key={maincategory.id}>
-                {maincategory.items.map((item) => {
-                  console.log('🏷️ Rendering subcategory:', item.name, 'from category:', maincategory.name)
-                  return (
-                    <div
-                      key={item.id}
-                      className="top-category__card"
-                      style={{ cursor: "pointer" }}
-                      onClick={() => handleCategoryClick(maincategory.id, item.id)}
-                    >
-                      <div className="top-category__image-container">
-                        <img
-                          src={item.image || keyboard}
-                          alt={item.name}
-                          className="top-category__image"
-                          loading="lazy"
-                          decoding="async"
-                          width="200"
-                          height="200"
-                          draggable={false}
-                        />
-                      </div>
-                      <p className="top-category__name">{item.name}</p>
-                    </div>
-                  )
-                })}
-              </React.Fragment>
-            ))}
-      </div>
+	const handleTouchEnd = () => {
+		setIsDragging(false);
 
-      {/* Arrow buttons removed */}
-    </div>
-  )
-}
+		setTimeout(() => setDragDistance(0), 100);
+	};
 
-export default CategorySlider
+	useEffect(() => {
+		const handleResize = () => {
+			setIsDesktop(window.innerWidth >= 768);
+		};
+
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
+
+	const CategorySkeleton = () => (
+		<div className="top-category__card top-category__card--skeleton">
+			<div className="top-category__image-container">
+				<div className="top-category__image-skeleton skeleton"></div>
+			</div>
+			<div className="top-category__name-skeleton skeleton-text"></div>
+		</div>
+	);
+
+	return (
+		<div className="top-category">
+			{isDesktop && showPrev && (
+				<button
+					className="top-category__nav top-category__nav--prev"
+					onClick={() => scroll("left")}
+				>
+					<ArrowLeft />
+				</button>
+			)}
+			{isDesktop && showNext && (
+				<button
+					className="top-category__nav top-category__nav--next"
+					onClick={() => scroll("right")}
+				>
+					<ArrowRight />
+				</button>
+			)}
+
+			<div
+				className="top-category__slider-container"
+				ref={sliderRef}
+				onScroll={checkScroll}
+				onMouseDown={handleMouseDown}
+				onMouseMove={handleMouseMove}
+				onMouseUp={handleMouseUp}
+				onMouseLeave={handleMouseLeave}
+				onTouchStart={handleTouchStart}
+				onTouchMove={handleTouchMove}
+				onTouchEnd={handleTouchEnd}
+				style={{ cursor: isDragging ? "grabbing" : "grab" }}
+			>
+				{showLoading ? (
+					Array.from({ length: 8 }).map((_, index) => (
+						<CategorySkeleton key={`skeleton-${index}`} />
+					))
+				) : categories.length === 0 ? (
+					<div
+						style={{
+							padding: "2rem",
+							textAlign: "center",
+							color: "#666",
+						}}
+					>
+						No categories available
+					</div>
+				) : (
+					categories.map((maincategory: Category) => (
+						<React.Fragment key={maincategory.id}>
+							{maincategory.items.map((item) => {
+								console.log(
+									"🏷️ Rendering subcategory:",
+									item.name,
+									"from category:",
+									maincategory.name
+								);
+								return (
+									<div
+										key={item.id}
+										className="top-category__card"
+										style={{ cursor: "pointer" }}
+										onClick={() =>
+											handleCategoryClick(maincategory.id, item.id)
+										}
+									>
+										<div className="top-category__image-container">
+											<img
+												src={item.image || keyboard}
+												alt={item.name}
+												className="top-category__image"
+												loading="lazy"
+												decoding="async"
+												width="200"
+												height="200"
+												draggable={false}
+											/>
+										</div>
+										<p className="top-category__name">{item.name}</p>
+									</div>
+								);
+							})}
+						</React.Fragment>
+					))
+				)}
+			</div>
+		</div>
+	);
+};
+
+export default CategorySlider;

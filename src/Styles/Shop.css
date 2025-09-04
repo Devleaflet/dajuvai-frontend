@@ -7,14 +7,14 @@
 }
 
 .shop-container {
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 100vh;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  overflow: visible;
-  padding-bottom: 60px;
+	width: 100%;
+	box-sizing: border-box;
+	min-height: 100vh;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	overflow: visible;
+	padding-bottom: 60px;
 }
 
 /* .shop-title{
@@ -793,7 +793,7 @@
 		justify-items: stretch;
 		grid-auto-rows: minmax(280px, auto);
 		padding: 5px 1px;
-		width: 96%;
+		width: 100%;
 	}
 
 	.shop-container {

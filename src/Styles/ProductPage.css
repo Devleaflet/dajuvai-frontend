@@ -208,7 +208,7 @@ html {
 }
 
 .product-page__content {
-	width:100%;
+	width: 100%;
 	display: flex;
 	gap: 1.5rem;
 	flex-wrap: nowrap;
@@ -251,9 +251,9 @@ html {
 	pointer-events: none;
 	/* Prevent image dragging */
 }
-.product-gallery__no-image{
+.product-gallery__no-image {
 	text-align: center;
-	width:30rem;
+	width: 30rem;
 }
 /* Remove hover effects that interfere with zoom */
 .product-gallery__main-image:hover {
@@ -744,7 +744,7 @@ html {
 }
 
 .product-page__recommended {
-	width:100%;	
+	width: 100%;
 	margin: 0.5rem auto 3rem;
 	padding: 0 1.5rem;
 }
