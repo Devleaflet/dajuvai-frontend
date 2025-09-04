@@ -14,9 +14,8 @@ import type { Product } from "../Components/Types/Product";
 import ProductCard1 from "../ALT/ProductCard1";
 import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
 import { API_BASE_URL } from "../config";
-import { Search } from "lucide-react";
+import { Search, ChevronDown, ChevronUp } from "lucide-react";
 import { Settings2 } from 'lucide-react';
-
 
 // Interfaces and API functions remain unchanged
 interface Category {
@@ -190,6 +189,8 @@ const Shop: React.FC = () => {
   const [searchInputValue, setSearchInputValue] = useState<string>("");
   const [showMoreCategories, setShowMoreCategories] = useState<boolean>(false);
   const [showMoreSubcategories, setShowMoreSubcategories] = useState<boolean>(false);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState<boolean>(false);
+  const [isSubCategoryDropdownOpen, setIsSubCategoryDropdownOpen] = useState<boolean>(false);
 
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -285,7 +286,6 @@ const Shop: React.FC = () => {
       const sidebar = sidebarRef.current;
       
       if (sidebar && window.innerWidth > 992) {
-        // Reset any inline styles to let CSS take control
         sidebar.style.position = '';
         sidebar.style.top = '';
         sidebar.style.left = '';
@@ -304,11 +304,9 @@ const Shop: React.FC = () => {
     };
   }, [isSidebarOpen]);
 
-  // Handle click outside to close sidebar on mobile
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isSidebarOpen && sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
-        // Check if click is on the filter button or overlay
         const target = event.target as Element;
         const isFilterButton = target.closest('.filter-button');
         const isOverlay = target.classList.contains('filter-sidebar-overlay');
@@ -590,7 +588,6 @@ const Shop: React.FC = () => {
     newSearchParams.delete("search");
     setSearchParams(newSearchParams);
     
-    // Close sidebar on mobile after filter selection
     if (window.innerWidth <= 992) {
       setIsSidebarOpen(false);
     }
@@ -606,7 +603,6 @@ const Shop: React.FC = () => {
     }
     setSearchParams(newSearchParams);
     
-    // Close sidebar on mobile after filter selection
     if (window.innerWidth <= 992) {
       setIsSidebarOpen(false);
     }
@@ -615,7 +611,6 @@ const Shop: React.FC = () => {
   const handleSortChange = (newSort: string | undefined): void => {
     setSortBy(newSort || "all");
     
-    // Close sidebar on mobile after filter selection
     if (window.innerWidth <= 992) {
       setIsSidebarOpen(false);
     }
@@ -634,7 +629,6 @@ const Shop: React.FC = () => {
     const newSearchParams = new URLSearchParams();
     setSearchParams(newSearchParams);
     
-    // Close sidebar on mobile after clearing filters
     if (window.innerWidth <= 992) {
       setIsSidebarOpen(false);
     }
@@ -657,7 +651,6 @@ const Shop: React.FC = () => {
     newSearchParams.delete("subcategoryId");
     setSearchParams(newSearchParams);
     
-    // Close sidebar on mobile after search
     if (window.innerWidth <= 992) {
       setIsSidebarOpen(false);
     }
@@ -912,7 +905,7 @@ const Shop: React.FC = () => {
 
   return (
     <>
-      <Navbar />
+      {!isSidebarOpen &&<Navbar />}
       <ProductBanner />
       <CategorySlider />
       <div className="shop-max-width-container">
@@ -976,7 +969,7 @@ const Shop: React.FC = () => {
                 ref={sidebarRef}
               >
                 <div className="filter-sidebar__header">
-                 <h3>Filter</h3>
+                  <h3>Filter</h3>
                   <button className="filter-sidebar__close" onClick={toggleSidebar} aria-label="Close filters">
                     ×
                   </button>
@@ -1021,150 +1014,176 @@ const Shop: React.FC = () => {
                   </div>
                 </div>
                 <div className="filter-sidebar__section">
-                  <h4 className="filter-sidebar__section-title">Categories</h4>
-                  <div className="filter-sidebar__search-container filter-sidebar__search-container--categories">
-                    <input
-                      type="text"
-                      placeholder="Search categories..."
-                      value={categorySearch}
-                      onChange={(e) => setCategorySearch(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          const match = categories.find((cat: Category) =>
-                            cat.name.toLowerCase().includes(categorySearch.toLowerCase())
-                          );
-                          if (match) {
-                            handleCategoryChange(match.id);
-                            if (subcategoryInputRef.current) {
-                              subcategoryInputRef.current.focus();
+                  <h4 className="filter-sidebar__section-title">
+                    Categories
+                    <button
+                      className="dropdown-toggle"
+                      onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                      aria-label="Toggle categories dropdown"
+                    >
+                      {isCategoryDropdownOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                    </button>
+                  </h4>
+                  {isCategoryDropdownOpen && (
+                    <div className="filter-sidebar__dropdown-content">
+                      <div className="filter-sidebar__search-container filter-sidebar__search-container--categories">
+                        <input
+                          type="text"
+                          placeholder="Search categories..."
+                          value={categorySearch}
+                          onChange={(e) => setCategorySearch(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const match = categories.find((cat: Category) =>
+                                cat.name.toLowerCase().includes(categorySearch.toLowerCase())
+                              );
+                              if (match) {
+                                handleCategoryChange(match.id);
+                                if (subcategoryInputRef.current) {
+                                  subcategoryInputRef.current.focus();
+                                }
+                              }
                             }
-                          }
-                        }
-                      }}
-                      className="filter-sidebar__search-input"
-                    />
-                  </div>
-                  <div className="filter-sidebar__checkbox-list">
-                    {isLoadingCategories ? (
-                      <p className="filter-sidebar__loading">Loading categories...</p>
-                    ) : (
-                      <>
-                        <div className="filter-sidebar__checkbox-item">
-                          <input
-                            type="radio"
-                            id="category-all"
-                            name="category"
-                            checked={selectedCategory === undefined}
-                            onChange={() => handleCategoryChange(undefined)}
-                          />
-                          <label htmlFor="category-all">All Categories</label>
-                        </div>
-                        {categories
-                          .filter((category: Category) =>
-                            category.name.toLowerCase().includes(categorySearch.toLowerCase())
-                          )
-                          .slice(
-                            0,
-                            selectedCategory === undefined ? (showMoreCategories ? undefined : 5) : undefined
-                          )
-                          .map((category: Category) => (
-                            <div key={category.id} className="filter-sidebar__category-group">
-                              <div className="filter-sidebar__checkbox-item">
-                                <input
-                                  type="radio"
-                                  id={`category-${category.id}`}
-                                  name="category"
-                                  checked={selectedCategory === category.id}
-                                  onChange={() => handleCategoryChange(category.id)}
-                                />
-                                <label htmlFor={`category-${category.id}`}>{category.name}</label>
-                              </div>
+                          }}
+                          className="filter-sidebar__search-input"
+                        />
+                      </div>
+                      <div className="filter-sidebar__checkbox-list">
+                        {isLoadingCategories ? (
+                          <p className="filter-sidebar__loading">Loading categories...</p>
+                        ) : (
+                          <>
+                            <div className="filter-sidebar__checkbox-item">
+                              <input
+                                type="radio"
+                                id="category-all"
+                                name="category"
+                                checked={selectedCategory === undefined}
+                                onChange={() => handleCategoryChange(undefined)}
+                              />
+                              <label htmlFor="category-all">All Categories</label>
                             </div>
-                          ))}
-                        {selectedCategory === undefined && categories.length > 5 && (
-                          <button
-                            onClick={() => setShowMoreCategories(!showMoreCategories)}
-                            className="view-more-categories-button"
-                          >
-                            {showMoreCategories ? "View Less" : "View More"}
-                          </button>
+                            {categories
+                              .filter((category: Category) =>
+                                category.name.toLowerCase().includes(categorySearch.toLowerCase())
+                              )
+                              .slice(
+                                0,
+                                selectedCategory === undefined ? (showMoreCategories ? undefined : 5) : undefined
+                              )
+                              .map((category: Category) => (
+                                <div key={category.id} className="filter-sidebar__category-group">
+                                  <div className="filter-sidebar__checkbox-item">
+                                    <input
+                                      type="radio"
+                                      id={`category-${category.id}`}
+                                      name="category"
+                                      checked={selectedCategory === category.id}
+                                      onChange={() => handleCategoryChange(category.id)}
+                                    />
+                                    <label htmlFor={`category-${category.id}`}>{category.name}</label>
+                                  </div>
+                                </div>
+                              ))}
+                            {selectedCategory === undefined && categories.length > 5 && (
+                              <button
+                                onClick={() => setShowMoreCategories(!showMoreCategories)}
+                                className="view-more-categories-button"
+                              >
+                                {showMoreCategories ? "View Less" : "View More"}
+                              </button>
+                            )}
+                          </>
                         )}
-                      </>
-                    )}
-                  </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {selectedCategory !== undefined && (
-                  <div className="filter-sidebar__section">
-                    <h4 className="filter-sidebar__section-title">Subcategories</h4>
-                    <div className="filter-sidebar__search-container">
-                      <input
-                        ref={subcategoryInputRef}
-                        type="text"
-                        placeholder="Search subcategories..."
-                        value={subcategorySearch}
-                        onChange={(e) => setSubcategorySearch(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            const match = subcategories.find((sub: Subcategory) =>
-                              sub.name.toLowerCase().includes(subcategorySearch.toLowerCase())
-                            );
-                            if (match) {
-                              handleSubcategoryChange(match.id);
-                            }
-                          }
-                        }}
-                        className="filter-sidebar__search-input"
-                      />
-                    </div>
-                    <div className="filter-sidebar__checkbox-list">
-                      {isLoadingSubcategories ? (
-                        <p className="filter-sidebar__loading">Loading subcategories...</p>
-                      ) : subcategories.length > 0 ? (
-                        <>
-                          <div className="filter-sidebar__checkbox-item">
-                            <input
-                              type="radio"
-                              id="subcategory-all"
-                              name="subcategory"
-                              checked={selectedSubcategory === undefined}
-                              onChange={() => handleSubcategoryChange(undefined)}
-                            />
-                            <label htmlFor="subcategory-all">All Subcategories</label>
-                          </div>
-                          {subcategories
-                            .filter((sub: Subcategory) =>
-                              sub.name.toLowerCase().includes(subcategorySearch.toLowerCase())
-                            )
-                            .slice(0, showMoreSubcategories ? undefined : 5)
-                            .map((subcategory: Subcategory) => (
-                              <div key={subcategory.id} className="filter-sidebar__checkbox-item">
-                                <input
-                                  type="radio"
-                                  id={`subcategory-${subcategory.id}`}
-                                  name="subcategory"
-                                  checked={selectedSubcategory === subcategory.id}
-                                  onChange={() => handleSubcategoryChange(subcategory.id)}
-                                />
-                                <label htmlFor={`subcategory-${subcategory.id}`}>{subcategory.name}</label>
-                              </div>
-                            ))}
-                          {subcategories.length > 5 && (
-                            <button
-                              onClick={() => setShowMoreSubcategories(!showMoreSubcategories)}
-                              className="view-more-subcategories-button"
-                            >
-                              {showMoreSubcategories ? "View Less" : "View More"}
-                            </button>
-                          )}
-                        </>
-                      ) : (
-                        <p className="filter-sidebar__no-data">No subcategories available</p>
-                      )}
-                    </div>
+               {selectedCategory !== undefined && (
+  <div className="filter-sidebar__section">
+    <h4 className="filter-sidebar__section-title">
+      Subcategories
+      <button
+        className="dropdown-toggle"
+        onClick={() => setIsSubCategoryDropdownOpen(!isSubCategoryDropdownOpen)}
+        aria-label="Toggle subcategories dropdown"
+      >
+        {isSubCategoryDropdownOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+      </button>
+    </h4>
+    {isSubCategoryDropdownOpen && (
+      <div className="filter-sidebar__dropdown-content">
+        <div className="filter-sidebar__search-container">
+          <input
+            ref={subcategoryInputRef}
+            type="text"
+            placeholder="Search subcategories..."
+            value={subcategorySearch}
+            onChange={(e) => setSubcategorySearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const match = subcategories.find((sub: Subcategory) =>
+                  sub.name.toLowerCase().includes(subcategorySearch.toLowerCase())
+                );
+                if (match) {
+                  handleSubcategoryChange(match.id);
+                }
+              }
+            }}
+            className="filter-sidebar__search-input"
+          />
+        </div>
+        <div className="filter-sidebar__checkbox-list">
+          {isLoadingSubcategories ? (
+            <p className="filter-sidebar__loading">Loading subcategories...</p>
+          ) : subcategories.length > 0 ? (
+            <>
+              <div className="filter-sidebar__checkbox-item">
+                <input
+                  type="radio"
+                  id="subcategory-all"
+                  name="subcategory"
+                  checked={selectedSubcategory === undefined}
+                  onChange={() => handleSubcategoryChange(undefined)}
+                />
+                <label htmlFor="subcategory-all">All Subcategories</label>
+              </div>
+              {subcategories
+                .filter((sub: Subcategory) =>
+                  sub.name.toLowerCase().includes(subcategorySearch.toLowerCase())
+                )
+                .slice(0, showMoreSubcategories ? undefined : 5)
+                .map((subcategory: Subcategory) => (
+                  <div key={subcategory.id} className="filter-sidebar__checkbox-item">
+                    <input
+                      type="radio"
+                      id={`subcategory-${subcategory.id}`}
+                      name="subcategory"
+                      checked={selectedSubcategory === subcategory.id}
+                      onChange={() => handleSubcategoryChange(subcategory.id)}
+                    />
+                    <label htmlFor={`subcategory-${subcategory.id}`}>{subcategory.name}</label>
                   </div>
-                )}
+                ))}
+              {subcategories.length > 5 && (
+                <button
+                  onClick={() => setShowMoreSubcategories(!showMoreSubcategories)}
+                  className="view-more-subcategories-button"
+                >
+                  {showMoreSubcategories ? "View Less" : "View More"}
+                </button>
+              )}
+            </>
+          ) : (
+            <p className="filter-sidebar__no-data">No subcategories available</p>
+          )}
+        </div>
+      </div>
+    )}
+  </div>
+)}
               </div>
               <div className="shop-products">
                 {isLoadingProducts ? (

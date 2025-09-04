@@ -16,10 +16,6 @@
 	padding-bottom: 60px;
 }
 
-/* .shop-title{
-  max-width: 500px;
-  border: 1px solid black;
-} */
 .shop-header {
 	display: flex;
 	justify-content: space-between;
@@ -43,7 +39,6 @@
 	gap: 20px;
 	width: 100%;
 	position: relative;
-
 	padding: 20px 0 60px;
 	margin-bottom: 40px;
 	overflow: visible;
@@ -114,7 +109,6 @@
 	grid-area: sidebar;
 }
 
-/* Ensure sticky positioning works on desktop */
 @media (min-width: 993px) {
 	.filter-sidebar {
 		position: sticky !important;
@@ -149,7 +143,6 @@
 	margin-bottom: 1.5rem;
 	padding-bottom: 1rem;
 	border-bottom: 1px solid #e9ecef;
-
 	top: 0;
 	background: #ffffff;
 	z-index: 101;
@@ -192,10 +185,36 @@
 }
 
 .filter-sidebar__section-title {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
 	font-size: 1rem;
 	margin-bottom: 1rem;
 	font-weight: 600;
 	color: #333;
+}
+
+.dropdown-toggle {
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: #666;
+	padding: 4px;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dropdown-toggle:hover {
+	background-color: #f8f9fa;
+	color: #333;
+}
+
+.filter-sidebar__dropdown-content {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
 }
 
 .filter-sidebar__radio-list,
@@ -249,6 +268,7 @@
 	color: #666;
 	padding: 8px 0;
 }
+
 .shop-no-products {
 	display: flex;
 	flex-direction: column;
@@ -260,8 +280,9 @@
 	border-radius: 0.5rem;
 	color: #666;
 	font-size: 0.9rem;
-	grid-column: 1 / -1; /* Span all grid columns */
+	grid-column: 1 / -1;
 }
+
 .shop-no-products-clear-button {
 	color: white;
 	background-color: #f97316;
@@ -394,8 +415,6 @@
 		order: 3;
 		align-self: center;
 	}
-
-	/* Additional mobile styles for smaller screens */
 	.shop-products {
 		grid-template-columns: repeat(2, 1fr);
 		gap: 12px;
@@ -404,32 +423,24 @@
 		width: 90vw;
 		max-width: 280px;
 	}
-
-	/* Enhanced scrollbar styles for mobile */
 	.filter-sidebar::-webkit-scrollbar {
 		width: 4px;
 	}
-
 	.filter-sidebar::-webkit-scrollbar-track {
 		background: transparent;
 	}
-
 	.filter-sidebar::-webkit-scrollbar-thumb {
 		background-color: rgba(0, 0, 0, 0.2);
 		border-radius: 2px;
 	}
-
 	.filter-sidebar::-webkit-scrollbar-thumb:hover {
 		background-color: rgba(0, 0, 0, 0.3);
 	}
-
-	/* Ensure content doesn't get cut off */
 	.filter-sidebar {
 		padding-bottom: 20px;
 	}
 }
 
-/* Clear All Filters Button Styles */
 .sidebar-clear-all-button,
 .clear-filters-button {
 	width: 100%;
@@ -461,7 +472,6 @@
 	box-shadow: 0 2px 6px rgba(255, 107, 0, 0.2);
 }
 
-/* View More/Less Buttons Styles */
 .view-more-categories-button,
 .view-more-subcategories-button {
 	width: 100%;
@@ -494,7 +504,6 @@
 	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Add subtle animation effect */
 .view-more-categories-button::before,
 .view-more-subcategories-button::before {
 	content: "";
@@ -522,14 +531,11 @@
 		grid-template-columns: repeat(2, 1fr);
 		gap: 10px;
 	}
-
-	/* Mobile adjustments for buttons */
 	.sidebar-clear-all-button,
 	.clear-filters-button {
 		padding: 10px 14px;
 		font-size: 0.85rem;
 	}
-
 	.view-more-categories-button,
 	.view-more-subcategories-button {
 		padding: 8px 12px;
@@ -733,7 +739,6 @@
 	}
 }
 
-/* Responsive grid for product cards */
 @media (max-width: 1200px) {
 	.shop-products {
 		grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -748,7 +753,6 @@
 		grid-template-columns: 1fr;
 		grid-template-areas: "products";
 	}
-
 	.shop-products {
 		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 		gap: 12px;
@@ -794,11 +798,9 @@
 		padding: 5px 1px;
 		width: 100%;
 	}
-
 	.shop-container {
 		padding: 8px 4px;
 	}
-
 	.shop {
 		padding: 10px 0px 40px;
 	}
