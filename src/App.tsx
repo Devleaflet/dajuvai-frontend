@@ -53,6 +53,7 @@ import SectionProducts from "./Components/SectionProducts";
 import WebsiteComingSoon from "./Pages/WebsiteComingSoon";
 import VendorTerms from "./Pages/VendorTerms";
 import PasswordProtectedRoute from "./Components/SiteProtection/PasswordProtectedRoute";
+import EsewaPaymentFailure from "./Pages/EsewaPaymentFailure";
 // import VendorLoginPage from "./Pages/VendorLoginPage";
 // import VendorSignupPage from "./Pages/VendorSignupPage";
 
@@ -263,6 +264,14 @@ function App() {
           element={
             <PasswordProtectedRoute>
               <PaymentSuccess />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/order/esewa-payment-failure"
+          element={
+            <PasswordProtectedRoute>
+              <EsewaPaymentFailure />
             </PasswordProtectedRoute>
           }
         />

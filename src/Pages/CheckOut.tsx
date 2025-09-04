@@ -66,7 +66,7 @@ const Checkout: React.FC = () => {
     const listener = (event: MessageEvent) => {
       if (event.data?.action === "refresh") {
         console.log("----------------Page refresh----------------------")
-        window.location.reload(); 
+        window.location.reload();
       }
     };
 
@@ -187,8 +187,8 @@ const Checkout: React.FC = () => {
     product_service_charge: '0',
     product_delivery_charge: '0',
     product_code: 'EPAYTEST',
-    success_url: `https://dev.dajuvai.com/order/esewa-payment-success`,
-    failure_url: `https://dev.dajuvai.com/esewa-payment-failure`,
+    success_url: `https://dajuvai.com/order/esewa-payment-success`,
+    failure_url: `https://dajuvai.com/esewa-payment-failure`,
     signed_field_names: 'total_amount,transaction_uuid,product_code',
     signature: '',
     secret: '8gBm/:&EnhH.1/q',
@@ -662,31 +662,35 @@ const Checkout: React.FC = () => {
               style: { backgroundColor: '#22c55e', color: 'white' },
             },
           ];
-          // Pass buttons to the AlertModal (you'll need to update its props)
-          // For now, we'll assume AlertModal accepts a buttons prop
-          setShowAlert(true); // This assumes AlertModal will use the buttons
+          setShowAlert(true);
         } else if (selectedPaymentMethod === 'ESEWA') {
-          const freshTransactionUuid = uuidv4();
-          const amount = finalTotal.toString();
-          const hashString = `total_amount=${amount},transaction_uuid=${freshTransactionUuid},product_code=EPAYTEST`;
-          const hash = CryptoJS.HmacSHA256(hashString, '8gBm/:&EnhH.1/q');
-          const signature = CryptoJS.enc.Base64.stringify(hash);
+          // const freshTransactionUuid = uuidv4();
+          // const amount = finalTotal.toString();
+          // const hashString = `total_amount=${amount},transaction_uuid=${freshTransactionUuid},product_code=EPAYTEST`;
+          // const hash = CryptoJS.HmacSHA256(hashString, '8gBm/:&EnhH.1/q');
+          // const signature = CryptoJS.enc.Base64.stringify(hash);
 
-          const updatedFormData = {
-            ...formData,
-            amount: amount,
-            total_amount: amount,
-            transaction_uuid: freshTransactionUuid,
-            signature: signature,
-          };
+          // const updatedFormData = {
+          //   ...formData,
+          //   amount: amount,
+          //   total_amount: amount,
+          //   transaction_uuid: freshTransactionUuid,
+          //   signature: signature,
+          // };
 
-          const form = document.getElementById('esewa-form') as HTMLFormElement;
-          if (form) {
-            (form.querySelector('input[name="amount"]') as HTMLInputElement).value = updatedFormData.amount;
-            (form.querySelector('input[name="total_amount"]') as HTMLInputElement).value = updatedFormData.total_amount;
-            (form.querySelector('input[name="transaction_uuid"]') as HTMLInputElement).value = updatedFormData.transaction_uuid;
-            (form.querySelector('input[name="signature"]') as HTMLInputElement).value = updatedFormData.signature;
-            form.submit();
+          // const form = document.getElementById('esewa-form') as HTMLFormElement;
+          // if (form) {
+          //   (form.querySelector('input[name="amount"]') as HTMLInputElement).value = updatedFormData.amount;
+          //   (form.querySelector('input[name="total_amount"]') as HTMLInputElement).value = updatedFormData.total_amount;
+          //   (form.querySelector('input[name="transaction_uuid"]') as HTMLInputElement).value = updatedFormData.transaction_uuid;
+          //   (form.querySelector('input[name="signature"]') as HTMLInputElement).value = updatedFormData.signature;
+          //   form.submit();
+          // }
+          if (result.esewaRedirectUrl) {
+            console.log('Redirecting to eSewa:', result.esewaRedirectUrl.url);
+            window.location.href = result.esewaRedirectUrl.url;
+          } else {
+            throw new Error('eSewa redirect URL not provided');
           }
         }
         setTimeout(() => {
@@ -1382,7 +1386,7 @@ const Checkout: React.FC = () => {
                 required
                 style={{ boxShadow: 'none' }}
               />
-              <p>I have read and agree to the website <Link to="/terms"  rel="noopener noreferrer" style={{ color: '#ff7e5f', textDecoration: 'underline' }}>terms and conditions</Link> *</p>
+              <p>I have read and agree to the website <Link to="/terms" rel="noopener noreferrer" style={{ color: '#ff7e5f', textDecoration: 'underline' }}>terms and conditions</Link> *</p>
             </label>
             <button
               className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''}`}
