@@ -7,14 +7,13 @@
 
 .admin-vendors__content {
     flex: 1;
-    padding: 20px;
 }
 
 .admin-vendors__header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin: 0 2rem 24px 2rem;
 }
 
 .admin-vendors__header h2 {
@@ -65,7 +64,7 @@
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
     padding: 20px;
-    margin: 15px 0px;
+    margin: 15px 2rem;
 }
 
 .admin-vendors__table-container {
@@ -200,7 +199,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 16px;
+    margin: 16px 2rem 0 2rem;
 }
 
 .admin-vendors__pagination-info {

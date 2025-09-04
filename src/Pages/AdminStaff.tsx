@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import Header from '../Components/Header';
 import { AdminSidebar } from '../Components/AdminSidebar';
@@ -27,6 +27,7 @@ const AdminStaff: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState<StaffUser | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [sortOption, setSortOption] = useState<string>("newest");
   const docketHeight = useDocketHeight();
 
   useEffect(() => {
@@ -201,9 +202,13 @@ const AdminStaff: React.FC = () => {
     }
   };
 
-  const handleSearch = (query: string) => {
-    console.log('Searching for:', query);
-  };
+  const handleSearch = useCallback(
+    (query: string) => {
+      console.log('Searching for:', query);
+      // TODO: Implement search functionality
+    },
+    []
+  );
 
   const handleDeleteClick = (staff: StaffUser) => {
     setStaffToDelete(staff);
@@ -235,13 +240,33 @@ const AdminStaff: React.FC = () => {
     setStaffToDelete(null);
   };
 
+  // Column sort handler (for table headers)
+  const handleColumnSort = useCallback((key: keyof StaffUser) => {
+    // TODO: Implement sorting functionality for staff table
+    console.log('Sorting by:', key);
+  }, []);
+
+  // Dropdown sort handler (for Header component)
+  const handleSort = useCallback((newSortOption: string) => {
+    setSortOption(newSortOption);
+    // TODO: Implement pagination and reset to first page when sorting changes
+  }, []);
+
   return (
     <div className="">
-      
+     
       <div className="admin-content" style={{display:'flex',height:'100vh'}}>
         <AdminSidebar />
+        
         <main className="admin-main" style={{ minHeight: docketHeight, overflow: 'auto', width:'100vw' }}>
           <div className="admin-categories__content">
+             <Header 
+          onSearch={handleSearch} 
+          showSearch 
+          onSort={handleSort}
+          sortOption={sortOption}
+          title="Staff Management"
+        />
             <div className="admin-staff__header">
               <div className="admin-staff__title-section">
                 <h1 className="admin-staff__title">Staff Management</h1>

@@ -55,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <>
       <header className="dashboard__header">
-        <h1 className="dashboard__title">{title || "Daju Vai Admin"}</h1>
+        <h1 className="dashboard__title">{title || ""}</h1> 
         <div className="dashboard__user" ref={dropdownRef}>
           <div className="dashboard__avatar">
             <span className="dashboard__avatar-text">

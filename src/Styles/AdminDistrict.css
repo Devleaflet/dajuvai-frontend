@@ -6,7 +6,6 @@
 
 .admin-district__content {
   flex: 1;
-  padding: 24px 32px;
   background: #f9fafb;
 }
 
@@ -14,8 +13,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
-  padding: 2rem;
+  margin: 0 2rem 14px 2rem;
 }
 
 .admin-district__title {
@@ -51,7 +49,7 @@
 }
 
 .admin-district__search-row {
-  margin-bottom: 16px;
+  margin: 0 2rem 16px 2rem;
   display: flex;
   justify-content: flex-end;
 }
@@ -77,7 +75,7 @@
   border-radius: 3px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   padding: 16px;
-  margin-bottom: 16px;
+  margin: 0 2rem 16px 2rem;
   overflow-x: auto;
 }
 
@@ -159,7 +157,7 @@
   justify-content: center;
   align-items: center;
   gap: 14px;
-  margin: 32px 0 18px 0;
+  margin: 32px 2rem 18px 2rem;
   padding-bottom: 8px;
 }
 

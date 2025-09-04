@@ -174,7 +174,7 @@ const AdminDistrict: React.FC = () => {
     <div className="admin-district">
       <AdminSidebar />
       <div className="admin-district__content">
-        <Header onSearch={() => {}} showSearch={false} />
+        <Header onSearch={() => {}} showSearch={false} title="District Management" />
         <div className="admin-district__header-row">
           <h1 className="admin-district__title">District Management</h1>
           <button className="admin-district__add-btn" onClick={() => setShowAddModal(true)}>

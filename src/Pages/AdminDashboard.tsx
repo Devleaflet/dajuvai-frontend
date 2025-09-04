@@ -261,7 +261,7 @@ export function AdminDashboard() {
     <div className="vendor-dash-container">
       <AdminSidebar />
       <div className={`dashboard ${isMobile ? "dashboard--mobile" : ""}`}>
-        <Header onSearch={handleSearch} showSearch={false} />
+        <Header onSearch={handleSearch} showSearch={false} title="Dashboard" />
         <main
           className="dashboard__main"
           style={{

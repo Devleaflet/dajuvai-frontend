@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { AdminSidebar } from "../Components/AdminSidebar";
+import Header from "../Components/Header";
 import { useAuth } from "../context/AuthContext";
 import { FiEdit2, FiTrash2, FiPlus, FiSearch } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
@@ -190,6 +191,7 @@ const AdminPromo: React.FC = () => {
       <div className="admin-promo">
         <AdminSidebar />
         <div className="admin-promo__content">
+          <Header onSearch={() => {}} showSearch={false} title="Promo Code Management" />
           <div className="admin-promo__error">
             <h2>Access Denied</h2>
             <p>Please log in to access promo code management.</p>
@@ -204,6 +206,7 @@ const AdminPromo: React.FC = () => {
       <div className="admin-promo">
         <AdminSidebar />
         <div className="admin-promo__content">
+          <Header onSearch={() => {}} showSearch={false} title="Promo Code Management" />
           <div className="admin-promo__header">
             <div className="admin-promo__title-container">
               <h1 className="admin-promo__title">Promo Code Management</h1>
@@ -255,6 +258,7 @@ const AdminPromo: React.FC = () => {
     <div className="admin-promo">
       <AdminSidebar />
       <div className="admin-promo__content">
+        <Header onSearch={setSearchQuery} showSearch={true} title="Promo Code Management" />
         <div className="admin-promo__header">
           <div className="admin-promo__title-container">
             <h1 className="admin-promo__title">Promo Code Management</h1>
@@ -271,17 +275,7 @@ const AdminPromo: React.FC = () => {
           </button>
         </div>
 
-        <div className="admin-promo__controls">
-          <div className="admin-promo__search">
-            <FiSearch />
-            <input
-              type="text"
-              placeholder="Search promo codes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
+
 
         {error && (
           <div className="admin-promo__error">

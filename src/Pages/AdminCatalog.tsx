@@ -4,6 +4,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import toast, { Toaster } from "react-hot-toast";
 import "../Styles/AdminCatalog.css";
 import { AdminSidebar } from "../Components/AdminSidebar";
+import Header from "../Components/Header";
 import { API_BASE_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
 
@@ -244,11 +245,8 @@ const AdminCatalog = () => {
       />
       <AdminSidebar />
       <div className="admin-catalog__container">
+        <Header onSearch={() => {}} showSearch={false} title="Content Management" />
         <div className="admin-catalog__content">
-          <div className="admin-catalog__header">
-            <h1 className="admin-catalog__title">Content Management</h1>
-            <p className="admin-catalog__subtitle">Manage your homepage sections</p>
-          </div>
 
           <div className="admin-catalog__card">
             <div className="admin-catalog__card-header">

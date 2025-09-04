@@ -250,11 +250,9 @@
    .recommended-products { 
      width: 100%; 
      margin: 0.5rem 0; 
-
+     padding: 1rem 0.5rem; 
    } 
-   .recommended-product-card__wrapper{
-    width: 220px;
-   }
+ 
    .recommended-products::after { 
      width: 200px; 
      height: 200px; 
@@ -277,24 +275,4 @@
    .recommended-products__scroll-button { 
      display: none; 
    } 
- }
-
- @media (max-width:576px){
-     .recommended-product-card__wrapper{
-    width: 220px;
-   }
-   .recommended-products{
-    padding:0px;
-    margin:0px;
-   }
- }
- @media (max-width:498px){
-     .recommended-product-card__wrapper{
-    width: 180px;
-   }
- }
-  @media (max-width:410px){
-     .recommended-product-card__wrapper{
-    width: 160px;
-   }
  }

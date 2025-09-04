@@ -603,7 +603,7 @@ const AdminBannerWithTabs = () => {
     <div className="admin-banner" style={{ display: "flex" }}>
       <AdminSidebar />
       <div className="admin-banner__content">
-        <Header onSearch={() => {}} showSearch={false} />
+        <Header onSearch={() => {}} showSearch={false} title="Banner Management" />
         {error && (
           <div className="admin-banner__error">
             {error}

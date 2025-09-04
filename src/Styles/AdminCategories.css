@@ -8,7 +8,6 @@
 
 .admin-categories__content {
   flex: 1;
-  padding: 24px;
   overflow-y: auto;
   max-width: 100%;
 }
@@ -17,8 +16,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  margin-top: 16px;
+  margin: 16px 2rem 24px 2rem;
   padding-right: 15px;
   padding-left: 15px;
 }
@@ -59,6 +57,7 @@
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   overflow: hidden;
+  margin: 0 2rem;
 }
 
 .admin-categories__table-container {

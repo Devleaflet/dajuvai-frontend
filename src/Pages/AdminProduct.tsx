@@ -272,6 +272,7 @@ const AdminProduct: React.FC = () => {
           showSearch 
           onSort={handleSort}
           sortOption={sortOption}
+          title="Product Management"
         />
         <div className="admin-products__list-container">
           <div className="admin-products__header">
