@@ -11,6 +11,13 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 
+const ORDER_STATUS_OPTIONS = [
+  { value: "all", label: "All Statuses" },
+  { value: "CONFIRMED", label: "Confirmed" },
+  { value: "DELIVERED", label: "Delivered" },
+  { value: "CANCELLED", label: "Cancelled" }
+];
+
 interface DisplayOrder {
   id: string;
   customer: string;
@@ -53,6 +60,10 @@ const AdminOrders: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [sortOption, setSortOption] = useState<string>("newest");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("all");
+  const [dateRangeFilter, setDateRangeFilter] = useState<string>("all");
+  const [priceRangeFilter, setPriceRangeFilter] = useState<string>("all");
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -109,12 +120,54 @@ const AdminOrders: React.FC = () => {
   useEffect(() => {
     let results = orders.filter(
       (order) =>
-        order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         order.status.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.paymentStatus.toLowerCase().includes(searchQuery.toLowerCase())
+        order.paymentStatus.toLowerCase().includes(searchQuery.toLowerCase())) &&
+        (statusFilter === "all" || order.status === statusFilter) &&
+        (paymentStatusFilter === "all" || order.paymentStatus === paymentStatusFilter)
     );
+
+    // Apply date range filter
+    if (dateRangeFilter !== "all") {
+      const now = new Date();
+      const filterDate = new Date();
+      
+      switch (dateRangeFilter) {
+        case "today":
+          filterDate.setHours(0, 0, 0, 0);
+          results = results.filter(order => new Date(order.orderDate) >= filterDate);
+          break;
+        case "week":
+          filterDate.setDate(now.getDate() - 7);
+          results = results.filter(order => new Date(order.orderDate) >= filterDate);
+          break;
+        case "month":
+          filterDate.setMonth(now.getMonth() - 1);
+          results = results.filter(order => new Date(order.orderDate) >= filterDate);
+          break;
+      }
+    }
+
+    // Apply price range filter
+    if (priceRangeFilter !== "all") {
+      results = results.filter(order => {
+        const price = parseFloat(order.totalPrice.replace("Rs. ", ""));
+        switch (priceRangeFilter) {
+          case "0-1000":
+            return price >= 0 && price <= 1000;
+          case "1000-5000":
+            return price > 1000 && price <= 5000;
+          case "5000-10000":
+            return price > 5000 && price <= 10000;
+          case "10000+":
+            return price > 10000;
+          default:
+            return true;
+        }
+      });
+    }
 
     results = [...results].sort((a, b) => {
       switch (sortOption) {
@@ -149,7 +202,7 @@ const AdminOrders: React.FC = () => {
 
     setFilteredOrders(results);
     setCurrentPage(1);
-  }, [searchQuery, orders, sortOption]);
+  }, [searchQuery, orders, sortOption, statusFilter, paymentStatusFilter, dateRangeFilter, priceRangeFilter]);
 
   const handleSearch = (query: string) => setSearchQuery(query);
 
@@ -269,6 +322,82 @@ const AdminOrders: React.FC = () => {
           showSearch={true}
           title="Order Management"
         />
+
+        {/* Filter Section */}
+        <div className="admin-orders__filters">
+          <div className="admin-orders__filter-group">
+            <label htmlFor="status-filter">Status:</label>
+            <select
+              id="status-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="admin-orders__filter-select"
+            >
+              {ORDER_STATUS_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="admin-orders__filter-group">
+            <label htmlFor="payment-filter">Payment:</label>
+            <select
+              id="payment-filter"
+              value={paymentStatusFilter}
+              onChange={(e) => setPaymentStatusFilter(e.target.value)}
+              className="admin-orders__filter-select"
+            >
+              <option value="all">All Payments</option>
+               <option value="PAID">Paid</option>
+               <option value="UNPAID">Unpaid</option>
+            </select>
+          </div>
+
+          <div className="admin-orders__filter-group">
+            <label htmlFor="date-filter">Date Range:</label>
+            <select
+              id="date-filter"
+              value={dateRangeFilter}
+              onChange={(e) => setDateRangeFilter(e.target.value)}
+              className="admin-orders__filter-select"
+            >
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">Last 7 Days</option>
+              <option value="month">Last 30 Days</option>
+            </select>
+          </div>
+
+          <div className="admin-orders__filter-group">
+            <label htmlFor="price-filter">Price Range:</label>
+            <select
+              id="price-filter"
+              value={priceRangeFilter}
+              onChange={(e) => setPriceRangeFilter(e.target.value)}
+              className="admin-orders__filter-select"
+            >
+              <option value="all">All Prices</option>
+              <option value="0-1000">Rs. 0 - 1,000</option>
+              <option value="1000-5000">Rs. 1,000 - 5,000</option>
+              <option value="5000-10000">Rs. 5,000 - 10,000</option>
+              <option value="10000+">Rs. 10,000+</option>
+            </select>
+          </div>
+
+          <button
+            onClick={() => {
+              setStatusFilter("all");
+              setPaymentStatusFilter("all");
+              setDateRangeFilter("all");
+              setPriceRangeFilter("all");
+            }}
+            className="admin-orders__clear-filters"
+          >
+            Clear All Filters
+          </button>
+        </div>
 
         {!showOrderDetails ? (
           <div className="admin-orders__list-container">
