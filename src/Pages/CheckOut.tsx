@@ -466,7 +466,7 @@ const Checkout: React.FC = () => {
           paymentMethod: selectedPaymentMethod,
           phoneNumber: billingDetails.phoneNumber,
           items: orderItems,
-          promoCode: appliedPromoCode || undefined,
+          promoCode: enteredPromoCode || undefined,
         };
       }
 
