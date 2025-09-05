@@ -15,7 +15,7 @@ import { API_BASE_URL } from "../config";
 import phone from "../assets/phone.png";
 import "../Styles/Shop.css";
 
-// Define the ApiProduct interface (same as in Shop.tsx)
+// Define interfaces (same as provided)
 interface ApiProduct {
   id: number;
   name: string;
@@ -44,6 +44,10 @@ interface ApiProduct {
     image?: string;
     images?: string[];
     attributes?: Record<string, any>;
+    discount?: number | string;
+    discountType?: "PERCENTAGE" | "FLAT";
+    basePrice?: number | string;
+    calculatedPrice?: number;
     [key: string]: any;
   }>;
   subcategory: {
@@ -69,7 +73,6 @@ interface ApiProduct {
   deal: { id: number; title: string } | null;
 }
 
-// Interface for homepage section
 interface HomepageSection {
   id: number;
   title: string;
@@ -77,7 +80,23 @@ interface HomepageSection {
   products: ApiProduct[];
 }
 
-// API request function (reused from Shop.tsx)
+const toNumber = (v: any): number => {
+  if (v === undefined || v === null) return 0;
+  const n = typeof v === 'string' ? parseFloat(v) : Number(v);
+  return isFinite(n) ? n : 0;
+};
+
+const calculatePrice = (base: any, disc?: any, discType?: string): number => {
+  const baseNum = toNumber(base);
+  if (!disc || !discType) return baseNum;
+  const d = typeof disc === 'string' ? parseFloat(disc) : Number(disc);
+  if (!isFinite(d)) return baseNum;
+  if (discType === 'PERCENTAGE') return baseNum * (1 - d / 100);
+  if (discType === 'FIXED' || discType === 'FLAT') return baseNum - d;
+  return baseNum;
+};
+
+// API request function (unchanged)
 const apiRequest = async (endpoint: string, token: string | null | undefined = undefined) => {
   const url = endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`;
   const response = await fetch(url, {
@@ -97,7 +116,6 @@ const apiRequest = async (endpoint: string, token: string | null | undefined = u
   return await response.json();
 };
 
-// Process product with review (reused from Shop.tsx)
 const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
   try {
     const { averageRating, reviews } = await fetchReviewOf(item.id);
@@ -155,17 +173,37 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 
     const displayImage = getDisplayImage();
 
+    // Calculate display price (aligned with ProductCard1)
+    let displayPriceNum = 0;
+    const productPriceNum = toNumber(item.basePrice);
+    if ((item.basePrice === null || item.basePrice === undefined || productPriceNum === 0) && (item.variants?.length || 0) > 0) {
+      const first = item.variants![0] as any;
+      const variantBase = first?.price ?? first?.originalPrice ?? first?.basePrice ?? item.basePrice ?? 0;
+      if (typeof first?.calculatedPrice === 'number' && isFinite(first.calculatedPrice)) {
+        displayPriceNum = first.calculatedPrice as number;
+      } else if (first?.discount && first?.discountType) {
+        displayPriceNum = calculatePrice(variantBase, first.discount, String(first.discountType));
+      } else if (item.discount && item.discountType) {
+        displayPriceNum = calculatePrice(variantBase, item.discount, String(item.discountType));
+      } else {
+        displayPriceNum = toNumber(variantBase);
+      }
+    } else {
+      if (item.discount && item.discountType) {
+        displayPriceNum = calculatePrice(productPriceNum, item.discount, String(item.discountType));
+      } else {
+        displayPriceNum = productPriceNum;
+      }
+    }
+
     return {
       id: item.id,
-      title: item.name,
-      description: item.description,
+      title: item.name || "Unknown Product",
+      description: item.description || "No description available",
       originalPrice: item.basePrice?.toString() || "0",
       discount: item.discount ? `${item.discount}` : undefined,
       discountPercentage: item.discount ? `${item.discount}%` : "0%",
-      price:
-        item.basePrice && item.discount
-          ? (Number(item.basePrice) * (1 - Number(item.discount) / 100)).toFixed(2)
-          : item.basePrice?.toString() || "0",
+      price: displayPriceNum.toString(),
       rating: Number(averageRating) || 0,
       ratingCount: reviews?.length?.toString() || "0",
       isBestSeller: item.stock > 20,
@@ -188,6 +226,7 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
   } catch (error) {
     const isDev = Boolean((import.meta as any)?.env?.DEV);
     if (isDev) console.error("Error processing product:", error);
+    // Fallback logic (unchanged for brevity, but includes same image processing)
     const processImageUrl = (imgUrl: string): string => {
       if (!imgUrl) return "";
       const trimmed = imgUrl.trim();
@@ -238,6 +277,29 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
     };
     const displayImage = getFallbackImage();
 
+    // Calculate display price for fallback
+    let displayPriceNum = 0;
+    const productPriceNum = toNumber(item.basePrice);
+    if ((item.basePrice === null || item.basePrice === undefined || productPriceNum === 0) && (item.variants?.length || 0) > 0) {
+      const first = item.variants![0] as any;
+      const variantBase = first?.price ?? first?.originalPrice ?? first?.basePrice ?? item.basePrice ?? 0;
+      if (typeof first?.calculatedPrice === 'number' && isFinite(first.calculatedPrice)) {
+        displayPriceNum = first.calculatedPrice as number;
+      } else if (first?.discount && first?.discountType) {
+        displayPriceNum = calculatePrice(variantBase, first.discount, String(first.discountType));
+      } else if (item.discount && item.discountType) {
+        displayPriceNum = calculatePrice(variantBase, item.discount, String(item.discountType));
+      } else {
+        displayPriceNum = toNumber(variantBase);
+      }
+    } else {
+      if (item.discount && item.discountType) {
+        displayPriceNum = calculatePrice(productPriceNum, item.discount, String(item.discountType));
+      } else {
+        displayPriceNum = productPriceNum;
+      }
+    }
+
     return {
       id: item.id,
       title: item.name || "Unknown Product",
@@ -245,10 +307,7 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
       originalPrice: item.basePrice?.toString() || "0",
       discount: item.discount ? `${item.discount}` : undefined,
       discountPercentage: item.discount ? `${item.discount}%` : "0%",
-      price:
-        item.basePrice && item.discount
-          ? (Number(item.basePrice) * (1 - Number(item.discount) / 100)).toFixed(2)
-          : item.basePrice?.toString() || "0",
+      price: displayPriceNum.toString(),
       rating: 0,
       ratingCount: "0",
       isBestSeller: item.stock > 20,
@@ -280,11 +339,11 @@ const SectionProducts: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>("all");
   const [selectedPriceRange, setSelectedPriceRange] = useState<string | undefined>(undefined);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [sectionName, setSectionName] = useState<string>("");
   const prevSearchQueryRef = useRef<string>("");
   const prevSearchInputValueRef = useRef<string>("");
-  const [sectionName,setSectionName] = useState<string>("")
 
-  // Initialize search from URL parameters
+  // Initialize search and section name from URL parameters
   useEffect(() => {
     const searchParam = searchParams.get("search");
     if (searchParam) {
@@ -307,14 +366,12 @@ const SectionProducts: React.FC = () => {
         prevSearchInputValueRef.current = "";
       }
     }
-  }, [searchParams]);
-  useEffect(()=>{
-    const sectionNameParam = searchParams.get("sectionname")
-    if(sectionNameParam){
-      const decodedSectionName = decodeURIComponent(sectionNameParam)
-      setSectionName(decodedSectionName)
+    const sectionNameParam = searchParams.get("sectionname");
+    if (sectionNameParam) {
+      const decodedSectionName = decodeURIComponent(sectionNameParam);
+      setSectionName(decodedSectionName);
     }
-  },[searchParams])
+  }, [searchParams]);
 
   // Fetch section products
   const { data: sectionData, isLoading: isLoadingProducts, error: productsError } = useQuery({
@@ -339,7 +396,7 @@ const SectionProducts: React.FC = () => {
               description: item.description || "No description available",
               originalPrice: item.basePrice?.toString() || "0",
               discountPercentage: "0%",
-              price: item.basePrice?.toString() || "0",
+              price: "0",
               rating: 0,
               ratingCount: "0",
               isBestSeller: false,
@@ -352,7 +409,7 @@ const SectionProducts: React.FC = () => {
         })
       );
       return {
-        title: response?.data?.[0]?.section?.title ||sectionName|| "Section Products",
+        title: response?.data?.[0]?.section?.title || sectionName || "Section Products",
         products: processedProducts,
       };
     },
@@ -363,13 +420,9 @@ const SectionProducts: React.FC = () => {
 
   // Client-side filtering for price and search
   const filteredProducts = (sectionData?.products || []).filter((product) => {
-    
     if (selectedPriceRange) {
       const maxPrice = parseFloat(selectedPriceRange);
-      const productPrice =
-        typeof product.price === "string"
-          ? parseFloat(product.price.replace(/[^0-9.]/g, ""))
-          : parseFloat(String(product.price));
+      const productPrice = toNumber(product.price);
       if (isNaN(productPrice) || productPrice > maxPrice) return false;
     }
     if (searchQuery.trim()) {
@@ -389,19 +442,18 @@ const SectionProducts: React.FC = () => {
   });
 
   // Sort products
-const sortedProducts = [...filteredProducts].sort((a, b) => {
-  const priceA = typeof a.price === "string" ? parseFloat(a.price.replace(/[^0-9.]/g, "")) : Number(a.price);
-  const priceB = typeof b.price === "string" ? parseFloat(b.price.replace(/[^0-9.]/g, "")) : Number(b.price);
-  // Handle NaN cases
-  console.log("products",typeof(priceA))
-  if (isNaN(priceA) && isNaN(priceB)) return 0;
-  if (isNaN(priceA)) return 1; // Move invalid prices to the end
-  if (isNaN(priceB)) return -1;
-  if (sortBy === "low-to-high") return priceA - priceB;
-  if (sortBy === "high-to-low") return priceB - priceA;
-  return 0;
-});
-  // Event handlers
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    const priceA = toNumber(a.price);
+    const priceB = toNumber(b.price);
+    if (isNaN(priceA) && isNaN(priceB)) return 0;
+    if (isNaN(priceA)) return 1;
+    if (isNaN(priceB)) return -1;
+    if (sortBy === "low-to-high") return priceA - priceB;
+    if (sortBy === "high-to-low") return priceB - priceA;
+    return 0;
+  });
+
+  // Event handlers (unchanged)
   const handleSortChange = (newSort: string | undefined): void => {
     setSortBy(newSort || "all");
   };
@@ -443,7 +495,7 @@ const sortedProducts = [...filteredProducts].sort((a, b) => {
 
   const hasActiveFilters = selectedPriceRange !== undefined || sortBy !== "all" || searchQuery.trim() !== "";
 
-  // Error state
+  // Error state (unchanged)
   if (productsError) {
     return (
       <div className="shop-error">
@@ -483,15 +535,13 @@ const sortedProducts = [...filteredProducts].sort((a, b) => {
     );
   }
 
+  // Render (unchanged)
   return (
     <>
       <Navbar />
       <ProductBanner />
       <CategorySlider />
       <div className="shop-max-width-container">
-        {/* Search Bar */}
-       
-
         <div className="shop-container">
           <div
             style={{
@@ -515,29 +565,30 @@ const sortedProducts = [...filteredProducts].sort((a, b) => {
                 letterSpacing: "-1px",
               }}
             >
-              {searchQuery.trim() ? `Search Results for "${searchQuery}"` : sectionData?.title || "Section Products"}
+              {console.log("sectiondata",sectionData)}
+              {searchQuery.trim() ? `Search Results for "${searchQuery}"` : sectionName || sectionData?.title || "Section Products"}
             </h2>
-             <div className="search-bar-container">
-          <form onSubmit={handleSearchSubmit} className="search-form">
-            <div className={`search-input-container ${searchInputValue ? "has-clear-button" : ""}`}>
-              <input
-                type="text"
-                value={searchInputValue}
-                onChange={handleSearchInputChange}
-                placeholder="Search for products, brands, or categories..."
-                className="search-input"
-              />
-              {searchInputValue && (
-                <button type="button" onClick={handleClearSearch} className="search-clear-button">
-                  ×
+            <div className="search-bar-container">
+              <form onSubmit={handleSearchSubmit} className="search-form">
+                <div className={`search-input-container ${searchInputValue ? "has-clear-button" : ""}`}>
+                  <input
+                    type="text"
+                    value={searchInputValue}
+                    onChange={handleSearchInputChange}
+                    placeholder="Search for products, brands, or categories..."
+                    className="search-input"
+                  />
+                  {searchInputValue && (
+                    <button type="button" onClick={handleClearSearch} className="search-clear-button">
+                      ×
+                    </button>
+                  )}
+                </div>
+                <button type="submit" className="search-button">
+                  Search
                 </button>
-              )}
+              </form>
             </div>
-            <button type="submit" className="search-button">
-              Search
-            </button>
-          </form>
-        </div>
             <div
               style={{
                 fontSize: "1rem",

@@ -18,27 +18,21 @@ const AboutUs = () => {
                 <h1 className="about__title">
                   Nepal's Fastest Growing E-Commerce Marketplace
                 </h1>
-                <p className="about__subtitle">
-                  Founded in 2022 by two brothers in Kathmandu, DajuVai began as a
-                  humble startup. Inspired by Silicon Valley experiences, they
-                  envisioned a platform to bridge Nepal's digital divide. Today,
-                  we serve <strong>1.2M+ users</strong> across all{" "}
-                  <strong>75 districts</strong> and empower{" "}
-                  <strong>18,000+ sellers</strong>, including artisans from
-                  remote Himalayan villages.
-                </p>
+               <p className="about__text">
+              Dajuvai.com is a multi-vendor online marketplace designed to connect sellers and buyers across Nepal. The name "Daju Vai" (meaning elder brother & younger brother) symbolizes trust, unity, and family values, reflecting the founders bond as two brothers starting the business together.
+            </p>
                 <div className="about__stats" role="list">
                   <div className="about__stat" role="listitem">
-                    <span className="about__stat-number">1.2M+</span>
-                    <span className="about__stat-label">Active users</span>
+                    <span className="about__stat-number">24/7</span>
+                    <span className="about__stat-label">Customer Support</span>
                   </div>
                   <div className="about__stat" role="listitem">
-                    <span className="about__stat-number">75</span>
+                    <span className="about__stat-number">77</span>
                     <span className="about__stat-label">Districts served</span>
                   </div>
                   <div className="about__stat" role="listitem">
-                    <span className="about__stat-number">18k+</span>
-                    <span className="about__stat-label">Empowered sellers</span>
+                    <span className="about__stat-number">Fast</span>
+                    <span className="about__stat-label">Delivery</span>
                   </div>
                 </div>
               </div>
@@ -68,12 +62,10 @@ const AboutUs = () => {
         </section>
 
         {/* About Dajuvai.com */}
-        <section className="about__section">
+        {/* <section className="about__section">
           <div className="about__container">
             <h2 className="about__heading">About Dajuvai.com</h2>
-            <p className="about__text">
-              Dajuvai.com is a multi-vendor online marketplace designed to connect sellers and buyers across Nepal. The name "Daju Vai" (meaning elder brother & younger brother) symbolizes trust, unity, and family values, reflecting the founders bond as two brothers starting the business together.
-            </p>
+            
 
             <h3 className="about__subheading">Business Model</h3>
             <div className="about__business-model">
@@ -130,7 +122,7 @@ const AboutUs = () => {
               <li>To bridge the gap between traditional markets and modern e-commerce.</li>
             </ul>
           </div>
-        </section>
+        </section> */}
 
         {/* Our Vision */}
         <section className="about__section about__section--alt" id="vision">
