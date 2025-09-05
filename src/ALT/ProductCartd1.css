@@ -1,3 +1,6 @@
+/* ProductCartd1.css - full file (integrated tooltip + layout) */
+
+/* Link wrapper */
 .product1__link-wrapper {
 	text-decoration: none !important;
 	color: inherit;
@@ -6,6 +9,7 @@
 	margin-bottom: 0.1rem;
 }
 
+/* Product card */
 .product1 {
 	width: 100%;
 	height: 400px; /* Increased height for better description space */
@@ -19,7 +23,8 @@
 	pointer-events: auto;
 	margin: 0 auto;
 	transition: box-shadow 0.3s ease;
-	overflow: hidden; /* Changed from visible to hidden */
+	/* Allow tooltip to escape the card */
+	overflow: visible;
 }
 
 .product1:hover {
@@ -91,6 +96,7 @@
 	transform: scale(1.1);
 }
 
+/* Image area */
 .product1__image {
 	position: relative;
 	height: 65%; /* Reduced to 65% to give more space for text */
@@ -98,7 +104,7 @@
 	justify-content: center;
 	align-items: center;
 	margin-bottom: 5px; /* Reduced margin */
-	overflow: hidden;
+	overflow: hidden; /* keep image clipped inside */
 	border-radius: 8px;
 	z-index: 1;
 	flex-shrink: 0;
@@ -123,6 +129,7 @@
 	pointer-events: none;
 }
 
+/* Rating / sold row */
 .product1__rating {
 	display: flex;
 	align-items: center;
@@ -158,10 +165,11 @@
 	height: 14px;
 }
 
+/* Cart floating button */
 .product1__cart-button {
 	position: absolute;
 	bottom: 10px;
-	right: 10px; /* Changed from right to left */
+	right: 10px;
 	border: none;
 	border-radius: 50%;
 	padding: 8px;
@@ -198,18 +206,21 @@
 	color: white;
 }
 
+/* Info panel */
 .product1__info {
 	flex: 1;
 	display: flex;
 	flex-direction: column;
 	min-height: 0;
-	overflow: hidden;
+	/* allow tooltip to show outside this block */
+	overflow: visible;
 	padding: 0 5px; /* Added padding */
 	height: 35%; /* Increased to 35% for more text space */
 	justify-content: flex-start;
 	gap: 4px;
 }
 
+/* Title & description */
 .product1__title {
 	font-size: 15px;
 	font-weight: 600;
@@ -224,8 +235,12 @@
 	text-overflow: ellipsis;
 	word-break: break-word;
 	hyphens: auto;
+	/* we will position tooltip relative to this */
+	position: relative;
+	cursor: pointer;
 }
 
+/* description text */
 .product1__description {
 	display: -webkit-box;
 	font-size: 12px;
@@ -243,6 +258,7 @@
 	flex-shrink: 0;
 }
 
+/* Price block */
 .product1__price {
 	display: flex;
 	align-items: center;

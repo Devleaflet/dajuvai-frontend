@@ -314,6 +314,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 					<h3
 						className="product1__title"
 						data-full-title={title}
+						title={title}
 					>
 						{title}
 					</h3>
