@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
+import {Truck,Undo2,ShieldCheck,Phone} from 'lucide-react'
 
 interface Category {
 	id: number;
@@ -753,6 +754,34 @@ const ProductPage = () => {
 			?.scrollIntoView({ behavior: "smooth" });
 	};
 
+	const handleVendorClick = async () => {
+		const vendorId = product?.vendor?.id;
+		if (!vendorId) {
+			console.warn("Vendor ID not found in product data");
+			return;
+		}
+		try {
+			const response = await fetch(`/api/vendors/${vendorId}`, {
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			});
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+			const data = await response.json();
+			if (data.success) {
+				window.location.href = `/vendor/${vendorId}`;
+			} else {
+				console.error("Failed to fetch vendor details:", data.message);
+			}
+		} catch (error) {
+			console.error("Error fetching vendor details:", error);
+			window.location.href = `/vendor/${vendorId}`;
+		}
+	};
+
 	if (isProductLoading || isReviewsLoading || !product) {
 		return (
 			<>
@@ -796,7 +825,7 @@ const ProductPage = () => {
 			<Navbar />
 			<main className="product-page">
 				<div className="product-page__container">
-					<div className="product-page__content">
+					<div className="product-page__content product-page__content--three-column">
 						<div className="product-gallery">
 							<div className="product-gallery__images">
 								<div
@@ -1142,51 +1171,6 @@ const ProductPage = () => {
 								)}
 							</div>
 
-							<div className="seller-info">
-								<div
-									className="seller-info__identity"
-									onClick={async () => {
-										const vendorId = product.vendor?.id;
-										if (!vendorId) {
-											console.warn("Vendor ID not found in product data");
-											return;
-										}
-										try {
-											const response = await fetch(`/api/vendors/${vendorId}`, {
-												method: "GET",
-												headers: {
-													"Content-Type": "application/json",
-												},
-											});
-											if (!response.ok) {
-												throw new Error(
-													`HTTP error! status: ${response.status}`
-												);
-											}
-											const data = await response.json();
-											if (data.success) {
-												window.location.href = `/vendor/${vendorId}`;
-											} else {
-												console.error(
-													"Failed to fetch vendor details:",
-													data.message
-												);
-											}
-										} catch (error) {
-											console.error("Error fetching vendor details:", error);
-											window.location.href = `/vendor/${vendorId}`;
-										}
-									}}
-								>
-									<div className="seller-info__icon">
-										{product.vendor?.businessName?.charAt(0).toUpperCase() ||
-											"U"}
-									</div>
-									<h4 className="seller-info__name">
-										Sold by: {product.vendor?.businessName || "Unknown Vendor"}
-									</h4>
-								</div>
-							</div>
 							<div className="product-actions">
 								<button
 									className="product-actions__button product-actions__button--primary"
@@ -1220,6 +1204,75 @@ const ProductPage = () => {
 										Add to Wishlist
 									</button>
 								)}
+							</div>
+						</div>
+
+						{/* New Vendor Details Section */}
+						<div className="vendor-details">
+							<div className="vendor-details__header">
+								<h3 className="vendor-details__title">Seller Information</h3>
+							</div>
+
+							<div className="vendor-details__content">
+								<div className="vendor-details__profile" onClick={handleVendorClick}>
+									<div className="vendor-details__avatar">
+										{product.vendor?.businessName?.charAt(0).toUpperCase() || "U"}
+									</div>
+									<div className="vendor-details__info">
+										<h4 className="vendor-details__name">
+											{product.vendor?.businessName || "Unknown Vendor"}
+										</h4>
+										<p className="vendor-details__subtitle">Verified Seller</p>
+									</div>
+								</div>
+
+
+								<div className="vendor-details__features">
+									<div className="vendor-details__feature">
+										<div className="vendor-details__feature-icon"><Truck style={{opacity:'1', color:'#ff6b35'}}/></div>
+										<div className="vendor-details__feature-text">
+											<span className="vendor-details__feature-title">Fast Shipping</span>
+											<span className="vendor-details__feature-desc">14 business days</span>
+										</div>
+									</div>
+									<div className="vendor-details__feature">
+										<div className="vendor-details__feature-icon"><Undo2 style={{opacity:'1', color:'#ff6b35'}}/></div>
+										<div className="vendor-details__feature-text">
+											<span className="vendor-details__feature-title">Easy Returns</span>
+											<span className="vendor-details__feature-desc">1 week return policy</span>
+										</div>
+									</div>
+									<div className="vendor-details__feature">
+										<div className="vendor-details__feature-icon"><ShieldCheck style={{opacity:'1', color:'#ff6b35'}}/></div>
+										<div className="vendor-details__feature-text">
+											<span className="vendor-details__feature-title">Secure Payment</span>
+											<span className="vendor-details__feature-desc">Protected transactions</span>
+										</div>
+									</div>
+									<div className="vendor-details__feature">
+										<div className="vendor-details__feature-icon"><Phone style={{opacity:'1', color:'#ff6b35'}}/></div>
+										<div className="vendor-details__feature-text">
+											<span className="vendor-details__feature-title">24/7 Support</span>
+											<span className="vendor-details__feature-desc">Customer service</span>
+										</div>
+									</div>
+								</div>
+
+								<div className="vendor-details__actions">
+									<button 
+										className="vendor-details__button vendor-details__button--primary"
+										onClick={handleVendorClick}
+									>
+										Visit Store
+									</button>
+									
+								</div>
+
+								<div className="vendor-details__badges">
+									<div className="vendor-details__badge">✓ Verified</div>
+									<div className="vendor-details__badge">⭐ Top Rated</div>
+									<div className="vendor-details__badge">🔒 Trusted</div>
+								</div>
 							</div>
 						</div>
 					</div>
