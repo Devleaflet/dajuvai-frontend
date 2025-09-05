@@ -8,13 +8,22 @@
 }
 
 .shop-container {
-	width: 100%;
+	width: 95%;
+	margin: 0 auto;
 	box-sizing: border-box;
 	position: relative;
 	display: flex;
 	flex-direction: column;
 	padding-bottom: 60px;
 	max-width: 100%;
+}
+
+@media (max-width: 768px) {
+	.shop-container {
+		width: 100%;
+		padding-left: 8px;
+		padding-right: 8px;
+	}
 }
 
 .shop-header {
