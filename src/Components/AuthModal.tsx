@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import VendorService from "../services/vendorService";
@@ -41,7 +41,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const { login, fetchUserData } = useAuth();
   const { login: vendorLogin } = useVendorAuth();
   const navigate = useNavigate();
-
+  const [termsAgreed,setTermsAgreed] = useState<boolean>(false)
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
@@ -217,7 +217,9 @@ useEffect(() => {
       setErrors(prev => ({ ...prev, [name]: error }));
     }
   };
-
+   const handleTermsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setTermsAgreed(e.target.checked);
+    };
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     let isValid = true;
@@ -900,47 +902,60 @@ useEffect(() => {
               )}
 
               {!isLoginMode && (
-                <div className="auth-modal__form-group" style={{ position: 'relative' }}>
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    className="auth-modal__input"
-                    placeholder="Confirm password"
-                    value={confirmPassword}
-                    name="confirmPassword"
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    required
-                    disabled={isLoading}
-                    style={{ paddingRight: '40px' }}
-                  />
-                  <span style={{ position: 'absolute', right: '10px', top: '25px', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', height: '100%' }}>
-                    <button
-                      type="button"
-                      onClick={toggleConfirmPasswordVisibility}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: '0',
-                        fontSize: '16px',
-                        lineHeight: 1
-                      }}
-                      tabIndex={-1}
-                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showConfirmPassword ? (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7" /><circle cx="12" cy="12" r="3.5" /></svg>
-                      ) : (
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22" /><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" /><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" /></svg>
-                      )}
-                    </button>
-                  </span>
-                  {errors.confirmPassword && touched.confirmPassword && (
-                    <div className="error-message">
-                      <FaInfoCircle className="error-icon" />
-                      {errors.confirmPassword}
-                    </div>
-                  )}
+                <div>
+                  <div className="auth-modal__form-group" style={{ position: 'relative' }}>
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      className="auth-modal__input"
+                      placeholder="Confirm password"
+                      value={confirmPassword}
+                      name="confirmPassword"
+                      onChange={handleInputChange}
+                      onBlur={handleBlur}
+                      required
+                      disabled={isLoading}
+                      style={{ paddingRight: '40px' }}
+                    />
+                    <span style={{ position: 'absolute', right: '10px', top: '25px', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center', height: '100%' }}>
+                      <button
+                        type="button"
+                        onClick={toggleConfirmPasswordVisibility}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '0',
+                          fontSize: '16px',
+                          lineHeight: 1
+                        }}
+                        tabIndex={-1}
+                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showConfirmPassword ? (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7" /><circle cx="12" cy="12" r="3.5" /></svg>
+                        ) : (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22" /><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" /><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" /></svg>
+                        )}
+                      </button>
+                    </span>
+                    {errors.confirmPassword && touched.confirmPassword && (
+                      <div className="error-message">
+                        <FaInfoCircle className="error-icon" />
+                        {errors.confirmPassword}
+                      </div>
+                    )}
+                  </div>
+                   <label className="checkout-container__terms-checkbox">
+              <input
+                type="checkbox"
+                checked={termsAgreed}
+                onChange={handleTermsChange}
+                className="checkout-container__terms-checkbox-input"
+                required
+                style={{ boxShadow: 'none' }}
+              />
+              <p>I have read and agree to the website <Link to="/terms" rel="noopener noreferrer" style={{ color: '#ff7e5f', textDecoration: 'underline' }}>terms and conditions</Link> *</p>
+            </label>
                 </div>
               )}
 

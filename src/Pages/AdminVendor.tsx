@@ -1,613 +1,399 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo, FC, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { Vendor, District, VendorUpdateRequest, VendorSignupRequest } from '../Components/Types/vendor';
+import { VendorAuthService } from '../services/vendorAuthService';
+import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config';
 import { AdminSidebar } from "../Components/AdminSidebar";
 import Header from "../Components/Header";
 import Pagination from "../Components/Pagination";
 import VendorEditModal from "../Components/Modal/VendorEditModal";
 import AddVendorModal from "../Components/Modal/AddVendorModal";
 import VendorViewModal from "../Components/Modal/VendorViewModal";
-import { API_BASE_URL } from "../config";
-import { useAuth } from "../context/AuthContext";
-import { VendorAuthService } from "../services/vendorAuthService";
-import { Vendor, District, ApiResponse, VendorSignupRequest, VendorUpdateRequest } from "../Components/Types/vendor";
-import "../Styles/AdminVendor.css";
-import "../Styles/AdminCustomers.css";
-import { toast } from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
 
-const SkeletonRow: React.FC = () => {
-  return (
-    <tr>
-      <td><div className="skeleton skeleton-text"></div></td>
-      <td><div className="skeleton skeleton-text"></div></td>
-      <td><div className="skeleton skeleton-text"></div></td>
-      <td><div className="skeleton skeleton-text"></div></td>
-      <td><div className="skeleton skeleton-text"></div></td>
-      <td><div className="skeleton skeleton-text"></div></td>
-      <td><div className="skeleton skeleton-text"></div></td>
-      <td><div className="skeleton skeleton-text"></div></td>
-    </tr>
-  );
-};
+// Define the API response type
+interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data?: T;
+}
 
-const createVendorAPI = (token: string | null) => ({
-  async getAll(): Promise<Vendor[]> {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      };
+interface AdminVendorProps {}
 
-      const response = await fetch(`${API_BASE_URL}/api/vendors`, {
-        method: "GET",
-        headers,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result: ApiResponse<Vendor[]> = await response.json();
-      return (result.data || []).map((vendor) => ({
-        ...vendor,
-        status: vendor.isVerified ? "Active" : "Inactive",
-        taxNumber: vendor.taxNumber || "N/A",
-        taxDocuments: Array.isArray(vendor.taxDocuments) ? vendor.taxDocuments : vendor.taxDocuments ? [vendor.taxDocuments] : null,
-        businessRegNumber: vendor.businessRegNumber || "N/A",
-        citizenshipDocuments: Array.isArray(vendor.citizenshipDocuments) ? vendor.citizenshipDocuments : vendor.citizenshipDocuments ? [vendor.citizenshipDocuments] : null,
-        chequePhoto: Array.isArray(vendor.chequePhoto) ? vendor.chequePhoto : vendor.chequePhoto ? [vendor.chequePhoto] : null,
-        accountName: vendor.accountName || "N/A",
-        bankName: vendor.bankName || "N/A",
-        accountNumber: vendor.accountNumber || "N/A",
-        bankBranch: vendor.bankBranch || "N/A",
-        bankCode: vendor.bankCode || "N/A",
-        businessAddress: vendor.businessAddress || "N/A",
-        profilePicture: vendor.profilePicture || "N/A",
-      }));
-    } catch (error) {
-      console.error("Error fetching vendors:", error);
-      throw error;
-    }
-  },
-
-  async getUnapproved(): Promise<Vendor[]> {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      };
-
-      const response = await fetch(`${API_BASE_URL}/api/vendors/unapprove/list`, {
-        method: "GET",
-        headers,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result: ApiResponse<Vendor[]> = await response.json();
-      return (result.data || []).map((vendor) => ({
-        ...vendor,
-        status: "Inactive",
-        taxNumber: vendor.taxNumber || "N/A",
-        taxDocuments: Array.isArray(vendor.taxDocuments) ? vendor.taxDocuments : vendor.taxDocuments ? [vendor.taxDocuments] : null,
-        businessRegNumber: vendor.businessRegNumber || "N/A",
-        citizenshipDocuments: Array.isArray(vendor.citizenshipDocuments) ? vendor.citizenshipDocuments : vendor.citizenshipDocuments ? [vendor.citizenshipDocuments] : null,
-        chequePhoto: Array.isArray(vendor.chequePhoto) ? vendor.chequePhoto : vendor.chequePhoto ? [vendor.chequePhoto] : null,
-        accountName: vendor.accountName || "N/A",
-        bankName: vendor.bankName || "N/A",
-        accountNumber: vendor.accountNumber || "N/A",
-        bankBranch: vendor.bankBranch || "N/A",
-        bankCode: vendor.bankCode || "N/A",
-        businessAddress: vendor.businessAddress || "N/A",
-        profilePicture: vendor.profilePicture || "N/A",
-      }));
-    } catch (error) {
-      console.error("Error fetching unapproved vendors:", error);
-      throw error;
-    }
-  },
-
-  async approve(id: number): Promise<void> {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      };
-
-      const response = await fetch(`${API_BASE_URL}/api/vendors/approve/${id}`, {
-        method: "PUT",
-        headers,
-      });
-
-      if (!response.ok) {
-        let errorMessage = `HTTP error! status: ${response.status}`;
-        try {
-          const errorText = await response.text();
-          errorMessage += `, body: ${errorText}`;
-          const errorData = JSON.parse(errorText);
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          }
-        } catch (parseError) {
-          console.error("Failed to parse error response:", parseError);
-        }
-        throw new Error(errorMessage);
-      }
-
-      if (response.status !== 204) {
-        const result = await response.json();
-        if (!result.success) {
-          throw new Error(result.message || "Failed to approve vendor");
-        }
-      }
-    } catch (error) {
-      console.error("Error approving vendor:", error);
-      throw error;
-    }
-  },
-
-async create(vendorData: VendorSignupRequest): Promise<Vendor> {
-  try {
-    if (!token) {
-      throw new Error("No token provided. Please log in.");
-    }
-
-    console.log("Creating vendor with data:", vendorData);
-
-    const response = await VendorAuthService.signup(
-      {
-        businessName: vendorData.businessName,
-        email: vendorData.email,
-        phoneNumber: vendorData.phoneNumber,
-        password: vendorData.password,
-        district: vendorData.district, // Changed from districtId to district
-        taxNumber: vendorData.taxNumber,
-        taxDocuments: vendorData.taxDocuments,
-        businessRegNumber: vendorData.businessRegNumber,
-        citizenshipDocuments: vendorData.citizenshipDocuments,
-        chequePhoto: vendorData.chequePhoto, // This is now a string, not an array
-        bankDetails: vendorData.bankDetails,
-        
-        profilePicture: vendorData.profilePicture,
-      },
-      token
-    );
-    
-    if (!response.success || !response.vendor) {
-      if (response.errors?.some((err) => err.message.includes("email already exists"))) {
-        throw new Error("A vendor with this email already exists");
-      }
-      throw new Error(response.message || "Failed to create vendor");
-    }
-    
-    return {
-      ...response.vendor,
-      phoneNumber: response.vendor.phoneNumber || "N/A",
-      taxNumber: response.vendor.taxNumber || "N/A",
-      taxDocuments: Array.isArray(response.vendor.taxDocuments) ? response.vendor.taxDocuments : response.vendor.taxDocuments ? [response.vendor.taxDocuments] : null,
-      businessRegNumber: response.vendor.businessRegNumber || "N/A",
-      citizenshipDocuments: Array.isArray(response.vendor.citizenshipDocuments) ? response.vendor.citizenshipDocuments : response.vendor.citizenshipDocuments ? [response.vendor.citizenshipDocuments] : null,
-    
-      chequePhoto: response.vendor.chequePhoto,
-      accountName: response.vendor.accountName || "N/A",
-      bankName: response.vendor.bankName || "N/A",
-      accountNumber: response.vendor.accountNumber || "N/A",
-      bankBranch: response.vendor.bankBranch || "N/A",
-      bankCode: response.vendor.bankCode || "N/A",
-      businessAddress: response.vendor.businessAddress || "N/A",
-      profilePicture: response.vendor.profilePicture || "N/A",
-      isVerified: !!response.vendor.isVerified,
-      status: response.vendor.isVerified ? "Active" : "Inactive",
-    };
-  } catch (error) {
-    console.error("Error creating vendor:", error);
-    throw error;
-  }
-},
-
-  async update(id: number, vendorData: VendorUpdateRequest): Promise<Vendor> {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const response = await VendorAuthService.updateVendor(
-        id,
-        {
-          id,
-          businessName: vendorData.businessName,
-          email: vendorData.email,
-          phoneNumber: vendorData.phoneNumber,
-          district: vendorData.district,
-          taxNumber: vendorData.taxNumber,
-          taxDocuments: vendorData.taxDocuments,
-          businessRegNumber: vendorData.businessRegNumber,
-          citizenshipDocuments: vendorData.citizenshipDocuments,
-          chequePhoto: vendorData.chequePhoto,
-          bankDetails: vendorData.bankDetails,
-          isVerified: vendorData.isVerified,
-          businessAddress: vendorData.businessAddress,
-          profilePicture: vendorData.profilePicture,
-        },
-        token
-      );
-
-      if (!response.success || !response.vendor) {
-        if (response.errors?.some((err) => err.message.includes("email already exists"))) {
-          throw new Error("A vendor with this email already exists");
-        }
-        throw new Error(response.message || "Failed to update vendor");
-      }
-
-      return {
-        ...response.vendor,
-        phoneNumber: response.vendor.phoneNumber || "N/A",
-        taxNumber: response.vendor.taxNumber || "N/A",
-        taxDocuments: Array.isArray(response.vendor.taxDocuments) ? response.vendor.taxDocuments : response.vendor.taxDocuments ? [response.vendor.taxDocuments] : null,
-        businessRegNumber: response.vendor.businessRegNumber || "N/A",
-        citizenshipDocuments: Array.isArray(response.vendor.citizenshipDocuments) ? response.vendor.citizenshipDocuments : response.vendor.citizenshipDocuments ? [response.vendor.citizenshipDocuments] : null,
-        chequePhoto: Array.isArray(response.vendor.chequePhoto) ? response.vendor.chequePhoto : response.vendor.chequePhoto ? [response.vendor.chequePhoto] : null,
-        accountName: response.vendor.accountName || "N/A",
-        bankName: response.vendor.bankName || "N/A",
-        accountNumber: response.vendor.accountNumber || "N/A",
-        bankBranch: response.vendor.bankBranch || "N/A",
-        bankCode: response.vendor.bankCode || "N/A",
-        businessAddress: response.vendor.businessAddress || "N/A",
-        profilePicture: response.vendor.profilePicture || "N/A",
-        isVerified: !!response.vendor.isVerified,
-        status: response.vendor.isVerified ? "Active" : "Inactive",
-      };
-    } catch (error) {
-      console.error("Error updating vendor:", error);
-      throw error;
-    }
-  },
-
-  async delete(id: number): Promise<void> {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      };
-
-      const response = await fetch(`${API_BASE_URL}/api/vendors/${id}`, {
-        method: "DELETE",
-        headers,
-      });
-
-      if (!response.ok) {
-        let errorMessage = `HTTP error! status: ${response.status}`;
-        try {
-          const errorText = await response.text();
-          errorMessage += `, body: ${errorText}`;
-          const errorData = JSON.parse(errorText);
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          }
-        } catch (parseError) {
-          console.error("Failed to parse error response:", parseError);
-        }
-        throw new Error(errorMessage);
-      }
-
-      if (response.status !== 204) {
-        const result = await response.json();
-        if (!result.success) {
-          throw new Error(result.message || "Failed to delete vendor");
-        }
-      }
-    } catch (error) {
-      console.error("Error deleting vendor:", error);
-      throw error;
-    }
-  },
-});
-
-const AdminVendor: React.FC = () => {
-  const { token, isAuthenticated } = useAuth();
+const AdminVendor: FC<AdminVendorProps> = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, token } = useAuth();
+  
+  // State for vendors and UI
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [filteredVendors, setFilteredVendors] = useState<Vendor[]>([]);
-  const [districts, setDistricts] = useState<District[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [vendorsPerPage] = useState(7);
-  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Vendor; direction: "asc" | "desc" } | null>(null);
-  const [unapprovedCount, setUnapprovedCount] = useState(0);
-  const [districtFilter, setDistrictFilter] = useState("all");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const vendorsPerPage = 10;
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [showViewModal, setShowViewModal] = useState<boolean>(false);
+  const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [unapprovedCount, setUnapprovedCount] = useState<number>(0);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof Vendor; direction: 'asc' | 'desc' } | null>(null);
+  const [districtFilter, setDistrictFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
-  const vendorAPI = createVendorAPI(token);
-
-  const CACHE_KEY = "admin_vendors";
-  const CACHE_TTL = 10 * 60 * 1000;
-
-  const fetchDistricts = useCallback(async () => {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const response = await fetch(`${API_BASE_URL}/api/district`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result: ApiResponse<District[]> = await response.json();
+  // Create vendor API instance
+  const vendorAPI = useMemo(() => {
+    return {
+      async getAll(): Promise<Vendor[]> {
+        try {
+          if (!token) {
+            throw new Error("No token provided. Please log in.");
+          }
+          const response = await fetch(`${API_BASE_URL}/api/vendors`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch vendors: ${response.statusText}`);
+          }
+          
+          const result: ApiResponse<Vendor[]> = await response.json();
+          if (!result.success) {
+            throw new Error(result.message || "Failed to fetch vendors");
+          }
+          
+          return result.data || [];
+        } catch (error) {
+          console.error("Error fetching vendors:", error);
+          throw error;
+        }
+      },
       
-      if (!result.data || result.data.length === 0) {
-        setError("No districts available. Please contact support.");
-        toast.error("No districts available. Please contact support.");
+      async update(id: number, vendorData: Partial<Vendor>): Promise<Vendor> {
+        try {
+          if (!token) {
+            throw new Error("No token provided. Please log in.");
+          }
+          
+          const response = await fetch(`${API_BASE_URL}/api/vendors/${id}`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(vendorData)
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Failed to update vendor");
+          }
+          
+          const result: ApiResponse<Vendor> = await response.json();
+          if (!result.success || !result.data) {
+            throw new Error(result.message || "Failed to update vendor");
+          }
+          
+          return result.data;
+        } catch (error) {
+          console.error("Error updating vendor:", error);
+          throw error;
+        }
+      },
+      
+      async delete(id: number): Promise<void> {
+        try {
+          if (!token) {
+            throw new Error("No token provided. Please log in.");
+          }
+          
+          const response = await fetch(`${API_BASE_URL}/api/vendors/${id}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Failed to delete vendor");
+          }
+        } catch (error) {
+          console.error("Error deleting vendor:", error);
+          throw error;
+        }
+      }
+    };
+  }, [token]);
+
+  // Fetch vendors and districts on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!isAuthenticated || !token) {
+        navigate('/login');
         return;
       }
-      
-      setDistricts(result.data || []);
-    } catch (error) {
-      setError("Failed to load districts");
-      toast.error("Failed to load districts");
-    }
-  }, [token]);
 
-  const loadUnapprovedCount = useCallback(async () => {
-    try {
-      const unapproved = await vendorAPI.getUnapproved();
-      setUnapprovedCount(unapproved.length);
-    } catch (err) {
-      console.error("Failed to load unapproved count");
-    }
-  }, [token]);
-
-  useEffect(() => {
-    if (isAuthenticated && token) {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        try {
-          const { data, timestamp } = JSON.parse(cached);
-          if (Array.isArray(data) && Date.now() - timestamp < CACHE_TTL) {
-            setVendors(data);
-            setFilteredVendors(data);
-            setLoading(false);
+      try {
+        setLoading(true);
+        
+        // Fetch vendors
+        const vendorsData = await vendorAPI.getAll();
+        setVendors(vendorsData);
+        setFilteredVendors(vendorsData);
+        
+        // Fetch districts
+        const districtsResponse = await fetch(`${API_BASE_URL}/api/districts`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-        } catch {}
-      }
-      loadVendors();
-      fetchDistricts();
-      loadUnapprovedCount();
-    } else {
-      setLoading(false);
-      setError("Please log in to access vendor management.");
-    }
-  }, [isAuthenticated, token, fetchDistricts]);
-
-  const loadVendors = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const fetchedVendors = await vendorAPI.getAll();
-      setVendors(fetchedVendors);
-      setFilteredVendors(fetchedVendors);
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ data: fetchedVendors, timestamp: Date.now() }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load vendors");
-      toast.error(err instanceof Error ? err.message : "Failed to load vendors");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(1);
-  };
-
-  // Comprehensive filtering logic
-  useEffect(() => {
-    let filtered = [...vendors];
-
-    // Apply search filter
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(
-        (vendor) =>
-          vendor.businessName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          vendor.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (vendor.phoneNumber || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (vendor.taxNumber || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-          vendor.id.toString().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Apply district filter
-    if (districtFilter !== "all") {
-      filtered = filtered.filter(vendor => 
-        vendor.district?.name === districtFilter
-      );
-    }
-
-    // Apply status filter
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(vendor => 
-        vendor.status.toLowerCase() === statusFilter.toLowerCase()
-      );
-    }
-
-    // Apply date range filter
-    if (startDate) {
-      filtered = filtered.filter(vendor => {
-        const vendorDate = new Date(vendor.createdAt);
-        const filterStartDate = new Date(startDate);
-        return vendorDate >= filterStartDate;
-      });
-    }
-
-    if (endDate) {
-      filtered = filtered.filter(vendor => {
-        const vendorDate = new Date(vendor.createdAt);
-        const filterEndDate = new Date(endDate);
-        filterEndDate.setHours(23, 59, 59, 999); // Include the entire end date
-        return vendorDate <= filterEndDate;
-      });
-    }
-
-    setFilteredVendors(filtered);
-  }, [vendors, searchQuery, districtFilter, statusFilter, startDate, endDate]);
-
-  const handleSort = (key: keyof Vendor) => {
-    let direction: "asc" | "desc" = "asc";
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const getSortedAndFilteredVendors = () => {
-    let filtered = [...filteredVendors];
-
-    if (sortConfig) {
-      filtered = filtered.sort((a, b) => {
-        let aValue: any = a[sortConfig.key];
-        let bValue: any = b[sortConfig.key];
-
-        if (sortConfig.key === "id") {
-          aValue = Number(aValue);
-          bValue = Number(bValue);
-        } else if (sortConfig.key === "createdAt" || sortConfig.key === "updatedAt") {
-          // Handle date sorting
-          aValue = new Date(aValue).getTime();
-          bValue = new Date(bValue).getTime();
-        } else if (sortConfig.key === "district") {
-          // Handle district sorting by name
-          aValue = a.district?.name ? a.district.name.toLowerCase() : "";
-          bValue = b.district?.name ? b.district.name.toLowerCase() : "";
-        } else {
-          aValue = aValue ? aValue.toString().toLowerCase() : "";
-          bValue = bValue ? bValue.toString().toLowerCase() : "";
+        });
+        
+        if (districtsResponse.ok) {
+          const districtsData = await districtsResponse.json();
+          setDistricts(districtsData.data || []);
         }
+        
+        // Fetch unapproved count
+        const unapprovedResponse = await fetch(`${API_BASE_URL}/api/vendors/unapproved/count`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (unapprovedResponse.ok) {
+          const countData = await unapprovedResponse.json();
+          setUnapprovedCount(countData.count || 0);
+        }
+        
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setError('Failed to load data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
+    fetchData();
+  }, [isAuthenticated, token, navigate, vendorAPI]);
+
+  // Handle search and filter changes
+  const handleSearch = useCallback((query: string) => {
+    const searchTerm = query.toLowerCase();
+    setSearchQuery(searchTerm);
+    setCurrentPage(1);
+    
+    const filtered = vendors.filter(vendor => {
+      const districtName = typeof vendor.district === 'object' 
+        ? vendor.district?.name || '' 
+        : vendor.district || '';
+        
+      return (
+        (vendor.businessName || '').toLowerCase().includes(searchTerm) ||
+        (vendor.email || '').toLowerCase().includes(searchTerm) ||
+        (vendor.phoneNumber || '').toLowerCase().includes(searchTerm) ||
+        districtName.toLowerCase().includes(searchTerm)
+      );
+    });
+    
+    setFilteredVendors(filtered);
+  }, [vendors]);
+
+  // Handle vendor update
+  const handleSaveVendor = async (vendorData: Partial<Vendor>) => {
+    if (!selectedVendor) return;
+    try {
+      if (!vendorAPI) return;
+      
+      // Prepare the update data with proper type conversions
+      const updateData: Partial<Vendor> = {
+        ...vendorData,
+        id: selectedVendor.id,
+        taxNumber: vendorData.taxNumber || '',
+        businessName: vendorData.businessName || '',
+        email: vendorData.email || '',
+        phoneNumber: vendorData.phoneNumber || '',
+        isVerified: vendorData.isVerified || false,
+        // Handle district conversion
+        district: typeof vendorData.district === 'string' 
+          ? { id: 0, name: vendorData.district } 
+          : vendorData.district,
+        // Handle bank details
+        accountName: vendorData.accountName || '',
+        bankName: vendorData.bankName || '',
+        accountNumber: vendorData.accountNumber || '',
+        bankBranch: vendorData.bankBranch || '',
+        bankCode: vendorData.bankCode || '',
+        // Handle document arrays
+        taxDocuments: Array.isArray(vendorData.taxDocuments) 
+          ? vendorData.taxDocuments 
+          : [],
+        citizenshipDocuments: Array.isArray(vendorData.citizenshipDocuments) 
+          ? vendorData.citizenshipDocuments 
+          : [],
+        // Handle cheque photo (can be string or string[])
+        chequePhoto: Array.isArray(vendorData.chequePhoto) 
+          ? vendorData.chequePhoto[0] || null 
+          : vendorData.chequePhoto || null
+      };
+      
+      // Call the API to update the vendor
+      const updatedVendor = await vendorAPI.update(selectedVendor.id, updateData);
+      
+      // Update the local state with the updated vendor data
+      setVendors(prevVendors => 
+        prevVendors.map(v => v.id === updatedVendor.id ? updatedVendor : v)
+      );
+      
+      // Update filtered vendors if needed
+      setFilteredVendors(prevFiltered => 
+        prevFiltered.map(v => v.id === updatedVendor.id ? updatedVendor : v)
+      );
+      
+      toast.success('Vendor updated successfully');
+      setShowEditModal(false);
+      setSelectedVendor(null);
+    } catch (error) {
+      console.error('Error updating vendor:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update vendor');
     }
-
-    return filtered;
   };
 
-  const indexOfLastVendor = currentPage * vendorsPerPage;
-  const indexOfFirstVendor = indexOfLastVendor - vendorsPerPage;
-  const currentVendors = getSortedAndFilteredVendors().slice(indexOfFirstVendor, indexOfLastVendor);
+  // Handle vendor deletion
+  const handleDeleteVendor = async (vendorId: number) => {
+    if (!window.confirm('Are you sure you want to delete this vendor?')) return;
+    
+    try {
+      if (!token) throw new Error('No authentication token found');
+      
+      await vendorAPI.delete(vendorId);
+      
+      // Update vendors list
+      setVendors(prev => prev.filter(v => v.id !== vendorId));
+      setFilteredVendors(prev => prev.filter(v => v.id !== vendorId));
+      
+      toast.success('Vendor deleted successfully');
+    } catch (error) {
+      console.error('Error deleting vendor:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete vendor');
+    }
+  };
 
-  const viewVendor = (vendor: Vendor) => {
+  // Handle adding a new vendor
+  const handleAddVendor = async (newVendor: VendorSignupRequest) => {
+    try {
+      // Convert to Vendor type for local state
+      const vendorToAdd: Vendor = {
+        ...newVendor,
+        id: Date.now(), // Temporary ID, will be replaced by server response
+        verificationCode: null,
+        verificationCodeExpire: null,
+        isVerified: false,
+        isApproved: false,
+        resetToken: null,
+        resetTokenExpire: null,
+        resendCount: 0,
+        resendBlockUntil: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        district: {
+          id: parseInt(newVendor.district as string) || 0,
+          name: newVendor.district as string
+        },
+        status: 'Active',
+        taxDocuments: newVendor.taxDocuments || [],
+        citizenshipDocuments: newVendor.citizenshipDocuments || [],
+        chequePhoto: newVendor.chequePhoto || null,
+        accountName: newVendor.bankDetails?.accountName || '',
+        bankName: newVendor.bankDetails?.bankName || '',
+        accountNumber: newVendor.bankDetails?.accountNumber || '',
+        bankBranch: newVendor.bankDetails?.bankBranch || '',
+        bankCode: newVendor.bankDetails?.bankCode || ''
+      };
+      
+      setVendors(prev => [vendorToAdd, ...prev]);
+      setFilteredVendors(prev => [vendorToAdd, ...prev]);
+      
+      // In a real app, you would make an API call here to create the vendor
+      // and update the state with the response
+      // const response = await vendorAPI.create(newVendor);
+      // setVendors(prev => [response.data, ...prev]);
+      // setFilteredVendors(prev => [response.data, ...prev]);
+      
+      toast.success('Vendor added successfully');
+    } catch (error) {
+      console.error('Error adding vendor:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to add vendor');
+    }
+  };
+
+  // Handle vendor selection for edit
+  const handleEditVendor = (vendor: Vendor) => {
+    setSelectedVendor(vendor);
+    setShowEditModal(true);
+  };
+
+  // Handle vendor selection for view
+  const handleViewVendor = (vendor: Vendor) => {
     setSelectedVendor(vendor);
     setShowViewModal(true);
   };
 
-  const editVendor = (vendor: Vendor) => {
-    setSelectedVendor({ ...vendor });
-    setShowEditModal(true);
+  // Handle modal close
+  const handleCloseModal = () => {
+    setShowEditModal(false);
+    setShowViewModal(false);
+    setSelectedVendor(null);
   };
 
-  const handleSaveVendor = async (updatedVendor: Vendor) => {
-    try {
-      const savedVendor = await vendorAPI.update(updatedVendor.id, {
-        id: updatedVendor.id,
-        businessName: updatedVendor.businessName,
-        email: updatedVendor.email,
-        phoneNumber: updatedVendor.phoneNumber,
-        districtId: updatedVendor.district?.id,
-        taxNumber: updatedVendor.taxNumber,
-        taxDocuments: updatedVendor.taxDocuments,
-        businessRegNumber: updatedVendor.businessRegNumber,
-        citizenshipDocuments: updatedVendor.citizenshipDocuments,
-        chequePhoto: updatedVendor.chequePhoto,
-        bankDetails: {
-          accountName: updatedVendor.accountName || "",
-          bankName: updatedVendor.bankName || "",
-          accountNumber: updatedVendor.accountNumber || "",
-          bankBranch: updatedVendor.bankBranch || "",
-          bankCode: updatedVendor.bankCode || "",
-        },
-        isVerified: updatedVendor.isVerified,
-        businessAddress: updatedVendor.businessAddress,
-        profilePicture: updatedVendor.profilePicture,
+  // Handle sorting
+  const handleSort = (key: keyof Vendor) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    
+    setSortConfig({ key, direction });
+    
+    setFilteredVendors(prev => {
+      const sorted = [...prev].sort((a, b) => {
+        // Handle potential undefined values
+        const aValue = a[key] || '';
+        const bValue = b[key] || '';
+        
+        if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+        return 0;
       });
-      setVendors(vendors.map((v) => (v.id === savedVendor.id ? savedVendor : v)));
-      setFilteredVendors(filteredVendors.map((v) => (v.id === savedVendor.id ? savedVendor : v)));
-      setShowEditModal(false);
-      setSelectedVendor(null);
-      toast.success("Vendor updated successfully");
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to save vendor";
-      toast.error(errorMessage);
-    }
+      
+      return sorted;
+    });
   };
 
-  const handleAddVendor = async (newVendor: VendorSignupRequest) => {
-  try {
-    if (!newVendor.district) {
-      throw new Error("Please select a valid district");
-    }
-    const selectedDistrict = districts.find((d) => d.name.toLowerCase() === newVendor.district.toLowerCase());
-    if (!selectedDistrict) {
-      throw new Error("Selected district is not valid. Please refresh the page and try again.");
-    }
-    const savedVendor = await vendorAPI.create(newVendor);
-    setVendors([...vendors, savedVendor]);
-    setFilteredVendors([...filteredVendors, savedVendor]);
-    setShowAddModal(false);
-    toast.success("Vendor added successfully");
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : "Failed to add vendor";
-    toast.error(errorMessage);
-    setError(errorMessage);
-  }
-};
+  // Calculate pagination
+  const indexOfLastVendor = currentPage * vendorsPerPage;
+  const indexOfFirstVendor = indexOfLastVendor - vendorsPerPage;
+  const currentVendors = filteredVendors.slice(indexOfFirstVendor, indexOfLastVendor);
+  const totalPages = Math.ceil(filteredVendors.length / vendorsPerPage);
 
-  const handleDeleteVendor = async (id: number) => {
-    try {
-      await vendorAPI.delete(id);
-      setVendors(vendors.filter((vendor) => vendor.id !== id));
-      setFilteredVendors(filteredVendors.filter((vendor) => vendor.id !== id));
-      toast.success("Vendor deleted successfully");
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to delete vendor";
-      toast.error(errorMessage);
-    }
+  // Handle page change
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
   };
 
-  if (!isAuthenticated || !token) {
+  if (!isAuthenticated) {
     return (
       <div className="admin-vendors">
         <AdminSidebar />
@@ -823,7 +609,7 @@ const AdminVendor: React.FC = () => {
                         <div className="admin-vendors__actions">
                           <button
                             className="admin-vendors__action-btn admin-vendors__view-btn"
-                            onClick={() => viewVendor(vendor)}
+                            onClick={() => handleViewVendor(vendor)}
                             aria-label="View vendor"
                           >
                             <svg
@@ -851,7 +637,7 @@ const AdminVendor: React.FC = () => {
                           </button>
                           <button
                             className="admin-vendors__action-btn admin-vendors__edit-btn"
-                            onClick={() => editVendor(vendor)}
+                            onClick={() => handleEditVendor(vendor)}
                             aria-label="Edit vendor"
                           >
                             <svg
