@@ -7,8 +7,6 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Navbar from '../Components/Navbar';
 import Footer from '../Components/Footer';
 import logo from '../assets/logo.webp';
-import esewa from '../assets/esewa.png';
-import npx from '../assets/npx.png';
 import { useAuth } from '../context/AuthContext';
 import AlertModal from '../Components/Modal/AlertModal';
 import { API_BASE_URL } from '../config';
@@ -133,6 +131,11 @@ const Checkout: React.FC = () => {
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('CASH_ON_DELIVERY');
+  const availablePaymentMethods = [
+    { id: 'CASH_ON_DELIVERY', name: 'Cash on Delivery' },
+    { id: 'ESEWA', name: 'eSewa' },
+    { id: 'NPX', name: 'Nepal Payment Express (NPX)' },
+  ];
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
@@ -517,28 +520,6 @@ const Checkout: React.FC = () => {
           ];
           setShowAlert(true);
         } else if (selectedPaymentMethod === 'ESEWA') {
-          // const freshTransactionUuid = uuidv4();
-          // const amount = finalTotal.toString();
-          // const hashString = `total_amount=${amount},transaction_uuid=${freshTransactionUuid},product_code=EPAYTEST`;
-          // const hash = CryptoJS.HmacSHA256(hashString, '8gBm/:&EnhH.1/q');
-          // const signature = CryptoJS.enc.Base64.stringify(hash);
-
-          // const updatedFormData = {
-          //   ...formData,
-          //   amount: amount,
-          //   total_amount: amount,
-          //   transaction_uuid: freshTransactionUuid,
-          //   signature: signature,
-          // };
-
-          // const form = document.getElementById('esewa-form') as HTMLFormElement;
-          // if (form) {
-          //   (form.querySelector('input[name="amount"]') as HTMLInputElement).value = updatedFormData.amount;
-          //   (form.querySelector('input[name="total_amount"]') as HTMLInputElement).value = updatedFormData.total_amount;
-          //   (form.querySelector('input[name="transaction_uuid"]') as HTMLInputElement).value = updatedFormData.transaction_uuid;
-          //   (form.querySelector('input[name="signature"]') as HTMLInputElement).value = updatedFormData.signature;
-          //   form.submit();
-          // }
           if (result.esewaRedirectUrl) {
             console.log('Redirecting to eSewa:', result.esewaRedirectUrl.url);
             window.location.href = result.esewaRedirectUrl.url;
@@ -546,6 +527,17 @@ const Checkout: React.FC = () => {
             throw new Error('eSewa redirect URL not provided');
           }
         }
+        // } else if (selectedPaymentMethod === 'NPX') {
+        //   console.log('Redirecting to NPX payment page');
+        //   navigate('/order-page', {
+        //     state: {
+        //       orderDetails: {
+        //         orderId: result.data?.id || null,
+        //         totalAmount: finalTotal,
+        //       },
+        //     },
+        //   });
+        // }
         setTimeout(() => {
           if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod !== 'ESEWA') {
             navigate('/order-page', {
@@ -1190,42 +1182,20 @@ const Checkout: React.FC = () => {
               </div>
             </div>
             <div className="checkout-container__payment-methods">
-              <label className="checkout-container__payment-methods-label">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="CASH_ON_DELIVERY"
-                  className="checkout-container__payment-methods-input"
-                  checked={selectedPaymentMethod === 'CASH_ON_DELIVERY'}
-                  onChange={handlePaymentMethodChange}
-                  style={{ boxShadow: 'none' }}
-                />
-                Cash on delivery
-              </label>
-              <label className="checkout-container__payment-methods-label">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="ONLINE_PAYMENT"
-                  className="checkout-container__payment-methods-input"
-                  checked={selectedPaymentMethod === 'ONLINE_PAYMENT'}
-                  onChange={handlePaymentMethodChange}
-                  style={{ boxShadow: 'none' }}
-                />
-                <img src={npx} alt="NPX" className="checkout-container__payment-methods-img" />
-              </label>
-              <label className="checkout-container__payment-methods-label">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="ESEWA"
-                  className="checkout-container__payment-methods-input"
-                  checked={selectedPaymentMethod === 'ESEWA'}
-                  onChange={handlePaymentMethodChange}
-                  style={{ boxShadow: 'none' }}
-                />
-                <img src={esewa} alt="eSewa" className="checkout-container__payment-methods-img" />
-              </label>
+              {availablePaymentMethods.map((method) => (
+                <label key={method.id} className="checkout-container__payment-methods-label">
+                  <input
+                    type="radio"
+                    name="payment"
+                    value={method.id}
+                    className="checkout-container__payment-methods-input"
+                    checked={selectedPaymentMethod === method.id}
+                    onChange={handlePaymentMethodChange}
+                    style={{ boxShadow: 'none' }}
+                  />
+                  {method.name}
+                </label>
+              ))}
             </div>
             <p className="checkout-container__privacy-note">
               Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our privacy policy.
