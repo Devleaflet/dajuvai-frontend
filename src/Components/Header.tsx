@@ -102,6 +102,8 @@ const Header: React.FC<HeaderProps> = ({
                 <option value="price-desc">Price: High to Low</option>
                 <option value="name-asc">Name: A-Z</option>
                 <option value="name-desc">Name: Z-A</option>
+                <option value="vendor-asc">Vendor: A-Z</option>
+                <option value="vendor-desc">Vendor: Z-A</option>
               </select>
             )}
           </div>

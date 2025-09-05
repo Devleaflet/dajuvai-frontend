@@ -490,27 +490,7 @@ const sortedProducts = [...filteredProducts].sort((a, b) => {
       <CategorySlider />
       <div className="shop-max-width-container">
         {/* Search Bar */}
-        <div className="search-bar-container">
-          <form onSubmit={handleSearchSubmit} className="search-form">
-            <div className={`search-input-container ${searchInputValue ? "has-clear-button" : ""}`}>
-              <input
-                type="text"
-                value={searchInputValue}
-                onChange={handleSearchInputChange}
-                placeholder="Search for products, brands, or categories..."
-                className="search-input"
-              />
-              {searchInputValue && (
-                <button type="button" onClick={handleClearSearch} className="search-clear-button">
-                  ×
-                </button>
-              )}
-            </div>
-            <button type="submit" className="search-button">
-              Search
-            </button>
-          </form>
-        </div>
+       
 
         <div className="shop-container">
           <div
@@ -537,6 +517,27 @@ const sortedProducts = [...filteredProducts].sort((a, b) => {
             >
               {searchQuery.trim() ? `Search Results for "${searchQuery}"` : sectionData?.title || "Section Products"}
             </h2>
+             <div className="search-bar-container">
+          <form onSubmit={handleSearchSubmit} className="search-form">
+            <div className={`search-input-container ${searchInputValue ? "has-clear-button" : ""}`}>
+              <input
+                type="text"
+                value={searchInputValue}
+                onChange={handleSearchInputChange}
+                placeholder="Search for products, brands, or categories..."
+                className="search-input"
+              />
+              {searchInputValue && (
+                <button type="button" onClick={handleClearSearch} className="search-clear-button">
+                  ×
+                </button>
+              )}
+            </div>
+            <button type="submit" className="search-button">
+              Search
+            </button>
+          </form>
+        </div>
             <div
               style={{
                 fontSize: "1rem",
