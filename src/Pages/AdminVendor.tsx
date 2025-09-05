@@ -6,6 +6,19 @@ import { Vendor, District, VendorUpdateRequest, VendorSignupRequest } from '../C
 import { VendorAuthService } from '../services/vendorAuthService';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
+
+// Skeleton loading row component
+const SkeletonRow = () => (
+  <tr className="animate-pulse">
+    <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded"></div></td>
+    <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded"></div></td>
+    <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded"></div></td>
+    <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded"></div></td>
+    <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded"></div></td>
+    <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded"></div></td>
+    <td className="px-4 py-3"><div className="h-4 bg-gray-200 rounded"></div></td>
+  </tr>
+);
 import { AdminSidebar } from "../Components/AdminSidebar";
 import Header from "../Components/Header";
 import Pagination from "../Components/Pagination";
