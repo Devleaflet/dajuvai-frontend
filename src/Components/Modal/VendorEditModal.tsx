@@ -3,34 +3,8 @@ import "../../Styles/VendorModal.css";
 import { API_BASE_URL } from "../../config";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import axios from "axios"; // Assuming axios is available; install if not: npm install axios
-
-interface District {
-  id: number;
-  name: string;
-}
-
-interface Vendor {
-  id: number;
-  businessName: string;
-  email: string;
-  phoneNumber: string;
-  businessAddress?: string;
-  profilePicture?: string;
-  taxNumber: string;
-  taxDocuments: string[] | null;
-  businessRegNumber: string;
-  citizenshipDocuments: string[] | null;
-  chequePhoto: string[] | null;
-  accountName: string;
-  bankName: string;
-  accountNumber: string;
-  bankBranch: string;
-  bankCode: string;
-  isVerified: boolean;
-  status: "Active" | "Inactive";
-  district?: District;
-}
+import axios from "axios";
+import { Vendor, District, VendorUpdateRequest } from "../../Components/Types/vendor";
 
 interface ImageUploadResponse {
   url: string;
@@ -45,7 +19,7 @@ interface VendorEditModalProps {
 }
 
 const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave, vendor }) => {
-  const [formData, setFormData] = useState<Vendor>({
+  const [formData, setFormData] = useState<Partial<Vendor>>({
     id: 0,
     businessName: "",
     email: "",
@@ -53,9 +27,9 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
     businessAddress: "",
     profilePicture: "",
     taxNumber: "",
-    taxDocuments: null,
+    taxDocuments: [],
     businessRegNumber: "",
-    citizenshipDocuments: null,
+    citizenshipDocuments: [],
     chequePhoto: null,
     accountName: "",
     bankName: "",
@@ -63,8 +37,17 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
     bankBranch: "",
     bankCode: "",
     isVerified: true,
+    isApproved: false,
     status: "Active",
-    district: undefined,
+    district: { id: 0, name: '' },
+    verificationCode: null,
+    verificationCodeExpire: null,
+    resetToken: null,
+    resetTokenExpire: null,
+    resendCount: 0,
+    resendBlockUntil: null,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   });
   const [districts, setDistricts] = useState<District[]>([]);
   const [taxFiles, setTaxFiles] = useState<File[]>([]);
@@ -84,25 +67,25 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
     if (vendor) {
       setFormData({
         ...vendor,
+        taxDocuments: Array.isArray(vendor.taxDocuments) ? vendor.taxDocuments : [],
+        citizenshipDocuments: Array.isArray(vendor.citizenshipDocuments) ? vendor.citizenshipDocuments : [],
         status: vendor.isVerified ? "Active" : "Inactive",
         businessAddress: vendor.businessAddress || "",
         profilePicture: vendor.profilePicture || "",
         taxNumber: vendor.taxNumber || "",
-        taxDocuments: Array.isArray(vendor.taxDocuments) ? vendor.taxDocuments : vendor.taxDocuments ? [vendor.taxDocuments] : null,
         businessRegNumber: vendor.businessRegNumber || "",
-        citizenshipDocuments: Array.isArray(vendor.citizenshipDocuments) ? vendor.citizenshipDocuments : vendor.citizenshipDocuments ? [vendor.citizenshipDocuments] : null,
-        chequePhoto: Array.isArray(vendor.chequePhoto) ? vendor.chequePhoto : vendor.chequePhoto ? [vendor.chequePhoto] : null,
+        chequePhoto: vendor.chequePhoto || null,
         accountName: vendor.accountName || "",
         bankName: vendor.bankName || "",
         accountNumber: vendor.accountNumber || "",
         bankBranch: vendor.bankBranch || "",
         bankCode: vendor.bankCode || "",
+        district: vendor.district || { id: 0, name: '' },
       });
       // Reset file inputs when vendor changes
       setTaxFiles([]);
       setCitizenshipFiles([]);
       setChequeFiles([]);
- 
     }
   }, [vendor]);
 
@@ -152,7 +135,6 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
       if (field === "taxDocuments") setTaxFiles(files);
       if (field === "citizenshipDocuments") setCitizenshipFiles(files);
       if (field === "chequePhoto") setChequeFiles(files);
-     
     }
   };
 
@@ -201,37 +183,80 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
       }
     }
 
-    const updatedFormData = { ...formData };
     try {
+      // Handle file uploads if new files are selected
+      let taxDocUrl = formData.taxDocuments || '';
+      let citizenshipDocUrl = formData.citizenshipDocuments || '';
+      let chequePhotoUrl = formData.chequePhoto || '';
+
       if (taxFiles.length > 0) {
-        updatedFormData.taxDocuments = await Promise.all(taxFiles.map((file) => uploadFile(file)));
+        const uploadedFiles = await Promise.all(taxFiles.map(file => uploadFile(file)));
+        taxDocUrl = uploadedFiles[0] || '';
       }
+
       if (citizenshipFiles.length > 0) {
-        updatedFormData.citizenshipDocuments = await Promise.all(citizenshipFiles.map((file) => uploadFile(file)));
+        const uploadedFiles = await Promise.all(citizenshipFiles.map(file => uploadFile(file)));
+        citizenshipDocUrl = uploadedFiles[0] || '';
       }
+
       if (chequeFiles.length > 0) {
-        updatedFormData.chequePhoto = await Promise.all(chequeFiles.map((file) => uploadFile(file)));
+        const uploadedFiles = await Promise.all(chequeFiles.map(file => uploadFile(file)));
+        chequePhotoUrl = uploadedFiles[0] || '';
+      }
+
+      // Prepare the vendor data with all required fields
+      const vendorToSave: Vendor = {
+        ...formData,
+        id: formData.id || 0,
+        businessName: formData.businessName || '',
+        email: formData.email || '',
+        phoneNumber: formData.phoneNumber || '',
+        taxNumber: formData.taxNumber || '',
+        taxDocuments: Array.isArray(formData.taxDocuments) ? formData.taxDocuments : [],
+        citizenshipDocuments: Array.isArray(formData.citizenshipDocuments) ? formData.citizenshipDocuments : [],
+        chequePhoto: formData.chequePhoto || null,
+        accountName: formData.accountName || '',
+        bankName: formData.bankName || '',
+        accountNumber: formData.accountNumber || '',
+        bankBranch: formData.bankBranch || '',
+        bankCode: formData.bankCode || '',
+        isVerified: formData.isVerified || false,
+        isApproved: formData.isApproved || false,
+        status: formData.status || 'Active',
+        district: formData.district || { id: 0, name: '' },
+        verificationCode: formData.verificationCode || null,
+        verificationCodeExpire: formData.verificationCodeExpire || null,
+        resetToken: formData.resetToken || null,
+        resetTokenExpire: formData.resetTokenExpire || null,
+        resendCount: formData.resendCount || 0,
+        resendBlockUntil: formData.resendBlockUntil || null,
+        createdAt: formData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      // Upload files if any
+      if (taxFiles.length > 0) {
+        const uploadedTaxFiles = await Promise.all(taxFiles.map(file => uploadFile(file)));
+        vendorToSave.taxDocuments = [...(vendorToSave.taxDocuments || []), ...uploadedTaxFiles];
       }
       
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to upload files";
-      setError(errorMessage);
-      toast.error(errorMessage);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      await onSave(updatedFormData);
+      if (citizenshipFiles.length > 0) {
+        const uploadedCitizenshipFiles = await Promise.all(citizenshipFiles.map(file => uploadFile(file)));
+        vendorToSave.citizenshipDocuments = [...(vendorToSave.citizenshipDocuments || []), ...uploadedCitizenshipFiles];
+      }
+      
+      if (chequeFiles.length > 0) {
+        const uploadedChequeFiles = await Promise.all(chequeFiles.map(file => uploadFile(file)));
+        vendorToSave.chequePhoto = uploadedChequeFiles[0] || null;
+      }
+      
+      await onSave(vendorToSave);
       onClose();
-      toast.success("Vendor updated successfully");
-      window.location.href = "/admin-vendors"; // Redirect after successful update
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to update vendor";
+    } catch (error) {
+      console.error("Error saving vendor:", error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save vendor';
       setError(errorMessage);
       toast.error(errorMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -425,13 +450,11 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
             <div className="document-section">
               <h3>PAN Documents</h3>
               <div className="document-container">
-                {formData.taxDocuments && formData.taxDocuments.length > 0 && (
+                {formData.taxDocuments && (
                   <div className="document-preview">
-                    {formData.taxDocuments.map((url, idx) => (
-                      <a key={idx} href={url} target="_blank" rel="noopener noreferrer">
-                        View Document {idx + 1}
-                      </a>
-                    ))}
+                    <a href={formData.taxDocuments} target="_blank" rel="noopener noreferrer">
+                      View Document
+                    </a>
                   </div>
                 )}
                 <div className="document-item file-upload">
@@ -452,13 +475,11 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
             <div className="document-section">
               <h3>Citizenship Documents</h3>
               <div className="document-container">
-                {formData.citizenshipDocuments && formData.citizenshipDocuments.length > 0 && (
+                {formData.citizenshipDocuments && (
                   <div className="document-preview">
-                    {formData.citizenshipDocuments.map((url, idx) => (
-                      <a key={idx} href={url} target="_blank" rel="noopener noreferrer">
-                        View Document {idx + 1}
-                      </a>
-                    ))}
+                    <a href={formData.citizenshipDocuments} target="_blank" rel="noopener noreferrer">
+                      View Document
+                    </a>
                   </div>
                 )}
                 <div className="document-item file-upload">
@@ -479,13 +500,11 @@ const VendorEditModal: React.FC<VendorEditModalProps> = ({ show, onClose, onSave
             <div className="document-section">
               <h3>Cheque Photo</h3>
               <div className="document-container">
-                {formData.chequePhoto && formData.chequePhoto.length > 0 && (
+                {formData.chequePhoto && (
                   <div className="document-preview">
-                    {formData.chequePhoto.map((url, idx) => (
-                      <a key={idx} href={url} target="_blank" rel="noopener noreferrer">
-                        View Cheque {idx + 1}
-                      </a>
-                    ))}
+                    <a href={formData.chequePhoto} target="_blank" rel="noopener noreferrer">
+                      View Cheque
+                    </a>
                   </div>
                 )}
                 <div className="document-item file-upload">
