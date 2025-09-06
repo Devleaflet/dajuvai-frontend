@@ -1,16 +1,5 @@
 import { API_BASE_URL } from "../config";
-import type { Vendor, VendorSignupRequest, VendorLoginRequest, ApiResponse } from "../Components/Types/vendor";
-
-export interface VendorUpdateRequest {
-  id: number;
-  businessName: string;
-  email: string;
-  phoneNumber: string;
-  businessAddress?: string;
-  district?: string;
-  taxNumber?: string;
-  taxDocument?: string;
-}
+import type { Vendor, VendorSignupRequest, VendorLoginRequest, ApiResponse, VendorUpdateRequest } from "../Components/Types/vendor";
 
 export class VendorAuthService {
   private static async setAuthToken(token: string) {
@@ -289,11 +278,22 @@ export class VendorAuthService {
         ? vendorData.phoneNumber
         : `+977${vendorData.phoneNumber}`;
 
+      // Debug: Log what we received
+      console.log("🔍 VendorAuthService.updateVendor - Received vendorData:", vendorData);
+      console.log("🔍 VendorAuthService.updateVendor - chequePhoto type:", typeof vendorData.chequePhoto);
+      console.log("🔍 VendorAuthService.updateVendor - chequePhoto isArray:", Array.isArray(vendorData.chequePhoto));
+      console.log("🔍 VendorAuthService.updateVendor - chequePhoto value:", vendorData.chequePhoto);
+
       const payload = {
         ...vendorData,
         phoneNumber: formattedPhoneNumber,
         ...(vendorData.district && { district: vendorData.district }),
       };
+
+      // Debug: Log what we're sending
+      console.log("🔍 VendorAuthService.updateVendor - Final payload chequePhoto:", payload.chequePhoto);
+      console.log("🔍 VendorAuthService.updateVendor - Final payload chequePhoto type:", typeof payload.chequePhoto);
+      console.log("🔍 VendorAuthService.updateVendor - Final payload chequePhoto isArray:", Array.isArray(payload.chequePhoto));
 
       console.log("Making vendor update request to:", `${API_BASE_URL}/api/vendors/${id}`);
       console.log("Request headers:", {

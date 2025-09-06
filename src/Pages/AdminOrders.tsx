@@ -13,6 +13,7 @@ import { toast } from "react-hot-toast";
 
 const ORDER_STATUS_OPTIONS = [
   { value: "all", label: "All Statuses" },
+  { value: "PENDING", label: "Pending" },
   { value: "CONFIRMED", label: "Confirmed" },
   { value: "DELIVERED", label: "Delivered" },
   { value: "CANCELLED", label: "Cancelled" }

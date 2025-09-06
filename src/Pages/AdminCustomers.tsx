@@ -232,14 +232,14 @@ const AdminCustomers: React.FC = () => {
         <Header onSearch={handleSearch} showSearch={true} title="User Management" />
         
         {/* Filter Section */}
-        <div className="admin-customers__filters">
-          <div className="admin-customers__filter-group">
-            <label htmlFor="roleFilter" className="admin-customers__filter-label">Role:</label>
+        <div className="admin-orders__filters">
+          <div className="admin-orders__filter-group">
+            <label htmlFor="roleFilter">Role:</label>
             <select 
               id="roleFilter"
               value={roleFilter} 
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="admin-customers__filter-select"
+              className="admin-orders__filter-select"
             >
               {ROLE_OPTIONS.map(option => (
                 <option key={option.value} value={option.value}>
@@ -249,25 +249,25 @@ const AdminCustomers: React.FC = () => {
             </select>
           </div>
 
-          <div className="admin-customers__filter-group">
-             <label htmlFor="startDate" className="admin-customers__filter-label">From Date:</label>
+          <div className="admin-orders__filter-group">
+             <label htmlFor="startDate">From Date:</label>
              <input 
                type="date"
                id="startDate"
                value={startDate} 
                onChange={(e) => setStartDate(e.target.value)}
-               className="admin-customers__filter-input"
+               className="admin-orders__filter-select"
              />
            </div>
 
-           <div className="admin-customers__filter-group">
-             <label htmlFor="endDate" className="admin-customers__filter-label">To Date:</label>
+           <div className="admin-orders__filter-group">
+             <label htmlFor="endDate">To Date:</label>
              <input 
                type="date"
                id="endDate"
                value={endDate} 
                onChange={(e) => setEndDate(e.target.value)}
-               className="admin-customers__filter-input"
+               className="admin-orders__filter-select"
              />
            </div>
  
@@ -283,7 +283,7 @@ const AdminCustomers: React.FC = () => {
                   searchInput.value = ''
                 }
               }}
-              className="admin-customers__clear-filters"
+              className="admin-orders__clear-filters"
             >
               Clear All Filters
             </button>

@@ -9,7 +9,7 @@ export interface Vendor {
   taxDocuments: string[] | null;
   businessRegNumber?: string;
   citizenshipDocuments: string[] | null;
-  chequePhoto: string | null; // Keep as array for display consistency
+  chequePhoto: string[] | null; // Keep as array for display consistency
   accountName?: string;
   bankName?: string;
   accountNumber?: string;
@@ -68,7 +68,7 @@ export interface VendorUpdateRequest {
   taxDocuments?: string[] | null;
   businessRegNumber?: string;
   citizenshipDocuments?: string[] | null;
-  chequePhoto?: string[] | null;
+  chequePhoto?: string | null;
   bankDetails?: {
     accountName: string;
     bankName: string;
