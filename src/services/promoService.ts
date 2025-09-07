@@ -1,10 +1,17 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
 
+export enum PromoType {
+  LINE_TOTAL = "LINE_TOTAL",
+  SHIPPING = "SHIPPING"
+}
+
 export interface PromoCode {
   id: number;
   promoCode: string;
   discountPercentage: number;
+  applyOn: string;
+  isValid: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -12,6 +19,8 @@ export interface PromoCode {
 export interface CreatePromoCodeData {
   promoCode: string;
   discountPercentage: number;
+  applyOn: string;
+  isValid: boolean;
 }
 
 export interface PromoCodeResponse {
