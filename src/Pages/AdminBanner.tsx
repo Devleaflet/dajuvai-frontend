@@ -30,10 +30,10 @@ interface Banner {
   createdAt?: string;
   updatedAt?: string;
   productSource?: string;
-  selectedProducts?: Array<number | { id: number; [key: string]: any }>;
-  selectedCategoryId?: number;
-  selectedSubcategory?: number;
-  selectedDeal?: number;
+  selectedProducts?: Array<number | { id: number; subcategory: { id: number; category: { id: number } } }>;
+  selectedCategory?: number | { id: number; name: string } | null;
+  selectedSubcategory?: number | { id: number; name: string } | null;
+  selectedDeal?: number | { id: number; title: string } | null;
   externalLink?: string;
 }
 
@@ -54,9 +54,9 @@ interface TransformedBanner {
   updatedAt?: string;
   productSource?: string;
   selectedProducts?: number[];
-  selectedCategoryId?: number;
-  selectedSubcategory?: number;
-  selectedDeal?: number;
+  selectedCategory?: number | null;
+  selectedSubcategory?: number | null;
+  selectedDeal?: number | null;
   externalLink?: string;
 }
 
@@ -119,39 +119,11 @@ const createBannerAPI = (token: string | null) => ({
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
       const result: ApiResponse<Banner[]> = await response.json();
+      console.log("Banners", result.data);
       return result.data || [];
     } catch (error) {
       console.error("Error fetching banners:", error);
-      throw error;
-    }
-  },
-
-  async getById(id: number): Promise<Banner> {
-    try {
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      };
-
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/banners/${id}`, {
-        method: "GET",
-        headers,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result: ApiResponse<Banner> = await response.json();
-      return result.data!;
-    } catch (error) {
-      console.error("Error fetching banner:", error);
       throw error;
     }
   },
@@ -328,7 +300,7 @@ const createDealAPI = (token: string | null) => ({
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const result: ApiResponse<Deal[]> = await response.json();
       return result.data || [];
     } catch (error) {
@@ -441,26 +413,52 @@ const AdminBannerWithTabs = () => {
     }
   }, [isAuthenticated, token]);
 
-  const transformBanner = (banner: Banner): TransformedBanner => ({
-    ...banner,
-    status: mapApiStatusToDisplay(banner.status),
-    type: mapApiTypeToDisplay(banner.type),
-    dateRange:
-      banner.startDate && banner.endDate
-        ? `${new Date(banner.startDate).toLocaleDateString()} - ${new Date(banner.endDate).toLocaleDateString()}`
-        : banner.startDate
-        ? `From ${new Date(banner.startDate).toLocaleDateString()}`
-        : "Not scheduled",
-    color: banner.color || getDefaultColor(mapApiTypeToDisplay(banner.type)),
-    createdBy: banner.createdBy ? banner.createdBy.username : "System",
-    selectedProducts: Array.isArray(banner.selectedProducts)
-      ? banner.selectedProducts.map((product) =>
-          typeof product === "number" ? product : product.id
-        )
-      : [],
-    selectedCategoryId: banner.selectedCategoryId,
-    selectedSubcategory: banner.selectedSubcategory,
-  });
+  const transformBanner = (banner: Banner): TransformedBanner => {
+    // Extract categoryId and subcategoryId from the first product in selectedProducts
+    let selectedCategory: number | null = banner.selectedCategory || null;
+    if (typeof selectedCategory === 'object' && selectedCategory !== null) {
+      selectedCategory = selectedCategory.id;
+    }
+    let selectedSubcategory: number | null = banner.selectedSubcategory || null;
+    if (typeof selectedSubcategory === 'object' && selectedSubcategory !== null) {
+      selectedSubcategory = selectedSubcategory.id;
+    }
+    let selectedDeal: number | null = banner.selectedDeal || null;
+    if (typeof selectedDeal === 'object' && selectedDeal !== null) {
+      selectedDeal = selectedDeal.id;
+    }
+
+    if (banner.productSource === "manual" && Array.isArray(banner.selectedProducts) && banner.selectedProducts.length > 0) {
+      const firstProduct = banner.selectedProducts[0];
+      if (typeof firstProduct !== "number" && firstProduct.subcategory) {
+        selectedSubcategory = firstProduct.subcategory.id;
+        selectedCategory = firstProduct.subcategory.category.id;
+      }
+    }
+
+    return {
+      ...banner,
+      status: mapApiStatusToDisplay(banner.status),
+      type: mapApiTypeToDisplay(banner.type),
+      dateRange:
+        banner.startDate && banner.endDate
+          ? `${new Date(banner.startDate).toLocaleDateString()} - ${new Date(banner.endDate).toLocaleDateString()}`
+          : banner.startDate
+          ? `From ${new Date(banner.startDate).toLocaleDateString()}`
+          : "Not scheduled",
+      color: banner.color || getDefaultColor(mapApiTypeToDisplay(banner.type)),
+      createdBy: banner.createdBy ? banner.createdBy.username : "System",
+      selectedProducts: Array.isArray(banner.selectedProducts)
+        ? banner.selectedProducts.map((product) =>
+            typeof product === "number" ? product : product.id
+          )
+        : [],
+      selectedCategory,
+      selectedSubcategory,
+      selectedDeal,
+      externalLink: banner.externalLink,
+    };
+  };
 
   const loadBanners = async () => {
     try {
@@ -576,26 +574,14 @@ const AdminBannerWithTabs = () => {
     setShowCreateForm(true);
   };
 
-  const handleEditBanner = async (bannerId: number) => {
+  const handleEditBanner = (bannerId: number) => {
     try {
-      const banner = await bannerAPI.getById(bannerId);
-      let transformedBanner = transformBanner(banner);
-
-      // If productSource is "manual" and selectedProducts exist but selectedCategoryId or selectedSubcategory are missing, fetch product details
-      if (transformedBanner.productSource === "manual" && transformedBanner.selectedProducts?.length && (!transformedBanner.selectedCategoryId || !transformedBanner.selectedSubcategory)) {
-        const productIds = transformedBanner.selectedProducts;
-        const products = await categoryAPI.getProducts();
-        const matchingProduct = products.find((product) => productIds.includes(product.id));
-        if (matchingProduct) {
-          transformedBanner = {
-            ...transformedBanner,
-            selectedCategoryId: matchingProduct.subcategory.category.id,
-            selectedSubcategory: matchingProduct.subcategory.id,
-          };
-        }
+      const banner = banners.find((b) => b.id === bannerId);
+      if (!banner) {
+        throw new Error("Banner not found");
       }
-
-      setEditingBanner(transformedBanner);
+      console.log("Editing banner:", banner);
+      setEditingBanner(banner);
       setShowCreateForm(true);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Failed to load banner for editing");
@@ -625,13 +611,14 @@ const AdminBannerWithTabs = () => {
     setBannerToDelete(null);
   };
 
-  const handleBannerSaved = (savedBanner: Banner) => {
-    const transformedBanner = transformBanner(savedBanner);
+  const handleBannerSaved = async (savedBanner: Banner) => {
     if (editingBanner) {
+      const transformedBanner = transformBanner(savedBanner);
       setBanners(banners.map((banner) => (banner.id === transformedBanner.id ? transformedBanner : banner)));
       toast.success("Banner updated successfully!");
+      await loadBanners();
     } else {
-      setBanners([transformedBanner, ...banners]);
+      await loadBanners();
       toast.success("Banner created successfully!");
     }
     setShowCreateForm(false);
@@ -695,7 +682,10 @@ const AdminBannerWithTabs = () => {
       <div className="admin-banner" style={{ display: "flex" }}>
         <AdminSidebar />
         <div className="admin-banner__content">
-          <div className="admin-banner__error">Please log in to access banner management.</div>
+          <div className="admin-banner__error">
+            Please log in to access banner management.
+            <button onClick={() => setError(null)}>×</button>
+          </div>
         </div>
       </div>
     );
@@ -954,7 +944,7 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
   const [selectedProducts, setSelectedProducts] = useState<number[]>(
     editingBanner?.selectedProducts || []
   );
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(editingBanner?.selectedCategoryId || null);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(editingBanner?.selectedCategory || null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(editingBanner?.selectedSubcategory || null);
   const [selectedDeal, setSelectedDeal] = useState<number | null>(editingBanner?.selectedDeal || null);
   const [externalLink, setExternalLink] = useState(editingBanner?.externalLink || "");
@@ -976,24 +966,21 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
         setCategories(fetchedCategories);
         setDeals(fetchedDeals);
 
-        // Fetch products if editing a banner
-        if (editingBanner) {
-          if (editingBanner.productSource === "manual" && editingBanner.selectedProducts?.length) {
-            const fetchedProducts = await categoryAPI.getProducts(
-              editingBanner.selectedCategoryId,
-              editingBanner.selectedSubcategory
-            );
-            setProducts(fetchedProducts);
-          } else if (editingBanner.productSource === "category" && editingBanner.selectedCategoryId) {
-            const fetchedProducts = await categoryAPI.getProducts(editingBanner.selectedCategoryId);
-            setProducts(fetchedProducts);
-          } else if (editingBanner.productSource === "subcategory" && editingBanner.selectedCategoryId && editingBanner.selectedSubcategory) {
-            const fetchedProducts = await categoryAPI.getProducts(editingBanner.selectedCategoryId, editingBanner.selectedSubcategory);
-            setProducts(fetchedProducts);
-          } else if (editingBanner.productSource === "deal" && editingBanner.selectedDeal) {
-            const fetchedProducts = await categoryAPI.getProducts(undefined, undefined, editingBanner.selectedDeal);
-            setProducts(fetchedProducts);
+        // Set selectedCategory for productSource === "subcategory" based on selectedSubcategory
+        if (editingBanner && editingBanner.productSource === "subcategory" && editingBanner.selectedSubcategory) {
+          const subcategoryId = editingBanner.selectedSubcategory;
+          const parentCategory = fetchedCategories.find((cat) =>
+            cat.subcategories.some((sub) => sub.id === subcategoryId)
+          );
+          if (parentCategory) {
+            setSelectedCategory(parentCategory.id);
           }
+        }
+
+        // Fetch products if editing a banner with pre-selected category/subcategory
+        if (editingBanner && editingBanner.productSource === "manual" && editingBanner.selectedCategory && editingBanner.selectedSubcategory) {
+          const fetchedProducts = await categoryAPI.getProducts(editingBanner.selectedCategory, editingBanner.selectedSubcategory);
+          setProducts(fetchedProducts);
         }
       } catch (error) {
         onError(error instanceof Error ? error.message : "Failed to fetch initial data");
@@ -1010,12 +997,6 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
         let fetchedProducts: Product[] = [];
         if (productSource === "manual" && selectedCategory && selectedSubcategory) {
           fetchedProducts = await categoryAPI.getProducts(selectedCategory, selectedSubcategory);
-        } else if (productSource === "category" && selectedCategory) {
-          fetchedProducts = await categoryAPI.getProducts(selectedCategory);
-        } else if (productSource === "subcategory" && selectedCategory && selectedSubcategory) {
-          fetchedProducts = await categoryAPI.getProducts(selectedCategory, selectedSubcategory);
-        } else if (productSource === "deal" && selectedDeal) {
-          fetchedProducts = await categoryAPI.getProducts(undefined, undefined, selectedDeal);
         }
         setProducts(fetchedProducts);
       } catch (error) {
@@ -1098,6 +1079,7 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
             <select
               className="create-banner__input"
               value={productSource}
+
               onChange={(e) => {
                 setProductSource(e.target.value);
                 setSelectedProducts([]);
@@ -1459,10 +1441,7 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
       onError("Banner name is required");
       return;
     }
-    if (new Date(startDate) < new Date()) {
-      onError("Start date must be >= today");
-      return;
-    }
+
     if (endDate && new Date(endDate) < new Date(startDate)) {
       onError("End date must be >= start date");
       return;
@@ -1495,7 +1474,7 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
       onError("Mobile image is required");
       return;
     }
-
+    console.log("source",productSource)
     setLoading(true);
     try {
       // Construct JSON payload
@@ -1513,8 +1492,6 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
 
       if (productSource === "manual") {
         bannerData.selectedProducts = selectedProducts;
-        bannerData.selectedCategoryId = selectedCategory;
-        bannerData.selectedSubcategoryId = selectedSubcategory;
       }
       if (productSource === "category") {
         bannerData.selectedCategoryId = selectedCategory;
@@ -1547,7 +1524,6 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
 
       // Log the payload for debugging
       console.log("Banner payload:", bannerData);
-
       let savedBanner: Banner;
       if (editingBanner) {
         savedBanner = await bannerAPI.update(editingBanner.id, bannerData);
