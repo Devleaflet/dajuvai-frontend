@@ -1064,18 +1064,54 @@ const UserProfile: React.FC = () => {
                 <div className="profile-sidebar__avatar" style={{ backgroundColor: userDetails?.username ? getAvatarColor(userDetails.username) : "#f97316" }}>
                   {userDetails?.username?.[0]?.toUpperCase() || "?"}
                 </div>
-                {(["details", "credentials", "orders"] as Tab[]).map((tab) => {
-                  if (tab === "credentials" && user?.provider === "google") return null; 
-                  return (
-                    <button
-                      key={tab}
-                      onClick={() => handleTabChange(tab)}
-                      className={`profile-sidebar__button ${activeTab === tab ? "profile-sidebar__button--primary" : "profile-sidebar__button--secondary"}`}
-                    >
-                      {tab === "details" ? "Manage Details" : tab === "credentials" ? "Change Credentials" : "Order History"}
-                    </button>
-                  );
-                })}
+{user.provider === "google"
+									? (["details", "orders"] as Tab[]).map((tab) => {
+											if (tab === "credentials" && user?.provider === "google")
+												return null;
+											return (
+												<button
+													key={tab}
+													onClick={() => handleTabChange(tab)}
+													className={`profile-sidebar__button ${
+														activeTab === tab
+															? "profile-sidebar__button--primary"
+															: "profile-sidebar__button--secondary"
+													}`}
+												>
+													{tab === "details"
+														? "Manage Details"
+														: tab === "credentials"
+														? "Change Credentials"
+														: "Order History"}
+												</button>
+											);
+									  })
+									: (["details", "credentials", "orders"] as Tab[]).map(
+											(tab) => {
+												if (
+													tab === "credentials" &&
+													user?.provider === "google"
+												)
+													return null;
+												return (
+													<button
+														key={tab}
+														onClick={() => handleTabChange(tab)}
+														className={`profile-sidebar__button ${
+															activeTab === tab
+																? "profile-sidebar__button--primary"
+																: "profile-sidebar__button--secondary"
+														}`}
+													>
+														{tab === "details"
+															? "Manage Details"
+															: tab === "credentials"
+															? "Change Credentials"
+															: "Order History"}
+													</button>
+												);
+											}
+									  )}
               </>
             )}
           </div>
