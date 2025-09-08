@@ -1413,9 +1413,7 @@ const UserProfile: React.FC = () => {
 					</div>
 					<div className="profile-content">
 						{activeTab === "details" && renderUserDetails()}
-						{activeTab === "credentials" &&
-							user.provider !== "local" &&
-							renderCredentials()}
+						{activeTab === "credentials" && renderCredentials()}
 						{activeTab === "orders" && renderOrders()}
 					</div>
 				</div>
