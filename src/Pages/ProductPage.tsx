@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
-import {Truck,Undo2,ShieldCheck,Phone} from 'lucide-react'
+import { Truck, Undo2, ShieldCheck, Phone } from "lucide-react";
 
 interface Category {
 	id: number;
@@ -980,16 +980,10 @@ const ProductPage = () => {
 													if (attrType === "color") {
 														return (
 															<div
-																className="flex gap-2 mb-2"
+																className="product-options__variant-group"
 																key={attrType}
 															>
-																<span
-																	className="text-md font-medium text-black mr-2 whitespace-nowrap"
-																	style={{
-																		padding: "10px 3px",
-																		fontWeight: "600",
-																	}}
-																>
+																<span className="product-options__variant-attribute">
 																	{attrType.toUpperCase()}
 																</span>
 																<div className={`product-options__variant-row`}>
@@ -1053,16 +1047,10 @@ const ProductPage = () => {
 													// Default logic for other attributes
 													return (
 														<div
-															className="flex gap-2 mb-2"
+															className="product-options__variant-group"
 															key={attrType}
 														>
-															<span
-																className="text-md font-medium text-black mr-2 whitespace-nowrap"
-																style={{
-																	padding: "10px 3px",
-																	fontWeight: "600",
-																}}
-															>
+															<span className="product-options__variant-attribute">
 																{attrType.toUpperCase()}
 															</span>
 															<div className={`product-options__variant-row`}>
@@ -1208,15 +1196,19 @@ const ProductPage = () => {
 						</div>
 
 						{/* New Vendor Details Section */}
-						<div className="vendor-details">
+						<div className="product-vendor-details">
 							<div className="vendor-details__header">
 								<h3 className="vendor-details__title">Seller Information</h3>
 							</div>
 
 							<div className="vendor-details__content">
-								<div className="vendor-details__profile" onClick={handleVendorClick}>
+								<div
+									className="vendor-details__profile"
+									onClick={handleVendorClick}
+								>
 									<div className="vendor-details__avatar">
-										{product.vendor?.businessName?.charAt(0).toUpperCase() || "U"}
+										{product.vendor?.businessName?.charAt(0).toUpperCase() ||
+											"U"}
 									</div>
 									<div className="vendor-details__info">
 										<h4 className="vendor-details__name">
@@ -1226,46 +1218,68 @@ const ProductPage = () => {
 									</div>
 								</div>
 
-
 								<div className="vendor-details__features">
 									<div className="vendor-details__feature">
-										<div className="vendor-details__feature-icon"><Truck style={{opacity:'1', color:'#ff6b35'}}/></div>
+										<div className="vendor-details__feature-icon">
+											<Truck style={{ opacity: "1", color: "#ff6b35" }} />
+										</div>
 										<div className="vendor-details__feature-text">
-											<span className="vendor-details__feature-title">Fast Shipping</span>
-											<span className="vendor-details__feature-desc">14 business days</span>
+											<span className="vendor-details__feature-title">
+												Fast Shipping
+											</span>
+											<span className="vendor-details__feature-desc">
+												2-3 business days
+											</span>
 										</div>
 									</div>
 									<div className="vendor-details__feature">
-										<div className="vendor-details__feature-icon"><Undo2 style={{opacity:'1', color:'#ff6b35'}}/></div>
+										<div className="vendor-details__feature-icon">
+											<Undo2 style={{ opacity: "1", color: "#ff6b35" }} />
+										</div>
 										<div className="vendor-details__feature-text">
-											<span className="vendor-details__feature-title">Easy Returns</span>
-											<span className="vendor-details__feature-desc">1 week return policy</span>
+											<span className="vendor-details__feature-title">
+												Easy Returns
+											</span>
+											<span className="vendor-details__feature-desc">
+												2 weeks return policy
+											</span>
 										</div>
 									</div>
 									<div className="vendor-details__feature">
-										<div className="vendor-details__feature-icon"><ShieldCheck style={{opacity:'1', color:'#ff6b35'}}/></div>
+										<div className="vendor-details__feature-icon">
+											<ShieldCheck style={{ opacity: "1", color: "#ff6b35" }} />
+										</div>
 										<div className="vendor-details__feature-text">
-											<span className="vendor-details__feature-title">Secure Payment</span>
-											<span className="vendor-details__feature-desc">Protected transactions</span>
+											<span className="vendor-details__feature-title">
+												Secure Payment
+											</span>
+											<span className="vendor-details__feature-desc">
+												Protected transactions
+											</span>
 										</div>
 									</div>
 									<div className="vendor-details__feature">
-										<div className="vendor-details__feature-icon"><Phone style={{opacity:'1', color:'#ff6b35'}}/></div>
+										<div className="vendor-details__feature-icon">
+											<Phone style={{ opacity: "1", color: "#ff6b35" }} />
+										</div>
 										<div className="vendor-details__feature-text">
-											<span className="vendor-details__feature-title">24/7 Support</span>
-											<span className="vendor-details__feature-desc">Customer service</span>
+											<span className="vendor-details__feature-title">
+												24/7 Support
+											</span>
+											<span className="vendor-details__feature-desc">
+												Customer service
+											</span>
 										</div>
 									</div>
 								</div>
 
 								<div className="vendor-details__actions">
-									<button 
+									<button
 										className="vendor-details__button vendor-details__button--primary"
 										onClick={handleVendorClick}
 									>
 										Visit Store
 									</button>
-									
 								</div>
 
 								<div className="vendor-details__badges">
