@@ -14,8 +14,11 @@ interface Slide {
   status?: string;
   startDate?: string;
   endDate?: string;
+  productSource?: string;
+  selectedCategory?: { id: number } | null;
+  selectedSubcategory?: { id: number; category: { id: number } } | null;
+  externalLink?: string | null;
 }
-
 
 const fetchProductBanners = async (): Promise<Slide[]> => {
   const response = await fetch(`${API_BASE_URL}/api/banners`);
@@ -23,11 +26,12 @@ const fetchProductBanners = async (): Promise<Slide[]> => {
     throw new Error(`Failed to fetch banners: ${response.statusText}`);
   }
   const data = await response.json();
+  console.log('Fetched banners:', data);
 
   return data.data
     .filter(
       (banner: any) =>
-        (banner.type === 'HERO' || banner.type === 'SIDEBAR') &&
+        (banner.type === 'PRODUCT' || banner.type === 'SIDEBAR') &&
         banner.status === 'ACTIVE' &&
         (!banner.startDate || new Date(banner.startDate) <= new Date()) &&
         (!banner.endDate || new Date(banner.endDate) >= new Date())
@@ -40,19 +44,23 @@ const fetchProductBanners = async (): Promise<Slide[]> => {
       status: banner.status,
       startDate: banner.startDate,
       endDate: banner.endDate,
+      productSource: banner.productSource,
+      selectedCategory: banner.selectedCategory,
+      selectedSubcategory: banner.selectedSubcategory,
+      externalLink: banner.externalLink,
     }));
 };
-
 
 const ProductBanner: React.FC = () => {
   const navigate = useNavigate();
   const [activeSlide, setActiveSlide] = useState<number>(0);
-  const [touchStart, setTouchStart] = useState<number>(0);
-  const [touchEnd, setTouchEnd] = useState<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [startX, setStartX] = useState<number>(0);
+  const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
   const [translateX, setTranslateX] = useState<number>(0);
   const sliderRef = useRef<HTMLDivElement>(null);
+
+  const clickThreshold = 5; // Pixels to consider as a click vs. drag
+  const swipeThreshold = sliderRef.current ? sliderRef.current.offsetWidth / 4 : 100;
 
   const { data: slides = [], isLoading, error } = useQuery<Slide[], Error>({
     queryKey: ['productBanners'],
@@ -79,36 +87,41 @@ const ProductBanner: React.FC = () => {
   const goToSlide = (index: number): void => {
     setActiveSlide(index);
     setTranslateX(0);
+    console.log('Go to slide:', index);
   };
 
   const goToPrevSlide = (): void => {
     setActiveSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
     setTranslateX(0);
+    console.log('Previous slide');
   };
 
   const goToNextSlide = (): void => {
     setActiveSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
     setTranslateX(0);
+    console.log('Next slide');
   };
 
-  const handleDragStart = (clientX: number): void => {
+  const handleDragStart = (clientX: number, clientY: number): void => {
     setIsDragging(true);
-    setStartX(clientX);
+    setStartPos({ x: clientX, y: clientY });
     setTranslateX(0);
+    console.log('Drag start at:', { x: clientX, y: clientY });
   };
 
   const handleDragMove = (clientX: number): void => {
     if (!isDragging) return;
-    const currentDrag = clientX - startX;
+    const currentDrag = clientX - (startPos?.x || 0);
     const maxDrag = sliderRef.current ? sliderRef.current.offsetWidth / 3 : 200;
     setTranslateX(Math.max(-maxDrag, Math.min(maxDrag, currentDrag)));
+    console.log('Dragging, translateX:', currentDrag);
   };
 
-  const handleDragEnd = (): void => {
+  const handleDragEnd = (clientX: number, clientY: number): void => {
     if (!isDragging) return;
     setIsDragging(false);
-    const swipeThreshold = sliderRef.current ? sliderRef.current.offsetWidth / 4 : 100;
 
+    // Check drag distance for swipe
     if (Math.abs(translateX) > swipeThreshold) {
       if (translateX > 0) {
         goToPrevSlide();
@@ -118,68 +131,126 @@ const ProductBanner: React.FC = () => {
     } else {
       setTranslateX(0); // Snap back
     }
+    console.log('Drag end, translateX:', translateX);
+
+    // Check for click (minimal movement)
+    if (startPos) {
+      const dx = clientX - startPos.x;
+      const dy = clientY - startPos.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance <= clickThreshold) {
+        handleBannerClick(slides[activeSlide]);
+      }
+    }
+    setStartPos(null);
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
     if (e.button !== 0) return; // Only left-click
-    handleDragStart(e.clientX);
+    handleDragStart(e.clientX, e.clientY);
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
     handleDragMove(e.clientX);
   };
 
-  const handleMouseUp = (): void => {
-    handleDragEnd();
+  const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>): void => {
+    handleDragEnd(e.clientX, e.clientY);
   };
 
   const handleMouseLeave = (): void => {
     if (isDragging) {
-      handleDragEnd();
-    }
-  };
-
-  const handleBannerClick = (slide: Slide) => {
-    if (Math.abs(translateX) > 5) return; // Prevent click during drag
-    console.log('🎯 ProductBanner clicked:', slide);
-    if (slide && slide.name) {
-      // Navigate to shop page with banner name as search parameter
-      const searchQuery = encodeURIComponent(slide.name);
-      console.log('🔍 Navigating to shop with search:', {
-        bannerName: slide.name,
-        encodedSearch: searchQuery,
-        fullUrl: `/shop?search=${searchQuery}`
-      });
-      try {
-        navigate(`/shop?search=${searchQuery}`);
-        console.log('✅ Navigation successful');
-      } catch (error) {
-        console.error('❌ Navigation failed:', error);
-        // Fallback: try window.location
-        window.location.href = `/shop?search=${searchQuery}`;
-      }
-    } else {
-      console.log('⚠️ No slide name found, navigating to shop without search');
-      // Fallback: navigate to shop without search
-      try {
-        navigate('/shop');
-      } catch (error) {
-        console.error('❌ Fallback navigation failed:', error);
-        window.location.href = '/shop';
-      }
+      handleDragEnd(startPos?.x || 0, startPos?.y || 0);
     }
   };
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>): void => {
-    handleDragStart(e.touches[0].clientX);
+    handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>): void => {
     handleDragMove(e.touches[0].clientX);
   };
 
-  const handleTouchEnd = (): void => {
-    handleDragEnd();
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>): void => {
+    const clientX = e.changedTouches[0]?.clientX || startPos?.x || 0;
+    const clientY = e.changedTouches[0]?.clientY || startPos?.y || 0;
+    handleDragEnd(clientX, clientY);
+  };
+
+  const handleBannerClick = (slide: Slide) => {
+    console.log('🎯 ProductBanner clicked:', slide);
+    if (!slide) {
+      console.log('⚠️ No slide found, navigating to /shop');
+      try {
+        navigate('/shop');
+      } catch (error) {
+        console.error('❌ Navigation failed:', error);
+        window.location.href = '/shop';
+      }
+      return;
+    }
+
+    if (slide.productSource === 'category' && slide.selectedCategory?.id) {
+      console.log('Navigating to category:', slide.selectedCategory.id);
+      try {
+        navigate(`/shop?categoryId=${slide.selectedCategory.id}`);
+      } catch (error) {
+        console.error('Navigation failed:', error);
+        window.location.href = `/shop?categoryId=${slide.selectedCategory.id}`;
+      }
+    } else if (
+      slide.productSource === 'subcategory' &&
+      slide.selectedSubcategory?.id &&
+      slide.selectedSubcategory?.category?.id
+    ) {
+      console.log(
+        'Navigating to subcategory:',
+        slide.selectedSubcategory.id,
+        'category:',
+        slide.selectedSubcategory.category.id
+      );
+      try {
+        navigate(
+          `/shop?categoryId=${slide.selectedSubcategory.category.id}&subcategoryId=${slide.selectedSubcategory.id}`
+        );
+      } catch (error) {
+        console.error('Navigation failed:', error);
+        window.location.href = `/shop?categoryId=${slide.selectedSubcategory.category.id}&subcategoryId=${slide.selectedSubcategory.id}`;
+      }
+    } else if (slide.productSource === 'manual') {
+      console.log('Navigating to manual banner:', slide.id);
+      try {
+        navigate(`/shop?bannerId=${slide.id}`);
+      } catch (error) {
+        console.error('Navigation failed:', error);
+        window.location.href = `/shop?bannerId=${slide.id}`;
+      }
+    } else if (slide.productSource === 'external' && slide.externalLink) {
+      console.log('Opening external link:', slide.externalLink);
+      try {
+        window.open(slide.externalLink, '_blank');
+      } catch (error) {
+        console.error('Failed to open external link:', error);
+      }
+    } else {
+      console.warn(
+        'No valid navigation criteria met. Slide properties:',
+        {
+          productSource: slide.productSource,
+          hasSelectedCategory: !!slide.selectedCategory,
+          hasSelectedSubcategory: !!slide.selectedSubcategory,
+          hasExternalLink: !!slide.externalLink,
+          slideName: slide.name,
+        }
+      );
+      try {
+        navigate('/shop');
+      } catch (error) {
+        console.error('Navigation failed:', error);
+        window.location.href = '/shop';
+      }
+    }
   };
 
   if (isLoading) return <SliderSkeleton />;
@@ -187,7 +258,7 @@ const ProductBanner: React.FC = () => {
   if (slides.length === 0) return <div>No product banners available</div>;
 
   return (
-    <div 
+    <div
       className="hero-slider"
       ref={sliderRef}
       onMouseDown={handleMouseDown}
@@ -199,7 +270,7 @@ const ProductBanner: React.FC = () => {
       onTouchEnd={handleTouchEnd}
       style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
     >
-      <div 
+      <div
         className="hero-slider__track"
         style={{
           transform: `translateX(calc(-${activeSlide * 100}% + ${translateX}px))`,
@@ -213,14 +284,12 @@ const ProductBanner: React.FC = () => {
               alt={slide.name}
               className="hero-slider__image"
               loading="lazy"
-              onClick={() => handleBannerClick(slide)}
               draggable={false}
+              onDragStart={(e) => e.preventDefault()}
             />
           </div>
         ))}
       </div>
-
-      {/* Navigation arrow buttons removed */}
 
       <div className="hero-slider__indicators">
         {slides.map((_, index) => (

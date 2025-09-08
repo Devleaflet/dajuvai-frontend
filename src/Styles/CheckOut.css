@@ -75,8 +75,8 @@
 
 /* Fixed container to prevent shadow clipping */
 .checkout-container {
-  width: 100%;
-  max-width: 1200px;
+  width: 85%;
+  max-width: 1800px;
   margin: 20px auto;
   padding: 0 15px;
   display: flex;
@@ -887,10 +887,7 @@ body {
   overflow-x: hidden;
 }
 
-.checkout-container {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
+
 
 /* Remove any container overflow that might clip shadows */
 .checkout-container__content,

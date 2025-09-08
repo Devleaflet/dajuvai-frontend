@@ -17,7 +17,7 @@ import { API_BASE_URL } from "../config";
 import { Search, ChevronDown, ChevronUp } from "lucide-react";
 import { Settings2 } from "lucide-react";
 
-// Interfaces and API functions remain unchanged
+// Interfaces
 interface Category {
 	id: number;
 	name: string;
@@ -34,6 +34,7 @@ interface ProductFilters {
 	subcategoryId?: number | undefined;
 	brandId?: string | undefined;
 	dealId?: string | undefined;
+	bannerId?: string | undefined;
 	sort?: string | undefined;
 }
 
@@ -106,6 +107,15 @@ interface ApiProduct {
 	} | null;
 }
 
+interface Banner {
+	id: number;
+	name: string;
+	type: string;
+	status: string;
+	selectedProducts?: ApiProduct[];
+}
+
+// API request function
 const apiRequest = async (
 	endpoint: string,
 	token: string | null | undefined = undefined
@@ -141,6 +151,7 @@ const apiRequest = async (
 	return await response.json();
 };
 
+// Build query params
 const buildQueryParams = (filters: ProductFilters): string => {
 	const params = new URLSearchParams();
 	if (filters.categoryId !== undefined && filters.categoryId !== null) {
@@ -155,6 +166,9 @@ const buildQueryParams = (filters: ProductFilters): string => {
 	if (filters.dealId !== undefined && filters.dealId !== null) {
 		params.append("dealId", filters.dealId);
 	}
+	if (filters.bannerId !== undefined && filters.bannerId !== null) {
+		params.append("bannerId", filters.bannerId);
+	}
 	if (
 		filters.sort !== undefined &&
 		filters.sort !== null &&
@@ -165,14 +179,20 @@ const buildQueryParams = (filters: ProductFilters): string => {
 	return params.toString();
 };
 
+// Fetch products with filters
 const fetchProductsWithFilters = async (
 	filters: ProductFilters,
 	token: string | null | undefined = undefined
 ) => {
+	if (filters.bannerId) {
+		const bannerResponse = await apiRequest(`/api/banners/${filters.bannerId}`, token);
+		if (bannerResponse?.data?.selectedProducts) {
+			return { success: true, data: bannerResponse.data.selectedProducts };
+		}
+		return { success: true, data: [] };
+	}
 	const queryParams = buildQueryParams(filters);
-	const endpoint = `/api/categories/all/products${
-		queryParams ? `?${queryParams}` : ""
-	}`;
+	const endpoint = `/api/categories/all/products${queryParams ? `?${queryParams}` : ""}`;
 	console.log("🔍 Fetching products with filters:", {
 		filters,
 		queryParams,
@@ -207,6 +227,9 @@ const Shop: React.FC = () => {
 	const [selectedSubcategory, setSelectedSubcategory] = useState<
 		number | undefined
 	>(undefined);
+	const [selectedBannerId, setSelectedBannerId] = useState<string | undefined>(
+		undefined
+	);
 	const [selectedPriceRange, setSelectedPriceRange] = useState<
 		string | undefined
 	>(undefined);
@@ -228,17 +251,20 @@ const Shop: React.FC = () => {
 	const prevSearchInputValueRef = useRef<string>("");
 	const prevSelectedCategoryRef = useRef<number | undefined>(undefined);
 	const prevSelectedSubcategoryRef = useRef<number | undefined>(undefined);
+	const prevSelectedBannerIdRef = useRef<string | undefined>(undefined);
 	const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
 
 	const currentFilters: ProductFilters = {
 		categoryId: selectedCategory,
 		subcategoryId: selectedSubcategory,
+		bannerId: selectedBannerId,
 		sort: sortBy,
 	};
 
 	useEffect(() => {
 		const categoryIdParam = searchParams.get("categoryId");
 		const subcategoryIdParam = searchParams.get("subcategoryId");
+		const bannerIdParam = searchParams.get("bannerId");
 		const searchParam = searchParams.get("search");
 
 		const newCategoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
@@ -253,6 +279,12 @@ const Shop: React.FC = () => {
 		if (newSubcategoryId !== prevSelectedSubcategoryRef.current) {
 			setSelectedSubcategory(newSubcategoryId);
 			prevSelectedSubcategoryRef.current = newSubcategoryId;
+		}
+
+		const newBannerId = bannerIdParam ? bannerIdParam : undefined;
+		if (newBannerId !== prevSelectedBannerIdRef.current) {
+			setSelectedBannerId(newBannerId);
+			prevSelectedBannerIdRef.current = newBannerId;
 		}
 
 		if (searchParam) {
@@ -279,7 +311,7 @@ const Shop: React.FC = () => {
 
 	useEffect(() => {
 		const handleShopFiltersChanged = (event: CustomEvent) => {
-			const { categoryId, subcategoryId } = event.detail;
+			const { categoryId, subcategoryId, bannerId } = event.detail;
 			const newSearchParams = new URLSearchParams(searchParams);
 			if (categoryId) {
 				newSearchParams.set("categoryId", categoryId.toString());
@@ -290,6 +322,11 @@ const Shop: React.FC = () => {
 				newSearchParams.set("subcategoryId", subcategoryId.toString());
 			} else {
 				newSearchParams.delete("subcategoryId");
+			}
+			if (bannerId) {
+				newSearchParams.set("bannerId", bannerId.toString());
+			} else {
+				newSearchParams.delete("bannerId");
 			}
 			newSearchParams.delete("search");
 			setSearchParams(newSearchParams);
@@ -507,6 +544,7 @@ const Shop: React.FC = () => {
 					hasSubcategoryId: !!currentFilters.subcategoryId,
 					hasBrandId: !!currentFilters.brandId,
 					hasDealId: !!currentFilters.dealId,
+					hasBannerId: !!currentFilters.bannerId,
 					hasSort: !!currentFilters.sort,
 					currentFilters,
 				});
@@ -516,6 +554,7 @@ const Shop: React.FC = () => {
 					currentFilters.subcategoryId ||
 					currentFilters.brandId ||
 					currentFilters.dealId ||
+					currentFilters.bannerId ||
 					currentFilters.sort
 				) {
 					console.log(
@@ -677,7 +716,9 @@ const Shop: React.FC = () => {
 			setCategorySearch("");
 		}
 		newSearchParams.delete("subcategoryId");
+		newSearchParams.delete("bannerId");
 		setSubcategorySearch("");
+		setSelectedBannerId(undefined);
 		newSearchParams.delete("search");
 		setSearchParams(newSearchParams);
 
@@ -694,6 +735,8 @@ const Shop: React.FC = () => {
 			newSearchParams.delete("subcategoryId");
 			setSubcategorySearch("");
 		}
+		newSearchParams.delete("bannerId");
+		setSelectedBannerId(undefined);
 		setSearchParams(newSearchParams);
 
 		if (window.innerWidth <= 992) {
@@ -719,6 +762,7 @@ const Shop: React.FC = () => {
 		setSearchInputValue("");
 		setCategorySearch("");
 		setSubcategorySearch("");
+		setSelectedBannerId(undefined);
 		const newSearchParams = new URLSearchParams();
 		setSearchParams(newSearchParams);
 
@@ -742,6 +786,8 @@ const Shop: React.FC = () => {
 		}
 		newSearchParams.delete("categoryId");
 		newSearchParams.delete("subcategoryId");
+		newSearchParams.delete("bannerId");
+		setSelectedBannerId(undefined);
 		setSearchParams(newSearchParams);
 
 		if (window.innerWidth <= 992) {
@@ -776,12 +822,16 @@ const Shop: React.FC = () => {
 		if (searchQuery.trim()) {
 			return `Search Results for "${searchQuery}"`;
 		}
+		if (selectedBannerId) {
+			return "Special Offer Products";
+		}
 		return getCurrentCategoryName();
 	};
 
 	const hasActiveFilters =
 		selectedCategory !== undefined ||
 		selectedSubcategory !== undefined ||
+		selectedBannerId !== undefined ||
 		selectedPriceRange !== undefined ||
 		sortBy !== "all" ||
 		searchQuery.trim() !== "";
@@ -1452,6 +1502,8 @@ const Shop: React.FC = () => {
 										<p className="shop-no-products-text">
 											{searchQuery.trim()
 												? `No products found matching "${searchQuery}". Try adjusting your search terms or browse categories.`
+												: selectedBannerId
+												? "No products found for this special offer."
 												: selectedCategory === undefined
 												? "No products available at the moment."
 												: `No products found in ${getCurrentCategoryName()}${

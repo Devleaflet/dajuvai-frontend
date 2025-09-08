@@ -1,6 +1,6 @@
-// components/SpecialOffers.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import '../Styles/SpecialOffers.css';
 import OffersSkeleton from '../skeleton/OffersSkeleton';
 import { API_BASE_URL } from '../config';
@@ -10,11 +10,15 @@ interface Offer {
   name: string;
   desktopImage: string;
   mobileImage?: string;
-  discount?: string; // Optional, as API doesn't provide discount
-  color: string; // We'll assign colors manually
+  discount?: string;
+  color: string;
   status?: string;
   startDate?: string;
   endDate?: string;
+  productSource?: string;
+  selectedCategory?: number | null;
+  selectedSubcategory?: number | null;
+  externalLink ?:string | null
 }
 
 const fetchSpecialDeals = async (): Promise<Offer[]> => {
@@ -23,6 +27,7 @@ const fetchSpecialDeals = async (): Promise<Offer[]> => {
     throw new Error(`Failed to fetch banners: ${response.statusText}`);
   }
   const data = await response.json();
+  console.log("special", data);
   // Filter for active SPECIAL_DEALS banners that are not expired and map to Offer interface
   const colors = ['#FFF3EA', '#F4F2ED', '#131313', '#FCE9E4', '#E2FFE2', '#E0F2FF'];
   return data.data
@@ -33,13 +38,24 @@ const fetchSpecialDeals = async (): Promise<Offer[]> => {
       (!banner.endDate || new Date(banner.endDate) >= new Date())
     )
     .map((banner: Offer, index: number) => ({
-      ...banner,
-      discount: banner.discount || 'SPECIAL OFFER', // Fallback discount text
-      color: colors[index % colors.length], // Cycle through colors
+      id: banner.id,
+      name: banner.name,
+      desktopImage: banner.desktopImage,
+      mobileImage: banner.mobileImage,
+      discount: banner.discount || 'SPECIAL OFFER',
+      color: colors[index % colors.length],
+      status: banner.status,
+      startDate: banner.startDate,
+      endDate: banner.endDate,
+      productSource: banner.productSource,
+      selectedCategory: banner.selectedCategory,
+      selectedSubcategory: banner.selectedSubcategory,
+      externalLink:banner.externalLink,
     }));
 };
 
 const SpecialOffers: React.FC = () => {
+  const navigate = useNavigate();
   const { data: offers = [], isLoading, error } = useQuery<Offer[], Error>({
     queryKey: ['specialDeals'],
     queryFn: fetchSpecialDeals,
@@ -54,6 +70,20 @@ const SpecialOffers: React.FC = () => {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
   });
 
+  const handleOfferClick = (offer: Offer) => {
+    console.log('hipeee')
+    console.log(offer)
+    if (offer.productSource === 'category' && offer.selectedCategory) {
+      navigate(`/shop?categoryId=${offer.selectedCategory.id}`);
+    } else if (offer.productSource === 'subcategory' && offer.selectedSubcategory) {
+      navigate(`/shop?categoryId=${offer.selectedSubcategory.category.id}&subcategoryId=${offer.selectedSubcategory.id}`);
+    } else if (offer.productSource === 'manual') {
+      navigate(`/shop?bannerId=${offer.id}`);
+    } else if (offer.productSource === 'external') {
+      window.open(offer.externalLink,"_blank");
+    } 
+  };
+
   if (isLoading) return <OffersSkeleton />;
   if (error) return <div className="special-offers-error">Error loading offers: {error.message}</div>;
   if (offers.length === 0) return (
@@ -63,7 +93,6 @@ const SpecialOffers: React.FC = () => {
       </p>
     </div>
   );
-
 
   return (
     <div className="special-offers-container">
@@ -77,7 +106,8 @@ const SpecialOffers: React.FC = () => {
           <div
             key={offer.id}
             className="offer-card"
-            style={{ backgroundColor: offer.color }}
+            style={{ backgroundColor: offer.color, cursor: 'pointer' }}
+            onClick={() => handleOfferClick(offer)}
           >
             <img
               src={offer.desktopImage}
