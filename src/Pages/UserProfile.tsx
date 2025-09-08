@@ -109,16 +109,15 @@ const UserProfile: React.FC = () => {
     fetchData();
   }, []);
 
-
   function capitalizeFirstLetter(string: string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
   }
 
-  const fetchDistricts = useCallback(async( province: string) =>{
-   if (!province){
-    setDistrictData([])
-    return
-   }
+  const fetchDistricts = useCallback(async (province: string) => {
+    if (!province) {
+      setDistrictData([]);
+      return;
+    }
     try {
       const districtResponse = await fetch(`/Nepal-Address-API-main/data/districtsByProvince/${province.toLowerCase()}.json`);
       const data = await districtResponse.json();
@@ -127,19 +126,30 @@ const UserProfile: React.FC = () => {
       console.error('Error fetching district data:', error);
       setDistrictData([]);
     }
-  },[])
+  }, []);
+
   useEffect(() => {
-  if (userDetails?.address?.province) {
-    fetchDistricts(userDetails.address.province);
-  } else {
-    setDistrictData([]);
-  }
-}, [userDetails?.address?.province, fetchDistricts]);
-
-
+    if (userDetails?.address?.province) {
+      fetchDistricts(userDetails.address.province);
+    } else {
+      setDistrictData([]);
+    }
+  }, [userDetails?.address?.province, fetchDistricts]);
 
   const toggleOrderExpansion = (orderId: number) => {
     setExpandedOrders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleOrderDetails = (orderId: number) => {
+    setExpandedOrderDetails(prev => {
       const newSet = new Set(prev);
       if (newSet.has(orderId)) {
         newSet.delete(orderId);
@@ -221,60 +231,60 @@ const UserProfile: React.FC = () => {
       return;
     }
 
-const fetchUserDetails = async () => {
-  console.log("[UserProfile] fetchUserDetails - Starting fetch");
-  console.log("[UserProfile] fetchUserDetails - User ID:", userId);
-  console.log("[UserProfile] fetchUserDetails - Token:", token);
-  console.log("[UserProfile] fetchUserDetails - Document cookie:", document.cookie);
-  
-  setIsLoading((prev) => ({ ...prev, fetchUser: true }));
-  try {
-    const headers: Record<string, string> = {};
-    const authToken = token || localStorage.getItem("authToken");
-    
-    if (authToken) {
-      headers.Authorization = `Bearer ${authToken}`;
-      console.log("[UserProfile] fetchUserDetails - Using token-based auth");
-    } else {
-      console.log("[UserProfile] fetchUserDetails - Using cookie-based auth");
-    }
-    
-    console.log("[UserProfile] fetchUserDetails - Request headers:", headers);
-    
-    const response = await axiosInstance.get(`/api/auth/users/${userId}`, {
-      headers,
-      withCredentials: true,
-      timeout: 5000,
-    });
-    
-    console.log("[UserProfile] fetchUserDetails - Response:", response.data);
-    
-    // Ensure consistent address structure
-    const userData = response.data.data;
-    const normalizedUserData = {
-      ...userData,
-      fullName: userData.fullName || "",
-      phoneNumber: userData.phoneNumber || "",
-      address: {
-        province: userData.address?.province || userData.province || "",
-        district: userData.address?.district || userData.district || "",
-        city: userData.address?.city || userData.city || "",
-        localAddress: userData.address?.localAddress || userData.localAddress || "",
-        landmark: userData.address?.landmark || userData.landmark || ""
+    const fetchUserDetails = async () => {
+      console.log("[UserProfile] fetchUserDetails - Starting fetch");
+      console.log("[UserProfile] fetchUserDetails - User ID:", userId);
+      console.log("[UserProfile] fetchUserDetails - Token:", token);
+      console.log("[UserProfile] fetchUserDetails - Document cookie:", document.cookie);
+      
+      setIsLoading((prev) => ({ ...prev, fetchUser: true }));
+      try {
+        const headers: Record<string, string> = {};
+        const authToken = token || localStorage.getItem("authToken");
+        
+        if (authToken) {
+          headers.Authorization = `Bearer ${authToken}`;
+          console.log("[UserProfile] fetchUserDetails - Using token-based auth");
+        } else {
+          console.log("[UserProfile] fetchUserDetails - Using cookie-based auth");
+        }
+        
+        console.log("[UserProfile] fetchUserDetails - Request headers:", headers);
+        
+        const response = await axiosInstance.get(`/api/auth/users/${userId}`, {
+          headers,
+          withCredentials: true,
+          timeout: 5000,
+        });
+        
+        console.log("[UserProfile] fetchUserDetails - Response:", response.data);
+        
+        // Ensure consistent address structure
+        const userData = response.data.data;
+        const normalizedUserData = {
+          ...userData,
+          fullName: userData.fullName || "",
+          phoneNumber: userData.phoneNumber || "",
+          address: {
+            province: userData.address?.province || userData.province || "",
+            district: userData.address?.district || userData.district || "",
+            city: userData.address?.city || userData.city || "",
+            localAddress: userData.address?.localAddress || userData.localAddress || "",
+            landmark: userData.address?.landmark || userData.landmark || ""
+          }
+        };
+        
+        setUserDetails(normalizedUserData);
+        setOriginalDetails(normalizedUserData);
+        setFormState((prev) => ({ ...prev, email: userData.email }));
+      } catch (error) {
+        console.error("[UserProfile] fetchUserDetails - Error:", error);
+        handleError(error, "Failed to load user details");
+        setUserDetails(null);
+      } finally {
+        setIsLoading((prev) => ({ ...prev, fetchUser: false }));
       }
     };
-    
-    setUserDetails(normalizedUserData);
-    setOriginalDetails(normalizedUserData);
-    setFormState((prev) => ({ ...prev, email: userData.email }));
-  } catch (error) {
-    console.error("[UserProfile] fetchUserDetails - Error:", error);
-    handleError(error, "Failed to load user details");
-    setUserDetails(null);
-  } finally {
-    setIsLoading((prev) => ({ ...prev, fetchUser: false }));
-  }
-};
     fetchUserDetails();
   }, [userId, isAuthLoading, login, token]);
 
@@ -340,48 +350,37 @@ const fetchUserDetails = async () => {
     }
   }, [location.state]);
 
-// useEffect(() => {
-//   if (popup?.type === "success" && popup?.content.includes("Profile updated successfully")) {
-//     // Refresh the auth context or user data instead of navigating
-//     const timeoutId = setTimeout(() => {
-//       // Maybe call a function to refresh user data
-//       window.location.reload(); // Or use a more elegant refresh method
-//     }, 2000);
-//     return () => clearTimeout(timeoutId);
-//   }
-// }, [popup]);
-
   const handleInputChange = (
-  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  section: keyof FormState | keyof UserDetails | keyof UserDetails['address']
-) => {
-  const value = e.target.value;
-  
-  if (['province', 'district', 'city', 'localAddress', 'landmark'].includes(section)) {
-    setUserDetails((prev) => {
-      if (!prev) return null;
-      
-      const newUserDetails = {
-        ...prev,
-        address: {
-          ...prev.address,
-          [section]: value,
-        },
-      };
-      
-      // Reset district when province changes
-      if (section === 'province') {
-        newUserDetails.address.district = '';
-      }
-      
-      return newUserDetails;
-    });
-  } else if (section in (userDetails || {})) {
-    setUserDetails((prev) => (prev ? { ...prev, [section]: value } : null));
-  } else {
-    setFormState((prev) => ({ ...prev, [section]: value }));
-  }
-};
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    section: keyof FormState | keyof UserDetails | keyof UserDetails['address']
+  ) => {
+    const value = e.target.value;
+    
+    if (['province', 'district', 'city', 'localAddress', 'landmark'].includes(section)) {
+      setUserDetails((prev) => {
+        if (!prev) return null;
+        
+        const newUserDetails = {
+          ...prev,
+          address: {
+            ...prev.address,
+            [section]: value,
+          },
+        };
+        
+        // Reset district when province changes
+        if (section === 'province') {
+          newUserDetails.address.district = '';
+        }
+        
+        return newUserDetails;
+      });
+    } else if (section in (userDetails || {})) {
+      setUserDetails((prev) => (prev ? { ...prev, [section]: value } : null));
+    } else {
+      setFormState((prev) => ({ ...prev, [section]: value }));
+    }
+  };
 
   const handleTabChange = (tab: Tab) => {
     if (isEditing && originalDetails) {
@@ -393,85 +392,84 @@ const fetchUserDetails = async () => {
     setFormState({ email: formState.email });
   };
 
-const handleSave = async () => {
-  if (!userDetails) return showPopup("error", "User details missing.");
-  if (!validateUsername(userDetails.username)) return showPopup("error", "Username must be 3+ characters and alphanumeric.");
-  if (!validateFullName(userDetails.fullName)) return showPopup("error", "Full name must be at least 2 characters.");
-  if (userDetails.phoneNumber && !validatePhoneNumber(userDetails.phoneNumber)) 
-    return showPopup("error", "Phone number must be 10 digits.");
+  const handleSave = async () => {
+    if (!userDetails) return showPopup("error", "User details missing.");
+    if (!validateUsername(userDetails.username)) return showPopup("error", "Username must be 3+ characters and alphanumeric.");
+    if (!validateFullName(userDetails.fullName)) return showPopup("error", "Full name must be at least 2 characters.");
+    if (userDetails.phoneNumber && !validatePhoneNumber(userDetails.phoneNumber)) 
+      return showPopup("error", "Phone number must be 10 digits.");
 
-  console.log("[UserProfile] handleSave - Starting update for userId:", userId);
-  setIsLoading((prev) => ({ ...prev, saveUser: true }));
+    console.log("[UserProfile] handleSave - Starting update for userId:", userId);
+    setIsLoading((prev) => ({ ...prev, saveUser: true }));
 
-  try {
-    const headers: Record<string, string> = {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
-    };
-    const authToken = token || localStorage.getItem("authToken");
-    if (authToken) {
-      headers.Authorization = `Bearer ${authToken}`;
-      console.log("[UserProfile] handleSave - Using token:", authToken);
-    }
-
-    // Ensure address object structure
-    const requestData = {
-      fullName: userDetails.fullName,
-      username: userDetails.username,
-      phoneNumber: userDetails.phoneNumber,
-      address: {
-        province: userDetails.address?.province || "",
-        district: userDetails.address?.district || "",
-        city: userDetails.address?.city || "",
-        localAddress: userDetails.address?.localAddress || "",
-        landmark: userDetails.address?.landmark || ""
+    try {
+      const headers: Record<string, string> = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      };
+      const authToken = token || localStorage.getItem("authToken");
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+        console.log("[UserProfile] handleSave - Using token:", authToken);
       }
-    };
 
-    console.log("[UserProfile] handleSave - Request data:", requestData);
-
-    const response = await axiosInstance.put(
-      `/api/auth/users/${userId}`,
-      requestData,
-      { 
-        withCredentials: true,
-        headers
-      }
-    );
-
-    console.log("[UserProfile] handleSave - API response:", response.data);
-
-    if (response.data.success) {
-      console.log("[UserProfile] handleSave - Updating user details and showing success popup");
-      
-      // Normalize the response data structure
-      const updatedData = response.data.data;
-      const normalizedUpdatedData = {
-        ...updatedData,
+      // Ensure address object structure
+      const requestData = {
+        fullName: userDetails.fullName,
+        username: userDetails.username,
+        phoneNumber: userDetails.phoneNumber,
         address: {
-          province: updatedData.address?.province || updatedData.province || "",
-          district: updatedData.address?.district || updatedData.district || "",
-          city: updatedData.address?.city || updatedData.city || "",
-          localAddress: updatedData.address?.localAddress || updatedData.localAddress || "",
-          landmark: updatedData.address?.landmark || updatedData.landmark || ""
+          province: userDetails.address?.province || "",
+          district: userDetails.address?.district || "",
+          city: userDetails.address?.city || "",
+          localAddress: userDetails.address?.localAddress || "",
+          landmark: userDetails.address?.landmark || ""
         }
       };
-      
-      setUserDetails(normalizedUpdatedData);
-      setOriginalDetails(normalizedUpdatedData);
-      setIsEditing(false);
-      showPopup("success", "Profile updated successfully!");
-    } else {
-      showPopup("error", response.data.message || "Failed to update profile");
-    }
-  } catch (error) {
-    console.error("[UserProfile] handleSave - Error:", error);
-    handleError(error, "Failed to update profile");
-  } finally {
-    setIsLoading((prev) => ({ ...prev, saveUser: false }));
-  }
-};
 
+      console.log("[UserProfile] handleSave - Request data:", requestData);
+
+      const response = await axiosInstance.put(
+        `/api/auth/users/${userId}`,
+        requestData,
+        { 
+          withCredentials: true,
+          headers
+        }
+      );
+
+      console.log("[UserProfile] handleSave - API response:", response.data);
+
+      if (response.data.success) {
+        console.log("[UserProfile] handleSave - Updating user details and showing success popup");
+        
+        // Normalize the response data structure
+        const updatedData = response.data.data;
+        const normalizedUpdatedData = {
+          ...updatedData,
+          address: {
+            province: updatedData.address?.province || updatedData.province || "",
+            district: updatedData.address?.district || updatedData.district || "",
+            city: updatedData.address?.city || updatedData.city || "",
+            localAddress: updatedData.address?.localAddress || updatedData.localAddress || "",
+            landmark: updatedData.address?.landmark || updatedData.landmark || ""
+          }
+        };
+        
+        setUserDetails(normalizedUpdatedData);
+        setOriginalDetails(normalizedUpdatedData);
+        setIsEditing(false);
+        showPopup("success", "Profile updated successfully!");
+      } else {
+        showPopup("error", response.data.message || "Failed to update profile");
+      }
+    } catch (error) {
+      console.error("[UserProfile] handleSave - Error:", error);
+      handleError(error, "Failed to update profile");
+    } finally {
+      setIsLoading((prev) => ({ ...prev, saveUser: false }));
+    }
+  };
 
   const handleForgotPassword = async () => {
     if (!formState.email) return showPopup("error", "Please enter your email address");
@@ -887,7 +885,6 @@ const handleSave = async () => {
                         <span>No items</span>
                       )}
                     </div>
-
                   </div>
 
                   {expandedOrderDetails.has(order.id) && (
@@ -1018,8 +1015,9 @@ const handleSave = async () => {
       <Popup
         open={!!popup}
         closeOnDocumentClick
-        onClose={() =>{ setPopup(null)
-          window.location.reload()
+        onClose={() => {
+          setPopup(null);
+          window.location.reload();
         }}
         contentStyle={{ borderRadius: "12px", maxWidth: "400px", background: "transparent", padding: 0, border: "none" }}
         overlayStyle={{ backgroundColor: "rgba(0, 0, 0, 0.6)", backdropFilter: "blur(4px)" }}
@@ -1067,7 +1065,7 @@ const handleSave = async () => {
                   {userDetails?.username?.[0]?.toUpperCase() || "?"}
                 </div>
                 {(["details", "credentials", "orders"] as Tab[]).map((tab) => {
-                  if (tab === "credentials" && user?.provider ==="google") return null; 
+                  if (tab === "credentials" && user?.provider === "google") return null; 
                   return (
                     <button
                       key={tab}
@@ -1078,7 +1076,6 @@ const handleSave = async () => {
                     </button>
                   );
                 })}
-
               </>
             )}
           </div>
@@ -1089,7 +1086,7 @@ const handleSave = async () => {
           </div>
         </div>
       </div>
-      {!popup &&<Footer />}
+      {!popup && <Footer />}
     </>
   );
 };
