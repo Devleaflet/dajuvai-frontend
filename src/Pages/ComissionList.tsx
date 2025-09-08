@@ -107,10 +107,10 @@ const CommissionList: React.FC = () => {
                         <tbody>
                             {filteredData.map((item, index) => (
                                 <tr key={index}>
-                                    <td>{item.level1}</td>
-                                    <td>{item.level2}</td>
-                                    <td>{item.level3}</td>
-                                    <td className="highlight">{item.commission}%</td>
+                                    <td data-label="Level 1">{item.level1}</td>
+                                    <td data-label="Level 2">{item.level2}</td>
+                                    <td data-label="Level 3">{item.level3}</td>
+                                    <td data-label="Commission" className="highlight">{item.commission}%</td>
                                 </tr>
                             ))}
                             {filteredData.length === 0 && (
