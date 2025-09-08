@@ -331,7 +331,7 @@ const UserProfile: React.FC = () => {
 		fetchUserDetails();
 	}, [userId, isAuthLoading, login, token]);
 
-	console.log("💀💀", user);
+	console.log("💀💀", userDetails);
 
 	useEffect(() => {
 		if (user) {
@@ -1361,7 +1361,7 @@ const UserProfile: React.FC = () => {
 								>
 									{userDetails?.username?.[0]?.toUpperCase() || "?"}
 								</div>
-								{user.provider === "google"
+								{userDetails.provider === "google"
 									? (["details", "orders"] as Tab[]).map((tab) => {
 											if (tab === "credentials" && user?.provider === "google")
 												return null;
