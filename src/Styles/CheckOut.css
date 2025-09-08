@@ -11,6 +11,17 @@
   z-index: 1000;
 }
 
+/* Delivery time styling */
+.checkout-container__delivery-time {
+  margin-top: 4px;
+  color: #28a745;
+  font-weight: 500;
+}
+
+.checkout-container__delivery-time small {
+  font-size: 12px;
+}
+
 .checkout-header__logo {
   font-size: 24px;
   font-weight: bold;

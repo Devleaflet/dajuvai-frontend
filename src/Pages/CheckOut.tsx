@@ -490,7 +490,8 @@ const Checkout: React.FC = () => {
       if (result.success) {
         if (selectedPaymentMethod === 'CASH_ON_DELIVERY') {
           // Show custom popup with navigation options
-          setAlertMessage('Your order has been placed. Do you want to see full details?');
+          const deliveryTime = getOverallDeliveryTime();
+          setAlertMessage(`Your order has been placed successfully! Expected delivery: ${deliveryTime}. Do you want to see full details?`);
           setShowAlert(true);
           // Store order details for navigation
           const orderDetails = {
@@ -571,6 +572,34 @@ const Checkout: React.FC = () => {
       return 'Kathmandu Valley';
     }
     return district;
+  };
+
+  const calculateDeliveryTime = (customerDistrict: string, vendorDistrict: string): string => {
+    const normalizedCustomerDistrict = normalizeDistrict(customerDistrict);
+    const normalizedVendorDistrict = normalizeDistrict(vendorDistrict);
+    
+    if (normalizedCustomerDistrict === normalizedVendorDistrict) {
+      return '1-2 days';
+    } else {
+      return '3-5 days';
+    }
+  };
+
+  const getOverallDeliveryTime = (): string => {
+    if (!billingDetails.district || vendorGroups.length === 0) {
+      return '3-5 days';
+    }
+    
+    const deliveryTimes = vendorGroups.map(group => 
+      calculateDeliveryTime(billingDetails.district, group.vendorDistrict)
+    );
+    
+    // If any vendor requires 3-5 days, the overall delivery is 3-5 days
+    if (deliveryTimes.some(time => time === '3-5 days')) {
+      return '3-5 days';
+    }
+    
+    return '1-2 days';
   };
 
   const [vendorCache, setVendorCache] = useState<{ [key: number]: { businessName: string; district: { name: string } } }>({});
@@ -1148,6 +1177,9 @@ const Checkout: React.FC = () => {
                               <small> (Same district)</small>
                             )}
                           </span>
+                          <div className="checkout-container__delivery-time">
+                            <small>Delivery: {calculateDeliveryTime(billingDetails.district, group.vendorDistrict)}</small>
+                          </div>
                         </div>
                       )}
                       <div className="checkout-container__group-line-total">

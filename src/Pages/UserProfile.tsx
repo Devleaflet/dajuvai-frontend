@@ -10,6 +10,7 @@ import "../Styles/UserProfile.css";
 import axiosInstance from "../api/axiosInstance";
 import { API_BASE_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
+import VendorService, { type Vendor } from "../services/vendorService";
 
 interface UserDetails {
 	id?: number;
@@ -94,6 +95,8 @@ const UserProfile: React.FC = () => {
 	const [ordersError, setOrdersError] = useState<string | null>(null);
 	const [provinceData, setProvinceData] = useState<string[]>([]);
 	const [districtData, setDistrictData] = useState<string[]>([]);
+	const [vendorCache, setVendorCache] = useState<{ [key: number]: Vendor }>({});
+	const [orderDeliveryTimes, setOrderDeliveryTimes] = useState<{ [key: number]: string }>({});
 
 	const { user, isLoading: isAuthLoading, login, token } = useAuth();
 	const userId = user?.id;
@@ -207,6 +210,84 @@ const UserProfile: React.FC = () => {
 	const validatePhoneNumber = (phoneNumber: string) =>
 		/^[0-9]{10}$/.test(phoneNumber);
 	const validateFullName = (fullName: string) => fullName.trim().length >= 2;
+
+	// Delivery time calculation functions
+	const normalizeDistrict = (district: string): string => {
+		const kathmandu_valley = ['kathmandu', 'lalitpur', 'bhaktapur'];
+		if (kathmandu_valley.includes(district.toLowerCase())) {
+			return 'Kathmandu Valley';
+		}
+		return district;
+	};
+
+	const calculateDeliveryTime = (customerDistrict: string, vendorDistrict: string): string => {
+		const normalizedCustomerDistrict = normalizeDistrict(customerDistrict);
+		const normalizedVendorDistrict = normalizeDistrict(vendorDistrict);
+		
+		if (normalizedCustomerDistrict === normalizedVendorDistrict) {
+			return '1-2 days';
+		} else {
+			return '3-5 days';
+		}
+	};
+
+	// Fetch vendor information
+	const fetchVendorInfo = async (vendorId: number): Promise<Vendor | null> => {
+		if (vendorCache[vendorId]) {
+			return vendorCache[vendorId];
+		}
+
+		try {
+			if (!token) return null;
+			const vendorService = VendorService.getInstance();
+			const vendor = await vendorService.getVendorById(vendorId, token);
+			
+			// Cache the vendor info
+			setVendorCache(prev => ({ ...prev, [vendorId]: vendor }));
+			return vendor;
+		} catch (error) {
+			console.error(`Failed to fetch vendor ${vendorId}:`, error);
+			return null;
+		}
+	};
+
+	// Calculate delivery time for an order
+	const getOrderDeliveryTime = async (order: OrderDetail): Promise<string> => {
+		const customerDistrict = order.shippingAddress?.district;
+		if (!customerDistrict || !order.orderItems || order.orderItems.length === 0) {
+			return '3-5 days';
+		}
+
+		try {
+			// Get unique vendor IDs from order items
+			const vendorIds = [...new Set(order.orderItems.map(item => item.vendorId))];
+			
+			// Fetch vendor info for all vendors
+			const vendorPromises = vendorIds.map(vendorId => fetchVendorInfo(vendorId));
+			const vendors = await Promise.all(vendorPromises);
+			
+			// Calculate delivery times for each vendor
+			const deliveryTimes = vendors
+				.filter(vendor => vendor !== null)
+				.map(vendor => calculateDeliveryTime(customerDistrict, vendor!.district.name));
+			
+			// If any vendor requires 3-5 days, the overall delivery is 3-5 days
+			if (deliveryTimes.some(time => time === '3-5 days')) {
+				return '3-5 days';
+			}
+			
+			// If all vendors are same district (1-2 days), return 1-2 days
+			if (deliveryTimes.length > 0 && deliveryTimes.every(time => time === '1-2 days')) {
+				return '1-2 days';
+			}
+			
+			// Default fallback
+			return '3-5 days';
+		} catch (error) {
+			console.error('Error calculating delivery time:', error);
+			return '3-5 days';
+		}
+	};
 
 	const handleError = (error: unknown, defaultMsg: string) => {
 		if (!axios.isAxiosError(error)) return showPopup("error", defaultMsg);
@@ -372,9 +453,23 @@ const UserProfile: React.FC = () => {
 					return { data };
 				});
 			})
-			.then(({ data }) => {
+			.then(async ({ data }) => {
 				if (data.success) {
 					setOrders(data.data);
+					
+					// Calculate delivery times for all orders
+					const deliveryTimePromises = data.data.map(async (order: OrderDetail) => {
+						const deliveryTime = await getOrderDeliveryTime(order);
+						return { orderId: order.id, deliveryTime };
+					});
+					
+					const deliveryTimeResults = await Promise.all(deliveryTimePromises);
+					const deliveryTimesMap = deliveryTimeResults.reduce((acc, { orderId, deliveryTime }) => {
+						acc[orderId] = deliveryTime;
+						return acc;
+					}, {} as { [key: number]: string });
+					
+					setOrderDeliveryTimes(deliveryTimesMap);
 				} else {
 					setOrdersError(data.message || "Failed to load orders");
 				}
@@ -1122,12 +1217,17 @@ const UserProfile: React.FC = () => {
 												data-label="Total"
 											>
 												<div className="order-total__amount">
-													Rs. {parseFloat(order.totalPrice).toLocaleString()}
-												</div>
-												<div className="order-total__shipping">
-													Shipping: Rs.{" "}
-													{parseFloat(order.shippingFee).toLocaleString()}
-												</div>
+												Rs. {parseFloat(order.totalPrice).toLocaleString()}
+											</div>
+											<div className="order-total__shipping">
+												Shipping: Rs.{" "}
+												{parseFloat(order.shippingFee).toLocaleString()}
+											</div>
+											<div className="order-total__delivery">
+															<small>
+																Delivery: {orderDeliveryTimes[order.id] || '3-5 days'}
+															</small>
+														</div>
 											</div>
 										</div>
 									)}
@@ -1233,6 +1333,11 @@ const UserProfile: React.FC = () => {
 											Shipping: Rs.{" "}
 											{parseFloat(order.shippingFee).toLocaleString()}
 										</div>
+										<div className="order-total__delivery">
+															<small>
+																Delivery: {orderDeliveryTimes[order.id] || '3-5 days'}
+															</small>
+														</div>
 									</div>
 								</>
 							)}
