@@ -218,10 +218,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 					return "Invalid phone number format";
 				return "";
 
-			case "telePhone":
-				if (!value.trim()) return "Telephone number is required";
-				return "";
-
 			case "businessRegNumber":
 				if (!value.trim()) return "Business registration number is required";
 				if (!/^\d+$/.test(value))
@@ -1499,7 +1495,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 													value={telePhone}
 													onChange={handleInputChange}
 													onBlur={handleBlur}
-													required
 													disabled={isLoading}
 													style={{
 														background: "transparent",
@@ -1555,6 +1550,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 														background: "transparent",
 														border: "1px solid #ddd",
 														borderRadius: "4px",
+														width:"100%"
 													}}
 												>
 													<option value="">Select District</option>
@@ -1728,7 +1724,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 													onClick={togglePasswordVisibility}
 													style={{
 														position: "absolute",
-														right: "10px",
+														right: "-5px",
 														top: "60px",
 														marginRight: "15px",
 														transform: "translateY(-70%)",
