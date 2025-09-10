@@ -59,6 +59,57 @@ interface ShippingGroup {
   lineTotal: number;
 }
 
+
+const OrderSuccessModal: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  onViewOrder: () => void;
+  onContinueShopping: () => void;
+  totalAmount: number;  // ✅ FIXED: Changed from {finalTotal} to number
+  paymentMethod: string;
+}> = ({ open, onClose, onViewOrder, onContinueShopping, totalAmount, paymentMethod }) => {  // ✅ FIXED: Added missing props
+  if (!open) return null;
+  return (
+    <div className="checkout-success-modal-overlay">
+      <div className="checkout-success-modal">
+        <div className="checkout-success-modal__content">
+          <div className="checkout-success-modal__header">
+            <div className="checkout-success-modal__icon-wrapper">
+              <div className="checkout-success-modal__icon">✓</div>
+            </div>
+            <button className="checkout-success-modal__close" onClick={onClose}>
+              ×
+            </button>
+          </div>
+          <h2 className="checkout-success-modal__title">Order Confirmed!</h2>
+          <p className="checkout-success-modal__message">
+            Thank you for your purchase! Your order has been successfully placed and is being processed.
+            You'll receive a confirmation email with your order details shortly.
+          </p>
+          <div className="checkout-success-modal__order-info">
+            <div className="checkout-success-modal__info-item">
+              <span>Order Total:</span>
+              <span>Rs {totalAmount.toLocaleString()}</span>  {/* ✅ FIXED: Use totalAmount prop */}
+            </div>
+            <div className="checkout-success-modal__info-item">
+              <span>Payment Method:</span>
+              <span>{paymentMethod.replace(/_/g, ' ')}</span>
+            </div>
+          </div>
+          <div className="checkout-success-modal__actions">
+            <button className="checkout-success-modal__btn checkout-success-modal__btn--primary" onClick={onViewOrder}>
+              View Order Details
+            </button>
+            <button className="checkout-success-modal__btn checkout-success-modal__btn--secondary" onClick={onContinueShopping}>
+              Continue Shopping
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Checkout: React.FC = () => {
   useEffect(() => {
     const listener = (event: MessageEvent) => {
@@ -490,7 +541,7 @@ const Checkout: React.FC = () => {
       if (result.success) {
         if (selectedPaymentMethod === 'CASH_ON_DELIVERY') {
           // Show custom popup with navigation options
-          setAlertMessage('Your order has been placed. Do you want to see full details?');
+setAlertMessage('Your order has been placed.');
           setShowAlert(true);
           // Store order details for navigation
           const orderDetails = {
@@ -501,6 +552,7 @@ const Checkout: React.FC = () => {
           const buttons = [
             {
               label: 'Go to Order Details',
+
               action: () => {
                 navigate('/user-profile', {
                   state: { activeTab: 'orders', orderDetails },
@@ -544,7 +596,7 @@ const Checkout: React.FC = () => {
               state: {
                 orderDetails: {
                   orderId: result.data?.id || null,
-                  totalAmount: finalTotal,
+                  totalAmount: {finalTotal},
                 },
               },
             });
@@ -780,33 +832,28 @@ const Checkout: React.FC = () => {
     <>
       <Navbar />
       {/* <AlertModal open={showAlert} message={alertMessage} onClose={() => setShowAlert(false)} /> */}
-      <AlertModal
-        open={showAlert}
-        message={alertMessage}
-        onClose={() => setShowAlert(false)}
-        buttons={
-          alertMessage.includes('Your order has been placed') ? [
-            {
-              label: 'Go to Order Details',
-              action: () => {
-                navigate('/user-profile', {
-                  state: { activeTab: 'orders' },
-                });
-                setShowAlert(false);
-              },
-              style: { backgroundColor: '#ff6b35', color: 'white' },
-            },
-            {
-              label: 'Shop More',
-              action: () => {
-                navigate('/shop');
-                setShowAlert(false);
-              },
-              style: { backgroundColor: '#22c55e', color: 'white' },
-            },
-          ] : undefined
-        }
-      />
+{showAlert && alertMessage.includes('Your order has been placed') ? (
+<OrderSuccessModal
+  open={showAlert}
+  onClose={() => setShowAlert(false)}
+  onViewOrder={() => {
+    navigate('/user-profile', { state: { activeTab: 'orders' } });
+    setShowAlert(false);
+  }}
+  onContinueShopping={() => {
+    navigate('/shop');
+    setShowAlert(false);
+  }}
+  totalAmount={finalTotal}  // Changed from totalAmount to finalTotal
+  paymentMethod={selectedPaymentMethod}  // This was correct
+/>
+) : (
+  <AlertModal
+    open={showAlert}
+    message={alertMessage}
+    onClose={() => setShowAlert(false)}
+  />
+)}
 
       <form
         id="esewa-form"
@@ -1178,7 +1225,7 @@ const Checkout: React.FC = () => {
               )}
               <div className="checkout-container__order-total--total">
                 <span>Total Price</span>
-                <span>Rs {finalTotal.toLocaleString()}</span>
+<span>Rs {finalTotal.toLocaleString()}</span>
               </div>
             </div>
             <div className="checkout-container__payment-methods">
@@ -1211,13 +1258,25 @@ const Checkout: React.FC = () => {
               />
               <p>I have read and agree to the website <Link to="/terms" rel="noopener noreferrer" style={{ color: '#ff7e5f', textDecoration: 'underline' }}>terms and conditions</Link> *</p>
             </label>
-            <button
-              className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''}`}
-              disabled={!termsAgreed || isPlacingOrder}
-              onClick={handlePlaceOrder}
-            >
-              {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
-            </button>
+
+
+<button
+  className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''}`}
+  disabled={!termsAgreed || isPlacingOrder}
+  onClick={handlePlaceOrder}
+>
+  {isPlacingOrder ? (
+<span className="checkout-container__loading-text">
+  Placing Order
+  <span className="checkout-container__animated-ellipsis">...</span>
+</span>
+  ) : (
+    'Place Order'
+  )}
+</button>
+
+
+
           </div>
         </div>
       </div>

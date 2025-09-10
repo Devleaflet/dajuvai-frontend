@@ -128,6 +128,11 @@ const Footer: React.FC = () => {
                         Become a <br />vendor
                       </Link>
                     </li>
+                    <li>
+<Link to="/return-refund-policy" className="footer__link">
+  Return Policy
+</Link>
+                    </li>
                   </ul>
                 </div>
 

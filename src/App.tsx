@@ -16,6 +16,7 @@ import AdminBannerWithTabs from "./Pages/AdminBanner";
 import AdminCatalog from "./Pages/AdminCatalog";
 import ProductPage from "./Pages/ProductPage";
 import UserProfile from "./Pages/UserProfile";
+import ReturnRefundPolicy from "./Pages/ReturnRefundPolicy"; // Added import
 
 // import VendorSignup from "./Pages/VendorSignup";
 import PageNotFound from "./Pages/PageNotFound";
@@ -161,6 +162,14 @@ function App() {
           element={
             <PasswordProtectedRoute>
               <Privacy />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/return-refund-policy" // Added route for Return & Refund Policy
+          element={
+            <PasswordProtectedRoute>
+              <ReturnRefundPolicy />
             </PasswordProtectedRoute>
           }
         />
