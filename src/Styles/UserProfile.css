@@ -673,6 +673,16 @@ margin-bottom: 24px;
   color: green;
 }
 
+.order-total__delivery {
+  font-size: 11px;
+  color: #28a745;
+  margin-top: 2px;
+}
+
+.order-total__delivery small {
+  font-weight: 500;
+}
+
 .orders__error {
   display: flex;
   align-items: center;
@@ -1113,6 +1123,14 @@ margin-bottom: 24px;
 
   .order-total__shipping {
     font-size: 11px;
+  }
+
+  .order-total__delivery {
+    font-size: 10px;
+  }
+
+  .order-total__delivery small {
+    font-weight: 500;
   }
 
   /* Mobile-specific order layout */
