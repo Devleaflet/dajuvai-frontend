@@ -49,18 +49,20 @@
           /* Payment Card */
 .payment-card {
   display: flex;
-  align-items: stretch;     /* stretch inner content properly */
+  align-items: stretch;
   justify-content: center;
   flex-direction: column;
   background: #ffffff;
   border-radius: 1rem;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
-  padding: 2.5rem;          /* ⬅️ more space inside */
+  padding: 2.5rem;
   transition: all 0.3s ease;
   width: 100%;
-  max-width: 42rem;         /* ⬅️ was no explicit width → now wider */
-  min-width: 28rem;         /* ⬅️ ensures box doesn’t collapse */
+  max-width: 42rem;
+  min-width: 20rem;        /* ✅ MORE FLEXIBLE */
 }
+
+
 .payment-card:hover {
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22);
   transform: translateY(-2px);
@@ -321,14 +323,6 @@
             border-color: #fb8c00;
           }
 
-          /* Media Queries */
-@media (max-width: 768px) {
-  .payment-card {
-    max-width: 95%;     /* ⬅️ almost full width on mobile */
-    min-width: auto;    /* ⬅️ remove restriction */
-    padding: 1.75rem;   /* ⬅️ slightly tighter padding for small screens */
-  }
-}
 
 
 
@@ -359,20 +353,7 @@
   box-sizing: border-box;
 }
 
-@media (max-width: 768px) {
-  .payment-card {
-    max-width: 95%;
-    min-width: auto;
-    padding: 1.75rem;
-  }
 
-  .form-input,
-  .select-input {
-    width: 100%;
-    height: 3rem;
-    font-size: 1rem;
-  }
-}
 
 /* Select container with icon */
 .select-container {
@@ -400,4 +381,76 @@
   transform: translateY(-50%);
   pointer-events: none;
   color: #6b7280;            /* grayish tone */
+}
+
+/* Add to existing media query or create new one */
+@media (max-width: 768px) {
+  .form-input::placeholder {
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .select-input {
+    padding-right: 2.5rem;
+  }
+  
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .payment-card {
+    padding: 1.5rem;
+  }
+  
+  .service-charge {
+    padding: 0.75rem;
+  }
+}
+
+/* Additional styles for better mobile alignment */
+.select-wrapper {
+  position: relative;
+}
+
+.select-input:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+
+
+
+/* Enhanced mobile media query: */
+@media (max-width: 768px) {
+  .payment-card {
+    max-width: 100%;         /* ✅ FULL WIDTH UTILIZATION */
+    min-width: auto;
+    padding: 2rem;           /* ✅ BETTER SPACING */
+    margin: 0 0.5rem;        /* ✅ SIDE MARGINS */
+  }
+
+  .form-input,
+  .select-input {
+    width: 100%;
+    height: 3rem;
+    font-size: 1rem;
+  }
+}
+
+.npx-form-group{
+
+  display: flex;
+  flex-direction: column;
+  width: 100%;        /* ⬅️ force group to take full width of parent */
+  margin-bottom: 1.25rem;
+}
+
+.npx-form-group label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
 }

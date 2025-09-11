@@ -441,29 +441,38 @@ const NepalPaymentGateway: React.FC = () => {
                 </div>
 
 
-<div className="form-group select-wrapper">
-  <label htmlFor="instrumentCode">Select Payment Method</label>
-  <div className="select-container">
-    <select
-      id="instrumentCode"
-      name="instrumentCode"
-      value={instrumentCode}
-      onChange={(e) => setInstrumentCode(e.target.value)}
-      required
-      className="form-input select-input"
-    >
-      <option value="" disabled hidden>
-        Choose your preferred payment method...
-      </option>
-      {paymentInstruments.map((instrument) => (
-        <option key={instrument.InstrumentCode} value={instrument.InstrumentCode}>
-          {instrument.InstitutionName} - {instrument.InstrumentName}
-        </option>
-      ))}
-    </select>
-    <ChevronDown className="select-icon" size={20} />
-  </div>
-</div>
+                <div className="form-group select-wrapper">
+                  <label htmlFor="instrumentCode">Select Payment Method</label>
+                  <div className="select-container">
+                    <select
+                      id="instrumentCode"
+                      name="instrumentCode"
+                      value={instrumentCode}
+                      onChange={(e) => setInstrumentCode(e.target.value)}
+                      required
+                      className="form-input select-input"
+                      disabled={paymentInstruments.length === 0}
+                    >
+                      <option value="" disabled hidden>
+                        {paymentInstruments.length > 0 
+                          ? "Choose your preferred payment method..." 
+                          : "No banks available"}
+                      </option>
+                      {paymentInstruments.length > 0 ? (
+                        paymentInstruments.map((instrument) => (
+                          <option key={instrument.InstrumentCode} value={instrument.InstrumentCode}>
+                            {instrument.InstitutionName} - {instrument.InstrumentName}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>
+                          No payment methods available
+                        </option>
+                      )}
+                    </select>
+                    <ChevronDown className="select-icon" size={20} />
+                  </div>
+                </div>
 
 
                 <div className="form-group">
@@ -472,7 +481,7 @@ const NepalPaymentGateway: React.FC = () => {
                     type="text"
                     id="remarks"
                     name="remarks"
-                    placeholder="Add a note or reference for this payment..."
+                    placeholder="Add a note for this payment..."
                     value={remarks}
                     onChange={(e) => setRemarks(e.target.value)}
                     className="form-input"
