@@ -424,8 +424,8 @@ const NepalPaymentGateway: React.FC = () => {
 
             {!isLoading ? (
               <form onSubmit={handlePayment} className="payment-form">
-                <div className="form-group">
-                  <label htmlFor="amount">Payment Amount</label>
+                <div className="npx-form-group">
+                  <label htmlFor="amount">Amount (NPR)</label>
                   <input
                     type="number"
                     id="amount"
