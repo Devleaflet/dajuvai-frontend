@@ -541,12 +541,8 @@ const Checkout: React.FC = () => {
       if (result.success) {
         if (selectedPaymentMethod === 'CASH_ON_DELIVERY') {
           // Show custom popup with navigation options
-<<<<<<< HEAD
-setAlertMessage('Your order has been placed.');
-=======
           const deliveryTime = getOverallDeliveryTime();
           setAlertMessage(`Your order has been placed successfully! Expected delivery: ${deliveryTime}. Do you want to see full details?`);
->>>>>>> 98d4a758524e305fe7549eb429bb8ac56c3b476d
           setShowAlert(true);
           // Store order details for navigation
           const orderDetails = {

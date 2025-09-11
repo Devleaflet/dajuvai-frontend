@@ -418,7 +418,7 @@ const NepalPaymentGateway: React.FC = () => {
 
             {!isLoading ? (
               <form onSubmit={handlePayment} className="payment-form">
-                <div className="form-group">
+                <div className="npx-form-group">
                   <label htmlFor="amount">Amount (NPR)</label>
                   <input
                     type="number"
@@ -429,11 +429,11 @@ const NepalPaymentGateway: React.FC = () => {
                     step="0.01"
                     value={amount}
                     readOnly
-                    className="form-input readonly"
+                    className="npx-form-input readonly"
                   />
                 </div>
 
-                <div className="form-group">
+                <div className="npx-form-group">
                   <label htmlFor="instrumentCode">Payment Method</label>
                   <select
                     id="instrumentCode"
@@ -441,7 +441,7 @@ const NepalPaymentGateway: React.FC = () => {
                     value={instrumentCode}
                     onChange={(e) => setInstrumentCode(e.target.value)}
                     required
-                    className="form-input"
+                    className="npx-form-input"
                   >
                     <option value="">Choose your payment method...</option>
                     {paymentInstruments.map((instrument) => (
@@ -452,7 +452,7 @@ const NepalPaymentGateway: React.FC = () => {
                   </select>
                 </div>
 
-                <div className="form-group">
+                <div className="npx-form-group">
                   <label htmlFor="remarks">Transaction Notes</label>
                   <input
                     type="text"
@@ -461,7 +461,7 @@ const NepalPaymentGateway: React.FC = () => {
                     placeholder="Add a note for this transaction (optional)"
                     value={remarks}
                     onChange={(e) => setRemarks(e.target.value)}
-                    className="form-input"
+                    className="npx-form-input"
                   />
                 </div>
 
@@ -516,7 +516,7 @@ const NepalPaymentGateway: React.FC = () => {
 
           /* Main Container */
           .main-container {
-            min-height: 100vh;
+            min-height:100vh;
             background: linear-gradient(135deg, #ffffff 0%, #ff6d00 100%);
             display: flex;
             align-items: center;
@@ -586,17 +586,17 @@ const NepalPaymentGateway: React.FC = () => {
             flex-direction: column;
             gap: 1.5rem;
           }
-          .form-group {
+          .npx-form-group {
             display: flex;
             flex-direction: column;
           }
-          .form-group label {
+          .npx-form-group label {
             font-size: 0.875rem;
             font-weight: 500;
             color: #1f2937;
             margin-bottom: 0.5rem;
           }
-          .form-input {
+          .npx-form-input {
             width: 100%;
             padding: 0.75rem;
             border: 1px solid #d1d5db;
@@ -605,17 +605,17 @@ const NepalPaymentGateway: React.FC = () => {
             color: #374151;
             transition: all 0.2s ease;
           }
-          .form-input:focus {
+          .npx-form-input:focus {
             outline: none;
             border-color: #ff9800;
             box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.2);
           }
-          .form-input.readonly {
+          .npx-form-input.readonly {
             background-color: #f3f4f6;
             color: #6b7280;
             cursor: not-allowed;
           }
-          .form-input::placeholder {
+          .npx-form-input::placeholder {
             color: #9ca3af;
           }
 
