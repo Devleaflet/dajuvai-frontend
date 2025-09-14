@@ -35,6 +35,13 @@ interface Subcategory {
 	products: Product[];
 }
 
+interface Deal {
+	id: number;
+	name: string;
+	discount: Float32Array;
+	status: string;
+}
+
 const AdminCatalog = () => {
 	const { token } = useAuth();
 	const [homepageSections, setHomepageSections] = useState<HomepageSection[]>(
@@ -55,6 +62,7 @@ const AdminCatalog = () => {
 	const [allProducts, setAllProducts] = useState<Product[]>([]);
 	const [subCategoryProducts, setSubCategoryProducts] = useState<Product[]>([]);
 	const [categories, setCategories] = useState<Category[]>([]);
+	const [deals, setDeals] = useState<Deal[]>([]);
 	const [productSearchQuery, setProductSearchQuery] = useState("");
 	const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 	const [currentStep, setCurrentStep] = useState(1);
@@ -62,6 +70,10 @@ const AdminCatalog = () => {
 	const [selectedCategory, setSelectedCategory] = useState("");
 	const [selectedSubcategory, setSelectedSubcategory] = useState("");
 	const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+	const [selectedDeal, setSelectedDeal] = useState("");
+	const [selectedCategoryId, setSelectedCategoryId] = useState<number>();
+	const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<number>();
+	const [selectedDealId, setSelectedDealId] = useState<number>();
 
 	const handleProductSelect = (productId: number) => {
 		setSelectedProducts((prev) => {
@@ -84,6 +96,7 @@ const AdminCatalog = () => {
 		fetchHomepageSections();
 		fetchProducts();
 		fetchCategories();
+		fetchDeals();
 	}, [token]);
 
 	const fetchHomepageSections = async () => {
@@ -213,75 +226,97 @@ const AdminCatalog = () => {
 		setShowDeleteModal(true);
 	}, []);
 
-	const openHomepageModal = useCallback((section?: HomepageSection) => {
-		if (section) {
-			setEditingHomepage(section);
-			setModalTitle(section.title);
-			setModalIsActive(section.isActive);
-			setModalProductIds(section.products.map((p) => p.id));
-			setSelectedProducts(section.products.map((p) => p.id));
-		} else {
-			setEditingHomepage(null);
-			setModalTitle("");
-			setModalIsActive(true);
-			setModalProductIds([]);
-			setSelectedProducts([]);
-			setSelectedProductSource("");
-			setSelectedCategory("");
-			setSelectedSubcategory("");
-		}
-		setProductSearchQuery("");
-		setDebouncedSearchQuery("");
-		setCurrentStep(1);
-		setShowHomepageModal(true);
-	}, []);
+	const openHomepageModal = useCallback(
+		(section?: HomepageSection, show?: number) => {
+			if (section) {
+				setEditingHomepage(section);
+				setModalTitle(section.title);
+				setModalIsActive(section.isActive);
+				setModalProductIds(section.products.map((p) => p.id));
+				setSelectedProducts(section.products.map((p) => p.id));
+			} else {
+				setEditingHomepage(null);
+				setModalTitle("");
+				setModalIsActive(true);
+				setModalProductIds([]);
+				setSelectedProducts([]);
+				setSelectedProductSource("");
+				setSelectedCategory("");
+				setSelectedSubcategory("");
+				setSelectedDeal("");
+			}
+			setProductSearchQuery("");
+			setDebouncedSearchQuery("");
+			setCurrentStep(1);
+			if (show == -1) {
+				setShowHomepageModal(false);
+			} else {
+				setShowHomepageModal(true);
+			}
+		},
+		[]
+	);
 
 	const handleSaveHomepageSection = async () => {
-		if (!token) return;
-		if (!modalTitle || modalProductIds.length === 0) {
-			toast.error("Please fill in all required fields");
-			return;
-		}
-
 		try {
-			const payload = {
+			let payload = {
 				title: modalTitle,
 				isActive: modalIsActive,
-				productIds: modalProductIds,
+				productSource: selectedProductSource,
 			};
 
-			const url = editingHomepage
-				? `${API_BASE_URL}/api/homepage/${editingHomepage.id}`
-				: `${API_BASE_URL}/api/homepage`;
+			let endpoint = `${API_BASE_URL}/api/homepage`;
 
-			const response = await fetch(url, {
-				method: editingHomepage ? "PUT" : "POST",
+			// Build payload based on product source
+			switch (selectedProductSource) {
+				case "manual":
+					payload.productIds = modalProductIds;
+					break;
+
+				case "deal":
+					payload.selectedDealId = selectedDealId;
+					break;
+
+				case "category":
+					payload.selectedCategoryId = selectedCategoryId;
+					break;
+
+				case "subcategory":
+					payload.selectedCategoryId = selectedCategoryId;
+					payload.selectedSubcategoryId = selectedSubcategoryId;
+					break;
+
+				default:
+					throw new Error(`Unknown product source: ${selectedProductSource}`);
+			}
+
+			console.log("😂🔥", payload);
+
+			const res = await fetch(endpoint, {
+				method: "POST",
 				headers: {
 					Authorization: `Bearer ${token}`,
-					"Content-Type": "application/json",
 					Accept: "application/json",
+					"Content-Type": "application/json",
 				},
 				body: JSON.stringify(payload),
 			});
 
-			if (!response.ok) throw new Error("Failed to save section");
-
-			const data = await response.json();
-			if (editingHomepage) {
-				setHomepageSections((sections) =>
-					sections.map((section) =>
-						section.id === editingHomepage.id ? data.data : section
-					)
-				);
-				toast.success("Homepage section updated successfully");
-			} else {
-				setHomepageSections((sections) => [...sections, data.data]);
-				toast.success("Homepage section created successfully");
+			if (!res.ok) {
+				const errorData = await res.text();
+				throw new Error(`Failed to save: ${res.status} - ${errorData}`);
 			}
 
-			setShowHomepageModal(false);
+			const result = await res.json();
+			console.log(`✅ ${selectedProductSource} section saved`, result);
+			const successMessage = editingHomepage
+				? "Homepage section updated successfully"
+				: "Homepage section added successfully";
+			toast.success(successMessage);
+			fetchHomepageSections();
+			openHomepageModal(null, -1);
 		} catch (err) {
-			toast.error("Failed to save section");
+			console.error("❌ Error:", err);
 		}
 	};
 
@@ -319,18 +354,35 @@ const AdminCatalog = () => {
 		setSelectedProductSource(e.target.value);
 		setSelectedCategory("");
 		setSelectedSubcategory("");
+		setSelectedDeal("");
 		// Do not reset selectedProducts or modalProductIds to persist selections
 	};
 
 	const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-		setSelectedCategory(e.target.value);
-		setSelectedSubcategory("");
-		// Do not reset selectedProducts or modalProductIds
+		const value = e.target.value;
+		setSelectedCategory(value);
+
+		const category = categories.find((c) => c.name === value);
+		const id = category ? category.id : 0;
+		setSelectedCategoryId(id);
 	};
 
 	const handleSubcategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-		setSelectedSubcategory(e.target.value);
-		// Do not reset selectedProducts or modalProductIds
+		const value = e.target.value;
+		setSelectedSubcategory(value);
+
+		const subcategory = getSubcategories().find((s) => s.name === value);
+		const id = subcategory ? subcategory.id : 0;
+		setSelectedSubcategoryId(id);
+	};
+
+	const handleDealChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+		const value = e.target.value;
+		setSelectedDeal(value);
+
+		const deal = deals.find((d) => d.name === value);
+		const id = deal ? deal.id : 0;
+		setSelectedDealId(id);
 	};
 
 	const getSubcategories = () => {
@@ -373,6 +425,35 @@ const AdminCatalog = () => {
 		}
 	};
 
+	const fetchDeals = async () => {
+		if (!token) return;
+		setLoadingProducts(true);
+		try {
+			const response = await fetch(`${API_BASE_URL}/api/deal`, {
+				headers: {
+					Authorization: `Bearer ${token}`,
+					Accept: "application/json",
+				},
+			});
+
+			if (!response.ok) throw new Error("Failed to fetch deals");
+			const data = await response.json();
+			const formattedDeals = data.data.deals.map((item: any) => ({
+				id: item.id,
+				name: item.name,
+				discount: item.discountPercentage,
+				status: item.status,
+			}));
+
+			setDeals(formattedDeals);
+		} catch (err) {
+			toast.error("Failed to load produdealscts");
+			setDeals([]);
+		} finally {
+			setLoadingProducts(false);
+		}
+	};
+
 	useEffect(() => {
 		const category = categories.find((cat) => cat.name === selectedCategory);
 		const subcategory = category?.subcategories.find(
@@ -388,7 +469,7 @@ const AdminCatalog = () => {
 
 	return (
 		<div className="admin-catalog">
-			<Toaster
+			{/* <Toaster
 				position="top-right"
 				toastOptions={{
 					duration: 3000,
@@ -403,7 +484,7 @@ const AdminCatalog = () => {
 						style: { backgroundColor: "#f44336" },
 					},
 				}}
-			/>
+			/> */}
 			<AdminSidebar />
 			<div className="admin-catalog__container">
 				<Header
@@ -499,6 +580,12 @@ const AdminCatalog = () => {
 															<span
 																key={product.id}
 																className="admin-catalog__product-tag"
+																style={{
+																	backgroundColor: "#e6e3e3ff",
+																	borderRadius: "6px",
+																	padding: "2px 4px",
+																	marginInline: "3px",
+																}}
 															>
 																{product.title || product.name}
 															</span>
@@ -567,36 +654,44 @@ const AdminCatalog = () => {
 								<div className="form-container">
 									{currentStep === 1 && (
 										<div>
-											<div className="admin-catalog__form-group">
-												<label
-													htmlFor="title"
-													className="admin-catalog__form-label"
-												>
-													Title
-												</label>
-												<input
-													id="title"
-													type="text"
-													value={modalTitle}
-													onChange={(e) => setModalTitle(e.target.value)}
-													placeholder="Section title"
-													className="admin-catalog__form-input"
-												/>
-											</div>
-											<div className="admin-catalog__checkbox-container">
-												<input
-													id="isActive"
-													type="checkbox"
-													className="admin-catalog__checkbox"
-													checked={modalIsActive}
-													onChange={(e) => setModalIsActive(e.target.checked)}
-												/>
-												<label
-													htmlFor="isActive"
-													className="admin-catalog__checkbox-label"
-												>
-													Active
-												</label>
+											<div className="admin-catalog-form-container">
+												<div className="admin-catalog__form-group">
+													<label
+														htmlFor="title"
+														className="admin-catalog__form-label"
+													>
+														Title
+													</label>
+													<input
+														id="title"
+														type="text"
+														value={modalTitle}
+														onChange={(e) => setModalTitle(e.target.value)}
+														placeholder="Section title"
+														className="admin-catalog__form-input"
+														onKeyDown={(e) => {
+															if (e.key === "Enter") {
+																e.preventDefault();
+																nextStep();
+															}
+														}}
+													/>
+												</div>
+												<div className="admin-catalog__checkbox-container">
+													<input
+														id="isActive"
+														type="checkbox"
+														className="admin-catalog__checkbox"
+														checked={modalIsActive}
+														onChange={(e) => setModalIsActive(e.target.checked)}
+													/>
+													<label
+														htmlFor="isActive"
+														className="admin-catalog__checkbox-label"
+													>
+														Active
+													</label>
+												</div>
 											</div>
 											<div className="buttons">
 												<div></div>
@@ -604,6 +699,7 @@ const AdminCatalog = () => {
 													type="button"
 													className="btn btn-next"
 													onClick={nextStep}
+													disabled={!modalTitle.trim()}
 												>
 													Next
 												</button>
@@ -612,40 +708,254 @@ const AdminCatalog = () => {
 									)}
 									{currentStep === 2 && (
 										<div>
-											<div className="admin-catalog__form-group">
-												<label
-													htmlFor="productSource"
-													className="admin-catalog__form-label"
-												>
-													Select Product Source
-												</label>
-												<select
-													id="productSource"
-													value={selectedProductSource}
-													onChange={handleProductSourceChange}
-													className="admin-catalog__form-input"
-												>
-													<option value="">--Select Product Source--</option>
-													<option value="manual">
-														Insert Products Manually
-													</option>
-													<option value="category">Select Category</option>
-													<option value="subcategory">
-														Select Subcategory
-													</option>
-												</select>
-											</div>
-											{selectedProductSource === "manual" && (
-												<>
+											<div className="admin-catalog-form-container">
+												<div className="admin-catalog__form-group">
+													<label
+														htmlFor="productSource"
+														className="admin-catalog__form-label"
+													>
+														Select Product Source
+													</label>
+													<select
+														id="productSource"
+														value={selectedProductSource}
+														onChange={handleProductSourceChange}
+														className="admin-catalog__form-input"
+													>
+														<option value="">--Select Product Source--</option>
+														<option value="manual">
+															Insert Products Manually
+														</option>
+														<option value="category">Select Category</option>
+														<option value="subcategory">
+															Select Subcategory
+														</option>
+														<option value="deal">Select Deals</option>
+													</select>
+												</div>
+												{selectedProductSource === "manual" && (
+													<>
+														<div className="admin-catalog__form-group">
+															<label
+																htmlFor="selectCategoryManual"
+																className="admin-catalog__form-label"
+															>
+																Select Category
+															</label>
+															<select
+																id="selectCategoryManual"
+																value={selectedCategory}
+																onChange={handleCategoryChange}
+																className="admin-catalog__form-input"
+															>
+																<option value="">--Select Category--</option>
+																{categories.map((category) => (
+																	<option
+																		key={category.id}
+																		value={category.name}
+																	>
+																		{category.name}
+																	</option>
+																))}
+															</select>
+														</div>
+														{selectedCategory && (
+															<div className="admin-catalog__form-group">
+																<label
+																	htmlFor="selectSubcategoryManual"
+																	className="admin-catalog__form-label"
+																>
+																	Select Subcategory
+																</label>
+																<select
+																	id="selectSubcategoryManual"
+																	value={selectedSubcategory}
+																	onChange={handleSubcategoryChange}
+																	className="admin-catalog__form-input"
+																>
+																	<option value="">
+																		--Select Subcategory--
+																	</option>
+																	{getSubcategories().map((subcategory) => (
+																		<option
+																			key={subcategory.id}
+																			value={subcategory.name}
+																		>
+																			{subcategory.name}
+																		</option>
+																	))}
+																</select>
+															</div>
+														)}
+														{/* Selected Products Section */}
+														{selectedProducts.length > 0 && (
+															<div className="admin-catalog__form-group">
+																<h4
+																	className="admin-catalog__form-label"
+																	style={{
+																		fontWeight: "bold",
+																	}}
+																>
+																	Selected Products
+																</h4>
+																<div className="admin-catalog-grid">
+																	{allProducts
+																		.filter((product) =>
+																			selectedProducts.includes(product.id)
+																		)
+																		.map((product) => (
+																			<div
+																				key={product.id}
+																				className="admin-catalog-card selected"
+																				onClick={() =>
+																					handleProductSelect(product.id)
+																				}
+																			>
+																				<input
+																					type="checkbox"
+																					id={`product-${product.id}`}
+																					className="admin-catalog-checkbox"
+																					checked={selectedProducts.includes(
+																						product.id
+																					)}
+																					onChange={() =>
+																						handleProductSelect(product.id)
+																					}
+																					onClick={(e) => e.stopPropagation()}
+																				/>
+																				<div className="admin-catalog-image-wrapper">
+																					<img
+																						src={
+																							product.productImages?.[0] ||
+																							"/placeholder.png"
+																						}
+																						alt={product.title}
+																						className="admin-catalog-image"
+																					/>
+																				</div>
+																				<div className="admin-catalog-info">
+																					<h4
+																						className="admin-catalog-title"
+																						title={product.title}
+																					>
+																						{product.title}
+																					</h4>
+																				</div>
+																			</div>
+																		))}
+																</div>
+															</div>
+														)}
+														{/* Subcategory Products for Selection */}
+														{selectedSubcategory && (
+															<>
+																{loadingProducts ? (
+																	<div className="admin-catalog-grid">
+																		{Array.from({ length: 6 }).map((_, i) => (
+																			<div
+																				key={i}
+																				className="admin-catalog-card skeleton"
+																			>
+																				<div className="admin-catalog-image-wrapper skeleton-box"></div>
+																				<div className="admin-catalog-info">
+																					<div
+																						className="skeleton-box"
+																						style={{
+																							height: "16px",
+																							width: "80%",
+																							margin: "6px auto",
+																						}}
+																					></div>
+																					<div
+																						className="skeleton-box"
+																						style={{
+																							height: "14px",
+																							width: "40%",
+																							margin: "6px auto",
+																						}}
+																					></div>
+																				</div>
+																			</div>
+																		))}
+																	</div>
+																) : subCategoryProducts.length > 0 ? (
+																	<div className="admin-catalog__form-group">
+																		<h4
+																			className="admin-catalog__form-label"
+																			style={{
+																				fontWeight: "bold",
+																			}}
+																		>
+																			Available Products
+																		</h4>
+																		<div className="admin-catalog-grid">
+																			{subCategoryProducts.map((product) => {
+																				const isSelected =
+																					selectedProducts.includes(product.id);
+																				return (
+																					<div
+																						key={product.id}
+																						className={`admin-catalog-card ${
+																							isSelected ? "selected" : ""
+																						}`}
+																						onClick={() =>
+																							handleProductSelect(product.id)
+																						}
+																					>
+																						<input
+																							type="checkbox"
+																							id={`product-${product.id}`}
+																							className="admin-catalog-checkbox"
+																							checked={isSelected}
+																							onChange={() =>
+																								handleProductSelect(product.id)
+																							}
+																							onClick={(e) =>
+																								e.stopPropagation()
+																							}
+																						/>
+																						<div className="admin-catalog-image-wrapper">
+																							<img
+																								src={
+																									product.productImages?.[0] ||
+																									"/placeholder.png"
+																								}
+																								alt={product.title}
+																								className="admin-catalog-image"
+																							/>
+																						</div>
+																						<div className="admin-catalog-info">
+																							<h4
+																								className="admin-catalog-title"
+																								title={product.title}
+																							>
+																								{product.title}
+																							</h4>
+																						</div>
+																					</div>
+																				);
+																			})}
+																		</div>
+																	</div>
+																) : (
+																	<p className="text-gray-500 text-center mt-6">
+																		No products available for this subcategory.
+																	</p>
+																)}
+															</>
+														)}
+													</>
+												)}
+												{selectedProductSource === "category" && (
 													<div className="admin-catalog__form-group">
 														<label
-															htmlFor="selectCategoryManual"
+															htmlFor="selectCategory"
 															className="admin-catalog__form-label"
 														>
 															Select Category
 														</label>
 														<select
-															id="selectCategoryManual"
+															id="selectCategory"
 															value={selectedCategory}
 															onChange={handleCategoryChange}
 															className="admin-catalog__form-input"
@@ -661,7 +971,33 @@ const AdminCatalog = () => {
 															))}
 														</select>
 													</div>
-													{selectedCategory && (
+												)}
+												{selectedProductSource === "subcategory" && (
+													<>
+														<div className="admin-catalog__form-group">
+															<label
+																htmlFor="selectCategoryManual"
+																className="admin-catalog__form-label"
+															>
+																Select Category
+															</label>
+															<select
+																id="selectCategoryManual"
+																value={selectedCategory}
+																onChange={handleCategoryChange}
+																className="admin-catalog__form-input"
+															>
+																<option value="">--Select Category--</option>
+																{categories.map((category) => (
+																	<option
+																		key={category.id}
+																		value={category.name}
+																	>
+																		{category.name}
+																	</option>
+																))}
+															</select>
+														</div>
 														<div className="admin-catalog__form-group">
 															<label
 																htmlFor="selectSubcategoryManual"
@@ -686,232 +1022,36 @@ const AdminCatalog = () => {
 																))}
 															</select>
 														</div>
-													)}
-													{/* Selected Products Section */}
-													{selectedProducts.length > 0 && (
-														<div className="admin-catalog__form-group">
-															<h4 className="admin-catalog__form-label">
-																Selected Products
-															</h4>
-															<div className="admin-catalog-grid">
-																{allProducts
-																	.filter((product) =>
-																		selectedProducts.includes(product.id)
-																	)
-																	.map((product) => (
-																		<div
-																			key={product.id}
-																			className="admin-catalog-card selected"
-																			onClick={() =>
-																				handleProductSelect(product.id)
-																			}
-																		>
-																			<input
-																				type="checkbox"
-																				id={`product-${product.id}`}
-																				className="admin-catalog-checkbox"
-																				checked={selectedProducts.includes(
-																					product.id
-																				)}
-																				onChange={() =>
-																					handleProductSelect(product.id)
-																				}
-																				onClick={(e) => e.stopPropagation()}
-																			/>
-																			<div className="admin-catalog-image-wrapper">
-																				<img
-																					src={
-																						product.productImages?.[0] ||
-																						"/placeholder.png"
-																					}
-																					alt={product.title}
-																					className="admin-catalog-image"
-																				/>
-																			</div>
-																			<div className="admin-catalog-info">
-																				<h4
-																					className="admin-catalog-title"
-																					title={product.title}
-																				>
-																					{product.title}
-																				</h4>
-																			</div>
-																		</div>
-																	))}
-															</div>
-														</div>
-													)}
-													{/* Subcategory Products for Selection */}
-													{selectedSubcategory && (
-														<>
-															{loadingProducts ? (
-																<div className="admin-catalog-grid">
-																	{Array.from({ length: 6 }).map((_, i) => (
-																		<div
-																			key={i}
-																			className="admin-catalog-card skeleton"
-																		>
-																			<div className="admin-catalog-image-wrapper skeleton-box"></div>
-																			<div className="admin-catalog-info">
-																				<div
-																					className="skeleton-box"
-																					style={{
-																						height: "16px",
-																						width: "80%",
-																						margin: "6px auto",
-																					}}
-																				></div>
-																				<div
-																					className="skeleton-box"
-																					style={{
-																						height: "14px",
-																						width: "40%",
-																						margin: "6px auto",
-																					}}
-																				></div>
-																			</div>
-																		</div>
-																	))}
-																</div>
-															) : subCategoryProducts.length > 0 ? (
-																<div className="admin-catalog__form-group">
-																	<h4 className="admin-catalog__form-label">
-																		Available Products
-																	</h4>
-																	<div className="admin-catalog-grid">
-																		{subCategoryProducts.map((product) => {
-																			const isSelected =
-																				selectedProducts.includes(product.id);
-																			return (
-																				<div
-																					key={product.id}
-																					className={`admin-catalog-card ${
-																						isSelected ? "selected" : ""
-																					}`}
-																					onClick={() =>
-																						handleProductSelect(product.id)
-																					}
-																				>
-																					<input
-																						type="checkbox"
-																						id={`product-${product.id}`}
-																						className="admin-catalog-checkbox"
-																						checked={isSelected}
-																						onChange={() =>
-																							handleProductSelect(product.id)
-																						}
-																						onClick={(e) => e.stopPropagation()}
-																					/>
-																					<div className="admin-catalog-image-wrapper">
-																						<img
-																							src={
-																								product.productImages?.[0] ||
-																								"/placeholder.png"
-																							}
-																							alt={product.title}
-																							className="admin-catalog-image"
-																						/>
-																					</div>
-																					<div className="admin-catalog-info">
-																						<h4
-																							className="admin-catalog-title"
-																							title={product.title}
-																						>
-																							{product.title}
-																						</h4>
-																					</div>
-																				</div>
-																			);
-																		})}
-																	</div>
-																</div>
-															) : (
-																<p className="text-gray-500 text-center mt-6">
-																	No products available for this subcategory.
-																</p>
-															)}
-														</>
-													)}
-												</>
-											)}
-											{selectedProductSource === "category" && (
-												<div className="admin-catalog__form-group">
-													<label
-														htmlFor="selectCategory"
-														className="admin-catalog__form-label"
-													>
-														Select Category
-													</label>
-													<select
-														id="selectCategory"
-														value={selectedCategory}
-														onChange={handleCategoryChange}
-														className="admin-catalog__form-input"
-													>
-														<option value="">--Select Category--</option>
-														{categories.map((category) => (
-															<option
-																key={category.id}
-																value={category.name}
-															>
-																{category.name}
-															</option>
-														))}
-													</select>
-												</div>
-											)}
-											{selectedProductSource === "subcategory" && (
-												<>
+													</>
+												)}
+
+												{selectedProductSource === "deal" && (
 													<div className="admin-catalog__form-group">
 														<label
-															htmlFor="selectCategoryManual"
+															htmlFor="selectDeal"
 															className="admin-catalog__form-label"
 														>
-															Select Category
+															Select Deals
 														</label>
 														<select
-															id="selectCategoryManual"
-															value={selectedCategory}
-															onChange={handleCategoryChange}
+															id="selectDeal"
+															value={selectedDeal}
+															onChange={handleDealChange}
 															className="admin-catalog__form-input"
 														>
-															<option value="">--Select Category--</option>
-															{categories.map((category) => (
+															<option value="">--Select Deal--</option>
+															{deals.map((deal) => (
 																<option
-																	key={category.id}
-																	value={category.name}
+																	key={deal.id}
+																	value={deal.name}
 																>
-																	{category.name}
+																	{deal.name}
 																</option>
 															))}
 														</select>
 													</div>
-													<div className="admin-catalog__form-group">
-														<label
-															htmlFor="selectSubcategoryManual"
-															className="admin-catalog__form-label"
-														>
-															Select Subcategory
-														</label>
-														<select
-															id="selectSubcategoryManual"
-															value={selectedSubcategory}
-															onChange={handleSubcategoryChange}
-															className="admin-catalog__form-input"
-														>
-															<option value="">--Select Subcategory--</option>
-															{getSubcategories().map((subcategory) => (
-																<option
-																	key={subcategory.id}
-																	value={subcategory.name}
-																>
-																	{subcategory.name}
-																</option>
-															))}
-														</select>
-													</div>
-												</>
-											)}
+												)}
+											</div>
 											<div className="buttons">
 												<button
 													type="button"
@@ -923,7 +1063,18 @@ const AdminCatalog = () => {
 												<button
 													className="btn btn-submit"
 													onClick={handleSaveHomepageSection}
-													disabled={!modalTitle || modalProductIds.length === 0}
+													disabled={
+														!modalTitle ||
+														!selectedProductSource ||
+														(selectedProductSource === "manual" &&
+															modalProductIds.length === 0) ||
+														(selectedProductSource === "category" &&
+															!selectedCategory) ||
+														(selectedProductSource === "deal" &&
+															!selectedDeal) ||
+														(selectedProductSource === "subcategory" &&
+															(!selectedCategory || !selectedSubcategory))
+													}
 												>
 													{editingHomepage ? "Save" : "Create"}
 												</button>

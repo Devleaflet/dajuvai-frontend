@@ -305,7 +305,7 @@
 	transform: translate(-50%, -50%);
 	background: white;
 	border-radius: 8px;
-	padding: 24px;
+	padding: 24px 8px 24px 24px;
 	max-width: 700px;
 	width: 90%;
 	z-index: 1001;
@@ -370,13 +370,14 @@
 .admin-catalog__form-group {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: 4px;
 }
 
 .admin-catalog__form-label {
 	font-size: 14px;
 	font-weight: 500;
-	color: #374151;
+	color: #15171b;
+	margin-bottom: 10px;
 }
 
 .admin-catalog__form-input {
@@ -397,6 +398,10 @@
 	display: flex;
 	align-items: center;
 	gap: 8px;
+	margin-top: 15px;
+	cursor: pointer;
+	width: fit-content;
+	padding-right: 20px;
 }
 
 .admin-catalog__checkbox {
@@ -408,6 +413,7 @@
 .admin-catalog__checkbox-label {
 	font-size: 14px;
 	color: #374151;
+	cursor: pointer;
 }
 
 .admin-catalog__products-list {
@@ -543,6 +549,12 @@
 .admin-catalog__button--danger {
 	background-color: #dc2626;
 	color: white;
+	padding: 8px 16px;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
 }
 
 .admin-catalog__button--danger:hover {
@@ -658,6 +670,7 @@
 	display: flex;
 	justify-content: space-between;
 	margin-top: 20px;
+	padding-right: 24px;
 }
 
 .btn {
@@ -708,9 +721,50 @@
 .admin-catalog-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-	gap: 1.5rem;
-	margin-top: 1.5rem;
-	padding: 1rem;
+	gap: 0.75rem;
+	padding: 1rem 0.4rem;
+}
+
+.admin-catalog-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+	gap: 0.75rem;
+	padding: 1rem 0.4rem;
+	overflow-y: auto;
+	max-height: 360px;
+	margin-right: 4px;
+}
+
+.admin-catalog-grid::-webkit-scrollbar {
+	width: 1.5px;
+}
+.admin-catalog-grid::-webkit-scrollbar-thumb {
+	background: #609dffa6;
+	border-radius: 6px;
+}
+.admin-catalog-grid::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.admin-catalog-form-container {
+	padding-right: 24px;
+	max-height: calc(85vh - 60px - 120px);
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	margin-top: 30px;
+}
+
+.admin-catalog-form-container::-webkit-scrollbar {
+	width: 2px;
+}
+.admin-catalog-form-container::-webkit-scrollbar-thumb {
+	background: #ccc;
+	border-radius: 6px;
+}
+.admin-catalog-form-container::-webkit-scrollbar-track {
+	background: transparent;
 }
 
 /* Card */
@@ -763,15 +817,23 @@
 
 /* Info */
 .admin-catalog-info {
-	text-align: center;
 }
 
 .admin-catalog-title {
 	font-size: 0.6rem;
 	font-weight: 600;
 	color: #111827;
-	text-align: justify;
+	text-align: left;
 	margin-bottom: 0.25rem;
+
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+
+	width: 100%;
+	line-height: 1.2;
+	max-height: calc(1.2em * 2);
 }
 
 .admin-catalog-card.selected {
