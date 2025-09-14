@@ -119,9 +119,9 @@ const HomeBanner: React.FC = () => {
       } else if (currentBanner.productSource === "manual") {
         navigate(`/shop?bannerId=${currentBanner.id}`);
       } else if (currentBanner.productSource === "external" && currentBanner.externalLink) {
-        window.open(currentBanner.externalLink, "_blank");
-      } 
-    } 
+        navigate(currentBanner.externalLink);
+      }
+    }
   };
 
   const handleNavButtonClick = (

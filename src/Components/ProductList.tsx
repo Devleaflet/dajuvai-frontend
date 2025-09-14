@@ -21,9 +21,7 @@ const ProductList: React.FC<ProductListProps> = ({
     const base = typeof basePrice === 'string' ? parseFloat(basePrice) : basePrice;
     if (!discount || !discountType) return base;
     const discountValue = parseFloat(discount) || 0;
-    if (discountType === "PERCENTAGE") {
-      return base * (1 - discountValue / 100);
-    } else if (discountType === "FIXED" || discountType === "FLAT") {
+     if (discountType === "FIXED" || discountType === "FLAT") {
       return base - discountValue;
     }
     return base;
