@@ -78,8 +78,11 @@ const Navbar: React.FC = () => {
   const [sideMenuLoading, setSideMenuLoading] = useState<
     Record<number, boolean>
   >({});
+  const [dropdownPosition, setDropdownPosition] = useState<{top: number, left: number} | null>(null);
+  const categoryRefs = useRef<{[key: number]: HTMLDivElement | null}>({});
   const [scrollPosition, setScrollPosition] = useState(0);
   const categoriesRef = useRef<HTMLDivElement>(null);
+  const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const sideMenuRef = useRef<HTMLDivElement>(null);
   const sideCartRef = useRef<HTMLDivElement>(null);
@@ -559,28 +562,43 @@ const Navbar: React.FC = () => {
     }
   };
 
+  const clearDropdownTimeout = () => {
+    if (dropdownTimeoutRef.current) {
+      clearTimeout(dropdownTimeoutRef.current);
+      dropdownTimeoutRef.current = null;
+    }
+  };
+
+  const hideDropdownWithDelay = () => {
+    dropdownTimeoutRef.current = setTimeout(() => {
+      setActiveDropdown(null);
+      setDropdownPosition(null);
+    }, 150); // 150ms delay
+  };
+
   const renderCategoryDropdown = (category: any) => {
     if (activeDropdown !== category.id) return null;
+    
     return (
-      <div className="navbar__dropdown">
-        <div className="navbar__dropdown-content">
-          {dropdownSubcategories.length > 0 ? (
-            dropdownSubcategories.map((subcategory: any) => (
-              <Link
-                key={subcategory.id}
-                to={`/shop?categoryId=${category.id}&subcategoryId=${subcategory.id}`}
-                className="navbar__dropdown-link"
-                onClick={() =>
-                  handleSubcategoryClick(category.id, subcategory.id)
-                }
-              >
-                {subcategory.name}
-              </Link>
-            ))
-          ) : (
-            <div className="navbar__dropdown-link">No subcategories</div>
-          )}
-        </div>
+      <div className="navbar__dropdown-content">
+        {dropdownSubcategories.length > 0 ? (
+          dropdownSubcategories.map((subcategory: any) => (
+            <Link
+              key={subcategory.id}
+              to={`/shop?categoryId=${category.id}&subcategoryId=${subcategory.id}`}
+              className="navbar__dropdown-link"
+              onClick={() =>
+                handleSubcategoryClick(category.id, subcategory.id)
+              }
+            >
+              {subcategory.name}
+            </Link>
+          ))
+        ) : (
+          <div className="navbar__dropdown-link" style={{ color: '#666', fontStyle: 'italic' }}>
+            Loading subcategories...
+          </div>
+        )}
       </div>
     );
   };
@@ -680,8 +698,15 @@ const Navbar: React.FC = () => {
   useEffect(() => {
     async function fetchSubs() {
       if (activeDropdown) {
-        const subs = await fetchSubCategory(activeDropdown);
-        setDropdownSubcategories(subs || []);
+        try {
+          console.log('🔍 Fetching subcategories for category:', activeDropdown);
+          const subs = await fetchSubCategory(activeDropdown);
+          console.log('📦 Received subcategories:', subs);
+          setDropdownSubcategories(subs || []);
+        } catch (error) {
+          console.error('❌ Error fetching subcategories:', error);
+          setDropdownSubcategories([]);
+        }
       } else {
         setDropdownSubcategories([]);
       }
@@ -1258,9 +1283,31 @@ const Navbar: React.FC = () => {
               {categories.map((category: any) => (
                 <div
                   key={category.id}
+                  ref={(el) => categoryRefs.current[category.id] = el}
                   className={`navbar__category${activeDropdown === category.id ? " active" : ""}`}
-                  onMouseEnter={() => setActiveDropdown(category.id)}
-                  onMouseLeave={() => setActiveDropdown(null)}
+                  onMouseEnter={() => {
+                    clearDropdownTimeout();
+                    setActiveDropdown(category.id);
+                    const element = categoryRefs.current[category.id];
+                    const sliderContainer = categoriesRef.current;
+                    if (element && sliderContainer) {
+                      const rect = element.getBoundingClientRect();
+                      const sliderRect = sliderContainer.getBoundingClientRect();
+                      
+                      // Calculate position accounting for slider scroll and viewport
+                      // Use the element's current viewport position directly
+                      const adjustedLeft = rect.left + window.scrollX;
+                      const adjustedTop = rect.bottom + window.scrollY;
+                      
+                      setDropdownPosition({
+                        top: adjustedTop,
+                        left: adjustedLeft
+                      });
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    hideDropdownWithDelay();
+                  }}
                 >
                   <div className="navbar__category-link">
                     {category.name}
@@ -1272,8 +1319,6 @@ const Navbar: React.FC = () => {
                         }`}
                     />
                   </div>
-                  {activeDropdown === category.id &&
-                    renderCategoryDropdown(category)}
                 </div>
               ))}
             </div>
@@ -1448,6 +1493,28 @@ const Navbar: React.FC = () => {
         isOpen={vendorAuthModalOpen}
         onClose={() => setVendorAuthModalOpen(false)}
       />
+      
+      {/* Portal for dropdown */}
+      {activeDropdown && dropdownPosition && (
+        <div 
+          className="navbar__dropdown-portal"
+          style={{
+            position: 'absolute',
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            zIndex: 9999
+          }}
+          onMouseEnter={() => {
+            // Keep the dropdown open when hovering over it
+            clearDropdownTimeout();
+          }}
+          onMouseLeave={() => {
+            hideDropdownWithDelay();
+          }}
+        >
+          {renderCategoryDropdown(categories.find(cat => cat.id === activeDropdown)!)}
+        </div>
+      )}
     </nav>
   );
 };

@@ -138,57 +138,76 @@
 .top-category__nav {
   position: absolute;
   background-color: rgb(255, 255, 255);
-  box-shadow: 0px 0px 5px 4px rgba(0, 0, 0, 0.2);
-  border: none;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 50%;
-  width: 40px; /* Smaller size */
-  height: 40px; /* Smaller size */
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: rgb(0, 0, 0);
   cursor: pointer;
-  z-index: 2;
+  z-index: 10;
+  transition: all 0.2s ease;
+  pointer-events: auto;
 }
 
 .top-category__nav:hover {
-  opacity: 1; /* Ensure hover effect is visible */
-  background-color: rgb(255, 255, 255);
-  box-shadow: 0px 0px 5px 4px rgba(0, 0, 0, 0.2);
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgb(0, 0, 0);
-  cursor: pointer;
-  z-index: 2;
+  background-color: rgb(248, 248, 248);
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .top-category__nav--prev {
-  left: 0.5rem;
-  bottom: 0.5rem;
-  position: absolute;
-  top: 32%;
-  transform: translateY(40%) translateX(-15%);
-  -webkit-transform: translateY(40%) translateX(-15%);
-  -moz-transform: translateY(40%) translateX(-15%);
-  -ms-transform: translateY(40%) translateX(-15%);
-  -o-transform: translateY(40%) translateX(-15%);
+  left: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  -webkit-transform: translateY(-50%);
+  -moz-transform: translateY(-50%);
+  -ms-transform: translateY(-50%);
+  -o-transform: translateY(-50%);
+}
+
+.top-category__nav--prev:hover {
+  transform: translateY(-50%) scale(1.05);
+  -webkit-transform: translateY(-50%) scale(1.05);
+  -moz-transform: translateY(-50%) scale(1.05);
+  -ms-transform: translateY(-50%) scale(1.05);
+  -o-transform: translateY(-50%) scale(1.05);
+}
+
+.top-category__nav--prev:active {
+  transform: translateY(-50%) scale(0.95);
+  -webkit-transform: translateY(-50%) scale(0.95);
+  -moz-transform: translateY(-50%) scale(0.95);
+  -ms-transform: translateY(-50%) scale(0.95);
+  -o-transform: translateY(-50%) scale(0.95);
 }
 
 .top-category__nav--next {
-  right: 0.5rem;
-  bottom: 0.5rem;
-  position: absolute;
-  top: 32%;
-  transform: translateY(40%) translateX(15%);
-  -webkit-transform: translateY(40%) translateX(15%);
-  -moz-transform: translateY(40%) translateX(15%);
-  -ms-transform: translateY(40%) translateX(15%);
-  -o-transform: translateY(40%) translateX(15%);
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  -webkit-transform: translateY(-50%);
+  -moz-transform: translateY(-50%);
+  -ms-transform: translateY(-50%);
+  -o-transform: translateY(-50%);
+}
+
+.top-category__nav--next:hover {
+  transform: translateY(-50%) scale(1.05);
+  -webkit-transform: translateY(-50%) scale(1.05);
+  -moz-transform: translateY(-50%) scale(1.05);
+  -ms-transform: translateY(-50%) scale(1.05);
+  -o-transform: translateY(-50%) scale(1.05);
+}
+
+.top-category__nav--next:active {
+  transform: translateY(-50%) scale(0.95);
+  -webkit-transform: translateY(-50%) scale(0.95);
+  -moz-transform: translateY(-50%) scale(0.95);
+  -ms-transform: translateY(-50%) scale(0.95);
+  -o-transform: translateY(-50%) scale(0.95);
 }
 
 /* Skeleton Loading Styles */

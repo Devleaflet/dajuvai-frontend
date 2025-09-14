@@ -55,6 +55,16 @@ const CategorySlider: React.FC = () => {
     }
   }, [showLoading, categories.length]);
 
+  // Additional effect to ensure scroll check happens after render
+  useEffect(() => {
+    if (sliderRef.current && categories.length > 0 && !showLoading) {
+      const timer = setTimeout(() => {
+        checkScroll();
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [categories, showLoading]);
+
   const handleCategoryClick = (mainCategoryId: string, itemId: string) => {
     if (Math.abs(dragDistance) > 5) return;
 
@@ -82,15 +92,21 @@ const CategorySlider: React.FC = () => {
     const slider = sliderRef.current;
     if (!slider) return;
 
-    const scrollAmount =
+    const scrollAmount = slider.offsetWidth * 0.8; // Scroll 80% of container width
+    const newScrollLeft =
       direction === "left"
-        ? slider.scrollLeft - slider.offsetWidth
-        : slider.scrollLeft + slider.offsetWidth;
+        ? Math.max(0, slider.scrollLeft - scrollAmount)
+        : Math.min(slider.scrollWidth - slider.clientWidth, slider.scrollLeft + scrollAmount);
 
     slider.scrollTo({
-      left: scrollAmount,
+      left: newScrollLeft,
       behavior: "smooth",
     });
+
+    // Update navigation buttons after scroll
+    setTimeout(() => {
+      checkScroll();
+    }, 300);
   };
 
   const checkScroll = () => {
@@ -172,6 +188,19 @@ const CategorySlider: React.FC = () => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Add scroll event listener to update navigation buttons
+  useEffect(() => {
+    const slider = sliderRef.current;
+    if (slider) {
+      const handleScroll = () => {
+        checkScroll();
+      };
+      
+      slider.addEventListener('scroll', handleScroll);
+      return () => slider.removeEventListener('scroll', handleScroll);
+    }
+  }, [categories.length, showLoading]);
 
   const CategorySkeleton = () => (
     <div className="top-category__card top-category__card--skeleton">
