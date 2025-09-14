@@ -74,6 +74,7 @@ const AdminCatalog = () => {
 	const [selectedCategoryId, setSelectedCategoryId] = useState<number>();
 	const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<number>();
 	const [selectedDealId, setSelectedDealId] = useState<number>();
+	const [sectionToEdit, setSectiontoEdit] = useState<number>();
 
 	const handleProductSelect = (productId: number) => {
 		setSelectedProducts((prev) => {
@@ -234,6 +235,7 @@ const AdminCatalog = () => {
 				setModalIsActive(section.isActive);
 				setModalProductIds(section.products.map((p) => p.id));
 				setSelectedProducts(section.products.map((p) => p.id));
+				setSectiontoEdit(section.id);
 			} else {
 				setEditingHomepage(null);
 				setModalTitle("");
@@ -265,7 +267,9 @@ const AdminCatalog = () => {
 				productSource: selectedProductSource,
 			};
 
-			let endpoint = `${API_BASE_URL}/api/homepage`;
+			let endpoint =
+				`${API_BASE_URL}/api/homepage` +
+				(editingHomepage ? "/" + sectionToEdit : ``);
 
 			// Build payload based on product source
 			switch (selectedProductSource) {
@@ -290,10 +294,20 @@ const AdminCatalog = () => {
 					throw new Error(`Unknown product source: ${selectedProductSource}`);
 			}
 
-			console.log("😂🔥", payload);
+			if (editingHomepage) {
+				payload.sectionId = sectionToEdit;
+			}
+
+			console.log(
+				"😂🔥",
+				sectionToEdit,
+				payload,
+				endpoint,
+				selectedProductSource
+			);
 
 			const res = await fetch(endpoint, {
-				method: "POST",
+				method: editingHomepage ? "PUT" : "POST",
 				headers: {
 					Authorization: `Bearer ${token}`,
 					Accept: "application/json",
