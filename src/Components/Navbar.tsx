@@ -13,6 +13,8 @@ import {
   FaHome,
   FaShoppingBag,
   FaInfoCircle,
+  FaChevronLeft,
+  FaChevronRight,
 } from "react-icons/fa";
 import {
   FaFacebook,
@@ -76,6 +78,8 @@ const Navbar: React.FC = () => {
   const [sideMenuLoading, setSideMenuLoading] = useState<
     Record<number, boolean>
   >({});
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const categoriesRef = useRef<HTMLDivElement>(null);
 
   const sideMenuRef = useRef<HTMLDivElement>(null);
   const sideCartRef = useRef<HTMLDivElement>(null);
@@ -94,18 +98,15 @@ const Navbar: React.FC = () => {
     updatingItems,
   } = useCart();
 
-  // Maintain a stable render order for cart items to avoid reordering on refresh
   const cartOrderRef = useRef<Map<number, number>>(new Map());
   const nextOrderIndexRef = useRef(0);
 
   useEffect(() => {
-    // Assign stable order indices for any new cart items
     cartItems.forEach((item) => {
       if (!cartOrderRef.current.has(item.id)) {
         cartOrderRef.current.set(item.id, nextOrderIndexRef.current++);
       }
     });
-    // Cleanup removed items from the order map
     for (const id of Array.from(cartOrderRef.current.keys())) {
       if (!cartItems.some((ci) => ci.id === id)) {
         cartOrderRef.current.delete(id);
@@ -704,23 +705,48 @@ const Navbar: React.FC = () => {
     window.location.href = '/';
   };
 
+  const scrollCategories = (direction: 'left' | 'right') => {
+    if (categoriesRef.current) {
+      const scrollAmount = 200;
+      const newScrollPosition =
+        direction === 'left'
+          ? scrollPosition - scrollAmount
+          : scrollPosition + scrollAmount;
+      categoriesRef.current.scrollTo({
+        left: newScrollPosition,
+        behavior: 'smooth',
+      });
+      setScrollPosition(newScrollPosition);
+    }
+  };
+
+  const updateScrollPosition = () => {
+    if (categoriesRef.current) {
+      setScrollPosition(categoriesRef.current.scrollLeft);
+    }
+  };
+
+  useEffect(() => {
+    const categoriesContainer = categoriesRef.current;
+    if (categoriesContainer) {
+      categoriesContainer.addEventListener('scroll', updateScrollPosition);
+      return () => categoriesContainer.removeEventListener('scroll', updateScrollPosition);
+    }
+  }, []);
+
   return (
     <nav className="navbar">
       <div className="navbar__container">
         <div className="nav_bar_right">
-
           {!isLoading && !isAuthenticated && (
             <a
-              // href="/vendor-login"
               className="navbar__top-link"
               onClick={toggleVendorAuthModal}
-
             >
               Vendor Login
             </a>
           )}
           <a href="/becomevendor" className="navbar__top-link">Become a Vendor</a>
-
         </div>
         <div className="navbar__top">
           <div className="navbar__top-row">
@@ -974,7 +1000,6 @@ const Navbar: React.FC = () => {
                 </div>
               </div>
 
-
               <NavLink
                 to="/wishlist"
                 className="navbar__account-icon-link tooltip tooltip_wishlist"
@@ -985,7 +1010,6 @@ const Navbar: React.FC = () => {
                 <FaHeart />
                 <span className="tooltip-text">Wishlist</span>
               </NavLink>
-
             </div>
           </div>
 
@@ -1020,7 +1044,6 @@ const Navbar: React.FC = () => {
                 href="/vendor-login"
                 className="navbar__side-menu-category-button"
                 onClick={toggleVendorAuthModal}
-
               >
                 Vendor Login
               </a>
@@ -1047,7 +1070,6 @@ const Navbar: React.FC = () => {
                     e.preventDefault();
                     showComingSoon();
                     setSideMenuOpen(false);
-
                   }}
                 >
                   DajuVai Rental
@@ -1105,8 +1127,7 @@ const Navbar: React.FC = () => {
           </div>
         </div>
         <div
-          className={`navbar__side-cart ${cartOpen ? "navbar__side-cart--open" : ""
-            }`}
+          className={`navbar__side-cart ${cartOpen ? "navbar__side-cart--open" : ""}`}
           ref={sideCartRef}
         >
           <div className="navbar__side-cart-header">
@@ -1216,8 +1237,7 @@ const Navbar: React.FC = () => {
         </div>
 
         <div
-          className={`navbar__overlay ${sideMenuOpen || cartOpen ? "navbar__overlay--visible" : ""
-            }`}
+          className={`navbar__overlay ${sideMenuOpen || cartOpen ? "navbar__overlay--visible" : ""}`}
           onClick={() => {
             setSideMenuOpen(false);
             setCartOpen(false);
@@ -1226,28 +1246,44 @@ const Navbar: React.FC = () => {
         ></div>
 
         <div className="navbar__bottom">
-          <div className="navbar__categories">
-            {categories.map((category: any) => (
-              <div
-                key={category.id}
-                className={`navbar__category${activeDropdown === category.id ? " active" : ""}`}
-                onMouseEnter={() => setActiveDropdown(category.id)}
-                onMouseLeave={() => setActiveDropdown(null)}
-              >
-                <div className="navbar__category-link">
-                  {category.name}
-                  <FaChevronDown
-                    size={16}
-                    className={`navbar__category-icon ${activeDropdown === category.id
-                      ? "navbar__category-icon--active"
-                      : ""
-                      }`}
-                  />
+          <div className="navbar__categories-container">
+            <button
+              className="navbar__category-nav navbar__category-nav--left"
+              onClick={() => scrollCategories('left')}
+              disabled={scrollPosition <= 0}
+            >
+              <FaChevronLeft />
+            </button>
+            <div className="navbar__categories" ref={categoriesRef}>
+              {categories.map((category: any) => (
+                <div
+                  key={category.id}
+                  className={`navbar__category${activeDropdown === category.id ? " active" : ""}`}
+                  onMouseEnter={() => setActiveDropdown(category.id)}
+                  onMouseLeave={() => setActiveDropdown(null)}
+                >
+                  <div className="navbar__category-link">
+                    {category.name}
+                    <FaChevronDown
+                      size={16}
+                      className={`navbar__category-icon ${activeDropdown === category.id
+                        ? "navbar__category-icon--active"
+                        : ""
+                        }`}
+                    />
+                  </div>
+                  {activeDropdown === category.id &&
+                    renderCategoryDropdown(category)}
                 </div>
-                {activeDropdown === category.id &&
-                  renderCategoryDropdown(category)}
-              </div>
-            ))}
+              ))}
+            </div>
+            <button
+              className="navbar__category-nav navbar__category-nav--right"
+              onClick={() => scrollCategories('right')}
+              disabled={categoriesRef.current && scrollPosition >= categoriesRef.current.scrollWidth - categoriesRef.current.clientWidth}
+            >
+              <FaChevronRight />
+            </button>
           </div>
 
           <div className="navbar__social navbar__social--desktop">
@@ -1284,7 +1320,6 @@ const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Unified profile drop-down rendered at top level */}
       {isAuthenticated && profileDropdownOpen && (
         <div
           className="navbar__profile-dropdown-card"

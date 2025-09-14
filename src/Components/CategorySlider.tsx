@@ -1,10 +1,8 @@
 "use client";
-"use client";
 
 import React, { useRef, useState, useEffect } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import keyboard from "../assets/keyboard.png";
 import "../Styles/CategorySlider.css";
 import { useCategory } from "../context/Category";
 import { fetchCategory } from "../api/category";
@@ -12,327 +10,275 @@ import { useQuery } from "@tanstack/react-query";
 import type { Category } from "../context/Category";
 
 const CategorySlider: React.FC = () => {
-	const sliderRef = useRef<HTMLDivElement | null>(null);
-	const [showPrev, setShowPrev] = useState<boolean>(false);
-	const [showNext, setShowNext] = useState<boolean>(true);
-	const [isDesktop, setIsDesktop] = useState<boolean>(window.innerWidth >= 768);
-	const [isCategoriesReady, setIsCategoriesReady] = useState(false);
-	const [isDragging, setIsDragging] = useState(false);
-	const [startX, setStartX] = useState(0);
-	const [scrollLeft, setScrollLeft] = useState(0);
-	const [dragDistance, setDragDistance] = useState(0);
+  const sliderRef = useRef<HTMLDivElement | null>(null);
+  const [showPrev, setShowPrev] = useState<boolean>(false);
+  const [showNext, setShowNext] = useState<boolean>(true);
+  const [isDesktop, setIsDesktop] = useState<boolean>(window.innerWidth >= 768);
+  const [isCategoriesReady, setIsCategoriesReady] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [dragDistance, setDragDistance] = useState(0);
 
-	const categoryContext = useCategory();
-	const updateCategoriesWithSubcategories =
-		categoryContext?.updateCategoriesWithSubcategories;
-	const categories = categoryContext?.categories || [];
-	const navigate = useNavigate();
-	const location = useLocation();
+  const categoryContext = useCategory();
+  const updateCategoriesWithSubcategories =
+    categoryContext?.updateCategoriesWithSubcategories;
+  const categories = categoryContext?.categories || [];
+  const navigate = useNavigate();
+  const location = useLocation();
 
-	const { data: categoryData, isLoading: isCategoryLoading } = useQuery({
-		queryKey: ["cat"],
-		queryFn: fetchCategory,
-		staleTime: 5 * 60 * 1000,
-		gcTime: 30 * 60 * 1000,
-		refetchOnWindowFocus: false,
-		refetchOnMount: false,
-		refetchOnReconnect: false,
-	});
+  const { data: categoryData, isLoading: isCategoryLoading } = useQuery({
+    queryKey: ["cat"],
+    queryFn: fetchCategory,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+  });
 
-	useEffect(() => {
-		if (categories) {
-			categories.forEach((maincategory) => {
-				maincategory.items.forEach((item) => {
-					if (item.image) {
-						const img = new Image();
-						img.src = item.image;
-					}
-				});
-			});
-		}
-	}, [categories]);
+  useEffect(() => {
+    if (updateCategoriesWithSubcategories && categoryData) {
+      updateCategoriesWithSubcategories(categoryData).then(() => {
+        setIsCategoriesReady(true);
+      });
+    }
+  }, [categoryData, updateCategoriesWithSubcategories]);
 
-	useEffect(() => {
-		console.log("🔄 CategorySlider: categoryData changed:", categoryData);
-		console.log(
-			"🔄 CategorySlider: updateCategoriesWithSubcategories available:",
-			!!updateCategoriesWithSubcategories
-		);
-		if (updateCategoriesWithSubcategories && categoryData) {
-			console.log("📊 CategorySlider: Processing category data...");
-			updateCategoriesWithSubcategories(categoryData).then(() => {
-				console.log("✅ CategorySlider: Categories ready!");
-				setIsCategoriesReady(true);
-			});
-		}
-	}, [categoryData, updateCategoriesWithSubcategories]);
+  const showLoading = isCategoryLoading || !isCategoriesReady;
 
-	const showLoading = isCategoryLoading || !isCategoriesReady;
+  useEffect(() => {
+    if (!showLoading && categories.length > 0) {
+      setTimeout(() => {
+        checkScroll();
+      }, 100);
+    }
+  }, [showLoading, categories.length]);
 
-	console.log("🎯 CategorySlider render state:", {
-		isCategoryLoading,
-		isCategoriesReady,
-		showLoading,
-		categoriesCount: categories.length,
-		totalSubcategories: categories.reduce(
-			(total, cat) => total + cat.items.length,
-			0
-		),
-	});
+  const handleCategoryClick = (mainCategoryId: string, itemId: string) => {
+    if (Math.abs(dragDistance) > 5) return;
 
-	useEffect(() => {
-		const prefetchCategories = async () => {
-			try {
-				await fetchCategory();
-			} catch (error) {
-				console.error("Error prefetching categories:", error);
-			}
-		};
-		prefetchCategories();
-	}, []);
+    const newUrl = `/shop?categoryId=${mainCategoryId}&subcategoryId=${itemId}`;
 
-	useEffect(() => {
-		if (!showLoading && categories.length > 0) {
-			setTimeout(() => {
-				checkScroll();
-			}, 100);
-		}
-	}, [showLoading, categories.length]);
+    if (location.pathname === "/shop") {
+      navigate(newUrl, { replace: true });
 
-	const handleCategoryClick = (mainCategoryId: string, itemId: string) => {
-		if (Math.abs(dragDistance) > 5) {
-			return;
-		}
+      const event = new CustomEvent("shopFiltersChanged", {
+        detail: {
+          categoryId: Number(mainCategoryId),
+          subcategoryId: Number(itemId),
+        },
+      });
 
-		const newUrl = `/shop?categoryId=${mainCategoryId}&subcategoryId=${itemId}`;
+      setTimeout(() => {
+        window.dispatchEvent(event);
+      }, 10);
+    } else {
+      navigate(newUrl);
+    }
+  };
 
-		if (location.pathname === "/shop") {
-			navigate(newUrl, { replace: true });
+  const scroll = (direction: "left" | "right") => {
+    const slider = sliderRef.current;
+    if (!slider) return;
 
-			const event = new CustomEvent("shopFiltersChanged", {
-				detail: {
-					categoryId: Number(mainCategoryId),
-					subcategoryId: Number(itemId),
-				},
-			});
+    const scrollAmount =
+      direction === "left"
+        ? slider.scrollLeft - slider.offsetWidth
+        : slider.scrollLeft + slider.offsetWidth;
 
-			setTimeout(() => {
-				window.dispatchEvent(event);
-			}, 10);
-		} else {
-			navigate(newUrl);
-		}
-	};
+    slider.scrollTo({
+      left: scrollAmount,
+      behavior: "smooth",
+    });
+  };
 
-	const scroll = (direction: "left" | "right"): void => {
-		const slider = sliderRef.current;
-		if (!slider) return;
+  const checkScroll = () => {
+    const slider = sliderRef.current;
+    if (!slider) return;
 
-		const scrollAmount =
-			direction === "left"
-				? slider.scrollLeft - slider.offsetWidth
-				: slider.scrollLeft + slider.offsetWidth;
+    const hasOverflow = slider.scrollWidth > slider.clientWidth;
+    setShowPrev(hasOverflow && slider.scrollLeft > 0);
+    setShowNext(
+      hasOverflow &&
+        slider.scrollLeft < slider.scrollWidth - slider.clientWidth - 10
+    );
+  };
 
-		slider.scrollTo({
-			left: scrollAmount,
-			behavior: "smooth",
-		});
-	};
+  const handleMouseDown = (e: React.MouseEvent) => {
+    const slider = sliderRef.current;
+    if (!slider) return;
 
-	const checkScroll = () => {
-		const slider = sliderRef.current;
-		if (!slider) return;
+    setIsDragging(true);
+    setStartX(e.pageX - slider.offsetLeft);
+    setScrollLeft(slider.scrollLeft);
+    setDragDistance(0);
+  };
 
-		const hasOverflow = slider.scrollWidth > slider.clientWidth;
-		setShowPrev(hasOverflow && slider.scrollLeft > 0);
-		setShowNext(
-			hasOverflow &&
-				slider.scrollLeft < slider.scrollWidth - slider.clientWidth - 10
-		);
-	};
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
 
-	const handleMouseDown = (e: React.MouseEvent) => {
-		const slider = sliderRef.current;
-		if (!slider) return;
+    e.preventDefault();
+    const slider = sliderRef.current;
+    if (!slider) return;
 
-		setIsDragging(true);
-		setStartX(e.pageX - slider.offsetLeft);
-		setScrollLeft(slider.scrollLeft);
-		setDragDistance(0);
-		slider.style.cursor = "grabbing";
-		slider.style.userSelect = "none";
-	};
+    const x = e.pageX - slider.offsetLeft;
+    const walk = (x - startX) * 2;
+    setDragDistance(Math.abs(walk));
+    slider.scrollLeft = scrollLeft - walk;
+  };
 
-	const handleMouseMove = (e: React.MouseEvent) => {
-		if (!isDragging) return;
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    setTimeout(() => setDragDistance(0), 100);
+  };
 
-		e.preventDefault();
-		const slider = sliderRef.current;
-		if (!slider) return;
+  const handleMouseLeave = () => {
+    if (isDragging) handleMouseUp();
+  };
 
-		const x = e.pageX - slider.offsetLeft;
-		const walk = (x - startX) * 2;
-		const newScrollLeft = scrollLeft - walk;
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const slider = sliderRef.current;
+    if (!slider) return;
 
-		setDragDistance(Math.abs(walk));
-		slider.scrollLeft = newScrollLeft;
-	};
+    setIsDragging(true);
+    setStartX(e.touches[0].pageX - slider.offsetLeft);
+    setScrollLeft(slider.scrollLeft);
+    setDragDistance(0);
+  };
 
-	const handleMouseUp = () => {
-		const slider = sliderRef.current;
-		if (!slider) return;
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const slider = sliderRef.current;
+    if (!slider) return;
 
-		setIsDragging(false);
-		slider.style.cursor = "grab";
-		slider.style.userSelect = "";
+    const x = e.touches[0].pageX - slider.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    setDragDistance(Math.abs(walk));
+    slider.scrollLeft = scrollLeft - walk;
+  };
 
-		setTimeout(() => setDragDistance(0), 100);
-	};
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    setTimeout(() => setDragDistance(0), 100);
+  };
 
-	const handleMouseLeave = () => {
-		if (isDragging) {
-			handleMouseUp();
-		}
-	};
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+      if (sliderRef.current) checkScroll();
+    };
 
-	const handleTouchStart = (e: React.TouchEvent) => {
-		const slider = sliderRef.current;
-		if (!slider) return;
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
-		setIsDragging(true);
-		setStartX(e.touches[0].pageX - slider.offsetLeft);
-		setScrollLeft(slider.scrollLeft);
-		setDragDistance(0);
-	};
+  const CategorySkeleton = () => (
+    <div className="top-category__card top-category__card--skeleton">
+      <div className="top-category__image-container">
+        <div className="top-category__image-skeleton skeleton"></div>
+      </div>
+      <div className="top-category__name-skeleton skeleton-text"></div>
+    </div>
+  );
 
-	const handleTouchMove = (e: React.TouchEvent) => {
-		if (!isDragging) return;
+  // 🔹 Subcomponent that shows fallback if image fails
+  const ImageWithFallback: React.FC<{ src?: string; name: string }> = ({
+    src,
+    name,
+  }) => {
+    const [error, setError] = useState(false);
 
-		const slider = sliderRef.current;
-		if (!slider) return;
+    if (!src || error) {
+      return (
+        <div className="top-category__image-fallback">
+          {name || "No Image"}
+        </div>
+      );
+    }
 
-		const x = e.touches[0].pageX - slider.offsetLeft;
-		const walk = (x - startX) * 1.5;
-		const newScrollLeft = scrollLeft - walk;
+    return (
+      <img
+        src={src}
+        alt={name || "Category image"}
+        className="top-category__image"
+        loading="lazy"
+        decoding="async"
+        width="80"
+        height="80"
+        draggable={false}
+        onError={() => setError(true)}
+      />
+    );
+  };
 
-		setDragDistance(Math.abs(walk));
-		slider.scrollLeft = newScrollLeft;
-	};
+  return (
+    <div className="top-category">
+      {isDesktop && showPrev && (
+        <button
+          className="top-category__nav top-category__nav--prev"
+          onClick={() => scroll("left")}
+        >
+          <ArrowLeft />
+        </button>
+      )}
+      {isDesktop && showNext && (
+        <button
+          className="top-category__nav top-category__nav--next"
+          onClick={() => scroll("right")}
+        >
+          <ArrowRight />
+        </button>
+      )}
 
-	const handleTouchEnd = () => {
-		setIsDragging(false);
-
-		setTimeout(() => setDragDistance(0), 100);
-	};
-
-	useEffect(() => {
-		const handleResize = () => {
-			setIsDesktop(window.innerWidth >= 768);
-			if (sliderRef.current) {
-				checkScroll();
-			}
-		};
-
-		window.addEventListener("resize", handleResize);
-		return () => window.removeEventListener("resize", handleResize);
-	}, []);
-
-	const CategorySkeleton = () => (
-		<div className="top-category__card top-category__card--skeleton">
-			<div className="top-category__image-container">
-				<div className="top-category__image-skeleton skeleton"></div>
-			</div>
-			<div className="top-category__name-skeleton skeleton-text"></div>
-		</div>
-	);
-
-	return (
-		<div className="top-category">
-			{isDesktop && showPrev && (
-				<button
-					className="top-category__nav top-category__nav--prev"
-					onClick={() => scroll("left")}
-				>
-					<ArrowLeft />
-				</button>
-			)}
-			{isDesktop && showNext && (
-				<button
-					className="top-category__nav top-category__nav--next"
-					onClick={() => scroll("right")}
-				>
-					<ArrowRight />
-				</button>
-			)}
-
-			<div
-				className="top-category__slider-container"
-				ref={sliderRef}
-				onScroll={checkScroll}
-				onMouseDown={handleMouseDown}
-				onMouseMove={handleMouseMove}
-				onMouseUp={handleMouseUp}
-				onMouseLeave={handleMouseLeave}
-				onTouchStart={handleTouchStart}
-				onTouchMove={handleTouchMove}
-				onTouchEnd={handleTouchEnd}
-				style={{ cursor: isDragging ? "grabbing" : "grab" }}
-			>
-				{showLoading ? (
-					Array.from({ length: 8 }).map((_, index) => (
-						<CategorySkeleton key={`skeleton-${index}`} />
-					))
-				) : categories.length === 0 ? (
-					<div
-						style={{
-							padding: "2rem",
-							textAlign: "center",
-							color: "#666",
-						}}
-					>
-						No categories available
-					</div>
-				) : (
-					categories.map((maincategory: Category) => (
-						<React.Fragment key={maincategory.id}>
-							{maincategory.items.map((item) => {
-								console.log(
-									"🏷️ Rendering subcategory:",
-									item.name,
-									"from category:",
-									maincategory.name
-								);
-								return (
-									<div
-										key={item.id}
-										className="top-category__card"
-										style={{ cursor: "pointer" }}
-										onClick={() =>
-											handleCategoryClick(maincategory.id, item.id)
-										}
-									>
-										<div className="top-category__image-container">
-											<img
-												src={item.image || keyboard}
-												alt={item.name}
-												className="top-category__image"
-												loading="lazy"
-												decoding="async"
-												width="200"
-												height="200"
-												draggable={false}
-											/>
-										</div>
-										<p className="top-category__name">{item.name}</p>
-									</div>
-								);
-							})}
-						</React.Fragment>
-					))
-				)}
-			</div>
-		</div>
-	);
+      <div
+        className="top-category__slider-container"
+        ref={sliderRef}
+        onScroll={checkScroll}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ cursor: isDragging ? "grabbing" : "grab" }}
+      >
+        {showLoading ? (
+          Array.from({ length: 8 }).map((_, index) => (
+            <CategorySkeleton key={`skeleton-${index}`} />
+          ))
+        ) : categories.length === 0 ? (
+          <div
+            style={{
+              padding: "2rem",
+              textAlign: "center",
+              color: "#666",
+            }}
+          >
+            No categories available
+          </div>
+        ) : (
+          categories.map((maincategory: Category) =>
+            maincategory.items.map((item) => (
+              <div
+                key={item.id}
+                className="top-category__card"
+                onClick={() =>
+                  handleCategoryClick(maincategory.id, item.id)
+                }
+              >
+                <div className="top-category__image-container">
+                  <ImageWithFallback src={item.image} name={item.name} />
+                </div>
+                <p className="top-category__name">{item.name}</p>
+              </div>
+            ))
+          )
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default CategorySlider;
