@@ -478,7 +478,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 							<span className="product-card__rating-score">{rating} |</span>
 							<span className="product-card__rating-count">
 								{" "}
-								Sold {ratingCount}
+								({ratingCount})
 							</span>
 						</div>
 					</div>
