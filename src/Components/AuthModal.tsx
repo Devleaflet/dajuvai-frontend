@@ -3,8 +3,6 @@ import { createPortal } from "react-dom";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useVendorAuth } from "../context/VendorAuthContext";
-import VendorService from "../services/vendorService";
 import { API_BASE_URL } from "../config";
 import { FaInfoCircle } from 'react-icons/fa';
 import "../Styles/AuthModal.css";
@@ -39,9 +37,8 @@ interface VerificationResponse {
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const { login, fetchUserData } = useAuth();
-  const { login: vendorLogin } = useVendorAuth();
   const navigate = useNavigate();
-  const [termsAgreed,setTermsAgreed] = useState<boolean>(false)
+  const [termsAgreed, setTermsAgreed] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
@@ -69,13 +66,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const modalRef = useRef<HTMLDivElement | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
 
-useEffect(() => {
-  if (isOpen) {
-    document.body.classList.add("auth-modal--open");
-  } else {
-    document.body.classList.remove("auth-modal--open");
-  }
-}, [isOpen]);
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add("auth-modal--open");
+    } else {
+      document.body.classList.remove("auth-modal--open");
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
@@ -181,7 +179,6 @@ useEffect(() => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    // Update the corresponding state
     switch (name) {
       case "username":
         setUsername(value);
@@ -206,20 +203,20 @@ useEffect(() => {
         break;
     }
 
-    // Clear the error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
     }
 
-    // Validate field in real-time if it's been touched before
     if (touched[name]) {
       const error = validateField(name, value);
       setErrors(prev => ({ ...prev, [name]: error }));
     }
   };
-   const handleTermsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setTermsAgreed(e.target.checked);
-    };
+
+  const handleTermsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTermsAgreed(e.target.checked);
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
     let isValid = true;
@@ -243,7 +240,6 @@ useEffect(() => {
 
     setErrors(newErrors);
 
-    // Mark all relevant fields as touched to show errors
     const allTouched = fieldsToValidate.reduce((acc, field) => {
       acc[field] = true;
       return acc;
@@ -357,8 +353,7 @@ useEffect(() => {
           setError(err.response.data.message);
         } else {
           setError(
-            `Signup failed (${err.response?.status || "unknown error"
-            }). Please try again.`
+            `Signup failed (${err.response?.status || "unknown error"}). Please try again.`
           );
         }
         console.error("Signup error:", err.response?.data);
@@ -460,21 +455,6 @@ useEffect(() => {
       setError("");
       setSuccess("");
 
-      try {
-        const vendorService = VendorService.getInstance();
-        const vendorResponse = await vendorService.login(userData);
-
-        if (vendorResponse.success) {
-          console.log("Vendor login successful:", vendorResponse);
-          vendorLogin(vendorResponse.token, vendorResponse.vendor);
-          navigate("/dashboard");
-          onClose();
-          return;
-        }
-      } catch {
-        console.log("Vendor login failed, trying regular user authentication:");
-      }
-
       const response = await axios.post<LoginResponse>(
         `${API_BASE_URL}/api/auth/login`,
         userData,
@@ -485,7 +465,7 @@ useEffect(() => {
         }
       );
 
-      console.log("Regular user login successful:", response.data);
+      console.log("User login successful:", response.data);
 
       if (response.data.success && response.data.token) {
         const userData = {
@@ -509,8 +489,6 @@ useEffect(() => {
         const role = response.data.data.role;
         if (role === "admin" || role === "staff") {
           navigate("/admin-dashboard");
-        } else if (role === "vendor") {
-          navigate("/dashboard");
         } else {
           navigate("/");
         }
@@ -681,15 +659,13 @@ useEffect(() => {
         {!showVerification && (
           <div className="auth-modal__tabs">
             <button
-              className={`auth-modal__tab ${isLoginMode ? "auth-modal__tab--active" : ""
-                }`}
+              className={`auth-modal__tab ${isLoginMode ? "auth-modal__tab--active" : ""}`}
               onClick={() => setIsLoginMode(true)}
             >
               LOG IN
             </button>
             <button
-              className={`auth-modal__tab ${!isLoginMode ? "auth-modal__tab--active" : ""
-                }`}
+              className={`auth-modal__tab ${!isLoginMode ? "auth-modal__tab--active" : ""}`}
               onClick={() => setIsLoginMode(false)}
             >
               SIGN UP
@@ -773,7 +749,6 @@ useEffect(() => {
                   inputMode="numeric"
                   pattern="\d*"
                 />
-
               </div>
 
               <button
@@ -945,17 +920,17 @@ useEffect(() => {
                       </div>
                     )}
                   </div>
-                   <label className="checkout-container__terms-checkbox">
-              <input
-                type="checkbox"
-                checked={termsAgreed}
-                onChange={handleTermsChange}
-                className="checkout-container__terms-checkbox-input"
-                required
-                style={{ boxShadow: 'none' }}
-              />
-              <p>I have read and agree to the website <Link to="/terms" rel="noopener noreferrer" style={{ color: '#ff7e5f', textDecoration: 'underline' }}>terms and conditions</Link> *</p>
-            </label>
+                  <label className="checkout-container__terms-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={termsAgreed}
+                      onChange={handleTermsChange}
+                      className="checkout-container__terms-checkbox-input"
+                      required
+                      style={{ boxShadow: 'none' }}
+                    />
+                    <p>I have read and agree to the website <Link to="/terms" rel="noopener noreferrer" style={{ color: '#ff7e5f', textDecoration: 'underline' }}>terms and conditions</Link> *</p>
+                  </label>
                 </div>
               )}
 
@@ -999,7 +974,6 @@ useEffect(() => {
             </p>
           </div>
         )}
-
 
       </div>
 
@@ -1089,10 +1063,8 @@ useEffect(() => {
                     }}
                   >
                     {showPassword ? (
-                      // Open eye SVG
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7" /><circle cx="12" cy="12" r="3.5" /></svg>
                     ) : (
-                      // Slashed eye SVG
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22" /><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" /><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" /></svg>
                     )}
                   </button>
@@ -1122,10 +1094,8 @@ useEffect(() => {
                     }}
                   >
                     {showConfirmPassword ? (
-                      // Open eye SVG
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="12" rx="10" ry="7" /><circle cx="12" cy="12" r="3.5" /></svg>
                     ) : (
-                      // Slashed eye SVG
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 1l22 22" /><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" /><path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" /></svg>
                     )}
                   </button>

@@ -177,7 +177,6 @@
 	gap: 16px;
 	width: 100%;
 	grid-area: products;
-	padding: 10px 0;
 	align-content: start;
 	height: fit-content;
 	justify-content: start;

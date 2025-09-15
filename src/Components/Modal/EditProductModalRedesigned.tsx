@@ -73,7 +73,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     type: '',
     values: [{ value: '', nestedAttributes: [] }]
   });
-  // Global attribute specs for generating combinations (ported from NewProductModal)
+  // Global attribute specs for generating combinations
   const [attributeSpecs, setAttributeSpecs] = useState<Array<{ type: string; valuesText: string }>>([
     { type: '', valuesText: '' }
   ]);
@@ -82,7 +82,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   const [images, setImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
 
-  // Helpers: parse and dedupe values from comma-separated text (ported)
+  // Helpers: parse and dedupe values from comma-separated text
   const parseValues = (text: string): string[] => {
     const raw = text.split(',');
     const trimmed = raw.map(v => v.trim()).filter(Boolean);
@@ -138,7 +138,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     return String(attributes);
   };
 
-  // Helper: compute cartesian product of attribute values (ported)
+  // Helper: compute cartesian product of attribute values
   const cartesian = (arrays: string[][]): string[][] => {
     return arrays.reduce<string[][]>((acc, curr) => {
       if (acc.length === 0) return curr.map(v => [v]);
@@ -152,7 +152,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     }, []);
   };
 
-  // Generate variants from global attribute specs (ported)
+  // Generate variants from global attribute specs
   const generateVariants = () => {
     const cleanSpecs = attributeSpecs
       .map(s => ({ type: s.type.trim(), values: parseValues(s.valuesText) }))
@@ -236,7 +236,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
             return { categoryId: cat.id, subcategories: subs };
           }
         } catch (e) {
-          // Continue scanning other categories
           console.warn(`Failed to fetch subcategories for category ${cat.id}:`, e);
         }
       }
@@ -281,7 +280,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       const resolved = await resolveCategoryFromSubcategoryId(subcategoryId);
       if (resolved) {
         categoryId = Number(resolved.categoryId);
-        // Preload subcategories based on resolution result
         setSubcategories(resolved.subcategories || []);
       }
     }
@@ -322,7 +320,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     // Helper: normalize various backend attribute shapes to Attribute[]
     const normalizeVariantAttributes = (raw: any): Attribute[] => {
       if (!raw) return [];
-      // Case 1: object map like { color: 'Red', size: 'M' | ['M','L'] }
       if (typeof raw === 'object' && !Array.isArray(raw)) {
         return Object.entries(raw).map(([key, value]) => ({
           type: String(key),
@@ -332,7 +329,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
           }))
         }));
       }
-      // Case 2: array of attribute objects
       if (Array.isArray(raw)) {
         return (raw as any[]).map((attr) => {
           const type = String(attr?.type ?? attr?.attributeType ?? '');
@@ -474,7 +470,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       if (!updatedVariants[variantIndex].attributes) {
         updatedVariants[variantIndex].attributes = [];
       }
-      // normalize empty nestedAttributes
       const normalized: Attribute = {
         type: newAttribute.type,
         values: newAttribute.values.map(v => ({ value: v.value, nestedAttributes: v.nestedAttributes || [] }))
@@ -498,7 +493,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     }
   };
 
-  // Variant image handlers (ported)
   const handleVariantImageUpload = (e: React.ChangeEvent<HTMLInputElement>, variantIndex: number) => {
     if (e.target.files && e.target.files.length > 0) {
       const newImages = Array.from(e.target.files);
@@ -579,6 +573,12 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       }
     }
     
+    // Validate discount if provided
+    if (formData.discount !== undefined && formData.discount !== null) {
+      if (formData.discount < 0) return 'Discount cannot be negative';
+      if (!formData.discountType) return 'Discount type is required when discount amount is provided';
+    }
+    
     console.log('✅ All validation checks passed');
     return null;
   };
@@ -634,14 +634,12 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         name: formData.name,
         subcategoryId: formData.subcategoryId,
         hasVariants: formData.hasVariants,
+        discount: formData.discount !== undefined && formData.discount !== null ? parseFloat(formData.discount.toString()) : 0,
+        discountType: formData.discountType || 'PERCENTAGE'
       };
 
       // Add optional fields
       if (formData.description) updatePayload.description = formData.description;
-      if (formData.discount !== undefined && formData.discount !== null && formData.discount !== '') {
-        updatePayload.discount = typeof formData.discount === 'string' ? parseFloat(formData.discount) : formData.discount;
-      }
-      if (formData.discountType) updatePayload.discountType = formData.discountType;
       if (formData.dealId) updatePayload.dealId = formData.dealId;
       if (formData.bannerId) updatePayload.bannerId = formData.bannerId;
       if (allImages.length > 0) updatePayload.productImages = allImages;
@@ -673,7 +671,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
             })
           );
 
-          // Convert variants to match API structure (flatten attributes and map images)
+          // Convert variants to match API structure
           updatePayload.variants = variantsWithImageUrls.map((variant: ProductVariant) => ({
             sku: variant.sku,
             basePrice: variant.price,
@@ -691,7 +689,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
           }));
         }
       } else {
-        // For non-variant products, these fields are required
         updatePayload.basePrice = typeof formData.basePrice === 'string' ? parseFloat(formData.basePrice) : formData.basePrice;
         updatePayload.stock = typeof formData.stock === 'string' ? parseInt(formData.stock) : formData.stock;
         updatePayload.status = formData.status || 'AVAILABLE';
@@ -713,11 +710,10 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
       if (response.success) {
         toast.success('Product updated successfully!');
-        // Call the parent callback for any additional handling
         await onSave(product.id, formData, selectedCategoryId, formData.subcategoryId);
         handleClose();
       } else {
-        throw new Error(response.message || 'Failed to update product');
+        throw new Error('Failed to update product');
       }
     } catch (error: any) {
       console.error('Error updating product:', error);
@@ -728,7 +724,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   };
 
   const handleClose = () => {
-    // Reset form
     setFormData({
       name: "",
       description: "",
@@ -764,13 +759,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       handleClose();
     }
   };
-
-  // Initialize with one variant if hasVariants is true
-  useEffect(() => {
-    if (formData.hasVariants && variants.length === 0) {
-      addVariant();
-    }
-  }, [formData.hasVariants]);
 
   if (!show) return null;
 
@@ -900,13 +888,53 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
               </div>
             </div>
 
+            {/* Discount Section */}
+            <div className="form-section">
+              <div className="section-header">
+                <div className="section-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z"/>
+                  </svg>
+                </div>
+                <h3 className="section-title">Discount</h3>
+              </div>
+
+              <div className="form-grid two-columns">
+                <div className="form-group">
+                  <label className="form-label">Discount Amount</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={formData.discount || ''}
+                    onChange={(e) => handleInputChange('discount', e.target.value === '' ? undefined : Number(e.target.value))}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Discount Type</label>
+                  <select
+                    className="form-select"
+                    value={formData.discountType || ''}
+                    onChange={(e) => handleInputChange('discountType', e.target.value || undefined)}
+                  >
+                    <option value="">No discount</option>
+                    <option value="PERCENTAGE">Percentage (%)</option>
+                    <option value="FLAT">Fixed Amount</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
             {/* Non-Variant Product Section */}
             {!formData.hasVariants && (
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z"/>
+                      <path d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z"/>
                     </svg>
                   </div>
                   <h3 className="section-title">Pricing & Inventory</h3>
@@ -918,8 +946,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     <input
                       type="number"
                       className="form-input"
-                      value={formData.basePrice ?? 0}
-                      onChange={(e) => handleInputChange('basePrice', e.target.value === '' ? null : Number(e.target.value))}
+                      value={formData.basePrice || ''}
+                      onChange={(e) => handleInputChange('basePrice', Number(e.target.value))}
                       placeholder="0.00"
                       min="0"
                       step="0.01"
@@ -932,8 +960,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     <input
                       type="number"
                       className="form-input"
-                      value={formData.stock}
-                      onChange={(e) => handleInputChange('stock', e.target.value === '' ? 0 : Number(e.target.value))}
+                      value={formData.stock || ''}
+                      onChange={(e) => handleInputChange('stock', Number(e.target.value))}
                       placeholder="0"
                       min="0"
                       required
@@ -953,32 +981,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                       <option value={InventoryStatus.LOW_STOCK}>Low Stock</option>
                     </select>
                   </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Discount Amount</label>
-                    <input
-                      type="number"
-                      className="form-input"
-                      value={formData.discount ?? 0}
-                      onChange={(e) => handleInputChange('discount', e.target.value === '' ? null : Number(e.target.value))}
-                      placeholder="0.00"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Discount Type</label>
-                    <select
-                      className="form-select"
-                      value={formData.discountType || ''}
-                      onChange={(e) => handleInputChange('discountType', e.target.value as 'PERCENTAGE' | 'FLAT')}
-                    >
-                      <option value="">No discount</option>
-                      <option value="PERCENTAGE">Percentage (%)</option>
-                      <option value="FLAT">Fixed Amount</option>
-                    </select>
-                  </div>
                 </div>
               </div>
             )}
@@ -995,7 +997,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                   <h3 className="section-title">Product Variants</h3>
                 </div>
 
-                {/* Attribute specs builder (from NewProductModal) */}
+                {/* Attribute specs builder */}
                 <div className="form-grid two-columns" style={{ marginBottom: 12 }}>
                   {attributeSpecs.map((spec, i) => (
                     <React.Fragment key={i}>
@@ -1027,7 +1029,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                             setAttributeSpecs(next);
                           }}
                         />
-                        {/* Values preview as chips */}
+                        <div className="label-hint">Tip: press comma to separate values. Duplicates are ignored.</div>
                         {parseValues(spec.valuesText).length > 0 && (
                           <div className="attribute-tags">
                             {parseValues(spec.valuesText).map((v, idx) => (
@@ -1131,63 +1133,57 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                         </div>
                       </div>
 
-                      {/* Attributes */}
-                      <div className="attribute-container">
+                      <div className="form-group full-width">
                         <label className="form-label">Attributes</label>
-                        <div className="attribute-input-group">
-                          <input
-                            type="text"
-                            className="form-input"
-                            placeholder="Attribute type (e.g., Color)"
-                            value={newAttribute.type}
-                            onChange={(e) => setNewAttribute({...newAttribute, type: e.target.value})}
-                          />
-                          <input
-                            type="text"
-                            className="form-input"
-                            placeholder="Value (e.g., Red)"
-                            value={newAttribute.values[0]?.value || ''}
-                            onChange={(e) => setNewAttribute({...newAttribute, values: [{ value: e.target.value, nestedAttributes: [] }]})}
-                          />
-                          <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={() => addAttribute(index)}
-                          >
-                            Add
-                          </button>
-                        </div>
-                        <div className="attribute-tags">
-                          {variant.attributes?.map((attr, attrIndex) => {
-                            const label = String((attr as any)?.type ?? (attr as any)?.attributeType ?? '').trim() || String(attrIndex);
-                            const valuesSrc: any = (attr as any)?.values ?? (attr as any)?.attributeValues ?? [];
-                            const vals = (Array.isArray(valuesSrc) ? valuesSrc : [valuesSrc])
-                              .map((v: any) => String((v && typeof v === 'object') ? (v.value ?? v.name ?? JSON.stringify(v)) : v))
-                              .filter(Boolean)
-                              .join(', ');
-                            return (
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={newAttribute.type}
+                          onChange={(e) => setNewAttribute({ ...newAttribute, type: e.target.value })}
+                          placeholder="Attribute Type (e.g., Color)"
+                        />
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={newAttribute.values[0]?.value || ''}
+                          onChange={(e) => setNewAttribute({
+                            ...newAttribute,
+                            values: [{ value: e.target.value, nestedAttributes: [] }]
+                          })}
+                          placeholder="Attribute Value (e.g., Red)"
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-add"
+                          onClick={() => addAttribute(index)}
+                          disabled={!newAttribute.type || !newAttribute.values[0]?.value}
+                        >
+                          Add Attribute
+                        </button>
+                        {variant.attributes && variant.attributes.length > 0 && (
+                          <div className="attribute-tags">
+                            {variant.attributes.map((attr, attrIndex) => (
                               <div key={attrIndex} className="attribute-tag">
-                                {label}: {vals}
+                                {attr.type}: {attr.values.map(v => v.value).join(', ')}
                                 <button
                                   type="button"
+                                  className="attribute-remove"
                                   onClick={() => removeAttribute(index, attrIndex)}
                                 >
                                   ×
                                 </button>
                               </div>
-                            );
-                          })}
-                        </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Variant Images: upload + preview */}
                       <div className="form-group full-width">
                         <label className="form-label">Variant Images</label>
-                        <div className="image-upload-container"
-                             onClick={(e) => {
-                               e.stopPropagation();
-                               document.getElementById(`variant-image-${index}`)?.click();
-                             }}>
+                        <div
+                          className="image-upload-container"
+                          onClick={() => document.getElementById(`variant-image-${index}`)?.click()}
+                        >
                           <div className="upload-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                               <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
@@ -1203,21 +1199,18 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                             style={{ display: 'none' }}
                           />
                         </div>
-                        {(variant.images && variant.images.length > 0) && (
+                        {variant.images && variant.images.length > 0 && (
                           <div className="image-preview-grid">
-                            {variant.images.map((img: any, imgIndex: number) => (
+                            {variant.images.map((img, imgIndex) => (
                               <div key={imgIndex} className="image-preview">
-                                <img 
+                                <img
                                   src={img instanceof File ? URL.createObjectURL(img) : img}
                                   alt={`Variant ${index + 1} - ${imgIndex + 1}`}
                                 />
                                 <button
                                   type="button"
                                   className="image-remove"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeVariantImage(index, imgIndex);
-                                  }}
+                                  onClick={() => removeVariantImage(index, imgIndex)}
                                 >
                                   ×
                                 </button>
@@ -1228,18 +1221,18 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                       </div>
                     </div>
                   ))}
-
-                  <button
-                    type="button"
-                    className="btn btn-add"
-                    onClick={addVariant}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2C13.1 2 14 2.9 14 4V10H20C21.1 10 22 10.9 22 12C22 13.1 21.1 14 20 14H14V20C14 21.1 13.1 22 12 22C10.9 22 10 21.1 10 20V14H4C2.9 14 2 13.1 2 12C2 10.9 2.9 10 4 10H10V4C10 2.9 10.9 2 12 2Z"/>
-                    </svg>
-                    Add Another Variant
-                  </button>
                 </div>
+
+                <button
+                  type="button"
+                  className="btn btn-add"
+                  onClick={addVariant}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z"/>
+                  </svg>
+                  Add Another Variant
+                </button>
               </div>
             )}
 
@@ -1254,34 +1247,16 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                 <h3 className="section-title">Product Images</h3>
               </div>
 
-              {/* Existing Images */}
-              {existingImages.length > 0 && (
-                <div>
-                  <h4 className="section-title" style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>Current Images</h4>
-                  <div className="image-preview-grid">
-                    {existingImages.map((imageUrl, index) => (
-                      <div key={index} className="image-preview">
-                        <img src={imageUrl} alt={`Current ${index + 1}`} />
-                        <button
-                          type="button"
-                          className="image-remove"
-                          onClick={() => removeExistingImage(index)}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="image-upload-container" onClick={() => document.getElementById('image-upload')?.click()}>
+              <div
+                className="image-upload-container"
+                onClick={() => document.getElementById('image-upload')?.click()}
+              >
                 <div className="upload-icon">
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
                   </svg>
                 </div>
-                <div className="upload-text">Drop new images here or click to browse</div>
+                <div className="upload-text">Drop images here or click to browse</div>
                 <div className="upload-hint">PNG, JPG, GIF up to 10MB each</div>
                 <input
                   id="image-upload"
@@ -1293,23 +1268,32 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                 />
               </div>
 
-              {images.length > 0 && (
-                <div>
-                  <h4 className="section-title" style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>New Images</h4>
-                  <div className="image-preview-grid">
-                    {images.map((image, index) => (
-                      <div key={index} className="image-preview">
-                        <img src={URL.createObjectURL(image)} alt={`New ${index + 1}`} />
-                        <button
-                          type="button"
-                          className="image-remove"
-                          onClick={() => removeImage(index)}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+              {(existingImages.length > 0 || images.length > 0) && (
+                <div className="image-preview-grid">
+                  {existingImages.map((image, index) => (
+                    <div key={`existing-${index}`} className="image-preview">
+                      <img src={image} alt={`Existing ${index + 1}`} />
+                      <button
+                        type="button"
+                        className="image-remove"
+                        onClick={() => removeExistingImage(index)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  {images.map((image, index) => (
+                    <div key={`new-${index}`} className="image-preview">
+                      <img src={URL.createObjectURL(image)} alt={`New ${index + 1}`} />
+                      <button
+                        type="button"
+                        className="image-remove"
+                        onClick={() => removeImage(index)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -1320,14 +1304,23 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                 <button type="button" onClick={handleClose} className="btn btn-secondary">
                   Cancel
                 </button>
-                <button 
-                  type="button" 
-                  disabled={isLoading} 
+                <button
+                  type="submit"
+                  disabled={isLoading}
                   className="btn btn-primary"
-                  onClick={handleSubmit}
                 >
-                  {isLoading && <div className="loading-spinner"></div>}
-                  {isLoading ? 'Updating Product...' : 'Update Product'}
+                  <div className="btn-content">
+                    {isLoading && (
+                      <div className="loading-spinner">
+                        <div className="loading-dots">
+                          <div className="dot"></div>
+                          <div className="dot"></div>
+                          <div className="dot"></div>
+                        </div>
+                      </div>
+                    )}
+                    <span>{isLoading ? 'Updating Product...' : 'Update Product'}</span>
+                  </div>
                 </button>
               </div>
             </div>

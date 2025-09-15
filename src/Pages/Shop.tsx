@@ -17,7 +17,7 @@ import { API_BASE_URL } from "../config";
 import { Search, ChevronDown, ChevronUp } from "lucide-react";
 import { Settings2 } from "lucide-react";
 
-// Interfaces
+// Interfaces (unchanged)
 interface Category {
   id: number;
   name: string;
@@ -119,14 +119,13 @@ interface Banner {
   selectedProducts?: ApiProduct[];
 }
 
-// Utility function to convert values to number
+// Utility functions (unchanged)
 const toNumber = (v: any): number => {
   if (v === undefined || v === null) return 0;
   const n = typeof v === 'string' ? parseFloat(v) : Number(v);
   return isFinite(n) ? n : 0;
 };
 
-// Calculate price function
 const calculatePrice = (base: any, disc?: any, discType?: string): number => {
   const baseNum = toNumber(base);
   if (!disc || !discType) return baseNum;
@@ -137,7 +136,6 @@ const calculatePrice = (base: any, disc?: any, discType?: string): number => {
   return baseNum;
 };
 
-// API request function
 const apiRequest = async (
   endpoint: string,
   token: string | null | undefined = undefined
@@ -173,7 +171,6 @@ const apiRequest = async (
   return await response.json();
 };
 
-// Build query params
 const buildQueryParams = (filters: ProductFilters): string => {
   const params = new URLSearchParams();
   if (filters.categoryId !== undefined && filters.categoryId !== null) {
@@ -201,7 +198,6 @@ const buildQueryParams = (filters: ProductFilters): string => {
   return params.toString();
 };
 
-// Fetch products with filters
 const fetchProductsWithFilters = async (
   filters: ProductFilters,
   token: string | null | undefined = undefined
@@ -238,7 +234,7 @@ const fetchProductsWithFilters = async (
   }
 };
 
-// Process product with review
+// Updated processProductWithReview function
 const processProductWithReview = async (
   item: ApiProduct
 ): Promise<Product> => {
@@ -328,22 +324,24 @@ const processProductWithReview = async (
 
     const displayImage = getDisplayImage();
 
-    // Calculate display price (aligned with SectionProducts.tsx)
+    // Updated price calculation logic
     let displayPriceNum = 0;
+    let originalPriceNum = 0;
     const productPriceNum = toNumber(item.basePrice);
+
     if ((item.basePrice === null || item.basePrice === undefined || productPriceNum === 0) && (item.variants?.length || 0) > 0) {
       const first = item.variants![0] as any;
-      const variantBase = first?.price ?? first?.originalPrice ?? first?.basePrice ?? item.basePrice ?? 0;
-      if (typeof first?.calculatedPrice === 'number' && isFinite(first.calculatedPrice)) {
-        displayPriceNum = first.calculatedPrice as number;
-      } else if (first?.discount && first?.discountType) {
-        displayPriceNum = calculatePrice(variantBase, first.discount, String(first.discountType));
-      } else if (item.discount && item.discountType) {
+      // Use the first variant's basePrice for original price
+      const variantBase = toNumber(first?.basePrice ?? first?.price ?? first?.originalPrice ?? 0);
+      originalPriceNum = variantBase;
+      // Apply product-level discount to variant's basePrice
+      if (item.discount && item.discountType) {
         displayPriceNum = calculatePrice(variantBase, item.discount, String(item.discountType));
       } else {
-        displayPriceNum = toNumber(variantBase);
+        displayPriceNum = variantBase;
       }
     } else {
+      originalPriceNum = productPriceNum;
       if (item.discount && item.discountType) {
         displayPriceNum = calculatePrice(productPriceNum, item.discount, String(item.discountType));
       } else {
@@ -355,7 +353,7 @@ const processProductWithReview = async (
       id: item.id,
       title: item.name,
       description: item.description,
-      originalPrice: item.basePrice?.toString() || "0",
+      originalPrice: originalPriceNum.toString(),
       discount: item.discount ? `${item.discount}` : undefined,
       discountPercentage: item.discount ? `${item.discount}%` : "0%",
       price: displayPriceNum.toString(),
@@ -448,14 +446,32 @@ const processProductWithReview = async (
     };
     const displayImage = getFallbackImage();
 
+    // Fallback price calculation
+    let displayPriceNum = 0;
+    let originalPriceNum = 0;
+    const productPriceNum = toNumber(item.basePrice);
+    if ((item.basePrice === null || item.basePrice === undefined || productPriceNum === 0) && (item.variants?.length || 0) > 0) {
+      const first = item.variants![0] as any;
+      const variantBase = toNumber(first?.basePrice ?? first?.price ?? first?.originalPrice ?? 0);
+      originalPriceNum = variantBase;
+      displayPriceNum = item.discount && item.discountType
+        ? calculatePrice(variantBase, item.discount, String(item.discountType))
+        : variantBase;
+    } else {
+      originalPriceNum = productPriceNum;
+      displayPriceNum = item.discount && item.discountType
+        ? calculatePrice(productPriceNum, item.discount, String(item.discountType))
+        : productPriceNum;
+    }
+
     return {
       id: item.id,
       title: item.name || "Unknown Product",
       description: item.description || "No description available",
-      originalPrice: item.basePrice?.toString() || "0",
+      originalPrice: originalPriceNum.toString(),
       discount: item.discount ? `${item.discount}` : undefined,
       discountPercentage: item.discount ? `${item.discount}%` : "0%",
-      price: "0",
+      price: displayPriceNum.toString(),
       rating: 0,
       ratingCount: "0",
       isBestSeller: item.stock > 20,
@@ -478,6 +494,7 @@ const processProductWithReview = async (
   }
 };
 
+// Rest of the Shop component (unchanged)
 const Shop: React.FC = () => {
   const { token } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -776,7 +793,7 @@ const Shop: React.FC = () => {
                 id: item.id,
                 title: item.name || "Unknown Product",
                 description: item.description || "No description available",
-                originalPrice: item.basePrice?.toString() || "0",
+                originalPrice: "0",
                 discount: item.discount ? `${item.discount}` : undefined,
                 discountPercentage: item.discount ? `${item.discount}%` : "0%",
                 price: "0",
@@ -845,7 +862,7 @@ const Shop: React.FC = () => {
                     id: item.id,
                     title: item.name || "Unknown Product",
                     description: item.description || "No description available",
-                    originalPrice: item.basePrice?.toString() || "0",
+                    originalPrice: "0",
                     discount: item.discount ? `${item.discount}` : undefined,
                     discountPercentage: item.discount ? `${item.discount}%` : "0%",
                     price: "0",
@@ -898,7 +915,7 @@ const Shop: React.FC = () => {
                         title: item.name || "Unknown Product",
                         description:
                           item.description || "No description available",
-                        originalPrice: item.basePrice?.toString() || "0",
+                        originalPrice: "0",
                         discount: item.discount ? `${item.discount}` : undefined,
                         discountPercentage: item.discount ? `${item.discount}%` : "0%",
                         price: "0",
@@ -942,7 +959,6 @@ const Shop: React.FC = () => {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  // Filter and sort products
   const filteredProducts = (productsData || []).filter((product) => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();

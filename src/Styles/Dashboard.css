@@ -643,3 +643,43 @@
   letter-spacing: 1px;
   line-height: 1.2;
 }
+.dashboard__table-section {
+  margin-top: 24px;
+}
+.section-card {
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.low-stock-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+.low-stock-table th,
+.low-stock-table td {
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+}
+.low-stock-table th {
+  background-color: #f3f4f6;
+}
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+.pagination button {
+  padding: 5px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+}
+.pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

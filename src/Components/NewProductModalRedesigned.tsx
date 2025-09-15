@@ -440,6 +440,12 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       }
     }
     
+    // Validate discount if provided
+    if (formData.discount !== undefined && formData.discount !== null) {
+      if (formData.discount < 0) return 'Discount cannot be negative';
+      if (!formData.discountType) return 'Discount type is required when discount amount is provided';
+    }
+    
     return null;
   };
 
@@ -526,7 +532,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
               console.log(` Variant ${variant.sku} images uploaded:`, uploadResponse.urls);
             } else {
               console.error(`Failed to upload images for variant ${variant.sku}:`, uploadResponse.message);
-              // Continue with existing URLs even if new uploads fail
             }
           }
 
@@ -544,17 +549,18 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
         hasVariants: formData.hasVariants,
         productImages: productImageUrls,
         dealId: formData.dealId || 0,
-        bannerId: 0
+        bannerId: 0,
+        discount: formData.discount !== undefined && formData.discount !== null ? parseFloat(formData.discount.toString()) : 0,
+        discountType: formData.discountType || 'PERCENTAGE'
       };
 
       if (formData.hasVariants) {
         // For variant products, structure variants according to API spec
         productData.variants = variantsWithImageUrls.map((variant) => ({
           sku: variant.sku,
-          basePrice: variant.price, // API expects basePrice on variant
+          basePrice: variant.price,
           discount: 0,
           discountType: 'PERCENTAGE',
-          // Flatten attributes to key -> single value (string)
           attributes: variant.attributes ?
             variant.attributes.reduce((acc: any, attr: any) => {
               const key = (attr.type || '').toString().trim().toLowerCase();
@@ -562,7 +568,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
               if (key && firstVal) acc[key] = firstVal;
               return acc;
             }, {}) : {},
-          variantImages: variant.images, // API expects 'variantImages'
+          variantImages: variant.images,
           stock: variant.stock,
           status: variant.status
         }));
@@ -571,15 +577,11 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
         productData.basePrice = 0;
         productData.stock = 0;
         productData.status = 'AVAILABLE';
-        productData.discount = 0;
-        productData.discountType = 'PERCENTAGE';
       } else {
         // For non-variant products
         productData.basePrice = parseFloat(formData.basePrice?.toString() || '0');
         productData.stock = parseInt(formData.stock?.toString() || '0');
         productData.status = formData.status || 'AVAILABLE';
-        productData.discount = parseFloat(formData.discount?.toString() || '0');
-        productData.discountType = formData.discountType || 'PERCENTAGE';
         productData.variants = [];
       }
 
@@ -678,7 +680,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
 
         <div className="new-product-modal-body">
           <form onSubmit={handleSubmit} className="new-product-form">
-
 
             {/* Basic Information Section */}
             <div className="form-section">
@@ -792,6 +793,46 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
               </div>
             </div>
 
+            {/* Discount Section */}
+            <div className="form-section">
+              <div className="section-header">
+                <div className="section-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z"/>
+                  </svg>
+                </div>
+                <h3 className="section-title">Discount</h3>
+              </div>
+
+              <div className="form-grid two-columns">
+                <div className="form-group">
+                  <label className="form-label">Discount Amount</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    value={formData.discount || ''}
+                    onChange={(e) => handleInputChange('discount', e.target.value === '' ? undefined : Number(e.target.value))}
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Discount Type</label>
+                  <select
+                    className="form-select"
+                    value={formData.discountType || ''}
+                    onChange={(e) => handleInputChange('discountType', e.target.value || undefined)}
+                  >
+                    <option value="">No discount</option>
+                    <option value="PERCENTAGE">Percentage (%)</option>
+                    <option value="FLAT">Fixed Amount</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
             {/* Non-Variant Product Section */}
             {!formData.hasVariants && (
               <div className="form-section">
@@ -843,32 +884,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                       <option value={InventoryStatus.AVAILABLE}>Available</option>
                       <option value={InventoryStatus.OUT_OF_STOCK}>Out of Stock</option>
                       <option value={InventoryStatus.LOW_STOCK}>Low Stock</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Discount Amount</label>
-                    <input
-                      type="number"
-                      className="form-input"
-                      value={formData.discount || ''}
-                      onChange={(e) => handleInputChange('discount', Number(e.target.value))}
-                      placeholder="0.00"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Discount Type</label>
-                    <select
-                      className="form-select"
-                      value={formData.discountType || ''}
-                      onChange={(e) => handleInputChange('discountType', e.target.value as 'PERCENTAGE' | 'FLAT')}
-                    >
-                      <option value="">No discount</option>
-                      <option value="PERCENTAGE">Percentage (%)</option>
-                      <option value="FLAT">Fixed Amount</option>
                     </select>
                   </div>
                 </div>
@@ -1166,7 +1181,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                 <button type="button" onClick={handleClose} className="btn btn-secondary">
                   Cancel
                 </button>
-<button 
+                <button 
                   type="submit" 
                   disabled={isLoading} 
                   className="btn btn-primary"

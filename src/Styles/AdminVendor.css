@@ -26,6 +26,7 @@
 }
 
 .admin-vendors__content {
+    width: 100%;
     flex: 1;
     padding: 24px;
 }
@@ -117,6 +118,7 @@
 }
 
 .admin-vendors__list-container {
+    min-width: 100%;
     background-color: white;
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);

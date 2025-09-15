@@ -277,7 +277,7 @@
 
 /* Price left, discount right */
 .product1__current-price {
-	font-size: 14px;
+	font-size: 12px;
 	font-weight: bold;
 	color: #2d2d2d;
 	white-space: nowrap;
@@ -285,7 +285,7 @@
 }
 
 .product1__original-price {
-	font-size: 14px;
+	font-size: 12px;
 	color: #858484;
 	text-decoration: line-through;
 	white-space: nowrap;
@@ -294,7 +294,7 @@
 }
 
 .product1__discount {
-	font-size: 14px;
+	font-size: 12px;
 	color: #4caf50;
 	font-weight: 600;
 	border-radius: 6px;
@@ -305,15 +305,15 @@
 /* ===== Mobile Responsive - FIXED TO MATCH DESKTOP LAYOUT ===== */
 @media (max-width: 1100px) {
 	.product1__current-price {
-		font-size: 13px;
+		font-size: 11px;
 	}
 
 	.product1__original-price {
-		font-size: 13px;
+		font-size: 11px;
 	}
 
 	.product1__discount {
-		font-size: 13px;
+		font-size: 11px;
 	}
 }
 @media (max-width: 768px) {
@@ -426,7 +426,7 @@
 		display: contents; /* Same as desktop */
 	}
 	.product1__current-price {
-		font-size: 12px; /* Reduced from 20px */
+		font-size: 10px; /* Reduced from 20px */
 		font-weight: bold;
 		color: #2d2d2d;
 		white-space: nowrap;
@@ -434,7 +434,7 @@
 	}
 
   .product1__discount {
-    font-size: 12px; /* Reduced from 11px */
+    font-size: 10px; /* Reduced from 11px */
     color: #4caf50;
     font-weight: 600;
     border-radius: 4px; /* Reduced from 6px */
@@ -445,7 +445,7 @@
   }
 
 	.product1__original-price {
-		font-size: 12px; /* Reduced from 11px */
+		font-size: 10px; /* Reduced from 11px */
 		color: #858484;
 		text-decoration: line-through;
 		white-space: nowrap;
@@ -544,15 +544,15 @@
 	}
 
   .product1__current-price {
-    font-size: 12px;
+    font-size: 9px;
   }
 
 	.product1__original-price {
-		font-size: 12px;
+		font-size: 9px;
 	}
 
   .product1__discount {
-    font-size: 12px;
+    font-size: 9px;
     padding: 1px 4px;
     border-radius: 3px;
   }
@@ -660,15 +660,15 @@
 	}
 
 	.product1__current-price {
-		font-size: 10px;
+		font-size: 8px;
 	}
 
 	.product1__original-price {
-		font-size: 10px;
+		font-size: 8px;
 	}
 
 	.product1__discount {
-		font-size: 10px;
+		font-size: 8px;
 		padding: 1px 3px;
 		border-radius: 2px;
 	}

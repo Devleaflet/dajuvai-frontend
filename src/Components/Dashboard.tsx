@@ -5,15 +5,38 @@ import { Sidebar } from "./Sidebar";
 import { Chart } from "chart.js/auto";
 import { useDocketHeight } from "../Hook/UseDockerHeight";
 import { useVendorAuth } from "../context/VendorAuthContext";
-import VendorDashboardService from "../services/vendorDashboardService";
 import VendorHeader from "./VendorHeader";
+import axiosInstance from "../api/axiosInstance";
 
 interface DashboardProps {
   version?: string;
 }
 
+interface TotalSalesData {
+  vendorId: number;
+  totalSales: number;
+}
+
+interface LowStockData {
+  success: boolean;
+  currentPage: string;
+  totalPage: number;
+  totalData: number;
+  data: Array<{
+    status: string;
+    productid: number;
+    productname: string;
+    vendorid: number;
+    vendorname: string;
+    stock: number;
+    variantStatus: string;
+  }>;
+}
+
 export function Dashboard({ version = "123456" }: DashboardProps) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [days, setDays] = useState<number>(10); // State for days selector
+  const [page, setPage] = useState<number>(1); // State for pagination
   const docketHeight = useDocketHeight();
   const chartRef = useRef<Chart | null>(null);
   const { authState } = useVendorAuth();
@@ -28,10 +51,76 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
     queryKey: ["vendor-stats", authState.token],
     queryFn: async () => {
       if (!authState.token) throw new Error("No authentication token available");
-      const dashboardService = VendorDashboardService.getInstance();
-      const statsRes = await dashboardService.getVendorStats(authState.token);
-      // If API returns {data: {...}}, extract data
-      return statsRes.data || statsRes;
+      const response = await axiosInstance.get("/api/vendor/dashboard/stats", {
+        headers: { Authorization: `Bearer ${authState.token}` },
+      });
+      return response.data.data || response.data;
+    },
+    enabled: !!authState.token,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // TanStack Query for total sales
+  const {
+    data: salesData,
+    isLoading: salesLoading,
+    isError: salesError,
+    error: salesErrorObj,
+  } = useQuery({
+    queryKey: ["vendor-total-sales", authState.token, days],
+    queryFn: async () => {
+      if (!authState.token) throw new Error("No authentication token available");
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - days + 1);
+
+      const salesPromises = [];
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        const formattedDate = d.toISOString().split('T')[0];
+        salesPromises.push(
+          axiosInstance.get("/api/vendor/dashboard/total-sales", {
+            headers: { Authorization: `Bearer ${authState.token}` },
+            params: { startDate: formattedDate, endDate: formattedDate },
+          })
+        );
+      }
+      const salesResults = await Promise.all(salesPromises);
+      console.log("salesress",salesResults)
+      const labels: string[] = [];
+      const totals: number[] = [];
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        const formattedDate = d.toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        });
+        labels.push(formattedDate);
+        const result = salesResults.shift();
+        totals.push(result?.data?.totalSales || 0);
+      }
+
+      return { labels, totals };
+    },
+    enabled: !!authState.token,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // TanStack Query for low stock
+  const {
+    data: lowStockData,
+    isLoading: lowStockLoading,
+    isError: lowStockError,
+    error: lowStockErrorObj,
+  } = useQuery({
+    queryKey: ["vendor-low-stock", authState.token, page],
+    queryFn: async () => {
+      if (!authState.token) throw new Error("No authentication token available");
+      const response = await axiosInstance.get("/api/vendor/dashboard/low-stock", {
+        headers: { Authorization: `Bearer ${authState.token}` },
+        params: { page },
+      });
+      console.log("dataaaaa",response.data)
+      return response.data;
     },
     enabled: !!authState.token,
     staleTime: 5 * 60 * 1000,
@@ -46,11 +135,11 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Initialize Chart.js for Sales Chart
+  // Initialize Chart.js for Total Sales Chart
   useEffect(() => {
     const ctx = document.getElementById("sales-chart") as HTMLCanvasElement;
 
-    if (ctx && statsData) {
+    if (ctx && salesData && salesData.labels.length > 0) {
       if (chartRef.current) {
         chartRef.current.destroy();
       }
@@ -58,16 +147,27 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
       const newChart = new Chart(ctx, {
         type: "line",
         data: {
-          labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+          labels: salesData.labels,
           datasets: [
             {
-              label: "Sales ($)",
-              data: [5000, 7000, 6500, 7500, 9000, statsData.totalSales, 10000],
+              label: "Total Sales",
+              data: salesData.totals,
               borderColor: "#3B82F6",
               backgroundColor: "rgba(59, 130, 246, 0.2)",
               borderWidth: 2,
               pointRadius: 4,
               pointBackgroundColor: "#3B82F6",
+              tension: 0.4,
+            },
+            {
+              label: "Sales Trend",
+              data: salesData.totals.map(total => total * 0.5),
+              backgroundColor: "transparent",
+              borderWidth: 2,
+              borderDash: [5, 5],
+              pointRadius: 0,
+              tension: 0.4,
+              borderColor: "rgba(59, 130, 246, 0.5)",
             },
           ],
         },
@@ -80,7 +180,13 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
             },
             tooltip: {
               callbacks: {
-                label: (context) => `$${context.parsed.y}`,
+                label: (context) => {
+                  if (context.dataset.label === "Total Sales") {
+                    return `₹ ${context.parsed.y}`;
+                  } else {
+                    return `${context.parsed.y}`;
+                  }
+                },
               },
             },
           },
@@ -96,7 +202,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
                 color: "#e5e7eb",
               },
               ticks: {
-                callback: (value) => `$${value}`,
+                callback: (value) => `₹${value}`,
               },
             },
           },
@@ -111,9 +217,17 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
         chartRef.current.destroy();
       }
     };
-  }, [statsData]);
+  }, [salesData]);
 
-  if (statsLoading) {
+  const handleDaysChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setDays(parseInt(event.target.value));
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
+
+  if (statsLoading || salesLoading || lowStockLoading) {
     return (
       <div className="vendor-dash-container">
         <Sidebar />
@@ -135,12 +249,28 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
                 </div>
               ))}
             </div>
+            {/* Chart Section Skeleton */}
+            <div className="dashboard__two-columns">
+              <div className="dashboard__column">
+                <div className="section-card revenue-analytics">
+                  <div className="skeleton" style={{ width: "100%", height: "300px" }}></div>
+                </div>
+              </div>
+            </div>
+            {/* Low Stock Table Skeleton */}
+            <div className="dashboard__table-section">
+              <div className="section-card">
+                <div className="skeleton" style={{ width: "100%", height: "200px" }}></div>
+              </div>
+            </div>
           </main>
         </div>
       </div>
     );
   }
-  if (statsError) return <div>Error: {statsErrorObj?.message}</div>;
+  if (statsError || salesError || lowStockError) {
+    return <div>Error: {statsErrorObj?.message || salesErrorObj?.message || lowStockErrorObj?.message}</div>;
+  }
 
   return (
     <div className="vendor-dash-container">
@@ -168,7 +298,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
             />
             <StatsCard
               title="Total Sales"
-              value={`Rs.${statsData?.totalSales?.toFixed(2) || "0.00"}`}
+              value={`₹${statsData?.totalSales?.toFixed(2) || "0.00"}`}
               iconType="sales"
               change={4.3}
               trend="down"
@@ -182,6 +312,84 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
               trend="up"
               timeframe="from yesterday"
             />
+          </div>
+          {/* Total Sales Chart Section */}
+          <div className="dashboard__two-columns">
+            <div className="dashboard__column">
+              <div className="section-card revenue-analytics">
+                <div className="revenue-analytics__legend">
+                  <div className="legend-item">
+                    <div className="legend-item__color legend-item__color--revenue"></div>
+                    <span className="legend-item__label">Total Sales</span>
+                  </div>
+                  <div className="legend-item">
+                    <div className="legend-item__color legend-item__color--order"></div>
+                    <span className="legend-item__label">Sales Trend</span>
+                  </div>
+                </div>
+                <div className="revenue-analytics__chart">
+                  <canvas id="sales-chart"></canvas>
+                </div>
+                <select className="days-selector" value={days} onChange={handleDaysChange}>
+                  <option value="7">Last 7 Days</option>
+                  <option value="10">Last 10 Days</option>
+                  <option value="30">Last 30 Days</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          {/* Low Stock Table Section */}
+          <div className="dashboard__table-section">
+            <div className="section-card">
+              <h3>Low Stock Products</h3>
+              {lowStockData && lowStockData.data.length > 0 ? (
+                <table className="low-stock-table">
+                  <thead>
+                    <tr>
+                      <th>Product ID</th>
+                      <th>Product Name</th>
+                      <th>Vendor ID</th>
+                      <th>Vendor Name</th>
+                      <th>Stock</th>
+                      <th>Variant Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lowStockData.data.map((item) => (
+                      <tr key={item.productid}>
+                        <td>{item.productid}</td>
+                        <td>{item.productname}</td>
+                        <td>{item.vendorid}</td>
+                        <td>{item.vendorname}</td>
+                        <td>{item.stock}</td>
+                        <td>{item.variantStatus}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p>No low stock data available.</p>
+              )}
+              {lowStockData && lowStockData.totalPage > 1 && (
+                <div className="pagination">
+                  <button
+                    onClick={() => handlePageChange(page - 1)}
+                    disabled={page === 1}
+                  >
+                    Previous
+                  </button>
+                  <span>
+                    Page {lowStockData.currentPage} of {lowStockData.totalPage}
+                  </span>
+                  <button
+                    onClick={() => handlePageChange(page + 1)}
+                    disabled={page === lowStockData.totalPage}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </main>
       </div>
