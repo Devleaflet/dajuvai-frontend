@@ -66,13 +66,12 @@ const NepalPaymentGateway: React.FC = () => {
   if (!orderDetails) {
     return <p className="no-order-details">No order details found.</p>;
   }
-
   const { totalAmount, orderId } = orderDetails;
 
   // Initialize amount with totalAmount from order if available
   useEffect(() => {
     if (totalAmount) {
-      setAmount(totalAmount.toString());
+      setAmount(totalAmount.finalTotal.toString());
     }
   }, [totalAmount]);
 
@@ -426,6 +425,7 @@ const NepalPaymentGateway: React.FC = () => {
               <form onSubmit={handlePayment} className="payment-form">
                 <div className="npx-form-group">
                   <label htmlFor="amount">Amount (NPR)</label>
+                  {console.log("amo",amount)}
                   <input
                     type="number"
                     id="amount"

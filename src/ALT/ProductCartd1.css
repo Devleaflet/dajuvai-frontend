@@ -222,7 +222,7 @@
 
 /* Title & description */
 .product1__title {
-	font-size: 15px;
+	font-size: 13px;
 	font-weight: 600;
 	margin: 0px; /* Added bottom margin for spacing */
 	line-height: 1.2;
@@ -277,7 +277,7 @@
 
 /* Price left, discount right */
 .product1__current-price {
-	font-size: 20px;
+	font-size: 14px;
 	font-weight: bold;
 	color: #2d2d2d;
 	white-space: nowrap;
@@ -285,7 +285,7 @@
 }
 
 .product1__original-price {
-	font-size: 11px;
+	font-size: 14px;
 	color: #858484;
 	text-decoration: line-through;
 	white-space: nowrap;
@@ -294,7 +294,7 @@
 }
 
 .product1__discount {
-	font-size: 11px;
+	font-size: 14px;
 	color: #4caf50;
 	font-weight: 600;
 	border-radius: 6px;
@@ -305,15 +305,15 @@
 /* ===== Mobile Responsive - FIXED TO MATCH DESKTOP LAYOUT ===== */
 @media (max-width: 1100px) {
 	.product1__current-price {
-		font-size: 15px;
+		font-size: 13px;
 	}
 
 	.product1__original-price {
-		font-size: 11px;
+		font-size: 13px;
 	}
 
 	.product1__discount {
-		font-size: 11px;
+		font-size: 13px;
 	}
 }
 @media (max-width: 768px) {
@@ -426,7 +426,7 @@
 		display: contents; /* Same as desktop */
 	}
 	.product1__current-price {
-		font-size: 13px; /* Reduced from 20px */
+		font-size: 12px; /* Reduced from 20px */
 		font-weight: bold;
 		color: #2d2d2d;
 		white-space: nowrap;
@@ -434,7 +434,7 @@
 	}
 
   .product1__discount {
-    font-size: 10px; /* Reduced from 11px */
+    font-size: 12px; /* Reduced from 11px */
     color: #4caf50;
     font-weight: 600;
     border-radius: 4px; /* Reduced from 6px */
@@ -445,7 +445,7 @@
   }
 
 	.product1__original-price {
-		font-size: 8px; /* Reduced from 11px */
+		font-size: 12px; /* Reduced from 11px */
 		color: #858484;
 		text-decoration: line-through;
 		white-space: nowrap;
@@ -495,18 +495,7 @@
 		word-break: break-word;
 	}
 
-	.product1__current-price {
-		font-size: 16px;
-	}
 
-	.product1__original-price {
-		font-size: 11px;
-	}
-
-	.product1__discount {
-		font-size: 11px;
-		border-radius: 4px;
-	}
 
 	.product1__info {
 		padding: 0 4px;
@@ -555,15 +544,15 @@
 	}
 
   .product1__current-price {
-    font-size: 14px;
+    font-size: 12px;
   }
 
 	.product1__original-price {
-		font-size: 11px;
+		font-size: 12px;
 	}
 
   .product1__discount {
-    font-size: 10px;
+    font-size: 12px;
     padding: 1px 4px;
     border-radius: 3px;
   }
@@ -637,17 +626,7 @@
 		word-break: break-word;
 	}
 
-	.product1__current-price {
-		font-size: 16px;
-	}
 
-	.product1__original-price {
-		font-size: 11px;
-	}
-
-	.product1__discount {
-		font-size: 11px;
-	}
 
 	.product1__info {
 		padding: 0 5px;
@@ -685,11 +664,11 @@
 	}
 
 	.product1__original-price {
-		font-size: 8px;
+		font-size: 10px;
 	}
 
 	.product1__discount {
-		font-size: 8px;
+		font-size: 10px;
 		padding: 1px 3px;
 		border-radius: 2px;
 	}
