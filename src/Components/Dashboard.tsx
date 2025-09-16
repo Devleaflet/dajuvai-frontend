@@ -86,11 +86,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
         );
       }
       const salesResults = await Promise.all(salesPromises);
-<<<<<<< Updated upstream
-      console.log("salesress",salesResults)
-=======
       console.log("salesress", salesResults);
->>>>>>> Stashed changes
       const labels: string[] = [];
       const totals: number[] = [];
       for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
@@ -124,11 +120,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
         headers: { Authorization: `Bearer ${authState.token}` },
         params: { page },
       });
-<<<<<<< Updated upstream
-      console.log("dataaaaa",response.data)
-=======
       console.log("dataaaaa", response.data);
->>>>>>> Stashed changes
       return response.data;
     },
     enabled: !!authState.token,

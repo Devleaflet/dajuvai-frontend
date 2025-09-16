@@ -57,7 +57,10 @@
 }
 
 .product1__wishlist-button {
-	position: relative;
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	z-index: 5; /* Reduced from higher value */
 	background: rgba(255, 255, 255, 0.8);
 	border-radius: 100%;
 	border: 1px solid #e0e0e0;
@@ -72,15 +75,12 @@
 	transition: all 0.2s ease;
 
 	flex-shrink: 0;
-	z-index: 11;
-
-	margin-left: 0;
 }
 
 .product1__wishlist-button:hover {
 	background: #ffffff;
 	transform: scale(1.1);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+	box-shadow: 0 4px 12px rgba(0, 0,
 }
 
 .product1__wishlist-button svg {
