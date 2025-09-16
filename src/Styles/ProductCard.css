@@ -176,7 +176,6 @@
   cursor: pointer;
   transition: all 0.2s ease-in-out;
   z-index: 3;
-  backdrop-filter: blur(4px);
 }
 
 .product-card__wishlist-button:hover {

@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { useQuery } from '@tanstack/react-query';
 import "../Styles/Dashboard.css";
@@ -85,7 +86,11 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
         );
       }
       const salesResults = await Promise.all(salesPromises);
+<<<<<<< Updated upstream
       console.log("salesress",salesResults)
+=======
+      console.log("salesress", salesResults);
+>>>>>>> Stashed changes
       const labels: string[] = [];
       const totals: number[] = [];
       for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
@@ -119,7 +124,11 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
         headers: { Authorization: `Bearer ${authState.token}` },
         params: { page },
       });
+<<<<<<< Updated upstream
       console.log("dataaaaa",response.data)
+=======
+      console.log("dataaaaa", response.data);
+>>>>>>> Stashed changes
       return response.data;
     },
     enabled: !!authState.token,
@@ -343,51 +352,55 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
             <div className="section-card">
               <h3>Low Stock Products</h3>
               {lowStockData && lowStockData.data.length > 0 ? (
-                <table className="low-stock-table">
-                  <thead>
-                    <tr>
-                      <th>Product ID</th>
-                      <th>Product Name</th>
-                      <th>Vendor ID</th>
-                      <th>Vendor Name</th>
-                      <th>Stock</th>
-                      <th>Variant Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {lowStockData.data.map((item) => (
-                      <tr key={item.productid}>
-                        <td>{item.productid}</td>
-                        <td>{item.productname}</td>
-                        <td>{item.vendorid}</td>
-                        <td>{item.vendorname}</td>
-                        <td>{item.stock}</td>
-                        <td>{item.variantStatus}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <>
+                  <div className="table-container">
+                    <table className="low-stock-table">
+                      <thead>
+                        <tr>
+                          <th>Product ID</th>
+                          <th>Product Name</th>
+                          <th>Vendor ID</th>
+                          <th>Vendor Name</th>
+                          <th>Stock</th>
+                          <th>Variant Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {lowStockData.data.map((item) => (
+                          <tr key={item.productid}>
+                            <td>{item.productid}</td>
+                            <td>{item.productname}</td>
+                            <td>{item.vendorid}</td>
+                            <td>{item.vendorname}</td>
+                            <td>{item.stock}</td>
+                            <td>{item.variantStatus}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {lowStockData.totalPage > 1 && (
+                    <div className="pagination">
+                      <button
+                        onClick={() => handlePageChange(page - 1)}
+                        disabled={page === 1}
+                      >
+                        Previous
+                      </button>
+                      <span>
+                        Page {lowStockData.currentPage} of {lowStockData.totalPage}
+                      </span>
+                      <button
+                        onClick={() => handlePageChange(page + 1)}
+                        disabled={page === lowStockData.totalPage}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <p>No low stock data available.</p>
-              )}
-              {lowStockData && lowStockData.totalPage > 1 && (
-                <div className="pagination">
-                  <button
-                    onClick={() => handlePageChange(page - 1)}
-                    disabled={page === 1}
-                  >
-                    Previous
-                  </button>
-                  <span>
-                    Page {lowStockData.currentPage} of {lowStockData.totalPage}
-                  </span>
-                  <button
-                    onClick={() => handlePageChange(page + 1)}
-                    disabled={page === lowStockData.totalPage}
-                  >
-                    Next
-                  </button>
-                </div>
               )}
             </div>
           </div>

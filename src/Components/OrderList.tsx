@@ -22,6 +22,7 @@ const OrderList: React.FC<OrderListProps> = ({ orders, isMobile, onView }) => {
             <th>Ordered By</th>
             <th>Product</th>
             <th>Price</th>
+            <th>Payment Mode</th>
             <th>Status</th>
             <th>Action</th>
           </tr>
@@ -33,14 +34,15 @@ const OrderList: React.FC<OrderListProps> = ({ orders, isMobile, onView }) => {
               <td>{order.orderedBy || "Unknown Customer"}</td>
               <td>{order.product || "Unknown Product"}</td>
               <td>Rs. {order.price?.toFixed(2) || "0.00"}</td>
+              <td>{order.paymentStatus || "Unknown"}</td>
               <td>
                 <span
                   className={`product-status ${
-                    order.status === "Delivered"
+                    order.status === "delivered"
                       ? "featured"
-                      : order.status === "Pending"
+                      : order.status === "pending"
                       ? "on-sale"
-                      : order.status === "Canceled"
+                      : order.status === "canceled"
                       ? "out-of-stock"
                       : ""
                   }`}
