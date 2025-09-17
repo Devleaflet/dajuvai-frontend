@@ -54,9 +54,9 @@ type NewProductFormData = {
   variants: ProductVariant[];
 };
 
-const AttributeManager = ({ 
-  attributes, 
-  onUpdate 
+const AttributeManager = ({
+  attributes,
+  onUpdate
 }: {
   attributes: ProductVariant['attributes'];
   onUpdate: (updated: ProductVariant['attributes']) => void;
@@ -67,9 +67,9 @@ const AttributeManager = ({
 
   const addNestedAttribute = (attrIndex: number) => {
     const updated = [...attributes];
-    updated[attrIndex].values.push({ 
-      value: '', 
-      nestedAttributes: [] 
+    updated[attrIndex].values.push({
+      value: '',
+      nestedAttributes: []
     });
     onUpdate(updated);
   };
@@ -87,7 +87,7 @@ const AttributeManager = ({
             }}
             placeholder="Attribute type (e.g. Color)"
           />
-          
+
           <div className="attribute-values">
             {attr.values.map((val, valIndex) => (
               <div key={valIndex} className="attribute-value">
@@ -100,7 +100,7 @@ const AttributeManager = ({
                   }}
                   placeholder="Value (e.g. Red)"
                 />
-                
+
                 {/* Nested attributes */}
                 {val.nestedAttributes?.map((nested, nestedIndex) => (
                   <div key={nestedIndex} className="nested-attribute">
@@ -113,12 +113,12 @@ const AttributeManager = ({
                       }}
                       placeholder="Nested type (e.g. Size)"
                     />
-                    
+
                     <input
                       value={nested.values.join(',')}
                       onChange={(e) => {
                         const updated = [...attributes];
-                        updated[attrIndex].values[valIndex].nestedAttributes![nestedIndex].values = 
+                        updated[attrIndex].values[valIndex].nestedAttributes![nestedIndex].values =
                           e.target.value.split(',');
                         onUpdate(updated);
                       }}
@@ -126,8 +126,8 @@ const AttributeManager = ({
                     />
                   </div>
                 ))}
-                
-                <button 
+
+                <button
                   type="button"
                   onClick={() => {
                     const updated = [...attributes];
@@ -142,8 +142,8 @@ const AttributeManager = ({
                 </button>
               </div>
             ))}
-            
-            <button 
+
+            <button
               type="button"
               onClick={() => addNestedAttribute(attrIndex)}
             >
@@ -152,7 +152,7 @@ const AttributeManager = ({
           </div>
         </div>
       ))}
-      
+
       <button type="button" onClick={addAttributeType}>
         Add Attribute Type
       </button>
@@ -162,7 +162,7 @@ const AttributeManager = ({
 
 const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const { authState } = useVendorAuth();
-  
+
   // Form state
   const [formData, setFormData] = useState<NewProductFormData>({
     name: "",
@@ -184,13 +184,13 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  
+
   // Data state
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0);
-  
+
   // Variant state
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [newAttribute, setNewAttribute] = useState<{
@@ -200,12 +200,12 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     attributeType: '',
     attributeValues: ['']
   });
-  
+
   // Global attribute specs for generating combinations
   const [attributeSpecs, setAttributeSpecs] = useState<Array<{ type: string; valuesText: string }>>([
     { type: '', valuesText: '' }
   ]);
-  
+
   // Image state: support both local Files and already-uploaded URLs
   const [images, setImages] = useState<Array<File | string>>([]);
 
@@ -239,7 +239,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   const handleCategoryChange = async (categoryId: number) => {
     setSelectedCategoryId(categoryId);
     setFormData(prev => ({ ...prev, subcategoryId: 0 }));
-    
+
     if (categoryId > 0) {
       try {
         const subcategories = await fetchSubcategories(categoryId);
@@ -255,7 +255,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
 
   const handleInputChange = (field: keyof NewProductFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Auto-progress steps
     if (field === 'name' && value && currentStep === 1) {
       setCurrentStep(2);
@@ -282,7 +282,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   };
 
   const updateVariant = (index: number, field: keyof ProductVariant, value: any) => {
-    setVariants(variants.map((variant, i) => 
+    setVariants(variants.map((variant, i) =>
       i === index ? { ...variant, [field]: value } : variant
     ));
   };
@@ -291,8 +291,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     const updatedVariants = [...variants];
     updatedVariants[variantIndex].attributes = [
       ...(updatedVariants[variantIndex].attributes || []),
-      { 
-        type: newAttribute.attributeType, 
+      {
+        type: newAttribute.attributeType,
         values: newAttribute.attributeValues.map(value => ({
           value,
           nestedAttributes: []
@@ -340,8 +340,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   const handleVariantImageUpload = (e: React.ChangeEvent<HTMLInputElement>, variantIndex: number) => {
     if (e.target.files && e.target.files.length > 0) {
       const newImages = Array.from(e.target.files);
-      setVariants(prev => prev.map((v, i) => 
-        i === variantIndex 
+      setVariants(prev => prev.map((v, i) =>
+        i === variantIndex
           ? { ...v, images: [...(v.images || []), ...newImages] }
           : v
       ));
@@ -349,12 +349,12 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   };
 
   const removeVariantImage = (variantIndex: number, imageIndex: number) => {
-    setVariants(prev => prev.map((v, i) => 
-      i === variantIndex 
-        ? { 
-            ...v, 
-            images: (v.images || []).filter((_, idx) => idx !== imageIndex)
-          } 
+    setVariants(prev => prev.map((v, i) =>
+      i === variantIndex
+        ? {
+          ...v,
+          images: (v.images || []).filter((_, idx) => idx !== imageIndex)
+        }
         : v
     ));
   };
@@ -427,7 +427,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     if (!formData.name.trim()) return 'Product name is required';
     if (!selectedCategoryId) return 'Please select a category';
     if (!formData.subcategoryId) return 'Please select a subcategory';
-    
+
     if (!formData.hasVariants) {
       if (!formData.basePrice || formData.basePrice <= 0) return 'Base price is required';
       if (formData.stock === undefined || formData.stock < 0) return 'Stock quantity is required';
@@ -439,25 +439,25 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
         if (variant.stock === undefined || variant.stock < 0) return 'All variants must have stock quantity';
       }
     }
-    
+
     // Validate discount if provided
     if (formData.discount !== undefined && formData.discount !== null) {
       if (formData.discount < 0) return 'Discount cannot be negative';
       if (!formData.discountType) return 'Discount type is required when discount amount is provided';
     }
-    
+
     return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     console.log(' NEW PRODUCT MODAL SUBMIT START');
     console.log(' Selected Category ID:', selectedCategoryId);
     console.log(' Form Data:', formData);
     console.log(' Variants:', variants);
     console.log(' Images:', images);
-      
+
     if (!selectedCategoryId || !formData.subcategoryId) {
       console.error('Missing category or subcategory:', { selectedCategoryId, subcategoryId: formData.subcategoryId });
       toast.error('Please select category and subcategory');
@@ -572,7 +572,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
           stock: variant.stock,
           status: variant.status
         }));
-        
+
         // Set base product fields for variant products
         productData.basePrice = 0;
         productData.stock = 0;
@@ -661,7 +661,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   }>) => {
     const updatedVariants = [...formData.variants];
     updatedVariants[variantIndex].attributes = attributes;
-    setFormData({...formData, variants: updatedVariants});
+    setFormData({ ...formData, variants: updatedVariants });
   };
 
   if (!isOpen) return null;
@@ -673,7 +673,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
           <h2 className="new-product-modal-title">Create New Product</h2>
           <button className="new-product-modal-close" onClick={handleClose}>
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>
@@ -686,7 +686,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
               <div className="section-header">
                 <div className="section-icon">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z"/>
+                    <path d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z" />
                   </svg>
                 </div>
                 <h3 className="section-title">Product Information</h3>
@@ -774,7 +774,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
               <div className="section-header">
                 <div className="section-icon">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M9 11H7V9H9V11ZM13 11H11V9H13V11ZM17 11H15V9H17V11ZM19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3Z"/>
+                    <path d="M9 11H7V9H9V11ZM13 11H11V9H13V11ZM17 11H15V9H17V11ZM19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3Z" />
                   </svg>
                 </div>
                 <h3 className="section-title">Product Configuration</h3>
@@ -793,45 +793,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
               </div>
             </div>
 
-            {/* Discount Section */}
-            <div className="form-section">
-              <div className="section-header">
-                <div className="section-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z"/>
-                  </svg>
-                </div>
-                <h3 className="section-title">Discount</h3>
-              </div>
 
-              <div className="form-grid two-columns">
-                <div className="form-group">
-                  <label className="form-label">Discount Amount</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={formData.discount || ''}
-                    onChange={(e) => handleInputChange('discount', e.target.value === '' ? undefined : Number(e.target.value))}
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Discount Type</label>
-                  <select
-                    className="form-select"
-                    value={formData.discountType || ''}
-                    onChange={(e) => handleInputChange('discountType', e.target.value || undefined)}
-                  >
-                    <option value="">No discount</option>
-                    <option value="PERCENTAGE">Percentage (%)</option>
-                    <option value="FLAT">Fixed Amount</option>
-                  </select>
-                </div>
-              </div>
-            </div>
 
             {/* Non-Variant Product Section */}
             {!formData.hasVariants && (
@@ -839,7 +801,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                 <div className="section-header">
                   <div className="section-icon">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z"/>
+                      <path d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z" />
                     </svg>
                   </div>
                   <h3 className="section-title">Pricing & Inventory</h3>
@@ -890,13 +852,56 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
               </div>
             )}
 
+
+            {/* Discount Section */}
+            {!formData.hasVariants && (
+              <div className="form-section">
+                <div className="section-header">
+                  <div className="section-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z" />
+                    </svg>
+                  </div>
+                  <h3 className="section-title">Discount</h3>
+                </div>
+
+                <div className="form-grid two-columns">
+                  <div className="form-group">
+                    <label className="form-label">Discount Amount</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={formData.discount || ''}
+                      onChange={(e) => handleInputChange('discount', e.target.value === '' ? undefined : Number(e.target.value))}
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Discount Type</label>
+                    <select
+                      className="form-select"
+                      value={formData.discountType || ''}
+                      onChange={(e) => handleInputChange('discountType', e.target.value || undefined)}
+                    >
+                      <option value="">No discount</option>
+                      <option value="PERCENTAGE">Percentage (%)</option>
+                      <option value="FLAT">Fixed Amount</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Variants Section */}
             {formData.hasVariants && (
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z"/>
+                      <path d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z" />
                     </svg>
                   </div>
                   <h3 className="section-title">Product Variants</h3>
@@ -1056,18 +1061,18 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                           </div>
                         </div>
                       )}
-                      
+
                       {/* Variant Images */}
                       <div className="form-group full-width">
                         <label className="form-label">Variant Images</label>
-                        <div className="image-upload-container" 
-                             onClick={(e) => {
-                               e.stopPropagation();
-                               document.getElementById(`variant-image-${index}`)?.click();
-                             }}>
+                        <div className="image-upload-container"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            document.getElementById(`variant-image-${index}`)?.click();
+                          }}>
                           <div className="upload-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
                             </svg>
                           </div>
                           <div className="upload-text">Click to add images for this variant</div>
@@ -1084,9 +1089,9 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                           <div className="image-preview-grid">
                             {variant.images.map((img, imgIndex) => (
                               <div key={imgIndex} className="image-preview">
-                                <img 
-                                  src={img instanceof File ? URL.createObjectURL(img) : img} 
-                                  alt={`Variant ${index + 1} - ${imgIndex + 1}`} 
+                                <img
+                                  src={img instanceof File ? URL.createObjectURL(img) : img}
+                                  alt={`Variant ${index + 1} - ${imgIndex + 1}`}
                                 />
                                 <button
                                   type="button"
@@ -1113,10 +1118,53 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                   onClick={addVariant}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z"/>
+                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z" />
                   </svg>
                   Add Another Variant
                 </button>
+              </div>
+            )}
+
+
+            {/* Discount Section */}
+            {formData.hasVariants && (
+              <div className="form-section">
+                <div className="section-header">
+                  <div className="section-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z" />
+                    </svg>
+                  </div>
+                  <h3 className="section-title">Discount</h3>
+                </div>
+
+                <div className="form-grid two-columns">
+                  <div className="form-group">
+                    <label className="form-label">Discount Amount</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={formData.discount || ''}
+                      onChange={(e) => handleInputChange('discount', e.target.value === '' ? undefined : Number(e.target.value))}
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Discount Type</label>
+                    <select
+                      className="form-select"
+                      value={formData.discountType || ''}
+                      onChange={(e) => handleInputChange('discountType', e.target.value || undefined)}
+                    >
+                      <option value="">No discount</option>
+                      <option value="PERCENTAGE">Percentage (%)</option>
+                      <option value="FLAT">Fixed Amount</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1125,21 +1173,21 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
               <div className="section-header">
                 <div className="section-icon">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M9 16.2L4.8 12L3.4 13.4L9 19L21 7L19.6 5.6L9 16.2Z"/>
+                    <path d="M9 16.2L4.8 12L3.4 13.4L9 19L21 7L19.6 5.6L9 16.2Z" />
                   </svg>
                 </div>
                 <h3 className="section-title">Product Images</h3>
               </div>
 
-              <div 
-                className="image-upload-container" 
+              <div
+                className="image-upload-container"
                 onClick={() => document.getElementById('image-upload')?.click()}
                 onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                 onDrop={handleImageDrop}
               >
                 <div className="upload-icon">
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
                   </svg>
                 </div>
                 <div className="upload-text">Drop images here or click to browse</div>
@@ -1158,9 +1206,9 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                 <div className="image-preview-grid">
                   {images.map((image, index) => (
                     <div key={index} className="image-preview">
-                      <img 
-                        src={image instanceof File ? URL.createObjectURL(image) : (image as string)} 
-                        alt={`Preview ${index + 1}`} 
+                      <img
+                        src={image instanceof File ? URL.createObjectURL(image) : (image as string)}
+                        alt={`Preview ${index + 1}`}
                       />
                       <button
                         type="button"
@@ -1181,9 +1229,9 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                 <button type="button" onClick={handleClose} className="btn btn-secondary">
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
-                  disabled={isLoading} 
+                <button
+                  type="submit"
+                  disabled={isLoading}
                   className="btn btn-primary"
                 >
                   <div className="btn-content">
@@ -1198,7 +1246,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                     )}
                     <span>{isLoading ? 'Creating Product...' : 'Create Product'}</span>
                   </div>
-                </button> 
+                </button>
               </div>
             </div>
           </form>

@@ -60,13 +60,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
   // UI state
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Data state
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number>(0);
-  
+
   // Variant state
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [newAttribute, setNewAttribute] = useState<Attribute>({
@@ -77,7 +77,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   const [attributeSpecs, setAttributeSpecs] = useState<Array<{ type: string; valuesText: string }>>([
     { type: '', valuesText: '' }
   ]);
-  
+
   // Image state
   const [images, setImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
@@ -247,33 +247,33 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
   const populateFormWithProduct = async () => {
     if (!product) return;
-  
+
     console.log('🔄 POPULATING FORM WITH PRODUCT DATA:');
     console.log('Product (prop):', product);
     console.log('Product Category ID:', product.categoryId);
     console.log('Product Subcategory:', product.subcategory);
-  
+
     // Extract category and subcategory IDs with multiple fallback strategies
     let categoryId = 0;
     let subcategoryId = 0;
-  
+
     // Strategy 1: Direct properties
     if (product.categoryId) categoryId = Number(product.categoryId);
     if (product.subcategory?.id) subcategoryId = Number(product.subcategory.id);
-  
+
     // Strategy 2: From subcategory object
     if (!categoryId && product.subcategory) {
       const sub = product.subcategory as any;
       if (sub.categoryId) categoryId = Number(sub.categoryId);
       if (sub.category?.id) categoryId = Number(sub.category.id);
     }
-  
+
     // Strategy 3: Alternative subcategory ID extraction
     if (!subcategoryId) {
       const prod = product as any;
       if (prod.subcategoryId) subcategoryId = Number(prod.subcategoryId);
     }
-  
+
     // Strategy 4: If categoryId is still missing but subcategoryId is known, resolve category by scanning
     if (!categoryId && subcategoryId) {
       console.warn('ℹ️ Category ID missing; resolving from subcategory...');
@@ -283,13 +283,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         setSubcategories(resolved.subcategories || []);
       }
     }
-  
+
     console.log('🎯 FINAL EXTRACTED IDs:');
     console.log('Category ID:', categoryId);
     console.log('Subcategory ID:', subcategoryId);
-  
+
     setSelectedCategoryId(categoryId);
-  
+
     // Load subcategories for the product's category (if not already resolved)
     if (categoryId > 0) {
       try {
@@ -301,7 +301,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         toast.error('Failed to load subcategories');
       }
     }
-  
+
     // Fetch freshest product by ID to ensure all variants are present
     let fullProduct: any = product;
     try {
@@ -354,8 +354,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     // Map API variants to ProductVariant interface
     const mappedVariants: ProductVariant[] = fullProduct.variants && fullProduct.variants.length > 0
       ? fullProduct.variants.map((v: any) => {
-          const imgs = v.variantImages || v.images || [];
-          return ({
+        const imgs = v.variantImages || v.images || [];
+        return ({
           sku: v.sku || '',
           price: Number(v.basePrice || 0),
           stock: Number(v.stock || 0),
@@ -364,9 +364,9 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
           images: imgs,
           variantImages: imgs,
         });
-        })
+      })
       : [];
-  
+
     // Resolve main product images into string[] for UI and payload
     const ensureAbsolute = (u: string) => {
       if (!u) return '';
@@ -413,17 +413,17 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       bannerId: fullProduct.bannerId ?? null,
       brandId: fullProduct.brand?.id ?? null,
     });
-  
+
     setVariants(mappedVariants);
     setExistingImages(resolvedProductImages);
-  
+
     console.log('✅ Form populated with category:', categoryId, 'subcategory:', subcategoryId, 'variants:', mappedVariants);
   };
 
   const handleCategoryChange = async (categoryId: number) => {
     setSelectedCategoryId(categoryId);
     setFormData(prev => ({ ...prev, subcategoryId: 0 }));
-    
+
     if (categoryId > 0) {
       try {
         const subcategories = await fetchSubcategories(categoryId);
@@ -459,7 +459,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   };
 
   const updateVariant = (index: number, field: keyof ProductVariant, value: any) => {
-    setVariants(variants.map((variant, i) => 
+    setVariants(variants.map((variant, i) =>
       i === index ? { ...variant, [field]: value } : variant
     ));
   };
@@ -529,7 +529,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     console.log('- Base price:', formData.basePrice);
     console.log('- Stock:', formData.stock);
     console.log('- Variants count:', variants.length);
-    
+
     if (!formData.name.trim()) {
       console.log('❌ Product name is missing');
       return 'Product name is required';
@@ -542,7 +542,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       console.log('❌ Subcategory not selected');
       return 'Please select a subcategory';
     }
-    
+
     if (!formData.hasVariants) {
       if (formData.basePrice == null || Number(formData.basePrice) <= 0) {
         console.log('❌ Base price is invalid:', formData.basePrice);
@@ -572,13 +572,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         }
       }
     }
-    
+
     // Validate discount if provided
     if (formData.discount !== undefined && formData.discount !== null) {
       if (formData.discount < 0) return 'Discount cannot be negative';
       if (!formData.discountType) return 'Discount type is required when discount amount is provided';
     }
-    
+
     console.log('✅ All validation checks passed');
     return null;
   };
@@ -586,7 +586,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     console.log('🚀 UPDATE PRODUCT BUTTON CLICKED!');
     e.preventDefault();
-    
+
     if (!product) {
       console.error('❌ No product to update');
       toast.error('No product to update');
@@ -769,7 +769,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
           <h2 className="new-product-modal-title">Edit Product</h2>
           <button className="new-product-modal-close" onClick={handleClose}>
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>
@@ -781,7 +781,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
               <div className="section-header">
                 <div className="section-icon">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z"/>
+                    <path d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z" />
                   </svg>
                 </div>
                 <h3 className="section-title">Product Information</h3>
@@ -869,7 +869,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
               <div className="section-header">
                 <div className="section-icon">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M9 11H7V9H9V11ZM13 11H11V9H13V11ZM17 11H15V9H17V11ZM19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3Z"/>
+                    <path d="M9 11H7V9H9V11ZM13 11H11V9H13V11ZM17 11H15V9H17V11ZM19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3Z" />
                   </svg>
                 </div>
                 <h3 className="section-title">Product Configuration</h3>
@@ -888,45 +888,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
               </div>
             </div>
 
-            {/* Discount Section */}
-            <div className="form-section">
-              <div className="section-header">
-                <div className="section-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z"/>
-                  </svg>
-                </div>
-                <h3 className="section-title">Discount</h3>
-              </div>
-
-              <div className="form-grid two-columns">
-                <div className="form-group">
-                  <label className="form-label">Discount Amount</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={formData.discount || ''}
-                    onChange={(e) => handleInputChange('discount', e.target.value === '' ? undefined : Number(e.target.value))}
-                    placeholder="0.00"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Discount Type</label>
-                  <select
-                    className="form-select"
-                    value={formData.discountType || ''}
-                    onChange={(e) => handleInputChange('discountType', e.target.value || undefined)}
-                  >
-                    <option value="">No discount</option>
-                    <option value="PERCENTAGE">Percentage (%)</option>
-                    <option value="FLAT">Fixed Amount</option>
-                  </select>
-                </div>
-              </div>
-            </div>
 
             {/* Non-Variant Product Section */}
             {!formData.hasVariants && (
@@ -934,7 +895,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                 <div className="section-header">
                   <div className="section-icon">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z"/>
+                      <path d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z" />
                     </svg>
                   </div>
                   <h3 className="section-title">Pricing & Inventory</h3>
@@ -985,13 +946,56 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
               </div>
             )}
 
+            {/* Discount Section */}
+            {!formData.hasVariants && (
+              <div className="form-section">
+                <div className="section-header">
+                  <div className="section-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z" />
+                    </svg>
+                  </div>
+                  <h3 className="section-title">Discount</h3>
+                </div>
+
+                <div className="form-grid two-columns">
+                  <div className="form-group">
+                    <label className="form-label">Discount Amount</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={formData.discount || ''}
+                      onChange={(e) => handleInputChange('discount', e.target.value === '' ? undefined : Number(e.target.value))}
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Discount Type</label>
+                    <select
+                      className="form-select"
+                      value={formData.discountType || ''}
+                      onChange={(e) => handleInputChange('discountType', e.target.value || undefined)}
+                    >
+                      <option value="">No discount</option>
+                      <option value="PERCENTAGE">Percentage (%)</option>
+                      <option value="FLAT">Fixed Amount</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+
             {/* Variants Section */}
             {formData.hasVariants && (
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z"/>
+                      <path d="M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z" />
                     </svg>
                   </div>
                   <h3 className="section-title">Product Variants</h3>
@@ -1186,7 +1190,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                         >
                           <div className="upload-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                              <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
                             </svg>
                           </div>
                           <div className="upload-text">Click to add images for this variant</div>
@@ -1229,19 +1233,62 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                   onClick={addVariant}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z"/>
+                    <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z" />
                   </svg>
                   Add Another Variant
                 </button>
               </div>
             )}
 
+            {/* Discount Section */}
+            {formData.hasVariants && (
+              <div className="form-section">
+                <div className="section-header">
+                  <div className="section-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z" />
+                    </svg>
+                  </div>
+                  <h3 className="section-title">Discount</h3>
+                </div>
+
+                <div className="form-grid two-columns">
+                  <div className="form-group">
+                    <label className="form-label">Discount Amount</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={formData.discount || ''}
+                      onChange={(e) => handleInputChange('discount', e.target.value === '' ? undefined : Number(e.target.value))}
+                      placeholder="0.00"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Discount Type</label>
+                    <select
+                      className="form-select"
+                      value={formData.discountType || ''}
+                      onChange={(e) => handleInputChange('discountType', e.target.value || undefined)}
+                    >
+                      <option value="">No discount</option>
+                      <option value="PERCENTAGE">Percentage (%)</option>
+                      <option value="FLAT">Fixed Amount</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+
             {/* Image Upload Section */}
             <div className="form-section">
               <div className="section-header">
                 <div className="section-icon">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M9 16.2L4.8 12L3.4 13.4L9 19L21 7L19.6 5.6L9 16.2Z"/>
+                    <path d="M9 16.2L4.8 12L3.4 13.4L9 19L21 7L19.6 5.6L9 16.2Z" />
                   </svg>
                 </div>
                 <h3 className="section-title">Product Images</h3>
@@ -1253,7 +1300,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
               >
                 <div className="upload-icon">
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                    <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
                   </svg>
                 </div>
                 <div className="upload-text">Drop images here or click to browse</div>

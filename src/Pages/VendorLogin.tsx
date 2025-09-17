@@ -40,16 +40,16 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
       document.body.classList.remove("auth-modal--open");
     }
 
-    const handleClickOutside = (event: MouseEvent): void => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
+    // const handleClickOutside = (event: MouseEvent): void => {
+    //   if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+    //     onClose();
+    //   }
+    // };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    // document.addEventListener("mousedown", handleClickOutside);
+    // return () => {
+    //   document.removeEventListener("mousedown", handleClickOutside);
+    // };
   }, [isOpen, onClose]);
 
   // Handle countdown timer
