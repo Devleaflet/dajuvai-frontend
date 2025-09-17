@@ -31,7 +31,7 @@
 	flex-direction: column;
 	align-items: stretch;
 	position: relative;
-	z-index: -1;
+	z-index: 1;
 	padding: 1rem 0rem;
 	gap: 1rem;
 	box-sizing: border-box;
@@ -155,7 +155,7 @@
 	display: block;
 	width: 100%;
 	position: relative;
-	z-index: -1;
+	z-index: 1;
 }
 
 .shop {
@@ -169,7 +169,6 @@
 	overflow: visible;
 	grid-template-areas: "sidebar products";
 	align-items: start;
-	z-index: -1 !important;
 }
 
 /* FIXED RESPONSIVE GRID - Main Fix */
@@ -899,7 +898,6 @@
 	gap: 12px;
 	max-width: 800px;
 	align-items: center;
-	z-index: -1;
 }
 
 .search-input-container {
@@ -1142,7 +1140,7 @@
 		padding: 0;
 		z-index: 5;
 	}
-	 {
+	.search-form {
 		max-width: 100%;
 		gap: 6px;
 	}

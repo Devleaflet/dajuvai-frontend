@@ -1,4 +1,3 @@
-/* ProductCartd1.css - full file (integrated tooltip + layout) */
 
 /* Link wrapper */
 .product1__link-wrapper {
@@ -80,7 +79,6 @@
 .product1__wishlist-button:hover {
 	background: #ffffff;
 	transform: scale(1.1);
-	box-shadow: 0 4px 12px rgba(0, 0,
 }
 
 .product1__wishlist-button svg {
