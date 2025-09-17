@@ -148,7 +148,7 @@
   justify-content: center;
   color: rgb(0, 0, 0);
   cursor: pointer;
-  z-index: 10;
+  z-index: -1;
   transition: all 0.2s ease;
   pointer-events: auto;
 }

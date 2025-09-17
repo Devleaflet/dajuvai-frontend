@@ -175,7 +175,7 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
-  z-index: 3;
+  z-index: -1;
 }
 
 .product-card__wishlist-button:hover {
