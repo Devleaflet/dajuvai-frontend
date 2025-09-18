@@ -155,7 +155,6 @@
 	display: block;
 	width: 100%;
 	position: relative;
-	z-index: 1;
 }
 
 .shop {
@@ -306,7 +305,6 @@
 	position: fixed;
 	bottom: 80px;
 	right: 16px;
-	z-index: 999;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 	transition: all 0.3s ease;
 	touch-action: manipulation;
@@ -588,12 +586,12 @@
 	width: 100vw;
 	height: 100vh;
 	background: rgba(0, 0, 0, 0.5);
-	z-index: 10001;
 	backdrop-filter: blur(2px);
 	opacity: 0;
 	visibility: hidden;
 	transition: opacity 0.3s ease, visibility 0.3s ease;
 	pointer-events: none;
+	z-index: 998;
 }
 
 .filter-sidebar-overlay.open {
@@ -658,7 +656,6 @@
 		position: fixed !important;
 		top: 0 !important;
 		left: -100vw;
-		z-index: 10002;
 		margin: 0;
 		border-radius: 0;
 		box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
@@ -670,6 +667,7 @@
 		scrollbar-color: #e0e0e0 transparent;
 		padding: 20px;
 		box-sizing: border-box;
+		z-index: 999;
 	}
 	.filter-sidebar.open {
 		left: 0;

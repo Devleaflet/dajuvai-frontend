@@ -71,7 +71,7 @@
 	border-radius: 50%;
 	font-size: 30px;
 	cursor: pointer;
-	z-index: 10;
+	z-index: 1;
 	display: flex;
 	align-items: center;
 	justify-content: center;

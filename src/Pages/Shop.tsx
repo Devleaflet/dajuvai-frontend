@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../Components/Navbar";
-import ProductBanner from "../Components/ProductBanner";
 import CategorySlider from "../Components/CategorySlider";
 import Footer from "../Components/Footer";
+import PageLoader from "../Components/PageLoader";
 import { useQuery } from "@tanstack/react-query";
 import { fetchReviewOf } from "../api/products";
-import phone from "../assets/phone.png";
 import "../Styles/Shop.css";
 import CategoryService from "../services/categoryService";
 import { useAuth } from "../context/AuthContext";
@@ -14,8 +13,7 @@ import type { Product } from "../Components/Types/Product";
 import ProductCard1 from "../ALT/ProductCard1";
 import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
 import { API_BASE_URL } from "../config";
-import { Search, ChevronDown, ChevronUp } from "lucide-react";
-import { Settings2 } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Settings2 } from "lucide-react";
 
 // Interfaces (unchanged)
 interface Category {
@@ -498,6 +496,7 @@ const processProductWithReview = async (
 const Shop: React.FC = () => {
   const { token } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [loading, setLoading] = useState<boolean>(true);
   const [categorySearch, setCategorySearch] = useState<string>("");
   const [subcategorySearch, setSubcategorySearch] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<number | undefined>(
@@ -521,21 +520,20 @@ const Shop: React.FC = () => {
   const [isSubCategoryDropdownOpen, setIsSubCategoryDropdownOpen] =
     useState<boolean>(false);
 
-  const sidebarRef = useRef<HTMLDivElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const prevSearchQueryRef = useRef<string>("");
-  const prevSearchInputValueRef = useRef<string>("");
-  const prevSelectedCategoryRef = useRef<number | undefined>(undefined);
-  const prevSelectedSubcategoryRef = useRef<number | undefined>(undefined);
-  const prevSelectedBannerIdRef = useRef<string | undefined>(undefined);
-  const subcategoryInputRef = useRef<HTMLInputElement | null>(null);
-
   const currentFilters: ProductFilters = {
     categoryId: selectedCategory,
     subcategoryId: selectedSubcategory,
     bannerId: selectedBannerId,
     sort: sortBy,
   };
+
+  const hasActiveFilters = Boolean(
+    selectedCategory || 
+    selectedSubcategory || 
+    selectedBannerId || 
+    searchQuery.trim() ||
+    (sortBy && sortBy !== "all")
+  );
 
   useEffect(() => {
     const categoryIdParam = searchParams.get("categoryId");
@@ -544,44 +542,23 @@ const Shop: React.FC = () => {
     const searchParam = searchParams.get("search");
 
     const newCategoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
-    if (newCategoryId !== prevSelectedCategoryRef.current) {
-      setSelectedCategory(newCategoryId);
-      prevSelectedCategoryRef.current = newCategoryId;
-    }
+    setSelectedCategory(newCategoryId);
 
     const newSubcategoryId = subcategoryIdParam
       ? Number(subcategoryIdParam)
       : undefined;
-    if (newSubcategoryId !== prevSelectedSubcategoryRef.current) {
-      setSelectedSubcategory(newSubcategoryId);
-      prevSelectedSubcategoryRef.current = newSubcategoryId;
-    }
+    setSelectedSubcategory(newSubcategoryId);
 
     const newBannerId = bannerIdParam ? bannerIdParam : undefined;
-    if (newBannerId !== prevSelectedBannerIdRef.current) {
-      setSelectedBannerId(newBannerId);
-      prevSelectedBannerIdRef.current = newBannerId;
-    }
+    setSelectedBannerId(newBannerId);
 
     if (searchParam) {
       const decodedSearch = decodeURIComponent(searchParam);
-      if (decodedSearch !== prevSearchQueryRef.current) {
-        setSearchQuery(decodedSearch);
-        prevSearchQueryRef.current = decodedSearch;
-      }
-      if (decodedSearch !== prevSearchInputValueRef.current) {
-        setSearchInputValue(decodedSearch);
-        prevSearchInputValueRef.current = decodedSearch;
-      }
+      setSearchQuery(decodedSearch);
+      setSearchInputValue(decodedSearch);
     } else {
-      if (prevSearchQueryRef.current !== "") {
-        setSearchQuery("");
-        prevSearchQueryRef.current = "";
-      }
-      if (prevSearchInputValueRef.current !== "") {
-        setSearchInputValue("");
-        prevSearchInputValueRef.current = "";
-      }
+      setSearchQuery("");
+      setSearchInputValue("");
     }
   }, [searchParams]);
 
@@ -621,49 +598,8 @@ const Shop: React.FC = () => {
   }, [searchParams, setSearchParams]);
 
   useEffect(() => {
-    const sidebar = sidebarRef.current;
-
-    if (!sidebar) return;
-
-    const handleResize = () => {
-      if (window.innerWidth <= 992) {
-        sidebar.className = `filter-sidebar ${
-          isSidebarOpen ? "open" : ""
-        } mobile-fixed`;
-      } else {
-        sidebar.className = `filter-sidebar ${isSidebarOpen ? "open" : ""}`;
-      }
-    };
-
-    const handleScroll = () => {
-      const sidebar = sidebarRef.current;
-
-      if (sidebar && window.innerWidth > 992) {
-        sidebar.style.position = "";
-        sidebar.style.top = "";
-        sidebar.style.left = "";
-        sidebar.style.zIndex = "";
-      }
-    };
-
-    handleResize();
-    handleScroll();
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("scroll", handleScroll);
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [isSidebarOpen]);
-
-  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        isSidebarOpen &&
-        sidebarRef.current &&
-        !sidebarRef.current.contains(event.target as Node)
-      ) {
+      if (isSidebarOpen) {
         const target = event.target as Element;
         const isFilterButton = target.closest(".filter-button");
         const isOverlay = target.classList.contains("filter-sidebar-overlay");
@@ -1107,46 +1043,49 @@ const Shop: React.FC = () => {
     return getCurrentCategoryName();
   };
 
-  const hasActiveFilters =
-    selectedCategory !== undefined ||
-    selectedSubcategory !== undefined ||
-    selectedBannerId !== undefined ||
-    sortBy !== "all" ||
-    searchQuery.trim() !== "";
+  // Loading state management
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return <PageLoader />;
+  }
 
   if (productsError) {
     return (
-      <div className="shop-error">
+      <>
         <Navbar />
-        <div className="error-message">
-          <h2 className="error-title">Unable to Load Products</h2>
-          <p className="error-text">
-            {productsError instanceof Error
-              ? productsError.message
-              : "Unknown error occurred"}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="error-refresh-button"
-          >
-            Refresh Page
-          </button>
+        <div className="shop-error">
+          <div className="error-message">
+            <h2 className="error-title">Unable to Load Products</h2>
+            <p className="error-text">
+              {productsError instanceof Error
+                ? productsError.message
+                : "Unknown error occurred"}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="error-refresh-button"
+            >
+              Refresh Page
+            </button>
+          </div>
         </div>
         <Footer />
-      </div>
+      </>
     );
   }
 
   return (
     <>
-      {!isSidebarOpen && <Navbar />}
-      <ProductBanner />
+      <Navbar />
       <CategorySlider />
       <div className="shop-max-width-container">
-        <div
-          className="shop-container"
-          ref={containerRef}
-        >
+        <div className="shop-container">
           <div className="shop-header">
             <div className="shop-header-title">
               <h2 className="shop-title">
@@ -1206,10 +1145,7 @@ const Shop: React.FC = () => {
             </div>
           </div>
           <div className="shop-content">
-            <div
-              className="shop"
-              ref={containerRef}
-            >
+            <div className="shop">
               <button
                 className="filter-button"
                 onClick={toggleSidebar}
@@ -1228,7 +1164,6 @@ const Shop: React.FC = () => {
               />
               <div
                 className={`filter-sidebar ${isSidebarOpen ? "open" : ""}`}
-                ref={sidebarRef}
               >
                 <div className="filter-sidebar__header">
                   <h3>Filter</h3>
@@ -1319,9 +1254,6 @@ const Shop: React.FC = () => {
                               );
                               if (match) {
                                 handleCategoryChange(match.id);
-                                if (subcategoryInputRef.current) {
-                                  subcategoryInputRef.current.focus();
-                                }
                               }
                             }
                           }}
@@ -1425,7 +1357,6 @@ const Shop: React.FC = () => {
                       <div className="filter-sidebar__dropdown-content">
                         <div className="filter-sidebar__search-container">
                           <input
-                            ref={subcategoryInputRef}
                             type="text"
                             placeholder="Search subcategories..."
                             value={subcategorySearch}
