@@ -183,7 +183,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
               callbacks: {
                 label: (context) => {
                   if (context.dataset.label === "Total Sales") {
-                    return `₹ ${context.parsed.y}`;
+                    return `Rs ${context.parsed.y}`;
                   } else {
                     return `${context.parsed.y}`;
                   }
@@ -203,7 +203,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
                 color: "#e5e7eb",
               },
               ticks: {
-                callback: (value) => `₹${value}`,
+                callback: (value) => `Rs ${value}`,
               },
             },
           },
@@ -299,7 +299,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
             />
             <StatsCard
               title="Total Sales"
-              value={`₹${statsData?.totalSales?.toFixed(2) || "0.00"}`}
+              value={`Rs ${statsData?.totalSales?.toFixed(2) || "0.00"}`}
               iconType="sales"
               change={4.3}
               trend="down"
