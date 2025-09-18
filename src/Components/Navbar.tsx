@@ -38,6 +38,7 @@ import { API_BASE_URL } from "../config";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import VendorLogin from "../Pages/VendorLogin";
 import { toast } from "react-hot-toast";
+import { useUI } from "../context/UIContext";
 
 interface Category {
   id: number;
@@ -58,11 +59,10 @@ interface Subcategory {
 const Navbar: React.FC = () => {
   const { user, isAuthenticated, isLoading, logout: userLogout, fetchUserData } = useAuth();
   const { authState: vendorAuthState, logout: vendorLogout } = useVendorAuth();
+  const { cartOpen, setCartOpen, sideMenuOpen, setSideMenuOpen } = useUI();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState<boolean>(false);
-  const [sideMenuOpen, setSideMenuOpen] = useState<boolean>(false);
-  const [cartOpen, setCartOpen] = useState<boolean>(false);
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [vendorAuthModalOpen, setVendorAuthModalOpen] = useState<boolean>(false);
@@ -1154,6 +1154,7 @@ const Navbar: React.FC = () => {
         <div
           className={`navbar__side-cart ${cartOpen ? "navbar__side-cart--open" : ""}`}
           ref={sideCartRef}
+          style={{zIndex:'1500 !important'}}
         >
           <div className="navbar__side-cart-header">
             <button

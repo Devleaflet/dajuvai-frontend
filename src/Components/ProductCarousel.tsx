@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import "../Styles/ProductCarousel.css";
 import ProductCard from "./ProductCard";
 import type { Product } from "./Types/Product";
+import { useUI } from "../context/UIContext";
 
 interface ProductCarouselProps {
 	title: string;
@@ -28,6 +29,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
 	isLoading = false,
 	isHomepage = false,
 }) => {
+	const { cartOpen } = useUI();
 	const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 	const [showScrollButtons, setShowScrollButtons] = useState<boolean>(false);
 	const [showLeftButton, setShowLeftButton] = useState<boolean>(false);
@@ -196,7 +198,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
 			)}
 
 			<div className="product-carousel__container">
-				{showScrollButtons && showLeftButton && (
+				{showScrollButtons && showLeftButton && !cartOpen && (
 					<button
 						className="product-carousel__scroll-button product-carousel__scroll-button--left"
 						onClick={() => scroll("left")}
@@ -204,7 +206,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
 						<IoIosArrowDropleftCircle />
 					</button>
 				)}
-				{showScrollButtons && showRightButton && (
+				{showScrollButtons && showRightButton && !cartOpen && (
 					<button
 						className="product-carousel__scroll-button product-carousel__scroll-button--right"
 						onClick={() => scroll("right")}
