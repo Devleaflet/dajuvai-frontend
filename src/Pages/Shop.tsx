@@ -9,6 +9,7 @@ import { fetchReviewOf } from "../api/products";
 import "../Styles/Shop.css";
 import CategoryService from "../services/categoryService";
 import { useAuth } from "../context/AuthContext";
+import { useUI } from "../context/UIContext";
 import type { Product } from "../Components/Types/Product";
 import ProductCard1 from "../ALT/ProductCard1";
 import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
@@ -495,6 +496,7 @@ const processProductWithReview = async (
 // Rest of the Shop component (unchanged)
 const Shop: React.FC = () => {
   const { token } = useAuth();
+  const { cartOpen } = useUI();
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState<boolean>(true);
   const [categorySearch, setCategorySearch] = useState<string>("");
@@ -1098,46 +1100,48 @@ const Shop: React.FC = () => {
                 )}
               </h2>
             </div>
-            <div className="search-bar-container">
-              <form
-                onSubmit={handleSearchSubmit}
-                className="search-form"
-              >
-                <div
-                  className={`search-input-container ${
-                    searchInputValue ? "has-clear-button" : ""
-                  }`}
+            {!cartOpen && (
+              <div className="search-bar-container">
+                <form
+                  onSubmit={handleSearchSubmit}
+                  className="search-form"
                 >
-                  <input
-                    type="text"
-                    value={searchInputValue}
-                    onChange={handleSearchInputChange}
-                    placeholder="Search for products, brands, or categories..."
-                    className="search-input"
-                  />
-                  {searchInputValue && (
-                    <button
-                      type="button"
-                      onClick={handleClearSearch}
-                      className="search-clear-button"
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-                <button
-                  type="submit"
-                  className="search-button"
-                >
-                  <span className="search-text">Search</span>
-                  <Search
-                    size={15}
-                    color="white"
-                    className="search-icon"
-                  />
-                </button>
-              </form>
-            </div>
+                  <div
+                    className={`search-input-container ${
+                      searchInputValue ? "has-clear-button" : ""
+                    }`}
+                  >
+                    <input
+                      type="text"
+                      value={searchInputValue}
+                      onChange={handleSearchInputChange}
+                      placeholder="Search for products, brands, or categories..."
+                      className="search-input"
+                    />
+                    {searchInputValue && (
+                      <button
+                        type="button"
+                        onClick={handleClearSearch}
+                        className="search-clear-button"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    type="submit"
+                    className="search-button"
+                  >
+                    <span className="search-text">Search</span>
+                    <Search
+                      size={15}
+                      color="white"
+                      className="search-icon"
+                    />
+                  </button>
+                </form>
+              </div>
+            )}
             <div className="product-count">
               {isLoadingProducts
                 ? "Loading..."

@@ -23,6 +23,7 @@ import AuthModal from "../Components/AuthModal";
 import { Product } from "../Components/Types/Product";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { useUI } from "../context/UIContext";
 import { getProductPrimaryImage } from "../utils/getProductPrimaryImage";
 import "../ALT/ProductCartd1.css";
 
@@ -33,6 +34,7 @@ interface ProductCardProps {
 const Product1: React.FC<ProductCardProps> = ({ product }) => {
 	const { handleCartOnAdd } = useCart();
 	const { token, isAuthenticated } = useAuth();
+	const { cartOpen } = useUI();
 	const [wishlistLoading, setWishlistLoading] = useState(false);
 	const [authModalOpen, setAuthModalOpen] = useState(false);
 	const [imageError, setImageError] = useState(false);
@@ -250,54 +252,64 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 		>
 			<div className="product1">
 				<div className="product1__header">
-					<button
-						className="product1__wishlist-button"
-						aria-label={
-							isWishlisted ? "Remove from wishlist" : "Add to wishlist"
-						}
-						onClick={(e) => {
-							e.preventDefault();
-							e.stopPropagation();
-							handleWishlist();
-						}}
-						disabled={wishlistLoading}
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 24 24"
-							fill={isWishlisted ? "red" : "none"}
-							stroke={isWishlisted ? "red" : "currentColor"}
-							strokeWidth="2"
-						>
-							<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-						</svg>
-					</button>
-					{isBestSeller && <span className="product1__tag">Best seller</span>}
-				</div>
-				<div className="product1__image">
-					<img
-						src={displayImage}
-						alt={title || "Product image"}
-						onError={handleImageError}
-						loading="lazy"
-					/>
-					<div className="product1__cart-button">
-						<FaCartPlus
+					{!cartOpen && (
+						<button
+							className="product1__wishlist-button"
+							aria-label={
+								isWishlisted ? "Remove from wishlist" : "Add to wishlist"
+							}
 							onClick={(e) => {
 								e.preventDefault();
 								e.stopPropagation();
-								if (!token) {
-									setAuthModalOpen(true);
-									return;
-								}
-								const variantCount = product.variants?.length || 0;
-								const variantId =
-									variantCount > 0 ? product.variants![0].id : undefined;
-								handleCartOnAdd(product, 1, variantId);
+								handleWishlist();
 							}}
-						/>
-					</div>
+							disabled={wishlistLoading}
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								viewBox="0 0 24 24"
+								fill={isWishlisted ? "red" : "none"}
+								stroke={isWishlisted ? "red" : "currentColor"}
+								strokeWidth="2"
+							>
+								<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+							</svg>
+						</button>
+					)}
+					{isBestSeller && <span className="product1__tag">Best seller</span>}
 				</div>
+				{!cartOpen ? (
+					<div className="product1__image">
+						<img
+							src={displayImage}
+							alt={title || "Product image"}
+							onError={handleImageError}
+							loading="lazy"
+						/>
+						{!cartOpen && (
+							<div className="product1__cart-button">
+								<FaCartPlus
+									onClick={(e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										if (!token) {
+											setAuthModalOpen(true);
+											return;
+										}
+										const variantCount = product.variants?.length || 0;
+										const variantId =
+											variantCount > 0 ? product.variants![0].id : undefined;
+										handleCartOnAdd(product, 1, variantId);
+									}}
+								/>
+							</div>
+						)}
+					</div>
+				) : (
+					<div className="product1__image--skeleton">
+						<div className="product1__skeleton-box"></div>
+					</div>
+				)}
 				<div className="product1__rating">
 					<div className="product1__rating-info">
 						<span className="product1__rating-star">

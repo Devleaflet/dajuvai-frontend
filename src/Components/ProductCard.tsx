@@ -4,6 +4,7 @@ import { FaCartPlus } from "react-icons/fa";
 import { Product } from "./Types/Product";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { useUI } from "../context/UIContext";
 import {
 	addToWishlist,
 	removeFromWishlist,
@@ -24,6 +25,7 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 	const { handleCartOnAdd } = useCart();
 	const { token, isAuthenticated } = useAuth();
+	const { cartOpen } = useUI();
 	const [wishlistLoading, setWishlistLoading] = useState(false);
 	const [authModalOpen, setAuthModalOpen] = useState(false);
 	const [imageError, setImageError] = useState(false);
@@ -400,71 +402,81 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 					)}
 				</div>
 
-				<button
-					className="product-card__wishlist-button"
-					aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-					onClick={(e) => {
-						e.preventDefault();
-						e.stopPropagation();
-						handleWishlist();
-					}}
-					disabled={wishlistLoading}
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 24 24"
-						fill={isWishlisted ? "red" : "none"}
-						stroke={isWishlisted ? "red" : "currentColor"}
-						strokeWidth="2"
-					>
-						<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-					</svg>
-				</button>
-
-				<div className="product-card__image">
-					<img
-						src={displayImage}
-						alt={title || "Product image"}
-						onError={handleImageError}
-						loading="lazy"
-					/>
-
-					{productImages.length > 1 && (
-						<div className="product-card__pagination product-card__pagination--inside">
-							<div className="product-card__dots">
-								{productImages.slice(0, 5).map((_, index) => (
-									<span
-										key={index}
-										className={`product-card__dot ${
-											index === currentImageIndex
-												? "product-card__dot--active"
-												: ""
-										}`}
-										onClick={(e) => handleDotClick(index, e)}
-									/>
-								))}
-							</div>
-						</div>
-					)}
-				</div>
-
-				<div className="product-card__cart-button">
-					<FaCartPlus
-						style={{ color: "#ea5f0a", width: "25px" }}
+				{!cartOpen && (
+					<button
+						className="product-card__wishlist-button"
+						aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
 						onClick={(e) => {
 							e.preventDefault();
 							e.stopPropagation();
-							if (!isAuthenticated) {
-								setAuthModalOpen(true);
-								return;
-							}
-							const variantCount = product.variants?.length || 0;
-							const variantId =
-								variantCount > 0 ? product.variants![0].id : undefined;
-							handleCartOnAdd(product, 1, variantId);
+							handleWishlist();
 						}}
-					/>
-				</div>
+						disabled={wishlistLoading}
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 24 24"
+							fill={isWishlisted ? "red" : "none"}
+							stroke={isWishlisted ? "red" : "currentColor"}
+							strokeWidth="2"
+						>
+							<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+						</svg>
+					</button>
+				)}
+
+				{!cartOpen ? (
+					<div className="product-card__image">
+						<img
+							src={displayImage}
+							alt={title || "Product image"}
+							onError={handleImageError}
+							loading="lazy"
+						/>
+
+						{productImages.length > 1 && (
+							<div className="product-card__pagination product-card__pagination--inside">
+								<div className="product-card__dots">
+									{productImages.slice(0, 5).map((_, index) => (
+										<span
+											key={index}
+											className={`product-card__dot ${
+												index === currentImageIndex
+													? "product-card__dot--active"
+													: ""
+											}`}
+											onClick={(e) => handleDotClick(index, e)}
+										/>
+									))}
+								</div>
+							</div>
+						)}
+					</div>
+				) : (
+					<div className="product-card__image product-card__image--skeleton">
+						<div className="product-card__skeleton-box"></div>
+					</div>
+				)}
+
+				{!cartOpen && (
+					<div className="product-card__cart-button">
+						<FaCartPlus
+							style={{ color: "#ea5f0a", width: "25px" }}
+							onClick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								if (!isAuthenticated) {
+									setAuthModalOpen(true);
+									return;
+								}
+								const variantCount = product.variants?.length || 0;
+								const variantId =
+									variantCount > 0 ? product.variants![0].id : undefined;
+								handleCartOnAdd(product, 1, variantId);
+							}}
+						/>
+					</div>
+				)}
 
 				<div className="product__info">
 					<div className="product-card__rating">
