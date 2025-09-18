@@ -164,6 +164,8 @@
 	align-items: center;
 	width: 34px;
 	height: 34px;
+	border:1px solid gray;
+	z-index: 10;
 }
 
 .product-card__wishlist-button:hover {
@@ -263,7 +265,7 @@
 .product-card__cart-button {
 	position: absolute;
 	right: 10px;
-	top: 200px;
+	top: 220px;
 	border: none;
 	border-radius: 4px;
 	padding: 4px;
@@ -641,4 +643,7 @@
 .product-card__pagination--inside .product-card__dot {
 	pointer-events: auto;
 	/* Allow dots to be clickable */
+}
+.product-card__wishlist-button {
+	top:20px;
 }

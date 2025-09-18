@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { useQuery } from '@tanstack/react-query';
 import "../Styles/Dashboard.css";
@@ -37,7 +36,7 @@ interface LowStockData {
 export function Dashboard({ version = "123456" }: DashboardProps) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [days, setDays] = useState<number>(10); // State for days selector
-  const [page, setPage] = useState<number>(1); // State for pagination
+  const [showAllLowStock, setShowAllLowStock] = useState<boolean>(false); // State for showing more data
   const docketHeight = useDocketHeight();
   const chartRef = useRef<Chart | null>(null);
   const { authState } = useVendorAuth();
@@ -106,22 +105,35 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
     staleTime: 5 * 60 * 1000,
   });
 
-  // TanStack Query for low stock
+  // TanStack Query for low stock - fetch all data at once
   const {
     data: lowStockData,
     isLoading: lowStockLoading,
     isError: lowStockError,
     error: lowStockErrorObj,
   } = useQuery({
-    queryKey: ["vendor-low-stock", authState.token, page],
+    queryKey: ["vendor-low-stock", authState.token],
     queryFn: async () => {
       if (!authState.token) throw new Error("No authentication token available");
-      const response = await axiosInstance.get("/api/vendor/dashboard/low-stock", {
-        headers: { Authorization: `Bearer ${authState.token}` },
-        params: { page },
-      });
-      console.log("dataaaaa", response.data);
-      return response.data;
+      // Fetch all pages of data
+      let allData: any[] = [];
+      let currentPage = 1;
+      let totalPages = 1;
+      
+      do {
+        const response = await axiosInstance.get("/api/vendor/dashboard/low-stock", {
+          headers: { Authorization: `Bearer ${authState.token}` },
+          params: { page: currentPage },
+        });
+        
+        const responseData = response.data;
+        allData = [...allData, ...responseData.data];
+        totalPages = responseData.totalPage;
+        currentPage++;
+      } while (currentPage <= totalPages);
+
+      console.log("dataaaaa", { ...lowStockData, data: allData });
+      return { ...lowStockData, data: allData, totalData: allData.length };
     },
     enabled: !!authState.token,
     staleTime: 5 * 60 * 1000,
@@ -139,7 +151,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
   // Initialize Chart.js for Total Sales Chart
   useEffect(() => {
     const ctx = document.getElementById("sales-chart") as HTMLCanvasElement;
-
+      console.log("saless",salesData)
     if (ctx && salesData && salesData.labels.length > 0) {
       if (chartRef.current) {
         chartRef.current.destroy();
@@ -224,8 +236,14 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
     setDays(parseInt(event.target.value));
   };
 
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
+  const handleViewMore = () => {
+    setShowAllLowStock(!showAllLowStock);
+  };
+
+  // Get displayed data based on showAllLowStock state
+  const getDisplayedLowStockData = () => {
+    if (!lowStockData?.data) return [];
+    return showAllLowStock ? lowStockData.data : lowStockData.data.slice(0, 10);
   };
 
   if (statsLoading || salesLoading || lowStockLoading) {
@@ -273,6 +291,8 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
     return <div>Error: {statsErrorObj?.message || salesErrorObj?.message || lowStockErrorObj?.message}</div>;
   }
 
+  const displayedData = getDisplayedLowStockData();
+
   return (
     <div className="vendor-dash-container">
       <Sidebar />
@@ -285,33 +305,33 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
               title="Total Products"
               value={statsData?.totalProducts?.toString() || "0"}
               iconType="products"
-              change={8.5}
-              trend="up"
-              timeframe="from yesterday"
+              // change={8.5}
+              // trend="up"
+              // timeframe="from yesterday"
             />
             <StatsCard
               title="Total Orders"
               value={statsData?.totalOrders?.toString() || "0"}
               iconType="orders"
-              change={1.3}
-              trend="up"
-              timeframe="from past week"
+              // change={1.3}
+              // trend="up"
+              // timeframe="from past week"
             />
             <StatsCard
               title="Total Sales"
               value={`Rs ${statsData?.totalSales?.toFixed(2) || "0.00"}`}
               iconType="sales"
-              change={4.3}
-              trend="down"
-              timeframe="from yesterday"
+              // change={4.3}
+              // trend="down"
+              // timeframe="from yesterday"
             />
             <StatsCard
               title="Total Pending"
               value={statsData?.totalPendingOrders?.toString() || "0"}
               iconType="pending"
-              change={1.8}
-              trend="up"
-              timeframe="from yesterday"
+              // change={1.8}
+              // trend="up"
+              // timeframe="from yesterday"
             />
           </div>
           {/* Total Sales Chart Section */}
@@ -342,8 +362,18 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
           {/* Low Stock Table Section */}
           <div className="dashboard__table-section">
             <div className="section-card">
-              <h3>Low Stock Products</h3>
-              {lowStockData && lowStockData.data.length > 0 ? (
+              <div className="table-header-with-button">
+                <h3>Low Stock Products</h3>
+                {lowStockData && lowStockData.data.length > 10 && (
+                  <button 
+                    className="view-more-button" 
+                    onClick={handleViewMore}
+                  >
+                    {showAllLowStock ? 'Show Less' : `View More (${lowStockData.data.length - 10} more)`}
+                  </button>
+                )}
+              </div>
+              {displayedData.length > 0 ? (
                 <>
                   <div className="table-container">
                     <table className="low-stock-table">
@@ -351,45 +381,23 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
                         <tr>
                           <th>Product ID</th>
                           <th>Product Name</th>
-                          <th>Vendor ID</th>
-                          <th>Vendor Name</th>
                           <th>Stock</th>
                           <th>Variant Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {lowStockData.data.map((item) => (
+                        {console.log("low",lowStockData)}
+                        {displayedData.map((item) => (
                           <tr key={item.productid}>
                             <td>{item.productid}</td>
                             <td>{item.productname}</td>
-                            <td>{item.vendorid}</td>
-                            <td>{item.vendorname}</td>
                             <td>{item.stock}</td>
-                            <td>{item.variantStatus}</td>
+                            <td>{item.variantStatus || item.status}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  {lowStockData.totalPage > 1 && (
-                    <div className="pagination">
-                      <button
-                        onClick={() => handlePageChange(page - 1)}
-                        disabled={page === 1}
-                      >
-                        Previous
-                      </button>
-                      <span>
-                        Page {lowStockData.currentPage} of {lowStockData.totalPage}
-                      </span>
-                      <button
-                        onClick={() => handlePageChange(page + 1)}
-                        disabled={page === lowStockData.totalPage}
-                      >
-                        Next
-                      </button>
-                    </div>
-                  )}
                 </>
               ) : (
                 <p>No low stock data available.</p>
@@ -406,9 +414,9 @@ interface StatsCardProps {
   title: string;
   value: string;
   iconType: string;
-  change: number;
-  trend: "up" | "down";
-  timeframe: string;
+  change?: number;
+  trend?: "up" | "down";
+  timeframe?: string;
 }
 
 function StatsCard({ title, value, iconType, change, trend, timeframe }: StatsCardProps) {
@@ -423,7 +431,7 @@ function StatsCard({ title, value, iconType, change, trend, timeframe }: StatsCa
         <div className="stats-card__trend">
           <span className={`stats-card__trend-value stats-card__trend-value--${trend}`}>
             <span className={`stats-card__trend-icon stats-card__trend-icon--${trend}`}></span>
-            {change}%
+            {change}
           </span>
           <span className="stats-card__timeframe">{timeframe}</span>
         </div>

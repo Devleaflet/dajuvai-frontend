@@ -163,7 +163,7 @@
 
 .product-card__wishlist-button {
   position: relative;
-  top: 0.5rem;
+  top: -3px;
   right: 0.5rem;
   background: rgba(255, 255, 255, 0.9);
   border: none;
@@ -176,6 +176,7 @@
   cursor: pointer !important;
   transition: all 0.2s ease-in-out;
   z-index: auto !important;
+  border:1px solid rgb(214, 214, 214);
 }
 
 .product-card__wishlist-button:hover {
