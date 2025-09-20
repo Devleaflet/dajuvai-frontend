@@ -645,6 +645,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		z-index: 3;
 	}
 	.filter-sidebar {
 		width: 85vw;
