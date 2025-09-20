@@ -972,7 +972,11 @@
     }
 
     body.navbar--menu-open {
-        overflow-x: hidden;
+        overflow: hidden;
+    }
+
+    body.navbar--menu-open .navbar__mobile-dock {
+        display: none;
     }
 }
 
