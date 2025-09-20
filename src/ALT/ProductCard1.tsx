@@ -350,7 +350,10 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 			</div>
 			<AuthModal
 				isOpen={authModalOpen}
-				onClose={() => setAuthModalOpen(false)}
+				onClose={(e?: React.MouseEvent) => {
+					e?.stopPropagation();
+					setAuthModalOpen(false);
+				}}
 			/>
 		</Link>
 	);

@@ -12,7 +12,7 @@ import { Toaster, toast } from 'react-hot-toast';
 
 interface AuthModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (e?: React.MouseEvent) => void;
 }
 
 interface SignupResponse {
@@ -115,6 +115,23 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       setTouched({});
     }
   }, [isOpen]);
+
+  // Handle click outside to close modal
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        onClose(event as any);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, onClose]);
 
   const validateField = (name: string, value: string): string => {
     switch (name) {
@@ -640,7 +657,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       <Toaster position="top-center" />
       <div className="auth-modal__overlay"></div>
       <div className="auth-modal__content" ref={modalRef}>
-        <button className="auth-modal__close" onClick={onClose}>
+        <button className="auth-modal__close" onClick={(e) => onClose(e)}>
           <img src={close} alt="Close" />
         </button>
 
