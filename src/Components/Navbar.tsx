@@ -72,6 +72,7 @@ const Navbar: React.FC = () => {
   const [isCategoriesReady, setIsCategoriesReady] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [dropdownSubcategories, setDropdownSubcategories] = useState([]);
+  const [dropdownLoading, setDropdownLoading] = useState(false);
   const [sideMenuSubcategories, setSideMenuSubcategories] = useState<
     Record<number, Subcategory[]>
   >({});
@@ -581,7 +582,11 @@ const Navbar: React.FC = () => {
     
     return (
       <div className="navbar__dropdown-content">
-        {dropdownSubcategories.length > 0 ? (
+        {dropdownLoading ? (
+          <div className="navbar__dropdown-link" style={{ color: '#666', fontStyle: 'italic' }}>
+            Loading subcategories...
+          </div>
+        ) : dropdownSubcategories.length > 0 ? (
           dropdownSubcategories.map((subcategory: any) => (
             <Link
               key={subcategory.id}
@@ -596,7 +601,7 @@ const Navbar: React.FC = () => {
           ))
         ) : (
           <div className="navbar__dropdown-link" style={{ color: '#666', fontStyle: 'italic' }}>
-            Loading subcategories...
+            No subcategories
           </div>
         )}
       </div>
@@ -698,6 +703,7 @@ const Navbar: React.FC = () => {
   useEffect(() => {
     async function fetchSubs() {
       if (activeDropdown) {
+        setDropdownLoading(true);
         try {
           console.log('🔍 Fetching subcategories for category:', activeDropdown);
           const subs = await fetchSubCategory(activeDropdown);
@@ -706,9 +712,12 @@ const Navbar: React.FC = () => {
         } catch (error) {
           console.error('❌ Error fetching subcategories:', error);
           setDropdownSubcategories([]);
+        } finally {
+          setDropdownLoading(false);
         }
       } else {
         setDropdownSubcategories([]);
+        setDropdownLoading(false);
       }
     }
     fetchSubs();
