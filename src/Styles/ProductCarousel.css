@@ -41,6 +41,7 @@
 	-ms-overflow-style: none;
 	scrollbar-width: none;
 	width: 100%;
+	min-height: 320px;
 	cursor: pointer !important;
 }
 
@@ -607,7 +608,7 @@
 	}
 
 	.product-carousel__products {
-		min-height: 300px;
+		min-height: 320px;
 	}
 	.product-card__current-price {
 		font-size: 9px;
