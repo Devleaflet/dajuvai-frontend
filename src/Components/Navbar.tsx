@@ -1093,6 +1093,73 @@ const Navbar: React.FC = () => {
 										{isAuthenticated ? "Profile" : "Login"}
 									</span>
 								</div>
+			{isAuthenticated && profileDropdownOpen && (
+				<div
+					className="navbar__profile-dropdown-card"
+					ref={profileRef}
+					style={{
+						position: "absolute",
+						right: "16px",
+						zIndex: 9999,
+            top: "calc(100% + 8px)", // CHANGED: Positions below with small gap
+					}}
+				>
+					<div className="navbar__profile-card-header">
+						{getUserAvatar()}
+						<div className="navbar__profile-card-info">
+							<div className="navbar__profile-card-name">
+								{user?.username || user?.email}
+							</div>
+							{user?.email && (
+								<div className="navbar__profile-card-email">{user.email}</div>
+							)}
+						</div>
+					</div>
+					<div className="navbar__profile-card-divider" />
+					{user?.role === "admin" && (
+						<NavLink
+							to="/admin-dashboard"
+							className="navbar__profile-card-link"
+							onClick={() => setProfileDropdownOpen(false)}
+							style={({ isActive }) => ({
+								color: isActive ? "#f97316" : "inherit",
+							})}
+						>
+							<FaHome className="navbar__profile-card-icon" /> Admin Dashboard
+						</NavLink>
+					)}
+					{vendorAuthState.isAuthenticated && vendorAuthState.vendor && (
+						<NavLink
+							to="/dashboard"
+							className="navbar__profile-card-link"
+							onClick={() => setProfileDropdownOpen(false)}
+							style={({ isActive }) => ({
+								color: isActive ? "#f97316" : "inherit",
+							})}
+						>
+							<FaHome className="navbar__profile-card-icon" /> Vendor Dashboard
+						</NavLink>
+					)}
+					<NavLink
+						to="/user-profile"
+						className="navbar__profile-card-link"
+						onClick={() => setProfileDropdownOpen(false)}
+						style={({ isActive }) => ({
+							color: isActive ? "#f97316" : "inherit",
+						})}
+					>
+						<FaCog className="navbar__profile-card-icon" /> Settings
+					</NavLink>
+					<button
+						className="navbar__profile-card-link navbar__profile-card-link--logout"
+						onClick={handleFullLogout}
+					>
+						<FaSignOutAlt className="navbar__profile-card-icon" /> Log Out
+					</button>
+				</div>
+			)}
+
+
 							</div>
 
 							<NavLink
@@ -1491,71 +1558,7 @@ const Navbar: React.FC = () => {
 				</div>
 			</div>
 
-			{isAuthenticated && profileDropdownOpen && (
-				<div
-					className="navbar__profile-dropdown-card"
-					ref={profileRef}
-					style={{
-						position: "absolute",
-						top: "70px",
-						right: "16px",
-						zIndex: 9999,
-					}}
-				>
-					<div className="navbar__profile-card-header">
-						{getUserAvatar()}
-						<div className="navbar__profile-card-info">
-							<div className="navbar__profile-card-name">
-								{user?.username || user?.email}
-							</div>
-							{user?.email && (
-								<div className="navbar__profile-card-email">{user.email}</div>
-							)}
-						</div>
-					</div>
-					<div className="navbar__profile-card-divider" />
-					{user?.role === "admin" && (
-						<NavLink
-							to="/admin-dashboard"
-							className="navbar__profile-card-link"
-							onClick={() => setProfileDropdownOpen(false)}
-							style={({ isActive }) => ({
-								color: isActive ? "#f97316" : "inherit",
-							})}
-						>
-							<FaHome className="navbar__profile-card-icon" /> Admin Dashboard
-						</NavLink>
-					)}
-					{vendorAuthState.isAuthenticated && vendorAuthState.vendor && (
-						<NavLink
-							to="/dashboard"
-							className="navbar__profile-card-link"
-							onClick={() => setProfileDropdownOpen(false)}
-							style={({ isActive }) => ({
-								color: isActive ? "#f97316" : "inherit",
-							})}
-						>
-							<FaHome className="navbar__profile-card-icon" /> Vendor Dashboard
-						</NavLink>
-					)}
-					<NavLink
-						to="/user-profile"
-						className="navbar__profile-card-link"
-						onClick={() => setProfileDropdownOpen(false)}
-						style={({ isActive }) => ({
-							color: isActive ? "#f97316" : "inherit",
-						})}
-					>
-						<FaCog className="navbar__profile-card-icon" /> Settings
-					</NavLink>
-					<button
-						className="navbar__profile-card-link navbar__profile-card-link--logout"
-						onClick={handleFullLogout}
-					>
-						<FaSignOutAlt className="navbar__profile-card-icon" /> Log Out
-					</button>
-				</div>
-			)}
+
 
 			<div className="navbar__mobile-dock">
 				<NavLink
