@@ -282,7 +282,7 @@ export function AdminDashboard() {
               <>
                 <StatsCard
                   title="Total Sales"
-                  value={`₹ ${Number(stats.totalSales).toLocaleString("en-IN")}`}
+                  value={`Rs. ${Number(stats.totalSales).toLocaleString("en-IN")}`}
                   iconType="sales"
                   change={0}
                   trend="up"

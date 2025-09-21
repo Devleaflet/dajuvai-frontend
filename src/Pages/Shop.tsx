@@ -187,13 +187,6 @@ const buildQueryParams = (filters: ProductFilters): string => {
   if (filters.bannerId !== undefined && filters.bannerId !== null) {
     params.append("bannerId", filters.bannerId);
   }
-  if (
-    filters.sort !== undefined &&
-    filters.sort !== null &&
-    filters.sort !== "all"
-  ) {
-    params.append("sort", filters.sort);
-  }
   return params.toString();
 };
 
@@ -208,10 +201,20 @@ const fetchProductsWithFilters = async (
     }
     return { success: true, data: [] };
   }
-  const queryParams = buildQueryParams(filters);
+  
+  const apiFilters = {
+    categoryId: filters.categoryId,
+    subcategoryId: filters.subcategoryId,
+    brandId: filters.brandId,
+    dealId: filters.dealId,
+    bannerId: filters.bannerId
+  };
+  
+  const queryParams = buildQueryParams(apiFilters);
   const endpoint = `/api/categories/all/products${queryParams ? `?${queryParams}` : ""}`;
   console.log("🔍 Fetching products with filters:", {
-    filters,
+    filters: apiFilters,
+    originalFilters: filters,
     queryParams,
     endpoint,
     fullUrl: `${API_BASE_URL}${endpoint}`,
@@ -226,14 +229,13 @@ const fetchProductsWithFilters = async (
     console.error("❌ Request details:", {
       endpoint,
       fullUrl: `${API_BASE_URL}${endpoint}`,
-      filters,
+      filters: apiFilters,
       queryParams,
     });
     throw error;
   }
 };
 
-// Updated processProductWithReview function
 const processProductWithReview = async (
   item: ApiProduct
 ): Promise<Product> => {
@@ -493,7 +495,7 @@ const processProductWithReview = async (
   }
 };
 
-// Rest of the Shop component (unchanged)
+// Rest of the Shop component
 const Shop: React.FC = () => {
   const { token } = useAuth();
   const { cartOpen } = useUI();
@@ -522,11 +524,16 @@ const Shop: React.FC = () => {
   const [isSubCategoryDropdownOpen, setIsSubCategoryDropdownOpen] =
     useState<boolean>(false);
 
+  // Fixed currentFilters - only include filters that affect API calls, not sorting
   const currentFilters: ProductFilters = {
     categoryId: selectedCategory,
     subcategoryId: selectedSubcategory,
     bannerId: selectedBannerId,
-    sort: sortBy,
+  };
+
+  const queryKeyFilters = {
+    ...currentFilters,
+    sort: sortBy // Include sort in query key for proper cache management
   };
 
   const hasActiveFilters = Boolean(
@@ -542,6 +549,7 @@ const Shop: React.FC = () => {
     const subcategoryIdParam = searchParams.get("subcategoryId");
     const bannerIdParam = searchParams.get("bannerId");
     const searchParam = searchParams.get("search");
+    const sortParam = searchParams.get("sort");
 
     const newCategoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
     setSelectedCategory(newCategoryId);
@@ -553,6 +561,9 @@ const Shop: React.FC = () => {
 
     const newBannerId = bannerIdParam ? bannerIdParam : undefined;
     setSelectedBannerId(newBannerId);
+
+    const newSort = sortParam || "all";
+    setSortBy(newSort);
 
     if (searchParam) {
       const decodedSearch = decodeURIComponent(searchParam);
@@ -676,9 +687,11 @@ const Shop: React.FC = () => {
     isLoading: isLoadingProducts,
     error: productsError,
   } = useQuery({
-    queryKey: ["products", currentFilters],
+    // Use the comprehensive query key that includes sort for proper caching
+    queryKey: ["products", queryKeyFilters],
     queryFn: async () => {
       console.log("🔄 Starting products query with filters:", currentFilters);
+      console.log("🔄 Query key filters:", queryKeyFilters);
       try {
         const response = await fetchProductsWithFilters(currentFilters, token);
         let productsArray: ApiProduct[] = [];
@@ -760,7 +773,6 @@ const Shop: React.FC = () => {
           hasBrandId: !!currentFilters.brandId,
           hasDealId: !!currentFilters.dealId,
           hasBannerId: !!currentFilters.bannerId,
-          hasSort: !!currentFilters.sort,
           currentFilters,
         });
 
@@ -769,8 +781,7 @@ const Shop: React.FC = () => {
           currentFilters.subcategoryId ||
           currentFilters.brandId ||
           currentFilters.dealId ||
-          currentFilters.bannerId ||
-          currentFilters.sort
+          currentFilters.bannerId
         ) {
           console.log(
             "🔄 Trying fallback: fetching all products without filters"
@@ -964,6 +975,15 @@ const Shop: React.FC = () => {
 
   const handleSortChange = (newSort: string | undefined): void => {
     setSortBy(newSort || "all");
+
+    // Update searchParams to include the sort parameter while preserving other filters
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (newSort && newSort !== "all") {
+      newSearchParams.set("sort", newSort);
+    } else {
+      newSearchParams.delete("sort");
+    }
+    setSearchParams(newSearchParams);
 
     if (window.innerWidth <= 992) {
       setIsSidebarOpen(false);
