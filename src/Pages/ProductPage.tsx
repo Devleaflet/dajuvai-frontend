@@ -190,26 +190,26 @@ const ProductPage = () => {
 
       const productImages = Array.isArray(apiProduct.productImages)
         ? apiProduct.productImages
-            .map((img: any) => {
-              try {
-                let imgUrl = "";
-                if (typeof img === "string") {
-                  try {
-                    const parsed = JSON.parse(img);
-                    imgUrl = parsed.url || parsed.imageUrl || img;
-                  } catch {
-                    imgUrl = img;
-                  }
-                } else if (img && typeof img === "object") {
-                  imgUrl = img.url || img.imageUrl || "";
+          .map((img: any) => {
+            try {
+              let imgUrl = "";
+              if (typeof img === "string") {
+                try {
+                  const parsed = JSON.parse(img);
+                  imgUrl = parsed.url || parsed.imageUrl || img;
+                } catch {
+                  imgUrl = img;
                 }
-                return imgUrl ? toFullUrl(imgUrl) : "";
-              } catch (e) {
-                console.error("Error parsing product image:", e, img);
-                return "";
+              } else if (img && typeof img === "object") {
+                imgUrl = img.url || img.imageUrl || "";
               }
-            })
-            .filter(Boolean)
+              return imgUrl ? toFullUrl(imgUrl) : "";
+            } catch (e) {
+              console.error("Error parsing product image:", e, img);
+              return "";
+            }
+          })
+          .filter(Boolean)
         : [];
 
       const allImages = [...new Set([...productImages, ...variantImages])].filter(
@@ -255,16 +255,16 @@ const ProductPage = () => {
         apiProduct?.category?.id != null
           ? Number(apiProduct.category.id)
           : (apiProduct as any)?.categoryId != null
-          ? Number((apiProduct as any).categoryId)
-          : undefined;
+            ? Number((apiProduct as any).categoryId)
+            : undefined;
       const derivedCategoryName = apiProduct?.category?.name;
 
       const derivedSubcategoryId =
         apiProduct?.subcategory?.id != null
           ? Number(apiProduct.subcategory.id)
           : (apiProduct as any)?.subcategoryId != null
-          ? Number((apiProduct as any).subcategoryId)
-          : undefined;
+            ? Number((apiProduct as any).subcategoryId)
+            : undefined;
       const derivedSubcategoryName = apiProduct?.subcategory?.name;
 
       return {
@@ -284,16 +284,16 @@ const ProductPage = () => {
           category:
             derivedCategoryId != null
               ? {
-                  id: derivedCategoryId,
-                  name: derivedCategoryName || "Category",
-                }
+                id: derivedCategoryId,
+                name: derivedCategoryName || "Category",
+              }
               : undefined,
           subcategory:
             derivedSubcategoryId != null
               ? {
-                  id: derivedSubcategoryId,
-                  name: derivedSubcategoryName || "Subcategory",
-                }
+                id: derivedSubcategoryId,
+                name: derivedSubcategoryName || "Subcategory",
+              }
               : undefined,
           vendor: apiProduct.vendor || {
             id: null,
@@ -430,10 +430,10 @@ const ProductPage = () => {
           const vals = Array.isArray(attr?.values)
             ? attr.values.map((v: any) => String(v?.value ?? v)).filter(Boolean)
             : Array.isArray(attr?.attributeValues)
-            ? attr.attributeValues
+              ? attr.attributeValues
                 .map((v: any) => String(v?.value ?? v))
                 .filter(Boolean)
-            : [];
+              : [];
           return label && vals.length ? `${label}: ${vals.join(", ")}` : "";
         })
         .filter(Boolean)
@@ -615,6 +615,10 @@ const ProductPage = () => {
       return;
     }
     try {
+      if (product.hasVariants && !selectedVariant) {
+        toast.error("Please select a variant before proceeding.");
+        return;
+      }
       const variantId = selectedVariant?.id;
       await addToWishlist(product.id, variantId, token);
       toast.success("Added to wishlist");
@@ -639,21 +643,26 @@ const ProductPage = () => {
       return;
     }
     if (!product) return;
-    navigate("/checkout", {
-      state: {
-        buyNow: true,
-        products: [
-          {
-            product: {
-              ...product,
-              selectedColor,
-              price: getCurrentPrice().toFixed(2),
-              originalPrice:
-                getOriginalPrice() > getCurrentPrice()
-                  ? getOriginalPrice().toFixed(2)
-                  : undefined,
-              selectedVariant: selectedVariant
-                ? {
+
+    // check if the product has variants and no variant is seeclected.
+    if (product.hasVariants && !selectedVariant) {
+      toast.error("Please select a variant before proceeding.")
+    } else {
+      navigate("/checkout", {
+        state: {
+          buyNow: true,
+          products: [
+            {
+              product: {
+                ...product,
+                selectedColor,
+                price: getCurrentPrice().toFixed(2),
+                originalPrice:
+                  getOriginalPrice() > getCurrentPrice()
+                    ? getOriginalPrice().toFixed(2)
+                    : undefined,
+                selectedVariant: selectedVariant
+                  ? {
                     id: selectedVariant.id,
                     attributes: selectedVariant.attributes,
                     calculatedPrice: selectedVariant.calculatedPrice,
@@ -661,13 +670,14 @@ const ProductPage = () => {
                     stock: selectedVariant.stock,
                     variantImgUrls: selectedVariant.variantImgUrls,
                   }
-                : undefined,
+                  : undefined,
+              },
+              quantity,
             },
-            quantity,
-          },
-        ],
-      },
-    });
+          ],
+        },
+      });
+    }
   };
 
   const handleQuantityChange = (increment: boolean) => {
@@ -841,9 +851,8 @@ const ProductPage = () => {
                   )}
                   {isZoomActive && currentImage && (
                     <div
-                      className={`product-gallery__zoom-box ${
-                        isZoomActive ? "active" : ""
-                      }`}
+                      className={`product-gallery__zoom-box ${isZoomActive ? "active" : ""
+                        }`}
                       style={{
                         backgroundImage: `url(${currentImage})`,
                         backgroundSize: `${ZOOM_LEVEL * 100}%`,
@@ -859,11 +868,10 @@ const ProductPage = () => {
                     {currentImages.map((image: string, index: number) => (
                       <button
                         key={index}
-                        className={`product-gallery__thumbnail ${
-                          selectedImageIndex === index
-                            ? "product-gallery__thumbnail--active"
-                            : ""
-                        }`}
+                        className={`product-gallery__thumbnail ${selectedImageIndex === index
+                          ? "product-gallery__thumbnail--active"
+                          : ""
+                          }`}
                         onClick={() => handleImageSelect(index)}
                       >
                         {image && !imageError[index] ? (
@@ -981,15 +989,13 @@ const ProductPage = () => {
                                       return (
                                         <button
                                           key={optionValue}
-                                          className={`product-options__button${
-                                            isSelected
-                                              ? " product-options__button--active"
-                                              : ""
-                                          }${
-                                            isOutOfStock
+                                          className={`product-options__button${isSelected
+                                            ? " product-options__button--active"
+                                            : ""
+                                            }${isOutOfStock
                                               ? " product-options__button--disabled"
                                               : ""
-                                          }`}
+                                            }`}
                                           onClick={() => {
                                             if (isOutOfStock) {
                                               toast("This color is out of stock.");
@@ -1045,15 +1051,13 @@ const ProductPage = () => {
                                     return (
                                       <button
                                         key={optionValue}
-                                        className={`product-options__button${
-                                          isSelected
-                                            ? " product-options__button--active"
-                                            : ""
-                                        }${
-                                          isOutOfStock
+                                        className={`product-options__button${isSelected
+                                          ? " product-options__button--active"
+                                          : ""
+                                          }${isOutOfStock
                                             ? " product-options__button--disabled"
                                             : ""
-                                        }`}
+                                          }`}
                                         onClick={() => {
                                           if (isOutOfStock) {
                                             toast(`This ${attrType} is out of stock.`);
