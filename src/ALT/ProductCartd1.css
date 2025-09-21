@@ -222,7 +222,7 @@
 	font-weight: 600;
 	margin: 0px; /* Added bottom margin for spacing */
 	line-height: 1.2;
-	height: 40px;
+	height: 35px; 
 	color: #2d2d2d;
 	display: -webkit-box;
 	-webkit-line-clamp: 2;
@@ -392,7 +392,7 @@
 		font-weight: 600; /* Same as desktop */
 		margin: 0px; /* Same as desktop */
 		line-height: 1.2; /* Same as desktop */
-		height: 40px; /* Same as desktop */
+		height: 35px; /* Same as desktop */
 		color: #2d2d2d; /* Same as desktop */
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
@@ -466,7 +466,7 @@
 		font-weight: 600;
 		margin: 0px;
 		line-height: 1.2;
-		height: 40px;
+		height: 35px;
 		color: #2d2d2d;
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
@@ -514,7 +514,7 @@
 		font-weight: 600;
 		margin: 0px;
 		line-height: 1.2;
-		height: 40px;
+		height: 35px;
 		color: #2d2d2d;
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
@@ -597,7 +597,7 @@
 		font-weight: 600;
 		margin: 0px;
 		line-height: 1.2;
-		height: 40px;
+		height: 35px; 
 		color: #2d2d2d;
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
@@ -645,7 +645,7 @@
 		font-size: 10px;
 		margin: 0px;
 		line-height: 1.1;
-		height: 24px;
+		height: 35px; 
 	}
 
 	.product1__description {

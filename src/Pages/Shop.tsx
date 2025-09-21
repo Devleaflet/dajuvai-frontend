@@ -358,7 +358,7 @@ const processProductWithReview = async (
       price: displayPriceNum.toString(),
       rating: Number(averageRating) || 0,
       ratingCount: reviews?.length?.toString() || "0",
-      isBestSeller: item.stock > 20,
+      isBestSeller: false,
       freeDelivery: true,
       image: displayImage,
       productImages:
@@ -473,7 +473,7 @@ const processProductWithReview = async (
       price: displayPriceNum.toString(),
       rating: 0,
       ratingCount: "0",
-      isBestSeller: item.stock > 20,
+      isBestSeller: false,
       freeDelivery: true,
       image: displayImage,
       productImages:
