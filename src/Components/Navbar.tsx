@@ -51,6 +51,7 @@ interface Subcategory {
 	category_id: number;
 }
 
+
 const Navbar: React.FC = () => {
 	const {
 		user,
@@ -59,6 +60,7 @@ const Navbar: React.FC = () => {
 		logout: userLogout,
 		fetchUserData,
 	} = useAuth();
+  const mobileProfileRef = useRef<HTMLDivElement>(null);
 	const { authState: vendorAuthState, logout: vendorLogout } = useVendorAuth();
 	const { cartOpen, setCartOpen, sideMenuOpen, setSideMenuOpen } = useUI();
 	const [searchQuery, setSearchQuery] = useState<string>("");
@@ -850,39 +852,88 @@ const Navbar: React.FC = () => {
 									</span>
 								)}
 							</a>
-							<div
-								className="navbar__mobile-user"
-								ref={dropdownTriggerRef}
-							>
-								<div
-									className="navbar__mobile-avatar"
-									tabIndex={0}
-									role="button"
-									aria-label="Profile"
-									onClick={
-										isAuthenticated
-											? () => setProfileDropdownOpen((v) => !v)
-											: toggleAuthModal
-									}
-									onKeyDown={(e) => {
-										if (isAuthenticated && (e.key === "Enter" || e.key === " "))
-											setProfileDropdownOpen((v) => !v);
-										if (
-											!isAuthenticated &&
-											(e.key === "Enter" || e.key === " ")
-										) {
-											toggleAuthModal({
-												preventDefault: () => {},
-												stopPropagation: () => {},
-											} as unknown as React.MouseEvent);
-										}
-									}}
-									aria-haspopup="true"
-									aria-expanded={profileDropdownOpen}
-								>
-									{getUserAvatar()}
-								</div>
-							</div>
+<div className="navbar__mobile-user" ref={dropdownTriggerRef}>
+  <div className="navbar__mobile-avatar" tabIndex={0} role="button" aria-label="Profile"
+    onClick={isAuthenticated ? () => setProfileDropdownOpen((v) => !v) : toggleAuthModal}
+    onKeyDown={(e) => {
+      if (isAuthenticated && (e.key === "Enter" || e.key === " "))
+        setProfileDropdownOpen((v) => !v);
+      if (!isAuthenticated && (e.key === "Enter" || e.key === " ")) {
+        toggleAuthModal({
+          preventDefault: () => {},
+          stopPropagation: () => {},
+        } as unknown as React.MouseEvent);
+      }
+    }}
+    aria-haspopup="true"
+    aria-expanded={profileDropdownOpen}
+  >
+    {getUserAvatar()}
+  </div>
+  
+  {isAuthenticated && profileDropdownOpen && (
+    <div
+      className="navbar__profile-dropdown-card"
+      ref={mobileProfileRef}
+      style={{
+        zIndex: 9999,
+      }}
+    >
+      <div className="navbar__profile-card-header">
+        {getUserAvatar()}
+        <div className="navbar__profile-card-info">
+          <div className="navbar__profile-card-name">
+            {user?.username || user?.email}
+          </div>
+          {user?.email && (
+            <div className="navbar__profile-card-email">{user.email}</div>
+          )}
+        </div>
+      </div>
+      <div className="navbar__profile-card-divider" />
+      {user?.role === "admin" && (
+        <NavLink
+          to="/admin-dashboard"
+          className="navbar__profile-card-link"
+          onClick={() => setProfileDropdownOpen(false)}
+          style={({ isActive }) => ({
+            color: isActive ? "#f97316" : "inherit",
+          })}
+        >
+          <FaHome className="navbar__profile-card-icon" /> Admin Dashboard
+        </NavLink>
+      )}
+      {vendorAuthState.isAuthenticated && vendorAuthState.vendor && (
+        <NavLink
+          to="/dashboard"
+          className="navbar__profile-card-link"
+          onClick={() => setProfileDropdownOpen(false)}
+          style={({ isActive }) => ({
+            color: isActive ? "#f97316" : "inherit",
+          })}
+        >
+          <FaHome className="navbar__profile-card-icon" /> Vendor Dashboard
+        </NavLink>
+      )}
+      <NavLink
+        to="/user-profile"
+        className="navbar__profile-card-link"
+        onClick={() => setProfileDropdownOpen(false)}
+        style={({ isActive }) => ({
+          color: isActive ? "#f97316" : "inherit",
+        })}
+      >
+        <FaCog className="navbar__profile-card-icon" /> Settings
+      </NavLink>
+      <button
+        className="navbar__profile-card-link navbar__profile-card-link--logout"
+        onClick={handleFullLogout}
+      >
+        <FaSignOutAlt className="navbar__profile-card-icon" /> Log Out
+      </button>
+    </div>
+  )}
+</div>
 
 							<span className="navbar__social-link navbar__social-link--nepal">
 								<img
@@ -1093,17 +1144,17 @@ const Navbar: React.FC = () => {
 										{isAuthenticated ? "Profile" : "Login"}
 									</span>
 								</div>
-			{isAuthenticated && profileDropdownOpen && (
-				<div
-					className="navbar__profile-dropdown-card"
-					ref={profileRef}
-					style={{
-						position: "absolute",
-						right: "16px",
-						zIndex: 9999,
-            top: "calc(100% + 8px)", // CHANGED: Positions below with small gap
-					}}
-				>
+  {isAuthenticated && profileDropdownOpen && (
+    <div
+      className="navbar__profile-dropdown-card"
+      ref={profileRef}
+      style={{
+        position: "absolute",
+        top: "calc(100% + 10px)",
+        right: 0,
+        zIndex: 9999,
+      }}
+    >
 					<div className="navbar__profile-card-header">
 						{getUserAvatar()}
 						<div className="navbar__profile-card-info">
