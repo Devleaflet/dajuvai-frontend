@@ -55,6 +55,7 @@ import WebsiteComingSoon from "./Pages/WebsiteComingSoon";
 import VendorTerms from "./Pages/VendorTerms";
 import PasswordProtectedRoute from "./Components/SiteProtection/PasswordProtectedRoute";
 import EsewaPaymentFailure from "./Pages/EsewaPaymentFailure";
+import AdminProfile from "./Pages/AdminProfile";
 // import VendorLoginPage from "./Pages/VendorLoginPage";
 // import VendorSignupPage from "./Pages/VendorSignupPage";
 
@@ -451,6 +452,15 @@ function App() {
             </AdminOnlyRoute>
           }
         />
+      <Route
+          path="/admin-profile"
+          element={
+            <AdminOrStaffRoute>
+              <AdminProfile/>
+            </AdminOrStaffRoute>
+          }
+        />
+
         {/* Fallback Route */}
         <Route path="*" element={<PageNotFound />} />
       </Routes >

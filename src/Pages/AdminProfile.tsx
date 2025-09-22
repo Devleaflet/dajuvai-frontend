@@ -1,14 +1,14 @@
 import axios from "axios";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Popup from "reactjs-popup";
 import "reactjs-popup/dist/index.css";
-import Footer from "../Components/Footer";
-import Navbar from "../Components/Navbar";
 import axiosInstance from "../api/axiosInstance";
 import { API_BASE_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
 import "../Styles/AdminProfile.css";
+import { AdminSidebar } from "../Components/AdminSidebar";
+import Header from "../Components/Header";
 
 interface AdminDetails {
   id?: number;
@@ -300,11 +300,11 @@ const AdminProfile: React.FC = () => {
   const renderAdminDetails = () => {
     if (isLoading.fetchAdmin) {
       return (
-        <div className="profile-form">
+        <div className="admin-profile-form">
           {[...Array(4)].map((_, i) => (
             <div
               key={i}
-              className="skeleton skeleton-form-group"
+              className="admin-skeleton admin-skeleton-form-group"
               style={{ height: i === 0 ? "40px" : i === 3 ? "48px" : "auto" }}
             />
           ))}
@@ -314,16 +314,16 @@ const AdminProfile: React.FC = () => {
 
     if (!adminDetails)
       return (
-        <div className="profile-form__loading">
+        <div className="admin-profile-form__loading">
           Failed to load admin information
         </div>
       );
 
     return (
-      <div className="profile-form">
-        <h2 className="profile-form__title">Admin Details</h2>
-        <div className="profile-form__row">
-          <div className="profile-form__group profile-form__group--half">
+      <div className="admin-profile-form">
+        <h2 className="admin-profile-form__title">Admin Profile</h2>
+        <div className="admin-profile-form__row">
+          <div className="admin-profile-form__group admin-profile-form__group--half">
             <label>Full Name</label>
             {isEditing ? (
               <input
@@ -331,13 +331,13 @@ const AdminProfile: React.FC = () => {
                 name="fullName"
                 value={adminDetails.fullName ?? ""}
                 onChange={(e) => handleInputChange(e, "fullName")}
-                className="profile-form__input"
+                className="admin-profile-form__input"
               />
             ) : (
-              <div>{adminDetails.fullName || "Not provided"}</div>
+              <div className="admin-profile-form__display">{adminDetails.fullName || "Not provided"}</div>
             )}
           </div>
-          <div className="profile-form__group profile-form__group--half">
+          <div className="admin-profile-form__group admin-profile-form__group--half">
             <label>Username</label>
             {isEditing ? (
               <input
@@ -345,29 +345,15 @@ const AdminProfile: React.FC = () => {
                 name="username"
                 value={adminDetails.username ?? ""}
                 onChange={(e) => handleInputChange(e, "username")}
-                className="profile-form__input"
+                className="admin-profile-form__input"
               />
             ) : (
-              <div>{adminDetails.username || "Not provided"}</div>
+              <div className="admin-profile-form__display">{adminDetails.username || "Not provided"}</div>
             )}
           </div>
         </div>
-        <div className="profile-form__row">
-          <div className="profile-form__group profile-form__group--half">
-            <label>Email Address</label>
-            {isEditing ? (
-              <input
-                type="email"
-                name="email"
-                value={adminDetails.email ?? ""}
-                readOnly
-                className="profile-form__input"
-              />
-            ) : (
-              <div>{adminDetails.email}</div>
-            )}
-          </div>
-          <div className="profile-form__group profile-form__group--half">
+        <div className="admin-profile-form__row">
+          <div className="admin-profile-form__group admin-profile-form__group--half">
             <label>Phone Number</label>
             {isEditing ? (
               <input
@@ -375,24 +361,24 @@ const AdminProfile: React.FC = () => {
                 name="phoneNumber"
                 value={adminDetails.phoneNumber ?? ""}
                 onChange={(e) => handleInputChange(e, "phoneNumber")}
-                className="profile-form__input"
+                className="admin-profile-form__input"
               />
             ) : (
-              <div>{adminDetails.phoneNumber || "Not provided"}</div>
+              <div className="admin-profile-form__display">{adminDetails.phoneNumber || "Not provided"}</div>
             )}
           </div>
         </div>
         {isEditing ? (
-          <div className="profile-form__actions">
+          <div className="admin-profile-form__actions">
             <button
-              className="btn-edit--primary"
+              className="admin-btn-edit--primary"
               onClick={handleSave}
               disabled={isLoading.saveAdmin}
             >
               {isLoading.saveAdmin ? "Saving..." : "Save Changes"}
             </button>
             <button
-              className="btn-edit--secondary"
+              className="admin-btn-edit--secondary"
               onClick={() => {
                 setAdminDetails(originalDetails);
                 setIsEditing(false);
@@ -403,7 +389,7 @@ const AdminProfile: React.FC = () => {
           </div>
         ) : (
           <button
-            className="btn-edit--primary"
+            className="admin-btn-edit--primary"
             onClick={() => setIsEditing(true)}
           >
             Edit Profile
@@ -416,11 +402,11 @@ const AdminProfile: React.FC = () => {
   const renderCredentials = () => {
     if (isLoading.fetchAdmin) {
       return (
-        <div className="credentials">
+        <div className="admin-credentials">
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
-              className="skeleton skeleton-form-group"
+              className="admin-skeleton admin-skeleton-form-group"
               style={{ height: i === 0 ? "40px" : i === 4 ? "48px" : "auto" }}
             />
           ))}
@@ -429,15 +415,15 @@ const AdminProfile: React.FC = () => {
     }
 
     return (
-      <div className="credentials">
-        <h2 className="credentials__main-title">Account Security</h2>
-        <div className="credentials__header">
-          <p className="credentials__description">
+      <div className="admin-credentials">
+        <h2 className="admin-credentials__main-title">Account Security</h2>
+        <div className="admin-credentials__header">
+          <p className="admin-credentials__description">
             Manage your password and account security
           </p>
-          <div className="credentials__actions">
+          <div className="admin-credentials__actions">
             <button
-              className={`profile-form__help ${
+              className={`admin-profile-form__help ${
                 credentialsMode === "forgot" ? "active" : ""
               }`}
               onClick={() => setCredentialsMode("forgot")}
@@ -447,17 +433,17 @@ const AdminProfile: React.FC = () => {
           </div>
         </div>
         {credentialsMode === "forgot" && (
-          <div className="credentials__section">
+          <div className="admin-credentials__section">
             <h3>Reset Password</h3>
             <p>Enter your email address to receive a reset token.</p>
-            <div className="profile-form__group">
-              <label className="profile-form__label">Email Address</label>
-              <div className="credentials__email-display">
+            <div className="admin-profile-form__group">
+              <label className="admin-profile-form__label">Email Address</label>
+              <div className="admin-credentials__email-display">
                 {formState.email || adminDetails?.email || "No email available"}
               </div>
             </div>
             <button
-              className="btn btn--primary"
+              className="admin-btn admin-btn--primary"
               onClick={handleForgotPassword}
               disabled={isLoading.forgot}
             >
@@ -466,48 +452,51 @@ const AdminProfile: React.FC = () => {
           </div>
         )}
         {credentialsMode === "reset" && (
-          <div className="credentials__section">
+          <div className="admin-credentials__section">
             <h3>Enter Reset Token</h3>
             <p>Check your email for the reset token and enter your new password.</p>
-            <div className="profile-form__group">
-              <label className="profile-form__label">Reset Token</label>
+            <div className="admin-profile-form__group">
+              <label className="admin-profile-form__label">Reset Token</label>
               <input
                 type="text"
                 name="token"
                 placeholder="Enter reset token"
                 value={formState.token ?? ""}
                 onChange={(e) => handleInputChange(e, "token")}
+                className="admin-profile-form__input"
               />
             </div>
-            <div className="profile-form__group">
-              <label className="profile-form__label">New Password</label>
+            <div className="admin-profile-form__group">
+              <label className="admin-profile-form__label">New Password</label>
               <input
                 type="password"
                 name="newPassword"
                 placeholder="Enter new password"
                 value={formState.newPassword ?? ""}
                 onChange={(e) => handleInputChange(e, "newPassword")}
+                className="admin-profile-form__input"
               />
             </div>
-            <div className="profile-form__group">
-              <label className="profile-form__label">Confirm Password</label>
+            <div className="admin-profile-form__group">
+              <label className="admin-profile-form__label">Confirm Password</label>
               <input
                 type="password"
                 name="confirmPassword"
                 placeholder="Confirm new password"
                 value={formState.confirmPassword ?? ""}
                 onChange={(e) => handleInputChange(e, "confirmPassword")}
+                className="admin-profile-form__input"
               />
             </div>
-            <div className="credentials__actions-row">
+            <div className="admin-credentials__actions-row">
               <button
-                className="btn btn--secondary"
+                className="admin-btn admin-btn--secondary"
                 onClick={() => setCredentialsMode("forgot")}
               >
                 Back to Email
               </button>
               <button
-                className="btn btn--primary"
+                className="admin-btn admin-btn--primary"
                 onClick={handleResetPassword}
                 disabled={isLoading.reset}
               >
@@ -522,7 +511,6 @@ const AdminProfile: React.FC = () => {
 
   return (
     <>
-      <Navbar />
       <Popup
         open={!!popup}
         closeOnDocumentClick
@@ -542,9 +530,9 @@ const AdminProfile: React.FC = () => {
           backdropFilter: "blur(4px)",
         }}
       >
-        <div className={`popup-content ${popup?.type}`}>
-          <div className="popup-header">
-            <span className="popup-icon">
+        <div className={`admin-popup-content ${popup?.type}`}>
+          <div className="admin-popup-header">
+            <span className="admin-popup-icon">
               {popup?.type === "success" ? (
                 <svg
                   width="24"
@@ -576,73 +564,75 @@ const AdminProfile: React.FC = () => {
                 </svg>
               )}
             </span>
-            <span className="popup-title">
+            <span className="admin-popup-title">
               {popup?.type === "success" ? "Success" : "Error"}
             </span>
           </div>
-          <div className="popup-body">
+          <div className="admin-popup-body">
             <p>{popup?.content}</p>
           </div>
           <button
-            className="popup-close-btn"
+            className="admin-popup-close-btn"
             onClick={() => setPopup(null)}
           >
             Close
           </button>
         </div>
       </Popup>
-      <div className="profile">
-        <div className={`profile-card ${activeTab === "details" || activeTab === "credentials" ? "profile-card--wide" : ""}`}>
-          <div className="profile-sidebar">
-            {isLoading.fetchAdmin ? (
-              <>
-                <div className="skeleton skeleton-avatar" />
-                {[...Array(2)].map((_, i) => (
+      <div className="admin-profile">
+        <AdminSidebar />
+        <div className="admin-profile-main">
+          <Header showSearch={false} title="Admin Profile" />
+          <div className={`admin-profile-card ${activeTab === "details" || activeTab === "credentials" ? "admin-profile-card--wide" : ""}`}>
+            <div className="admin-profile-sidebar">
+              {isLoading.fetchAdmin ? (
+                <>
+                  <div className="admin-skeleton admin-skeleton-avatar" />
+                  {[...Array(2)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="admin-skeleton admin-skeleton-button"
+                    />
+                  ))}
+                </>
+              ) : (
+                <>
                   <div
-                    key={i}
-                    className="skeleton skeleton-button"
-                  />
-                ))}
-              </>
-            ) : (
-              <>
-                <div
-                  className="profile-sidebar__avatar"
-                  style={{
-                    backgroundColor: adminDetails?.username
-                      ? getAvatarColor(adminDetails.username)
-                      : "#f97316",
-                  }}
-                >
-                  {adminDetails?.username?.[0]?.toUpperCase() || "?"}
-                </div>
-                {(["details", "credentials"] as Tab[]).map((tab) => {
-                  if (tab === "credentials" && user?.provider === "google")
-                    return null;
-                  return (
-                    <button
-                      key={tab}
-                      onClick={() => handleTabChange(tab)}
-                      className={`profile-sidebar__button ${
-                        activeTab === tab
-                          ? "profile-sidebar__button--primary"
-                          : "profile-sidebar__button--secondary"
-                      }`}
-                    >
-                      {tab === "details" ? "Manage Details" : "Change Credentials"}
-                    </button>
-                  );
-                })}
-              </>
-            )}
-          </div>
-          <div className="profile-content">
-            {activeTab === "details" && renderAdminDetails()}
-            {activeTab === "credentials" && renderCredentials()}
+                    className="admin-profile-sidebar__avatar"
+                    style={{
+                      backgroundColor: adminDetails?.username
+                        ? getAvatarColor(adminDetails.username)
+                        : "#f97316",
+                    }}
+                  >
+                    {adminDetails?.username?.[0]?.toUpperCase() || "?"}
+                  </div>
+                  {(["details", "credentials"] as Tab[]).map((tab) => {
+                    if (tab === "credentials" && user?.provider === "google") return null;
+                    return (
+                      <button
+                        key={tab}
+                        onClick={() => handleTabChange(tab)}
+                        className={`admin-profile-sidebar__button ${
+                          activeTab === tab
+                            ? "admin-profile-sidebar__button--primary"
+                            : "admin-profile-sidebar__button--secondary"
+                        }`}
+                      >
+                        {tab === "details" ? "Manage Details" : "Change Credentials"}
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+            <div className="admin-profile-content">
+              {activeTab === "details" && renderAdminDetails()}
+              {activeTab === "credentials" && renderCredentials()}
+            </div>
           </div>
         </div>
       </div>
-      {!popup && <Footer />}
     </>
   );
 };
