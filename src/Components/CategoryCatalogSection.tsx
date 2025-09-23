@@ -219,7 +219,9 @@ const CategoryCatalogSection: React.FC = () => {
 							<h2 className="category-section__title">
 								{category.category.name}
 							</h2>
-							<button className="category-section__view-all">View All</button>
+							<a href={`/shop?categoryId=${catId}`}>
+								<button className="category-section__view-all">View All</button>
+							</a>
 						</div>
 						<div className="category-section__carousel-container">
 							{showScrollButtons && hasOverflow && !atStart && (
@@ -257,28 +259,33 @@ const CategoryCatalogSection: React.FC = () => {
 							>
 								{category?.category.subcategories ? (
 									category.category.subcategories.map((item) => (
-										<div
-											key={item.id}
-											className="category-section__subcategory-item"
+										<a
+											href={`/shop?categoryId=${catId}&subcategoryId=${item.id}`}
+											className="no-underline"
 										>
-											<div className="category-section__subcategory-image-container">
-												<img
-													src={item.image}
-													alt={item.name}
-													className="category-section__subcategory-image"
-													onError={(e) =>
-														console.log(
-															"Subcategory image failed to load:",
-															e,
-															item.name
-														)
-													}
-												/>
+											<div
+												key={item.id}
+												className="category-section__subcategory-item"
+											>
+												<div className="category-section__subcategory-image-container">
+													<img
+														src={item.image}
+														alt={item.name}
+														className="category-section__subcategory-image"
+														onError={(e) =>
+															console.log(
+																"Subcategory image failed to load:",
+																e,
+																item.name
+															)
+														}
+													/>
+												</div>
+												<p className="category-section__subcategory-name">
+													{item.name}
+												</p>
 											</div>
-											<p className="category-section__subcategory-name">
-												{item.name}
-											</p>
-										</div>
+										</a>
 									))
 								) : (
 									<p>No subcategories available</p>
