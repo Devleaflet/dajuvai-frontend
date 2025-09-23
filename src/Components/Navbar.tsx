@@ -24,7 +24,6 @@ import AuthModal from "./AuthModal";
 import { useCart } from "../context/CartContext";
 import { fetchCategory } from "../api/category";
 import { useCategory } from "../context/Category";
-import iphone from "../assets/iphone.jpg";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import { fetchSubCategory } from "../api/subcategory";
@@ -34,6 +33,7 @@ import { useVendorAuth } from "../context/VendorAuthContext";
 import VendorLogin from "../Pages/VendorLogin";
 import { toast } from "react-hot-toast";
 import { useUI } from "../context/UIContext";
+import Cart from "./Cart";
 
 interface Category {
 	id: number;
@@ -50,7 +50,6 @@ interface Subcategory {
 	name: string;
 	category_id: number;
 }
-
 
 const Navbar: React.FC = () => {
 	const {
@@ -94,7 +93,6 @@ const Navbar: React.FC = () => {
 	const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 	const sideMenuRef = useRef<HTMLDivElement>(null);
-	const sideCartRef = useRef<HTMLDivElement>(null);
 	const hamburgerRef = useRef<HTMLButtonElement>(null);
 	const cartButtonRef = useRef<HTMLAnchorElement>(null);
 	const profileRef = useRef<HTMLDivElement>(null);
@@ -104,10 +102,6 @@ const Navbar: React.FC = () => {
 
 	const {
 		cartItems,
-		handleCartItemOnDelete,
-		handleIncreaseQuantity,
-		handleDecreaseQuantity,
-		updatingItems,
 	} = useCart();
 
 	const cartOrderRef = useRef<Map<number, number>>(new Map());
@@ -272,23 +266,13 @@ const Navbar: React.FC = () => {
 			) {
 				toggleSideMenu();
 			}
-
-			if (
-				cartOpen &&
-				sideCartRef.current &&
-				!sideCartRef.current.contains(e.target as Node) &&
-				cartButtonRef.current &&
-				!cartButtonRef.current.contains(e.target as Node)
-			) {
-				toggleCart();
-			}
 		};
 
 		document.addEventListener("click", handleClickOutside);
 		return () => {
 			document.removeEventListener("click", handleClickOutside);
 		};
-	}, [sideMenuOpen, cartOpen]);
+	}, [sideMenuOpen]);
 
 	useEffect(() => {
 		let prevScrollPos = window.pageYOffset;
@@ -449,7 +433,7 @@ const Navbar: React.FC = () => {
 						product.productImages?.[0] ||
 						product.variants?.find((v: any) => v?.variantImages?.[0])
 							?.variantImages?.[0] ||
-						iphone,
+						"../assets/iphone.jpg",
 					matchScore: calculateMatchScore(product, searchTerm),
 				}))
 				.sort((a: any, b: any) => b.matchScore - a.matchScore)
@@ -475,55 +459,6 @@ const Navbar: React.FC = () => {
 		if (description.includes(searchTerm)) score += 10;
 
 		return score;
-	};
-
-	const formatAttributes = (attrs: any): string => {
-		if (!attrs) return "";
-		if (Array.isArray(attrs)) {
-			return attrs
-				.map((a) => {
-					if (!a) return "";
-					if (typeof a === "string") return a;
-					if (typeof a === "object") {
-						const key = a.key || a.name || a.attribute || Object.keys(a)[0];
-						const value = a.value || a.val || a.option || a[key];
-						return [key, value].filter(Boolean).join(": ");
-					}
-					return String(a);
-				})
-				.filter(Boolean)
-				.join(", ");
-		}
-		if (typeof attrs === "object") {
-			return Object.entries(attrs)
-				.map(([k, v]) => `${k}: ${v}`)
-				.join(", ");
-		}
-		return String(attrs);
-	};
-
-	const getCartVariantLabel = (item: any): string | null => {
-		try {
-			const name = item?.variant?.name || item?.selectedVariant?.name;
-			if (name && typeof name === "string") return name;
-
-			const candidates = [
-				item?.variant?.attributes,
-				item?.variant?.attributeValues,
-				item?.variant?.attrs,
-				item?.variant?.attributeSpecs,
-				item?.variantAttributes,
-				item?.attributes,
-			];
-			for (const c of candidates) {
-				const s = formatAttributes(c);
-				if (s) return s;
-			}
-
-			const sku = item?.variant?.sku || item?.sku || item?.variantSku;
-			if (sku) return `SKU: ${sku}`;
-		} catch {}
-		return null;
 	};
 
 	const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1347,149 +1282,13 @@ const Navbar: React.FC = () => {
 						</div>
 					</div>
 				</div>
-				<div
-					className={`navbar__side-cart ${
-						cartOpen ? "navbar__side-cart--open" : ""
-					}`}
-					ref={sideCartRef}
-					style={{ zIndex: "1500 !important" }}
-				>
-					<div className="navbar__side-cart-header">
-						<button
-							className="navbar__side-cart-close"
-							onClick={toggleCart}
-							aria-label="Close cart"
-						>
-							<FaTimes />
-						</button>
-						<h3 className="navbar__side-cart-title">Your Cart</h3>
-					</div>
 
-					<div className="navbar__side-cart-content">
-						{cartItems.length === 0 ? (
-							<>
-								<p className="navbar__side-cart-empty">Your cart is empty</p>
-								<Link
-									to="/shop"
-									className="navbar__side-cart-button"
-								>
-									Shop Now
-								</Link>
-							</>
-						) : (
-							<>
-								<div className="navbar__cart-items">
-									{stableCartItems.map((item) => (
-										<div
-											key={item.id}
-											className="navbar__cart-item"
-										>
-											<div className="navbar__cart-item-image">
-												<img
-													src={item.image || iphone}
-													alt={item.name}
-													onError={(e) => {
-														e.currentTarget.src = iphone;
-													}}
-												/>
-											</div>
-											<div className="navbar__cart-item-details">
-												<h4 className="navbar__cart-item-name">{item.name}</h4>
-												{(() => {
-													const label = getCartVariantLabel(item);
-													return label ? (
-														<small
-															style={{
-																display: "block",
-																color: "#666",
-																marginTop: 4,
-															}}
-														>
-															Variant: {label}
-														</small>
-													) : null;
-												})()}
-												<div className="navbar__cart-item-price-qty">
-													<span className="navbar__cart-item-price">
-														Rs. {item.price.toLocaleString("en-IN")}
-													</span>
-													<div
-														className="navbar__cart-item-quantity"
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: 8,
-														}}
-													>
-														<button
-															type="button"
-															aria-label="Decrease quantity"
-															className="navbar__qty-btn navbar__qty-btn--dec"
-															onClick={() => handleDecreaseQuantity(item.id, 1)}
-															disabled={!!updatingItems?.has?.(item.id)}
-															style={{
-																width: 28,
-																height: 28,
-																borderRadius: 4,
-																border: "1px solid #ddd",
-															}}
-														>
-															−
-														</button>
-														<span>{item.quantity}</span>
-														<button
-															type="button"
-															aria-label="Increase quantity"
-															className="navbar__qty-btn navbar__qty-btn--inc"
-															onClick={() => handleIncreaseQuantity(item.id, 1)}
-															disabled={!!updatingItems?.has?.(item.id)}
-															style={{
-																width: 28,
-																height: 28,
-																borderRadius: 4,
-																border: "1px solid #ddd",
-															}}
-														>
-															+
-														</button>
-													</div>
-												</div>
-											</div>
-											<button
-												className="navbar__cart-item-remove"
-												onClick={() => {
-													handleCartItemOnDelete(item);
-												}}
-											>
-												×
-											</button>
-										</div>
-									))}
-								</div>
-								<div className="navbar__cart-subtotal">
-									<span>Subtotal:</span>
-									<span>
-										Rs.{" "}
-										{cartItems
-											.reduce(
-												(total, item) => total + item.price * item.quantity,
-												0
-											)
-											.toLocaleString("en-IN")}
-									</span>
-								</div>
-								<div className="navbar__cart-buttons">
-									<Link
-										to="/checkout"
-										className="navbar__cart-button navbar__cart-button--checkout"
-									>
-										Checkout
-									</Link>
-								</div>
-							</>
-						)}
-					</div>
-				</div>
+				<Cart 
+					cartOpen={cartOpen} 
+					toggleCart={toggleCart}
+					cartButtonRef={cartButtonRef}
+					stableCartItems={stableCartItems}
+				/>
 
 				<div
 					className={`navbar__overlay ${
@@ -1532,8 +1331,6 @@ const Navbar: React.FC = () => {
 											const sliderRect =
 												sliderContainer.getBoundingClientRect();
 
-											// Calculate position accounting for slider scroll and viewport
-											// Use the element's current viewport position directly
 											const adjustedLeft = rect.left + window.scrollX;
 											const adjustedTop = rect.bottom + window.scrollY;
 
@@ -1609,8 +1406,6 @@ const Navbar: React.FC = () => {
 				</div>
 			</div>
 
-
-
 			<div className="navbar__mobile-dock">
 				<NavLink
 					to="/"
@@ -1672,7 +1467,6 @@ const Navbar: React.FC = () => {
 				onClose={() => setVendorAuthModalOpen(false)}
 			/>
 
-			{/* Portal for dropdown */}
 			{activeDropdown && dropdownPosition && (
 				<div
 					className="navbar__dropdown-portal"
@@ -1683,7 +1477,6 @@ const Navbar: React.FC = () => {
 						zIndex: 9999,
 					}}
 					onMouseEnter={() => {
-						// Keep the dropdown open when hovering over it
 						clearDropdownTimeout();
 					}}
 					onMouseLeave={() => {

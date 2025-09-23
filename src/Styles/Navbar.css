@@ -2,27 +2,14 @@
     text-decoration: none;
 }
 
-/* Add padding to body to account for fixed navbar */
-/* body {
-    
-    position: relative;
-    overflow-x: hidden;
-} */
-
 .navbar {
     width: 100%;
     background-color: #ffffff;
     font-family: 'Arial', sans-serif;
     position: static;
     z-index: auto;
-/*
-    left: 0;
-    right: 0;
-    will-change: auto;
-    transform: translateZ(0); */
 }
 
-/* Ensure navbar container doesn't clip dropdowns */
 .navbar__container {
     max-width: 1800px;
     margin: 0 auto;
@@ -31,7 +18,6 @@
     z-index: 1;
 }
 
-/* Ensure bottom navbar allows dropdown overflow */
 .navbar__bottom {
     display: flex;
     justify-content: space-between;
@@ -40,7 +26,7 @@
     border-top: 1px solid #f0f0f0;
     position: relative;
     z-index: 50;
-    overflow: visible; /* Critical for dropdown visibility */
+    overflow: visible;
 }
 
 .navbar__categories-container {
@@ -50,7 +36,7 @@
     width: 100%;
     max-width: calc(100% - 200px);
     z-index: 100;
-    overflow: visible; /* Critical for dropdown visibility */
+    overflow: visible;
 }
 
 .nav_bar_right {
@@ -60,7 +46,6 @@
     padding-top: 15px;
 }
 
-/* Top navbar styles */
 .navbar__top {
     display: flex;
     flex-direction: column;
@@ -125,13 +110,10 @@
     cursor: pointer;
 }
 
-/* Update Cart Icon Size */
 .navbar__account-icon {
     font-size: 40px;
-    /* Larger cart icon */
 }
 
-/* Enhanced search styles */
 .navbar__search {
     position: relative;
     width: 100%;
@@ -284,18 +266,15 @@
     gap: 5px;
 }
 
-/* Updated main navigation links for consistent font sizing */
 .navbar__link {
     margin-right: 20px;
     text-decoration: none;
     color: #42504b;
     font-size: 14px;
-    /* Reduced from 16px to match account links */
     display: flex;
     align-items: center;
     transition: color 0.2s, background 0.2s;
     font-weight: 500;
-    /* Added to match account link weight */
 }
 
 .navbar__link:hover,
@@ -375,7 +354,6 @@
     padding: 8px;
 }
 
-/* Overlay */
 .navbar__overlay {
     position: fixed;
     top: 0;
@@ -394,7 +372,6 @@
     visibility: visible;
 }
 
-/* Side menu */
 .navbar__side-menu {
     position: fixed;
     top: 0;
@@ -453,7 +430,6 @@
     border-bottom: none;
 }
 
-/* Mobile Categories */
 .navbar__side-menu-categories {
     padding: 15px;
     border-bottom: 1px solid #f0f0f0;
@@ -520,68 +496,6 @@
     gap: 15px;
 }
 
-/* Side cart */
-.navbar__side-cart {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 300px;
-    height: 100%;
-    background-color: white;
-    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-    z-index: 999999 !important;
-    overflow-y: auto;
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
-    will-change: transform;
-}
-
-.navbar__side-cart--open {
-    transform: translateX(0);
-}
-
-.navbar__side-cart-header {
-    display: flex;
-    align-items: center;
-    padding: 15px;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.navbar__side-cart-close {
-    background: none;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-    color: #333;
-    margin-right: 10px;
-}
-
-.navbar__side-cart-title {
-    font-size: 18px;
-    margin: 0;
-}
-
-.navbar__side-cart-content {
-    padding: 20px;
-    text-align: center;
-}
-
-.navbar__side-cart-empty {
-    margin-bottom: 20px;
-    color: #666;
-}
-
-.navbar__side-cart-button {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #ff6600;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-    font-weight: bold;
-}
-
-/* Bottom navbar styles */
 .navbar__bottom {
     display: flex;
     justify-content: space-between;
@@ -590,13 +504,12 @@
     border-top: 1px solid #f0f0f0;
 }
 
-/* CATEGORY SLIDER FUNCTIONALITY */
 .navbar__categories-container {
     position: relative;
     display: flex;
     align-items: center;
     width: 100%;
-    max-width: calc(100% - 200px); /* Reserve space for social links */
+    max-width: calc(100% - 200px);
 }
 
 .navbar__category-nav {
@@ -659,7 +572,6 @@
     display: none;
 }
 
-/* Individual Category Styling */
 .navbar__category {
     position: relative;
     flex-shrink: 0;
@@ -706,7 +618,6 @@
     transform: rotate(180deg);
 }
 
-/* DROPDOWN FUNCTIONALITY */
 .navbar__dropdown {
     position: absolute !important;
     top: 100% !important;
@@ -750,9 +661,6 @@
     padding: 0;
 }
 
-/* Removed old hover rule - now using portal-based dropdown */
-}
-
 .navbar__dropdown-content {
     padding: 8px 0 !important;
     max-height: 300px !important;
@@ -778,7 +686,6 @@
     color: #ff6b00 !important;
 }
 
-/* Social links section */
 .navbar__social {
     display: flex;
     align-items: center;
@@ -838,12 +745,10 @@
     margin-left: 20px;
 }
 
-/* Hide Nepal flag by default (mobile first) */
 .nepal-flag {
     display: none;
 }
 
-/* Show Nepal flag on desktop screens only */
 @media (min-width: 1100px) {
     .nepal-flag {
         display: block;
@@ -856,7 +761,6 @@
     }
 }
 
-/* Mobile dock */
 .navbar__mobile-dock {
     display: none;
     position: fixed;
@@ -896,7 +800,6 @@
     text-align: center;
 }
 
-/* Responsive styles */
 @media (min-width: 1100px) {
     .navbar__top {
         flex-direction: row;
@@ -926,17 +829,12 @@
         margin-left: 40px;
     }
 
-    .navbar__side-menu,
-    .navbar__side-cart {
+    .navbar__side-menu {
         display: none !important;
     }
 
     .navbar__hamburger {
         display: none !important;
-    }
-
-    .navbar__side-cart--open {
-        display: block !important;
     }
 }
 
@@ -980,7 +878,6 @@
     }
 }
 
-/* Responsive category slider adjustments */
 @media (max-width: 1200px) {
     .navbar__categories-container {
         max-width: calc(100% - 150px);
@@ -1049,8 +946,7 @@
         height: 80px;
     }
 
-    .navbar__side-menu,
-    .navbar__side-cart {
+    .navbar__side-menu {
         width: 85%;
     }
 
@@ -1121,173 +1017,6 @@
     font-size: 10px;
 }
 
-/* Cart items styling */
-.navbar__cart-items {
-    max-height: calc(100vh - 250px);
-    overflow-y: auto;
-    margin-bottom: 15px;
-}
-
-.navbar__cart-item {
-    display: flex;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid #f0f0f0;
-    position: relative;
-}
-
-.navbar__cart-item-image {
-    width: 60px;
-    height: 60px;
-    margin-right: 10px;
-    border: 1px solid #f0f0f0;
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.navbar__cart-item-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.navbar__cart-item-details {
-    flex: 1;
-}
-
-.navbar__cart-item-name {
-    font-size: 14px;
-    margin: 0 0 5px;
-    padding-right: 20px;
-    font-weight: 500;
-}
-
-.navbar__cart-item-price-qty {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 13px;
-}
-
-.navbar__cart-item-price {
-    font-weight: 500;
-    color: #ff6600;
-}
-
-.navbar__cart-item-quantity {
-    display: flex;
-    align-items: center;
-    border: 1px solid #ddd;
-    border-radius: 3px;
-}
-
-.navbar__cart-qty-btn {
-    width: 24px;
-    height: 24px;
-    background: #f5f5f5;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-}
-
-.navbar__cart-item-quantity span {
-    width: 24px;
-    text-align: center;
-    font-size: 13px;
-}
-
-.navbar__cart-item-remove {
-    position: absolute;
-    top: 10px;
-    right: 0;
-    background: none;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
-    color: #999;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.navbar__cart-item-remove:hover {
-    background-color: #ff4444;
-    color: white;
-}
-
-.navbar__cart-item-remove:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.navbar__cart-item-remove-loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-}
-
-.navbar__cart-item-remove-loading .spinner {
-    width: 12px;
-    height: 12px;
-    border: 2px solid #ffffff;
-    border-top: 2px solid transparent;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-.navbar__cart-subtotal {
-    display: flex;
-    justify-content: space-between;
-    padding: 15px 0;
-    border-top: 1px solid #f0f0f0;
-    font-weight: 500;
-    font-size: 16px;
-}
-
-.navbar__cart-buttons {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.navbar__cart-button {
-    flex: 1;
-    padding: 10px;
-    text-align: center;
-    text-decoration: none;
-    font-weight: 500;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-
-.navbar__cart-button--view {
-    background-color: #f5f5f5;
-    color: #333;
-    border: 1px solid #ddd;
-}
-
-.navbar__cart-button--checkout {
-    background-color: #ff6600;
-    color: white;
-    border: 1px solid #ff6600;
-}
-
-.navbar__cart-button--view:hover {
-    background-color: #e9e9e9;
-}
-
-.navbar__cart-button--checkout:hover {
-    background-color: #ff5500;
-}
-
-/* Account icon position relative for badge */
 .navbar__account-icon-link {
     position: relative;
 }
@@ -1298,11 +1027,9 @@
 
 .navbar__user-profile {
     margin-top: 0;
-    position: relative; /* Add this line */
-
+    position: relative;
 }
 
-/* Avatar styles */
 .navbar__user-avatar {
     display: flex;
     align-items: center;
@@ -1344,7 +1071,6 @@
     object-fit: cover;
 }
 
-/* Profile dropdown styles */
 .navbar__profile-dropdown {
     position: absolute;
     top: 48px;
@@ -1404,7 +1130,6 @@
     margin-top: 6px;
 }
 
-/* Responsive adjustments */
 @media (max-width: 600px) {
     .navbar__profile-dropdown {
         right: auto;
@@ -1419,7 +1144,6 @@
     }
 }
 
-/* Profile dropdown bar styles */
 .navbar__profile-dropdown-bar {
     position: absolute;
     left: 0;
@@ -1480,12 +1204,10 @@
     }
 }
 
-/* Remove old username styling from dropdown */
 .navbar__profile-username {
     display: none !important;
 }
 
-/* Profile dropdown card styles */
 .navbar__profile-dropdown-card {
     position: absolute;
     top: 92px;
@@ -1599,7 +1321,6 @@
     cursor: pointer;
 }
 
-/* Skeleton Loading Styles */
 .navbar__category-link.skeleton {
     background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
     background-size: 200% 100%;
@@ -1641,7 +1362,6 @@
     }
 }
 
-/* Responsive styles */
 @media (max-width: 768px) {
     .navbar__search {
         max-width: 100%;
@@ -1681,7 +1401,6 @@
     cursor: not-allowed;
 }
 
-/* Category Skeleton Loading */
 .navbar__side-menu-category.skeleton {
     padding: 0.75rem 1rem;
     margin-bottom: 0.5rem;
@@ -1702,7 +1421,6 @@
     padding: 1rem;
 }
 
-/* Side Menu Category Styles */
 .navbar__side-menu-category {
     border-bottom: 1px solid #eee;
 }
@@ -1753,7 +1471,6 @@
     transform: translateY(0);
 }
 
-/* Coming Soon Popup */
 .navbar__coming-soon-popup {
     position: fixed;
     top: 20px;
@@ -1816,7 +1533,6 @@
     opacity: 1;
 }
 
-/* Mobile coming soon popup adjustments */
 @media (max-width: 768px) {
     .navbar__coming-soon-popup {
         top: 10px;
@@ -1834,7 +1550,6 @@
     }
 }
 
-/* More Dropdown Styles */
 .navbar__more-dropdown {
     position: relative;
     display: inline-block;
@@ -1896,7 +1611,6 @@
     color: #ff6b00;
 }
 
-/* Enhanced focus states for accessibility */
 .navbar__link:focus,
 .navbar__account-link:focus,
 .navbar__search-button:focus,
@@ -1905,7 +1619,6 @@
     outline-offset: 2px;
 }
 
-/* Tooltip container (reusable) */
 .tooltip {
     position: relative;
     display: inline-block;
@@ -1913,7 +1626,6 @@
     font-size: 23px;
 }
 
-/* Hidden tooltip text */
 .tooltip .tooltip-text {
     visibility: hidden;
     opacity: 0;
@@ -1932,14 +1644,12 @@
     font-size: 0.85rem;
 }
 
-/* Show on hover or keyboard focus */
 .tooltip:hover .tooltip-text,
 .tooltip:focus .tooltip-text {
     visibility: visible;
     opacity: 1;
 }
 
-/* Tooltip arrow */
 .tooltip .tooltip-text::after {
     content: "";
     position: absolute;
@@ -1999,7 +1709,6 @@
     position: absolute !important;
     top: 100% !important;
     right: 0 !important;
-    /* left: auto !important; */
     bottom: auto !important;
     width: 270px !important;
     margin-top: 10px;
