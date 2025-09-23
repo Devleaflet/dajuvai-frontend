@@ -1,650 +1,472 @@
-import axios from "axios";
-import React, { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Popup from "reactjs-popup";
-import "reactjs-popup/dist/index.css";
-import Footer from "../Components/Footer";
-import Navbar from "../Components/Navbar";
-import axiosInstance from "../api/axiosInstance";
-import { API_BASE_URL } from "../config";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
+import { AdminSidebar } from "../Components/AdminSidebar";
+import Header from "../Components/Header";
+import Pagination from "../Components/Pagination";
+import DeleteModal from "../Components/Modal/DeleteModal";
+import EditProductModal from "../Components/Modal/EditProductModalRedesigned";
 import { useAuth } from "../context/AuthContext";
-import "../Styles/AdminProfile.css";
+import ProductService from "../services/productService";
+import "../Styles/AdminProduct.css";
+import { toast } from "react-hot-toast";
+import { ApiProduct } from "../Components/Types/ApiProduct";
+import { ProductFormData } from "../types/product";
+import { debounce } from "lodash";
+import defaultProductImage from "../assets/logo.webp";
 
-interface AdminDetails {
-  id?: number;
-  fullName: string;
-  username: string;
-  email?: string;
-  role?: string;
-  isVerified?: boolean;
-  phoneNumber: string;
-}
+const SkeletonRow: React.FC = () => (
+  <tr>
+    {[...Array(6)].map((_, i) => (
+      <td key={i}>
+        <div className="skeleton skeleton-text" />
+      </td>
+    ))}
+  </tr>
+);
 
-interface FormState {
-  email: string;
-  currentPassword?: string;
-  newPassword?: string;
-  confirmPassword?: string;
-  token?: string;
-}
-
-type Tab = "details" | "credentials";
-type CredentialsMode = "change" | "forgot" | "reset";
-
-const AdminProfile: React.FC = () => {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<Tab>("details");
-  const [isEditing, setIsEditing] = useState(false);
-  const [adminDetails, setAdminDetails] = useState<AdminDetails | null>({
-    fullName: "",
-    username: "",
-    email: "",
-    phoneNumber: "",
-    role: "",
-  });
-  const [originalDetails, setOriginalDetails] = useState<AdminDetails | null>(null);
-  const [formState, setFormState] = useState<FormState>({ email: "" });
-  const [credentialsMode, setCredentialsMode] = useState<CredentialsMode>("change");
-  const [isLoading, setIsLoading] = useState<{ [key: string]: boolean }>({});
-  const [popup, setPopup] = useState<{
-    type: "success" | "error";
-    content: string;
+const AdminProduct: React.FC = () => {
+  const { token, isAuthenticated, user } = useAuth();
+  const [products, setProducts] = useState<ApiProduct[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ApiProduct[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage] = useState(7);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<ApiProduct | null>(null);
+  const [productToEdit, setProductToEdit] = useState<ApiProduct | null>(null);
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof ApiProduct;
+    direction: "asc" | "desc";
   } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  // Add sort option state
+  const [sortOption, setSortOption] = useState<string>("newest");
 
-  const { user, isLoading: isAuthLoading, login, token } = useAuth();
-  const adminId = user?.id;
+  const productService = ProductService;
 
-  const getAvatarColor = (username: string) => {
-    const colors = [
-      "#4285F4",
-      "#DB4437",
-      "#F4B400",
-      "#0F9D58",
-      "#673AB7",
-      "#0097A7",
-    ];
-    const charCodeSum = username
-      .split("")
-      .reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    return colors[charCodeSum % colors.length];
-  };
-
-  const showPopup = (type: "success" | "error", content: string) => {
-    setPopup({ type, content });
-    setTimeout(() => setPopup(null), 3000);
-  };
-
-  const validateUsername = (username: string) =>
-    username.trim().length >= 3 && /^[a-zA-Z0-9_]+$/.test(username);
-  const validatePhoneNumber = (phoneNumber: string) =>
-    /^[0-9]{10}$/.test(phoneNumber);
-  const validateFullName = (fullName: string) => fullName.trim().length >= 2;
-
-  const handleError = (error: unknown, defaultMsg: string) => {
-    if (!axios.isAxiosError(error)) return showPopup("error", defaultMsg);
-    const { status, data } = error.response || {};
-    const messages: { [key: number]: string } = {
-      400: data?.message || "Invalid input. Please check your data.",
-      401: "Unauthorized: Invalid or missing token.",
-      403: "Forbidden: Not authorized.",
-      404: "Resource not found.",
-      409: data?.message || "This username is already in use.",
-      410: "Token expired. Please try again.",
-    };
-    if (typeof status === "number" && messages[status]) {
-      showPopup("error", messages[status]);
-    } else {
-      showPopup("error", defaultMsg);
+  // Fetch products
+  const fetchProducts = useCallback(async () => {
+    if (!token || !isAuthenticated) return;
+    
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await productService.getAllProducts(token);
+      setProducts(data);
+      setFilteredProducts(data);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to load products";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [token, isAuthenticated, productService]);
 
+  // Load products on mount and when token changes
   useEffect(() => {
-    if (isAuthLoading) return;
-    if (!adminId) {
-      fetch(`${API_BASE_URL}/api/auth/me`, {
-        credentials: "include",
-        headers: { Accept: "application/json" },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && data.data) {
-            login(null, {
-              id: data.data.userId,
-              email: data.data.email,
-              role: data.data.role,
-              username: data.data.email.split("@")[0],
-              isVerified: true,
-              provider: data.data.provider,
-            });
-          } else {
-            showPopup(
-              "error",
-              "Authentication details missing. Please log in again."
-            );
-          }
-        })
-        .catch(() => {
-          showPopup(
-            "error",
-            "Authentication details missing. Please log in again."
-          );
-        });
-      return;
-    }
+    fetchProducts();
+  }, [fetchProducts]);
 
-    const fetchAdminDetails = async () => {
-      setIsLoading((prev) => ({ ...prev, fetchAdmin: true }));
+  // Save callback from modal: modal already performed the API update (new JSON flow).
+  // Here we only refresh the list to reflect changes and close the modal.
+  const handleSaveProduct = useCallback(
+    async (
+      _productId: number,
+      _product: ProductFormData,
+      _categoryId: number,
+      _subcategoryId: number
+    ) => {
       try {
-        const headers: Record<string, string> = {};
-        const authToken = token || localStorage.getItem("authToken");
-
-        if (authToken) {
-          headers.Authorization = `Bearer ${authToken}`;
-        }
-
-        const response = await axiosInstance.get(`/api/auth/users/${adminId}`, {
-          headers,
-          withCredentials: true,
-          timeout: 5000,
-        });
-
-        const adminData = response.data.data;
-        const normalizedAdminData = {
-          ...adminData,
-          fullName: adminData.fullName || "",
-          phoneNumber: adminData.phoneNumber || "",
-        };
-
-        setAdminDetails(normalizedAdminData);
-        setOriginalDetails(normalizedAdminData);
-        setFormState((prev) => ({ ...prev, email: adminData.email }));
-      } catch (error) {
-        handleError(error, "Failed to load admin details");
-        setAdminDetails(null);
+        setIsUpdating(true);
+        await fetchProducts();
+        setShowEditModal(false);
+        setProductToEdit(null);
+        // Modal already shows success toast; keep page quiet.
+      } catch (err: unknown) {
+        console.error("AdminProduct: Error refreshing after update:", err);
+        const errorMessage = err instanceof Error ? err.message : "Failed to refresh products";
+        toast.error(errorMessage);
+        throw err; // let modal handle if needed
       } finally {
-        setIsLoading((prev) => ({ ...prev, fetchAdmin: false }));
+        setIsUpdating(false);
       }
-    };
-    fetchAdminDetails();
-  }, [adminId, isAuthLoading, login, token]);
+    },
+    [fetchProducts]
+  );
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    field: keyof FormState | keyof AdminDetails
-  ) => {
-    const value = e.target.value;
+  // Delete product function
+  const deleteProduct = useCallback(async (product: ApiProduct) => {
+    setIsDeleting(true);
+    try {
+      await productService.deleteProduct(
+        product.categoryId,
+        product.subcategory.id,
+        product.id
+      );
+      setProducts(prevProducts => prevProducts.filter(p => p.id !== product.id));
+      setFilteredProducts(prevProducts => prevProducts.filter(p => p.id !== product.id));
+      setShowDeleteModal(false);
+      setProductToDelete(null);
+      toast.success("Product deleted successfully");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to delete product";
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [productService]);
 
-    if (field in (adminDetails || {})) {
-      setAdminDetails((prev) => (prev ? { ...prev, [field]: value } : null));
+  // Debounced search
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((query: string) => {
+        setCurrentPage(1);
+        setSearchQuery(query);
+        const results = products.filter(
+          (product) =>
+            product.name.toLowerCase().includes(query.toLowerCase()) ||
+            product.description.toLowerCase().includes(query.toLowerCase())
+        );
+        setFilteredProducts(results);
+      }, 300),
+    [products]
+  );
+
+  // Update filtered products when products change
+  useEffect(() => {
+    if (searchQuery) {
+      debouncedSearch(searchQuery);
     } else {
-      setFormState((prev) => ({ ...prev, [field]: value }));
+      setFilteredProducts(products);
     }
-  };
+  }, [products, searchQuery, debouncedSearch]);
 
-  const handleTabChange = (tab: Tab) => {
-    if (isEditing && originalDetails) {
-      setAdminDetails(originalDetails);
-      setIsEditing(false);
+  const handleSearch = useCallback(
+    (query: string) => {
+      debouncedSearch(query);
+    },
+    [debouncedSearch]
+  );
+
+  // Column sort handler (for table headers)
+  const handleColumnSort = useCallback((key: keyof ApiProduct) => {
+    setSortConfig((prev) => {
+      const direction =
+        prev?.key === key && prev.direction === "asc" ? "desc" : "asc";
+      return { key, direction };
+    });
+  }, []);
+
+  // Dropdown sort handler (for Header component)
+  const handleSort = useCallback((newSortOption: string) => {
+    setSortOption(newSortOption);
+    setCurrentPage(1); // Reset to first page when sorting changes
+  }, []);
+
+  // Sort products function
+  const sortProducts = useCallback((products: ApiProduct[], sortOption: string) => {
+    const sorted = [...products];
+    
+    switch (sortOption) {
+      case 'newest':
+        return sorted.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+      case 'oldest':
+        return sorted.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+      case 'price-asc':
+        return sorted.sort((a, b) => (a.basePrice || 0) - (b.basePrice || 0));
+      case 'price-desc':
+        return sorted.sort((a, b) => (b.basePrice || 0) - (a.basePrice || 0));
+      case 'name-asc':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'name-desc':
+        return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      default:
+        return sorted;
     }
-    setActiveTab(tab);
-    setCredentialsMode("change");
-    setFormState({ email: formState.email });
-  };
+  }, []);
 
-  const handleSave = async () => {
-    if (!adminDetails) return showPopup("error", "Admin details missing.");
-    if (!validateUsername(adminDetails.username))
-      return showPopup(
-        "error",
-        "Username must be 3+ characters and alphanumeric."
-      );
-    if (!validateFullName(adminDetails.fullName))
-      return showPopup("error", "Full name must be at least 2 characters.");
-    if (
-      adminDetails.phoneNumber &&
-      !validatePhoneNumber(adminDetails.phoneNumber)
-    )
-      return showPopup("error", "Phone number must be 10 digits.");
-
-    setIsLoading((prev) => ({ ...prev, saveAdmin: true }));
-
-    try {
-      const headers: Record<string, string> = {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      };
-      const authToken = token || localStorage.getItem("authToken");
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`;
-      }
-
-      const requestData = {
-        fullName: adminDetails.fullName,
-        username: adminDetails.username,
-        phoneNumber: adminDetails.phoneNumber,
-      };
-
-      const response = await axiosInstance.put(
-        `/api/auth/users/${adminId}`,
-        requestData,
-        {
-          withCredentials: true,
-          headers,
-        }
-      );
-
-      if (response.data.success) {
-        const updatedData = response.data.data;
-        const normalizedUpdatedData = {
-          ...updatedData,
-        };
-
-        setAdminDetails(normalizedUpdatedData);
-        setOriginalDetails(normalizedUpdatedData);
-        setIsEditing(false);
-        showPopup("success", "Profile updated successfully!");
-      } else {
-        showPopup("error", response.data.message || "Failed to update profile");
-      }
-    } catch (error) {
-      handleError(error, "Failed to update profile");
-    } finally {
-      setIsLoading((prev) => ({ ...prev, saveAdmin: false }));
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    if (!formState.email)
-      return showPopup("error", "Please enter your email address");
-    setIsLoading((prev) => ({ ...prev, forgot: true }));
-    try {
-      await axiosInstance.post(`/api/auth/forgot-password`, {
-        email: formState.email,
+  const sortedAndFilteredProducts = useMemo(() => {
+    let filtered = [...filteredProducts];
+    
+    // Apply dropdown sorting first
+    filtered = sortProducts(filtered, sortOption);
+    
+    // Then apply any table column sorting if needed
+    if (sortConfig) {
+      filtered.sort((a, b) => {
+        const aValue = a[sortConfig.key] ?? "";
+        const bValue = b[sortConfig.key] ?? "";
+        const isNumeric = ["id", "basePrice", "stock"].includes(sortConfig.key);
+        const aCompare = isNumeric
+          ? Number(aValue)
+          : aValue.toString().toLowerCase();
+        const bCompare = isNumeric
+          ? Number(bValue)
+          : bValue.toString().toLowerCase();
+        return sortConfig.direction === "asc"
+          ? aCompare < bCompare
+            ? -1
+            : 1
+          : aCompare > bCompare
+          ? -1
+          : 1;
       });
-      showPopup("success", "Password reset email sent! Check your inbox.");
-      setCredentialsMode("reset");
-    } catch (error) {
-      handleError(error, "Failed to send reset email");
-    } finally {
-      setIsLoading((prev) => ({ ...prev, forgot: false }));
     }
-  };
+    
+    return filtered;
+  }, [filteredProducts, sortOption, sortConfig, sortProducts]);
 
-  const handleResetPassword = async () => {
-    if (formState.newPassword !== formState.confirmPassword)
-      return showPopup("error", "Passwords do not match!");
-    if (!formState.token)
-      return showPopup("error", "Please enter the reset token");
-    setIsLoading((prev) => ({ ...prev, reset: true }));
+  const currentProducts = useMemo(
+    () =>
+      sortedAndFilteredProducts.slice(
+        (currentPage - 1) * productsPerPage,
+        currentPage * productsPerPage
+      ),
+    [sortedAndFilteredProducts, currentPage, productsPerPage]
+  );
+
+  const handleEditProduct = useCallback((product: ApiProduct) => {
+    console.log("AdminProduct: Opening edit modal for product:", product);
+    setProductToEdit(product);
+    setShowEditModal(true);
+  }, []);
+
+  const handleDeleteProduct = useCallback(async () => {
+    if (!productToDelete) return;
     try {
-      await axiosInstance.post(`/api/auth/reset-password`, {
-        newPass: formState.newPassword,
-        confirmPass: formState.confirmPassword,
-        token: formState.token,
-      });
-      showPopup("success", "Password reset successful!");
-      setCredentialsMode("change");
-      setFormState((prev) => ({
-        ...prev,
-        newPassword: "",
-        confirmPassword: "",
-        token: "",
-      }));
-    } catch (error) {
-      handleError(error, "Failed to reset password");
-    } finally {
-      setIsLoading((prev) => ({ ...prev, reset: false }));
+      await deleteProduct(productToDelete);
+    } catch (err: unknown) {
+      console.error("AdminProduct: Error deleting product:", err);
     }
-  };
+  }, [productToDelete, deleteProduct]);
 
-  const renderAdminDetails = () => {
-    if (isLoading.fetchAdmin) {
-      return (
-        <div className="profile-form">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="skeleton skeleton-form-group"
-              style={{ height: i === 0 ? "40px" : i === 3 ? "48px" : "auto" }}
-            />
-          ))}
-        </div>
-      );
-    }
-
-    if (!adminDetails)
-      return (
-        <div className="profile-form__loading">
-          Failed to load admin information
-        </div>
-      );
-
+  if (!isAuthenticated || !token) {
     return (
-      <div className="profile-form">
-        <h2 className="profile-form__title">Admin Details</h2>
-        <div className="profile-form__row">
-          <div className="profile-form__group profile-form__group--half">
-            <label>Full Name</label>
-            {isEditing ? (
-              <input
-                type="text"
-                name="fullName"
-                value={adminDetails.fullName ?? ""}
-                onChange={(e) => handleInputChange(e, "fullName")}
-                className="profile-form__input"
-              />
-            ) : (
-              <div>{adminDetails.fullName || "Not provided"}</div>
-            )}
-          </div>
-          <div className="profile-form__group profile-form__group--half">
-            <label>Username</label>
-            {isEditing ? (
-              <input
-                type="text"
-                name="username"
-                value={adminDetails.username ?? ""}
-                onChange={(e) => handleInputChange(e, "username")}
-                className="profile-form__input"
-              />
-            ) : (
-              <div>{adminDetails.username || "Not provided"}</div>
-            )}
+      <div className="admin-products">
+        <AdminSidebar />
+        <div className="admin-products__content">
+          <div className="admin-products__error">
+            Please log in to access product management.
           </div>
         </div>
-        <div className="profile-form__row">
-          <div className="profile-form__group profile-form__group--half">
-            <label>Email Address</label>
-            {isEditing ? (
-              <input
-                type="email"
-                name="email"
-                value={adminDetails.email ?? ""}
-                readOnly
-                className="profile-form__input"
-              />
-            ) : (
-              <div>{adminDetails.email}</div>
-            )}
-          </div>
-          <div className="profile-form__group profile-form__group--half">
-            <label>Phone Number</label>
-            {isEditing ? (
-              <input
-                type="text"
-                name="phoneNumber"
-                value={adminDetails.phoneNumber ?? ""}
-                onChange={(e) => handleInputChange(e, "phoneNumber")}
-                className="profile-form__input"
-              />
-            ) : (
-              <div>{adminDetails.phoneNumber || "Not provided"}</div>
-            )}
-          </div>
-        </div>
-        {isEditing ? (
-          <div className="profile-form__actions">
-            <button
-              className="btn-edit--primary"
-              onClick={handleSave}
-              disabled={isLoading.saveAdmin}
-            >
-              {isLoading.saveAdmin ? "Saving..." : "Save Changes"}
-            </button>
-            <button
-              className="btn-edit--secondary"
-              onClick={() => {
-                setAdminDetails(originalDetails);
-                setIsEditing(false);
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button
-            className="btn-edit--primary"
-            onClick={() => setIsEditing(true)}
-          >
-            Edit Profile
-          </button>
-        )}
       </div>
     );
-  };
-
-  const renderCredentials = () => {
-    if (isLoading.fetchAdmin) {
-      return (
-        <div className="credentials">
-          {[...Array(5)].map((_, i) => (
-            <div
-              key={i}
-              className="skeleton skeleton-form-group"
-              style={{ height: i === 0 ? "40px" : i === 4 ? "48px" : "auto" }}
-            />
-          ))}
-        </div>
-      );
-    }
-
-    return (
-      <div className="credentials">
-        <h2 className="credentials__main-title">Account Security</h2>
-        <div className="credentials__header">
-          <p className="credentials__description">
-            Manage your password and account security
-          </p>
-          <div className="credentials__actions">
-            <button
-              className={`profile-form__help ${
-                credentialsMode === "forgot" ? "active" : ""
-              }`}
-              onClick={() => setCredentialsMode("forgot")}
-            >
-              Forgot Password
-            </button>
-          </div>
-        </div>
-        {credentialsMode === "forgot" && (
-          <div className="credentials__section">
-            <h3>Reset Password</h3>
-            <p>Enter your email address to receive a reset token.</p>
-            <div className="profile-form__group">
-              <label className="profile-form__label">Email Address</label>
-              <div className="credentials__email-display">
-                {formState.email || adminDetails?.email || "No email available"}
-              </div>
-            </div>
-            <button
-              className="btn btn--primary"
-              onClick={handleForgotPassword}
-              disabled={isLoading.forgot}
-            >
-              {isLoading.forgot ? "Sending..." : "Send Reset Email"}
-            </button>
-          </div>
-        )}
-        {credentialsMode === "reset" && (
-          <div className="credentials__section">
-            <h3>Enter Reset Token</h3>
-            <p>Check your email for the reset token and enter your new password.</p>
-            <div className="profile-form__group">
-              <label className="profile-form__label">Reset Token</label>
-              <input
-                type="text"
-                name="token"
-                placeholder="Enter reset token"
-                value={formState.token ?? ""}
-                onChange={(e) => handleInputChange(e, "token")}
-              />
-            </div>
-            <div className="profile-form__group">
-              <label className="profile-form__label">New Password</label>
-              <input
-                type="password"
-                name="newPassword"
-                placeholder="Enter new password"
-                value={formState.newPassword ?? ""}
-                onChange={(e) => handleInputChange(e, "newPassword")}
-              />
-            </div>
-            <div className="profile-form__group">
-              <label className="profile-form__label">Confirm Password</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                placeholder="Confirm new password"
-                value={formState.confirmPassword ?? ""}
-                onChange={(e) => handleInputChange(e, "confirmPassword")}
-              />
-            </div>
-            <div className="credentials__actions-row">
-              <button
-                className="btn btn--secondary"
-                onClick={() => setCredentialsMode("forgot")}
-              >
-                Back to Email
-              </button>
-              <button
-                className="btn btn--primary"
-                onClick={handleResetPassword}
-                disabled={isLoading.reset}
-              >
-                {isLoading.reset ? "Resetting..." : "Reset Password"}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
+  }
 
   return (
-    <>
-      <Navbar />
-      <Popup
-        open={!!popup}
-        closeOnDocumentClick
-        onClose={() => {
-          setPopup(null);
-          window.location.reload();
-        }}
-        contentStyle={{
-          borderRadius: "12px",
-          maxWidth: "400px",
-          background: "transparent",
-          padding: 0,
-          border: "none",
-        }}
-        overlayStyle={{
-          backgroundColor: "rgba(0, 0, 0, 0.6)",
-          backdropFilter: "blur(4px)",
-        }}
-      >
-        <div className={`popup-content ${popup?.type}`}>
-          <div className="popup-header">
-            <span className="popup-icon">
-              {popup?.type === "success" ? (
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-              ) : (
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-              )}
-            </span>
-            <span className="popup-title">
-              {popup?.type === "success" ? "Success" : "Error"}
-            </span>
+    <div className="admin-products">
+      <AdminSidebar />
+      <div className="admin-products__content">
+        {error && (
+          <div className="admin-products__error">
+            {error}
+            <button onClick={fetchProducts}>Retry</button>
           </div>
-          <div className="popup-body">
-            <p>{popup?.content}</p>
+        )}
+        <Header 
+          onSearch={handleSearch} 
+          showSearch 
+          onSort={handleSort}
+          sortOption={sortOption}
+          title="Product Management"
+        />
+        <div className="admin-products__list-container">
+          <div className="admin-products__header">
+            <h2>Product Management</h2>
           </div>
-          <button
-            className="popup-close-btn"
-            onClick={() => setPopup(null)}
-          >
-            Close
-          </button>
-        </div>
-      </Popup>
-      <div className="profile">
-        <div className={`profile-card ${activeTab === "details" || activeTab === "credentials" ? "profile-card--wide" : ""}`}>
-          <div className="profile-sidebar">
-            {isLoading.fetchAdmin ? (
-              <>
-                <div className="skeleton skeleton-avatar" />
-                {[...Array(2)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="skeleton skeleton-button"
-                  />
-                ))}
-              </>
-            ) : (
-              <>
-                <div
-                  className="profile-sidebar__avatar"
-                  style={{
-                    backgroundColor: adminDetails?.username
-                      ? getAvatarColor(adminDetails.username)
-                      : "#f97316",
-                  }}
-                >
-                  {adminDetails?.username?.[0]?.toUpperCase() || "?"}
-                </div>
-                {(["details", "credentials"] as Tab[]).map((tab) => {
-                  if (tab === "credentials" && user?.provider === "google")
-                    return null;
-                  return (
-                    <button
-                      key={tab}
-                      onClick={() => handleTabChange(tab)}
-                      className={`profile-sidebar__button ${
-                        activeTab === tab
-                          ? "profile-sidebar__button--primary"
-                          : "profile-sidebar__button--secondary"
-                      }`}
+          <div className="admin-products__table-container">
+            <table className="admin-products__table">
+              <thead className="admin-products__table-head">
+                <tr>
+                  <th>Image</th>
+                  {['id', 'name', 'basePrice', 'stock'].map((key) => (
+                    <th
+                      key={key}
+                      onClick={() => handleColumnSort(key as keyof ApiProduct)}
+                      className="sortable"
                     >
-                      {tab === "details" ? "Manage Details" : "Change Credentials"}
-                    </button>
-                  );
-                })}
-              </>
-            )}
+                      {key.charAt(0).toUpperCase() + key.slice(1)}{' '}
+                      {sortConfig?.key === key &&
+                        (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                    </th>
+                  ))}
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  [...Array(productsPerPage)].map((_, i) => (
+                    <SkeletonRow key={i} />
+                  ))
+                ) : currentProducts.length > 0 ? (
+                  currentProducts.map((product) => {
+                    const firstVariant = product.hasVariants && product.variants && product.variants.length > 0
+                      ? product.variants[0]
+                      : null;
+                    // Variant price may be provided as `price` (number) or `basePrice` (string/number) from API
+                    const variantPrice: number | undefined = (() => {
+                      if (!product.hasVariants || !product.variants || product.variants.length === 0) return undefined;
+                      const getVarPrice = (v: any): number | undefined => {
+                        if (typeof v?.price === 'number' && isFinite(v.price) && v.price > 0) return v.price;
+                        if (typeof v?.basePrice === 'string') {
+                          const parsed = parseFloat(v.basePrice);
+                          if (isFinite(parsed) && parsed > 0) return parsed;
+                        }
+                        if (typeof v?.basePrice === 'number' && isFinite(v.basePrice) && v.basePrice > 0) return v.basePrice;
+                        return undefined;
+                      };
+                      for (const v of product.variants as any[]) {
+                        const p = getVarPrice(v);
+                        if (p && p > 0) return p;
+                      }
+                      return undefined;
+                    })();
+                    console.log(typeof product.basePrice)
+                    const displayPrice = ((typeof product.basePrice === 'number' || typeof Number(product.basePrice) === "number" )&& product.basePrice > 0)
+                      ? product.basePrice
+                      : (variantPrice ?? 0);
+                    const displayStock = product.stock && product.stock > 0 ? product.stock : (firstVariant?.stock ?? 0);
+                    // Only use string URLs for image src
+                    const variantImgStr = firstVariant
+                      ? (
+                          (Array.isArray(firstVariant.variantImages) && typeof firstVariant.variantImages[0] === 'string'
+                            ? (firstVariant.variantImages[0] as string)
+                            : undefined) ||
+                          (Array.isArray(firstVariant.images) && typeof firstVariant.images[0] === 'string'
+                            ? (firstVariant.images[0] as string)
+                            : undefined)
+                        )
+                      : undefined;
+                    const displayImage: string = (product.productImages?.[0]) || variantImgStr || (defaultProductImage as string);
+                    return (
+                      <tr key={product.id} className="admin-products__table-row">
+                        <td className="admin-products__image-cell">
+                          <img
+                            src={displayImage}
+                            alt={product.name}
+                            className="admin-products__product-image"
+                          />
+                        </td>
+                        <td>{product.id}</td>
+                        <td>{product.name}</td>
+                        <td>Rs. {displayPrice.toFixed ? displayPrice.toFixed(2) : Number(displayPrice).toFixed(2)}</td>
+                        <td>{displayStock}</td>
+                        <td>
+                          <div className="admin-products__actions">
+                          <button
+                            className="admin-products__action-btn admin-products__edit-btn"
+                            onClick={() => handleEditProduct(product)}
+                            disabled={isUpdating}
+                            aria-label="Edit product"
+                          >
+                            <svg
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                d="M18.5 2.50023C18.8978 2.10243 19.4374 1.87891 20 1.87891C20.5626 1.87891 21.1022 2.10243 21.5 2.50023C21.8978 2.89804 22.1213 3.43762 22.1213 4.00023C22.1213 4.56284 21.8978 5.10243 21.5 5.50023L12 15.0002L8 16.0002L9 12.0002L18.5 2.50023Z"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            className="admin-products__action-btn admin-products__delete-btn"
+                            onClick={() => {
+                              setProductToDelete(product);
+                              setShowDeleteModal(true);
+                            }}
+                            disabled={isDeleting}
+                            aria-label="Delete product"
+                          >
+                            <svg
+                              width="20"
+                              height="20"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M3 6H5H21"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                d="M8 6V4C8 2.96957 8.21071 2.46086 8.58579 2.08579C8.96086 1.71071 9.46957 1.5 10 1.5H14C14.5304 1.5 15.0391 1.71071 15.4142 2.08579C15.7893 2.46086 16 2.96957 16 3.5V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="admin-products__no-data">
+                      No products found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-          <div className="profile-content">
-            {activeTab === "details" && renderAdminDetails()}
-            {activeTab === "credentials" && renderCredentials()}
+          <div className="admin-products__pagination-container">
+            <div className="admin-products__pagination-info">
+              Showing {(currentPage - 1) * productsPerPage + 1}-
+              {Math.min(currentPage * productsPerPage, sortedAndFilteredProducts.length)}{" "}
+              out of {sortedAndFilteredProducts.length}
+            </div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(sortedAndFilteredProducts.length / productsPerPage)}
+              onPageChange={setCurrentPage}
+            />
           </div>
         </div>
       </div>
-      {!popup && <Footer />}
-    </>
+      <EditProductModal
+        show={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setProductToEdit(null);
+        }}
+        onSave={handleSaveProduct}
+        product={productToEdit}
+      />
+      <DeleteModal
+        show={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setProductToDelete(null);
+        }}
+        onDelete={handleDeleteProduct}
+        productName={productToDelete?.name || "Product"}
+      />
+    </div>
   );
 };
 
-export default AdminProfile;
+export default AdminProduct;

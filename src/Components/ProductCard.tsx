@@ -235,86 +235,56 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 		setCurrentImageIndex(index);
 	};
 
-	// Price calculation helpers and variant-aware display price
-	const calculatePrice = (
-		basePrice: string | number,
-		discountVal?: string | number,
-		discountType?: string | null
-	): number => {
-		const base =
-			typeof basePrice === "string"
-				? parseFloat(basePrice)
-				: Number(basePrice) || 0;
-		if (!discountVal || !discountType) return base;
-		const dVal =
-			typeof discountVal === "string"
-				? parseFloat(discountVal)
-				: Number(discountVal) || 0;
-		if (discountType === "PERCENTAGE") return base * (1 - dVal / 100);
-		if (discountType === "FIXED" || discountType === "FLAT") return base - dVal;
-		return base;
-	};
+const calculatePrice = (
+	basePrice: string | number,
+	discountVal?: string | number,
+	discountType?: string | null
+): number => {
+	const base =
+		typeof basePrice === "string"
+			? parseFloat(basePrice)
+			: Number(basePrice) || 0;
+	if (!discountVal || !discountType) return base;
+	const dVal =
+		typeof discountVal === "string"
+			? parseFloat(discountVal)
+			: Number(discountVal) || 0;
+	if (discountType === "PERCENTAGE") return base * (1 - dVal / 100);
+	if (discountType === "FIXED" || discountType === "FLAT") return base - dVal;
+	return base;
+};
 
-	let currentPrice = 0;
-	let originalPriceDisplay: number | undefined = undefined;
-	let discountLabel: string | null = null;
+let currentPrice = 0;
+let originalPriceDisplay: number | undefined = undefined;
+let discountLabel: string | null = null;
 
-	if (variants && variants.length > 0) {
-		const v: any = variants[0] || {};
-		const variantBase =
-			v?.price ??
-			v?.originalPrice ??
-			v?.basePrice ??
-			product.basePrice ??
-			price ??
-			0;
-		const baseNum =
-			typeof variantBase === "string"
-				? parseFloat(variantBase)
-				: Number(variantBase) || 0;
-		const hasCalculated =
-			typeof v?.calculatedPrice === "number" && isFinite(v.calculatedPrice);
+// Get base price from variant (if exists) or product
+let baseNum = 0;
+if (variants && variants.length > 0) {
+	// Use first variant's basePrice
+	const variantBase = variants[0]?.basePrice;
+	baseNum = typeof variantBase === "string" ? parseFloat(variantBase) : Number(variantBase) || 0;
+} else {
+	// Use product's basePrice or price
+	const productBase = product.basePrice ?? price;
+	baseNum = typeof productBase === "string" ? parseFloat(productBase) : Number(productBase) || 0;
+}
 
-		if (hasCalculated) {
-			currentPrice = v.calculatedPrice as number;
-		} else if (v?.discount && v?.discountType) {
-			currentPrice = calculatePrice(baseNum, v.discount, v.discountType);
-			originalPriceDisplay = baseNum;
-			discountLabel =
-				v.discountType === "PERCENTAGE" ? `${v.discount}%` : `Rs ${v.discount}`;
-		} else if (product.discount && product.discountType) {
-			currentPrice = calculatePrice(
-				baseNum,
-				product.discount,
-				product.discountType
-			);
-			originalPriceDisplay = baseNum;
-			discountLabel =
-				product.discountType === "PERCENTAGE"
-					? `${product.discount}%`
-					: `Rs ${product.discount}`;
-		} else {
-			currentPrice = baseNum;
-		}
-	} else {
-		const baseNum =
-			typeof price === "string" ? parseFloat(price) : Number(price) || 0;
-		if (product.discount && product.discountType) {
-			currentPrice = calculatePrice(
-				baseNum,
-				product.discount,
-				product.discountType
-			);
-			originalPriceDisplay = baseNum;
-			discountLabel =
-				product.discountType === "PERCENTAGE"
-					? `${product.discount}%`
-					: `Rs ${product.discount}`;
-		} else {
-			currentPrice = baseNum;
-		}
-	}
+// Apply product-level discount to the base price
+const productDiscount = Number(product.discount) || 0;
+const productDiscountType = product.discountType;
 
+if (productDiscount > 0 && productDiscountType) {
+	// Calculate discounted price
+	currentPrice = calculatePrice(baseNum, productDiscount, productDiscountType);
+	originalPriceDisplay = baseNum;
+	discountLabel = productDiscountType === "PERCENTAGE" 
+		? `${productDiscount}%` 
+		: `Rs ${productDiscount}`;
+} else {
+	// No discount
+	currentPrice = baseNum;
+}
 	const handleWishlist = async () => {
 		if (!isAuthenticated) {
 			setAuthModalOpen(true);
@@ -514,7 +484,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 											{originalPriceDisplay.toFixed(2)}
 										</span>
 									)}
-								{Number(discount) == 0 ? null : (
+								{Number(discount) == 0 || discount === "0" ? null : (
 									<span className="product-card__discount">
 										{discountLabel}
 									</span>
