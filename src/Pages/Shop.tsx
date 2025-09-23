@@ -184,7 +184,6 @@ const fetchProductsWithFilters = async (
     }
     return { success: true, data: [] };
   }
-  
   const apiFilters = {
     categoryId: filters.categoryId,
     subcategoryId: filters.subcategoryId,
@@ -192,7 +191,6 @@ const fetchProductsWithFilters = async (
     dealId: filters.dealId,
     bannerId: filters.bannerId
   };
-  
   const queryParams = buildQueryParams(apiFilters);
   const endpoint = `/api/categories/all/products${queryParams ? `?${queryParams}` : ""}`;
   console.log("🔍 Fetching products with filters:", {
@@ -495,7 +493,6 @@ const Shop: React.FC = () => {
     subcategoryId: selectedSubcategory,
     bannerId: selectedBannerId,
   };
-
   const queryKeyFilters = {
     ...currentFilters,
     sort: sortBy // Include sort in query key for proper cache management
@@ -513,7 +510,6 @@ const Shop: React.FC = () => {
     const bannerIdParam = searchParams.get("bannerId");
     const searchParam = searchParams.get("search");
     const sortParam = searchParams.get("sort");
-
     const newCategoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
     setSelectedCategory(newCategoryId);
     const newSubcategoryId = subcategoryIdParam
@@ -912,7 +908,6 @@ const Shop: React.FC = () => {
   };
   const handleSortChange = (newSort: string | undefined): void => {
     setSortBy(newSort || "all");
-
     // Update searchParams to include the sort parameter while preserving other filters
     const newSearchParams = new URLSearchParams(searchParams);
     if (newSort && newSort !== "all") {
@@ -921,7 +916,6 @@ const Shop: React.FC = () => {
       newSearchParams.delete("sort");
     }
     setSearchParams(newSearchParams);
-
     if (window.innerWidth <= 992) {
       setIsSidebarOpen(false);
     }
@@ -1280,7 +1274,8 @@ const Shop: React.FC = () => {
                     </div>
                   )}
                 </div>
-                {selectedCategory !== undefined && (
+                {/* MODIFIED: Only show subcategories section if selected category has subcategories */}
+                {selectedCategory !== undefined && subcategories.length > 0 && (
                   <div className="filter-sidebar__section">
                     <h4 className="filter-sidebar__section-title">
                       Subcategories
