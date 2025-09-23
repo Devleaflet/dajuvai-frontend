@@ -43,6 +43,7 @@
 	width: 100%;
 	min-height: 320px;
 	cursor: pointer !important;
+	margin-bottom: 20px;
 }
 
 .product-carousel__products:active {

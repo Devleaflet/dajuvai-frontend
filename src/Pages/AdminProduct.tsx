@@ -101,6 +101,7 @@ const AdminProduct: React.FC = () => {
   // Delete product function
   const deleteProduct = useCallback(async (product: ApiProduct) => {
     setIsDeleting(true);
+    console.log("delete",product)
     try {
       await productService.deleteProduct(
         product.categoryId,
