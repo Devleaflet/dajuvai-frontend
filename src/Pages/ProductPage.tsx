@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
-import {Truck,Undo2,ShieldCheck,Phone} from 'lucide-react'
+import { Truck, Undo2, ShieldCheck, Phone } from "lucide-react";
 
 interface Category {
 	id: number;
@@ -761,7 +761,7 @@ const ProductPage = () => {
 			return;
 		}
 		try {
-			const response = await fetch(`/api/vendors/${vendorId}`, {
+			const response = await fetch(`/api/vendors/auth/vendor}`, {
 				method: "GET",
 				headers: {
 					"Content-Type": "application/json",
@@ -940,7 +940,10 @@ const ProductPage = () => {
 										<div className="product-options__variants p-2 rounded">
 											{(() => {
 												// Dynamically build attribute options from variants
-												const attributeOptions: Record<string, Set<string>> = {};
+												const attributeOptions: Record<
+													string,
+													Set<string>
+												> = {};
 												product.variants.forEach((variant: any) => {
 													if (variant.attributes) {
 														Object.entries(variant.attributes).forEach(
@@ -952,7 +955,7 @@ const ProductPage = () => {
 														);
 													}
 												});
-												
+
 												// Order: color, size, length, then others
 												let attributeTypes = Object.keys(attributeOptions);
 												const order = ["color", "size", "length"];
@@ -962,7 +965,7 @@ const ProductPage = () => {
 														.filter((t) => !order.includes(t))
 														.sort(),
 												];
-												
+
 												// Build selected attributes from selectedVariant
 												const selectedAttributes = orderedTypes.reduce(
 													(acc, key) => {
@@ -974,11 +977,11 @@ const ProductPage = () => {
 													},
 													{} as Record<string, string>
 												);
-												
+
 												return orderedTypes.map((attrType, idx) => {
 													const optionValues = [...attributeOptions[attrType]];
 													const hasMultipleOptions = optionValues.length > 4;
-													
+
 													// Special logic for color buttons
 													if (attrType === "color") {
 														return (
@@ -995,21 +998,24 @@ const ProductPage = () => {
 																>
 																	{attrType.toUpperCase()}
 																</span>
-																<div 
+																<div
 																	className={`product-options__variant-row ${
-																		hasMultipleOptions ? 'product-options__variant-row--many' : ''
+																		hasMultipleOptions
+																			? "product-options__variant-row--many"
+																			: ""
 																	}`}
 																>
 																	{optionValues.map((optionValue) => {
 																		const isSelected =
-																			selectedAttributes[attrType] === optionValue;
+																			selectedAttributes[attrType] ===
+																			optionValue;
 																		const hasStock = product.variants.some(
 																			(v) =>
 																				v.attributes?.color === optionValue &&
 																				v.stock > 0
 																		);
 																		const isOutOfStock = !hasStock;
-																		
+
 																		return (
 																			<button
 																				key={optionValue}
@@ -1022,21 +1028,23 @@ const ProductPage = () => {
 																						? " product-options__button--disabled"
 																						: ""
 																				}${
-																					hasMultipleOptions 
-																						? " product-options__button--compact" 
+																					hasMultipleOptions
+																						? " product-options__button--compact"
 																						: ""
 																				}`}
 																				onClick={() => {
 																					if (isOutOfStock) {
-																						toast("This color is out of stock.");
+																						toast(
+																							"This color is out of stock."
+																						);
 																						return;
 																					}
 																					setSelectedSize("");
 																					setQuantity(1);
 																					const variant = product.variants.find(
 																						(v) =>
-																							v.attributes?.color === optionValue && 
-																							v.stock > 0
+																							v.attributes?.color ===
+																								optionValue && v.stock > 0
 																					);
 																					if (variant) {
 																						handleVariantSelect(variant);
@@ -1045,10 +1053,10 @@ const ProductPage = () => {
 																				disabled={isOutOfStock}
 																				title={optionValue}
 																			>
-																				{optionValue.length > 8 && hasMultipleOptions 
-																					? `${optionValue.substring(0, 6)}...` 
-																					: optionValue
-																				}
+																				{optionValue.length > 8 &&
+																				hasMultipleOptions
+																					? `${optionValue.substring(0, 6)}...`
+																					: optionValue}
 																			</button>
 																		);
 																	})}
@@ -1056,10 +1064,13 @@ const ProductPage = () => {
 															</div>
 														);
 													}
-													
+
 													// Default logic for other attributes
 													return (
-														<div className="flex gap-2 mb-2" key={attrType}>
+														<div
+															className="flex gap-2 mb-2"
+															key={attrType}
+														>
 															<span
 																className="text-md font-medium text-black mr-2 whitespace-nowrap"
 																style={{
@@ -1069,13 +1080,17 @@ const ProductPage = () => {
 															>
 																{attrType.toUpperCase()}
 															</span>
-															<div 
+															<div
 																className={`product-options__variant-row ${
-																	hasMultipleOptions ? 'product-options__variant-row--many' : ''
+																	hasMultipleOptions
+																		? "product-options__variant-row--many"
+																		: ""
 																}`}
 															>
 																{optionValues.map((optionValue) => {
-																	const isSelected = selectedAttributes[attrType] === optionValue;
+																	const isSelected =
+																		selectedAttributes[attrType] ===
+																		optionValue;
 																	const selection = {
 																		...selectedAttributes,
 																		[attrType]: optionValue,
@@ -1088,7 +1103,7 @@ const ProductPage = () => {
 																		);
 																	});
 																	const isOutOfStock = !variant;
-																	
+
 																	return (
 																		<button
 																			key={optionValue}
@@ -1101,13 +1116,15 @@ const ProductPage = () => {
 																					? " product-options__button--disabled"
 																					: ""
 																			}${
-																				hasMultipleOptions 
-																					? " product-options__button--compact" 
+																				hasMultipleOptions
+																					? " product-options__button--compact"
 																					: ""
 																			}`}
 																			onClick={() => {
 																				if (isOutOfStock) {
-																					toast(`This ${attrType} is out of stock.`);
+																					toast(
+																						`This ${attrType} is out of stock.`
+																					);
 																					return;
 																				}
 																				setQuantity(1);
@@ -1116,10 +1133,10 @@ const ProductPage = () => {
 																			disabled={isOutOfStock}
 																			title={optionValue}
 																		>
-																			{optionValue.length > 8 && hasMultipleOptions 
-																				? `${optionValue.substring(0, 6)}...` 
-																				: optionValue
-																			}
+																			{optionValue.length > 8 &&
+																			hasMultipleOptions
+																				? `${optionValue.substring(0, 6)}...`
+																				: optionValue}
 																		</button>
 																	);
 																})}
@@ -1221,9 +1238,13 @@ const ProductPage = () => {
 							</div>
 
 							<div className="vendor-details__content">
-								<div className="vendor-details__profile" onClick={handleVendorClick}>
+								<div
+									className="vendor-details__profile"
+									onClick={handleVendorClick}
+								>
 									<div className="vendor-details__avatar">
-										{product.vendor?.businessName?.charAt(0).toUpperCase() || "U"}
+										{product.vendor?.businessName?.charAt(0).toUpperCase() ||
+											"U"}
 									</div>
 									<div className="vendor-details__info">
 										<h4 className="vendor-details__name">
@@ -1236,44 +1257,60 @@ const ProductPage = () => {
 								<div className="vendor-details__features">
 									<div className="vendor-details__feature">
 										<div className="vendor-details__feature-icon">
-											<Truck style={{opacity:'1', color:'#ff6b35'}}/>
+											<Truck style={{ opacity: "1", color: "#ff6b35" }} />
 										</div>
 										<div className="vendor-details__feature-text">
-											<span className="vendor-details__feature-title">Fast Shipping</span>
-											<span className="vendor-details__feature-desc">14 business days</span>
+											<span className="vendor-details__feature-title">
+												Fast Shipping
+											</span>
+											<span className="vendor-details__feature-desc">
+												14 business days
+											</span>
 										</div>
 									</div>
 									<div className="vendor-details__feature">
 										<div className="vendor-details__feature-icon">
-											<Undo2 style={{opacity:'1', color:'#ff6b35'}}/>
+											<Undo2 style={{ opacity: "1", color: "#ff6b35" }} />
 										</div>
 										<div className="vendor-details__feature-text">
-											<span className="vendor-details__feature-title">Easy Returns</span>
-											<span className="vendor-details__feature-desc">1 week return policy</span>
+											<span className="vendor-details__feature-title">
+												Easy Returns
+											</span>
+											<span className="vendor-details__feature-desc">
+												1 week return policy
+											</span>
 										</div>
 									</div>
 									<div className="vendor-details__feature">
 										<div className="vendor-details__feature-icon">
-											<ShieldCheck style={{opacity:'1', color:'#ff6b35'}}/>
+											<ShieldCheck style={{ opacity: "1", color: "#ff6b35" }} />
 										</div>
 										<div className="vendor-details__feature-text">
-											<span className="vendor-details__feature-title">Secure Payment</span>
-											<span className="vendor-details__feature-desc">Protected transactions</span>
+											<span className="vendor-details__feature-title">
+												Secure Payment
+											</span>
+											<span className="vendor-details__feature-desc">
+												Protected transactions
+											</span>
 										</div>
 									</div>
 									<div className="vendor-details__feature">
 										<div className="vendor-details__feature-icon">
-											<Phone style={{opacity:'1', color:'#ff6b35'}}/>
+											<Phone style={{ opacity: "1", color: "#ff6b35" }} />
 										</div>
 										<div className="vendor-details__feature-text">
-											<span className="vendor-details__feature-title">24/7 Support</span>
-											<span className="vendor-details__feature-desc">Customer service</span>
+											<span className="vendor-details__feature-title">
+												24/7 Support
+											</span>
+											<span className="vendor-details__feature-desc">
+												Customer service
+											</span>
 										</div>
 									</div>
 								</div>
 
 								<div className="vendor-details__actions">
-									<button 
+									<button
 										className="vendor-details__button vendor-details__button--primary"
 										onClick={handleVendorClick}
 									>
@@ -1342,5 +1379,3 @@ const ProductPage = () => {
 };
 
 export default ProductPage;
-
-
