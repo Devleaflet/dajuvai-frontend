@@ -202,6 +202,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
 					<button
 						className="product-carousel__scroll-button product-carousel__scroll-button--left"
 						onClick={() => scroll("left")}
+						aria-label="Scroll left"
 					>
 						<IoIosArrowDropleftCircle />
 					</button>
@@ -210,6 +211,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
 					<button
 						className="product-carousel__scroll-button product-carousel__scroll-button--right"
 						onClick={() => scroll("right")}
+						aria-label="Scroll right"
 					>
 						<IoIosArrowDroprightCircle />
 					</button>
@@ -246,3 +248,5 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
 };
 
 export default ProductCarousel;
+
+

@@ -15,19 +15,16 @@ import ProductCard1 from "../ALT/ProductCard1";
 import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
 import { API_BASE_URL } from "../config";
 import { Search, ChevronDown, ChevronUp, Settings2 } from "lucide-react";
-
 // Interfaces (unchanged)
 interface Category {
   id: number;
   name: string;
   subcategories: Subcategory[];
 }
-
 interface Subcategory {
   id: number;
   name: string;
 }
-
 interface ProductFilters {
   categoryId?: number | undefined;
   subcategoryId?: number | undefined;
@@ -36,7 +33,6 @@ interface ProductFilters {
   bannerId?: string | undefined;
   sort?: string | undefined;
 }
-
 interface ApiProduct {
   id: number;
   name: string;
@@ -109,22 +105,12 @@ interface ApiProduct {
     title: string;
   } | null;
 }
-
-interface Banner {
-  id: number;
-  name: string;
-  type: string;
-  status: string;
-  selectedProducts?: ApiProduct[];
-}
-
 // Utility functions (unchanged)
 const toNumber = (v: any): number => {
   if (v === undefined || v === null) return 0;
   const n = typeof v === 'string' ? parseFloat(v) : Number(v);
   return isFinite(n) ? n : 0;
 };
-
 const calculatePrice = (base: any, disc?: any, discType?: string): number => {
   const baseNum = toNumber(base);
   if (!disc || !discType) return baseNum;
@@ -134,7 +120,6 @@ const calculatePrice = (base: any, disc?: any, discType?: string): number => {
   if (discType === 'FIXED' || discType === 'FLAT') return baseNum - d;
   return baseNum;
 };
-
 const apiRequest = async (
   endpoint: string,
   token: string | null | undefined = undefined
@@ -169,7 +154,6 @@ const apiRequest = async (
   }
   return await response.json();
 };
-
 const buildQueryParams = (filters: ProductFilters): string => {
   const params = new URLSearchParams();
   if (filters.categoryId !== undefined && filters.categoryId !== null) {
@@ -189,7 +173,6 @@ const buildQueryParams = (filters: ProductFilters): string => {
   }
   return params.toString();
 };
-
 const fetchProductsWithFilters = async (
   filters: ProductFilters,
   token: string | null | undefined = undefined
@@ -235,7 +218,7 @@ const fetchProductsWithFilters = async (
     throw error;
   }
 };
-
+// Updated processProductWithReview function
 const processProductWithReview = async (
   item: ApiProduct
 ): Promise<Product> => {
@@ -254,7 +237,6 @@ const processProductWithReview = async (
           variantImage: v.image,
         })),
       });
-
     const processImageUrl = (imgUrl: string): string => {
       if (!imgUrl) return "";
       const trimmed = imgUrl.trim();
@@ -272,7 +254,6 @@ const processProductWithReview = async (
       const url = `${base}${needsSlash ? "/" : ""}${trimmed}`;
       return url.replace(/([^:]\/)\/+/g, "$1/");
     };
-
     const processedProductImages = (item.productImages || [])
       .filter(
         (img): img is string =>
@@ -280,7 +261,6 @@ const processProductWithReview = async (
       )
       .map(processImageUrl)
       .filter(Boolean);
-
     const processedVariants = (item.variants || []).map((variant) => {
       const rawImages = Array.isArray((variant as any).images)
         ? (variant as any).images
@@ -305,11 +285,9 @@ const processProductWithReview = async (
         images: normalizedImages,
       };
     });
-
     const variantImagePool = processedVariants
       .flatMap((v) => [v.image, ...(v.images || [])])
       .filter((x): x is string => typeof x === "string" && x.length > 0);
-
     const getDisplayImage = () => {
       if (processedProductImages.length > 0) {
         return processedProductImages[0];
@@ -322,14 +300,11 @@ const processProductWithReview = async (
         console.log("No valid images found for product, using default image");
       return phone;
     };
-
     const displayImage = getDisplayImage();
-
     // Updated price calculation logic
     let displayPriceNum = 0;
     let originalPriceNum = 0;
     const productPriceNum = toNumber(item.basePrice);
-
     if ((item.basePrice === null || item.basePrice === undefined || productPriceNum === 0) && (item.variants?.length || 0) > 0) {
       const first = item.variants![0] as any;
       // Use the first variant's basePrice for original price
@@ -349,7 +324,6 @@ const processProductWithReview = async (
         displayPriceNum = productPriceNum;
       }
     }
-
     return {
       id: item.id,
       title: item.name,
@@ -397,7 +371,6 @@ const processProductWithReview = async (
       const url = `${base}${needsSlash ? "/" : ""}${trimmed}`;
       return url.replace(/([^:]\/)\/+/g, "$1/");
     };
-
     const processedProductImages = (item.productImages || [])
       .filter(
         (img): img is string =>
@@ -405,7 +378,6 @@ const processProductWithReview = async (
       )
       .map(processImageUrl)
       .filter(Boolean);
-
     const processedVariants = (item.variants || []).map((variant) => {
       const rawImages = Array.isArray((variant as any).images)
         ? (variant as any).images
@@ -430,11 +402,9 @@ const processProductWithReview = async (
         images: normalizedImages,
       };
     });
-
     const variantImagePool = processedVariants
       .flatMap((v) => [v.image, ...(v.images || [])])
       .filter((x): x is string => typeof x === "string" && x.length > 0);
-
     const getFallbackImage = () => {
       if (processedProductImages.length > 0) {
         return processedProductImages[0];
@@ -446,7 +416,6 @@ const processProductWithReview = async (
       return phone;
     };
     const displayImage = getFallbackImage();
-
     // Fallback price calculation
     let displayPriceNum = 0;
     let originalPriceNum = 0;
@@ -464,7 +433,6 @@ const processProductWithReview = async (
         ? calculatePrice(productPriceNum, item.discount, String(item.discountType))
         : productPriceNum;
     }
-
     return {
       id: item.id,
       title: item.name || "Unknown Product",
@@ -494,8 +462,7 @@ const processProductWithReview = async (
     };
   }
 };
-
-// Rest of the Shop component
+// Rest of the Shop component (unchanged)
 const Shop: React.FC = () => {
   const { token } = useAuth();
   const { cartOpen } = useUI();
@@ -523,8 +490,6 @@ const Shop: React.FC = () => {
     useState<boolean>(false);
   const [isSubCategoryDropdownOpen, setIsSubCategoryDropdownOpen] =
     useState<boolean>(false);
-
-  // Fixed currentFilters - only include filters that affect API calls, not sorting
   const currentFilters: ProductFilters = {
     categoryId: selectedCategory,
     subcategoryId: selectedSubcategory,
@@ -535,7 +500,6 @@ const Shop: React.FC = () => {
     ...currentFilters,
     sort: sortBy // Include sort in query key for proper cache management
   };
-
   const hasActiveFilters = Boolean(
     selectedCategory || 
     selectedSubcategory || 
@@ -543,7 +507,6 @@ const Shop: React.FC = () => {
     searchQuery.trim() ||
     (sortBy && sortBy !== "all")
   );
-
   useEffect(() => {
     const categoryIdParam = searchParams.get("categoryId");
     const subcategoryIdParam = searchParams.get("subcategoryId");
@@ -553,18 +516,12 @@ const Shop: React.FC = () => {
 
     const newCategoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
     setSelectedCategory(newCategoryId);
-
     const newSubcategoryId = subcategoryIdParam
       ? Number(subcategoryIdParam)
       : undefined;
     setSelectedSubcategory(newSubcategoryId);
-
     const newBannerId = bannerIdParam ? bannerIdParam : undefined;
     setSelectedBannerId(newBannerId);
-
-    const newSort = sortParam || "all";
-    setSortBy(newSort);
-
     if (searchParam) {
       const decodedSearch = decodeURIComponent(searchParam);
       setSearchQuery(decodedSearch);
@@ -574,7 +531,6 @@ const Shop: React.FC = () => {
       setSearchInputValue("");
     }
   }, [searchParams]);
-
   useEffect(() => {
     const handleShopFiltersChanged = (event: CustomEvent) => {
       const { categoryId, subcategoryId, bannerId } = event.detail;
@@ -597,7 +553,6 @@ const Shop: React.FC = () => {
       newSearchParams.delete("search");
       setSearchParams(newSearchParams);
     };
-
     window.addEventListener(
       "shopFiltersChanged",
       handleShopFiltersChanged as EventListener
@@ -609,31 +564,26 @@ const Shop: React.FC = () => {
       );
     };
   }, [searchParams, setSearchParams]);
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isSidebarOpen) {
         const target = event.target as Element;
         const isFilterButton = target.closest(".filter-button");
         const isOverlay = target.classList.contains("filter-sidebar-overlay");
-
         if (!isFilterButton && !isOverlay) {
           setIsSidebarOpen(false);
         }
       }
     };
-
     if (isSidebarOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("touchstart", handleClickOutside);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
     };
   }, [isSidebarOpen]);
-
   const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
@@ -653,7 +603,6 @@ const Shop: React.FC = () => {
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
-
   const { data: subcategories = [], isLoading: isLoadingSubcategories } =
     useQuery({
       queryKey: ["subcategories", selectedCategory],
@@ -681,7 +630,6 @@ const Shop: React.FC = () => {
       staleTime: 5 * 60 * 1000,
       gcTime: 10 * 60 * 1000,
     });
-
   const {
     data: productsData,
     isLoading: isLoadingProducts,
@@ -703,7 +651,6 @@ const Shop: React.FC = () => {
           dataIsArray: Array.isArray(response?.data),
           responseKeys: response ? Object.keys(response) : [],
         });
-
         if (response?.success && Array.isArray(response.data)) {
           productsArray = response.data;
           console.log(
@@ -720,7 +667,6 @@ const Shop: React.FC = () => {
           console.warn("⚠️ Unexpected response format:", response);
           productsArray = [];
         }
-
         console.log(
           "🔄 Processing products with reviews, count:",
           productsArray.length
@@ -759,7 +705,6 @@ const Shop: React.FC = () => {
             }
           })
         );
-
         console.log(
           "✅ Successfully processed all products, final count:",
           processedProducts.length
@@ -775,7 +720,6 @@ const Shop: React.FC = () => {
           hasBannerId: !!currentFilters.bannerId,
           currentFilters,
         });
-
         if (
           currentFilters.categoryId ||
           currentFilters.subcategoryId ||
@@ -907,7 +851,6 @@ const Shop: React.FC = () => {
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
-
   const filteredProducts = (productsData || []).filter((product) => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
@@ -924,7 +867,6 @@ const Shop: React.FC = () => {
     }
     return true;
   });
-
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     const priceA = toNumber(a.price);
     const priceB = toNumber(b.price);
@@ -935,7 +877,6 @@ const Shop: React.FC = () => {
     if (sortBy === "high-to-low") return priceB - priceA;
     return 0;
   });
-
   const handleCategoryChange = (categoryId: number | undefined): void => {
     const newSearchParams = new URLSearchParams(searchParams);
     if (categoryId) {
@@ -950,12 +891,10 @@ const Shop: React.FC = () => {
     setSelectedBannerId(undefined);
     newSearchParams.delete("search");
     setSearchParams(newSearchParams);
-
     if (window.innerWidth <= 992) {
       setIsSidebarOpen(false);
     }
   };
-
   const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
     const newSearchParams = new URLSearchParams(searchParams);
     if (subcategoryId) {
@@ -967,12 +906,10 @@ const Shop: React.FC = () => {
     newSearchParams.delete("bannerId");
     setSelectedBannerId(undefined);
     setSearchParams(newSearchParams);
-
     if (window.innerWidth <= 992) {
       setIsSidebarOpen(false);
     }
   };
-
   const handleSortChange = (newSort: string | undefined): void => {
     setSortBy(newSort || "all");
 
@@ -989,11 +926,9 @@ const Shop: React.FC = () => {
       setIsSidebarOpen(false);
     }
   };
-
   const toggleSidebar = (): void => {
     setIsSidebarOpen(!isSidebarOpen);
   };
-
   const clearAllFilters = (): void => {
     setSortBy("all");
     setSearchInputValue("");
@@ -1002,16 +937,13 @@ const Shop: React.FC = () => {
     setSelectedBannerId(undefined);
     const newSearchParams = new URLSearchParams();
     setSearchParams(newSearchParams);
-
     if (window.innerWidth <= 992) {
       setIsSidebarOpen(false);
     }
   };
-
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInputValue(e.target.value);
   };
-
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedSearch = searchInputValue.trim();
@@ -1026,19 +958,16 @@ const Shop: React.FC = () => {
     newSearchParams.delete("bannerId");
     setSelectedBannerId(undefined);
     setSearchParams(newSearchParams);
-
     if (window.innerWidth <= 992) {
       setIsSidebarOpen(false);
     }
   };
-
   const handleClearSearch = () => {
     setSearchInputValue("");
     const newSearchParams = new URLSearchParams(searchParams);
     newSearchParams.delete("search");
     setSearchParams(newSearchParams);
   };
-
   const getCurrentCategoryName = (): string => {
     if (selectedCategory === undefined) return "All Categories";
     const category = categories.find(
@@ -1046,7 +975,6 @@ const Shop: React.FC = () => {
     );
     return category ? category.name : "Selected Category";
   };
-
   const getCurrentSubcategoryName = (): string | undefined => {
     if (selectedSubcategory === undefined) return undefined;
     const subcategory = subcategories.find(
@@ -1054,7 +982,6 @@ const Shop: React.FC = () => {
     );
     return subcategory ? subcategory.name : "Selected Subcategory";
   };
-
   const getDisplayTitle = (): string => {
     if (searchQuery.trim()) {
       return `Search Results for "${searchQuery}"`;
@@ -1064,7 +991,6 @@ const Shop: React.FC = () => {
     }
     return getCurrentCategoryName();
   };
-
   // Loading state management
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -1072,11 +998,9 @@ const Shop: React.FC = () => {
     }, 1000);
     return () => clearTimeout(timer);
   }, []);
-
   if (loading) {
     return <PageLoader />;
   }
-
   if (productsError) {
     return (
       <>
@@ -1101,7 +1025,6 @@ const Shop: React.FC = () => {
       </>
     );
   }
-
   return (
     <>
       <Navbar />
@@ -1536,5 +1459,4 @@ const Shop: React.FC = () => {
     </>
   );
 };
-
 export default Shop;

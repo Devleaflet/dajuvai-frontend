@@ -53,44 +53,97 @@
 	display: none;
 }
 
+/* Enhanced Scroll Buttons with Orange Theme */
 .product-carousel__scroll-button {
 	position: absolute;
-	width: 44px;
-	height: 44px;
+	width: 50px;
+	height: 50px;
 	border-radius: 50%;
-	font-size: 30px;
+	font-size: 32px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	cursor: pointer;
-	transition: all 0.2s ease;
-	background-color: rgba(255, 255, 255, 0.9);
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	transition: all 0.3s ease;
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 	pointer-events: auto;
-	z-index: -1;
+	z-index: 10;
+	border: none;
+	outline: none;
 }
 
-.product-carousel__scroll-button:hover {
-	background-color: #f5f5f5;
-	transform: scale(1.05);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
+/* Left Button - Subtle Orange */
 .product-carousel__scroll-button--left {
-	left: -22px;
-	z-index: 2 !important;
+	left: -25px;
+	background: linear-gradient(135deg, #ffb347, #ff8c00);
+	color: white;
 }
 
+/* Right Button - Vibrant Orange (Enhanced as requested) */
 .product-carousel__scroll-button--right {
-	right: -22px;
-	z-index: 2 !important;
+	right: -25px;
+	background: linear-gradient(135deg, #ff6b00, #e05a00);
+	color: white;
+	box-shadow: 0 4px 20px rgba(255, 107, 0, 0.4);
+	transform: scale(1);
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover effects for both buttons */
+.product-carousel__scroll-button:hover {
+	transform: scale(1.15);
+	box-shadow: 0 6px 25px rgba(255, 107, 0, 0.5);
+}
+
+/* Active state */
+.product-carousel__scroll-button:active {
+	transform: scale(0.95);
+	box-shadow: 0 2px 10px rgba(255, 107, 0, 0.3);
+}
+
+/* Add pulse animation on hover for right button */
+.product-carousel__scroll-button--right:hover {
+	animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+	0% {
+		box-shadow: 0 4px 20px rgba(255, 107, 0, 0.4);
+	}
+	50% {
+		box-shadow: 0 4px 30px rgba(255, 107, 0, 0.6);
+	}
+	100% {
+		box-shadow: 0 4px 20px rgba(255, 107, 0, 0.4);
+	}
+}
+
+/* Add icon hover effect */
+.product-carousel__scroll-button svg {
+	transition: all 0.3s ease;
+}
+
+.product-carousel__scroll-button:hover svg {
+	transform: translateX(2px);
+}
+
+.product-carousel__scroll-button--left:hover svg {
+	transform: translateX(-2px);
+}
+
+.product-carousel__scroll-button--right:hover svg {
+	transform: translateX(4px);
+}
+
+/* Focus styles for accessibility */
+.product-carousel__scroll-button:focus {
+	outline: 3px solid rgba(255, 107, 0, 0.5);
+	outline-offset: 3px;
 }
 
 .product-card__wrapper {
 	flex: 0 0 auto;
 	pointer-events: auto;
-	
-	/* Ensure wrapper is clickable */
 }
 
 .product-card {
@@ -104,7 +157,6 @@
 	transition: transform 0.3s ease;
 	height: fit-content;
 	pointer-events: auto;
-	/* Ensure card is clickable */
 }
 
 .product-card--skeleton {
@@ -119,7 +171,6 @@
 	-ms-user-select: none;
 }
 
-/* Only disable pointer-events on non-interactive elements during drag */
 .product-carousel__products--dragging .product-card__image,
 .product-carousel__products--dragging .product-card__title,
 .product-carousel__products--dragging .product-card__description {
@@ -448,6 +499,7 @@
 	background-size: 200% 100%;
 	animation: shimmer 1.5s infinite;
 }
+
 .product-carousel__products {
 	min-height: 370px;
 }
@@ -638,13 +690,12 @@
 	justify-content: center;
 	width: 100%;
 	pointer-events: none;
-	/* So clicks go through except dots */
 }
 
 .product-card__pagination--inside .product-card__dot {
 	pointer-events: auto;
-	/* Allow dots to be clickable */
 }
+
 .product-card__wishlist-button {
 	top:20px;
 }
