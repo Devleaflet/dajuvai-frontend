@@ -395,7 +395,7 @@ if (productDiscount > 0 && productDiscountType) {
 					</button>
 				)}
 
-				{!cartOpen ? (
+			
 					<div className="product-card__image">
 						<img
 							src={displayImage}
@@ -422,11 +422,7 @@ if (productDiscount > 0 && productDiscountType) {
 							</div>
 						)}
 					</div>
-				) : (
-					<div className="product-card__image product-card__image--skeleton">
-						<div className="product-card__skeleton-box"></div>
-					</div>
-				)}
+				
 
 				{!cartOpen && (
 					<div className="product-card__cart-button">

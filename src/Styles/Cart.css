@@ -60,7 +60,7 @@
 .cart__title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin: 0;
   font-size: 1.3rem;
   font-weight: 700;
@@ -74,13 +74,26 @@
 }
 
 .cart__item-count {
-  background: #f97316;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   color: white;
-  border-radius: 20px;
-  padding: 2px 10px;
+  border-radius: 50%;
+  min-width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.75rem;
-  font-weight: 600;
-  margin-left: 6px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
+  animation: cartCountBounce 0.3s ease-out;
+  border: 2px solid white;
+  margin-left: 8px;
+}
+
+@keyframes cartCountBounce {
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
 .cart__close {
@@ -642,6 +655,13 @@
     gap: 8px;
   }
   
+  .cart__item-count {
+    min-width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+    margin-left: 6px;
+  }
+  
   .cart__items {
     padding: 18px;
     gap: 14px;
@@ -734,6 +754,13 @@
   
   .cart__title {
     font-size: 1rem;
+  }
+  
+  .cart__item-count {
+    min-width: 18px;
+    height: 18px;
+    font-size: 0.65rem;
+    margin-left: 4px;
   }
   
   .cart__items {
@@ -897,7 +924,8 @@
   .cart__button,
   .cart__qty-btn,
   .cart__item-remove,
-  .cart__quantity-display {
+  .cart__quantity-display,
+  .cart__item-count {
     transition: none;
     animation: none;
   }
@@ -916,4 +944,32 @@
   .cart__quantity-display--updating {
     animation: none;
   }
+}
+/* Disable animations specifically for quantity updates */
+.cart__item--quantity-updating {
+  animation: none !important;
+}
+
+.cart__item--quantity-updating * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Prevent cart items from re-animating on quantity changes */
+.cart__items .cart__item:nth-child(n) {
+  animation-delay: 0s;
+}
+
+/* Override the stagger animation when items are being updated */
+.cart__item--updating:nth-child(1),
+.cart__item--updating:nth-child(2),
+.cart__item--updating:nth-child(3),
+.cart__item--updating:nth-child(4),
+.cart__item--updating:nth-child(5) {
+  animation: none;
+}
+
+/* Keep subtotal smooth */
+.cart__subtotal-amount {
+  transition: all 0.2s ease;
 }

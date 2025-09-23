@@ -278,7 +278,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 					)}
 					{isBestSeller && <span className="product1__tag">Best seller</span>}
 				</div>
-				{!cartOpen ? (
+				
 					<div className="product1__image">
 						<img
 							src={displayImage}
@@ -305,11 +305,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 							</div>
 						)}
 					</div>
-				) : (
-					<div className="product1__image--skeleton">
-						<div className="product1__skeleton-box"></div>
-					</div>
-				)}
+
 				<div className="product1__rating">
 					<div className="product1__rating-info">
 						<span className="product1__rating-star">

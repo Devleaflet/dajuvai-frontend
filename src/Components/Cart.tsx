@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { FaTimes, FaShoppingBag, FaPlus, FaMinus, FaTrash, FaExclamationCircle } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
@@ -18,7 +18,7 @@ interface ErrorState {
   type: 'delete' | 'quantity' | 'stock';
 }
 
-const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef, stableCartItems }) => {
+const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
   const {
     handleCartItemOnDelete,
     handleIncreaseQuantity,
@@ -32,7 +32,7 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef, stable
   
   // Enhanced error state management
   const [errors, setErrors] = useState<ErrorState[]>([]);
-  const [optimisticUpdates, setOptimisticUpdates] = useState<Map<string, number>>(new Map());
+  const [isProcessing, setIsProcessing] = useState<Set<string>>(new Set());
 
   // Clear errors after 5 seconds
   useEffect(() => {
@@ -45,17 +45,17 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef, stable
   }, [errors]);
 
   // Add error helper
-  const addError = (itemId: string, message: string, type: ErrorState['type']) => {
+  const addError = useCallback((itemId: string, message: string, type: ErrorState['type']) => {
     setErrors(prev => {
       const filtered = prev.filter(error => error.itemId !== itemId);
       return [...filtered, { itemId, message, type }];
     });
-  };
+  }, []);
 
   // Clear error for specific item
-  const clearError = (itemId: string) => {
+  const clearError = useCallback((itemId: string) => {
     setErrors(prev => prev.filter(error => error.itemId !== itemId));
-  };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent): void => {
@@ -76,7 +76,7 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef, stable
     };
   }, [cartOpen, toggleCart, cartButtonRef]);
 
-  const getCartVariantLabel = (item: any): string | null => {
+  const getCartVariantLabel = useCallback((item: any): string | null => {
     try {
       const name = item?.variant?.name || item?.selectedVariant?.name;
       if (name && typeof name === "string") return name;
@@ -102,9 +102,9 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef, stable
       console.error("Error getting variant label:", error);
     }
     return null;
-  };
+  }, []);
 
-  const formatAttributes = (attrs: any): string => {
+  const formatAttributes = useCallback((attrs: any): string => {
     if (!attrs) return "";
     if (Array.isArray(attrs)) {
       return attrs
@@ -127,10 +127,16 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef, stable
         .join(", ");
     }
     return String(attrs);
-  };
+  }, []);
 
-  // Fixed delete function - pass the entire item object instead of just the ID
-  const handleDeleteItem = async (item: any) => {
+  // Fixed delete function with event stopping
+  const handleDeleteItem = useCallback(async (item: any, e?: React.MouseEvent) => {
+    // Stop event propagation to prevent cart from closing
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     const itemId = item.lineItemId || item.id || item.itemId;
     if (!itemId) {
       console.error("No valid item ID found for deletion:", item);
@@ -139,6 +145,7 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef, stable
     }
 
     clearError(itemId);
+    setIsProcessing(prev => new Set(prev).add(itemId));
     
     try {
       // Pass the entire item object, not just the ID
@@ -154,114 +161,216 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef, stable
         console.error("Quantity fallback also failed:", quantityError);
         addError(itemId, "Unable to remove item. Please try again.", 'delete');
       }
+    } finally {
+      // Quick cleanup without triggering re-renders
+      setTimeout(() => {
+        setIsProcessing(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(itemId);
+          return newSet;
+        });
+      }, 100);
     }
-  };
-
-  // Enhanced quantity handlers with optimistic updates and error handling
-  const handleSafeIncrease = async (item: any) => {
-    const itemId = item.lineItemId || item.id || item.itemId;
-    if (!itemId) return;
-
-    clearError(itemId);
-    
-    // Optimistic update
-    setOptimisticUpdates(prev => new Map(prev.set(itemId, (item.quantity || 0) + 1)));
-
-    try {
-      await handleIncreaseQuantity(itemId, 1);
-      // Clear optimistic update on success
-      setOptimisticUpdates(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(itemId);
-        return newMap;
-      });
-    } catch (error) {
-      console.error("Error increasing quantity:", error);
-      // Revert optimistic update
-      setOptimisticUpdates(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(itemId);
-        return newMap;
-      });
-      
-      // Check if it's a stock issue
-      const errorMessage = error?.message?.toLowerCase() || '';
-      if (errorMessage.includes('stock') || errorMessage.includes('inventory') || errorMessage.includes('available')) {
-        addError(itemId, "Not enough stock available", 'stock');
-      } else {
-        addError(itemId, "Unable to update quantity. Please try again.", 'quantity');
-      }
-    }
-  };
-
-  const handleSafeDecrease = async (item: any) => {
-    const itemId = item.lineItemId || item.id || item.itemId;
-    if (!itemId) return;
-
-    clearError(itemId);
-
-    if (item.quantity <= 1) {
-      // If quantity is 1, delete the item
-      await handleDeleteItem(item);
-      return;
-    }
-
-    // Optimistic update
-    setOptimisticUpdates(prev => new Map(prev.set(itemId, (item.quantity || 0) - 1)));
-
-    try {
-      await handleDecreaseQuantity(itemId, 1);
-      // Clear optimistic update on success
-      setOptimisticUpdates(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(itemId);
-        return newMap;
-      });
-    } catch (error) {
-      console.error("Error decreasing quantity:", error);
-      // Revert optimistic update
-      setOptimisticUpdates(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(itemId);
-        return newMap;
-      });
-      addError(itemId, "Unable to update quantity. Please try again.", 'quantity');
-    }
-  };
-
-  // Get display quantity (optimistic or actual)
-  const getDisplayQuantity = (item: any) => {
-    const itemId = item.lineItemId || item.id || item.itemId;
-    return optimisticUpdates.get(itemId) ?? item.quantity;
-  };
+  }, [handleCartItemOnDelete, handleDecreaseQuantity, addError, clearError]);
 
   // Get error for specific item
-  const getItemError = (itemId: string) => {
+  const getItemError = useCallback((itemId: string) => {
     return errors.find(error => error.itemId === itemId);
-  };
+  }, [errors]);
 
-  // Stable cart items with consistent ordering
+  // Use cartItems directly for real-time updates
   const orderedCartItems = React.useMemo(() => {
-    // Create a map to maintain original positions
-    const positionMap = new Map();
-    stableCartItems.forEach((item, index) => {
-      const itemId = item.lineItemId || item.id || item.itemId;
-      if (!positionMap.has(itemId)) {
-        positionMap.set(itemId, index);
+    return [...cartItems]; // Use cartItems directly for real-time updates
+  }, [cartItems]);
+
+  // Optimized subtotal calculation that updates immediately
+  const subtotal = React.useMemo(() => {
+    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+  }, [cartItems]);
+
+  // Highly optimized cart item component with minimal re-renders
+  const CartItem = React.memo(({ item }: { item: any }) => {
+    const itemId = item.lineItemId || item.id || item.itemId;
+    const isUpdating = updatingItems?.has?.(itemId) || isProcessing.has(itemId);
+    const itemError = getItemError(itemId);
+    const variantLabel = getCartVariantLabel(item);
+    
+    // Local state for immediate UI feedback without waiting for context updates
+    const [localQuantity, setLocalQuantity] = useState(item.quantity);
+    const [isLocalUpdating, setIsLocalUpdating] = useState(false);
+
+    // Update local quantity when item quantity changes from external sources
+    useEffect(() => {
+      setLocalQuantity(item.quantity);
+    }, [item.quantity]);
+
+    // Optimized quantity handlers with immediate local updates
+    const handleLocalIncrease = useCallback(async (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      setIsLocalUpdating(true);
+      setLocalQuantity(prev => prev + 1); // Immediate local update
+      
+      try {
+        await handleIncreaseQuantity(itemId, 1);
+      } catch (error) {
+        setLocalQuantity(item.quantity); // Revert on error
+        console.error("Error increasing quantity:", error);
+        
+        // Check if it's a stock issue
+        const errorMessage = (error as any)?.message?.toLowerCase() || '';
+        if (errorMessage.includes('stock') || errorMessage.includes('inventory') || errorMessage.includes('available')) {
+          addError(itemId, "Not enough stock available", 'stock');
+        } else {
+          addError(itemId, "Unable to update quantity. Please try again.", 'quantity');
+        }
+      } finally {
+        setIsLocalUpdating(false);
       }
-    });
+    }, [itemId, item.quantity, handleIncreaseQuantity, addError]);
 
-    // Sort by original position
-    return [...stableCartItems].sort((a, b) => {
-      const idA = a.lineItemId || a.id || a.itemId;
-      const idB = b.lineItemId || b.id || b.itemId;
-      const posA = positionMap.get(idA) ?? 999;
-      const posB = positionMap.get(idB) ?? 999;
-      return posA - posB;
-    });
-  }, [stableCartItems]);
+    const handleLocalDecrease = useCallback(async (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-  const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+      if (localQuantity <= 1) {
+        await handleDeleteItem(item, e);
+        return;
+      }
+
+      setIsLocalUpdating(true);
+      setLocalQuantity(prev => prev - 1); // Immediate local update
+
+      try {
+        await handleDecreaseQuantity(itemId, 1);
+      } catch (error) {
+        setLocalQuantity(item.quantity); // Revert on error
+        console.error("Error decreasing quantity:", error);
+        addError(itemId, "Unable to update quantity. Please try again.", 'quantity');
+      } finally {
+        setIsLocalUpdating(false);
+      }
+    }, [itemId, item.quantity, localQuantity, handleDecreaseQuantity, handleDeleteItem, addError]);
+    
+    return (
+      <div 
+        className={`cart__item cart__item--uniform-size ${(isUpdating || isLocalUpdating) ? 'cart__item--updating' : ''} ${itemError ? 'cart__item--error' : ''}`}
+      >
+        {/* Error message */}
+        {itemError && (
+          <div className={`cart__item-error cart__item-error--${itemError.type}`}>
+            <FaExclamationCircle className="cart__item-error-icon" />
+            <span className="cart__item-error-text">{itemError.message}</span>
+            <button 
+              className="cart__item-error-dismiss"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                clearError(itemId);
+              }}
+              aria-label="Dismiss error"
+            >
+              <FaTimes />
+            </button>
+          </div>
+        )}
+
+        <div className="cart__item-image-container">
+          <img
+            src={item.image || "../assets/iphone.jpg"}
+            alt={item.name}
+            className="cart__item-image"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = "../assets/iphone.jpg";
+            }}
+          />
+        </div>
+        
+        <div className="cart__item-content">
+          <div className="cart__item-header">
+            <h4 className="cart__item-name">{item.name}</h4>
+            <button
+              className="cart__item-remove"
+              aria-label="Remove item"
+              onClick={(e) => handleDeleteItem(item, e)}
+              disabled={isUpdating || isLocalUpdating}
+            >
+              {(isUpdating || isLocalUpdating) ? (
+                <div className="cart__item-remove-loading"></div>
+              ) : (
+                <FaTrash />
+              )}
+            </button>
+          </div>
+
+          {variantLabel && (
+            <div className="cart__item-variant">
+              {variantLabel}
+            </div>
+          )}
+
+          <div className="cart__item-footer">
+            <div className="cart__item-price">
+              Rs. {item.price.toLocaleString("en-IN")}
+            </div>
+            
+            <div className="cart__item-controls">
+              <div className="cart__quantity-controls">
+                <button
+                  type="button"
+                  aria-label={localQuantity <= 1 ? "Remove item" : "Decrease quantity"}
+                  className="cart__qty-btn cart__qty-btn--decrease"
+                  onClick={handleLocalDecrease}
+                  disabled={isUpdating || isLocalUpdating}
+                >
+                  {localQuantity <= 1 ? <FaTrash /> : <FaMinus />}
+                </button>
+                
+                <span className={`cart__quantity-display ${(isUpdating || isLocalUpdating) ? 'cart__quantity-display--updating' : ''}`}>
+                  {localQuantity}
+                </span>
+                
+                <button
+                  type="button"
+                  aria-label="Increase quantity"
+                  className="cart__qty-btn cart__qty-btn--increase"
+                  onClick={handleLocalIncrease}
+                  disabled={isUpdating || isLocalUpdating}
+                >
+                  <FaPlus />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Loading overlay - only show for major operations, not quantity changes */}
+        {isUpdating && !isLocalUpdating && (
+          <div className="cart__item-loading-overlay">
+            <div className="cart__item-loading-spinner"></div>
+          </div>
+        )}
+      </div>
+    );
+  }, (prevProps, nextProps) => {
+    // Custom comparison function to prevent unnecessary re-renders
+    const prevItem = prevProps.item;
+    const nextItem = nextProps.item;
+    
+    return (
+      prevItem.quantity === nextItem.quantity &&
+      prevItem.price === nextItem.price &&
+      prevItem.name === nextItem.name &&
+      prevItem.image === nextItem.image
+    );
+  });
+
+  // Prevent cart from closing when clicking inside cart content
+  const handleCartContentClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
 
   return (
     <>
@@ -273,6 +382,7 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef, stable
       <div
         className={`cart ${cartOpen ? "cart--open" : ""}`}
         ref={sideCartRef}
+        onClick={handleCartContentClick} // Prevent clicks inside cart from bubbling
       >
         <div className="cart__header">
           <div className="cart__header-content">
@@ -280,12 +390,16 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef, stable
               <FaShoppingBag className="cart__title-icon" />
               Your Shopping Cart
               {cartItems.length > 0 && (
-                <span className="cart__item-count">({cartItems.length})</span>
+                <span className="cart__item-count">{cartItems.length}</span>
               )}
             </h2>
             <button
               className="cart__close"
-              onClick={toggleCart}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleCart();
+              }}
               aria-label="Close cart"
             >
               <FaTimes />
@@ -304,7 +418,10 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef, stable
               <Link
                 to="/shop"
                 className="cart__empty-button"
-                onClick={() => setCartOpen(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCartOpen(false);
+                }}
               >
                 Start Shopping
               </Link>
@@ -314,111 +431,7 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef, stable
               <div className="cart__items">
                 {orderedCartItems.map((item) => {
                   const itemId = item.lineItemId || item.id || item.itemId;
-                  const isUpdating = updatingItems?.has?.(itemId);
-                  const displayQuantity = getDisplayQuantity(item);
-                  const itemError = getItemError(itemId);
-                  
-                  return (
-                    <div 
-                      className={`cart__item cart__item--uniform-size ${isUpdating ? 'cart__item--updating' : ''} ${itemError ? 'cart__item--error' : ''}`} 
-                      key={itemId}
-                    >
-                      {/* Error message */}
-                      {itemError && (
-                        <div className={`cart__item-error cart__item-error--${itemError.type}`}>
-                          <FaExclamationCircle className="cart__item-error-icon" />
-                          <span className="cart__item-error-text">{itemError.message}</span>
-                          <button 
-                            className="cart__item-error-dismiss"
-                            onClick={() => clearError(itemId)}
-                            aria-label="Dismiss error"
-                          >
-                            <FaTimes />
-                          </button>
-                        </div>
-                      )}
-
-                      <div className="cart__item-image-container">
-                        <img
-                          src={item.image || "../assets/iphone.jpg"}
-                          alt={item.name}
-                          className="cart__item-image"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = "../assets/iphone.jpg";
-                          }}
-                        />
-                      </div>
-                      
-                      <div className="cart__item-content">
-                        <div className="cart__item-header">
-                          <h4 className="cart__item-name">{item.name}</h4>
-                          <button
-                            className="cart__item-remove"
-                            aria-label="Remove item"
-                            onClick={() => handleDeleteItem(item)}
-                            disabled={isUpdating}
-                          >
-                            {isUpdating ? (
-                              <div className="cart__item-remove-loading"></div>
-                            ) : (
-                              <FaTrash />
-                            )}
-                          </button>
-                        </div>
-
-                        {(() => {
-                          const label = getCartVariantLabel(item);
-                          return label ? (
-                            <div className="cart__item-variant">
-                              {label}
-                            </div>
-                          ) : null;
-                        })()}
-
-                        <div className="cart__item-footer">
-                          <div className="cart__item-price">
-                            Rs. {item.price.toLocaleString("en-IN")}
-                          </div>
-                          
-                          <div className="cart__item-controls">
-                            <div className="cart__quantity-controls">
-                              <button
-                                type="button"
-                                aria-label={displayQuantity <= 1 ? "Remove item" : "Decrease quantity"}
-                                className="cart__qty-btn cart__qty-btn--decrease"
-                                onClick={() => handleSafeDecrease(item)}
-                                disabled={isUpdating}
-                              >
-                                {displayQuantity <= 1 ? <FaTrash /> : <FaMinus />}
-                              </button>
-                              
-                              <span className={`cart__quantity-display ${isUpdating ? 'cart__quantity-display--updating' : ''}`}>
-                                {displayQuantity}
-                              </span>
-                              
-                              <button
-                                type="button"
-                                aria-label="Increase quantity"
-                                className="cart__qty-btn cart__qty-btn--increase"
-                                onClick={() => handleSafeIncrease(item)}
-                                disabled={isUpdating}
-                              >
-                                <FaPlus />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Loading overlay */}
-                      {isUpdating && (
-                        <div className="cart__item-loading-overlay">
-                          <div className="cart__item-loading-spinner"></div>
-                        </div>
-                      )}
-                    </div>
-                  );
+                  return <CartItem key={itemId} item={item} />;
                 })}
               </div>
 
@@ -438,7 +451,10 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef, stable
                   <Link
                     to="/checkout"
                     className="cart__button cart__button--checkout"
-                    onClick={() => setCartOpen(false)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCartOpen(false);
+                    }}
                   >
                     Proceed to Checkout
                   </Link>
@@ -446,7 +462,10 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef, stable
                   <Link
                     to="/shop"
                     className="cart__button cart__button--continue"
-                    onClick={() => setCartOpen(false)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCartOpen(false);
+                    }}
                   >
                     Continue Shopping
                   </Link>
