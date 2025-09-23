@@ -636,11 +636,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     onClose();
   };
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      handleClose();
-    }
-  };
+
 
   // Initialize with one variant if hasVariants is true
   useEffect(() => {
@@ -667,7 +663,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   if (!isOpen) return null;
 
   return (
-    <div className="new-product-modal-overlay" onClick={handleOverlayClick}>
+    <div className="new-product-modal-overlay">
       <div className="new-product-modal" onClick={(e) => e.stopPropagation()}>
         <div className="new-product-modal-header">
           <h2 className="new-product-modal-title">Create New Product</h2>

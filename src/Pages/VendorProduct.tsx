@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { fetchProducts, updateProduct } from '../api/products';
+import { fetchProducts, updateProduct, deleteProduct } from '../api/products'; // Added deleteProduct import
 import Header from '../Components/Header';
 import EditProductModal from '../Components/Modal/EditProductModalRedesigned';
 import NewProductModal from '../Components/NewProductModalRedesigned';
@@ -75,19 +75,19 @@ const VendorProduct: React.FC = () => {
     ],
     queryFn: async () => {
       if (!authState.vendor?.id || !authState.token) throw new Error('Missing vendor or token');
-      
+
       console.log('Fetching vendor products for vendor ID:', authState.vendor.id);
       console.log('Current page:', currentPage, 'Products per page:', productsPerPage);
-      
+
       const response = await fetchProducts(
         Number(authState.vendor.id),
         currentPage,
         productsPerPage
       );
-      
+
       console.log('Vendor products response:', response);
       console.log('Response data:', response.data);
-      
+
       if (!response.data || typeof response.data !== 'object') throw new Error('Invalid response');
       if (!response.data.success || !response.data.data || !Array.isArray(response.data.data.product)) throw new Error('Invalid response format');
       const products: Product[] = response.data.data.product.map((product: ApiProduct): Product => {
@@ -209,6 +209,7 @@ const VendorProduct: React.FC = () => {
     },
     enabled: !!authState.vendor?.id && !!authState.token
   });
+
   // Sort products based on sortOption
   const sortProducts = (products: Product[]) => {
     const sorted = [...products];
@@ -355,17 +356,17 @@ const VendorProduct: React.FC = () => {
       console.log('Product created successfully:', data);
       console.log('Created product data:', data);
       toast.success('Product created successfully!');
-      
+
       // Invalidate all vendor-products queries to ensure fresh data
-      queryClient.invalidateQueries({ 
-        queryKey: ['vendor-products'] 
+      queryClient.invalidateQueries({
+        queryKey: ['vendor-products']
       });
-      
+
       // Force refetch the current page
       queryClient.refetchQueries({
         queryKey: ['vendor-products', authState.vendor?.id, currentPage, productsPerPage, authState.token]
       });
-      
+
       console.log('Cache invalidated and refetch triggered');
       setShowAddModal(false);
     },
@@ -445,6 +446,23 @@ const VendorProduct: React.FC = () => {
           authState.token
         ]
       });
+    },
+  });
+
+  // New Mutation for deleting a product
+  const deleteProductMutation = useMutation({
+    mutationFn: async (productId: number) => {
+      if (!authState.token) throw new Error("Authentication token is missing");
+      if (!authState.vendor?.id) throw new Error("Vendor ID is missing");
+      return deleteProduct(productId, authState.token); // Assuming deleteProduct takes (productId, token)
+    },
+    onSuccess: () => {
+      toast.success('Product deleted successfully!');
+      queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
+    },
+    onError: (error: Error) => {
+      console.error('Error deleting product:', error);
+      toast.error(error.message || 'Failed to delete product');
     },
   });
 
@@ -552,6 +570,13 @@ const VendorProduct: React.FC = () => {
     console.log('ApiProduct Subcategory:', apiProduct.subcategory);
     setEditingProduct(apiProduct);
     setShowEditModal(true);
+  };
+
+  // New Handler for Delete Product
+  const handleDeleteProduct = (product: Product) => {
+    if (window.confirm(`Are you sure you want to delete "${product.name}"? This action cannot be undone.`)) {
+      deleteProductMutation.mutate(product.id);
+    }
   };
 
   const handleSaveEditProduct = async (_productId: number, _productData: ProductFormData, _categoryId: number, _subcategoryId: number) => {
@@ -681,6 +706,7 @@ const VendorProduct: React.FC = () => {
                 products={finalProducts}
                 isMobile={isMobile}
                 onEdit={handleEditProduct}
+                onDelete={handleDeleteProduct} // Added onDelete prop
                 showVendor={false}
               />
               {finalTotal > productsPerPage && (

@@ -104,9 +104,8 @@ const AdminProduct: React.FC = () => {
     console.log("delete",product)
     try {
       await productService.deleteProduct(
-        product.categoryId,
-        product.subcategory.id,
-        product.id
+        product.id,
+        token
       );
       setProducts(prevProducts => prevProducts.filter(p => p.id !== product.id));
       setFilteredProducts(prevProducts => prevProducts.filter(p => p.id !== product.id));

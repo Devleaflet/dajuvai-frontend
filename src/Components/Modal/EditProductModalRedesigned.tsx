@@ -754,16 +754,11 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     onClose();
   };
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      handleClose();
-    }
-  };
 
   if (!show) return null;
 
   return (
-    <div className="new-product-modal-overlay" onClick={handleOverlayClick}>
+    <div className="new-product-modal-overlay" >
       <div className="new-product-modal" onClick={(e) => e.stopPropagation()}>
         <div className="new-product-modal-header">
           <h2 className="new-product-modal-title">Edit Product</h2>
@@ -1348,7 +1343,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
             {/* Submit Buttons */}
             <div className="form-section">
               <div className="button-group">
-                <button type="button" onClick={handleClose} className="btn btn-secondary">
+                <button type="button" onClick={handleClose} className="btn btn-cancel">
                   Cancel
                 </button>
                 <button
