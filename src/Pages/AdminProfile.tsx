@@ -354,6 +354,10 @@ const AdminProfile: React.FC = () => {
         </div>
         <div className="admin-profile-form__row">
           <div className="admin-profile-form__group admin-profile-form__group--half">
+            <label>Email</label>
+              <div className="admin-profile-form__display">{adminDetails.email|| "Not provided"}</div>
+          </div>
+          <div className="admin-profile-form__group admin-profile-form__group--half">
             <label>Phone Number</label>
             {isEditing ? (
               <input

@@ -67,7 +67,7 @@ const OrderSuccessModal: React.FC<{
   onContinueShopping: () => void;
   totalAmount: number;  // ✅ FIXED: Changed from {finalTotal} to number
   paymentMethod: string;
-}> = ({ open, onClose, onViewOrder, onContinueShopping, totalAmount, paymentMethod }) => {  // ✅ FIXED: Added missing props
+}> = ({ open,  onViewOrder, onContinueShopping, totalAmount, paymentMethod }) => {  // ✅ FIXED: Added missing props
   if (!open) return null;
   return (
     <div className="checkout-success-modal-overlay">
@@ -77,9 +77,6 @@ const OrderSuccessModal: React.FC<{
             <div className="checkout-success-modal__icon-wrapper">
               <div className="checkout-success-modal__icon">✓</div>
             </div>
-            <button className="checkout-success-modal__close" onClick={onClose}>
-              ×
-            </button>
           </div>
           <h2 className="checkout-success-modal__title">Order Confirmed!</h2>
           <p className="checkout-success-modal__message">
