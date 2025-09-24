@@ -47,7 +47,7 @@
 }
 
 .dashboard__search-input {
-	width: 500px; /* Full width within its container */
+	width: 100%; /* Full width within its container */
 	padding: 10px 16px 10px 40px;
 	border: 1px solid #e5e7eb;
 	border-radius: 24px;
