@@ -1,3 +1,7 @@
+// ================================
+// WISHLIST COMPONENT — TSX FILE
+// ================================
+
 import React, { useState, useEffect } from 'react';
 import '../Styles/Wishlist.css';
 import { FaTrash, FaShoppingCart, FaMinus, FaPlus, FaUser } from 'react-icons/fa';
@@ -13,14 +17,17 @@ import { useAuth } from '../context/AuthContext';
 import defaultProductImage from "../assets/logo.webp";
 import { useCart } from '../context/CartContext';
 
-// Define types for wishlist items from API
+// ================================
+// TYPES & INTERFACES
+// ================================
+
 interface Product {
   id: number;
   name: string;
   description: string;
   basePrice: number;
-  productImages?: string[]; // Added for product images
-  image?: string; // Fallback image
+  productImages?: string[];
+  image?: string;
 }
 
 interface Variant {
@@ -51,9 +58,12 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-// Skeleton component for loading state
+// ================================
+// SKELETON LOADER COMPONENT
+// ================================
+
 const WishlistItemSkeleton: React.FC = () => (
-  <div className="wishlist__item wishlist__item--skeleton">
+  <div className="wishlist__item wishlist__item--skeleton" aria-hidden="true">
     <div className="wishlist__item-image">
       <div className="skeleton skeleton--image"></div>
     </div>
@@ -79,6 +89,10 @@ const WishlistItemSkeleton: React.FC = () => (
   </div>
 );
 
+// ================================
+// MAIN WISHLIST COMPONENT
+// ================================
+
 const Wishlist: React.FC = () => {
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +102,10 @@ const Wishlist: React.FC = () => {
   const { token, isAuthenticated } = useAuth();
   const { refreshCart } = useCart();
 
-  // API headers with authentication
+  // ================================
+  // HELPER FUNCTIONS
+  // ================================
+
   const getHeaders = () => {
     return {
       'Content-Type': 'application/json',
@@ -96,7 +113,6 @@ const Wishlist: React.FC = () => {
     };
   };
 
-  // Helpers
   const toFullUrl = (imgUrl: string): string => {
     if (!imgUrl) return '';
     return imgUrl.startsWith('http')
@@ -108,7 +124,6 @@ const Wishlist: React.FC = () => {
     try {
       if (!img) return '';
       if (typeof img === 'string') {
-        // Could be URL or JSON string
         try {
           const parsed = JSON.parse(img);
           const url = parsed?.url || parsed?.imageUrl || img;
@@ -128,7 +143,6 @@ const Wishlist: React.FC = () => {
   };
 
   const getItemImage = (item: WishlistItem): string => {
-    // Prefer variant image if present
     const vImgs = (item.variant?.variantImages || []) as any[];
     if (vImgs.length > 0) {
       const first = parseImageEntry(vImgs[0]);
@@ -193,6 +207,10 @@ const Wishlist: React.FC = () => {
     return Number(item.product.basePrice) || 0;
   };
 
+  // ================================
+  // API CALLS
+  // ================================
+
   const fetchWishlist = async () => {
     try {
       setLoading(true);
@@ -243,7 +261,6 @@ const Wishlist: React.FC = () => {
     }
   };
 
-  // Remove item from wishlist
   const handleRemoveItem = async (wishlistItemId: number) => {
     try {
       setActionLoading(prev => ({ ...prev, [`remove_${wishlistItemId}`]: true }));
@@ -283,7 +300,6 @@ const Wishlist: React.FC = () => {
     }
   };
 
-  // Move item to cart
   const handleMoveToCart = async (wishlistItemId: number, quantity: number, showToast: boolean = true) => {
     try {
       setActionLoading(prev => ({ ...prev, [`cart_${wishlistItemId}`]: true }));
@@ -309,7 +325,7 @@ const Wishlist: React.FC = () => {
       
       if (data.success) {
         setWishlistItems(prev => prev.filter(item => item.id !== wishlistItemId));
-        await refreshCart(); // Refresh cart after moving item
+        await refreshCart();
         if (showToast) {
           toast.success('Item moved to cart successfully!');
         }
@@ -326,7 +342,10 @@ const Wishlist: React.FC = () => {
     }
   };
 
-  // Handle quantity change (local state only)
+  // ================================
+  // UI HANDLERS
+  // ================================
+
   const handleQuantityChange = (id: number, newQuantity: number) => {
     if (newQuantity < 1) return;
     
@@ -335,16 +354,13 @@ const Wishlist: React.FC = () => {
     ));
   };
 
-  // Handle adding all items to cart
   const handleAddAllToCart = async () => {
     try {
       setActionLoading(prev => ({ ...prev, 'add_all': true }));
-      // Sequentially move each item to cart to ensure cookies are sent and state is updated
       for (const item of wishlistItems) {
-        // eslint-disable-next-line no-await-in-loop
         await handleMoveToCart(item.id, item.quantity || 1, false);
       }
-      await refreshCart(); // Refresh cart after moving all items
+      await refreshCart();
       toast.success('All items moved to cart successfully!');
       await fetchWishlist();
     } catch (err) {
@@ -355,44 +371,50 @@ const Wishlist: React.FC = () => {
     }
   };
 
-  // Load wishlist on component mount
+  // ================================
+  // LIFECYCLE & CALCULATIONS
+  // ================================
+
   useEffect(() => {
     fetchWishlist();
   }, []);
 
-  // Calculate total price of all items
   const totalPrice = wishlistItems.reduce((sum, item) => {
     const price = getItemPrice(item);
     return sum + price * (item.quantity || 1);
   }, 0);
 
-  // Handle retry
   const handleRetry = () => {
     fetchWishlist();
   };
+
+  // ================================
+  // RENDER
+  // ================================
 
   return (
     <>
       <ScrollToTop />
       <Navbar />
-      <div className="wishlist">
+      <div className="wishlist" role="main">
         <div className="wishlist__container">
           <h1 className="wishlist__title">My Wishlist</h1>
           
           {loading ? (
-            <div className="wishlist__items">
+            <div className="wishlist__items" aria-busy="true">
               {[...Array(3)].map((_, index) => (
                 <WishlistItemSkeleton key={index} />
               ))}
             </div>
           ) : error ? (
-            <div className="wishlist__error">
+            <div className="wishlist__error" role="alert">
               {error.includes('Please log in') ? (
                 <div className="wishlist__login-container">
                   <p className="wishlist__login-message">Please log in to view and manage your wishlist items</p>
                   <button 
                     className="wishlist__login-button"
                     onClick={() => setShowAuthModal(true)}
+                    aria-label="Log in to continue"
                   >
                     <FaUser className="wishlist__login-icon" />
                     Log In to Continue
@@ -402,36 +424,36 @@ const Wishlist: React.FC = () => {
                 <button 
                   className="wishlist__retry-button"
                   onClick={handleRetry}
+                  aria-label="Retry loading wishlist"
                 >
                   Try Again
                 </button>
               )}
             </div>
           ) : wishlistItems.length === 0 ? (
-            /* Empty State */
-            <div className="wishlist__empty">
+            <div className="wishlist__empty" aria-label="Empty wishlist">
               <p>Your wishlist is empty</p>
               <Link to="/shop" className="wishlist__shop-button">Shop Now</Link>
             </div>
           ) : (
-            /* Wishlist Items */
             <>
               <div className="wishlist__items">
                 {wishlistItems.map((item) => (
-                  <div key={item.id} className="wishlist__item">
+                  <div key={item.id} className="wishlist__item" data-testid={`wishlist-item-${item.id}`}>
                     <div className="wishlist__item-image">
                       <img 
                         src={getItemImage(item)}
                         alt={item.product.name}
                         onError={e => { e.currentTarget.src = defaultProductImage; }}
-                        style={{ objectFit: 'cover', width: 80, height: 80, borderRadius: 8, border: '1px solid #eee' }}
+                        loading="lazy"
+                        className="wishlist__product-image"
                       />
                     </div>
                     
                     <div className="wishlist__item-details">
                       <h3 className="wishlist__item-name">{item.product.name}</h3>
                       {item.variant && (
-                        <div className="wishlist__item-variant" style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+                        <div className="wishlist__item-variant">
                           Variant: {formatVariantAttributes(item.variant.attributes)}
                         </div>
                       )}
@@ -451,7 +473,7 @@ const Wishlist: React.FC = () => {
                       >
                         <FaMinus />
                       </button>
-                      <span className="wishlist__qty-value">{item.quantity || 1}</span>
+                      <span className="wishlist__qty-value" aria-live="polite">{item.quantity || 1}</span>
                       <button 
                         className="wishlist__qty-btn"
                         onClick={() => handleQuantityChange(item.id, (item.quantity || 1) + 1)}
@@ -470,7 +492,7 @@ const Wishlist: React.FC = () => {
                         disabled={actionLoading[`remove_${item.id}`] || actionLoading[`cart_${item.id}`]}
                       >
                         {actionLoading[`remove_${item.id}`] ? (
-                          <div className="spinner"></div>
+                          <div className="spinner" aria-label="Removing item"></div>
                         ) : (
                           <FaTrash />
                         )}
@@ -483,7 +505,7 @@ const Wishlist: React.FC = () => {
                         disabled={actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`]}
                       >
                         {actionLoading[`cart_${item.id}`] ? (
-                          <div className="spinner"></div>
+                          <div className="spinner" aria-label="Adding to cart"></div>
                         ) : (
                           <FaShoppingCart />
                         )}
@@ -505,10 +527,11 @@ const Wishlist: React.FC = () => {
                   className="wishlist__add-all-btn"
                   onClick={handleAddAllToCart}
                   disabled={actionLoading['add_all'] || wishlistItems.length === 0}
+                  aria-label="Add all items to cart"
                 >
                   {actionLoading['add_all'] ? (
                     <>
-                      <div className="spinner"></div>
+                      <div className="spinner" aria-label="Processing"></div>
                       ADDING TO CART...
                     </>
                   ) : (
@@ -542,3 +565,4 @@ const Wishlist: React.FC = () => {
 };
 
 export default Wishlist;
+
