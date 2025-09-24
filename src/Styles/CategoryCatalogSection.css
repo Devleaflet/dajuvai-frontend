@@ -320,6 +320,7 @@
 
 	.category-section__subcategory-name {
 		max-width: 110px;
+		font-size: smaller;
 	}
 }
 

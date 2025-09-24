@@ -20,6 +20,7 @@ interface HomepageSection {
 	id: number;
 	title: string;
 	isActive: boolean;
+	productSource: string;
 	products: Product[];
 }
 
@@ -116,6 +117,7 @@ const AdminCatalog = () => {
 			);
 			if (!response.ok) throw new Error("Failed to fetch homepage sections");
 			const data = await response.json();
+
 			setHomepageSections(data.data);
 		} catch (err) {
 			setError("Failed to load homepage sections");
@@ -561,6 +563,9 @@ const AdminCatalog = () => {
 										<tr className="admin-catalog__table-row">
 											<th className="admin-catalog__table-header">Title</th>
 											<th className="admin-catalog__table-header">Status</th>
+											<th className="admin-catalog__table-header">
+												Product Source
+											</th>
 											<th className="admin-catalog__table-header">Products</th>
 											<th className="admin-catalog__table-header">Actions</th>
 										</tr>
@@ -587,6 +592,9 @@ const AdminCatalog = () => {
 													>
 														{section.isActive ? "Active" : "Inactive"}
 													</button>
+												</td>
+												<td className="admin-catalog__table-cell sentence-casing">
+													{section.productSource}
 												</td>
 												<td className="admin-catalog__table-cell">
 													<div className="admin-catalog__product-tags">

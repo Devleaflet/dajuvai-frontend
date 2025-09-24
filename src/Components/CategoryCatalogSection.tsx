@@ -219,9 +219,6 @@ const CategoryCatalogSection: React.FC = () => {
 							<h2 className="category-section__title">
 								{category.category.name}
 							</h2>
-							<a href={`/shop?categoryId=${catId}`}>
-								<button className="category-section__view-all">View All</button>
-							</a>
 						</div>
 						<div className="category-section__carousel-container">
 							{showScrollButtons && hasOverflow && !atStart && (

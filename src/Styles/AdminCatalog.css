@@ -38,6 +38,9 @@
 .admin-catalog__card-header {
 	padding: 20px 24px;
 	border-bottom: 1px solid #e5e7eb;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
 }
 
 .admin-catalog__header-content {
@@ -52,6 +55,12 @@
 	font-weight: 600;
 	color: #374151;
 	margin: 0;
+}
+
+.admin-catalog__section-info {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 }
 
 .admin-catalog__controls {
@@ -555,6 +564,14 @@
 	font-size: 14px;
 	font-weight: 500;
 	cursor: pointer;
+}
+
+.sentence-casing {
+	text-transform: lowercase;
+}
+
+.sentence-casing::first-letter {
+	text-transform: uppercase;
 }
 
 .admin-catalog__button--danger:hover {
