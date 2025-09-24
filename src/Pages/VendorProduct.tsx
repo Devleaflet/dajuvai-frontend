@@ -13,6 +13,7 @@ import { useVendorAuth } from "../context/VendorAuthContext";
 import "../Styles/VendorProduct.css";
 import { Product as ApiProduct, ProductFormData } from "../types/product";
 import * as XLSX from "xlsx";
+import VendorHeader from "../Components/VendorHeader";
 
 const ProductListSkeleton: React.FC = () => {
 	return (
@@ -846,9 +847,9 @@ const VendorProduct: React.FC = () => {
 		<div className="vendor-dash-container">
 			<Sidebar />
 			<div className={`dashboard ${isMobile ? "dashboard--mobile" : ""}`}>
-				<Header
+				<VendorHeader
+					showSearch={false}
 					title="Product Management"
-					onSearch={() => {}}
 				/>
 				<div
 					className="dashboard__search-container"
