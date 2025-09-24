@@ -1,3 +1,4 @@
+// About.tsx
 import { useEffect, useState } from 'react';
 import { FaEnvelope, FaInfoCircle, FaMapMarkerAlt, FaPhone } from 'react-icons/fa';
 import { toast, ToastContainer } from 'react-toastify';
@@ -6,6 +7,10 @@ import axiosInstance from '../api/axiosInstance';
 import Footer from "../Components/Footer";
 import Navbar from "../Components/Navbar";
 import '../Styles/About.css';
+
+// ===============================
+// TYPES AND INTERFACES
+// ===============================
 
 interface FormErrors {
   firstName?: string;
@@ -16,7 +21,15 @@ interface FormErrors {
   message?: string;
 }
 
+// ===============================
+// MAIN COMPONENT
+// ===============================
+
 const About = () => {
+  // ===============================
+  // STATE MANAGEMENT
+  // ===============================
+  
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -30,6 +43,10 @@ const About = () => {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
 
+  // ===============================
+  // EFFECTS AND EVENT HANDLERS
+  // ===============================
+  
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
@@ -52,7 +69,6 @@ const About = () => {
       
       case "phone":
         if (!value.trim()) return "Phone number is required";
-        // Remove all spaces and non-digit characters
         const cleanPhone = value.replace(/\D/g, '');
         
         if (cleanPhone.length < 10) {
@@ -64,7 +80,6 @@ const About = () => {
         if (!/^[0-9]{10}$/.test(cleanPhone)) {
           return "Phone number must contain only digits";
         }
-        // Check if it starts with valid Nepali prefixes
         if (!cleanPhone.startsWith('98') && !cleanPhone.startsWith('97') && !cleanPhone.startsWith('96') && !cleanPhone.startsWith('01')) {
           return "Enter valid Nepali phone number (98XXXXXXXX, 97XXXXXXXX, 96XXXXXXXX, or 01XXXXXXXX)";
         }
@@ -97,12 +112,10 @@ const About = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
 
-    // Clear the error for this field when user starts typing
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: "" }));
     }
     
-    // Validate field in real-time if it's been touched before
     if (touched[name]) {
       const error = validateField(name, value);
       setErrors(prev => ({ ...prev, [name]: error }));
@@ -123,7 +136,6 @@ const About = () => {
 
     setErrors(newErrors);
     
-    // Mark all fields as touched to show errors
     const allTouched = Object.keys(formData).reduce((acc, key) => {
       acc[key] = true;
       return acc;
@@ -168,7 +180,6 @@ const About = () => {
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosError = err as any;
         if (axiosError.response?.data) {
-          // Handle field validation errors from server
           if (axiosError.response.data.errors) {
             const serverErrors = axiosError.response.data.errors;
             const newErrors: FormErrors = {};
@@ -200,26 +211,52 @@ const About = () => {
     }
   };
 
+  // ===============================
+  // RENDER
+  // ===============================
+  
   return (
     <>
       <Navbar />
       <div className="about-max-width-container">
+        {/* ===============================
+             CONTACT SECTION
+        =============================== */}
         <section className="contact-section">
           <div className="contact-container">
             <div className="contact-content">
+              {/* ===============================
+                   CONTACT INFORMATION
+              =============================== */}
               <div className="contact-content-left">
                 <h2 className="contact-title">Contact Us</h2>
                 <p className="contact-subtext">
                   We're here to help! Have questions, feedback, or need assistance?
                   Reach out via email, phone, or the form and we'll respond promptly.
                 </p>
+                
                 <div className="contact-info">
-                  <div className="contact-info-item"><FaPhone /><span>+977-9700620004</span></div>
-                  <div className="contact-info-item"><FaPhone /><span>01-4720234</span></div>
-                  <div className="contact-info-item"><FaEnvelope /><span>Dajuvai106@gmail.com</span></div>
-                  <div className="contact-info-item"><FaMapMarkerAlt /><span>Kathmandu, Nepal</span></div>
+                  <div className="contact-info-item">
+                    <FaPhone className="contact-icon" />
+                    <span>+977-9700620004</span>
+                  </div>
+                  <div className="contact-info-item">
+                    <FaPhone className="contact-icon" />
+                    <span>01-4720234</span>
+                  </div>
+                  <div className="contact-info-item">
+                    <FaEnvelope className="contact-icon" />
+                    <span>Dajuvai106@gmail.com</span>
+                  </div>
+                  <div className="contact-info-item">
+                    <FaMapMarkerAlt className="contact-icon" />
+                    <span>Kathmandu, Nepal</span>
+                  </div>
                 </div>
 
+                {/* ===============================
+                     VENDOR CTA
+                =============================== */}
                 <div className="vendor-cta">
                   <h3>Want to Become a Vendor?</h3>
                   <p>Join our platform and reach thousands of customers across Nepal.</p>
@@ -227,18 +264,23 @@ const About = () => {
                 </div>
               </div>
 
+              {/* ===============================
+                   CONTACT FORM
+              =============================== */}
               <div className="contact-content-right">
                 <form onSubmit={handleSubmit} className="contact-form" noValidate>
+                  {/* First Name & Last Name */}
                   <div className="form-row">
                     <div className="form-group">
-                      <label>First Name *</label>
+                      <label htmlFor="firstName">First Name *</label>
                       <input 
+                        id="firstName"
                         name="firstName" 
                         placeholder="Enter your first name"
                         value={formData.firstName} 
                         onChange={handleInputChange}
                         onBlur={handleBlur}
-                        className={errors.firstName && touched.firstName ? 'error' : ''}
+                        className={errors.firstName && touched.firstName ? 'input-error' : ''}
                         required 
                       />
                       {errors.firstName && touched.firstName && (
@@ -249,14 +291,15 @@ const About = () => {
                       )}
                     </div>
                     <div className="form-group">
-                      <label>Last Name *</label>
+                      <label htmlFor="lastName">Last Name *</label>
                       <input 
+                        id="lastName"
                         name="lastName" 
                         placeholder="Enter your last name"
                         value={formData.lastName} 
                         onChange={handleInputChange}
                         onBlur={handleBlur}
-                        className={errors.lastName && touched.lastName ? 'error' : ''}
+                        className={errors.lastName && touched.lastName ? 'input-error' : ''}
                         required 
                       />
                       {errors.lastName && touched.lastName && (
@@ -268,16 +311,18 @@ const About = () => {
                     </div>
                   </div>
                   
+                  {/* Email */}
                   <div className="form-group">
-                    <label>Email *</label>
+                    <label htmlFor="email">Email *</label>
                     <input 
+                      id="email"
                       type="email" 
                       name="email" 
                       placeholder="Enter your email address"
                       value={formData.email} 
                       onChange={handleInputChange}
                       onBlur={handleBlur}
-                      className={errors.email && touched.email ? 'error' : ''}
+                      className={errors.email && touched.email ? 'input-error' : ''}
                       required 
                     />
                     {errors.email && touched.email && (
@@ -288,16 +333,18 @@ const About = () => {
                     )}
                   </div>
                   
+                  {/* Phone */}
                   <div className="form-group">
-                    <label>Phone *</label>
+                    <label htmlFor="phone">Phone *</label>
                     <input 
+                      id="phone"
                       type="tel" 
                       name="phone" 
-                      placeholder="Enter phone number "
+                      placeholder="Enter phone number"
                       value={formData.phone} 
                       onChange={handleInputChange}
                       onBlur={handleBlur}
-                      className={errors.phone && touched.phone ? 'error' : ''}
+                      className={errors.phone && touched.phone ? 'input-error' : ''}
                       required 
                     />
                     {errors.phone && touched.phone && (
@@ -308,15 +355,17 @@ const About = () => {
                     )}
                   </div>
                   
+                  {/* Subject */}
                   <div className="form-group">
-                    <label>Subject *</label>
+                    <label htmlFor="subject">Subject *</label>
                     <input 
+                      id="subject"
                       name="subject" 
                       placeholder="Enter the subject of your message"
                       value={formData.subject} 
                       onChange={handleInputChange}
                       onBlur={handleBlur}
-                      className={errors.subject && touched.subject ? 'error' : ''}
+                      className={errors.subject && touched.subject ? 'input-error' : ''}
                       required 
                     />
                     {errors.subject && touched.subject && (
@@ -327,16 +376,19 @@ const About = () => {
                     )}
                   </div>
                   
+                  {/* Message */}
                   <div className="form-group">
-                    <label>Message</label>
+                    <label htmlFor="message">Message *</label>
                     <textarea 
+                      id="message"
                       rows={windowWidth < 576 ? 5 : 7} 
                       name="message" 
                       placeholder="Enter your message here..."
                       value={formData.message} 
                       onChange={handleInputChange}
                       onBlur={handleBlur}
-                      className={errors.message && touched.message ? 'error' : ''}
+                      className={errors.message && touched.message ? 'input-error' : ''}
+                      required
                     />
                     {errors.message && touched.message && (
                       <div className="error-message">
@@ -346,8 +398,19 @@ const About = () => {
                     )}
                   </div>
                   
-                  <button type="submit" className="btn btn--primary" disabled={loading}>
-                    {loading ? 'Sending…' : 'Send Message'}
+                  {/* Submit Button */}
+                  <button 
+                    type="submit" 
+                    className="btn btn--primary" 
+                    disabled={loading}
+                    aria-busy={loading}
+                  >
+                    {loading ? (
+                      <span className="btn-loading">
+                        <span className="loading-spinner"></span>
+                        Sending…
+                      </span>
+                    ) : 'Send Message'}
                   </button>
                 </form>
               </div>
@@ -356,7 +419,18 @@ const About = () => {
         </section>
       </div>
       <Footer />
-      <ToastContainer />
+      <ToastContainer 
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="colored"
+      />
     </>
   );
 };

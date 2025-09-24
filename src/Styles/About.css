@@ -1,4 +1,31 @@
-/* Fixed width container - prevents expansion on zoom */
+/* About.css */
+/* ===============================
+   GLOBAL STYLES AND VARIABLES
+=============================== */
+:root {
+  --primary: #f47a42;
+  --primary-dark: #e06a32;
+  --primary-light: #ffd8c8;
+  --error: #dc3545;
+  --error-light: #fff5f5;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --text-placeholder: #aaaaaa;
+  --border-light: #f0f0f0;
+  --background-light: #f9f9f9;
+  --white: #ffffff;
+  --shadow-light: rgba(0, 0, 0, 0.08);
+  --shadow-medium: rgba(0, 0, 0, 0.12);
+  --shadow-primary: rgba(244, 122, 66, 0.25);
+  --shadow-primary-hover: rgba(244, 122, 66, 0.35);
+  --border-radius: 12px;
+  --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --transition-fast: all 0.2s ease;
+}
+
+/* ===============================
+   LAYOUT CONTAINERS
+=============================== */
 .about-max-width-container {
   width: 1440px;
   max-width: 100vw;
@@ -9,7 +36,6 @@
 
 .contact-section {
   padding: 40px 20px;
-
   width: 100%;
   box-sizing: border-box;
 }
@@ -19,6 +45,9 @@
   box-sizing: border-box;
 }
 
+/* ===============================
+   CONTACT CONTENT LAYOUT
+=============================== */
 .contact-content {
   display: flex;
   flex-wrap: wrap;
@@ -40,21 +69,29 @@
   min-width: 600px;
 }
 
+/* ===============================
+   TYPOGRAPHY
+=============================== */
 .contact-title {
-  color: #f47a42;
+  color: var(--primary);
   font-size: 3rem;
   margin-bottom: 24px;
   font-weight: 700;
   line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .contact-subtext {
-  color: #666666;
+  color: var(--text-secondary);
   margin-bottom: 40px;
   font-size: 1.1rem;
   max-width: 90%;
+  line-height: 1.6;
 }
 
+/* ===============================
+   CONTACT INFORMATION
+=============================== */
 .contact-info {
   margin: 32px 0;
 }
@@ -64,66 +101,83 @@
   align-items: center;
   gap: 16px;
   margin-bottom: 20px;
-  color: #666666;
+  color: var(--text-secondary);
   font-size: 1.05rem;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: var(--transition);
+  padding: 8px 0;
 }
 
 .contact-info-item:hover {
-  color: #f47a42;
+  color: var(--primary);
   transform: translateX(5px);
 }
 
-.contact-info-item svg {
-  color: #f47a42;
+.contact-icon {
+  color: var(--primary);
   font-size: 1.3rem;
   flex-shrink: 0;
+  transition: var(--transition-fast);
 }
 
-/* Vendor CTA */
+/* ===============================
+   VENDOR CTA
+=============================== */
 .vendor-cta {
   margin-top: 48px;
   padding: 32px;
-  background: linear-gradient(135deg, #f9f9f9 0%, #ffffff 100%);
-  border-radius: 12px;
-  border-left: 4px solid #f47a42;
+  background: linear-gradient(135deg, var(--background-light) 0%, var(--white) 100%);
+  border-radius: var(--border-radius);
+  border-left: 4px solid var(--primary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: var(--transition);
+}
+
+.vendor-cta:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .vendor-cta h3 {
   font-size: 1.5rem;
-  color: #f47a42;
+  color: var(--primary);
   margin-bottom: 12px;
   font-weight: 600;
+  line-height: 1.3;
 }
 
 .vendor-cta p {
   margin-bottom: 24px;
-  color: #666666;
+  color: var(--text-secondary);
+  line-height: 1.6;
 }
 
-/* Fixed Button */
+/* ===============================
+   BUTTON STYLES
+=============================== */
 .btn {
-  display: inline-block;
-  background: #f47a42;
-  color: #ffffff;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--primary);
+  color: var(--white);
   padding: 16px 35px;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--border-radius);
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: var(--transition);
   text-decoration: none;
-  box-shadow: 0 4px 14px rgba(244, 122, 66, 0.25);
+  box-shadow: 0 4px 14px var(--shadow-primary);
   position: relative;
   overflow: hidden;
+  min-height: 52px;
+  line-height: 1;
 }
 
-.btn:hover {
-  background: #e06a32;
+.btn:hover:not(:disabled) {
+  background: var(--primary-dark);
   transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(244, 122, 66, 0.35);
+  box-shadow: 0 6px 20px var(--shadow-primary-hover);
 }
 
 .btn:disabled {
@@ -131,20 +185,43 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+  opacity: 0.8;
 }
 
-/* Contact Form - Enhanced Styling with White Background */
+.btn-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.loading-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ===============================
+   FORM STYLES
+=============================== */
 .contact-form {
-  background: #ffffff;
+  background: var(--white);
   padding: 48px;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  border: 1px solid #f0f0f0;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 16px var(--shadow-light);
+  transition: var(--transition);
+  border: 1px solid var(--border-light);
 }
 
 .contact-form:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 24px var(--shadow-medium);
 }
 
 .form-row {
@@ -169,29 +246,37 @@
 .form-group label {
   margin-bottom: 10px;
   font-weight: 500;
-  color: #333333;
+  color: var(--text-primary);
   font-size: 1rem;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
+/* ===============================
+   INPUT STYLES
+=============================== */
 input, textarea {
   padding: 16px 20px;
-  border: 2px solid #ffd8c8 !important;
-  border-radius: 12px;
+  border: 2px solid var(--primary-light);
+  border-radius: var(--border-radius);
   font-family: inherit;
   font-size: 1rem;
-  background: #ffffff;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  background: var(--white);
+  transition: var(--transition);
+  box-shadow: 0 2px 6px var(--shadow-light);
   resize: vertical;
   outline: none;
-  color: #333333;
+  color: var(--text-primary);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #aaaaaa;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  color: var(--text-placeholder);
+  transition: var(--transition);
 }
 
 input {
@@ -203,35 +288,40 @@ textarea {
   line-height: 1.5;
 }
 
-/* Focus state with enhanced border and shadow */
-input:focus, textarea:focus {
-  border: 2px solid #f47a42 !important;
+/* Focus states */
+input:focus, 
+textarea:focus {
+  border-color: var(--primary);
   box-shadow: 0 4px 16px rgba(244, 122, 66, 0.3);
   transform: translateY(-2px);
 }
 
-input:focus::placeholder, textarea:focus::placeholder {
+input:focus::placeholder, 
+textarea:focus::placeholder {
   opacity: 0.7;
   transform: translateX(5px);
 }
 
 /* Error states */
-input.error,
-textarea.error {
-  border-color: #dc3545 !important;
-  background-color: #fff5f5;
+input.input-error,
+textarea.input-error {
+  border-color: var(--error) !important;
+  background-color: var(--error-light);
 }
 
-/* Improved Error Message Alignment */
+/* ===============================
+   ERROR MESSAGES
+=============================== */
 .error-message {
   display: flex;
   align-items: flex-start;
-  color: #dc3545;
+  color: var(--error);
   font-size: 0.85rem;
   margin-top: 8px;
   font-weight: 500;
   line-height: 1.4;
   padding: 0 2px;
+  animation: fadeIn 0.2s ease;
 }
 
 .error-icon {
@@ -241,50 +331,33 @@ textarea.error {
   flex-shrink: 0;
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Label animation on focus */
 .form-group:focus-within label {
-  color: #f47a42;
+  color: var(--primary);
   font-weight: 600;
 }
 
-/* Toast utility classes */
-.flex {
-  display: flex;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.mr-2 {
-  margin-right: 0.5rem;
-}
-
-/* Toast Overrides */
+/* ===============================
+   TOAST NOTIFICATIONS
+=============================== */
 .Toastify__toast {
   font-family: inherit;
   border-radius: 8px;
+  font-weight: 500;
 }
 
-.Toastify__toast--success {
-  background: #28a745;
-  color: #ffffff;
+.Toastify__progress-bar {
+  height: 4px;
 }
 
-.Toastify__toast--error {
-  background: #dc3545;
-  color: #ffffff;
-}
-
-.Toastify__progress-bar--success {
-  background: #155724;
-}
-
-.Toastify__progress-bar--error {
-  background: #721c24;
-}
-
-/* Responsive Design - Window resize responsive but not zoom responsive */
+/* ===============================
+   RESPONSIVE DESIGN
+=============================== */
 @media screen and (max-width: 1440px) {
   .about-max-width-container {
     width: 100%;
@@ -375,6 +448,7 @@ textarea.error {
   .btn {
     width: 100%;
     text-align: center;
+    padding: 16px;
   }
   
   textarea {
@@ -383,11 +457,11 @@ textarea.error {
   
   input, textarea {
     padding: 14px 16px;
-    border-width: 1.5px !important;
+    border-width: 1.5px;
   }
   
   input:focus, textarea:focus {
-    border-width: 1.5px !important;
+    border-width: 1.5px;
   }
   
   .vendor-cta {
@@ -435,19 +509,33 @@ textarea.error {
     font-size: 0.75rem;
     margin-top: 5px;
   }
-}
-
-/* Prevent content from expanding beyond viewport width when zoomed */
-@media screen and (min-width: 1441px) {
-  .about-max-width-container {
-    width: 1440px;
+  
+  .btn {
+    padding: 14px;
   }
 }
 
-/* Improved Input States - removed green validation */
+/* ===============================
+   ACCESSIBILITY
+=============================== */
 input:focus-visible,
 textarea:focus-visible,
 .btn:focus-visible {
-  outline: 2px solid #f47a42;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* ===============================
+   UTILITY CLASSES
+=============================== */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
