@@ -89,23 +89,10 @@ const VendorProduct: React.FC = () => {
 	}, [sortOption]);
 
 	const deleteProductMutation = useMutation({
-		mutationFn: async ({
-			productId,
-			categoryId,
-			subcategoryId,
-		}: {
-			productId: number;
-			categoryId: number;
-			subcategoryId: number;
-		}) => {
+		mutationFn: async ({ productId }: { productId: number }) => {
 			if (!authState.token) throw new Error("Authentication token is missing");
 			if (!authState.vendor?.id) throw new Error("Vendor ID is missing");
-			return deleteProduct(
-				productId,
-				categoryId,
-				subcategoryId,
-				authState.token
-			);
+			return deleteProduct(productId, authState.token);
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({
@@ -379,8 +366,6 @@ const VendorProduct: React.FC = () => {
 		if (productToDelete) {
 			deleteProductMutation.mutate({
 				productId: productToDelete.id,
-				categoryId: productToDelete.categoryId,
-				subcategoryId: productToDelete.subcategoryId,
 			});
 			setShowDeleteDialog(false);
 			setProductToDelete(null);

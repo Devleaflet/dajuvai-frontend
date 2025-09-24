@@ -97,7 +97,7 @@ const Home = () => {
 	}
 
 	return (
-		<div>
+		<div style={{ zIndex: "0" }}>
 			<Navbar />
 			<HeroSlider />
 			<CategorySlider />
@@ -111,4 +111,3 @@ const Home = () => {
 };
 
 export default Home;
-
