@@ -15,7 +15,6 @@ import AuthModal from '../Components/AuthModal';
 import { useAuth } from '../context/AuthContext';
 import defaultProductImage from "../assets/logo.webp";
 import { useCart } from '../context/CartContext';
-
 // ================================
 // TYPES & INTERFACES
 // ================================
@@ -27,7 +26,6 @@ interface Product {
   productImages?: string[];
   image?: string;
 }
-
 interface Variant {
   id: number;
   basePrice?: number | string;
@@ -36,7 +34,6 @@ interface Variant {
   attributes?: Record<string, any> | Array<any>;
   variantImages?: Array<any>;
 }
-
 interface WishlistItem {
   id: number;
   productId: number;
@@ -45,17 +42,14 @@ interface WishlistItem {
   variant?: Variant;
   quantity?: number;
 }
-
 interface WishlistData {
   items: WishlistItem[];
 }
-
 interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
 }
-
 // ================================
 // SKELETON LOADER COMPONENT
 // ================================
@@ -81,7 +75,6 @@ const WishlistItemSkeleton: React.FC = () => (
     </div>
   </div>
 );
-
 // ================================
 // EMPTY WISHLIST COMPONENT
 // ================================
@@ -112,7 +105,6 @@ const EmptyWishlist: React.FC = () => {
     </div>
   );
 };
-
 // ================================
 // MAIN WISHLIST COMPONENT
 // ================================
@@ -124,7 +116,6 @@ const Wishlist: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { token, isAuthenticated } = useAuth();
   const { refreshCart } = useCart();
-
   // ================================
   // HELPER FUNCTIONS
   // ================================
@@ -134,14 +125,12 @@ const Wishlist: React.FC = () => {
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     };
   };
-
   const toFullUrl = (imgUrl: string): string => {
     if (!imgUrl) return '';
     return imgUrl.startsWith('http')
       ? imgUrl
       : `${window.location.origin}${imgUrl.startsWith('/') ? '' : '/'}${imgUrl}`;
   };
-
   const parseImageEntry = (img: any): string => {
     try {
       if (!img) return '';
@@ -163,7 +152,6 @@ const Wishlist: React.FC = () => {
       return '';
     }
   };
-
   const getItemImage = (item: WishlistItem): string => {
     const vImgs = (item.variant?.variantImages || []) as any[];
     if (vImgs.length > 0) {
@@ -177,7 +165,6 @@ const Wishlist: React.FC = () => {
     }
     return item.product.image || defaultProductImage;
   };
-
   const formatVariantAttributes = (attributes: any): string => {
     if (!attributes) return '';
     if (Array.isArray(attributes)) {
@@ -213,7 +200,6 @@ const Wishlist: React.FC = () => {
     }
     return String(attributes);
   };
-
   const getItemPrice = (item: WishlistItem): number => {
     if (item.variant) {
       const base = Number(item.variant.basePrice) || 0;
@@ -228,7 +214,6 @@ const Wishlist: React.FC = () => {
     }
     return Number(item.product.basePrice) || 0;
   };
-
   // ================================
   // API CALLS
   // ================================
@@ -276,7 +261,6 @@ const Wishlist: React.FC = () => {
       setLoading(false);
     }
   };
-
   const handleRemoveItem = async (wishlistItemId: number) => {
     try {
       setActionLoading(prev => ({ ...prev, [`remove_${wishlistItemId}`]: true }));
@@ -311,7 +295,6 @@ const Wishlist: React.FC = () => {
       setActionLoading(prev => ({ ...prev, [`remove_${wishlistItemId}`]: false }));
     }
   };
-
   const handleMoveToCart = async (wishlistItemId: number, quantity: number, showToast: boolean = true) => {
     try {
       setActionLoading(prev => ({ ...prev, [`cart_${wishlistItemId}`]: true }));
@@ -349,7 +332,6 @@ const Wishlist: React.FC = () => {
       setActionLoading(prev => ({ ...prev, [`cart_${wishlistItemId}`]: false }));
     }
   };
-
   // ================================
   // UI HANDLERS
   // ================================
@@ -359,7 +341,6 @@ const Wishlist: React.FC = () => {
       item.id === id ? { ...item, quantity: newQuantity } : item
     ));
   };
-
   const handleAddAllToCart = async () => {
     try {
       setActionLoading(prev => ({ ...prev, 'add_all': true }));
@@ -376,23 +357,19 @@ const Wishlist: React.FC = () => {
       setActionLoading(prev => ({ ...prev, 'add_all': false }));
     }
   };
-
   // ================================
   // LIFECYCLE & CALCULATIONS
   // ================================
   useEffect(() => {
     fetchWishlist();
   }, []);
-
   const totalPrice = wishlistItems.reduce((sum, item) => {
     const price = getItemPrice(item);
     return sum + price * (item.quantity || 1);
   }, 0);
-
   const handleRetry = () => {
     fetchWishlist();
   };
-
   // ================================
   // RENDER
   // ================================
@@ -464,18 +441,20 @@ const Wishlist: React.FC = () => {
                       </div>
                       <div className="wishlist__item-quantity">
                         <button 
-                          className="wishlist__qty-btn"
+                          className="wishlist__qty-btn wishlist__qty-btn--touch"
                           onClick={() => handleQuantityChange(item.id, (item.quantity || 1) - 1)}
                           aria-label="Decrease quantity"
+                          aria-controls={`qty-value-${item.id}`}
                           disabled={actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`]}
                         >
                           <FaMinus />
                         </button>
-                        <span className="wishlist__qty-value" aria-live="polite">{item.quantity || 1}</span>
+                        <span id={`qty-value-${item.id}`} className="wishlist__qty-value" aria-live="polite">{item.quantity || 1}</span>
                         <button 
-                          className="wishlist__qty-btn"
+                          className="wishlist__qty-btn wishlist__qty-btn--touch"
                           onClick={() => handleQuantityChange(item.id, (item.quantity || 1) + 1)}
                           aria-label="Increase quantity"
+                          aria-controls={`qty-value-${item.id}`}
                           disabled={actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`]}
                         >
                           <FaPlus />
@@ -558,8 +537,5 @@ const Wishlist: React.FC = () => {
     </>
   );
 };
-
 export default Wishlist;
-
-
 
