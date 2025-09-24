@@ -1085,11 +1085,29 @@ const Shop: React.FC = () => {
                 </form>
               </div>
             )}
-            <div className="product-count">
-              {isLoadingProducts
-                ? "Loading..."
-                : `${sortedProducts.length} products`}
+
+
+
+          <div className="product-count">
+            <div className="product-count__badge">
+              {isLoadingProducts ? (
+                <div className="product-count__loading">
+                  <div className="product-count__spinner"></div>
+                  <span>Loading products...</span>
+                </div>
+              ) : (
+                <div className="product-count__result">
+                  <span className="product-count__number">{sortedProducts.length}</span>
+                  <span className="product-count__label">
+                    {sortedProducts.length === 1 ? 'product' : 'products'} found
+                  </span>
+                </div>
+              )}
             </div>
+          </div>
+
+
+
           </div>
           <div className="shop-content">
             <div className="shop">
