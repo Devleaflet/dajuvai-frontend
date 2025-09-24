@@ -215,19 +215,24 @@ const Navbar: React.FC = () => {
 		}
 	};
 
+	// FIXED: Proper cart toggle function that works on all pages
 	const toggleCart = (e?: React.MouseEvent): void => {
 		e?.preventDefault();
 		e?.stopPropagation();
 		const newState = !cartOpen;
 		setCartOpen(newState);
 		if (sideMenuOpen) setSideMenuOpen(false);
+		
+		// Properly manage body classes for cart state
 		if (newState) {
 			document.body.classList.add("no-scroll");
 			document.body.classList.add("cart-open");
+			document.body.style.overflow = "hidden";
 		} else {
 			document.body.classList.remove("no-scroll");
 			document.body.classList.remove("cart-open");
 			document.body.classList.remove("navbar--menu-open");
+			document.body.style.overflow = "";
 		}
 	};
 
@@ -775,11 +780,12 @@ const Navbar: React.FC = () => {
 							>
 								<FaHeart />
 							</NavLink>
-							<a
-								href="/cart"
+							{/* FIXED: Cart button with proper toggle functionality */}
+							<button
 								className="navbar__account-icon-link"
 								onClick={toggleCart}
 								ref={cartButtonRef}
+								style={{ background: 'none', border: 'none', cursor: 'pointer' }}
 							>
 								<FaShoppingCart />
 								{cartItems.length > 0 && (
@@ -787,7 +793,7 @@ const Navbar: React.FC = () => {
 										{cartItems.length}
 									</span>
 								)}
-							</a>
+							</button>
 							<div
 								className="navbar__mobile-user"
 								ref={dropdownTriggerRef}
@@ -1045,11 +1051,12 @@ const Navbar: React.FC = () => {
 						</div>
 
 						<div className="navbar__account">
-							<a
-								href="/cart"
+							{/* FIXED: Desktop cart button with proper toggle functionality */}
+							<button
 								className="navbar__account-link tooltip"
 								onClick={toggleCart}
 								ref={cartButtonRef}
+								style={{ background: 'none', border: 'none', cursor: 'pointer' }}
 							>
 								<FaShoppingCart
 									className="navbar__account-icon"
@@ -1063,7 +1070,7 @@ const Navbar: React.FC = () => {
 								)}
 
 								<span className="tooltip-text">View Cart</span>
-							</a>
+							</button>
 
 							<div
 								className="navbar__user-profile"
@@ -1325,6 +1332,7 @@ const Navbar: React.FC = () => {
 						document.body.classList.remove("navbar--menu-open");
 						document.body.classList.remove("no-scroll");
 						document.body.classList.remove("cart-open");
+						document.body.style.overflow = "";
 					}}
 				></div>
 
