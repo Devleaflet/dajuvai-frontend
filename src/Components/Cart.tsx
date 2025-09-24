@@ -1,3 +1,4 @@
+// Cart.tsx
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
 	FaTimes,
