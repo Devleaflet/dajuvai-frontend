@@ -38,15 +38,24 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
 	const { setCartOpen } = useUI();
 	const sideCartRef = useRef<HTMLDivElement>(null);
 	const location = useLocation();
+	const prevLocationRef = useRef(location.pathname);
 
 	const [errors, setErrors] = useState<ErrorState[]>([]);
 	const [isProcessing, setIsProcessing] = useState<Set<string>>(new Set());
 
-	// ✅ FIXED: Only auto-close when navigating TO /checkout, NOT /shop
+	// ✅ FIXED: Only auto-close when NAVIGATING TO /checkout from another page
 	useEffect(() => {
-		if (cartOpen && location.pathname === '/checkout') {
+		const currentPath = location.pathname;
+		const prevPath = prevLocationRef.current;
+		
+		// Only close cart if we're navigating TO checkout from a different page
+		// AND the cart is currently open
+		if (cartOpen && currentPath === '/checkout' && prevPath !== '/checkout') {
 			setCartOpen(false);
 		}
+		
+		// Update the previous location reference
+		prevLocationRef.current = currentPath;
 	}, [location.pathname, cartOpen, setCartOpen]);
 
 	useEffect(() => {
@@ -90,6 +99,20 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
 			document.removeEventListener("click", handleClickOutside);
 		};
 	}, [cartOpen, toggleCart, cartButtonRef]);
+
+	// ✅ FIXED: Handle Escape key to close cart
+	useEffect(() => {
+		const handleEscapeKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape' && cartOpen) {
+				toggleCart();
+			}
+		};
+
+		document.addEventListener('keydown', handleEscapeKey);
+		return () => {
+			document.removeEventListener('keydown', handleEscapeKey);
+		};
+	}, [cartOpen, toggleCart]);
 
 	const getCartVariantLabel = useCallback((item: any): string | null => {
 		try {
@@ -426,11 +449,18 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
 		e.stopPropagation();
 	}, []);
 
+	// ✅ FIXED: Improved close handler that prevents event bubbling issues
+	const handleCloseCart = useCallback((e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		toggleCart();
+	}, [toggleCart]);
+
 	return (
 		<>
 			<div
 				className={`cart__overlay ${cartOpen ? "cart__overlay--visible" : ""}`}
-				onClick={toggleCart}
+				onClick={handleCloseCart}
 			></div>
 
 			<div
@@ -449,12 +479,9 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
 						</h2>
 						<button
 							className="cart__close"
-							onClick={(e) => {
-								e.preventDefault();
-								e.stopPropagation();
-								toggleCart();
-							}}
+							onClick={handleCloseCart}
 							aria-label="Close cart"
+							type="button"
 						>
 							<FaTimes />
 						</button>
