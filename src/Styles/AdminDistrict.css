@@ -1,319 +1,341 @@
 .admin-district {
-  display: flex;
-  min-height: 100vh;
-  background: #f9fafb;
+	display: flex;
+	min-height: 100vh;
+	background: #f9fafb;
 }
 
 .admin-district__content {
-  flex: 1;
-  background: #f9fafb;
+	flex: 1;
+	background: #f9fafb;
 }
 
 .admin-district__header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 0 2rem 14px 2rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: 0 2rem 14px 2rem;
 }
 
 .admin-district__title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1f2a44;
-  margin: 0;
+	font-size: 1.5rem;
+	font-weight: 600;
+	color: #1f2a44;
+	margin: 0;
 }
 
 .admin-district__add-btn {
-  background: #ff6600;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 28px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.18s;
-  box-shadow: 0 2px 8px rgba(255,102,0,0.06);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+	background: #ff6600;
+	color: #fff;
+	border: none;
+	border-radius: 8px;
+	padding: 10px 28px;
+	font-size: 1rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.18s;
+	box-shadow: 0 2px 8px rgba(255, 102, 0, 0.06);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-left: auto;
+	margin-bottom: 10px;
 }
 
 .admin-district__add-btn svg {
-  color: #fff;
-  font-size: 1.2em;
+	color: #fff;
+	font-size: 1.2em;
 }
 
 .admin-district__add-btn:hover {
-  background: #e65c00;
+	background: #e65c00;
 }
 
 .admin-district__search-row {
-  margin: 0 2rem 16px 2rem;
-  display: flex;
-  justify-content: flex-end;
+	margin: 0 2rem 16px 2rem;
+	display: flex;
+	justify-content: flex-end;
 }
 
 .admin-district__search-input {
-  padding: 8px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  width: 200px;
-  transition: border-color 0.2s;
-  background: white;
-
+	padding: 8px 12px;
+	border: 1px solid #e5e7eb;
+	border-radius: 4px;
+	font-size: 0.875rem;
+	width: 200px;
+	transition: border-color 0.2s;
+	background: white;
 }
 
 .admin-district--search-input:focus {
-  border-color: #3b82f6;
-  outline: none;
+	border-color: #3b82f6;
+	outline: none;
 }
 
 .admin-district__table-container {
-  background-color: white;
-  border-radius: 3px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  padding: 16px;
-  margin: 0 2rem 16px 2rem;
-  overflow-x: auto;
+	background-color: white;
+	border-radius: 3px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	padding: 16px;
+	margin: 0 2rem 16px 2rem;
+	overflow-x: auto;
+	border-radius: 12px;
+	-webkit-border-radius: 12px;
+	-moz-border-radius: 12px;
+	-ms-border-radius: 12px;
+	-o-border-radius: 12px;
 }
 
 .admin-district__table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 16px;
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 16px;
 }
 
-.admin-district__table th, .admin-district__table td {
-  padding: 16px 22px;
-  text-align: left;
+.admin-district__table th,
+.admin-district__table td {
+	padding: 16px 22px;
+	text-align: left;
 }
 
 .admin-district__table th {
-  background: #f9fafb;
-  font-weight: 600;
-  color: #1f2a44;
-  border-bottom: 2px solid #e5e7eb;
+	background: #f9fafb;
+	font-weight: 600;
+	color: #1f2a44;
+	border-bottom: 2px solid #e5e7eb;
 }
 
 .admin-district__table tr {
-  background: #fff;
-  transition: background 0.13s;
+	background: #fff;
+	transition: background 0.13s;
 }
 
 .admin-district__table tr:hover {
-  background: #f8f8fa;
+	background: #f8f8fa;
 }
 
 .admin-district__table tr:not(:last-child) td {
-  border-bottom: 1px solid #e5e7eb;
+	border-bottom: 1px solid #e5e7eb;
 }
 
-.admin-district__edit-btn, .admin-district__delete-btn {
-  background: #fff;
-  border: none;
-  margin-right: 6px;
-  cursor: pointer;
-  font-size: 1.1rem;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.15s;
-  box-shadow: none;
+.admin-district__edit-btn,
+.admin-district__delete-btn {
+	background: #fff;
+	border: none;
+	margin-right: 6px;
+	cursor: pointer;
+	font-size: 1.1rem;
+	border-radius: 50%;
+	width: 32px;
+	height: 32px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 0.15s;
+	box-shadow: none;
 }
 
 .admin-district__edit-btn svg {
-  color: #ff6600;
-  font-size: 1.2em;
+	color: #ff6600;
+	font-size: 1.2em;
 }
 
 .admin-district__edit-btn:hover {
-  background: #fff3e0;
+	background: #fff3e0;
 }
 
 .admin-district__delete-btn svg {
-  color: #e53935;
-  font-size: 1.2em;
+	color: #e53935;
+	font-size: 1.2em;
 }
 
 .admin-district__delete-btn:hover {
-  background: #ffebee;
+	background: #ffebee;
 }
 
 .admin-district__error {
-  padding: 16px;
-  text-align: center;
-  color: #6b7280;
-  font-size: 14px;
-
+	padding: 16px;
+	text-align: center;
+	color: #6b7280;
+	font-size: 14px;
 }
 
 .admin-district__pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 14px;
-  margin: 32px 2rem 18px 2rem;
-  padding-bottom: 8px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 14px;
+	margin: 32px 2rem 18px 2rem;
+	padding-bottom: 8px;
 }
 
 .admin-district__pagination-btn {
-  background: #fff3e0;
-  color: #ff6600;
-  border: 1.5px solid #ff6600;
-  border-radius: 6px;
-  padding: 7px 15px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, border 0.15s;
+	background: #fff3e0;
+	color: #ff6600;
+	border: 1.5px solid #ff6600;
+	border-radius: 6px;
+	padding: 7px 15px;
+	font-size: 1rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background 0.15s, color 0.15s, border 0.15s;
 }
 
 .admin-district__pagination-btn.active,
 .admin-district__pagination-btn:hover {
-  background: #ff6600;
-  color: #fff;
-  border: 1.5px solid #ff6600;
+	background: #ff6600;
+	color: #fff;
+	border: 1.5px solid #ff6600;
 }
 
 .admin-district__pagination-btn:disabled {
-  background: #f0f0f0;
-  color: #bbb;
-  border: 1.5px solid #eee;
-  cursor: not-allowed;
+	background: #f0f0f0;
+	color: #bbb;
+	border: 1.5px solid #eee;
+	cursor: not-allowed;
 }
 
 .admin-district__skeleton-row td {
-  padding: 12px;
+	padding: 12px;
 }
 
 .admin-district__skeleton {
-  background: #e5e7eb;
-  border-radius: 4px;
-  animation: pulse 1.5s infinite;
+	background: #e5e7eb;
+	border-radius: 4px;
+	animation: pulse 1.5s infinite;
 }
 
 .admin-district__skeleton-id {
-  width: 30px;
-  height: 12px;
+	width: 30px;
+	height: 12px;
 }
 
 .admin-district__skeleton-name {
-  width: 150px;
-  height: 12px;
+	width: 150px;
+	height: 12px;
 }
 
 .admin-district__skeleton-btn {
-  width: 18px;
-  height: 12px;
-  margin-right: 8px;
-  display: inline-block;
+	width: 18px;
+	height: 12px;
+	margin-right: 8px;
+	display: inline-block;
 }
 
 @keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
+	0% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+	100% {
+		opacity: 1;
+	}
 }
 
 .admin-district__modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.3);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.3);
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .admin-district__modal {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  padding: 24px;
-  width: 100%;
-  max-width: 400px;
-  animation: fadeIn 0.3s ease-out;
+	background: white;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	padding: 24px;
+	width: 100%;
+	max-width: 400px;
+	animation: fadeIn 0.3s ease-out;
 }
 
 .admin-district__modal h2 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2a44;
-  margin-bottom: 16px;
+	font-size: 1.125rem;
+	font-weight: 600;
+	color: #1f2a44;
+	margin-bottom: 16px;
 }
 
 .admin-district__modal p {
-  font-size: 0.875rem;
-  color: #4b5563;
-  margin-bottom: 16px;
+	font-size: 0.875rem;
+	color: #4b5563;
+	margin-bottom: 16px;
 }
 
 .admin-district__modal input[type="text"] {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  background: white;
-  transition: border-color 0.2s;
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid #e5e7eb;
+	border-radius: 4px;
+	font-size: 0.875rem;
+	background: white;
+	transition: border-color 0.2s;
 }
 
 .admin-district__modal input[type="text"]:focus {
-  border-color: #3b82f6;
-  outline: none;
+	border-color: #3b82f6;
+	outline: none;
 }
 
 .admin-district__modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 16px;
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 16px;
 }
 
 .admin-district__modal-actions button[type="submit"],
 .admin-district__modal-actions button:not([type]),
 .admin-district__modal-actions button.confirm {
-  background: #ff6600;
-  color: #fff;
-  border: 1.5px solid #ff6600;
-  border-radius: 7px;
-  padding: 8px 18px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.18s, border 0.18s;
+	background: #ff6600;
+	color: #fff;
+	border: 1.5px solid #ff6600;
+	border-radius: 7px;
+	padding: 8px 18px;
+	font-size: 1rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.18s, border 0.18s;
 }
 .admin-district__modal-actions button[type="submit"]:hover,
 .admin-district__modal-actions button:not([type]):hover,
 .admin-district__modal-actions button.confirm:hover {
-  background: #e65c00;
-  border: 1.5px solid #e65c00;
+	background: #e65c00;
+	border: 1.5px solid #e65c00;
 }
 .admin-district__modal-actions button[type="button"],
 .admin-district__modal-actions button.cancel {
-  background: #fff;
-  color: #ff6600;
-  border: 1.5px solid #ff6600;
-  border-radius: 7px;
-  padding: 8px 18px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.18s, color 0.18s, border 0.18s;
+	background: #fff;
+	color: #ff6600;
+	border: 1.5px solid #ff6600;
+	border-radius: 7px;
+	padding: 8px 18px;
+	font-size: 1rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.18s, color 0.18s, border 0.18s;
 }
 .admin-district__modal-actions button[type="button"]:hover,
 .admin-district__modal-actions button.cancel:hover {
-  background: #fff3e0;
-  color: #e65c00;
-  border: 1.5px solid #e65c00;
+	background: #fff3e0;
+	color: #e65c00;
+	border: 1.5px solid #e65c00;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
