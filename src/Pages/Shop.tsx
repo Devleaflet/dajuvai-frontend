@@ -1084,48 +1084,46 @@ const Shop: React.FC = () => {
 								)}
 							</h2>
 						</div>
-						{!cartOpen && (
-							<div className="search-bar-container">
-								<form
-									onSubmit={handleSearchSubmit}
-									className="search-form"
+						<div className="search-bar-container">
+							<form
+								onSubmit={handleSearchSubmit}
+								className="search-form"
+							>
+								<div
+									className={`search-input-container ${
+										searchInputValue ? "has-clear-button" : ""
+									}`}
 								>
-									<div
-										className={`search-input-container ${
-											searchInputValue ? "has-clear-button" : ""
-										}`}
-									>
-										<input
-											type="text"
-											value={searchInputValue}
-											onChange={handleSearchInputChange}
-											placeholder="Search for products, brands, or categories..."
-											className="search-input"
-										/>
-										{searchInputValue && (
-											<button
-												type="button"
-												onClick={handleClearSearch}
-												className="search-clear-button"
-											>
-												×
-											</button>
-										)}
-									</div>
-									<button
-										type="submit"
-										className="search-button"
-									>
-										<span className="search-text">Search</span>
-										<Search
-											size={15}
-											color="white"
-											className="search-icon"
-										/>
-									</button>
-								</form>
-							</div>
-						)}
+									<input
+										type="text"
+										value={searchInputValue}
+										onChange={handleSearchInputChange}
+										placeholder="Search for products, brands, or categories..."
+										className="search-input"
+									/>
+									{searchInputValue && (
+										<button
+											type="button"
+											onClick={handleClearSearch}
+											className="search-clear-button"
+										>
+											×
+										</button>
+									)}
+								</div>
+								<button
+									type="submit"
+									className="search-button"
+								>
+									<span className="search-text">Search</span>
+									<Search
+										size={15}
+										color="white"
+										className="search-icon"
+									/>
+								</button>
+							</form>
+						</div>
 
 						<div className="product-count">
 							<div className="product-count__badge">
