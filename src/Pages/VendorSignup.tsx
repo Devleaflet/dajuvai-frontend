@@ -1550,7 +1550,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 														background: "transparent",
 														border: "1px solid #ddd",
 														borderRadius: "4px",
-														width:"100%"
+														width: "100%",
 													}}
 												>
 													<option value="">Select District</option>
@@ -1566,49 +1566,42 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 											</div>
 											<div></div>
 										</div>
-										<div
-											className="auth-modal__form-group"
-											style={{
-												display: "flex",
-												flexDirection: "column",
-												gap: "10px",
-												width: "100%",
-											}}
-										>
+										<div className=" auth-modal__checkbox">
+											<input
+												type="checkbox"
+												name="acceptTerms"
+												checked={acceptTerms}
+												onChange={(e) => {
+													setAcceptTerms(e.target.checked);
+													setTouched((prev) => ({
+														...prev,
+														acceptTerms: true,
+													}));
+													const error = validateField(
+														"acceptTerms",
+														e.target.checked
+													);
+													setErrors((prev) => ({
+														...prev,
+														acceptTerms: error,
+													}));
+													console.log(
+														"Accept terms toggled:",
+														e.target.checked
+													);
+												}}
+												disabled={isLoading}
+												style={{
+													background: "transparent",
+													border: "1px solid #ddd",
+													height: "fit-content",
+													width: "fit-content",
+												}}
+											/>
 											<label
-												className="auth-modal__checkbox"
+												className=""
 												style={{ background: "transparent" }}
 											>
-												<input
-													type="checkbox"
-													name="acceptTerms"
-													checked={acceptTerms}
-													onChange={(e) => {
-														setAcceptTerms(e.target.checked);
-														setTouched((prev) => ({
-															...prev,
-															acceptTerms: true,
-														}));
-														const error = validateField(
-															"acceptTerms",
-															e.target.checked
-														);
-														setErrors((prev) => ({
-															...prev,
-															acceptTerms: error,
-														}));
-														console.log(
-															"Accept terms toggled:",
-															e.target.checked
-														);
-													}}
-													disabled={isLoading}
-													style={{
-														background: "transparent",
-														border: "1px solid #ddd",
-														height: "fit-content",
-													}}
-												/>
 												I accept the{" "}
 												<Link
 													to="/vendor/terms"
@@ -2154,10 +2147,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 												</div>
 											</div>
 										</div>
-										<label
-											className="auth-modal__checkbox"
-											style={{ background: "transparent" }}
-										>
+
+										<div className="auth-modal__checkbox">
 											<input
 												type="checkbox"
 												name="acceptListingFee"
@@ -2184,20 +2175,26 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 												disabled={isLoading}
 												style={{
 													background: "transparent",
-													border: "none",
-													boxShadow: "none",
+													border: "1px solid #ddd",
+													height: "fit-content",
+													width: "fit-content",
 												}}
 											/>
-											I accept the listing fee (
-											<Link
-												to="/commission-list"
-												target="_blank"
-												className="auth-modal__link"
+											<label
+												className=""
+												style={{ background: "transparent" }}
 											>
-												View Commission List
-											</Link>
-											)
-										</label>
+												I accept the listing fee (
+												<Link
+													to="/commission-list"
+													target="_blank"
+													className="auth-modal__link"
+												>
+													View Commission List
+												</Link>
+												)
+											</label>
+										</div>
 									</>
 								)}
 

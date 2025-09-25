@@ -1,149 +1,149 @@
 vendor-signup {
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 20px;
+	max-width: 400px;
+	margin: 0 auto;
+	padding: 20px;
 }
 
 .vendor-signup__title {
-  font-size: 24px;
-  margin-bottom: 20px;
-  text-align: center;
+	font-size: 24px;
+	margin-bottom: 20px;
+	text-align: center;
 }
 
 .vendor-signup__error {
-  color: #d32f2f;
-  margin-bottom: 15px;
-  text-align: center;
+	color: #d32f2f;
+	margin-bottom: 15px;
+	text-align: center;
 }
 
 .vendor-signup__success {
-  color: #2e7d32;
-  margin-bottom: 15px;
-  text-align: center;
+	color: #2e7d32;
+	margin-bottom: 15px;
+	text-align: center;
 }
 
 .vendor-signup__form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+	display: flex;
+	flex-direction: column;
+	gap: 15px;
 }
 
 .vendor-signup__field {
-  display: flex;
-  flex-direction: column;
+	display: flex;
+	flex-direction: column;
 }
 
 .vendor-signup__label {
-  font-size: 14px;
-  margin-bottom: 5px;
+	font-size: 14px;
+	margin-bottom: 5px;
 }
 
 .vendor-signup__input {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
+	padding: 10px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	font-size: 16px;
 }
 
 .vendor-signup__input:focus {
-  outline: none;
-  border-color: #1976d2;
+	outline: none;
+	border-color: #1976d2;
 }
 
 .vendor-signup__button {
-  padding: 12px;
-  background-color: #1976d2;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
+	padding: 12px;
+	background-color: #1976d2;
+	color: white;
+	border: none;
+	border-radius: 4px;
+	font-size: 16px;
+	cursor: pointer;
 }
 
 .vendor-signup__button:hover {
-  background-color: #1565c0;
+	background-color: #1565c0;
 }
 
 .vendor-signup__button:disabled {
-  background-color: #90caf9;
-  cursor: not-allowed;
+	background-color: #90caf9;
+	cursor: not-allowed;
 }
 
 .vendor-signup__loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .vendor-signup__spinner {
-  width: 20px;
-  height: 20px;
-  margin-right: 8px;
-  animation: spin 1s linear infinite;
+	width: 20px;
+	height: 20px;
+	margin-right: 8px;
+	animation: spin 1s linear infinite;
 }
 
 .vendor-signup__spinner-circle {
-  opacity: 0.25;
+	opacity: 0.25;
 }
 
 .vendor-signup__spinner-path {
-  opacity: 0.75;
+	opacity: 0.75;
 }
 
 .vendor-signup__modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: rgba(0, 0, 0, 0.5);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: 1000;
 }
 
 .vendor-signup__modal {
-  background-color: white;
-  border-radius: 8px;
-  width: 100%;
-  max-width: 500px;
-  padding: 20px;
-  position: relative;
+	background-color: white;
+	border-radius: 8px;
+	width: 100%;
+	max-width: 500px;
+	padding: 20px;
+	position: relative;
 }
 
 .vendor-signup__modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
 }
 
 .vendor-signup__modal-close {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #333;
+	background: none;
+	border: none;
+	font-size: 20px;
+	cursor: pointer;
+	color: #333;
 }
 
 .vendor-signup__modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+	margin-top: 20px;
 }
 
 .vendor-signup__cancel-btn {
-  background-color: #ccc;
+	background-color: #ccc;
 }
 
 .vendor-signup__cancel-btn:hover {
-  background-color: #b0b0b0;
+	background-color: #b0b0b0;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+	to {
+		transform: rotate(360deg);
+	}
 }
