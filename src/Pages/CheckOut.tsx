@@ -1,3 +1,4 @@
+// Checkout.tsx - Updated for Total Price and Payment Section
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import CryptoJS from 'crypto-js';
@@ -59,16 +60,16 @@ interface ShippingGroup {
   lineTotal: number;
 }
 
-
 const OrderSuccessModal: React.FC<{
   open: boolean;
   onClose: () => void;
   onViewOrder: () => void;
   onContinueShopping: () => void;
-  totalAmount: number;  // ✅ FIXED: Changed from {finalTotal} to number
+  totalAmount: number;
   paymentMethod: string;
-}> = ({ open,  onViewOrder, onContinueShopping, totalAmount, paymentMethod }) => {  // ✅ FIXED: Added missing props
+}> = ({ open, onClose, onViewOrder, onContinueShopping, totalAmount, paymentMethod }) => {
   if (!open) return null;
+
   return (
     <div className="checkout-success-modal-overlay">
       <div className="checkout-success-modal">
@@ -77,6 +78,9 @@ const OrderSuccessModal: React.FC<{
             <div className="checkout-success-modal__icon-wrapper">
               <div className="checkout-success-modal__icon">✓</div>
             </div>
+            <button className="checkout-success-modal__close" onClick={onClose}>
+              ×
+            </button>
           </div>
           <h2 className="checkout-success-modal__title">Order Confirmed!</h2>
           <p className="checkout-success-modal__message">
@@ -86,7 +90,7 @@ const OrderSuccessModal: React.FC<{
           <div className="checkout-success-modal__order-info">
             <div className="checkout-success-modal__info-item">
               <span>Order Total:</span>
-              <span>Rs {totalAmount.toLocaleString()}</span>  {/* ✅ FIXED: Use totalAmount prop */}
+              <span>Rs {totalAmount.toLocaleString()}</span>
             </div>
             <div className="checkout-success-modal__info-item">
               <span>Payment Method:</span>
@@ -115,11 +119,9 @@ const Checkout: React.FC = () => {
         window.location.reload();
       }
     };
-
     window.addEventListener("message", listener);
     return () => window.removeEventListener("message", listener);
   }, []);
-
 
   const location = useLocation();
   const { cartItems: contextCartItems, handleIncreaseQuantity, handleDecreaseQuantity } = useCart();
@@ -164,7 +166,6 @@ const Checkout: React.FC = () => {
   }
 
   const navigate = useNavigate();
-
   const [billingDetails, setBillingDetails] = useState({
     fullName: '',
     province: '',
@@ -179,11 +180,13 @@ const Checkout: React.FC = () => {
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('CASH_ON_DELIVERY');
+
   const availablePaymentMethods = [
     { id: 'CASH_ON_DELIVERY', name: 'Cash on Delivery' },
     { id: 'ESEWA', name: 'eSewa' },
     { id: 'NPX', name: 'Nepal Payment Express (NPX)' },
   ];
+
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
@@ -298,16 +301,13 @@ const Checkout: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-
     let filteredValue = value;
     if (name === 'phoneNumber') {
       filteredValue = value.replace(/\D/g, '').slice(0, 10);
     } else if (name === 'fullName' || name === 'city') {
       filteredValue = value.replace(/[^a-zA-Z\s]/g, '');
     }
-
     setBillingDetails(prev => ({ ...prev, [name]: filteredValue }));
-
     if (touched[name] || errors[name]) {
       const error = validateField(name, filteredValue);
       setErrors(prev => ({ ...prev, [name]: error }));
@@ -334,7 +334,6 @@ const Checkout: React.FC = () => {
       setPromoError("Please enter a promo code");
       return;
     }
-
     try {
       const response = await fetch(`${API_BASE_URL}/api/order/check-promo`, {
         method: "POST",
@@ -346,7 +345,6 @@ const Checkout: React.FC = () => {
       });
 
       const result = await response.json();
-
       if (response.ok && result.success) {
         setPromoError("");
         setAlertMessage(`Promo code "${result.data.promoCode}" applied successfully!`);
@@ -362,9 +360,6 @@ const Checkout: React.FC = () => {
     }
   };
 
-
-
-
   const handleRemovePromoCode = () => {
     setAppliedPromoCode(null);
     setEnteredPromoCode('');
@@ -376,7 +371,6 @@ const Checkout: React.FC = () => {
       console.warn('User or token not available, skipping user data fetch');
       return;
     }
-
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/users/${user.id}`, {
         credentials: 'include',
@@ -385,8 +379,10 @@ const Checkout: React.FC = () => {
           Authorization: `Bearer ${token}`,
         },
       });
+
       if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
       const data = await response.json();
+
       if (data.success && data.data) {
         const newBillingDetails = {
           fullName: data.data.fullName || '',
@@ -426,8 +422,6 @@ const Checkout: React.FC = () => {
       fetchUser();
     }
   }, [user?.id, token]);
-
-
 
   const handlePlaceOrder = async () => {
     // Validate all fields
@@ -470,7 +464,6 @@ const Checkout: React.FC = () => {
 
     try {
       let orderData;
-
       if (location.state?.buyNow && cartItems.length === 1) {
         const buyNowItem = cartItems[0];
         const finalQuantity = buyNowQuantities[buyNowItem.id] || buyNowItem.quantity;
@@ -518,7 +511,7 @@ const Checkout: React.FC = () => {
         };
       }
 
-      console.log('Sending order data:', JSON.stringify(orderData, null, 2));
+      console.log('Sending order ', JSON.stringify(orderData, null, 2));
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -550,7 +543,6 @@ const Checkout: React.FC = () => {
           const buttons = [
             {
               label: 'Go to Order Details',
-
               action: () => {
                 navigate('/user-profile', {
                   state: { activeTab: 'orders', orderDetails },
@@ -588,13 +580,14 @@ const Checkout: React.FC = () => {
         //     },
         //   });
         // }
+
         setTimeout(() => {
           if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod !== 'ESEWA') {
             navigate('/order-page', {
               state: {
                 orderDetails: {
                   orderId: result.data?.id || null,
-                  totalAmount: {finalTotal},
+                  totalAmount: finalTotal,
                 },
               },
             });
@@ -613,8 +606,6 @@ const Checkout: React.FC = () => {
     }
   };
 
-
-
   const normalizeDistrict = (district: string): string => {
     const kathmandu_valley = ['kathmandu', 'lalitpur', 'bhaktapur'];
     if (kathmandu_valley.includes(district.toLowerCase())) {
@@ -626,7 +617,7 @@ const Checkout: React.FC = () => {
   const calculateDeliveryTime = (customerDistrict: string, vendorDistrict: string): string => {
     const normalizedCustomerDistrict = normalizeDistrict(customerDistrict);
     const normalizedVendorDistrict = normalizeDistrict(vendorDistrict);
-    
+
     if (normalizedCustomerDistrict === normalizedVendorDistrict) {
       return '1-2 days';
     } else {
@@ -638,16 +629,15 @@ const Checkout: React.FC = () => {
     if (!billingDetails.district || vendorGroups.length === 0) {
       return '3-5 days';
     }
-    
-    const deliveryTimes = vendorGroups.map(group => 
+
+    const deliveryTimes = vendorGroups.map(group =>
       calculateDeliveryTime(billingDetails.district, group.vendorDistrict)
     );
-    
+
     // If any vendor requires 3-5 days, the overall delivery is 3-5 days
     if (deliveryTimes.some(time => time === '3-5 days')) {
       return '3-5 days';
     }
-    
     return '1-2 days';
   };
 
@@ -690,7 +680,6 @@ const Checkout: React.FC = () => {
         district: vendorCache[item.product.vendorId].district.name,
       };
     }
-
     return {
       businessName: item.product?.vendor?.businessName || 'Unknown Vendor',
       district: item.product?.vendor?.district?.name || 'Unknown District',
@@ -714,9 +703,11 @@ const Checkout: React.FC = () => {
     cartItems.forEach(item => {
       const vendorInfo = getVendorInfo(item);
       const key = `${vendorInfo.businessName}-${vendorInfo.district}`;
+
       if (!vendorGroups[key]) {
         vendorGroups[key] = [];
       }
+
       vendorGroups[key].push(item);
     });
 
@@ -728,11 +719,13 @@ const Checkout: React.FC = () => {
 
       const vendorInfo = getVendorInfo(items[0]);
       let shippingCost = 0;
+
       if (billingDetails.district) {
         const customerDistrict = normalizeDistrict(billingDetails.district);
         const normalizedVendorDistrict = normalizeDistrict(vendorInfo.district);
         shippingCost = customerDistrict === normalizedVendorDistrict ? 100 : 200;
       }
+
       const lineTotal = subtotal + shippingCost;
 
       return {
@@ -754,7 +747,9 @@ const Checkout: React.FC = () => {
   }, 0);
 
   const totalShipping = vendorGroups.reduce((sum, group) => sum + group.shippingCost, 0);
+
   const total = subtotal + totalShipping;
+
   const discountPercentage = appliedPromoCode ? appliedPromoCode.discountPercentage : 0;
   const discountAmount = appliedPromoCode ? Math.round((total * discountPercentage) / 100) : 0;
   const finalTotal = total - discountAmount;
@@ -765,7 +760,6 @@ const Checkout: React.FC = () => {
       const rootAttrs = item && (item.variantAttributes || item.attributes) || null;
       return rootAttrs ? formatAttributes(rootAttrs) : '';
     }
-
     if (typeof v.name === 'string' && v.name.trim()) return v.name.trim();
     const byAttrs = formatAttributes(v.attributes || v.attributeValues || v.attributeSpecs || v.attrs || null);
     if (byAttrs) return byAttrs;
@@ -775,7 +769,6 @@ const Checkout: React.FC = () => {
 
   const formatAttributes = (attrs: any): string => {
     if (!attrs) return '';
-
     if (Array.isArray(attrs)) {
       const parts = attrs.map((a: any) => {
         const label = String(a?.type ?? a?.attributeType ?? a?.name ?? '').trim();
@@ -789,7 +782,6 @@ const Checkout: React.FC = () => {
       }).filter(Boolean);
       return parts.join(', ');
     }
-
     if (typeof attrs === 'object') {
       const parts = Object.entries(attrs).map(([k, v]) => {
         const label = String(k).trim();
@@ -800,7 +792,6 @@ const Checkout: React.FC = () => {
       });
       return parts.join(', ');
     }
-
     return String(attrs);
   };
 
@@ -858,28 +849,28 @@ const Checkout: React.FC = () => {
     <>
       <Navbar />
       {/* <AlertModal open={showAlert} message={alertMessage} onClose={() => setShowAlert(false)} /> */}
-{showAlert && alertMessage.includes('Your order has been placed') ? (
-<OrderSuccessModal
-  open={showAlert}
-  onClose={() => setShowAlert(false)}
-  onViewOrder={() => {
-    navigate('/user-profile', { state: { activeTab: 'orders' } });
-    setShowAlert(false);
-  }}
-  onContinueShopping={() => {
-    navigate('/shop');
-    setShowAlert(false);
-  }}
-  totalAmount={finalTotal}  // Changed from totalAmount to finalTotal
-  paymentMethod={selectedPaymentMethod}  // This was correct
-/>
-) : (
-  <AlertModal
-    open={showAlert}
-    message={alertMessage}
-    onClose={() => setShowAlert(false)}
-  />
-)}
+      {showAlert && alertMessage.includes('Your order has been placed') ? (
+        <OrderSuccessModal
+          open={showAlert}
+          onClose={() => setShowAlert(false)}
+          onViewOrder={() => {
+            navigate('/user-profile', { state: { activeTab: 'orders' } });
+            setShowAlert(false);
+          }}
+          onContinueShopping={() => {
+            navigate('/shop');
+            setShowAlert(false);
+          }}
+          totalAmount={finalTotal}
+          paymentMethod={selectedPaymentMethod}
+        />
+      ) : (
+        <AlertModal
+          open={showAlert}
+          message={alertMessage}
+          onClose={() => setShowAlert(false)}
+        />
+      )}
 
       <form
         id="esewa-form"
@@ -902,7 +893,7 @@ const Checkout: React.FC = () => {
 
       {showAlert && alertMessage && selectedPaymentMethod === 'CASH_ON_DELIVERY' && (
         <div className="checkout-container__alert">
-          <span role="img" aria-label="success" style={{ fontSize: '1.5em', marginRight: '0.5em' }}>✅</span>
+          <span role="img" aria-label="success" style={{ fontSize: '1.5em', marginRight: '0.5em' }}>✓</span>
           {alertMessage}
         </div>
       )}
@@ -930,6 +921,7 @@ const Checkout: React.FC = () => {
                 </div>
               )}
             </div>
+
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Province *</label>
               <select
@@ -952,6 +944,7 @@ const Checkout: React.FC = () => {
                 </div>
               )}
             </div>
+
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">District *</label>
               <select
@@ -974,6 +967,7 @@ const Checkout: React.FC = () => {
                 </div>
               )}
             </div>
+
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">City *</label>
               <input
@@ -993,6 +987,7 @@ const Checkout: React.FC = () => {
                 </div>
               )}
             </div>
+
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Street Address *</label>
               <input
@@ -1012,6 +1007,7 @@ const Checkout: React.FC = () => {
                 </div>
               )}
             </div>
+
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Landmark </label>
               <input
@@ -1030,6 +1026,7 @@ const Checkout: React.FC = () => {
                 </div>
               )}
             </div>
+
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Phone Number *</label>
               <input
@@ -1052,7 +1049,7 @@ const Checkout: React.FC = () => {
             </div>
 
             <div className="checkout-container__promo-section-left">
-              <h3 style={{ marginBottom: '1rem', color: '#333' }}>🎉 Have a Promo Code?</h3>
+              <h3 style={{ marginBottom: '1rem', color: '#333' }}>Have a Promo Code?</h3>
               {!showPromoField ? (
                 <button
                   type="button"
@@ -1073,7 +1070,7 @@ const Checkout: React.FC = () => {
                     maxWidth: '300px',
                   }}
                 >
-                  ✨ Apply Promo Code
+                  Apply Promo Code
                 </button>
               ) : (
                 <div className="checkout-container__promo-input-section-left">
@@ -1131,7 +1128,7 @@ const Checkout: React.FC = () => {
                   marginTop: '15px',
                 }}>
                   <span style={{ color: '#22c55e', fontSize: '16px', fontWeight: '600' }}>
-                    ✅ "{appliedPromoCode.promoCode}" applied ({appliedPromoCode.discountPercentage}% off)
+                    ✓ "{appliedPromoCode.promoCode}" applied ({appliedPromoCode.discountPercentage}% off)
                   </span>
                   <button
                     type="button"
@@ -1236,30 +1233,38 @@ const Checkout: React.FC = () => {
               ) : (
                 <p>No items in cart.</p>
               )}
+
               <div className="checkout-container__order-total">
                 <span>Sub Total:</span>
                 <span>Rs {subtotal.toLocaleString()}</span>
               </div>
+
               {billingDetails.district && (
                 <div className="checkout-container__order-total">
                   <span>Total Shipping:</span>
                   <span>Rs {totalShipping.toLocaleString()}</span>
                 </div>
               )}
+
               {appliedPromoCode && (
                 <div className="checkout-container__order-total">
                   <span>Discount ({discountPercentage}%):</span>
                   <span style={{ color: 'green' }}>- Rs {discountAmount.toLocaleString()}</span>
                 </div>
               )}
+
               <div className="checkout-container__order-total--total">
                 <span>Total Price</span>
-<span>Rs {finalTotal.toLocaleString()}</span>
+                <span>Rs {finalTotal.toLocaleString()}</span>
               </div>
             </div>
+
             <div className="checkout-container__payment-methods">
               {availablePaymentMethods.map((method) => (
-                <label key={method.id} className="checkout-container__payment-methods-label">
+                <label
+                  key={method.id}
+                  className={`checkout-container__payment-methods-label ${selectedPaymentMethod === method.id ? 'selected' : ''}`}
+                >
                   <input
                     type="radio"
                     name="payment"
@@ -1267,45 +1272,55 @@ const Checkout: React.FC = () => {
                     className="checkout-container__payment-methods-input"
                     checked={selectedPaymentMethod === method.id}
                     onChange={handlePaymentMethodChange}
-                    style={{ boxShadow: 'none' }}
                   />
-                  {method.name}
+                  <span className="checkout-container__payment-methods-label-text">{method.name}</span>
                 </label>
               ))}
             </div>
+
             <p className="checkout-container__privacy-note">
               Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our privacy policy.
             </p>
-            <label className="checkout-container__terms-checkbox">
+
+            {/* Updated Terms Checkbox - Removed onClick from label, rely on input's onChange */}
+            <label className="checkout-container__terms-checkbox" htmlFor="terms-checkbox">
               <input
+                id="terms-checkbox"
                 type="checkbox"
                 checked={termsAgreed}
-                onChange={handleTermsChange}
+                onChange={handleTermsChange} // This handler updates the state
                 className="checkout-container__terms-checkbox-input"
                 required
-                style={{ boxShadow: 'none' }}
+                style={{ display: 'none' }} // Hide the default checkbox
               />
-              <p>I have read and agree to the website <Link to="/terms" rel="noopener noreferrer" style={{ color: '#ff7e5f', textDecoration: 'underline' }}>terms and conditions</Link> *</p>
+              <span className="checkout-container__terms-checkbox-label">
+                <span className="checkout-container__terms-checkbox-text">
+                  I have read and agree to the website <Link to="/terms" rel="noopener noreferrer">terms and conditions</Link> *
+                </span>
+              </span>
             </label>
 
+            {errors.terms && !termsAgreed && (
+              <div className="error-message">
+                <FaInfoCircle className="error-icon" />
+                {errors.terms}
+              </div>
+            )}
 
-<button
-  className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''}`}
-  disabled={!termsAgreed || isPlacingOrder}
-  onClick={handlePlaceOrder}
->
-  {isPlacingOrder ? (
-<span className="checkout-container__loading-text">
-  Placing Order
-  <span className="checkout-container__animated-ellipsis">...</span>
-</span>
-  ) : (
-    'Place Order'
-  )}
-</button>
-
-
-
+            <button
+              className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''}`}
+              disabled={!termsAgreed || isPlacingOrder}
+              onClick={handlePlaceOrder}
+            >
+              {isPlacingOrder ? (
+                <span className="checkout-container__loading-text">
+                  Placing Order
+                  <span className="checkout-container__animated-ellipsis">...</span>
+                </span>
+              ) : (
+                'Place Order'
+              )}
+            </button>
           </div>
         </div>
       </div>
