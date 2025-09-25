@@ -1,7 +1,23 @@
+/* ===== GLOBAL HEIGHT RESET (critical for 100% height to work) ===== */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* ===== PAGE LAYOUT WRAPPER ===== */
+.become-vendor-page-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* ✅ Not min-height, not vh — just 100% */
+  width: 100%;
+}
+
+/* ===== MAIN CONTENT ===== */
 .become-vendor {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   padding: 40px 16px 32px;
-  min-height: 100vh;
   font-feature-settings: "liga", "clig", "kern";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -10,6 +26,8 @@
   transition: all 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
   position: relative;
   overflow: hidden;
+  flex: 1; /* Fills available space between navbar and footer */
+  box-sizing: border-box; /* Ensures padding is included in height */
 }
 
 .become-vendor--visible {
@@ -706,5 +724,3 @@
     border-radius: 10px;
   }
 }
-
-
