@@ -6,10 +6,10 @@ import React, { useState, useEffect } from "react";
 const PASSWORD = "this is password";
 
 // Lucide React-style SVG Icons (Light Orange Theme)
-const LockIcon = () => (
+const ShieldCheckIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    <path d="m9 12 2 2 4-4"/>
   </svg>
 );
 
@@ -20,10 +20,19 @@ const KeyIcon = () => (
   </svg>
 );
 
-const ShieldCheckIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-    <path d="m9 12 2 2 4-4"/>
+const EyeIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>
+);
+
+const EyeOffIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+    <line x1="2" y1="2" x2="22" y2="22"/>
   </svg>
 );
 
@@ -37,6 +46,7 @@ const PasswordProtectedRoute = ({ children }: { children: React.ReactNode }) => 
 
     const [enteredPassword, setEnteredPassword] = useState("");
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
         const savedAuth = localStorage.getItem("authenticated");
@@ -164,14 +174,14 @@ const PasswordProtectedRoute = ({ children }: { children: React.ReactNode }) => 
                                 <div style={{ position: "relative" }}>
                                     <input
                                         id="password"
-                                        type="password"
+                                        type={showPassword ? "text" : "password"}
                                         value={enteredPassword}
                                         onChange={(e) =>
                                             setEnteredPassword(e.target.value)
                                         }
                                         style={{
                                             width: "100%",
-                                            padding: "0.75rem 1rem 0.75rem 2.75rem",
+                                            padding: "0.75rem 3.25rem 0.75rem 2.75rem",
                                             border: "1px solid #fde6d0",
                                             borderRadius: "8px",
                                             fontSize: "1rem",
@@ -204,6 +214,34 @@ const PasswordProtectedRoute = ({ children }: { children: React.ReactNode }) => 
                                     >
                                         <KeyIcon />
                                     </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        style={{
+                                            position: "absolute",
+                                            right: "1rem",
+                                            top: "50%",
+                                            transform: "translateY(-50%)",
+                                            background: "none",
+                                            border: "none",
+                                            color: "#9ca3af",
+                                            cursor: "pointer",
+                                            padding: "4px",
+                                            borderRadius: "4px",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            transition: "color 0.2s ease",
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            (e.target as HTMLButtonElement).style.color = "#f97316";
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            (e.target as HTMLButtonElement).style.color = "#9ca3af";
+                                        }}
+                                    >
+                                        {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                                    </button>
                                 </div>
                             </div>
 
