@@ -217,7 +217,7 @@
 	align-items: center;
 	width: 34px;
 	height: 34px;
-	border:1px solid gray;
+	border: 1px solid gray;
 	z-index: 10 !important;
 }
 
@@ -568,7 +568,7 @@
 	}
 
 	.product-carousel__title {
-		font-size: 20px;
+		font-size: large;
 	}
 	.product-card__current-price {
 		font-size: 11px;
@@ -698,7 +698,5 @@
 }
 
 .product-card__wishlist-button {
-	top:20px;
+	top: 20px;
 }
-
-
