@@ -172,6 +172,12 @@ const BecomeVendor: React.FC = () => {
           </div>
         </div>
 
+        {/* This was missing in the original code! */}
+        <VendorSignup
+          isOpen={isModalOpen}
+          onClose={closeModal}
+        />
+        
         <Footer />
       </div>
     </>
