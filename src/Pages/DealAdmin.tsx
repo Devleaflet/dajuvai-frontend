@@ -280,7 +280,7 @@ const DealAdmin: React.FC = () => {
     <div className="deal-admin">
       <AdminSidebar />
       <div className="deal-admin__content">
-        <Header onSearch={() => {}} showSearch={false} />
+        <Header onSearch={() => {}} showSearch={false} title="Deal Management" />
 
         <div className="deal-admin__header">
           <div className="deal-admin__header-content">

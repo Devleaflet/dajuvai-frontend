@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 import "../Styles/HomeBanner.css";
@@ -14,6 +14,10 @@ interface Banner {
   image: string;
   startDate?: string;
   endDate?: string;
+  productSource?: string;
+  selectedCategory?: { id: number } | null;
+  selectedSubcategory?: { id: number; category: { id: number } } | null;
+  externalLink?: string | null;
 }
 
 const HomeBanner: React.FC = () => {
@@ -22,6 +26,10 @@ const HomeBanner: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mouseDownPos, setMouseDownPos] = useState<{ x: number; y: number } | null>(null);
+
+  const dragThreshold = 5; // Pixels to consider as a drag vs. click
+  const bannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchBanners();
@@ -42,7 +50,7 @@ const HomeBanner: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log("Raw banner data:", data);
+      console.log("helo", data);
       // Filter only active hero banners
       const activeBanners = data.data.filter(
         (banner: Banner) =>
@@ -73,10 +81,24 @@ const HomeBanner: React.FC = () => {
     );
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setMouseDownPos({ x: e.clientX, y: e.clientY });
+  };
+
   const handleBannerClick = (e: React.MouseEvent) => {
-    // Prevent default behavior and stop propagation
     e.preventDefault();
     e.stopPropagation();
+
+    // Check if it was a click (not a drag)
+    if (mouseDownPos) {
+      const dx = e.clientX - mouseDownPos.x;
+      const dy = e.clientY - mouseDownPos.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance > dragThreshold) {
+        console.log("Drag detected, ignoring click");
+        return;
+      }
+    }
 
     console.log("HomeBanner clicked!");
     const currentBanner = banners[currentIndex];
@@ -84,15 +106,21 @@ const HomeBanner: React.FC = () => {
     console.log("Current index:", currentIndex);
     console.log("Total banners:", banners.length);
 
-    if (currentBanner && currentBanner.name) {
-      // Navigate to shop page with banner name as search parameter
-      const searchQuery = encodeURIComponent(currentBanner.name);
-      console.log("Navigating to:", `/shop?search=${searchQuery}`);
-      navigate(`/shop?search=${searchQuery}`);
-    } else {
-      console.log("No banner name found or banner is null");
-      // Fallback: navigate to shop without search
-      navigate("/shop");
+    if (currentBanner) {
+      if (currentBanner.productSource === "category" && currentBanner.selectedCategory) {
+        navigate(`/shop?categoryId=${currentBanner.selectedCategory.id}`);
+      } else if (
+        currentBanner.productSource === "subcategory" &&
+        currentBanner.selectedSubcategory
+      ) {
+        navigate(
+          `/shop?categoryId=${currentBanner.selectedSubcategory.category.id}&subcategoryId=${currentBanner.selectedSubcategory.id}`
+        );
+      } else if (currentBanner.productSource === "manual") {
+        navigate(`/shop?bannerId=${currentBanner.id}`);
+      } else if (currentBanner.productSource === "external" && currentBanner.externalLink) {
+        navigate(currentBanner.externalLink);
+      }
     }
   };
 
@@ -113,6 +141,10 @@ const HomeBanner: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     setCurrentIndex(index);
+  };
+
+  const handleDragStart = (e: React.DragEvent) => {
+    e.preventDefault();
   };
 
   // Auto-advance slides every 5 seconds
@@ -145,7 +177,9 @@ const HomeBanner: React.FC = () => {
         <div
           className="home-banner__content"
           onClick={handleBannerClick}
+          onMouseDown={handleMouseDown}
           style={{ cursor: "pointer" }}
+          ref={bannerRef}
         >
           {banners.length > 1 && (
             <>
@@ -170,6 +204,8 @@ const HomeBanner: React.FC = () => {
             alt={banners[currentIndex].name}
             className="home-banner__image"
             style={{ cursor: "pointer", width: "100%", height: "auto" }}
+            draggable={false}
+            onDragStart={handleDragStart}
           />
           {banners.length > 1 && (
             <div className="home-banner__indicators">

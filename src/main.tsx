@@ -9,6 +9,7 @@ import { AuthProvider } from "./context/AuthContext.tsx";
 import CartContextProvider from "./context/CartContext.tsx";
 import CategoryContextProvider from "./context/Category.tsx";
 import { VendorAuthProvider } from "./context/VendorAuthContext.tsx";
+import { UIProvider } from "./context/UIContext.tsx";
 import { setupAxiosInterceptors } from './api/axiosInstance';
 // import PasswordProtectedRoute from "./Components/SiteProtection/PasswordProtectedRoute.tsx";
 
@@ -43,9 +44,11 @@ createRoot(document.getElementById("root")!).render(
           <QueryClientProvider client={queryClient}>
             <CartContextProvider>
               <CategoryContextProvider>
-                {/* <PasswordProtectedRoute> */}
-                  <App />
-                {/* </PasswordProtectedRoute> */}
+                <UIProvider>
+                  {/* <PasswordProtectedRoute> */}
+                    <App />
+                  {/* </PasswordProtectedRoute> */}
+                </UIProvider>
               </CategoryContextProvider>
             </CartContextProvider>
           </QueryClientProvider>

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { AdminSidebar } from "../Components/AdminSidebar";
 import Header from "../Components/Header";
 import Pagination from "../Components/Pagination";
@@ -10,8 +10,8 @@ import "../Styles/AdminProduct.css";
 import { toast } from "react-hot-toast";
 import { ApiProduct } from "../Components/Types/ApiProduct";
 import { ProductFormData } from "../types/product";
-import { debounce } from "lodash";
 import defaultProductImage from "../assets/logo.webp";
+import { API_BASE_URL } from "../config";
 
 const SkeletonRow: React.FC = () => (
   <tr>
@@ -24,55 +24,83 @@ const SkeletonRow: React.FC = () => (
 );
 
 const AdminProduct: React.FC = () => {
-  const { token, isAuthenticated, user } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const [products, setProducts] = useState<ApiProduct[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<ApiProduct[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [productsPerPage] = useState(7);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState<ApiProduct | null>(null);
   const [productToEdit, setProductToEdit] = useState<ApiProduct | null>(null);
-  const [sortConfig, setSortConfig] = useState<{
-    key: keyof ApiProduct;
-    direction: "asc" | "desc";
-  } | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOption, setSortOption] = useState<string>("newest");
+  const [filterOption, setFilterOption] = useState<string>("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  // Add sort option state
-  const [sortOption, setSortOption] = useState<string>("newest");
 
   const productService = ProductService;
 
-  // Fetch products
+  // Fetch products from backend with pagination, sorting, and filtering
   const fetchProducts = useCallback(async () => {
     if (!token || !isAuthenticated) return;
-    
+
     setLoading(true);
     setError(null);
     try {
-      const data = await productService.getAllProducts(token);
-      setProducts(data);
-      setFilteredProducts(data);
+      const queryParams = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: productsPerPage.toString(),
+        sort: sortOption,
+        ...(filterOption !== "all" && { filter: filterOption }),
+      });
+
+      console.log('Fetching products with params:', {
+        page: currentPage,
+        limit: productsPerPage,
+        sort: sortOption,
+        filter: filterOption !== "all" ? filterOption : "none"
+      });
+
+      const response = await fetch(`${API_BASE_URL}/api/product/admin/products?${queryParams}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Request URL:', `${API_BASE_URL}/api/product/admin/products?${queryParams}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      const data = await response.json();
+      console.log('Response data:', data);
+      
+      if (data.success) {
+        setProducts(data.data.products);
+        setTotalProducts(data.data.total);
+      } else {
+        throw new Error(data.message || "Failed to fetch products");
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to load products";
+      console.error('Fetch products error:', err);
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [token, isAuthenticated, productService]);
+  }, [token, isAuthenticated, currentPage, productsPerPage, sortOption, filterOption]);
 
-  // Load products on mount and when token changes
+  // Load products on mount and when dependencies change
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Save callback from modal: modal already performed the API update (new JSON flow).
-  // Here we only refresh the list to reflect changes and close the modal.
+  // Save callback from modal: modal already performed the API update
   const handleSaveProduct = useCallback(
     async (
       _productId: number,
@@ -85,12 +113,11 @@ const AdminProduct: React.FC = () => {
         await fetchProducts();
         setShowEditModal(false);
         setProductToEdit(null);
-        // Modal already shows success toast; keep page quiet.
       } catch (err: unknown) {
         console.error("AdminProduct: Error refreshing after update:", err);
         const errorMessage = err instanceof Error ? err.message : "Failed to refresh products";
         toast.error(errorMessage);
-        throw err; // let modal handle if needed
+        throw err;
       } finally {
         setIsUpdating(false);
       }
@@ -103,12 +130,11 @@ const AdminProduct: React.FC = () => {
     setIsDeleting(true);
     try {
       await productService.deleteProduct(
-        product.categoryId,
+        product.subcategory.category.id,
         product.subcategory.id,
         product.id
       );
-      setProducts(prevProducts => prevProducts.filter(p => p.id !== product.id));
-      setFilteredProducts(prevProducts => prevProducts.filter(p => p.id !== product.id));
+      await fetchProducts();
       setShowDeleteModal(false);
       setProductToDelete(null);
       toast.success("Product deleted successfully");
@@ -118,123 +144,41 @@ const AdminProduct: React.FC = () => {
     } finally {
       setIsDeleting(false);
     }
-  }, [productService]);
+  }, [productService, fetchProducts]);
 
-  // Debounced search
-  const debouncedSearch = useMemo(
-    () =>
-      debounce((query: string) => {
-        setCurrentPage(1);
-        setSearchQuery(query);
-        const results = products.filter(
-          (product) =>
-            product.name.toLowerCase().includes(query.toLowerCase()) ||
-            product.description.toLowerCase().includes(query.toLowerCase())
-        );
-        setFilteredProducts(results);
-      }, 300),
-    [products]
-  );
-
-  // Update filtered products when products change
-  useEffect(() => {
-    if (searchQuery) {
-      debouncedSearch(searchQuery);
-    } else {
-      setFilteredProducts(products);
-    }
-  }, [products, searchQuery, debouncedSearch]);
-
-  const handleSearch = useCallback(
-    (query: string) => {
-      debouncedSearch(query);
-    },
-    [debouncedSearch]
-  );
-
-  // Column sort handler (for table headers)
-  const handleColumnSort = useCallback((key: keyof ApiProduct) => {
-    setSortConfig((prev) => {
-      const direction =
-        prev?.key === key && prev.direction === "asc" ? "desc" : "asc";
-      return { key, direction };
-    });
-  }, []);
-
-  // Dropdown sort handler (for Header component)
+  // Handle sort change - Fixed mapping
   const handleSort = useCallback((newSortOption: string) => {
-    setSortOption(newSortOption);
-    setCurrentPage(1); // Reset to first page when sorting changes
+    console.log('Sort option selected:', newSortOption);
+    
+    const backendSortMap: { [key: string]: string } = {
+      "newest": "newest",
+      "oldest": "oldest",
+      "price-asc": "price_low_high",
+      "price-desc": "price_high_low", 
+    };
+    
+    const backendSortValue = backendSortMap[newSortOption] || "newest";
+    console.log('Mapped to backend sort:', backendSortValue);
+    
+    setSortOption(backendSortValue);
+    setCurrentPage(1);
   }, []);
 
-  // Sort products function
-  const sortProducts = useCallback((products: ApiProduct[], sortOption: string) => {
-    const sorted = [...products];
-    
-    switch (sortOption) {
-      case 'newest':
-        return sorted.sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
-      case 'oldest':
-        return sorted.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
-      case 'price-asc':
-        return sorted.sort((a, b) => (a.basePrice || 0) - (b.basePrice || 0));
-      case 'price-desc':
-        return sorted.sort((a, b) => (b.basePrice || 0) - (a.basePrice || 0));
-      case 'name-asc':
-        return sorted.sort((a, b) => a.name.localeCompare(b.name));
-      case 'name-desc':
-        return sorted.sort((a, b) => b.name.localeCompare(a.name));
-      default:
-        return sorted;
-    }
+  // Handle filter change
+  const handleFilter = useCallback((newFilterOption: string) => {
+    console.log('Filter option selected:', newFilterOption);
+    setFilterOption(newFilterOption);
+    setCurrentPage(1);
   }, []);
 
-  const sortedAndFilteredProducts = useMemo(() => {
-    let filtered = [...filteredProducts];
-    
-    // Apply dropdown sorting first
-    filtered = sortProducts(filtered, sortOption);
-    
-    // Then apply any table column sorting if needed
-    if (sortConfig) {
-      filtered.sort((a, b) => {
-        const aValue = a[sortConfig.key] ?? "";
-        const bValue = b[sortConfig.key] ?? "";
-        const isNumeric = ["id", "basePrice", "stock"].includes(sortConfig.key);
-        const aCompare = isNumeric
-          ? Number(aValue)
-          : aValue.toString().toLowerCase();
-        const bCompare = isNumeric
-          ? Number(bValue)
-          : bValue.toString().toLowerCase();
-        return sortConfig.direction === "asc"
-          ? aCompare < bCompare
-            ? -1
-            : 1
-          : aCompare > bCompare
-          ? -1
-          : 1;
-      });
-    }
-    
-    return filtered;
-  }, [filteredProducts, sortOption, sortConfig, sortProducts]);
-
-  const currentProducts = useMemo(
-    () =>
-      sortedAndFilteredProducts.slice(
-        (currentPage - 1) * productsPerPage,
-        currentPage * productsPerPage
-      ),
-    [sortedAndFilteredProducts, currentPage, productsPerPage]
-  );
-
+  // Handle edit product
   const handleEditProduct = useCallback((product: ApiProduct) => {
     console.log("AdminProduct: Opening edit modal for product:", product);
     setProductToEdit(product);
     setShowEditModal(true);
   }, []);
 
+  // Handle delete product
   const handleDeleteProduct = useCallback(async () => {
     if (!productToDelete) return;
     try {
@@ -268,31 +212,48 @@ const AdminProduct: React.FC = () => {
           </div>
         )}
         <Header 
-          onSearch={handleSearch} 
-          showSearch 
+          onSearch={() => {}} 
+          showSearch={true}  // Changed to true so filter dropdown shows
           onSort={handleSort}
-          sortOption={sortOption}
+          sortOption={(() => {
+            // Reverse map backend value to frontend value for display
+            const frontendSortMap: { [key: string]: string } = {
+              "newest": "newest",
+              "oldest": "oldest", 
+              "price_low_high": "price-asc",
+              "price_high_low": "price-desc",
+              "name_asc": "name-asc",
+              "name_desc": "name-desc", 
+              "vendor_asc": "vendor-asc",
+              "vendor_desc": "vendor-desc",
+            };
+            return frontendSortMap[sortOption] || "newest";
+          })()}
+          onFilter={handleFilter}
+          filterOption={filterOption}
+          title="Product Management"
         />
         <div className="admin-products__list-container">
           <div className="admin-products__header">
             <h2>Product Management</h2>
+            <div className="admin-products__stats">
+              <span>Total: {totalProducts} products</span>
+              {filterOption !== "all" && (
+                <span className="filter-indicator">
+                  Filtered by: {filterOption.replace('_', ' ').toUpperCase()}
+                </span>
+              )}
+            </div>
           </div>
           <div className="admin-products__table-container">
             <table className="admin-products__table">
               <thead className="admin-products__table-head">
                 <tr>
                   <th>Image</th>
-                  {['id', 'name', 'basePrice', 'stock'].map((key) => (
-                    <th
-                      key={key}
-                      onClick={() => handleColumnSort(key as keyof ApiProduct)}
-                      className="sortable"
-                    >
-                      {key.charAt(0).toUpperCase() + key.slice(1)}{' '}
-                      {sortConfig?.key === key &&
-                        (sortConfig.direction === 'asc' ? '↑' : '↓')}
-                    </th>
-                  ))}
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Price</th>
+                  <th>Stock</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -301,35 +262,103 @@ const AdminProduct: React.FC = () => {
                   [...Array(productsPerPage)].map((_, i) => (
                     <SkeletonRow key={i} />
                   ))
-                ) : currentProducts.length > 0 ? (
-                  currentProducts.map((product) => {
+                ) : products.length > 0 ? (
+                  products.map((product) => {
+                    // Helper function to get valid price from product or variant
+                    const getDisplayPrice = (): number => {
+                      console.log("helo")
+                      // First try product base price
+                      if (product.basePrice && 
+                          (typeof product.basePrice === 'number' && product.basePrice > 0)) {
+                        return product.basePrice;
+                      }
+                      
+                      // If base price is string, try to parse it
+                      if (typeof product.basePrice === 'string') {
+                        const parsedPrice = parseFloat(product.basePrice);
+                        if (!isNaN(parsedPrice) && parsedPrice > 0) {
+                          return parsedPrice;
+                        }
+                      }
+                      
+                      // Try product.price field
+                      if (product.price && 
+                          (typeof product.price === 'number' && product.price > 0)) {
+                        return product.price;
+                      }
+                      
+                      // Fallback to first variant price
+                      if ( product.variants && product.variants.length > 0) {
+                          console.log("hieeeee",product.name)
+
+                        for (const variant of product.variants) {
+                          // Try variant.price first
+                          if (variant.price && typeof variant.price === 'number' && variant.price > 0) {
+                            return variant.price;
+                          }
+                          
+                          // Try variant.basePrice (number)
+                          if (variant.basePrice && typeof variant.basePrice === 'number' && variant.basePrice > 0) {
+                            console.log("hiee",product.name)
+                            return variant.basePrice;
+                          }
+                          
+                          // Try variant.basePrice (string)
+                          if (typeof variant.basePrice === 'string') {
+                            const parsedVariantPrice = parseFloat(variant.basePrice);
+                            if (!isNaN(parsedVariantPrice) && parsedVariantPrice > 0) {
+                              return parsedVariantPrice;
+                            }
+                          }
+                        }
+                      }
+                      
+                      return 0; // Default fallback
+                    };
+
+                    // Helper function to get valid stock from product or variant
+                    const getDisplayStock = (): number => {
+
+                      if (product.stock && typeof product.stock === 'number' && product.stock >= 0) {
+                        return product.stock;
+                      }
+                      
+                      // If product stock is string, try to parse it
+                      if (typeof product.stock === 'string') {
+                        const parsedStock = parseInt(product.stock, 10);
+                        if (!isNaN(parsedStock) && parsedStock >= 0) {
+                          return parsedStock;
+                        }
+                      }
+                      
+                      // Fallback to first variant stock
+                      if (product.variants && product.variants.length > 0) {
+                                                    console.log("hiee",product.name)
+
+                        for (const variant of product.variants) {
+                          if (variant.stock && typeof variant.stock === 'number' && variant.stock >= 0) {
+                            return variant.stock;
+                          }
+                          
+                          if (typeof variant.stock === 'string') {
+                            const parsedVariantStock = parseInt(variant.stock, 10);
+                            if (!isNaN(parsedVariantStock) && parsedVariantStock >= 0) {
+                              return parsedVariantStock;
+                            }
+                          }
+                        }
+                      }
+                      
+                      return 0; // Default fallback
+                    };
+
+                    const displayPrice = getDisplayPrice();
+                    const displayStock = getDisplayStock();
+                    
+                    // Get first variant for image fallback
                     const firstVariant = product.hasVariants && product.variants && product.variants.length > 0
                       ? product.variants[0]
                       : null;
-                    // Variant price may be provided as `price` (number) or `basePrice` (string/number) from API
-                    const variantPrice: number | undefined = (() => {
-                      if (!product.hasVariants || !product.variants || product.variants.length === 0) return undefined;
-                      const getVarPrice = (v: any): number | undefined => {
-                        if (typeof v?.price === 'number' && isFinite(v.price) && v.price > 0) return v.price;
-                        if (typeof v?.basePrice === 'string') {
-                          const parsed = parseFloat(v.basePrice);
-                          if (isFinite(parsed) && parsed > 0) return parsed;
-                        }
-                        if (typeof v?.basePrice === 'number' && isFinite(v.basePrice) && v.basePrice > 0) return v.basePrice;
-                        return undefined;
-                      };
-                      for (const v of product.variants as any[]) {
-                        const p = getVarPrice(v);
-                        if (p && p > 0) return p;
-                      }
-                      return undefined;
-                    })();
-                    console.log(typeof product.basePrice)
-                    const displayPrice = ((typeof product.basePrice === 'number' || typeof Number(product.basePrice) === "number" )&& product.basePrice > 0)
-                      ? product.basePrice
-                      : (variantPrice ?? 0);
-                    const displayStock = product.stock && product.stock > 0 ? product.stock : (firstVariant?.stock ?? 0);
-                    // Only use string URLs for image src
                     const variantImgStr = firstVariant
                       ? (
                           (Array.isArray(firstVariant.variantImages) && typeof firstVariant.variantImages[0] === 'string'
@@ -342,7 +371,7 @@ const AdminProduct: React.FC = () => {
                       : undefined;
                     const displayImage: string = (product.productImages?.[0]) || variantImgStr || (defaultProductImage as string);
                     return (
-                      <tr key={product.id} className="admin-products__table-row">
+                      <tr key={product.id} className={`admin-products__table-row ${displayStock === 0 ? 'out-of-stock' : ''}`}>
                         <td className="admin-products__image-cell">
                           <img
                             src={displayImage}
@@ -353,79 +382,83 @@ const AdminProduct: React.FC = () => {
                         <td>{product.id}</td>
                         <td>{product.name}</td>
                         <td>Rs. {displayPrice.toFixed ? displayPrice.toFixed(2) : Number(displayPrice).toFixed(2)}</td>
-                        <td>{displayStock}</td>
+                        <td>
+                          <span className={displayStock === 0 ? 'stock-zero' : 'stock-available'}>
+                            {displayStock}
+                          </span>
+                        </td>
                         <td>
                           <div className="admin-products__actions">
-                          <button
-                            className="admin-products__action-btn admin-products__edit-btn"
-                            onClick={() => handleEditProduct(product)}
-                            disabled={isUpdating}
-                            aria-label="Edit product"
-                          >
-                            <svg
-                              width="20"
-                              height="20"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
+                            <button
+                              className="admin-products__action-btn admin-products__edit-btn"
+                              onClick={() => handleEditProduct(product)}
+                              disabled={isUpdating}
+                              aria-label="Edit product"
                             >
-                              <path
-                                d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                              <path
-                                d="M18.5 2.50023C18.8978 2.10243 19.4374 1.87891 20 1.87891C20.5626 1.87891 21.1022 2.10243 21.5 2.50023C21.8978 2.89804 22.1213 3.43762 22.1213 4.00023C22.1213 4.56284 21.8978 5.10243 21.5 5.50023L12 15.0002L8 16.0002L9 12.0002L18.5 2.50023Z"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                          <button
-                            className="admin-products__action-btn admin-products__delete-btn"
-                            onClick={() => {
-                              setProductToDelete(product);
-                              setShowDeleteModal(true);
-                            }}
-                            disabled={isDeleting}
-                            aria-label="Delete product"
-                          >
-                            <svg
-                              width="20"
-                              height="20"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
+                              <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                                <path
+                                  d="M18.5 2.50023C18.8978 2.10243 19.4374 1.87891 20 1.87891C20.5626 1.87891 21.1022 2.10243 21.5 2.50023C21.8978 2.89804 22.1213 3.43762 22.1213 4.00023C22.1213 4.56284 21.8978 5.10243 21.5 5.50023L12 15.0002L8 16.0002L9 12.0002L18.5 2.50023Z"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </button>
+                            <button
+                              className="admin-products__action-btn admin-products__delete-btn"
+                              onClick={() => {
+                                setProductToDelete(product);
+                                setShowDeleteModal(true);
+                              }}
+                              disabled={isDeleting}
+                              aria-label="Delete product"
                             >
-                              <path
-                                d="M3 6H5H21"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                              <path
-                                d="M8 6V4C8 2.96957 8.21071 2.46086 8.58579 2.08579C8.96086 1.71071 9.46957 1.5 10 1.5H14C14.5304 1.5 15.0391 1.71071 15.4142 2.08579C15.7893 2.46086 16 2.96957 16 3.5V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                              <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M3 6H5H21"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                                <path
+                                  d="M8 6V4C8 2.96957 8.21071 2.46086 8.58579 2.08579C8.96086 1.71071 9.46957 1.5 10 1.5H14C14.5304 1.5 15.0391 1.71071 15.4142 2.08579C15.7893 2.46086 16 2.96957 16 3.5V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
                     );
                   })
                 ) : (
                   <tr>
                     <td colSpan={6} className="admin-products__no-data">
-                      No products found
+                      {filterOption !== "all" ? `No products found with filter: ${filterOption}` : "No products found"}
                     </td>
                   </tr>
                 )}
@@ -435,12 +468,12 @@ const AdminProduct: React.FC = () => {
           <div className="admin-products__pagination-container">
             <div className="admin-products__pagination-info">
               Showing {(currentPage - 1) * productsPerPage + 1}-
-              {Math.min(currentPage * productsPerPage, sortedAndFilteredProducts.length)}{" "}
-              out of {sortedAndFilteredProducts.length}
+              {Math.min(currentPage * productsPerPage, totalProducts)}{" "}
+              out of {totalProducts}
             </div>
             <Pagination
               currentPage={currentPage}
-              totalPages={Math.ceil(sortedAndFilteredProducts.length / productsPerPage)}
+              totalPages={Math.ceil(totalProducts / productsPerPage)}
               onPageChange={setCurrentPage}
             />
           </div>

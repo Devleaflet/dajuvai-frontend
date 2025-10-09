@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { AdminSidebar } from "../Components/AdminSidebar";
+import Header from "../Components/Header";
 import { useAuth } from "../context/AuthContext";
 import { FiEdit2, FiTrash2, FiPlus, FiSearch } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
@@ -31,6 +32,8 @@ const AdminPromo: React.FC = () => {
   const [formData, setFormData] = useState<CreatePromoCodeData>({
     promoCode: "",
     discountPercentage: 0,
+    applyOn: "LINE_TOTAL",
+    isValid: true,
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -89,7 +92,11 @@ const AdminPromo: React.FC = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "discountPercentage" ? Number(value) : value,
+      [name]: name === "discountPercentage" 
+        ? Number(value) 
+        : name === "isValid" 
+        ? value === "true" 
+        : value,
     }));
   };
 
@@ -117,7 +124,12 @@ const AdminPromo: React.FC = () => {
 
       if (response.success) {
         toast.success("Promo code created successfully!");
-        setFormData({ promoCode: "", discountPercentage: 0 });
+        setFormData({ 
+          promoCode: "", 
+          discountPercentage: 0, 
+          applyOn: "LINE_TOTAL", 
+          isValid: true 
+        });
         setShowAddModal(false);
         // Clear cache and refetch
         localStorage.removeItem(CACHE_KEY);
@@ -190,6 +202,7 @@ const AdminPromo: React.FC = () => {
       <div className="admin-promo">
         <AdminSidebar />
         <div className="admin-promo__content">
+          <Header onSearch={() => {}} showSearch={false} title="Promo Code Management" />
           <div className="admin-promo__error">
             <h2>Access Denied</h2>
             <p>Please log in to access promo code management.</p>
@@ -204,6 +217,7 @@ const AdminPromo: React.FC = () => {
       <div className="admin-promo">
         <AdminSidebar />
         <div className="admin-promo__content">
+          <Header onSearch={() => {}} showSearch={false} title="Promo Code Management" />
           <div className="admin-promo__header">
             <div className="admin-promo__title-container">
               <h1 className="admin-promo__title">Promo Code Management</h1>
@@ -219,13 +233,17 @@ const AdminPromo: React.FC = () => {
                   <th>ID</th>
                   <th>Promo Code</th>
                   <th>Discount %</th>
-                  <th>Created At</th>
+                  <th>Apply On</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {[...Array(5)].map((_, index) => (
                   <tr key={index}>
+                    <td>
+                      <div className="admin-promo__skeleton"></div>
+                    </td>
                     <td>
                       <div className="admin-promo__skeleton"></div>
                     </td>
@@ -255,6 +273,7 @@ const AdminPromo: React.FC = () => {
     <div className="admin-promo">
       <AdminSidebar />
       <div className="admin-promo__content">
+        <Header onSearch={setSearchQuery} showSearch={true} title="Promo Code Management" />
         <div className="admin-promo__header">
           <div className="admin-promo__title-container">
             <h1 className="admin-promo__title">Promo Code Management</h1>
@@ -271,17 +290,7 @@ const AdminPromo: React.FC = () => {
           </button>
         </div>
 
-        <div className="admin-promo__controls">
-          <div className="admin-promo__search">
-            <FiSearch />
-            <input
-              type="text"
-              placeholder="Search promo codes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
+
 
         {error && (
           <div className="admin-promo__error">
@@ -296,7 +305,8 @@ const AdminPromo: React.FC = () => {
                 <th>ID</th>
                 <th>Promo Code</th>
                 <th>Discount %</th>
-                <th>Created At</th>
+                <th>Apply On</th>
+                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -313,7 +323,12 @@ const AdminPromo: React.FC = () => {
                     </span>
                   </td>
                   <td>
-                    {promo.createdAt ? formatDate(promo.createdAt) : "N/A"}
+                    <span className="admin-promo__apply-on">{promo.applyOn}</span>
+                  </td>
+                  <td>
+                    <span className={`admin-promo__status ${promo.isValid ? 'admin-promo__status--valid' : 'admin-promo__status--invalid'}`}>
+                      {promo.isValid ? 'Active' : 'Inactive'}
+                    </span>
                   </td>
                   <td>
                     <div className="admin-promo__actions">
@@ -405,6 +420,34 @@ const AdminPromo: React.FC = () => {
                   required
                 />
                 <small>Enter a value between 1 and 100</small>
+              </div>
+              <div className="admin-promo__form-group">
+                <label htmlFor="applyOn">Apply On *</label>
+                <select
+                  id="applyOn"
+                  name="applyOn"
+                  value={formData.applyOn}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="LINE_TOTAL">Line Total</option>
+                  <option value="SHIPPING">Shipping</option>
+                </select>
+                <small>Select where the discount should be applied</small>
+              </div>
+              <div className="admin-promo__form-group">
+                <label htmlFor="isValid">Status *</label>
+                <select
+                  id="isValid"
+                  name="isValid"
+                  value={formData.isValid.toString()}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
+                <small>Set the initial status of the promo code</small>
               </div>
               <div className="admin-promo__modal-actions">
                 <button

@@ -10,7 +10,6 @@ import VendorDashboardService from "../services/vendorDashboardService";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import { Order, OrderDetail } from "../Components/Types/Order";
 import { useQuery } from '@tanstack/react-query';
-
 import VendorHeader from "../Components/VendorHeader";
 
 const VendorOrder: React.FC = () => {
@@ -55,7 +54,7 @@ const VendorOrder: React.FC = () => {
           createdAt: order.createdAt,
           price: parseFloat(order.totalPrice) + parseFloat(order.shippingFee),
           paymentStatus: order.paymentMethod || "",
-          status: order.status.toLowerCase().replace("confirmed", "delivered"),
+          status: order.status,
         };
       });
     },
@@ -261,7 +260,7 @@ const VendorOrder: React.FC = () => {
           background: #fff;
         }
         .vendor-order__table {
-          min-width: 600px;
+          min-width: 700px;
         }
       `}</style>
       

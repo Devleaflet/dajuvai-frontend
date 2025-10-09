@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import Header from '../Components/Header';
 import { AdminSidebar } from '../Components/AdminSidebar';
@@ -6,6 +6,7 @@ import { useDocketHeight } from '../Hook/UseDockerHeight';
 import { useAuth } from '../context/AuthContext';
 import staffApi, { StaffUser, StaffRegistrationData, ApiResponse } from '../api/staff';
 import '../Styles/AdminStaff.css';
+import '../Styles/AdminCustomers.css';
 
 interface StaffFormData extends Omit<StaffRegistrationData, 'confirmPassword'> {
   confirmPassword: string;
@@ -27,6 +28,12 @@ const AdminStaff: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState<StaffUser | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [sortOption, setSortOption] = useState<string>("newest");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredStaffList, setFilteredStaffList] = useState<StaffUser[]>([]);
+  const [sortConfig, setSortConfig] = useState<{ key: keyof StaffUser; direction: 'asc' | 'desc' } | null>(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const docketHeight = useDocketHeight();
 
   useEffect(() => {
@@ -41,6 +48,70 @@ const AdminStaff: React.FC = () => {
   useEffect(() => {
     fetchStaffList();
   }, []);
+
+  // Filter and sort staff list
+  useEffect(() => {
+    let filtered = [...staffList];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(staff => 
+        staff.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        staff.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        staff.id.toString().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Apply date filter
+    if (startDate) {
+      filtered = filtered.filter(staff => {
+        const staffDate = new Date(staff.createdAt);
+        const filterStartDate = new Date(startDate);
+        return staffDate >= filterStartDate;
+      });
+    }
+
+    if (endDate) {
+      filtered = filtered.filter(staff => {
+        const staffDate = new Date(staff.createdAt);
+        const filterEndDate = new Date(endDate);
+        filterEndDate.setHours(23, 59, 59, 999); // Include the entire end date
+        return staffDate <= filterEndDate;
+      });
+    }
+
+    // Apply sorting
+    if (sortOption === "newest") {
+      filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (sortOption === "oldest") {
+      filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    }
+
+    // Apply column sorting if exists
+    if (sortConfig) {
+      filtered.sort((a, b) => {
+        let aValue: any = a[sortConfig.key];
+        let bValue: any = b[sortConfig.key];
+
+        if (sortConfig.key === "id") {
+          aValue = Number(aValue);
+          bValue = Number(bValue);
+        } else if (sortConfig.key === "createdAt" || sortConfig.key === "updatedAt") {
+          aValue = new Date(aValue).getTime();
+          bValue = new Date(bValue).getTime();
+        } else {
+          aValue = aValue ? aValue.toString().toLowerCase() : "";
+          bValue = bValue ? bValue.toString().toLowerCase() : "";
+        }
+
+        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+
+    setFilteredStaffList(filtered);
+  }, [staffList, searchQuery, sortOption, sortConfig, startDate, endDate]);
 
   const fetchStaffList = async () => {
     setLoading(true);
@@ -201,9 +272,12 @@ const AdminStaff: React.FC = () => {
     }
   };
 
-  const handleSearch = (query: string) => {
-    console.log('Searching for:', query);
-  };
+  const handleSearch = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
+    },
+    []
+  );
 
   const handleDeleteClick = (staff: StaffUser) => {
     setStaffToDelete(staff);
@@ -235,13 +309,76 @@ const AdminStaff: React.FC = () => {
     setStaffToDelete(null);
   };
 
+  // Column sort handler (for table headers)
+  const handleColumnSort = useCallback((key: keyof StaffUser) => {
+    setSortConfig(prevConfig => {
+      if (prevConfig?.key === key) {
+        return {
+          key,
+          direction: prevConfig.direction === 'asc' ? 'desc' : 'asc'
+        };
+      }
+      return { key, direction: 'asc' };
+    });
+  }, []);
+
+  // Dropdown sort handler (for Header component)
+  const handleSort = useCallback((newSortOption: string) => {
+    setSortOption(newSortOption);
+    setSortConfig(null); // Clear column sorting when using dropdown sort
+  }, []);
+
   return (
     <div className="">
-      
+     
       <div className="admin-content" style={{display:'flex',height:'100vh'}}>
         <AdminSidebar />
+        
         <main className="admin-main" style={{ minHeight: docketHeight, overflow: 'auto', width:'100vw' }}>
           <div className="admin-categories__content">
+             <Header 
+          onSearch={handleSearch} 
+          showSearch 
+          onSort={handleSort}
+          sortOption={sortOption}
+          title="Staff Management"
+        />
+        
+        {/* Filter Section */}
+        <div className="admin-customers__filters">
+          <div className="admin-customers__filter-group">
+            <label htmlFor="startDate" className="admin-customers__filter-label">From Date:</label>
+            <input 
+              type="date"
+              id="startDate"
+              value={startDate} 
+              onChange={(e) => setStartDate(e.target.value)}
+              className="admin-customers__filter-input"
+            />
+          </div>
+
+          <div className="admin-customers__filter-group">
+            <label htmlFor="endDate" className="admin-customers__filter-label">To Date:</label>
+            <input 
+              type="date"
+              id="endDate"
+              value={endDate} 
+              onChange={(e) => setEndDate(e.target.value)}
+              className="admin-customers__filter-input"
+            />
+          </div>
+
+          <button 
+            onClick={() => {
+              setStartDate("");
+              setEndDate("");
+              setSearchQuery("");
+            }}
+            className="admin-customers__clear-filters"
+          >
+            Clear All Filters
+          </button>
+        </div>
             <div className="admin-staff__header">
               <div className="admin-staff__title-section">
                 <h1 className="admin-staff__title">Staff Management</h1>
@@ -377,20 +514,28 @@ const AdminStaff: React.FC = () => {
                 {loading && <span className="admin-staff__loading">Loading...</span>}
               </div>
 
-              {staffList.length > 0 ? (
+              {filteredStaffList.length > 0 ? (
                 <div className="admin-staff__table-container">
                   <table className="admin-staff__table">
                     <thead>
                       <tr>
-                        <th>ID</th>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Created At</th>
+                        <th onClick={() => handleColumnSort('id')} className="sortable" style={{cursor: 'pointer'}}>
+                          ID {sortConfig?.key === 'id' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                        </th>
+                        <th onClick={() => handleColumnSort('username')} className="sortable" style={{cursor: 'pointer'}}>
+                          Username {sortConfig?.key === 'username' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                        </th>
+                        <th onClick={() => handleColumnSort('email')} className="sortable" style={{cursor: 'pointer'}}>
+                          Email {sortConfig?.key === 'email' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                        </th>
+                        <th onClick={() => handleColumnSort('createdAt')} className="sortable" style={{cursor: 'pointer'}}>
+                          Created At {sortConfig?.key === 'createdAt' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+                        </th>
                         <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {staffList.map((staff) => (
+                      {filteredStaffList.map((staff) => (
                         <tr key={staff.id}>
                           <td>{staff.id}</td>
                           <td>{staff.username}</td>
@@ -425,8 +570,8 @@ const AdminStaff: React.FC = () => {
                       <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
-                  <h4>No Staff Users</h4>
-                  <p>No staff users have been registered yet. Click "Add New Staff" to get started.</p>
+                  <h4>{staffList.length === 0 ? 'No Staff Users' : 'No Results Found'}</h4>
+                  <p>{staffList.length === 0 ? 'No staff users have been registered yet. Click "Add New Staff" to get started.' : 'No staff users match your current search criteria. Try adjusting your search terms.'}</p>
                 </div>
               )}
             </div>

@@ -32,6 +32,14 @@
 .profile-card--wide {
   max-width: min(80vw, 1600px);
 }
+.profile__form-select{
+    height:40px;
+    padding:10px;
+    border: 1px solid #dddd;
+    border-radius:4px;
+    font-size:14px;
+    width:100%;
+  }
 
 /* Sidebar */
 .profile-sidebar {
@@ -143,7 +151,7 @@
   margin-bottom: 0;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 752px) {
   .profile-form__row {
     flex-direction: column;
     margin-bottom: -5px;
@@ -665,6 +673,16 @@ margin-bottom: 24px;
   color: green;
 }
 
+.order-total__delivery {
+  font-size: 11px;
+  color: #28a745;
+  margin-top: 2px;
+}
+
+.order-total__delivery small {
+  font-weight: 500;
+}
+
 .orders__error {
   display: flex;
   align-items: center;
@@ -686,33 +704,32 @@ margin-bottom: 24px;
 }
 
 /* Button Styles */
-.btn {
+.btn-edit--primary {
+  display: flex;
+  justify-content: center;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
   font-size: 16px;
-  padding: 12px 24px;
+  padding: 12px;
   transition: all 0.3s ease;
   margin-top: 20px;
-  padding-left: 10px;
-  margin-left: 10px;
   margin-bottom: 10px;
 }
 
-.btn--primary {
+.btn-edit--primary {
   background-color: #f97316;
   color: #ffffff;
   padding-left: 10px;
 }
 
-.btn--primary:hover {
+.btn-edit--primary:hover {
   background-color: #ea580c;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
 }
 
-.btn--primary:disabled {
+.btn-edit--primary:disabled {
   background-color: #d1d5db;
   cursor: not-allowed;
   transform: none;
@@ -734,21 +751,25 @@ margin-bottom: 24px;
   gap: 16px;
 }
 
-.btn btn--primary {
+.btn-edit btn-edit--primary {
   padding-left: 10px;
 }
 
-.btn btn--secondary {
+.btn-edit btn-edit--secondary {
   padding-left: 10px;
 }
 
-.btn--secondary {
+.btn-edit--secondary {
   background-color: transparent;
   color: #f97316;
   border: 2px solid #f97316;
+  padding:10px;
+  border-radius: 8px; 
+  margin-top: 20px;
+  margin-bottom: 10px;
 }
 
-.btn--secondary:hover {
+.btn-edit--secondary:hover {
   background-color: #fff7ed;
   color: #ea580c;
 }
@@ -759,10 +780,8 @@ margin-bottom: 24px;
   border-radius: 16px;
   padding: 20px;
   min-width: 300px;
-  max-width: 500px;
   margin: 0 auto;
   position: relative;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   animation: popupSlideIn 0.3s ease-out;
 }
 
@@ -820,10 +839,10 @@ margin-bottom: 24px;
 }
 
 /* Popup Footer */
-.popup-footer {
+/* .popup-footer {
   display: flex;
   justify-content: flex-end;
-}
+} */
 
 .popup-close-btn {
   background-color: transparent;
@@ -860,7 +879,7 @@ margin-bottom: 24px;
   .profile-card {
     flex-direction: column;
     height: auto; /* Allow height to adjust for smaller screens */
-    max-height: 80vh; /* Limit height to viewport */
+
   }
 
   .profile-sidebar {
@@ -873,8 +892,7 @@ margin-bottom: 24px;
   .profile-content {
     padding: 24px;
     height: auto; /* Allow content to adjust */
-    max-height: 50vh; /* Limit content height /
-  overflow-y: auto; / Ensure scrollable */
+  /* overflow-y: auto; Ensure scrollable */
   }
 
   .profile-form,
@@ -882,10 +900,17 @@ margin-bottom: 24px;
   .orders {
     max-height: 100%; /* Ensure sections respect parent height */
   }
+    .profile-sidebar__avatar {
+    width: 80px;
+    height: 80px;
+    font-size: 32px;
+    margin: 0 auto;
+  }
+  
 }
 
-@media (max-width: 640px) {
-  html, body, .profile, .profile-card, .profile-sidebar, .profile-content, .profile-form {
+@media (max-width: 752px) {
+  .profile, .profile-card, .profile-sidebar, .profile-content, .profile-form {
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100vw !important;
@@ -932,7 +957,7 @@ margin-bottom: 24px;
   }
 
   .profile-sidebar__button,
-  .btn,
+  .btn-edit,
   .profile-sidebar__button--primary,
   .profile-sidebar__button--secondary {
     width: 90% !important;
@@ -976,14 +1001,14 @@ margin-bottom: 24px;
     font-size: 12px;
     margin-bottom: 4px;
   }
-
+  
   .profile-form__group div,
   .profile-form__group input {
     font-size: 14px;
     padding: 10px;
   }
 
-  .btn, .profile-sidebar__button {
+  .btn-edit, .profile-sidebar__button {
     min-width: 44px;
     min-height: 44px;
     font-size: 14px;
@@ -992,13 +1017,12 @@ margin-bottom: 24px;
 
   .profile-form__actions {
     flex-direction: column;
-    align-items: center;
-    gap: 12px;
+    gap: 5px;
     padding: 0;
     margin: 16px 0;
   }
 
-  .profile-form__actions .btn {
+  .profile-form__actions .btn-edit {
     width: 100%;
     max-width: 280px;
     margin: 4px 0;
@@ -1099,6 +1123,14 @@ margin-bottom: 24px;
 
   .order-total__shipping {
     font-size: 11px;
+  }
+
+  .order-total__delivery {
+    font-size: 10px;
+  }
+
+  .order-total__delivery small {
+    font-weight: 500;
   }
 
   /* Mobile-specific order layout */
@@ -1251,7 +1283,7 @@ margin-bottom: 24px;
   }
 
   .profile-content {
-    padding: 12px 4px;
+    padding: 12px 10px;
   }
 
   .profile-form__title,
@@ -1274,7 +1306,7 @@ margin-bottom: 24px;
     padding: 8px;
   }
 
-  .btn {
+  .btn-edit {
     font-size: 13px;
     padding: 10px 16px;
   }

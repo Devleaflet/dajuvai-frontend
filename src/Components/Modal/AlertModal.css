@@ -1,4 +1,4 @@
-.alert-modal-backdrop {
+/* .alert-modal-backdrop {
   position: fixed;
   top: 0;
   left: 0;
@@ -68,4 +68,53 @@
     font-size: 0.95rem;
     padding: 7px 16px;
   }
-} 
+}  */
+
+/* src/Components/Modal/AlertModal.css */
+.alert-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.alert-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.alert-modal-message {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.alert-modal-buttons {
+  display: flex;
+  justify-content: space-around;
+}
+
+.alert-modal-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.alert-modal-button:hover {
+  opacity: 0.9;
+}

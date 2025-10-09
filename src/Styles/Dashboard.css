@@ -11,7 +11,7 @@
   width: 100%;
   background-color: #f9fafb;
   transition: width 0.3s ease;
-  overflow: auto; /* Changed from 'hidden' to 'auto' to enable scrolling */
+  overflow: auto;
   padding: 0px;
 }
 
@@ -97,7 +97,6 @@
 .dashboard__main {
   flex: 1;
   padding: 12px;
-  /* Bottom padding is now controlled via inline style */
 }
 
 .dashboard__stats {
@@ -360,44 +359,6 @@
   color: #b91c1c;
 }
 
-/* Responsive Styles */
-@media (max-width: 999px) {
-  .dashboard {
-    width: 100%;
-    /* Removed fixed padding-bottom here as we're using dynamic padding in the component */
-    overflow: auto;
-  }
-
-  .dashboard__stats {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); /* Compact stats cards */
-  }
-
-  .dashboard__table-header th:nth-child(2),
-  .dashboard__table-row td:nth-child(2),
-  .dashboard__table-header th:nth-child(4),
-  .dashboard__table-row td:nth-child(4) {
-    display: none; /* Hide location and piece columns on small screens */
-  }
-
-  .dashboard__table-header th,
-  .dashboard__table-row td {
-    font-size: 12px; /* Smaller font size for mobile */
-    padding: 8px 12px;
-  }
-
-  .product-cell {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-
-  .product-cell__name {
-    font-size: 12px;
-  }
-}
-/* Additional styles for AdminDashboard.css */
-/* These should be added to your existing Dashboard.css file */
-
 .dashboard__two-columns {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -411,6 +372,7 @@
 
 .revenue-analytics {
   padding: 24px;
+  width: 100%;
 }
 
 .revenue-analytics__legend {
@@ -573,30 +535,60 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23f97316' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
 }
 
-/* Responsive styles for two column layout */
-@media (max-width: 999px) {
-  .dashboard__two-columns {
-    grid-template-columns: 1fr;
-  }
-  
-  .revenue-analytics__highlight {
-    top: 16px;
-    right: 16px;
-  }
+.table-header-with-button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
 
-  .dashboard__stats {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 16px;
-  }
-  
-  .stats-card__value {
-    font-size: 18px;
-  }
-  
-  .days-selector, .filter-by {
-    font-size: 12px;
-    padding: 4px 8px;
-  }
+.view-more-button {
+  padding: 8px 16px;
+  background-color: #F97316;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.view-more-button:hover {
+  background-color: #e56b15;
+}
+
+.table-container {
+  width: 100%;
+  max-height: 400px; /* Fixed height for the table container */
+  overflow-x: auto; /* Enable horizontal scrolling */
+  overflow-y: auto; /* Enable vertical scrolling for more data */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+.low-stock-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  min-width: 600px; /* Ensure table is wide enough to prevent text wrapping */
+}
+
+.low-stock-table th,
+.low-stock-table td {
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+  font-size: 14px;
+  white-space: nowrap; /* Prevent text wrapping in cells */
+}
+
+.low-stock-table th {
+  background-color: #f3f4f6;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.low-stock-table td {
+  color: #1f2937;
 }
 
 .dashboard__dropdown-menu {
@@ -642,4 +634,131 @@
   color: #1a2233;
   letter-spacing: 1px;
   line-height: 1.2;
+}
+
+/* Responsive Styles */
+@media (max-width: 999px) {
+  .dashboard {
+    width: 100%;
+    overflow: auto;
+  }
+
+  .dashboard__stats {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+  }
+
+  .dashboard__table-header th:nth-child(2),
+  .dashboard__table-row td:nth-child(2),
+  .dashboard__table-header th:nth-child(4),
+  .dashboard__table-row td:nth-child(4) {
+    display: none; /* Hide location and piece columns on small screens */
+  }
+
+  .dashboard__table-header th,
+  .dashboard__table-row td {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  .product-cell {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .product-cell__name {
+    font-size: 12px;
+  }
+
+  .dashboard__two-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .revenue-analytics__highlight {
+    top: 16px;
+    right: 16px;
+  }
+
+  .stats-card__value {
+    font-size: 18px;
+  }
+
+  .days-selector,
+  .filter-by {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+}
+
+/* Mobile-responsive styles for low stock table */
+@media (max-width: 768px) {
+  .table-container {
+    max-height: 300px; /* Smaller fixed height for mobile */
+    overflow-x: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .low-stock-table {
+    min-width: 600px;
+    font-size: 12px;
+  }
+
+  .low-stock-table th,
+  .low-stock-table td {
+    padding: 6px;
+  }
+
+  /* Hide less critical columns on mobile */
+  .low-stock-table th:nth-child(3), /* Vendor ID */
+  .low-stock-table td:nth-child(3),
+  .low-stock-table th:nth-child(6), /* Variant Status */
+  .low-stock-table td:nth-child(6) {
+    display: none;
+  }
+
+  /* Ensure essential columns are prioritized and readable */
+  .low-stock-table th:nth-child(1), /* Product ID */
+  .low-stock-table td:nth-child(1),
+  .low-stock-table th:nth-child(2), /* Product Name */
+  .low-stock-table td:nth-child(2),
+  .low-stock-table th:nth-child(5), /* Stock */
+  .low-stock-table td:nth-child(5) {
+    min-width: 100px;
+  }
+
+  .low-stock-table th:nth-child(4), /* Vendor Name */
+  .low-stock-table td:nth-child(4) {
+    min-width: 120px;
+  }
+}
+
+.view-more-button {
+  padding: 8px 16px;
+  background-color: #F97316;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.view-more-button:hover {
+  background-color: #e56b15; /* Slightly darker shade for hover effect */
+}
+
+.view-more-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.3); /* Focus ring for accessibility */
+}
+
+/* Mobile-responsive styles */
+@media (max-width: 768px) {
+  .view-more-button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
 }

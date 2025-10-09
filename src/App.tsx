@@ -16,6 +16,7 @@ import AdminBannerWithTabs from "./Pages/AdminBanner";
 import AdminCatalog from "./Pages/AdminCatalog";
 import ProductPage from "./Pages/ProductPage";
 import UserProfile from "./Pages/UserProfile";
+import ReturnRefundPolicy from "./Pages/ReturnRefundPolicy"; // Added import
 
 // import VendorSignup from "./Pages/VendorSignup";
 import PageNotFound from "./Pages/PageNotFound";
@@ -53,6 +54,8 @@ import SectionProducts from "./Components/SectionProducts";
 import WebsiteComingSoon from "./Pages/WebsiteComingSoon";
 import VendorTerms from "./Pages/VendorTerms";
 import PasswordProtectedRoute from "./Components/SiteProtection/PasswordProtectedRoute";
+import EsewaPaymentFailure from "./Pages/EsewaPaymentFailure";
+import AdminProfile from "./Pages/AdminProfile";
 // import VendorLoginPage from "./Pages/VendorLoginPage";
 // import VendorSignupPage from "./Pages/VendorSignupPage";
 
@@ -94,8 +97,10 @@ const ProtectedVendorRoute = ({ children }: { children: ReactElement }) => {
   return children;
 };
 
+
 // const SHOW_COMING_SOON = true;
-const isAuthenticated = localStorage.getItem("authenticated") === "true";
+const isAuthenticated = localStorage.getItem("authenticated") === "true";  // comment this line of code and ----
+// const isAuthenticated = true;                                           // --- uncomment this line of code in local 
 
 
 function App() {
@@ -158,6 +163,14 @@ function App() {
           element={
             <PasswordProtectedRoute>
               <Privacy />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/return-refund-policy" // Added route for Return & Refund Policy
+          element={
+            <PasswordProtectedRoute>
+              <ReturnRefundPolicy />
             </PasswordProtectedRoute>
           }
         />
@@ -262,6 +275,14 @@ function App() {
           element={
             <PasswordProtectedRoute>
               <PaymentSuccess />
+            </PasswordProtectedRoute>
+          }
+        />
+        <Route
+          path="/order/esewa-payment-failure"
+          element={
+            <PasswordProtectedRoute>
+              <EsewaPaymentFailure />
             </PasswordProtectedRoute>
           }
         />
@@ -431,6 +452,15 @@ function App() {
             </AdminOnlyRoute>
           }
         />
+      <Route
+          path="/admin-profile"
+          element={
+            <AdminOrStaffRoute>
+              <AdminProfile/>
+            </AdminOrStaffRoute>
+          }
+        />
+
         {/* Fallback Route */}
         <Route path="*" element={<PageNotFound />} />
       </Routes >

@@ -1,6 +1,15 @@
 /* AdminStaff.css */
 .admin-staff {
-  padding: 2rem;
+  display: flex;
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+.admin-staff__content {
+  flex: 1;
+}
+
+.admin-staff__container {
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -9,7 +18,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 2rem;
+  margin: 0 2rem 2rem 2rem;
   gap: 1rem;
 }
 
@@ -58,7 +67,7 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+  margin: 0 2rem 2rem 2rem;
   overflow: hidden;
 }
 
@@ -194,6 +203,7 @@
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  margin: 0 2rem;
 }
 
 .admin-staff__list-header {

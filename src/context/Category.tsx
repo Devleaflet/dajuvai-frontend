@@ -60,19 +60,31 @@ const CategoryContextProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!categoryData) return;
 
     try {
-      const categoriesWithSubcategoriesPromises = categoryData.map(async (section: any) => {
-        const mainCategory = section.category;
-        const subItems = await fetchSubcategoriesWithCache(mainCategory.id);
+      console.log('🔄 Processing category data in context:', categoryData);
+      
+      // Handle new API structure where categories come directly with subcategories
+      const categoriesWithSubcategoriesPromises = categoryData.map(async (category: any) => {
+        console.log('📂 Processing category:', category.name, 'with', category.subcategories?.length || 0, 'subcategories');
+        
+        // Map subcategories to the expected format
+        const subItems = category.subcategories?.map((sub: any) => ({
+          id: sub.id,
+          name: sub.name,
+          link: `/shop?categoryId=${category.id}&subcategoryId=${sub.id}`,
+          image: sub.image || ""
+        })) || [];
+        
         return {
-          id: mainCategory.id,
-          name: mainCategory.name,
-          icon: mainCategory.image || "",
-          link: `/shop?categoryId=${mainCategory.id}`,
+          id: category.id,
+          name: category.name,
+          icon: category.image || "",
+          link: `/shop?categoryId=${category.id}`,
           items: subItems,
         };
       });
 
       const resolvedCategories = await Promise.all(categoriesWithSubcategoriesPromises);
+      console.log('✅ Resolved categories:', resolvedCategories.length, 'categories with subcategories');
 
       const isDifferent =
         resolvedCategories.length !== categories.length ||
@@ -82,6 +94,7 @@ const CategoryContextProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         );
 
       if (isDifferent) {
+        console.log('🔄 Categories changed, updating state');
         setCategories(resolvedCategories);
         resolvedCategories.forEach((category) => {
           queryClient.prefetchQuery({
@@ -91,9 +104,11 @@ const CategoryContextProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             gcTime: 30 * 60 * 1000,
           });
         });
+      } else {
+        console.log('📋 Categories unchanged, skipping update');
       }
     } catch (error) {
-      console.error("Error updating categories:", error);
+      console.error("❌ Error updating categories:", error);
     }
   };
 

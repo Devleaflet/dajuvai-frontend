@@ -41,6 +41,13 @@ const SubcategoriesViewModal: React.FC<SubcategoriesViewModalProps> = ({
 }) => {
   if (!show || !category) return null;
 
+  // Handler for delete button click
+  const handleDeleteClick = (categoryId: string, subCategoryId: string) => {
+    // Trigger the parent's confirmation modal and close this modal
+    onDeleteSubCategory(categoryId, subCategoryId);
+    onClose();
+  };
+
   return (
     <div className="subcategories-modal-overlay" onClick={onClose}>
       <div className="subcategories-modal" onClick={(e) => e.stopPropagation()}>
@@ -129,7 +136,7 @@ const SubcategoriesViewModal: React.FC<SubcategoriesViewModalProps> = ({
                             </svg>
                           </button>
                           <button
-                            onClick={() => onDeleteSubCategory(category.id, sub.id)}
+                            onClick={() => handleDeleteClick(category.id, sub.id)}
                             className="subcategories-modal__action-btn subcategories-modal__delete-btn"
                             title="Delete subcategory"
                           >

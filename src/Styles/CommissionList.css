@@ -1,6 +1,10 @@
+/* ===== BASE STYLES ===== */
 body {
     font-family: 'Inter', Arial, sans-serif;
     background: linear-gradient(to bottom right, #f9fafb, #e5e7eb);
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
 }
 
 .commission-container {
@@ -8,15 +12,45 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 16px;
 }
 
+/* ===== CARD STYLES ===== */
+.commission-card {
+    width: 100%;
+    max-width: 1300px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin: 0 auto;
+}
+
+.commission-header {
+    background: linear-gradient(to right, #ff6b00, #ff8c3a);
+    color: white;
+    text-align: center;
+    padding: 24px 16px;
+}
+
+.commission-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+}
+
+.commission-header p {
+    font-size: 14px;
+    opacity: 0.9;
+    margin: 0;
+}
+
+/* ===== SEARCH BAR ===== */
 .search-bar {
     width: 100%;
     max-width: 500px;
     margin: 20px auto;
-    display: flex;
-    justify-content: center;
+    padding: 0 16px;
 }
 
 .search-bar input {
@@ -29,6 +63,9 @@ body {
     transition: all 0.3s ease;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     background-color: #ffffff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 14px center;
 }
 
 .search-bar input:focus {
@@ -36,35 +73,11 @@ body {
     box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
 }
 
-.commission-card {
-    width: 100%;
-    max-width: 1300px;
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-}
-
-.commission-header {
-    background: linear-gradient(to right, #ff6b00, #ff6b00);
-    color: white;
-    text-align: center;
-    padding: 24px;
-}
-
-.commission-header h1 {
-    font-size: 28px;
-    font-weight: 700;
-}
-
-.commission-header p {
-    font-size: 14px;
-    opacity: 0.9;
-    margin-top: 6px;
-}
-
+/* ===== TABLE STYLES ===== */
 .table-wrapper {
     overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
 }
 
 table {
@@ -86,6 +99,10 @@ td {
     text-align: left;
 }
 
+tbody tr {
+    transition: background-color 0.2s ease;
+}
+
 tbody tr:hover {
     background: #f9fafb;
 }
@@ -96,6 +113,7 @@ tbody tr:hover {
     text-align: center;
 }
 
+/* ===== BUTTON STYLES ===== */
 .button-group {
     display: flex;
     flex-wrap: wrap;
@@ -111,12 +129,20 @@ tbody tr:hover {
     border-radius: 10px;
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    flex: 1;
+    min-width: 160px;
+    max-width: 280px;
 }
 
 .btn:hover {
-    transform: scale(1.05);
+    transform: translateY(-2px);
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+    transform: translateY(0);
+    opacity: 0.9;
 }
 
 .btn-green {
@@ -127,4 +153,114 @@ tbody tr:hover {
 .btn-blue {
     background: linear-gradient(to right, #2563eb, #1d4ed8);
     color: white;
+}
+
+/* ===== MOBILE RESPONSIVE STYLES ===== */
+@media screen and (max-width: 768px) {
+    .commission-container {
+        padding: 12px;
+        align-items: flex-start;
+    }
+    
+    .commission-card {
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .commission-header {
+        padding: 20px 16px;
+    }
+    
+    .commission-header h1 {
+        font-size: 24px;
+    }
+    
+    .commission-header p {
+        font-size: 13px;
+    }
+    
+    .search-bar {
+        margin: 16px auto;
+        padding: 0 12px;
+    }
+    
+    .search-bar input {
+        padding: 10px 16px 10px 38px;
+        font-size: 16px; /* Prevents zoom on iOS */
+        background-position: 12px center;
+    }
+    
+    /* Responsive table for mobile */
+    .table-wrapper {
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    table {
+        min-width: 100%;
+    }
+    
+    th, td {
+        padding: 12px 10px;
+        font-size: 14px;
+    }
+    
+    /* Stack buttons on mobile */
+    .button-group {
+        flex-direction: column;
+        align-items: center;
+        padding: 16px;
+        gap: 10px;
+    }
+    
+    .btn {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+/* Extra small devices */
+@media screen and (max-width: 480px) {
+    .commission-header {
+        padding: 16px 12px;
+    }
+    
+    .commission-header h1 {
+        font-size: 22px;
+    }
+    
+    th, td {
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+    
+    .highlight {
+        font-size: 14px;
+    }
+    
+    .button-group {
+        padding: 12px;
+    }
+    
+    .btn {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+}
+
+/* Table responsive design for very small screens */
+@media screen and (max-width: 360px) {
+    th, td {
+        padding: 8px 6px;
+        font-size: 12px;
+    }
+    
+    .commission-header h1 {
+        font-size: 20px;
+    }
+}
+
+/* ===== NO RESULTS STYLE ===== */
+td[colspan] {
+    font-style: italic;
+    color: #6b7280;
 }

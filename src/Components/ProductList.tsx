@@ -4,179 +4,236 @@ import defaultProductImage from "../assets/logo.webp";
 import { API_BASE_URL } from "../config";
 
 interface ProductListProps {
-  products: Product[];
-  onEdit: (product: Product) => void;
-  isMobile: boolean;
-  showVendor: boolean;
+	products: Product[];
+	onEdit: (product: Product) => void;
+	onDelete: (product: Product) => void;
+	isMobile: boolean;
+	showVendor: boolean;
 }
 
 const ProductList: React.FC<ProductListProps> = ({
-  products,
-  onEdit,
-  isMobile,
-  showVendor,
+	products,
+	onEdit,
+	onDelete,
+	isMobile,
+	showVendor,
 }) => {
-  // Helper function to compute discounted price
-  const calculatePrice = (basePrice: string | number, discount?: string, discountType?: string): number => {
-    const base = typeof basePrice === 'string' ? parseFloat(basePrice) : basePrice;
-    if (!discount || !discountType) return base;
-    const discountValue = parseFloat(discount) || 0;
-    if (discountType === "PERCENTAGE") {
-      return base * (1 - discountValue / 100);
-    } else if (discountType === "FIXED" || discountType === "FLAT") {
-      return base - discountValue;
-    }
-    return base;
-  };
+	// Helper function to compute discounted price
+	const calculatePrice = (
+		basePrice: string | number,
+		discount?: string,
+		discountType?: string
+	): number => {
+		const base =
+			typeof basePrice === "string" ? parseFloat(basePrice) : basePrice;
+		if (!discount || !discountType) return base;
+		const discountValue = parseFloat(discount) || 0;
+		if (discountType === "FIXED" || discountType === "FLAT") {
+			return base - discountValue;
+		}
+		return base;
+	};
 
-  // Normalize/complete image URLs similar to Shop page
-  const processImageUrl = (imgUrl: string): string => {
-    if (!imgUrl) return '';
-    const trimmed = imgUrl.trim();
-    if (!trimmed) return '';
-    if (trimmed.startsWith('//')) return `https:${trimmed}`;
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
-      return trimmed;
-    }
-    const base = API_BASE_URL.replace(/\/?api\/?$/, '');
-    const needsSlash = !trimmed.startsWith('/');
-    const url = `${base}${needsSlash ? '/' : ''}${trimmed}`;
-    return url.replace(/([^:]\/)\/+/, '$1/');
-  };
+	// Normalize/complete image URLs similar to Shop page
+	const processImageUrl = (imgUrl: string): string => {
+		if (!imgUrl) return "";
+		const trimmed = imgUrl.trim();
+		if (!trimmed) return "";
+		if (trimmed.startsWith("//")) return `https:${trimmed}`;
+		if (
+			trimmed.startsWith("http://") ||
+			trimmed.startsWith("https://") ||
+			trimmed.startsWith("/")
+		) {
+			return trimmed;
+		}
+		const base = API_BASE_URL.replace(/\/?api\/?$/, "");
+		const needsSlash = !trimmed.startsWith("/");
+		const url = `${base}${needsSlash ? "/" : ""}${trimmed}`;
+		return url.replace(/([^:]\/)\/+/, "$1/");
+	};
 
-  const getDisplayImage = (product: Product): string => {
-    // 1) Product images
-    const productImages = (product.productImages || [])
-      .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
-      .map(processImageUrl)
-      .filter(Boolean);
-    if (productImages.length > 0) return productImages[0];
+	// Get display image for product
+	const getDisplayImage = (product: Product): string => {
+		const productImages = (product.productImages || [])
+			.filter(
+				(img): img is string =>
+					!!img && typeof img === "string" && img.trim() !== ""
+			)
+			.map(processImageUrl)
+			.filter(Boolean);
+		if (productImages.length > 0) return productImages[0];
 
-    // 2) Single product.image
-    if (typeof product.image === 'string' && product.image.trim()) {
-      const img = processImageUrl(product.image);
-      if (img) return img;
-    }
+		if (typeof product.image === "string" && product.image.trim()) {
+			const img = processImageUrl(product.image);
+			if (img) return img;
+		}
 
-    // 3) Variant images (image + images[])
-    const variantImages: string[] = (product.variants || [])
-      .flatMap((v: any) => [
-        v?.image,
-        ...(Array.isArray(v?.images) ? v.images : []),
-        ...(Array.isArray(v?.variantImages) ? v.variantImages : []),
-      ])
-      .filter((img): img is string => !!img && typeof img === 'string' && img.trim() !== '')
-      .map(processImageUrl)
-      .filter(Boolean);
-    if (variantImages.length > 0) return variantImages[0];
+		const variantImages: string[] = (product.variants || [])
+			.flatMap((v: any) => [
+				v?.image,
+				...(Array.isArray(v?.images) ? v.images : []),
+				...(Array.isArray(v?.variantImages) ? v.variantImages : []),
+			])
+			.filter(
+				(img): img is string =>
+					!!img && typeof img === "string" && img.trim() !== ""
+			)
+			.map(processImageUrl)
+			.filter(Boolean);
+		if (variantImages.length > 0) return variantImages[0];
 
-    // 4) Default
-    return defaultProductImage;
-  };
+		return defaultProductImage;
+	};
 
-  return (
-    <div className="dashboard__card vendor-product__table-container">
-      <table className="dashboard__table">
-        <thead className="dashboard__table-header">
-          <tr>
-            <th>Image</th>
-            <th>Product Name</th>
-            <th>Category</th>
-            {showVendor && <th>Vendor</th>}
-            <th>Price</th>
-            <th>Stock</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.length === 0 ? (
-            <tr>
-              <td colSpan={isMobile ? (showVendor ? 8 : 7) : (showVendor ? 9 : 8)} className="empty-state">
-                No products found matching your criteria
-              </td>
-            </tr>
-          ) : (
-            products.map((product) => {
-              // Handle variant products
-              let numericStock = 0;
-              let displayPrice = 0;
-              const displayImage = getDisplayImage(product);
-              
-              if (product.variants && product.variants.length > 0) {
-                // Use first variant's price and stock
-                const firstVariant = product.variants[0] as any;
-                numericStock = (firstVariant?.stock ?? product.stock ?? 0) as number;
+	return (
+		<div className="dashboard__card vendor-product__table-container">
+			<table className="dashboard__table">
+				<thead className="dashboard__table-header">
+					<tr>
+						<th>Image</th>
+						<th>Product Name</th>
+						<th>Category</th>
+						{showVendor && <th>Vendor</th>}
+						<th>Price</th>
+						<th>Stock</th>
+						<th>Status</th>
+						<th>Action</th>
+					</tr>
+				</thead>
+				<tbody>
+					{products.length === 0 ? (
+						<tr>
+							<td
+								colSpan={isMobile ? (showVendor ? 8 : 7) : showVendor ? 9 : 8}
+								className="empty-state"
+							>
+								No products found matching your criteria
+							</td>
+						</tr>
+					) : (
+						products.map((product) => {
+							let numericStock = 0;
+							let displayPrice = 0;
+							const displayImage = getDisplayImage(product);
 
-                // Prefer precomputed calculatedPrice from mapping when available
-                const variantBase = (firstVariant?.price ?? firstVariant?.originalPrice ?? firstVariant?.basePrice ?? product.basePrice ?? product.price) as number | string | undefined;
-                const hasCalculated = typeof firstVariant?.calculatedPrice === 'number' && isFinite(firstVariant.calculatedPrice);
+							if (product.variants && product.variants.length > 0) {
+								const firstVariant = product.variants[0] as any;
+								numericStock = (firstVariant?.stock ??
+									product.stock ??
+									0) as number;
 
-                if (hasCalculated) {
-                  displayPrice = firstVariant.calculatedPrice as number;
-                } else if (firstVariant?.discount && firstVariant?.discountType) {
-                  displayPrice = calculatePrice(variantBase ?? 0, String(firstVariant.discount), String(firstVariant.discountType));
-                } else if (product.discount && product.discountType) {
-                  displayPrice = calculatePrice(variantBase ?? 0, String(product.discount), String(product.discountType));
-                } else {
-                  displayPrice = typeof variantBase === 'string' ? parseFloat(variantBase) : (Number(variantBase) || 0);
-                }
-              } else {
-                // For non-variant products
-                numericStock = product.stock ?? 0;
-                displayPrice = calculatePrice(product.price, product.discount as any, product.discountType as any);
-              }
+								const variantBase = (firstVariant?.price ??
+									firstVariant?.originalPrice ??
+									firstVariant?.basePrice ??
+									product.basePrice ??
+									product.price) as number | string | undefined;
+								const hasCalculated =
+									typeof firstVariant?.calculatedPrice === "number" &&
+									isFinite(firstVariant.calculatedPrice);
 
-              // Determine status display
-              const statusDisplay = (() => {
-                if (product.status === 'OUT_OF_STOCK') {
-                  return <span className="product-status out-of-stock">Out of Stock</span>;
-                }
-                if (product.status === 'LOW_STOCK') {
-                  return <span className="product-status low-stock">Low Stock</span>;
-                }
-                if (product.status === 'AVAILABLE') {
-                  return <span className="product-status available">Available</span>;
-                }
-                return '-';
-              })();
+								if (hasCalculated) {
+									displayPrice = firstVariant.calculatedPrice as number;
+								} else if (
+									firstVariant?.discount &&
+									firstVariant?.discountType
+								) {
+									displayPrice = calculatePrice(
+										variantBase ?? 0,
+										String(firstVariant.discount),
+										String(firstVariant.discountType)
+									);
+								} else if (product.discount && product.discountType) {
+									displayPrice = calculatePrice(
+										variantBase ?? 0,
+										String(product.discount),
+										String(product.discountType)
+									);
+								} else {
+									displayPrice =
+										typeof variantBase === "string"
+											? parseFloat(variantBase)
+											: Number(variantBase) || 0;
+								}
+							} else {
+								numericStock = product.stock ?? 0;
+								displayPrice = calculatePrice(
+									product.price,
+									product.discount as any,
+									product.discountType as any
+								);
+							}
 
-              return (
-                <tr key={product.id} className="dashboard__table-row">
-                  <td>
-                    <div
-                      className="product-cell__icon vendor-product__image"
-                      style={{
-                        backgroundImage: `url(${displayImage})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                      }}
-                    ></div>
-                  </td>
-                  <td>{product.name || "Unnamed Product"}</td>
-                  <td>{product.subcategory?.name || product.category || "Unknown"}</td>
-                  {showVendor && <td>{product.vendor || "Unknown"}</td>}
-                  <td>Rs. {displayPrice.toFixed(2)}</td>
-                  <td>{numericStock}</td>
-                  <td>{statusDisplay}</td>
-                  <td>
-                    <div className="vendor-product__actions-cell">
-                      <button
-                        className="vendor-product__action-btn vendor-product__edit"
-                        onClick={() => onEdit(product)}
-                      >
-                        <span className="vendor-product__edit-icon"></span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
+							const statusDisplay = (() => {
+								if (product.status === "OUT_OF_STOCK") {
+									return (
+										<span className="product-status out-of-stock">
+											Out of Stock
+										</span>
+									);
+								}
+								if (product.status === "LOW_STOCK") {
+									return (
+										<span className="product-status low-stock">Low Stock</span>
+									);
+								}
+								if (product.status === "AVAILABLE") {
+									return (
+										<span className="product-status available">Available</span>
+									);
+								}
+								return "-";
+							})();
+
+							return (
+								<tr
+									key={product.id}
+									className="dashboard__table-row"
+								>
+									<td>
+										<div
+											className="product-cell__icon vendor-product__image"
+											style={{
+												backgroundImage: `url(${displayImage})`,
+												backgroundSize: "cover",
+												backgroundPosition: "center",
+											}}
+										></div>
+									</td>
+									<td>{product.name || "Unnamed Product"}</td>
+									<td>
+										{product.subcategory?.name || product.category || "Unknown"}
+									</td>
+									{showVendor && <td>{product.vendor || "Unknown"}</td>}
+									<td>Rs. {displayPrice.toFixed(2)}</td>
+									<td>{numericStock}</td>
+									<td>{statusDisplay}</td>
+									<td>
+										<div className="vendor-product__actions-cell">
+											<button
+												className="vendor-product__action-buttton vendor-product__edit"
+												onClick={() => onEdit(product)}
+												title="Edit Product"
+											>
+												<span className="vendor-product__edit-icon"></span>
+											</button>
+											<button
+												className="vendor-product__action-buttton vendor-product__delete"
+												onClick={() => onDelete(product)}
+												title="Delete Product"
+											>
+												<span className="vendor-product__delete-icon"></span>
+											</button>
+										</div>
+									</td>
+								</tr>
+							);
+						})
+					)}
+				</tbody>
+			</table>
+		</div>
+	);
 };
 
 export default ProductList;

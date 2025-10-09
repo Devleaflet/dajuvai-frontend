@@ -211,11 +211,17 @@ class ProductService {
     }
   }
 
-  async deleteProduct(categoryId: number, subcategoryId: number, productId: number): Promise<void> {
+
+  async deleteProduct(productId: number, token: string): Promise<void> {
     return this.handleRequest(
       this.axiosInstance.delete(
-        `/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}`,
-        { headers: { 'Content-Type': 'application/json' } }
+        `/api/product/${productId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`, 
+          },
+        },
       )
     );
   }
@@ -250,5 +256,6 @@ class ProductService {
 
 // Export the singleton instance. Import as:
 // import ProductService from '.../productService';
+import AuthContext from '../context/VendorAuthContext';
 // Do NOT use ProductService.getInstance() in your code.
 export default ProductService.getInstance();

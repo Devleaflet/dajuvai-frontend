@@ -1,828 +1,1119 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { AdminSidebar } from "../Components/AdminSidebar";
 import Header from "../Components/Header";
 import Pagination from "../Components/Pagination";
 import VendorEditModal from "../Components/Modal/VendorEditModal";
-import AddVendorModal from "../Components/Modal/AddVendorModal";
 import VendorViewModal from "../Components/Modal/VendorViewModal";
 import { API_BASE_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
-import { VendorAuthService } from "../services/vendorAuthService";
-import { Vendor, District, ApiResponse, VendorSignupRequest, VendorUpdateRequest } from "../Components/Types/vendor";
+import {
+	Vendor,
+	District,
+	ApiResponse,
+	VendorUpdateRequest,
+} from "../Components/Types/vendor";
 import "../Styles/AdminVendor.css";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
 const SkeletonRow: React.FC = () => {
-  return (
-    <tr>
-      <td><div className="skeleton skeleton-text"></div></td>
-      <td><div className="skeleton skeleton-text"></div></td>
-      <td><div className="skeleton skeleton-text"></div></td>
-      <td><div className="skeleton skeleton-text"></div></td>
-      <td><div className="skeleton skeleton-text"></div></td>
-      <td><div className="skeleton skeleton-text"></div></td>
-      <td><div className="skeleton skeleton-text"></div></td>
-    </tr>
-  );
+	return (
+		<tr className="admin-vendors__table-row">
+			<td>
+				<div className="admin-vendors__skeleton"></div>
+			</td>
+			<td>
+				<div className="admin-vendors__skeleton"></div>
+			</td>
+			<td>
+				<div className="admin-vendors__skeleton"></div>
+			</td>
+			<td>
+				<div className="admin-vendors__skeleton"></div>
+			</td>
+			<td>
+				<div className="admin-vendors__skeleton"></div>
+			</td>
+			<td>
+				<div className="admin-vendors__skeleton"></div>
+			</td>
+			<td>
+				<div className="admin-vendors__skeleton"></div>
+			</td>
+		</tr>
+	);
 };
 
 const createVendorAPI = (token: string | null) => ({
-  async getAll(): Promise<Vendor[]> {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      };
+	async getAll(): Promise<Vendor[]> {
+		try {
+			if (!token) {
+				throw new Error("No token provided. Please log in.");
+			}
+			const headers: Record<string, string> = {
+				"Content-Type": "application/json",
+				Accept: "application/json",
+				Authorization: `Bearer ${token}`,
+			};
 
-      const response = await fetch(`${API_BASE_URL}/api/vendors`, {
-        method: "GET",
-        headers,
-      });
+			const response = await fetch(`${API_BASE_URL}/api/vendors`, {
+				method: "GET",
+				headers,
+			});
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
 
-      const result: ApiResponse<Vendor[]> = await response.json();
-      return (result.data || []).map((vendor) => ({
-        ...vendor,
-        status: vendor.isVerified ? "Active" : "Inactive",
-        taxNumber: vendor.taxNumber || "N/A",
-        taxDocuments: Array.isArray(vendor.taxDocuments) ? vendor.taxDocuments : vendor.taxDocuments ? [vendor.taxDocuments] : null,
-        businessRegNumber: vendor.businessRegNumber || "N/A",
-        citizenshipDocuments: Array.isArray(vendor.citizenshipDocuments) ? vendor.citizenshipDocuments : vendor.citizenshipDocuments ? [vendor.citizenshipDocuments] : null,
-        chequePhoto: Array.isArray(vendor.chequePhoto) ? vendor.chequePhoto : vendor.chequePhoto ? [vendor.chequePhoto] : null,
-        accountName: vendor.accountName || "N/A",
-        bankName: vendor.bankName || "N/A",
-        accountNumber: vendor.accountNumber || "N/A",
-        bankBranch: vendor.bankBranch || "N/A",
-        bankCode: vendor.bankCode || "N/A",
-        businessAddress: vendor.businessAddress || "N/A",
-        profilePicture: vendor.profilePicture || "N/A",
-      }));
-    } catch (error) {
-      console.error("Error fetching vendors:", error);
-      throw error;
-    }
-  },
+			const result: ApiResponse<Vendor[]> = await response.json();
+			return (result.data || []).map((vendor) => ({
+				...vendor,
+				status: vendor.isVerified ? "Active" : "Inactive",
+				isApproved: vendor.isApproved !== undefined ? vendor.isApproved : true, // Preserve isApproved, default to true for existing vendors
+				taxNumber: vendor.taxNumber || "N/A",
+				taxDocuments: Array.isArray(vendor.taxDocuments)
+					? vendor.taxDocuments
+					: vendor.taxDocuments
+					? [vendor.taxDocuments]
+					: [],
+				businessRegNumber: vendor.businessRegNumber || "N/A",
+				citizenshipDocuments: Array.isArray(vendor.citizenshipDocuments)
+					? vendor.citizenshipDocuments
+					: vendor.citizenshipDocuments
+					? [vendor.citizenshipDocuments]
+					: [],
+				chequePhoto: Array.isArray(vendor.chequePhoto)
+					? vendor.chequePhoto
+					: vendor.chequePhoto
+					? [vendor.chequePhoto]
+					: [],
+				accountName: vendor.accountName || "N/A",
+				bankName: vendor.bankName || "N/A",
+				accountNumber: vendor.accountNumber || "N/A",
+				bankBranch: vendor.bankBranch || "N/A",
+				bankCode: vendor.bankCode || "N/A",
+				businessAddress: vendor.businessAddress || "N/A",
+				profilePicture: vendor.profilePicture || "N/A",
+			})) as Vendor[];
+		} catch (error) {
+			console.error("Error fetching vendors:", error);
+			throw error;
+		}
+	},
 
-  async getUnapproved(): Promise<Vendor[]> {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      };
+	async getUnapproved(): Promise<Vendor[]> {
+		try {
+			if (!token) {
+				throw new Error("No token provided. Please log in.");
+			}
+			const headers: Record<string, string> = {
+				"Content-Type": "application/json",
+				Accept: "application/json",
+				Authorization: `Bearer ${token}`,
+			};
 
-      const response = await fetch(`${API_BASE_URL}/api/vendors/unapprove/list`, {
-        method: "GET",
-        headers,
-      });
+			const response = await fetch(
+				`${API_BASE_URL}/api/vendors/unapprove/list`,
+				{
+					method: "GET",
+					headers,
+				}
+			);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+			console.log(
+				`Fetch finished loading: GET "${API_BASE_URL}/api/vendors/unapprove/list"`
+			);
 
-      const result: ApiResponse<Vendor[]> = await response.json();
-      return (result.data || []).map((vendor) => ({
-        ...vendor,
-        status: "Inactive",
-        taxNumber: vendor.taxNumber || "N/A",
-        taxDocuments: Array.isArray(vendor.taxDocuments) ? vendor.taxDocuments : vendor.taxDocuments ? [vendor.taxDocuments] : null,
-        businessRegNumber: vendor.businessRegNumber || "N/A",
-        citizenshipDocuments: Array.isArray(vendor.citizenshipDocuments) ? vendor.citizenshipDocuments : vendor.citizenshipDocuments ? [vendor.citizenshipDocuments] : null,
-        chequePhoto: Array.isArray(vendor.chequePhoto) ? vendor.chequePhoto : vendor.chequePhoto ? [vendor.chequePhoto] : null,
-        accountName: vendor.accountName || "N/A",
-        bankName: vendor.bankName || "N/A",
-        accountNumber: vendor.accountNumber || "N/A",
-        bankBranch: vendor.bankBranch || "N/A",
-        bankCode: vendor.bankCode || "N/A",
-        businessAddress: vendor.businessAddress || "N/A",
-        profilePicture: vendor.profilePicture || "N/A",
-      }));
-    } catch (error) {
-      console.error("Error fetching unapproved vendors:", error);
-      throw error;
-    }
-  },
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
 
-  async approve(id: number): Promise<void> {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      };
+			const result: ApiResponse<Vendor[]> = await response.json();
+			return (result.data || []).map((vendor) => ({
+				...vendor,
+				status: "Inactive",
+				isApproved: vendor.isApproved || false, // Preserve the isApproved status
+				taxNumber: vendor.taxNumber || "N/A",
+				taxDocuments: Array.isArray(vendor.taxDocuments)
+					? vendor.taxDocuments
+					: vendor.taxDocuments
+					? [vendor.taxDocuments]
+					: [],
+				businessRegNumber: vendor.businessRegNumber || "N/A",
+				citizenshipDocuments: Array.isArray(vendor.citizenshipDocuments)
+					? vendor.citizenshipDocuments
+					: vendor.citizenshipDocuments
+					? [vendor.citizenshipDocuments]
+					: [],
+				chequePhoto: Array.isArray(vendor.chequePhoto)
+					? vendor.chequePhoto
+					: vendor.chequePhoto
+					? [vendor.chequePhoto]
+					: [],
+				accountName: vendor.accountName || "N/A",
+				bankName: vendor.bankName || "N/A",
+				accountNumber: vendor.accountNumber || "N/A",
+				bankBranch: vendor.bankBranch || "N/A",
+				bankCode: vendor.bankCode || "N/A",
+				businessAddress: vendor.businessAddress || "N/A",
+				profilePicture: vendor.profilePicture || "N/A",
+			})) as Vendor[];
+		} catch (error) {
+			console.error("Error fetching unapproved vendors:", error);
+			throw error;
+		}
+	},
 
-      const response = await fetch(`${API_BASE_URL}/api/vendors/approve/${id}`, {
-        method: "PUT",
-        headers,
-      });
+	async approve(id: number): Promise<void> {
+		try {
+			if (!token) {
+				throw new Error("No token provided. Please log in.");
+			}
+			const headers: Record<string, string> = {
+				"Content-Type": "application/json",
+				Accept: "application/json",
+				Authorization: `Bearer ${token}`,
+			};
 
-      if (!response.ok) {
-        let errorMessage = `HTTP error! status: ${response.status}`;
-        try {
-          const errorText = await response.text();
-          errorMessage += `, body: ${errorText}`;
-          const errorData = JSON.parse(errorText);
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          }
-        } catch (parseError) {
-          console.error("Failed to parse error response:", parseError);
-        }
-        throw new Error(errorMessage);
-      }
+			const response = await fetch(
+				`${API_BASE_URL}/api/vendors/approve/${id}`,
+				{
+					method: "PUT",
+					headers,
+				}
+			);
 
-      if (response.status !== 204) {
-        const result = await response.json();
-        if (!result.success) {
-          throw new Error(result.message || "Failed to approve vendor");
-        }
-      }
-    } catch (error) {
-      console.error("Error approving vendor:", error);
-      throw error;
-    }
-  },
+			console.log(
+				`Fetch finished loading: PUT "${API_BASE_URL}/api/vendors/approve/${id}"`
+			);
 
-async create(vendorData: VendorSignupRequest): Promise<Vendor> {
-  try {
-    if (!token) {
-      throw new Error("No token provided. Please log in.");
-    }
+			if (!response.ok) {
+				let errorMessage = `HTTP error! status: ${response.status}`;
+				try {
+					const errorText = await response.text();
+					errorMessage += `, body: ${errorText}`;
+					const errorData = JSON.parse(errorText);
+					if (errorData.message) {
+						errorMessage = errorData.message;
+					}
+				} catch (parseError) {
+					console.error("Failed to parse error response:", parseError);
+				}
+				throw new Error(errorMessage);
+			}
 
-    console.log("Creating vendor with data:", vendorData);
+			const result = await response.json();
+			if (!result.success) {
+				throw new Error(result.message || "Failed to approve vendor");
+			}
+		} catch (error) {
+			console.error("Error approving vendor:", error);
+			throw error;
+		}
+	},
 
-    const response = await VendorAuthService.signup(
-      {
-        businessName: vendorData.businessName,
-        email: vendorData.email,
-        phoneNumber: vendorData.phoneNumber,
-        password: vendorData.password,
-        district: vendorData.district, // Changed from districtId to district
-        taxNumber: vendorData.taxNumber,
-        taxDocuments: vendorData.taxDocuments,
-        businessRegNumber: vendorData.businessRegNumber,
-        citizenshipDocuments: vendorData.citizenshipDocuments,
-        chequePhoto: vendorData.chequePhoto, // This is now a string, not an array
-        bankDetails: vendorData.bankDetails,
-        
-        profilePicture: vendorData.profilePicture,
-      },
-      token
-    );
-    
-    if (!response.success || !response.vendor) {
-      if (response.errors?.some((err) => err.message.includes("email already exists"))) {
-        throw new Error("A vendor with this email already exists");
-      }
-      throw new Error(response.message || "Failed to create vendor");
-    }
-    
-    return {
-      ...response.vendor,
-      phoneNumber: response.vendor.phoneNumber || "N/A",
-      taxNumber: response.vendor.taxNumber || "N/A",
-      taxDocuments: Array.isArray(response.vendor.taxDocuments) ? response.vendor.taxDocuments : response.vendor.taxDocuments ? [response.vendor.taxDocuments] : null,
-      businessRegNumber: response.vendor.businessRegNumber || "N/A",
-      citizenshipDocuments: Array.isArray(response.vendor.citizenshipDocuments) ? response.vendor.citizenshipDocuments : response.vendor.citizenshipDocuments ? [response.vendor.citizenshipDocuments] : null,
-    
-      chequePhoto: response.vendor.chequePhoto,
-      accountName: response.vendor.accountName || "N/A",
-      bankName: response.vendor.bankName || "N/A",
-      accountNumber: response.vendor.accountNumber || "N/A",
-      bankBranch: response.vendor.bankBranch || "N/A",
-      bankCode: response.vendor.bankCode || "N/A",
-      businessAddress: response.vendor.businessAddress || "N/A",
-      profilePicture: response.vendor.profilePicture || "N/A",
-      isVerified: !!response.vendor.isVerified,
-      status: response.vendor.isVerified ? "Active" : "Inactive",
-    };
-  } catch (error) {
-    console.error("Error creating vendor:", error);
-    throw error;
-  }
-},
+	async reject(id: number): Promise<void> {
+		try {
+			if (!token) {
+				throw new Error("No token provided. Please log in.");
+			}
+			const headers: Record<string, string> = {
+				"Content-Type": "application/json",
+				Accept: "application/json",
+				Authorization: `Bearer ${token}`,
+			};
 
-  async update(id: number, vendorData: VendorUpdateRequest): Promise<Vendor> {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const response = await VendorAuthService.updateVendor(
-        id,
-        {
-          id,
-          businessName: vendorData.businessName,
-          email: vendorData.email,
-          phoneNumber: vendorData.phoneNumber,
-          district: vendorData.district,
-          taxNumber: vendorData.taxNumber,
-          taxDocuments: vendorData.taxDocuments,
-          businessRegNumber: vendorData.businessRegNumber,
-          citizenshipDocuments: vendorData.citizenshipDocuments,
-          chequePhoto: vendorData.chequePhoto,
-          bankDetails: vendorData.bankDetails,
-          isVerified: vendorData.isVerified,
-          businessAddress: vendorData.businessAddress,
-          profilePicture: vendorData.profilePicture,
-        },
-        token
-      );
+			const response = await fetch(`${API_BASE_URL}/api/vendors/reject/${id}`, {
+				method: "PUT",
+				headers,
+			});
 
-      if (!response.success || !response.vendor) {
-        if (response.errors?.some((err) => err.message.includes("email already exists"))) {
-          throw new Error("A vendor with this email already exists");
-        }
-        throw new Error(response.message || "Failed to update vendor");
-      }
+			console.log(
+				`Fetch finished loading: PUT "${API_BASE_URL}/api/vendors/reject/${id}"`
+			);
 
-      return {
-        ...response.vendor,
-        phoneNumber: response.vendor.phoneNumber || "N/A",
-        taxNumber: response.vendor.taxNumber || "N/A",
-        taxDocuments: Array.isArray(response.vendor.taxDocuments) ? response.vendor.taxDocuments : response.vendor.taxDocuments ? [response.vendor.taxDocuments] : null,
-        businessRegNumber: response.vendor.businessRegNumber || "N/A",
-        citizenshipDocuments: Array.isArray(response.vendor.citizenshipDocuments) ? response.vendor.citizenshipDocuments : response.vendor.citizenshipDocuments ? [response.vendor.citizenshipDocuments] : null,
-        chequePhoto: Array.isArray(response.vendor.chequePhoto) ? response.vendor.chequePhoto : response.vendor.chequePhoto ? [response.vendor.chequePhoto] : null,
-        accountName: response.vendor.accountName || "N/A",
-        bankName: response.vendor.bankName || "N/A",
-        accountNumber: response.vendor.accountNumber || "N/A",
-        bankBranch: response.vendor.bankBranch || "N/A",
-        bankCode: response.vendor.bankCode || "N/A",
-        businessAddress: response.vendor.businessAddress || "N/A",
-        profilePicture: response.vendor.profilePicture || "N/A",
-        isVerified: !!response.vendor.isVerified,
-        status: response.vendor.isVerified ? "Active" : "Inactive",
-      };
-    } catch (error) {
-      console.error("Error updating vendor:", error);
-      throw error;
-    }
-  },
+			if (!response.ok) {
+				let errorMessage = `HTTP error! status: ${response.status}`;
+				try {
+					const errorText = await response.text();
+					errorMessage += `, body: ${errorText}`;
+					const errorData = JSON.parse(errorText);
+					if (errorData.message) {
+						errorMessage = errorData.message;
+					}
+				} catch (parseError) {
+					console.error("Failed to parse error response:", parseError);
+				}
+				throw new Error(errorMessage);
+			}
 
-  async delete(id: number): Promise<void> {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      };
+			const result = await response.json();
+			if (!result.success) {
+				throw new Error(result.message || "Failed to reject vendor");
+			}
+		} catch (error) {
+			console.error("Error rejecting vendor:", error);
+			throw error;
+		}
+	},
 
-      const response = await fetch(`${API_BASE_URL}/api/vendors/${id}`, {
-        method: "DELETE",
-        headers,
-      });
+	async update(
+		id: number,
+		vendorData: Partial<VendorUpdateRequest>
+	): Promise<Vendor> {
+		try {
+			if (!token) {
+				throw new Error("No token provided. Please log in.");
+			}
 
-      if (!response.ok) {
-        let errorMessage = `HTTP error! status: ${response.status}`;
-        try {
-          const errorText = await response.text();
-          errorMessage += `, body: ${errorText}`;
-          const errorData = JSON.parse(errorText);
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          }
-        } catch (parseError) {
-          console.error("Failed to parse error response:", parseError);
-        }
-        throw new Error(errorMessage);
-      }
+			const headers: Record<string, string> = {
+				"Content-Type": "application/json",
+				Accept: "application/json",
+				Authorization: `Bearer ${token}`,
+			};
 
-      if (response.status !== 204) {
-        const result = await response.json();
-        if (!result.success) {
-          throw new Error(result.message || "Failed to delete vendor");
-        }
-      }
-    } catch (error) {
-      console.error("Error deleting vendor:", error);
-      throw error;
-    }
-  },
+			// Normalize chequePhoto to a string
+			const normalizedVendorData = {
+				...vendorData,
+				chequePhoto: Array.isArray(vendorData.chequePhoto)
+					? vendorData.chequePhoto.length > 0
+						? vendorData.chequePhoto[0] // Use the first item if multiple
+						: ""
+					: vendorData.chequePhoto || "", // Ensure it's a string or empty
+			};
+
+			console.log(
+				"Sending PUT request with normalized data:",
+				normalizedVendorData
+			);
+
+			const response = await fetch(`${API_BASE_URL}/api/vendors/${id}`, {
+				method: "PUT",
+				headers,
+				body: JSON.stringify(normalizedVendorData),
+			});
+
+			console.log(
+				`Fetch finished loading: PUT "${API_BASE_URL}/api/vendors/${id}"`
+			);
+
+			if (!response.ok) {
+				let errorMessage = `HTTP error! status: ${response.status}`;
+				try {
+					const errorText = await response.text();
+					errorMessage += `, body: ${errorText}`;
+					const errorData = JSON.parse(errorText);
+					if (errorData.message) {
+						errorMessage = errorData.message;
+					}
+				} catch (parseError) {
+					console.error("Failed to parse error response:", parseError);
+				}
+				throw new Error(errorMessage);
+			}
+
+			const result = await response.json();
+			console.log("PUT response:", result);
+
+			if (!result.success) {
+				throw new Error(result.message || "Failed to update vendor");
+			}
+
+			if (!result.data) {
+				return {
+					id,
+					...normalizedVendorData,
+					phoneNumber: normalizedVendorData.phoneNumber || "N/A",
+					taxNumber: normalizedVendorData.taxNumber || "N/A",
+					taxDocuments: Array.isArray(normalizedVendorData.taxDocuments)
+						? normalizedVendorData.taxDocuments
+						: normalizedVendorData.taxDocuments
+						? [normalizedVendorData.taxDocuments]
+						: [],
+					businessRegNumber: normalizedVendorData.businessRegNumber || "N/A",
+					citizenshipDocuments: Array.isArray(
+						normalizedVendorData.citizenshipDocuments
+					)
+						? normalizedVendorData.citizenshipDocuments
+						: normalizedVendorData.citizenshipDocuments
+						? [normalizedVendorData.citizenshipDocuments]
+						: [],
+					chequePhoto: normalizedVendorData.chequePhoto || "",
+					accountName: normalizedVendorData.accountName || "N/A",
+					bankName: normalizedVendorData.bankName || "N/A",
+					accountNumber: normalizedVendorData.accountNumber || "N/A",
+					bankBranch: normalizedVendorData.bankBranch || "N/A",
+					bankCode: normalizedVendorData.bankCode || "N/A",
+					businessAddress: normalizedVendorData.businessAddress || "N/A",
+					profilePicture: normalizedVendorData.profilePicture || "N/A",
+					isVerified: false,
+					status: "Inactive",
+				} as Vendor;
+			}
+
+			return {
+				...result.data,
+				phoneNumber: result.data.phoneNumber || "N/A",
+				taxNumber: result.data.taxNumber || "N/A",
+				taxDocuments: Array.isArray(result.data.taxDocuments)
+					? result.data.taxDocuments
+					: result.data.taxDocuments
+					? [result.data.taxDocuments]
+					: [],
+				businessRegNumber: result.data.businessRegNumber || "N/A",
+				citizenshipDocuments: Array.isArray(result.data.citizenshipDocuments)
+					? result.data.citizenshipDocuments
+					: result.data.citizenshipDocuments
+					? [result.data.citizenshipDocuments]
+					: [],
+				chequePhoto: result.data.chequePhoto || "",
+				accountName: result.data.accountName || "N/A",
+				bankName: result.data.bankName || "N/A",
+				accountNumber: result.data.accountNumber || "N/A",
+				bankBranch: result.data.bankBranch || "N/A",
+				bankCode: result.data.bankCode || "N/A",
+				businessAddress: result.data.businessAddress || "N/A",
+				profilePicture: result.data.profilePicture || "N/A",
+				isVerified: !!result.data.isVerified,
+				status: result.data.isVerified ? "Active" : "Inactive",
+			};
+		} catch (error) {
+			console.error("Error updating vendor:", error);
+			throw error;
+		}
+	},
+
+	async delete(id: number): Promise<void> {
+		try {
+			if (!token) {
+				throw new Error("No token provided. Please log in.");
+			}
+			const headers: Record<string, string> = {
+				"Content-Type": "application/json",
+				Accept: "application/json",
+				Authorization: `Bearer ${token}`,
+			};
+
+			const response = await fetch(`${API_BASE_URL}/api/vendors/${id}`, {
+				method: "DELETE",
+				headers,
+			});
+
+			if (!response.ok) {
+				let errorMessage = `HTTP error! status: ${response.status}`;
+				try {
+					const errorText = await response.text();
+					errorMessage += `, body: ${errorText}`;
+					const errorData = JSON.parse(errorText);
+					if (errorData.message) {
+						errorMessage = errorData.message;
+					}
+				} catch (parseError) {
+					console.error("Failed to parse error response:", parseError);
+				}
+				throw new Error(errorMessage);
+			}
+
+			if (response.status !== 204) {
+				const result = await response.json();
+				if (!result.success) {
+					throw new Error(result.message || "Failed to delete vendor");
+				}
+			}
+		} catch (error) {
+			console.error("Error deleting vendor:", error);
+			throw error;
+		}
+	},
 });
 
+interface ConfirmationModalProps {
+	show: boolean;
+	onClose: () => void;
+	onConfirm: () => void;
+	action: "approve" | "reject";
+}
+
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
+	show,
+	onClose,
+	onConfirm,
+	action,
+}) => {
+	if (!show) return null;
+
+	return (
+		<div className="modal-overlay">
+			<div className="modal-content">
+				<h2>Confirm {action.charAt(0).toUpperCase() + action.slice(1)}</h2>
+				<p>Are you sure you want to {action} this vendor?</p>
+				<div className="modal-buttons">
+					<button
+						onClick={onConfirm}
+						className="confirm-btn"
+					>
+						Yes
+					</button>
+					<button
+						onClick={onClose}
+						className="cancel-btn"
+					>
+						No
+					</button>
+				</div>
+			</div>
+		</div>
+	);
+};
+
 const AdminVendor: React.FC = () => {
-  const { token, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [filteredVendors, setFilteredVendors] = useState<Vendor[]>([]);
-  const [districts, setDistricts] = useState<District[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [vendorsPerPage] = useState(7);
-  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Vendor; direction: "asc" | "desc" } | null>(null);
-  const [unapprovedCount, setUnapprovedCount] = useState(0);
+	const { token, isAuthenticated } = useAuth();
+	const navigate = useNavigate();
+	const [vendors, setVendors] = useState<Vendor[]>([]);
+	const [filteredVendors, setFilteredVendors] = useState<Vendor[]>([]);
+	const [districts, setDistricts] = useState<District[]>([]);
+	const [currentPage, setCurrentPage] = useState(1);
+	const [vendorsPerPage] = useState(7);
+	const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+	const [showEditModal, setShowEditModal] = useState(false);
+	const [showViewModal, setShowViewModal] = useState(false);
+	const [showConfirmModal, setShowConfirmModal] = useState(false);
+	const [confirmAction, setConfirmAction] = useState<
+		"approve" | "reject" | null
+	>(null);
+	const [selectedVendorId, setSelectedVendorId] = useState<number | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const [sortConfig, setSortConfig] = useState<{
+		key: keyof Vendor;
+		direction: "asc" | "desc";
+	} | null>(null);
+	const [unapprovedCount, setUnapprovedCount] = useState(0);
+	const [districtFilter, setDistrictFilter] = useState("all");
+	const [startDate, setStartDate] = useState("");
+	const [endDate, setEndDate] = useState("");
+	const [statusFilter, setStatusFilter] = useState("all");
+	const [approvalFilter, setApprovalFilter] = useState("all");
+	const [searchQuery, setSearchQuery] = useState("");
+	const [approvingVendorId, setApprovingVendorId] = useState<number | null>(
+		null
+	);
 
-  const vendorAPI = createVendorAPI(token);
+	const vendorAPI = useMemo(() => createVendorAPI(token), [token]);
 
-  const CACHE_KEY = "admin_vendors";
-  const CACHE_TTL = 10 * 60 * 1000;
+	const CACHE_KEY_VENDORS = "admin_vendors";
+	const CACHE_KEY_DISTRICTS = "admin_districts";
+	const CACHE_TTL = 10 * 60 * 1000;
 
-  const fetchDistricts = useCallback(async () => {
-    try {
-      if (!token) {
-        throw new Error("No token provided. Please log in.");
-      }
-      const response = await fetch(`${API_BASE_URL}/api/district`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+	const fetchDistricts = useCallback(async () => {
+		console.log("Fetching districts...");
+		try {
+			if (!token) {
+				throw new Error("No token provided. Please log in.");
+			}
+			const cached = localStorage.getItem(CACHE_KEY_DISTRICTS);
+			if (cached) {
+				try {
+					const { data, timestamp } = JSON.parse(cached);
+					if (Array.isArray(data) && Date.now() - timestamp < CACHE_TTL) {
+						console.log("Using cached districts");
+						setDistricts(data);
+						return;
+					}
+				} catch {
+					console.log("Invalid district cache, fetching fresh data");
+				}
+			}
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+			const response = await fetch(`${API_BASE_URL}/api/district`, {
+				method: "GET",
+				headers: {
+					"Content-Type": "application/json",
+					Accept: "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+			});
 
-      const result: ApiResponse<District[]> = await response.json();
-      
-      if (!result.data || result.data.length === 0) {
-        setError("No districts available. Please contact support.");
-        toast.error("No districts available. Please contact support.");
-        return;
-      }
-      
-      setDistricts(result.data || []);
-    } catch (error) {
-      setError("Failed to load districts");
-      toast.error("Failed to load districts");
-    }
-  }, [token]);
+			console.log(`Fetch finished loading: GET "${API_BASE_URL}/api/district"`);
 
-  const loadUnapprovedCount = useCallback(async () => {
-    try {
-      const unapproved = await vendorAPI.getUnapproved();
-      setUnapprovedCount(unapproved.length);
-    } catch (err) {
-      console.error("Failed to load unapproved count");
-    }
-  }, [token]);
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
 
-  useEffect(() => {
-    if (isAuthenticated && token) {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        try {
-          const { data, timestamp } = JSON.parse(cached);
-          if (Array.isArray(data) && Date.now() - timestamp < CACHE_TTL) {
-            setVendors(data);
-            setFilteredVendors(data);
-            setLoading(false);
-          }
-        } catch {}
-      }
-      loadVendors();
-      fetchDistricts();
-      loadUnapprovedCount();
-    } else {
-      setLoading(false);
-      setError("Please log in to access vendor management.");
-    }
-  }, [isAuthenticated, token, fetchDistricts]);
+			const result: ApiResponse<District[]> = await response.json();
+			if (!result.data || result.data.length === 0) {
+				setError("No districts available. Please contact support.");
+				toast.error("No districts available. Please contact support.");
+				return;
+			}
 
-  const loadVendors = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const fetchedVendors = await vendorAPI.getAll();
-      setVendors(fetchedVendors);
-      setFilteredVendors(fetchedVendors);
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ data: fetchedVendors, timestamp: Date.now() }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load vendors");
-      toast.error(err instanceof Error ? err.message : "Failed to load vendors");
-    } finally {
-      setLoading(false);
-    }
-  };
+			setDistricts(result.data);
+			localStorage.setItem(
+				CACHE_KEY_DISTRICTS,
+				JSON.stringify({ data: result.data, timestamp: Date.now() })
+			);
+		} catch (error) {
+			console.error("Error fetching districts:", error);
+			setError("Failed to load districts");
+			toast.error("Failed to load districts");
+		}
+	}, [token]);
 
-  const handleSearch = (query: string) => {
-    setCurrentPage(1);
-    const results = vendors.filter(
-      (vendor) =>
-        vendor.businessName.toLowerCase().includes(query.toLowerCase()) ||
-        vendor.email.toLowerCase().includes(query.toLowerCase()) ||
-        (vendor.phoneNumber || "").toLowerCase().includes(query.toLowerCase()) ||
-        (vendor.taxNumber || "").toLowerCase().includes(query.toLowerCase()) ||
-        vendor.id.toString().includes(query.toLowerCase())
-    );
-    setFilteredVendors(results);
-  };
+	const loadUnapprovedCount = useCallback(async () => {
+		console.log("Fetching unapproved vendors...");
+		try {
+			const unapproved = await vendorAPI.getUnapproved();
+			setUnapprovedCount(unapproved.length);
+		} catch (err) {
+			console.error("Failed to load unapproved count:", err);
+		}
+	}, [vendorAPI]);
 
-  const handleSort = (key: keyof Vendor) => {
-    let direction: "asc" | "desc" = "asc";
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
-  };
+	const loadVendors = useCallback(async () => {
+		try {
+			setLoading(true);
+			const cached = localStorage.getItem(CACHE_KEY_VENDORS);
+			if (cached) {
+				try {
+					const { data, timestamp } = JSON.parse(cached);
+					if (Array.isArray(data) && Date.now() - timestamp < CACHE_TTL) {
+						setVendors(data);
+						setFilteredVendors(data);
+						setLoading(false);
+						return;
+					}
+				} catch {
+					console.log("Invalid vendor cache, fetching fresh data");
+				}
+			}
 
-  const getSortedAndFilteredVendors = () => {
-    let filtered = [...filteredVendors];
+			// Fetch both approved and unapproved vendors
+			const [approvedVendors, unapprovedVendors] = await Promise.all([
+				vendorAPI.getAll(),
+				vendorAPI.getUnapproved(),
+			]);
 
-    if (sortConfig) {
-      filtered = filtered.sort((a, b) => {
-        let aValue: any = a[sortConfig.key];
-        let bValue: any = b[sortConfig.key];
+			// Combine and deduplicate vendors (in case there's overlap)
+			const allVendors = [...approvedVendors];
+			unapprovedVendors.forEach((unapprovedVendor) => {
+				if (!allVendors.find((v) => v.id === unapprovedVendor.id)) {
+					allVendors.push(unapprovedVendor);
+				}
+			});
 
-        if (sortConfig.key === "id") {
-          aValue = Number(aValue);
-          bValue = Number(bValue);
-        } else {
-          aValue = aValue ? aValue.toString().toLowerCase() : "";
-          bValue = bValue ? bValue.toString().toLowerCase() : "";
-        }
+			setVendors(allVendors);
+			setFilteredVendors(allVendors);
+			localStorage.setItem(
+				CACHE_KEY_VENDORS,
+				JSON.stringify({ data: allVendors, timestamp: Date.now() })
+			);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Failed to load vendors");
+			toast.error(
+				err instanceof Error ? err.message : "Failed to load vendors"
+			);
+		} finally {
+			setLoading(false);
+		}
+	}, [vendorAPI]);
 
-        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
+	useEffect(() => {
+		if (!isAuthenticated || !token) {
+			setLoading(false);
+			setError("Please log in to access vendor management.");
+			navigate("/login");
+			return;
+		}
 
-    return filtered;
-  };
+		const loadInitialData = async () => {
+			await Promise.all([
+				loadVendors(),
+				fetchDistricts(),
+				loadUnapprovedCount(),
+			]);
+		};
 
-  const indexOfLastVendor = currentPage * vendorsPerPage;
-  const indexOfFirstVendor = indexOfLastVendor - vendorsPerPage;
-  const currentVendors = getSortedAndFilteredVendors().slice(indexOfFirstVendor, indexOfLastVendor);
+		loadInitialData();
+	}, [
+		isAuthenticated,
+		token,
+		fetchDistricts,
+		loadUnapprovedCount,
+		loadVendors,
+		navigate,
+	]);
 
-  const viewVendor = (vendor: Vendor) => {
-    setSelectedVendor(vendor);
-    setShowViewModal(true);
-  };
+	// Auto-filter when approval filter changes
+	useEffect(() => {
+		handleFilter();
+	}, [
+		approvalFilter,
+		districtFilter,
+		statusFilter,
+		startDate,
+		endDate,
+		vendors,
+	]);
 
-  const editVendor = (vendor: Vendor) => {
-    setSelectedVendor({ ...vendor });
-    setShowEditModal(true);
-  };
+	const handleSearch = useCallback(
+		(query: string) => {
+			setSearchQuery(query);
+			setCurrentPage(1);
 
-  const handleSaveVendor = async (updatedVendor: Vendor) => {
-    try {
-      const savedVendor = await vendorAPI.update(updatedVendor.id, {
-        id: updatedVendor.id,
-        businessName: updatedVendor.businessName,
-        email: updatedVendor.email,
-        phoneNumber: updatedVendor.phoneNumber,
-        districtId: updatedVendor.district?.id,
-        taxNumber: updatedVendor.taxNumber,
-        taxDocuments: updatedVendor.taxDocuments,
-        businessRegNumber: updatedVendor.businessRegNumber,
-        citizenshipDocuments: updatedVendor.citizenshipDocuments,
-        chequePhoto: updatedVendor.chequePhoto,
-        bankDetails: {
-          accountName: updatedVendor.accountName || "",
-          bankName: updatedVendor.bankName || "",
-          accountNumber: updatedVendor.accountNumber || "",
-          bankBranch: updatedVendor.bankBranch || "",
-          bankCode: updatedVendor.bankCode || "",
-        },
-        isVerified: updatedVendor.isVerified,
-        businessAddress: updatedVendor.businessAddress,
-        profilePicture: updatedVendor.profilePicture,
-      });
-      setVendors(vendors.map((v) => (v.id === savedVendor.id ? savedVendor : v)));
-      setFilteredVendors(filteredVendors.map((v) => (v.id === savedVendor.id ? savedVendor : v)));
-      setShowEditModal(false);
-      setSelectedVendor(null);
-      toast.success("Vendor updated successfully");
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to save vendor";
-      toast.error(errorMessage);
-    }
-  };
+			const searchTerm = query.toLowerCase();
+			const filtered = vendors.filter((vendor) => {
+				const districtName =
+					typeof vendor.district === "object" && vendor.district
+						? vendor.district.name
+						: typeof vendor.district === "string"
+						? vendor.district
+						: "";
+				return (
+					(vendor.businessName || "").toLowerCase().includes(searchTerm) ||
+					(vendor.email || "").toLowerCase().includes(searchTerm) ||
+					(vendor.phoneNumber || "").toLowerCase().includes(searchTerm) ||
+					districtName.toLowerCase().includes(searchTerm)
+				);
+			});
 
-  const handleAddVendor = async (newVendor: VendorSignupRequest) => {
-  try {
-    if (!newVendor.district) {
-      throw new Error("Please select a valid district");
-    }
-    const selectedDistrict = districts.find((d) => d.name.toLowerCase() === newVendor.district.toLowerCase());
-    if (!selectedDistrict) {
-      throw new Error("Selected district is not valid. Please refresh the page and try again.");
-    }
-    const savedVendor = await vendorAPI.create(newVendor);
-    setVendors([...vendors, savedVendor]);
-    setFilteredVendors([...filteredVendors, savedVendor]);
-    setShowAddModal(false);
-    toast.success("Vendor added successfully");
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : "Failed to add vendor";
-    toast.error(errorMessage);
-    setError(errorMessage);
-  }
+			setFilteredVendors(filtered);
+		},
+		[vendors]
+	);
+
+	const handleSort = (key: keyof Vendor) => {
+		let direction: "asc" | "desc" = "asc";
+		if (
+			sortConfig &&
+			sortConfig.key === key &&
+			sortConfig.direction === "asc"
+		) {
+			direction = "desc";
+		}
+		setSortConfig({ key, direction });
+
+		const sorted = [...filteredVendors].sort((a, b) => {
+			const aValue = a[key] || "";
+			const bValue = b[key] || "";
+			if (direction === "asc") {
+				return aValue.toString().localeCompare(bValue.toString());
+			}
+			return bValue.toString().localeCompare(aValue.toString());
+		});
+		setFilteredVendors(sorted);
+	};
+
+	const handleFilter = () => {
+		let filtered = [...vendors];
+
+		if (districtFilter !== "all") {
+			filtered = filtered.filter((vendor) => {
+				const districtName =
+					typeof vendor.district === "object" && vendor.district
+						? vendor.district.name
+						: typeof vendor.district === "string"
+						? vendor.district
+						: "";
+				return districtName === districtFilter;
+			});
+		}
+
+		if (statusFilter !== "all") {
+			filtered = filtered.filter((vendor) => vendor.status === statusFilter);
+		}
+
+		if (approvalFilter !== "all") {
+			if (approvalFilter === "approved") {
+				filtered = filtered.filter((vendor) => vendor.isApproved === true);
+			} else if (approvalFilter === "pending") {
+				filtered = filtered.filter(
+					(vendor) => vendor.isApproved === false || vendor.isApproved === null
+				);
+			}
+		}
+
+		if (startDate && endDate) {
+			filtered = filtered.filter((vendor) => {
+				const createdAt = new Date(vendor.createdAt || "");
+				return (
+					createdAt >= new Date(startDate) && createdAt <= new Date(endDate)
+				);
+			});
+		}
+
+		setFilteredVendors(filtered);
+		setCurrentPage(1);
+	};
+
+	const handleEditVendor = (vendor: Vendor) => {
+		setSelectedVendor(vendor);
+		setShowEditModal(true);
+	};
+
+	const handleSaveVendor = async (vendorData: Partial<VendorUpdateRequest>) => {
+		if (!selectedVendor?.id) return;
+
+		try {
+			// Normalize chequePhoto before sending
+			const normalizedVendorData = {
+				...vendorData,
+				chequePhoto: Array.isArray(vendorData.chequePhoto)
+					? vendorData.chequePhoto.length > 0
+						? vendorData.chequePhoto[0] // Use the first item
+						: ""
+					: vendorData.chequePhoto || "", // Ensure it's a string
+			};
+
+			console.log("Normalized vendor data for update:", normalizedVendorData);
+
+			const updatedVendor = await vendorAPI.update(
+				selectedVendor.id,
+				normalizedVendorData
+			);
+			setVendors((prev) =>
+				prev.map((v) => (v.id === selectedVendor.id ? updatedVendor : v))
+			);
+			setFilteredVendors((prev) =>
+				prev.map((v) => (v.id === selectedVendor.id ? updatedVendor : v))
+			);
+			localStorage.removeItem(CACHE_KEY_VENDORS);
+			await loadVendors();
+			toast.success("Vendor updated successfully");
+			setShowEditModal(false);
+			setSelectedVendor(null);
+		} catch (error) {
+			console.error("Update failed:", error);
+			toast.error(
+				error instanceof Error ? error.message : "Failed to update vendor"
+			);
+		}
+	};
+
+	const handleApproveClick = (id: number) => {
+		setSelectedVendorId(id);
+		setConfirmAction("approve");
+		setShowConfirmModal(true);
+	};
+
+	const handleRejectClick = (id: number) => {
+		setSelectedVendorId(id);
+		setConfirmAction("reject");
+		setShowConfirmModal(true);
+	};
+
+	const handleConfirm = async () => {
+		if (!selectedVendorId || !confirmAction) return;
+
+		try {
+			if (confirmAction === "approve") {
+				setApprovingVendorId(selectedVendorId);
+				await vendorAPI.approve(selectedVendorId);
+				setVendors((prev) =>
+					prev.map((v) =>
+						v.id === selectedVendorId
+							? { ...v, isApproved: true, status: "Active" }
+							: v
+					)
+				);
+				setFilteredVendors((prev) =>
+					prev.map((v) =>
+						v.id === selectedVendorId
+							? { ...v, isApproved: true, status: "Active" }
+							: v
+					)
+				);
+				toast.success("Vendor approved successfully");
+			} else if (confirmAction === "reject") {
+				await vendorAPI.reject(selectedVendorId);
+				setVendors((prev) => prev.filter((v) => v.id !== selectedVendorId));
+				setFilteredVendors((prev) =>
+					prev.filter((v) => v.id !== selectedVendorId)
+				);
+				toast.success("Vendor rejected successfully");
+			}
+			setUnapprovedCount((prev) => prev - 1);
+			localStorage.removeItem(CACHE_KEY_VENDORS);
+			await loadVendors();
+			await loadUnapprovedCount();
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: `Failed to ${confirmAction} vendor`
+			);
+		} finally {
+			setApprovingVendorId(null);
+			setShowConfirmModal(false);
+			setConfirmAction(null);
+			setSelectedVendorId(null);
+		}
+	};
+
+	const handleDeleteVendor = async (id: number) => {
+		try {
+			await vendorAPI.delete(id);
+			setVendors((prev) => prev.filter((v) => v.id !== id));
+			setFilteredVendors((prev) => prev.filter((v) => v.id !== id));
+			localStorage.removeItem(CACHE_KEY_VENDORS);
+			await loadVendors();
+			toast.success("Vendor deleted successfully");
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : "Failed to delete vendor"
+			);
+		}
+	};
+
+	const indexOfLastVendor = currentPage * vendorsPerPage;
+	const indexOfFirstVendor = indexOfLastVendor - vendorsPerPage;
+	const currentVendors = filteredVendors.slice(
+		indexOfFirstVendor,
+		indexOfLastVendor
+	);
+
+	return (
+		<div className="admin-vendors">
+			<AdminSidebar />
+			<div style={{ display: "flex", flexDirection: "column", flex: "1" }}>
+				<Header
+					onSearch={handleSearch}
+					showSearch={true}
+					title="Vendor Management"
+				/>
+				<div className="admin-vendors__content">
+					{unapprovedCount > 0 && (
+						<div className="admin-vendors__unapproved-count">
+							<span>{unapprovedCount} unapproved vendors</span>
+						</div>
+					)}
+					<div className="admin-vendors__filter-container">
+						<select
+							value={districtFilter}
+							onChange={(e) => setDistrictFilter(e.target.value)}
+							className="admin-vendors__filter-select"
+						>
+							<option value="all">All Districts</option>
+							{districts.map((district) => (
+								<option
+									key={district.id}
+									value={district.name}
+								>
+									{district.name}
+								</option>
+							))}
+						</select>
+						<select
+							value={statusFilter}
+							onChange={(e) => setStatusFilter(e.target.value)}
+							className="admin-vendors__filter-select"
+						>
+							<option value="all">All Statuses</option>
+							<option value="Active">Active</option>
+							<option value="Inactive">Inactive</option>
+						</select>
+						<select
+							value={approvalFilter}
+							onChange={(e) => setApprovalFilter(e.target.value)}
+							className="admin-vendors__filter-select"
+						>
+							<option value="all">All Approvals</option>
+							<option value="approved">Approved</option>
+							<option value="pending">Pending Approval</option>
+						</select>
+						<input
+							type="date"
+							value={startDate}
+							onChange={(e) => setStartDate(e.target.value)}
+							className="admin-vendors__filter-date"
+						/>
+						<input
+							type="date"
+							value={endDate}
+							onChange={(e) => setEndDate(e.target.value)}
+							className="admin-vendors__filter-date"
+						/>
+						<button
+							onClick={handleFilter}
+							className="admin-vendors__filter-button"
+						>
+							Apply Filters
+						</button>
+					</div>
+					{error && <p className="admin-vendors__error">{error}</p>}
+					<div className="admin-vendors__list-container">
+						<div className="admin-vendors__table-container">
+							<table className="admin-vendors__table">
+								<thead className="admin-vendors__table-head">
+									<tr>
+										<th
+											onClick={() => handleSort("businessName")}
+											className="admin-vendors__name-column"
+										>
+											Business Name
+										</th>
+										<th
+											onClick={() => handleSort("email")}
+											className="admin-vendors__email-column"
+										>
+											Email
+										</th>
+										<th
+											onClick={() => handleSort("phoneNumber")}
+											className="admin-vendors__phone-column"
+										>
+											Phone
+										</th>
+										<th
+											onClick={() => handleSort("district")}
+											className="admin-vendors__district-column"
+										>
+											District
+										</th>
+										<th
+											onClick={() => handleSort("status")}
+											className="admin-vendors__status-column"
+										>
+											Status
+										</th>
+										<th
+											onClick={() => handleSort("isApproved")}
+											className="admin-vendors__approval-column"
+										>
+											Approval Status
+										</th>
+										<th className="admin-vendors__actions-column">Actions</th>
+									</tr>
+								</thead>
+								<tbody>
+									{loading ? (
+										Array.from({ length: vendorsPerPage }).map((_, index) => (
+											<SkeletonRow key={index} />
+										))
+									) : currentVendors.length === 0 ? (
+										<tr>
+											<td
+												colSpan={7}
+												className="admin-vendors__table-row"
+											>
+												No vendors found
+											</td>
+										</tr>
+									) : (
+										currentVendors.map((vendor) => (
+											<tr
+												key={vendor.id}
+												className="admin-vendors__table-row"
+											>
+												<td className="admin-vendors__name-column">
+													{vendor.businessName}
+												</td>
+												<td className="admin-vendors__email-column">
+													{vendor.email}
+												</td>
+												<td className="admin-vendors__phone-column">
+													{vendor.phoneNumber}
+												</td>
+												<td className="admin-vendors__district-column">
+													{typeof vendor.district === "object" &&
+													vendor.district
+														? vendor.district.name
+														: vendor.district || "N/A"}
+												</td>
+												<td className="admin-vendors__status-column">
+													{vendor.status}
+												</td>
+												<td className="admin-vendors__approval-column">
+													<span
+														className={`approval-status ${
+															vendor.isApproved ? "approved" : "pending"
+														}`}
+													>
+														{vendor.isApproved ? "Approved" : "Pending"}
+													</span>
+												</td>
+												<td className="admin-vendors__actions-column">
+													<div className="admin-vendors__actions">
+														<button
+															onClick={() => handleEditVendor(vendor)}
+															className="admin-vendors__action-btn admin-vendors__action-btn--edit"
+														>
+															Edit
+														</button>
+														<button
+															onClick={() => {
+																setSelectedVendor(vendor);
+																setShowViewModal(true);
+															}}
+															className="admin-vendors__action-btn admin-vendors__action-btn--view"
+														>
+															View
+														</button>
+														{!vendor.isApproved && (
+															<button
+																onClick={() => handleApproveClick(vendor.id)}
+																className="admin-vendors__action-btn admin-vendors__action-btn--approve"
+																disabled={approvingVendorId === vendor.id}
+															>
+																{approvingVendorId === vendor.id
+																	? "Approving..."
+																	: "Approve"}
+															</button>
+														)}
+														<button
+															onClick={() => handleDeleteVendor(vendor.id)}
+															className="admin-vendors__action-btn admin-vendors__action-btn--delete"
+														>
+															Delete
+														</button>
+													</div>
+												</td>
+											</tr>
+										))
+									)}
+								</tbody>
+							</table>
+						</div>
+						<div className="admin-vendors__pagination-container">
+							<Pagination
+								currentPage={currentPage}
+								totalItems={filteredVendors.length}
+								itemsPerPage={vendorsPerPage}
+								onPageChange={setCurrentPage}
+							/>
+						</div>
+					</div>
+					<VendorEditModal
+						show={showEditModal}
+						onClose={() => {
+							setShowEditModal(false);
+							setSelectedVendor(null);
+						}}
+						onSave={handleSaveVendor}
+						vendor={selectedVendor}
+						districts={districts}
+					/>
+					<VendorViewModal
+						show={showViewModal}
+						onClose={() => {
+							setShowViewModal(false);
+							setSelectedVendor(null);
+						}}
+						vendor={selectedVendor}
+					/>
+					<ConfirmationModal
+						show={showConfirmModal}
+						onClose={() => {
+							setShowConfirmModal(false);
+							setConfirmAction(null);
+							setSelectedVendorId(null);
+						}}
+						onConfirm={handleConfirm}
+						action={confirmAction || "approve"}
+					/>
+				</div>
+			</div>
+		</div>
+	);
 };
 
-  const handleDeleteVendor = async (id: number) => {
-    try {
-      await vendorAPI.delete(id);
-      setVendors(vendors.filter((vendor) => vendor.id !== id));
-      setFilteredVendors(filteredVendors.filter((vendor) => vendor.id !== id));
-      toast.success("Vendor deleted successfully");
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to delete vendor";
-      toast.error(errorMessage);
-    }
-  };
-
-  if (!isAuthenticated || !token) {
-    return (
-      <div className="admin-vendors">
-        <AdminSidebar />
-        <div className="admin-vendors__content">
-          <div className="admin-vendors__error">
-            Please log in to access vendor management.
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="admin-vendors">
-        <AdminSidebar />
-        <div className="admin-vendors__content">
-          <Header onSearch={handleSearch} showSearch={true} title="Vendor Management" />
-          <div className="admin-vendors__list-container">
-            <div className="admin-vendors__header">
-              <h2>Vendor Management</h2>
-              <div className="admin-vendors__header-buttons">
-                <button className="admin-vendors__add-btn" onClick={() => setShowAddModal(true)}>
-                  Add Vendor
-                </button>
-                <button
-                  className="admin-vendors__unapproved-btn"
-                  onClick={() => navigate('/admin-vendors/unapproved')}
-                >
-                  Unapproved Vendors
-                </button>
-              </div>
-            </div>
-            <div className="admin-vendors__table-container">
-              <table className="admin-vendors__table">
-                <thead className="admin-vendors__table-head">
-                  <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>District</th>
-                    <th>Phone Number</th>
-                    <th>PAT Number</th>
-                    <th>PAN Document</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...Array(5)].map((_, index) => (
-                    <SkeletonRow key={index} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="admin-vendors">
-      <AdminSidebar />
-      <div className="admin-vendors__content">
-        {error && (
-          <div className="admin-vendors__error">
-            {error}
-            <button onClick={() => setError(null)}>×</button>
-          </div>
-        )}
-        <Header onSearch={handleSearch} showSearch={true} title="Vendor Management" />
-        <div className="admin-vendors__list-container">
-          <div className="admin-vendors__header">
-            <h2>Vendor Management</h2>
-            <div className="admin-vendors__header-buttons">
-              <button
-                className="admin-vendors__add-btn"
-                onClick={() => setShowAddModal(true)}
-              >
-                Add Vendor
-              </button>
-              <button
-                className="admin-vendors__unapproved-btn"
-                onClick={() => navigate('/admin-vendors/unapproved')}
-              >
-                Unapproved Vendors {unapprovedCount > 0 && `(${unapprovedCount})`}
-              </button>
-            </div>
-          </div>
-
-          <div className="admin-vendors__table-container">
-            <table className="admin-vendors__table">
-              <thead className="admin-vendors__table-head">
-                <tr>
-                  <th onClick={() => handleSort("id")} className="sortable">
-                    ID {sortConfig?.key === "id" && (sortConfig.direction === "asc" ? "↑" : "↓")}
-                  </th>
-                  <th onClick={() => handleSort("businessName")} className="sortable">
-                    Name {sortConfig?.key === "businessName" && (sortConfig.direction === "asc" ? "↑" : "↓")}
-                  </th>
-                  <th onClick={() => handleSort("email")} className="sortable">
-                    Email {sortConfig?.key === "email" && (sortConfig.direction === "asc" ? "↑" : "↓")}
-                  </th>
-                  <th onClick={() => handleSort("district")} className="sortable">
-                    District {sortConfig?.key === "district" && (sortConfig.direction === "asc" ? "↑" : "↓")}
-                  </th>
-                  <th onClick={() => handleSort("phoneNumber")} className="sortable">
-                    Phone Number {sortConfig?.key === "phoneNumber" && (sortConfig.direction === "asc" ? "↑" : "↓")}
-                  </th>
-                  <th onClick={() => handleSort("taxNumber")} className="sortable">
-                    PAN Number {sortConfig?.key === "taxNumber" && (sortConfig.direction === "asc" ? "↑" : "↓")}
-                  </th>
-                  <th>PAN Document</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentVendors.length > 0 ? (
-                  currentVendors.map((vendor) => (
-                    <tr key={vendor.id} className="admin-vendors__table-row">
-                      <td>{vendor.id}</td>
-                      <td>{vendor.businessName}</td>
-                      <td>{vendor.email}</td>
-                      <td>{vendor.district?.name || "N/A"}</td>
-                      <td>{vendor.phoneNumber}</td>
-                      <td>{vendor.taxNumber}</td>
-                      <td>
-                        {vendor.taxDocuments && vendor.taxDocuments.length > 0 ? (
-                          <a href={vendor.taxDocuments[0]} target="_blank" rel="noopener noreferrer">
-                            View Document
-                          </a>
-                        ) : (
-                          "N/A"
-                        )}
-                      </td>
-                      <td>
-                        <div className="admin-vendors__actions">
-                          <button
-                            className="admin-vendors__action-btn admin-vendors__view-btn"
-                            onClick={() => viewVendor(vendor)}
-                            aria-label="View vendor"
-                          >
-                            <svg
-                              width="20"
-                              height="20"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M1 12S4 4 12 4S23 12 23 12S20 20 12 20S1 12 1 12Z"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                              <path
-                                d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                          <button
-                            className="admin-vendors__action-btn admin-vendors__edit-btn"
-                            onClick={() => editVendor(vendor)}
-                            aria-label="Edit vendor"
-                          >
-                            <svg
-                              width="20"
-                              height="20"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                              <path
-                                d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                          <button
-                            className="admin-vendors__action-btn admin-vendors__delete-btn"
-                            onClick={() => handleDeleteVendor(vendor.id)}
-                            aria-label="Delete vendor"
-                          >
-                            <svg
-                              width="20"
-                              height="20"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M3 6H5H21"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                              <path
-                                d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={8} className="admin-vendors__no-data">
-                      No vendors found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="admin-vendors__pagination-container">
-            <div className="admin-vendors__pagination-info">
-              Showing {indexOfFirstVendor + 1}-{Math.min(indexOfLastVendor, filteredVendors.length)} out of {filteredVendors.length}
-            </div>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={Math.ceil(filteredVendors.length / vendorsPerPage)}
-              onPageChange={setCurrentPage}
-            />
-          </div>
-        </div>
-      </div>
-
-      <VendorEditModal
-        show={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedVendor(null);
-        }}
-        onSave={handleSaveVendor}
-        vendor={selectedVendor}
-      />
-      <AddVendorModal
-        show={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onAdd={handleAddVendor}
-        districts={districts}
-        token={token}
-      />
-      <VendorViewModal
-        show={showViewModal}
-        onClose={() => {
-          setShowViewModal(false);
-          setSelectedVendor(null);
-        }}
-        vendor={selectedVendor}
-      />
-    </div>
-  );
-};
-
-export default AdminVendor ;
+export default AdminVendor;

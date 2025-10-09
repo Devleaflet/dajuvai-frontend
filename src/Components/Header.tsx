@@ -10,6 +10,8 @@ interface HeaderProps {
   title?: string;
   onSort?: (sortOption: string) => void;
   sortOption?: string;
+  onFilter?: (filterOption: string) => void;
+  filterOption?: string;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -17,7 +19,9 @@ const Header: React.FC<HeaderProps> = ({
   showSearch = true, 
   title, 
   onSort, 
-  sortOption = "newest" 
+  sortOption = "newest",
+  onFilter,
+  filterOption = "all"
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -33,6 +37,13 @@ const Header: React.FC<HeaderProps> = ({
     const newSortOption = e.target.value;
     if (onSort) {
       onSort(newSortOption);
+    }
+  };
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newFilterOption = e.target.value;
+    if (onFilter) {
+      onFilter(newFilterOption);
     }
   };
 
@@ -52,10 +63,13 @@ const Header: React.FC<HeaderProps> = ({
 
   if (!user) return null;
 
+  // Show controls if we have sort or filter functionality, regardless of showSearch
+  const showControls = showSearch || onSort || onFilter;
+
   return (
     <>
       <header className="dashboard__header">
-        <h1 className="dashboard__title">{title || "Daju Vai Admin"}</h1>
+        <h1 className="dashboard__title">{title || ""}</h1> 
         <div className="dashboard__user" ref={dropdownRef}>
           <div className="dashboard__avatar">
             <span className="dashboard__avatar-text">
@@ -78,17 +92,19 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       </header>
       <div>
-        {showSearch && (
+        {showControls && (
           <div className="dashboard__search-container" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <div className="dashboard__search" style={{ flex: 1, minWidth: 200 }}>
-              <input
-                type="text"
-                placeholder="Search"
-                className="dashboard__search-input"
-                onChange={handleInputChange}
-              />
-              <span className="dashboard__search-icon"></span>
-            </div>
+            {showSearch && (
+              <div className="dashboard__search" style={{ flex: 1, minWidth: 200 }}>
+                <input
+                  type="text"
+                  placeholder="Search"
+                  className="dashboard__search-input"
+                  onChange={handleInputChange}
+                />
+                <span className="dashboard__search-icon"></span>
+              </div>
+            )}
             {onSort && (
               <select
                 className="vendor-product__sort-select"
@@ -100,8 +116,17 @@ const Header: React.FC<HeaderProps> = ({
                 <option value="oldest">Oldest</option>
                 <option value="price-asc">Price: Low to High</option>
                 <option value="price-desc">Price: High to Low</option>
-                <option value="name-asc">Name: A-Z</option>
-                <option value="name-desc">Name: Z-A</option>
+              </select>
+            )}
+            {onFilter && (
+              <select
+                className="vendor-product__filter-select"
+                value={filterOption}
+                onChange={handleFilterChange}
+                style={{ minWidth: 180, height: 38, borderRadius: 20, border: '1px solid #e5e7eb', padding: '0 12px', background: '#fff', fontSize: 14 }}
+              >
+                <option value="all">All Products</option>
+                <option value="out_of_stock">Out of Stock</option>
               </select>
             )}
           </div>

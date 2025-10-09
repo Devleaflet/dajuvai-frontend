@@ -1,9 +1,11 @@
 import React from 'react';
 import "../Styles/VendorTerms.css"
+
 const VendorTerms = () => {
     const handleGoBack = () => {
-        window.close()
+        window.history.back();
     };
+
     return (
         <div className="agreement">
             <div className="agreement__header">
@@ -46,7 +48,7 @@ const VendorTerms = () => {
                     <li className="agreement__list-item">Agreement Discussion and Signature</li>
                     <li className="agreement__list-item">Company Documents and ownership details with citizenship</li>
                 </ul>
-                <p className="agreement__text">By registering as a Vendor on the Company’s online platform ("Platform"), that the company provides them username and password in their online dashboard to list out the goods they want to sell, the Vendor agrees to comply with the following terms and conditions:</p>
+                <p className="agreement__text">By registering as a Vendor on the Company's online platform ("Platform"), that the company provides them username and password in their online dashboard to list out the goods they want to sell, the Vendor agrees to comply with the following terms and conditions:</p>
             </div>
 
             <div className="agreement__section">
@@ -73,7 +75,7 @@ const VendorTerms = () => {
 
                 <h4 className="agreement__section-subtitle">1.4 Shipping to Company Warehouse</h4>
                 <ul className="agreement__list">
-                    <li className="agreement__list-item">The Vendor agrees to prepare the order so that sold products can reach the Company’s designated warehouse within one business day upon order confirmation by vendor or the company’s shipment effort.</li>
+                    <li className="agreement__list-item">The Vendor agrees to prepare the order so that sold products can reach the Company's designated warehouse within one business day upon order confirmation by vendor or the company's shipment effort.</li>
                     <li className="agreement__list-item">Shipping costs to the Company's warehouse shall be borne by the Vendor unless otherwise agreed.</li>
                 </ul>
 
@@ -85,7 +87,7 @@ const VendorTerms = () => {
             </div>
 
             <div className="agreement__section">
-                <h3 className="agreement__section-title">2. Company’s Responsibilities</h3>
+                <h3 className="agreement__section-title">2. Company's Responsibilities</h3>
                 <h4 className="agreement__section-subtitle">2.1 Order Processing & Delivery</h4>
                 <ul className="agreement__list">
                     <li className="agreement__list-item">The Company will manage customer orders, payments, and last-mile delivery.</li>
@@ -141,19 +143,19 @@ const VendorTerms = () => {
 
                 <h4 className="agreement__section-subtitle">3.5 Refunds & Chargebacks</h4>
                 <ul className="agreement__list">
-                    <li className="agreement__list-item">If a customer requests a refund, the Company will deduct the amount from the Vendor’s next settlement.</li>
-                    <li className="agreement__list-item">Chargebacks due to Vendor misconduct (e.g., wrong product, bad packaging, and defective pieces) will be the Vendor’s liability.</li>
+                    <li className="agreement__list-item">If a customer requests a refund, the Company will deduct the amount from the Vendor's next settlement.</li>
+                    <li className="agreement__list-item">Chargebacks due to Vendor misconduct (e.g., wrong product, bad packaging, and defective pieces) will be the Vendor's liability.</li>
                 </ul>
             </div>
 
             <div className="agreement__section">
                 <h3 className="agreement__section-title">4. Intellectual Property & Branding</h3>
-                <h4 className="agreement__section-subtitle">4.1 Company’s Platform Ownership</h4>
+                <h4 className="agreement__section-subtitle">4.1 Company's Platform Ownership</h4>
                 <ul className="agreement__list">
                     <li className="agreement__list-item">The Vendor acknowledges that the Company owns all rights to the Platform, branding, and customer data.</li>
                 </ul>
 
-                <h4 className="agreement__section-subtitle">4.2 Vendor’s Product Rights</h4>
+                <h4 className="agreement__section-subtitle">4.2 Vendor's Product Rights</h4>
                 <ul className="agreement__list">
                     <li className="agreement__list-item">The Vendor retains ownership of product trademarks but grants the Company a license to display and sell them on the Platform.</li>
                 </ul>
@@ -174,7 +176,7 @@ const VendorTerms = () => {
 
                 <h4 className="agreement__section-subtitle">5.3 Termination by Vendor</h4>
                 <ul className="agreement__list">
-                    <li className="agreement__list-item">The Vendor may terminate this Agreement with 30 days’ written notice.</li>
+                    <li className="agreement__list-item">The Vendor may terminate this Agreement with 30 days' written notice.</li>
                     <li className="agreement__list-item">Undercutting platform policies.</li>
                 </ul>
             </div>

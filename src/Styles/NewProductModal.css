@@ -47,6 +47,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -71,6 +72,7 @@
     opacity: 0;
     transform: translateY(20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -546,6 +548,7 @@
     opacity: 0;
     transform: scale(0.8);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -691,6 +694,25 @@
   border: 1px solid var(--border-color);
 }
 
+.btn.btn-cancel {
+  background-color: #f8f9fa;
+  color: #dc3545;
+  border: 1px solid #dc3545;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn.btn-cancel:hover {
+  background-color: #dc3545;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4);
+}
+
+
 .btn.btn-secondary:hover {
   background: var(--surface);
   color: var(--text-primary);
@@ -739,23 +761,27 @@
   animation: dotPulse 1.4s ease-in-out infinite both;
 }
 
-.loading-dots .dot:nth-child(1) { 
-  animation-delay: -0.32s; 
+.loading-dots .dot:nth-child(1) {
+  animation-delay: -0.32s;
 }
 
-.loading-dots .dot:nth-child(2) { 
-  animation-delay: -0.16s; 
+.loading-dots .dot:nth-child(2) {
+  animation-delay: -0.16s;
 }
 
-.loading-dots .dot:nth-child(3) { 
-  animation-delay: 0s; 
+.loading-dots .dot:nth-child(3) {
+  animation-delay: 0s;
 }
 
 @keyframes dotPulse {
-  0%, 80%, 100% {
+
+  0%,
+  80%,
+  100% {
     transform: scale(0.6);
     opacity: 0.6;
   }
+
   40% {
     transform: scale(1);
     opacity: 1;
@@ -802,6 +828,7 @@
   justify-content: flex-end;
   background: #ffffff !important;
 }
+
 /* 
 .btn {
   min-width: 140px;
@@ -815,6 +842,7 @@
   min-width: 140px;
   max-width: 200px;
 }
+
 /* Button content container */
 .btn-content {
   display: flex;
@@ -1008,6 +1036,7 @@
 
 /* Accessibility */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {

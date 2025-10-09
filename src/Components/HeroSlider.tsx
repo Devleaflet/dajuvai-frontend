@@ -1,4 +1,4 @@
-import React, { useState, useRef , useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -14,8 +14,11 @@ interface Slide {
   status?: string;
   startDate?: string;
   endDate?: string;
+  productSource?: string;
+  selectedCategory?: { id: number } | null;
+  selectedSubcategory?: { id: number; category: { id: number } } | null;
+  externalLink?: string | null;
 }
-
 
 interface HeroSliderProps {
   onLoad?: () => void;
@@ -45,17 +48,23 @@ const fetchHeroBanners = async (): Promise<Slide[]> => {
       status: banner.status,
       startDate: banner.startDate,
       endDate: banner.endDate,
+      productSource: banner.productSource,
+      selectedCategory: banner.selectedCategory,
+      selectedSubcategory: banner.selectedSubcategory,
+      externalLink: banner.externalLink,
     }));
 };
-
 
 const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   const navigate = useNavigate();
   const [activeSlide, setActiveSlide] = useState<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [startX, setStartX] = useState<number>(0);
+  const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
   const [translateX, setTranslateX] = useState<number>(0);
   const sliderRef = useRef<HTMLDivElement>(null);
+
+  const clickThreshold = 5; // Pixels to consider as a click vs. drag
+  const swipeThreshold = sliderRef.current ? sliderRef.current.offsetWidth / 4 : 100;
 
   const { data: slides = [], isLoading, error } = useQuery<Slide[], Error>({
     queryKey: ['heroBanners'],
@@ -73,47 +82,47 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
 
   useEffect(() => {
     onLoad?.();
-    console.log('Slides loaded:', slides); // Debug slides data
+    console.log('Slides loaded:', slides);
   }, [onLoad, slides]);
 
   const goToSlide = (index: number): void => {
     setActiveSlide(index);
     setTranslateX(0);
-    console.log('Go to slide:', index); // Debug slide change
+    console.log('Go to slide:', index);
   };
 
   const goToPrevSlide = (): void => {
     setActiveSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
     setTranslateX(0);
-    console.log('Previous slide'); // Debug navigation
+    console.log('Previous slide');
   };
 
   const goToNextSlide = (): void => {
     setActiveSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
     setTranslateX(0);
-    console.log('Next slide'); // Debug navigation
+    console.log('Next slide');
   };
 
-  const handleDragStart = (clientX: number): void => {
+  const handleDragStart = (clientX: number, clientY: number): void => {
     setIsDragging(true);
-    setStartX(clientX);
+    setStartPos({ x: clientX, y: clientY });
     setTranslateX(0);
-    console.log('Drag start at:', clientX); // Debug drag start
+    console.log('Drag start at:', { x: clientX, y: clientY });
   };
 
   const handleDragMove = (clientX: number): void => {
     if (!isDragging) return;
-    const currentDrag = clientX - startX;
+    const currentDrag = clientX - (startPos?.x || 0);
     const maxDrag = sliderRef.current ? sliderRef.current.offsetWidth / 3 : 200;
     setTranslateX(Math.max(-maxDrag, Math.min(maxDrag, currentDrag)));
-    console.log('Dragging, translateX:', currentDrag); // Debug drag movement
+    console.log('Dragging, translateX:', currentDrag);
   };
 
-  const handleDragEnd = (): void => {
+  const handleDragEnd = (clientX: number, clientY: number): void => {
     if (!isDragging) return;
     setIsDragging(false);
-    const swipeThreshold = sliderRef.current ? sliderRef.current.offsetWidth / 4 : 100;
 
+    // Check drag distance for swipe
     if (Math.abs(translateX) > swipeThreshold) {
       if (translateX > 0) {
         goToPrevSlide();
@@ -123,54 +132,119 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
     } else {
       setTranslateX(0); // Snap back
     }
-    console.log('Drag end, translateX:', translateX); // Debug drag end
+    console.log('Drag end, translateX:', translateX);
+
+    // Check for click (minimal movement)
+    if (startPos) {
+      const dx = clientX - startPos.x;
+      const dy = clientY - startPos.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      if (distance <= clickThreshold) {
+        handleImageClick(slides[activeSlide]);
+      }
+    }
+    setStartPos(null);
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
     if (e.button !== 0) return; // Only left-click
-    handleDragStart(e.clientX);
+    handleDragStart(e.clientX, e.clientY);
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
     handleDragMove(e.clientX);
   };
 
-  const handleMouseUp = (): void => {
-    handleDragEnd();
+  const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>): void => {
+    handleDragEnd(e.clientX, e.clientY);
   };
 
   const handleMouseLeave = (): void => {
     if (isDragging) {
-      handleDragEnd();
+      handleDragEnd(startPos?.x || 0, startPos?.y || 0);
     }
   };
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>): void => {
-    handleDragStart(e.touches[0].clientX);
+    handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>): void => {
     handleDragMove(e.touches[0].clientX);
   };
 
-  const handleTouchEnd = (): void => {
-    handleDragEnd();
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>): void => {
+    const clientX = e.changedTouches[0]?.clientX || startPos?.x || 0;
+    const clientY = e.changedTouches[0]?.clientY || startPos?.y || 0;
+    handleDragEnd(clientX, clientY);
   };
 
   const handleImageClick = (slide: Slide): void => {
-    if (Math.abs(translateX) > 5) return; // Prevent click during drag
-    console.log('Banner clicked:', slide); // Debug click
-    if (slide?.name) {
-      const searchQuery = encodeURIComponent(slide.name);
-      console.log('Navigating to:', `/shop?search=${searchQuery}`);
+    console.log('Banner clicked:', slide);
+    if (!slide) {
+      console.log('No slide found, navigating to /shop');
       try {
-        navigate(`/shop?search=${searchQuery}`);
+        navigate('/shop');
       } catch (error) {
         console.error('Navigation failed:', error);
-        window.location.href = `/shop?search=${searchQuery}`;
+        window.location.href = '/shop';
+      }
+      return;
+    }
+
+    if (slide.productSource === 'category' && slide.selectedCategory?.id) {
+      console.log('Navigating to category:', slide.selectedCategory.id);
+      try {
+        navigate(`/shop?categoryId=${slide.selectedCategory.id}`);
+      } catch (error) {
+        console.error('Navigation failed:', error);
+        window.location.href = `/shop?categoryId=${slide.selectedCategory.id}`;
+      }
+    } else if (
+      slide.productSource === 'subcategory' &&
+      slide.selectedSubcategory?.id &&
+      slide.selectedSubcategory?.category?.id
+    ) {
+      console.log(
+        'Navigating to subcategory:',
+        slide.selectedSubcategory.id,
+        'category:',
+        slide.selectedSubcategory.category.id
+      );
+      try {
+        navigate(
+          `/shop?categoryId=${slide.selectedSubcategory.category.id}&subcategoryId=${slide.selectedSubcategory.id}`
+        );
+      } catch (error) {
+        console.error('Navigation failed:', error);
+        window.location.href = `/shop?categoryId=${slide.selectedSubcategory.category.id}&subcategoryId=${slide.selectedSubcategory.id}`;
+      }
+    } else if (slide.productSource === 'manual') {
+      console.log('Navigating to manual banner:', slide.id);
+      try {
+        navigate(`/shop?bannerId=${slide.id}`);
+      } catch (error) {
+        console.error('Navigation failed:', error);
+        window.location.href = `/shop?bannerId=${slide.id}`;
+      }
+    } else if (slide.productSource === 'external' && slide.externalLink) {
+      console.log('Opening external link:', slide.externalLink);
+      try {
+        window.open(slide.externalLink, '_blank');
+      } catch (error) {
+        console.error('Failed to open external link:', error);
       }
     } else {
-      console.log('No slide name, navigating to /shop');
+      console.warn(
+        'No valid navigation criteria met. Slide properties:',
+        {
+          productSource: slide.productSource,
+          hasSelectedCategory: !!slide.selectedCategory,
+          hasSelectedSubcategory: !!slide.selectedSubcategory,
+          hasExternalLink: !!slide.externalLink,
+          slideName: slide.name,
+        }
+      );
       try {
         navigate('/shop');
       } catch (error) {
@@ -208,28 +282,13 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
           <div key={slide.id} className="hero-slider__slide">
             <div className="hero-slider__image-container">
               <img
-  src={window.innerWidth < 768 ? slide.mobileImage || slide.desktopImage : slide.desktopImage}
-  alt={slide.name}
-  className="hero-slider__image"
-  loading="lazy"
-  onClick={() => handleImageClick(slide)}
-  draggable={false}
-/>
-
-              <button
-                className="hero-slider__nav-button hero-slider__nav-button--prev"
-                onClick={goToPrevSlide}
-                disabled={slides.length <= 1}
-              >
-                <ArrowLeft size={24} color="white" />
-              </button>
-              <button
-                className="hero-slider__nav-button hero-slider__nav-button--next"
-                onClick={goToNextSlide}
-                disabled={slides.length <= 1}
-              >
-                <ArrowRight size={24} color="white" />
-              </button>
+                src={window.innerWidth < 768 ? slide.mobileImage || slide.desktopImage : slide.desktopImage}
+                alt={slide.name}
+                className="hero-slider__image"
+                loading="lazy"
+                draggable={false}
+                onDragStart={(e) => e.preventDefault()}
+              />
             </div>
           </div>
         ))}
@@ -241,9 +300,7 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className={`hero-slider__indicator ${
-                activeSlide === index ? 'hero-slider__indicator--active' : ''
-              }`}
+              className={`hero-slider__indicator ${activeSlide === index ? 'hero-slider__indicator--active' : ''}`}
             />
           ))}
         </div>

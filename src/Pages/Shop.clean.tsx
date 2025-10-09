@@ -96,7 +96,7 @@ const Shop: React.FC = () => {
             aria-hidden={!isSidebarOpen}
           >
             <div className="filter-sidebar__header">
-              <h3>Filters</h3>
+             <h3>Filter</h3>
               <button 
                 className="filter-sidebar__close" 
                 onClick={toggleSidebar} 

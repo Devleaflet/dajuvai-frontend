@@ -261,7 +261,7 @@ export function AdminDashboard() {
     <div className="vendor-dash-container">
       <AdminSidebar />
       <div className={`dashboard ${isMobile ? "dashboard--mobile" : ""}`}>
-        <Header onSearch={handleSearch} showSearch={false} />
+        <Header onSearch={handleSearch} showSearch={false} title="Dashboard" />
         <main
           className="dashboard__main"
           style={{
@@ -282,7 +282,7 @@ export function AdminDashboard() {
               <>
                 <StatsCard
                   title="Total Sales"
-                  value={`₹ ${Number(stats.totalSales).toLocaleString("en-IN")}`}
+                  value={`Rs. ${Number(stats.totalSales).toLocaleString("en-IN")}`}
                   iconType="sales"
                   change={0}
                   trend="up"

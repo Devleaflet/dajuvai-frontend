@@ -1,14 +1,13 @@
+// Checkout.tsx - Updated for Total Price and Payment Section
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import CryptoJS from 'crypto-js';
 import '../Styles/CheckOut.css';
 import { useCart } from '../context/CartContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Navbar from '../Components/Navbar';
 import Footer from '../Components/Footer';
 import logo from '../assets/logo.webp';
-import esewa from '../assets/esewa.png';
-import npx from '../assets/npx.png';
 import { useAuth } from '../context/AuthContext';
 import AlertModal from '../Components/Modal/AlertModal';
 import { API_BASE_URL } from '../config';
@@ -61,7 +60,69 @@ interface ShippingGroup {
   lineTotal: number;
 }
 
+const OrderSuccessModal: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  onViewOrder: () => void;
+  onContinueShopping: () => void;
+  totalAmount: number;
+  paymentMethod: string;
+}> = ({ open, onClose, onViewOrder, onContinueShopping, totalAmount, paymentMethod }) => {
+  if (!open) return null;
+
+  return (
+    <div className="checkout-success-modal-overlay">
+      <div className="checkout-success-modal">
+        <div className="checkout-success-modal__content">
+          <div className="checkout-success-modal__header">
+            <div className="checkout-success-modal__icon-wrapper">
+              <div className="checkout-success-modal__icon">✓</div>
+            </div>
+            <button className="checkout-success-modal__close" onClick={onClose}>
+              ×
+            </button>
+          </div>
+          <h2 className="checkout-success-modal__title">Order Confirmed!</h2>
+          <p className="checkout-success-modal__message">
+            Thank you for your purchase! Your order has been successfully placed and is being processed.
+            You'll receive a confirmation email with your order details shortly.
+          </p>
+          <div className="checkout-success-modal__order-info">
+            <div className="checkout-success-modal__info-item">
+              <span>Order Total:</span>
+              <span>Rs {totalAmount.toLocaleString()}</span>
+            </div>
+            <div className="checkout-success-modal__info-item">
+              <span>Payment Method:</span>
+              <span>{paymentMethod.replace(/_/g, ' ')}</span>
+            </div>
+          </div>
+          <div className="checkout-success-modal__actions">
+            <button className="checkout-success-modal__btn checkout-success-modal__btn--primary" onClick={onViewOrder}>
+              View Order Details
+            </button>
+            <button className="checkout-success-modal__btn checkout-success-modal__btn--secondary" onClick={onContinueShopping}>
+              Continue Shopping
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Checkout: React.FC = () => {
+  useEffect(() => {
+    const listener = (event: MessageEvent) => {
+      if (event.data?.action === "refresh") {
+        console.log("----------------Page refresh----------------------")
+        window.location.reload();
+      }
+    };
+    window.addEventListener("message", listener);
+    return () => window.removeEventListener("message", listener);
+  }, []);
+
   const location = useLocation();
   const { cartItems: contextCartItems, handleIncreaseQuantity, handleDecreaseQuantity } = useCart();
   let cartItems: CartItem[] = contextCartItems;
@@ -105,7 +166,6 @@ const Checkout: React.FC = () => {
   }
 
   const navigate = useNavigate();
-
   const [billingDetails, setBillingDetails] = useState({
     fullName: '',
     province: '',
@@ -120,6 +180,13 @@ const Checkout: React.FC = () => {
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('CASH_ON_DELIVERY');
+
+  const availablePaymentMethods = [
+    { id: 'CASH_ON_DELIVERY', name: 'Cash on Delivery' },
+    { id: 'ESEWA', name: 'eSewa' },
+    { id: 'NPX', name: 'Nepal Payment Express (NPX)' },
+  ];
+
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
@@ -174,8 +241,8 @@ const Checkout: React.FC = () => {
     product_service_charge: '0',
     product_delivery_charge: '0',
     product_code: 'EPAYTEST',
-    success_url: `https://dev.dajuvai.com/order/esewa-payment-success`,
-    failure_url: `https://dev.dajuvai.com/esewa-payment-failure`,
+    success_url: `https://dajuvai.com/order/esewa-payment-success`,
+    failure_url: `https://dajuvai.com/esewa-payment-failure`,
     signed_field_names: 'total_amount,transaction_uuid,product_code',
     signature: '',
     secret: '8gBm/:&EnhH.1/q',
@@ -234,16 +301,13 @@ const Checkout: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-
     let filteredValue = value;
     if (name === 'phoneNumber') {
       filteredValue = value.replace(/\D/g, '').slice(0, 10);
     } else if (name === 'fullName' || name === 'city') {
       filteredValue = value.replace(/[^a-zA-Z\s]/g, '');
     }
-
     setBillingDetails(prev => ({ ...prev, [name]: filteredValue }));
-
     if (touched[name] || errors[name]) {
       const error = validateField(name, filteredValue);
       setErrors(prev => ({ ...prev, [name]: error }));
@@ -265,24 +329,34 @@ const Checkout: React.FC = () => {
     setSelectedPaymentMethod(e.target.value);
   };
 
-  const handleApplyPromoCode = () => {
+  const handleApplyPromoCode = async () => {
     if (!enteredPromoCode.trim()) {
-      setPromoError('Please enter a promo code');
+      setPromoError("Please enter a promo code");
       return;
     }
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/order/check-promo`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ promoCode: enteredPromoCode }),
+      });
 
-    const foundPromoCode = promoCodes.find(
-      promo => promo.promoCode.toUpperCase() === enteredPromoCode.toUpperCase()
-    );
-
-    if (foundPromoCode) {
-      setAppliedPromoCode(foundPromoCode);
-      setPromoError('');
-      setAlertMessage(`Promo code "${foundPromoCode.promoCode}" applied successfully! You saved ${foundPromoCode.discountPercentage}%`);
-      setShowAlert(true);
-    } else {
-      setPromoError('Promo code not available');
-      setAppliedPromoCode(null);
+      const result = await response.json();
+      if (response.ok && result.success) {
+        setPromoError("");
+        setAlertMessage(`Promo code "${result.data.promoCode}" applied successfully!`);
+        setShowAlert(true);
+        setAppliedPromoCode(result.data);
+      } else {
+        setPromoError(result.msg || "Invalid promo code");
+        setAppliedPromoCode(null);
+      }
+    } catch (error) {
+      console.error("Error applying promo code:", error);
+      setPromoError("Something went wrong. Please try again.");
     }
   };
 
@@ -297,7 +371,6 @@ const Checkout: React.FC = () => {
       console.warn('User or token not available, skipping user data fetch');
       return;
     }
-
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/users/${user.id}`, {
         credentials: 'include',
@@ -306,8 +379,10 @@ const Checkout: React.FC = () => {
           Authorization: `Bearer ${token}`,
         },
       });
+
       if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
       const data = await response.json();
+
       if (data.success && data.data) {
         const newBillingDetails = {
           fullName: data.data.fullName || '',
@@ -389,7 +464,6 @@ const Checkout: React.FC = () => {
 
     try {
       let orderData;
-
       if (location.state?.buyNow && cartItems.length === 1) {
         const buyNowItem = cartItems[0];
         const finalQuantity = buyNowQuantities[buyNowItem.id] || buyNowItem.quantity;
@@ -433,11 +507,11 @@ const Checkout: React.FC = () => {
           paymentMethod: selectedPaymentMethod,
           phoneNumber: billingDetails.phoneNumber,
           items: orderItems,
-          promoCodeId: appliedPromoCode?.id || undefined,
+          promoCode: enteredPromoCode || undefined,
         };
       }
 
-      console.log('Sending order data:', JSON.stringify(orderData, null, 2));
+      console.log('Sending order ', JSON.stringify(orderData, null, 2));
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -456,35 +530,57 @@ const Checkout: React.FC = () => {
 
       if (result.success) {
         if (selectedPaymentMethod === 'CASH_ON_DELIVERY') {
-          setAlertMessage('Order placed successfully!');
-          navigate('/user-profile', {
-            state: { activeTab: 'orders' },
-          });
+          // Show custom popup with navigation options
+          const deliveryTime = getOverallDeliveryTime();
+          setAlertMessage(`Your order has been placed successfully! Expected delivery: ${deliveryTime}. Do you want to see full details?`);
+          setShowAlert(true);
+          // Store order details for navigation
+          const orderDetails = {
+            orderId: result.data?.id || null,
+            totalAmount: finalTotal,
+          };
+          // Define buttons for the modal
+          const buttons = [
+            {
+              label: 'Go to Order Details',
+              action: () => {
+                navigate('/user-profile', {
+                  state: { activeTab: 'orders', orderDetails },
+                });
+                setShowAlert(false);
+              },
+              style: { backgroundColor: '#ff6b35', color: 'white' },
+            },
+            {
+              label: 'Shop More',
+              action: () => {
+                navigate('/shop');
+                setShowAlert(false);
+              },
+              style: { backgroundColor: '#22c55e', color: 'white' },
+            },
+          ];
           setShowAlert(true);
         } else if (selectedPaymentMethod === 'ESEWA') {
-          const freshTransactionUuid = uuidv4();
-          const amount = finalTotal.toString();
-          const hashString = `total_amount=${amount},transaction_uuid=${freshTransactionUuid},product_code=EPAYTEST`;
-          const hash = CryptoJS.HmacSHA256(hashString, '8gBm/:&EnhH.1/q');
-          const signature = CryptoJS.enc.Base64.stringify(hash);
-
-          const updatedFormData = {
-            ...formData,
-            amount: amount,
-            total_amount: amount,
-            transaction_uuid: freshTransactionUuid,
-            signature: signature,
-          };
-
-          const form = document.getElementById('esewa-form') as HTMLFormElement;
-          if (form) {
-            (form.querySelector('input[name="amount"]') as HTMLInputElement).value = updatedFormData.amount;
-            (form.querySelector('input[name="total_amount"]') as HTMLInputElement).value = updatedFormData.total_amount;
-            (form.querySelector('input[name="transaction_uuid"]') as HTMLInputElement).value = updatedFormData.transaction_uuid;
-            (form.querySelector('input[name="signature"]') as HTMLInputElement).value = updatedFormData.signature;
-            form.submit();
+          if (result.esewaRedirectUrl) {
+            console.log('Redirecting to eSewa:', result.esewaRedirectUrl.url);
+            window.location.href = result.esewaRedirectUrl.url;
+          } else {
+            throw new Error('eSewa redirect URL not provided');
           }
         }
+        // } else if (selectedPaymentMethod === 'NPX') {
+        //   console.log('Redirecting to NPX payment page');
+        //   navigate('/order-page', {
+        //     state: {
+        //       orderDetails: {
+        //         orderId: result.data?.id || null,
+        //         totalAmount: finalTotal,
+        //       },
+        //     },
+        //   });
+        // }
+
         setTimeout(() => {
           if (selectedPaymentMethod !== 'CASH_ON_DELIVERY' && selectedPaymentMethod !== 'ESEWA') {
             navigate('/order-page', {
@@ -516,6 +612,33 @@ const Checkout: React.FC = () => {
       return 'Kathmandu Valley';
     }
     return district;
+  };
+
+  const calculateDeliveryTime = (customerDistrict: string, vendorDistrict: string): string => {
+    const normalizedCustomerDistrict = normalizeDistrict(customerDistrict);
+    const normalizedVendorDistrict = normalizeDistrict(vendorDistrict);
+
+    if (normalizedCustomerDistrict === normalizedVendorDistrict) {
+      return '1-2 days';
+    } else {
+      return '3-5 days';
+    }
+  };
+
+  const getOverallDeliveryTime = (): string => {
+    if (!billingDetails.district || vendorGroups.length === 0) {
+      return '3-5 days';
+    }
+
+    const deliveryTimes = vendorGroups.map(group =>
+      calculateDeliveryTime(billingDetails.district, group.vendorDistrict)
+    );
+
+    // If any vendor requires 3-5 days, the overall delivery is 3-5 days
+    if (deliveryTimes.some(time => time === '3-5 days')) {
+      return '3-5 days';
+    }
+    return '1-2 days';
   };
 
   const [vendorCache, setVendorCache] = useState<{ [key: number]: { businessName: string; district: { name: string } } }>({});
@@ -557,7 +680,6 @@ const Checkout: React.FC = () => {
         district: vendorCache[item.product.vendorId].district.name,
       };
     }
-
     return {
       businessName: item.product?.vendor?.businessName || 'Unknown Vendor',
       district: item.product?.vendor?.district?.name || 'Unknown District',
@@ -581,9 +703,11 @@ const Checkout: React.FC = () => {
     cartItems.forEach(item => {
       const vendorInfo = getVendorInfo(item);
       const key = `${vendorInfo.businessName}-${vendorInfo.district}`;
+
       if (!vendorGroups[key]) {
         vendorGroups[key] = [];
       }
+
       vendorGroups[key].push(item);
     });
 
@@ -595,11 +719,13 @@ const Checkout: React.FC = () => {
 
       const vendorInfo = getVendorInfo(items[0]);
       let shippingCost = 0;
+
       if (billingDetails.district) {
         const customerDistrict = normalizeDistrict(billingDetails.district);
         const normalizedVendorDistrict = normalizeDistrict(vendorInfo.district);
         shippingCost = customerDistrict === normalizedVendorDistrict ? 100 : 200;
       }
+
       const lineTotal = subtotal + shippingCost;
 
       return {
@@ -621,7 +747,9 @@ const Checkout: React.FC = () => {
   }, 0);
 
   const totalShipping = vendorGroups.reduce((sum, group) => sum + group.shippingCost, 0);
+
   const total = subtotal + totalShipping;
+
   const discountPercentage = appliedPromoCode ? appliedPromoCode.discountPercentage : 0;
   const discountAmount = appliedPromoCode ? Math.round((total * discountPercentage) / 100) : 0;
   const finalTotal = total - discountAmount;
@@ -632,7 +760,6 @@ const Checkout: React.FC = () => {
       const rootAttrs = item && (item.variantAttributes || item.attributes) || null;
       return rootAttrs ? formatAttributes(rootAttrs) : '';
     }
-
     if (typeof v.name === 'string' && v.name.trim()) return v.name.trim();
     const byAttrs = formatAttributes(v.attributes || v.attributeValues || v.attributeSpecs || v.attrs || null);
     if (byAttrs) return byAttrs;
@@ -642,7 +769,6 @@ const Checkout: React.FC = () => {
 
   const formatAttributes = (attrs: any): string => {
     if (!attrs) return '';
-
     if (Array.isArray(attrs)) {
       const parts = attrs.map((a: any) => {
         const label = String(a?.type ?? a?.attributeType ?? a?.name ?? '').trim();
@@ -656,7 +782,6 @@ const Checkout: React.FC = () => {
       }).filter(Boolean);
       return parts.join(', ');
     }
-
     if (typeof attrs === 'object') {
       const parts = Object.entries(attrs).map(([k, v]) => {
         const label = String(k).trim();
@@ -667,7 +792,6 @@ const Checkout: React.FC = () => {
       });
       return parts.join(', ');
     }
-
     return String(attrs);
   };
 
@@ -706,25 +830,47 @@ const Checkout: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchPromoCodes = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/promo`);
-        const result = await response.json();
-        if (result.success && result.data) {
-          setPromoCodes(result.data);
-        }
-      } catch (error) {
-        console.error('Error fetching promo codes:', error);
-      }
-    };
-    fetchPromoCodes();
-  }, []);
+  // useEffect(() => {
+  //   const fetchPromoCodes = async () => {
+  //     try {
+  //       const response = await fetch(`${API_BASE_URL}/api/promo`);
+  //       const result = await response.json();
+  //       if (result.success && result.data) {
+  //         setPromoCodes(result.data);
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching promo codes:', error);
+  //     }
+  //   };
+  //   fetchPromoCodes();
+  // }, []);
 
   return (
     <>
       <Navbar />
-      <AlertModal open={showAlert} message={alertMessage} onClose={() => setShowAlert(false)} />
+      {/* <AlertModal open={showAlert} message={alertMessage} onClose={() => setShowAlert(false)} /> */}
+      {showAlert && alertMessage.includes('Your order has been placed') ? (
+        <OrderSuccessModal
+          open={showAlert}
+          onClose={() => setShowAlert(false)}
+          onViewOrder={() => {
+            navigate('/user-profile', { state: { activeTab: 'orders' } });
+            setShowAlert(false);
+          }}
+          onContinueShopping={() => {
+            navigate('/shop');
+            setShowAlert(false);
+          }}
+          totalAmount={finalTotal}
+          paymentMethod={selectedPaymentMethod}
+        />
+      ) : (
+        <AlertModal
+          open={showAlert}
+          message={alertMessage}
+          onClose={() => setShowAlert(false)}
+        />
+      )}
 
       <form
         id="esewa-form"
@@ -747,7 +893,7 @@ const Checkout: React.FC = () => {
 
       {showAlert && alertMessage && selectedPaymentMethod === 'CASH_ON_DELIVERY' && (
         <div className="checkout-container__alert">
-          <span role="img" aria-label="success" style={{ fontSize: '1.5em', marginRight: '0.5em' }}>✅</span>
+          <span role="img" aria-label="success" style={{ fontSize: '1.5em', marginRight: '0.5em' }}>✓</span>
           {alertMessage}
         </div>
       )}
@@ -775,6 +921,7 @@ const Checkout: React.FC = () => {
                 </div>
               )}
             </div>
+
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Province *</label>
               <select
@@ -797,6 +944,7 @@ const Checkout: React.FC = () => {
                 </div>
               )}
             </div>
+
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">District *</label>
               <select
@@ -819,6 +967,7 @@ const Checkout: React.FC = () => {
                 </div>
               )}
             </div>
+
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">City *</label>
               <input
@@ -838,6 +987,7 @@ const Checkout: React.FC = () => {
                 </div>
               )}
             </div>
+
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Street Address *</label>
               <input
@@ -857,6 +1007,7 @@ const Checkout: React.FC = () => {
                 </div>
               )}
             </div>
+
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Landmark </label>
               <input
@@ -875,6 +1026,7 @@ const Checkout: React.FC = () => {
                 </div>
               )}
             </div>
+
             <div className="checkout-container__form-group">
               <label className="checkout-container__form-label">Phone Number *</label>
               <input
@@ -897,7 +1049,7 @@ const Checkout: React.FC = () => {
             </div>
 
             <div className="checkout-container__promo-section-left">
-              <h3 style={{ marginBottom: '1rem', color: '#333' }}>🎉 Have a Promo Code?</h3>
+              <h3 style={{ marginBottom: '1rem', color: '#333' }}>Have a Promo Code?</h3>
               {!showPromoField ? (
                 <button
                   type="button"
@@ -918,7 +1070,7 @@ const Checkout: React.FC = () => {
                     maxWidth: '300px',
                   }}
                 >
-                  ✨ Apply Promo Code
+                  Apply Promo Code
                 </button>
               ) : (
                 <div className="checkout-container__promo-input-section-left">
@@ -976,7 +1128,7 @@ const Checkout: React.FC = () => {
                   marginTop: '15px',
                 }}>
                   <span style={{ color: '#22c55e', fontSize: '16px', fontWeight: '600' }}>
-                    ✅ "{appliedPromoCode.promoCode}" applied ({appliedPromoCode.discountPercentage}% off)
+                    ✓ "{appliedPromoCode.promoCode}" applied ({appliedPromoCode.discountPercentage}% off)
                   </span>
                   <button
                     type="button"
@@ -1066,6 +1218,9 @@ const Checkout: React.FC = () => {
                               <small> (Same district)</small>
                             )}
                           </span>
+                          <div className="checkout-container__delivery-time">
+                            <small>Delivery: {calculateDeliveryTime(billingDetails.district, group.vendorDistrict)}</small>
+                          </div>
                         </div>
                       )}
                       <div className="checkout-container__group-line-total">
@@ -1078,85 +1233,93 @@ const Checkout: React.FC = () => {
               ) : (
                 <p>No items in cart.</p>
               )}
+
               <div className="checkout-container__order-total">
                 <span>Sub Total:</span>
                 <span>Rs {subtotal.toLocaleString()}</span>
               </div>
+
               {billingDetails.district && (
                 <div className="checkout-container__order-total">
                   <span>Total Shipping:</span>
                   <span>Rs {totalShipping.toLocaleString()}</span>
                 </div>
               )}
+
               {appliedPromoCode && (
                 <div className="checkout-container__order-total">
                   <span>Discount ({discountPercentage}%):</span>
                   <span style={{ color: 'green' }}>- Rs {discountAmount.toLocaleString()}</span>
                 </div>
               )}
+
               <div className="checkout-container__order-total--total">
                 <span>Total Price</span>
                 <span>Rs {finalTotal.toLocaleString()}</span>
               </div>
             </div>
+
             <div className="checkout-container__payment-methods">
-              <label className="checkout-container__payment-methods-label">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="CASH_ON_DELIVERY"
-                  className="checkout-container__payment-methods-input"
-                  checked={selectedPaymentMethod === 'CASH_ON_DELIVERY'}
-                  onChange={handlePaymentMethodChange}
-                  style={{ boxShadow: 'none' }}
-                />
-                Cash on delivery
-              </label>
-              <label className="checkout-container__payment-methods-label">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="ONLINE_PAYMENT"
-                  className="checkout-container__payment-methods-input"
-                  checked={selectedPaymentMethod === 'ONLINE_PAYMENT'}
-                  onChange={handlePaymentMethodChange}
-                  style={{ boxShadow: 'none' }}
-                />
-                <img src={npx} alt="NPX" className="checkout-container__payment-methods-img" />
-              </label>
-              <label className="checkout-container__payment-methods-label">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="ESEWA"
-                  className="checkout-container__payment-methods-input"
-                  checked={selectedPaymentMethod === 'ESEWA'}
-                  onChange={handlePaymentMethodChange}
-                  style={{ boxShadow: 'none' }}
-                />
-                <img src={esewa} alt="eSewa" className="checkout-container__payment-methods-img" />
-              </label>
+              {availablePaymentMethods.map((method) => (
+                <label
+                  key={method.id}
+                  className={`checkout-container__payment-methods-label ${selectedPaymentMethod === method.id ? 'selected' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    value={method.id}
+                    className="checkout-container__payment-methods-input"
+                    checked={selectedPaymentMethod === method.id}
+                    onChange={handlePaymentMethodChange}
+                  />
+                  <span className="checkout-container__payment-methods-label-text">{method.name}</span>
+                </label>
+              ))}
             </div>
+
             <p className="checkout-container__privacy-note">
               Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our privacy policy.
             </p>
-            <label className="checkout-container__terms-checkbox">
+
+            {/* Updated Terms Checkbox - Removed onClick from label, rely on input's onChange */}
+            <label className="checkout-container__terms-checkbox" htmlFor="terms-checkbox">
               <input
+                id="terms-checkbox"
                 type="checkbox"
                 checked={termsAgreed}
-                onChange={handleTermsChange}
+                onChange={handleTermsChange} // This handler updates the state
                 className="checkout-container__terms-checkbox-input"
                 required
-                style={{ boxShadow: 'none' }}
+                style={{ display: 'none' }} // Hide the default checkbox
               />
-              <p>I have read and agree to the website terms and conditions *</p>
+              <span className="checkout-container__terms-checkbox-label">
+                <span className="checkout-container__terms-checkbox-text">
+                  I have read and agree to the website <Link to="/terms" rel="noopener noreferrer">terms and conditions</Link> *
+                </span>
+              </span>
             </label>
+
+            {errors.terms && !termsAgreed && (
+              <div className="error-message">
+                <FaInfoCircle className="error-icon" />
+                {errors.terms}
+              </div>
+            )}
+
             <button
               className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''}`}
               disabled={!termsAgreed || isPlacingOrder}
               onClick={handlePlaceOrder}
             >
-              {isPlacingOrder ? 'Placing Order...' : 'Place Order'}
+              {isPlacingOrder ? (
+                <span className="checkout-container__loading-text">
+                  Placing Order
+                  <span className="checkout-container__animated-ellipsis">...</span>
+                </span>
+              ) : (
+                'Place Order'
+              )}
             </button>
           </div>
         </div>

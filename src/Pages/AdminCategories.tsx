@@ -1030,9 +1030,9 @@ const AdminCategories: React.FC = () => {
               <button
                 className="admin-categories__add-btn"
                 onClick={() => setShowHomepageModal(true)}
-                style={{ marginLeft: "10px" }}
+                style={{ marginLeft: "10px",backgroundColor:"#f56a2c",color:"white" }}
               >
-                <Plus size={16} style={{ marginRight: 8 }} /> Manage Homepage Categories
+              Manage Homepage Categories
               </button>
             </div>
           </div>
@@ -1213,7 +1213,9 @@ const AdminCategories: React.FC = () => {
                 <div className="admin-categories__homepage-selection">
                   {categories.map((category) => (
                     <label key={category.id} className="admin-categories__checkbox-label">
-                      <input
+                      <input style={{
+                        height: "fit-content"
+                      }}
                         type="checkbox"
                         checked={homepageCategories.includes(category.id)}
                         onChange={() => handleHomepageCategoryChange(category.id)}
