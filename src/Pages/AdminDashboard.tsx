@@ -503,50 +503,82 @@ export function AdminDashboard() {
     };
   }, [topProducts]);
 
-  useEffect(() => {
-    const ctx = document.getElementById("todays-sales-chart") as HTMLCanvasElement;
-    if (ctx && todaysSalesData.length > 0) {
-      if (todaysChartRef.current) {
-        todaysChartRef.current.destroy();
-      }
-      const chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: todaysSalesData.map(d => d.label),
-          datasets: [{
-            label: 'Sales per Hour',
-            data: todaysSalesData.map(d => d.value),
-            borderColor: '#10B981',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            borderWidth: 2,
-            tension: 0.4,
-            fill: true,
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: (value: number) => `Rs. ${value.toLocaleString('en-IN')}`
+useEffect(() => {
+  const ctx = document.getElementById("top-products-chart") as HTMLCanvasElement;
+  if (ctx && topProducts.length > 0) {
+    if (topProductsChartRef.current) {
+      topProductsChartRef.current.destroy();
+    }
+
+    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'];
+
+    const chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: topProducts.map(p => p.productName),
+        datasets: [{
+          label: 'Total Sales',
+          data: topProducts.map(p => p.totalSales),
+          backgroundColor: topProducts.map((_, i) => colors[i % colors.length]),
+          borderColor: '#374151',
+          borderWidth: 1,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              // Show full product name on hover
+              title: function (context) {
+                return context[0].label;
+              },
+              label: function (context) {
+                return `Rs. ${context.parsed.y.toLocaleString('en-IN')}`;
               }
             }
           }
+        },
+        scales: {
+          x: {
+            ticks: {
+              callback: function (value, index) {
+                const label = this.getLabelForValue(value);
+                const maxLength = 15; // Adjust number of visible characters
+                return label.length > maxLength
+                  ? label.slice(0, maxLength) + "…"
+                  : label;
+              },
+              maxRotation: 45,  // Slight rotation for readability
+              minRotation: 45,
+              autoSkip: false,  // Prevents skipping labels
+            },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value: number) => `Rs. ${value.toLocaleString('en-IN')}`
+            },
+            grid: {
+              color: "#e5e7eb",
+            }
+          }
         }
-      });
-      todaysChartRef.current = chart;
-    }
-    return () => {
-      if (todaysChartRef.current) {
-        todaysChartRef.current.destroy();
       }
-    };
-  }, [todaysSalesData]);
+    });
+
+    topProductsChartRef.current = chart;
+  }
+
+  return () => {
+    if (topProductsChartRef.current) {
+      topProductsChartRef.current.destroy();
+    }
+  };
+}, [topProducts]);
+
 
   const handleVendorsPageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= (vendorsPaginated?.totalPage || 1)) {

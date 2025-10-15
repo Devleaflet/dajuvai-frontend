@@ -56,6 +56,7 @@ import VendorTerms from "./Pages/VendorTerms";
 import PasswordProtectedRoute from "./Components/SiteProtection/PasswordProtectedRoute";
 import EsewaPaymentFailure from "./Pages/EsewaPaymentFailure";
 import AdminProfile from "./Pages/AdminProfile";
+import { AdminNotifications } from "./Pages/AdminNotifications";
 // import VendorLoginPage from "./Pages/VendorLoginPage";
 // import VendorSignupPage from "./Pages/VendorSignupPage";
 
@@ -361,6 +362,14 @@ function App() {
           element={
             <AdminOrStaffRoute>
               <AdminProduct />
+            </AdminOrStaffRoute>
+          }
+        />
+        <Route
+          path="/admin-notifications"
+          element={
+            <AdminOrStaffRoute>
+              <AdminNotifications />
             </AdminOrStaffRoute>
           }
         />

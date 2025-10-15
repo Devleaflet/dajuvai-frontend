@@ -44,7 +44,7 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
 
   const getAvailableStatusOptions = (currentStatus: string) => {
     if (currentStatus === 'CONFIRMED') {
-      return ['CANCELLED', 'DELIVERED'];
+      return ['CANCELLED', 'DELIVERED',"DELAYED","SHIPPED","RETURNED"];
     }
     return [];
   };

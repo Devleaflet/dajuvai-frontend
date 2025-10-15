@@ -16,7 +16,11 @@ const ORDER_STATUS_OPTIONS = [
   { value: "PENDING", label: "Pending" },
   { value: "CONFIRMED", label: "Confirmed" },
   { value: "DELIVERED", label: "Delivered" },
-  { value: "CANCELLED", label: "Cancelled" }
+  { value: "CANCELLED", label: "Cancelled" },
+  { value: "SHIPPED", label: "Shipped" },
+  { value: "RETURNED", label: "Returned" },
+  { value: "DELAYED", label: "Delayed" },
+
 ];
 
 interface DisplayOrder {
