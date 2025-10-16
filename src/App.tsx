@@ -56,7 +56,7 @@ import VendorTerms from "./Pages/VendorTerms";
 import PasswordProtectedRoute from "./Components/SiteProtection/PasswordProtectedRoute";
 import EsewaPaymentFailure from "./Pages/EsewaPaymentFailure";
 import AdminProfile from "./Pages/AdminProfile";
-import { AdminNotifications } from "./Pages/AdminNotifications";
+import { AdminNotifications, Notifications } from "./Pages/Notifications";
 // import VendorLoginPage from "./Pages/VendorLoginPage";
 // import VendorSignupPage from "./Pages/VendorSignupPage";
 
@@ -340,6 +340,14 @@ function App() {
           }
         />
         <Route
+          path="/vendor-notifications"
+          element={
+            <ProtectedVendorRoute>
+              <Notifications />
+            </ProtectedVendorRoute>
+          }
+        />
+        <Route
           path="/vendor-profile"
           element={
             <ProtectedVendorRoute>
@@ -369,7 +377,7 @@ function App() {
           path="/admin-notifications"
           element={
             <AdminOrStaffRoute>
-              <AdminNotifications />
+              <Notifications />
             </AdminOrStaffRoute>
           }
         />
@@ -380,7 +388,7 @@ function App() {
               <OrdersList />
             </AdminOrStaffRoute>
           }
-        />
+      />
         <Route
           path="/admin-customers"
           element={

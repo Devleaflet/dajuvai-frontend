@@ -70,6 +70,18 @@ export function Sidebar({ ...props }: SidebarProps) {
           Orders
         </NavItem>
         <NavItem
+          to="/vendor-notifications"
+          icon={
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          }
+          active={location.pathname === "/vendor-notifications"}
+        >
+          Notifications
+        </NavItem>
+        <NavItem
           to="/vendor-profile"
           icon="profile"
           active={location.pathname === "/vendor-profile"}
@@ -83,7 +95,7 @@ export function Sidebar({ ...props }: SidebarProps) {
 
 interface NavItemProps {
   to: string;
-  icon: string;
+  icon: string | React.ReactNode;
   children: React.ReactNode;
   active?: boolean; // Add active prop
 }
@@ -95,7 +107,11 @@ function NavItem({ to, icon, children, active }: NavItemProps) {
       className={`sidebar__item ${active ? "sidebar__item--active" : ""}`}
       title={String(children)}
     >
-      <span className={`sidebar__icon sidebar__icon--${icon}`}></span>
+      {typeof icon === 'string' ? (
+        <span className={`sidebar__icon sidebar__icon--${icon}`}></span>
+      ) : (
+        icon
+      )}
       <span className="sidebar__text">{children}</span>
     </Link>
   );
