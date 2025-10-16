@@ -84,6 +84,7 @@
   background-color: white;
   border-left: 4px solid #f97316;
   transition: background-color 0.2s ease;
+  cursor: pointer;
 }
 
 .notification-item.unread {

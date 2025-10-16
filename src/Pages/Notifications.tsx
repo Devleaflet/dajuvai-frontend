@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "../Styles/Notifications.css";
 import { AdminSidebar } from "../Components/AdminSidebar";
 import { Sidebar, Sidebar as VendorSidebar } from "../Components/Sidebar";
 import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/AuthContext";
+import Header from "../Components/Header";
+import VendorHeader from "../Components/VendorHeader";
 
 export function Notifications() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1000);
@@ -19,6 +21,7 @@ export function Notifications() {
   }, []);
 
   const location = useLocation();
+  const navigate = useNavigate();
   const isVendor = location.pathname === "/vendor-notifications";
 
   const [notifications, setNotifications] = useState([]);
@@ -89,6 +92,20 @@ export function Notifications() {
     }
   };
 
+  const handleNotificationClick = async (notification) => {
+    if (!notification.read) {
+      await markAsRead(notification.id);
+    }
+    if (notification.type === 'order') {
+      const match = notification.title.match(/#(\d+)/);
+      if (match) {
+        const orderId = match[1];
+        const path = isVendor ? `/vendor-orders?orderId=${orderId}` : `/admin-orders?orderId=${orderId}`;
+        navigate(path);
+      }
+    }
+  };
+
   const filteredNotifications = activeTab === "Unread" 
     ? notifications.filter(n => !n.read) 
     : notifications;
@@ -105,42 +122,50 @@ export function Notifications() {
   return (
     <div className="admin-layout">
       {isVendor ? <Sidebar /> : <AdminSidebar />}
-      <div className={`notifications-main ${isMobile ? "notifications-main--mobile" : ""}`}>
-        <div className="notifications-container">
-          <div className="notifications-header">
-            <h1>Notifications</h1>
-            <span className="unread-badge">({unreadCount} Unread)</span>
-          </div>
-          <div className="tabs">
-            <button
-              className={`tab ${activeTab === "All" ? "active" : ""}`}
-              onClick={() => setActiveTab("All")}
-            >
-              All
-            </button>
-            <button
-              className={`tab ${activeTab === "Unread" ? "active" : ""}`}
-              onClick={() => setActiveTab("Unread")}
-            >
-              Unread
-            </button>
-          </div>
-          <div className="notifications-list">
-            {filteredNotifications.map((notification) => (
-              <div 
-                key={notification.id} 
-                className={`notification-item ${notification.read ? "read" : "unread"}`}
-                onClick={() => !notification.read && markAsRead(notification.id)}
+      <div style={{flex:1}}>
+        {!isVendor? <Header
+        showSearch = {false}
+        title="Notification"/>: 
+        <VendorHeader
+        title="Notification"
+        />}
+        <div className={`notifications-main ${isMobile ? "notifications-main--mobile" : ""}`}>
+          <div className="notifications-container">
+            <div className="notifications-header">
+              <h1>Notifications</h1>
+              <span className="unread-badge">({unreadCount} Unread)</span>
+            </div>
+            <div className="tabs">
+              <button
+                className={`tab ${activeTab === "All" ? "active" : ""}`}
+                onClick={() => setActiveTab("All")}
               >
-                <div className="notification-icon">
-                  {getIcon(notification.type)}
+                All
+              </button>
+              <button
+                className={`tab ${activeTab === "Unread" ? "active" : ""}`}
+                onClick={() => setActiveTab("Unread")}
+              >
+                Unread
+              </button>
+            </div>
+            <div className="notifications-list">
+              {filteredNotifications.map((notification) => (
+                <div
+                  key={notification.id}
+                  className={`notification-item ${notification.read ? "read" : "unread"}`}
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <div className="notification-icon">
+                    {getIcon(notification.type)}
+                  </div>
+                  <div className="notification-content">
+                    <p className="notification-title">{notification.title}</p>
+                    <span className="notification-time">{notification.time}</span>
+                  </div>
                 </div>
-                <div className="notification-content">
-                  <p className="notification-title">{notification.title}</p>
-                  <span className="notification-time">{notification.time}</span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
