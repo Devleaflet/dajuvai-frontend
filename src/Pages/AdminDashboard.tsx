@@ -7,12 +7,13 @@ import { useDocketHeight } from "./../Hook/UseDockerHeight";
 import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../api/axiosInstance";
 import Skeleton from "../Components/Skeleton/Skeleton";
+import RevenueByCategory from "../Components/AdminDashboard/CategoryRevenue";
 
 const STATS_CACHE_KEY = "admin_dashboard_stats";
 const REVENUE_CACHE_KEY = "admin_dashboard_revenue";
 const VENDORS_CACHE_KEY = "admin_dashboard_vendors_sales";
 const TOP_PRODUCTS_CACHE_KEY = "admin_dashboard_top_products";
-const CACHE_TTL = 5 * 60 * 1000; 
+const CACHE_TTL = 5 * 60 * 1000;
 
 interface StatData {
   totalSales: number;
@@ -104,7 +105,6 @@ export function AdminDashboard() {
   const revenueChartRef = useRef<Chart | null>(null);
   const vendorChartRef = useRef<Chart | null>(null);
   const topProductsChartRef = useRef<Chart | null>(null);
-  const todaysChartRef = useRef<Chart | null>(null);
 
   const handleSearch = (query: string) => {
     console.log("Searching for:", query);
@@ -130,7 +130,9 @@ export function AdminDashboard() {
           setStatsLoading(false);
           return;
         }
-      } catch {}
+      } catch (error) {
+        console.log(error)
+      }
     }
 
     try {
@@ -146,7 +148,7 @@ export function AdminDashboard() {
       } else {
         setError(response.data.message || "Failed to fetch dashboard stats");
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err.response?.data?.message || "Error fetching dashboard stats");
     } finally {
       setStatsLoading(false);
@@ -164,7 +166,9 @@ export function AdminDashboard() {
           setRevenueLoading(false);
           return;
         }
-      } catch {}
+      } catch (error) {
+        console.log(error)
+      }
     }
 
     try {
@@ -180,7 +184,7 @@ export function AdminDashboard() {
       } else {
         setError("Failed to fetch revenue data");
       }
-    } catch (err: any) {
+    } catch (err) {
       setError(err.response?.data?.message || "Error fetching revenue data");
     } finally {
       setRevenueLoading(false);
@@ -202,7 +206,9 @@ export function AdminDashboard() {
           setVendorsLoading(false);
           return;
         }
-      } catch {}
+      } catch (err) {
+        console.log(err)
+      }
     }
 
     try {
@@ -221,7 +227,7 @@ export function AdminDashboard() {
           JSON.stringify({ data: paginatedData, timestamp: Date.now() })
         );
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error fetching vendors sales:", err);
     } finally {
       setVendorsLoading(false);
@@ -243,7 +249,9 @@ export function AdminDashboard() {
           setTopProductsLoading(false);
           return;
         }
-      } catch {}
+      } catch (err) {
+        console.log(err)
+      }
     }
 
     try {
@@ -262,7 +270,7 @@ export function AdminDashboard() {
           JSON.stringify({ data: paginatedData, timestamp: Date.now() })
         );
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error fetching top products:", err);
     } finally {
       setTopProductsLoading(false);
@@ -278,7 +286,7 @@ export function AdminDashboard() {
       if (response.data && response.data.success) {
         setTodaysSales(response.data.data.totalSales || 0);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error fetching today's sales:", err);
     } finally {
       setTodaysLoading(false);
@@ -313,7 +321,7 @@ export function AdminDashboard() {
       fetchTopProducts(),
       fetchTodaysSales(),
     ]).catch(() => setError("Error during initial load"));
-  }, [token]); 
+  }, [token]);
 
   useEffect(() => {
     if (token) fetchRevenue();
@@ -329,7 +337,7 @@ export function AdminDashboard() {
 
   useEffect(() => {
     if (token) fetchTodaysSales();
-  }, [token]); 
+  }, [token]);
 
   useEffect(() => {
     const ctx = document.getElementById("revenue-chart") as HTMLCanvasElement;
@@ -503,81 +511,81 @@ export function AdminDashboard() {
     };
   }, [topProducts]);
 
-useEffect(() => {
-  const ctx = document.getElementById("top-products-chart") as HTMLCanvasElement;
-  if (ctx && topProducts.length > 0) {
-    if (topProductsChartRef.current) {
-      topProductsChartRef.current.destroy();
-    }
+  useEffect(() => {
+    const ctx = document.getElementById("top-products-chart") as HTMLCanvasElement;
+    if (ctx && topProducts.length > 0) {
+      if (topProductsChartRef.current) {
+        topProductsChartRef.current.destroy();
+      }
 
-    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'];
+      const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'];
 
-    const chart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: topProducts.map(p => p.productName),
-        datasets: [{
-          label: 'Total Sales',
-          data: topProducts.map(p => p.totalSales),
-          backgroundColor: topProducts.map((_, i) => colors[i % colors.length]),
-          borderColor: '#374151',
-          borderWidth: 1,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              // Show full product name on hover
-              title: function (context) {
-                return context[0].label;
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: topProducts.map(p => p.productName),
+          datasets: [{
+            label: 'Total Sales',
+            data: topProducts.map(p => p.totalSales),
+            backgroundColor: topProducts.map((_, i) => colors[i % colors.length]),
+            borderColor: '#374151',
+            borderWidth: 1,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                // Show full product name on hover
+                title: function (context) {
+                  return context[0].label;
+                },
+                label: function (context) {
+                  return `Rs. ${context.parsed.y.toLocaleString('en-IN')}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                callback: function (value, index) {
+                  const label = this.getLabelForValue(value);
+                  const maxLength = 15; // Adjust number of visible characters
+                  return label.length > maxLength
+                    ? label.slice(0, maxLength) + "…"
+                    : label;
+                },
+                maxRotation: 45,  // Slight rotation for readability
+                minRotation: 45,
+                autoSkip: false,  // Prevents skipping labels
               },
-              label: function (context) {
-                return `Rs. ${context.parsed.y.toLocaleString('en-IN')}`;
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: (value: number) => `Rs. ${value.toLocaleString('en-IN')}`
+              },
+              grid: {
+                color: "#e5e7eb",
               }
             }
           }
-        },
-        scales: {
-          x: {
-            ticks: {
-              callback: function (value, index) {
-                const label = this.getLabelForValue(value);
-                const maxLength = 15; // Adjust number of visible characters
-                return label.length > maxLength
-                  ? label.slice(0, maxLength) + "…"
-                  : label;
-              },
-              maxRotation: 45,  // Slight rotation for readability
-              minRotation: 45,
-              autoSkip: false,  // Prevents skipping labels
-            },
-          },
-          y: {
-            beginAtZero: true,
-            ticks: {
-              callback: (value: number) => `Rs. ${value.toLocaleString('en-IN')}`
-            },
-            grid: {
-              color: "#e5e7eb",
-            }
-          }
         }
-      }
-    });
+      });
 
-    topProductsChartRef.current = chart;
-  }
-
-  return () => {
-    if (topProductsChartRef.current) {
-      topProductsChartRef.current.destroy();
+      topProductsChartRef.current = chart;
     }
-  };
-}, [topProducts]);
+
+    return () => {
+      if (topProductsChartRef.current) {
+        topProductsChartRef.current.destroy();
+      }
+    };
+  }, [topProducts]);
 
 
   const handleVendorsPageChange = (newPage: number) => {
@@ -612,8 +620,8 @@ useEffect(() => {
     if (!paginated) return null;
     return (
       <div className="pagination-container">
-        <button 
-          onClick={() => onPageChange(currentPage - 1)} 
+        <button
+          onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           className="pagination-btn"
         >
@@ -622,8 +630,8 @@ useEffect(() => {
         <span className="pagination-info">
           Page {currentPage} of {paginated.totalPage} ({paginated.totalData} total)
         </span>
-        <button 
-          onClick={() => onPageChange(currentPage + 1)} 
+        <button
+          onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === paginated.totalPage}
           className="pagination-btn"
         >
@@ -639,18 +647,18 @@ useEffect(() => {
       <div>
         <label>
           Start Date:
-          <input 
-            type="date" 
-            value={startDate} 
-            onChange={onStartChange} 
+          <input
+            type="date"
+            value={startDate}
+            onChange={onStartChange}
           />
         </label>
         <label>
           End Date:
-          <input 
-            type="date" 
-            value={endDate} 
-            onChange={onEndChange} 
+          <input
+            type="date"
+            value={endDate}
+            onChange={onEndChange}
           />
         </label>
       </div>
@@ -821,6 +829,7 @@ useEffect(() => {
               )}
             </div>
           </div>
+          <RevenueByCategory />
         </main>
       </div>
     </div>
