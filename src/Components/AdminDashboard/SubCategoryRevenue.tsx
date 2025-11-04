@@ -3,17 +3,15 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContaine
 import { API_BASE_URL } from '../../config';
 
 interface RevenueData {
-    category: string;
     subcategory: string;
     revenue: string;
 }
 
-const RevenueByCategory = () => {
+const RevenueBySubCategory = () => {
     const [data, setData] = useState<RevenueData[]>([]);
 
     useEffect(() => {
-        // Fetch API data
-        fetch(`${API_BASE_URL}/api/admin/dashboard/analytics/revenue-by-category`)
+        fetch(`${API_BASE_URL}/api/admin/dashboard/analytics/revenue-by-sub-category`)
             .then((res) => res.json())
             .then((res) => {
                 console.log('API Response:', res);
@@ -24,14 +22,14 @@ const RevenueByCategory = () => {
 
     return (
         <div style={styles.container}>
-            <h1 style={styles.title}>Revenue by Category</h1>
+            <h1 style={styles.title}>Revenue by Sub Category</h1>
             <ResponsiveContainer width="100%" height={400}>
                 <BarChart
                     data={data.map(d => ({ ...d, revenue: parseFloat(d.revenue) }))}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="category" />
+                    <XAxis dataKey="subcategory" />
                     <YAxis />
                     <Tooltip />
                     <Bar dataKey="revenue" fill="#4f46e5" />
@@ -58,4 +56,4 @@ const styles: { [key: string]: React.CSSProperties } = {
     },
 };
 
-export default RevenueByCategory;
+export default RevenueBySubCategory;

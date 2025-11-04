@@ -7,6 +7,7 @@ import { useDocketHeight } from "../Hook/UseDockerHeight";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import VendorHeader from "./VendorHeader";
 import axiosInstance from "../api/axiosInstance";
+import TopProducts from "./VendorDashboard/TopProducts";
 
 interface DashboardProps {
   version?: string;
@@ -119,13 +120,13 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
       let allData: any[] = [];
       let currentPage = 1;
       let totalPages = 1;
-      
+
       do {
         const response = await axiosInstance.get("/api/vendor/dashboard/low-stock", {
           headers: { Authorization: `Bearer ${authState.token}` },
           params: { page: currentPage },
         });
-        
+
         const responseData = response.data;
         allData = [...allData, ...responseData.data];
         totalPages = responseData.totalPage;
@@ -151,7 +152,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
   // Initialize Chart.js for Total Sales Chart
   useEffect(() => {
     const ctx = document.getElementById("sales-chart") as HTMLCanvasElement;
-      console.log("saless",salesData)
+    console.log("saless", salesData)
     if (ctx && salesData && salesData.labels.length > 0) {
       if (chartRef.current) {
         chartRef.current.destroy();
@@ -305,33 +306,33 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
               title="Total Products"
               value={statsData?.totalProducts?.toString() || "0"}
               iconType="products"
-              // change={8.5}
-              // trend="up"
-              // timeframe="from yesterday"
+            // change={8.5}
+            // trend="up"
+            // timeframe="from yesterday"
             />
             <StatsCard
               title="Total Orders"
               value={statsData?.totalOrders?.toString() || "0"}
               iconType="orders"
-              // change={1.3}
-              // trend="up"
-              // timeframe="from past week"
+            // change={1.3}
+            // trend="up"
+            // timeframe="from past week"
             />
             <StatsCard
               title="Total Sales"
               value={`Rs ${statsData?.totalSales?.toFixed(2) || "0.00"}`}
               iconType="sales"
-              // change={4.3}
-              // trend="down"
-              // timeframe="from yesterday"
+            // change={4.3}
+            // trend="down"
+            // timeframe="from yesterday"
             />
             <StatsCard
               title="Total Pending"
               value={statsData?.totalPendingOrders?.toString() || "0"}
               iconType="pending"
-              // change={1.8}
-              // trend="up"
-              // timeframe="from yesterday"
+            // change={1.8}
+            // trend="up"
+            // timeframe="from yesterday"
             />
           </div>
           {/* Total Sales Chart Section */}
@@ -365,8 +366,8 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
               <div className="table-header-with-button">
                 <h3>Low Stock Products</h3>
                 {lowStockData && lowStockData.data.length > 10 && (
-                  <button 
-                    className="view-more-button" 
+                  <button
+                    className="view-more-button"
                     onClick={handleViewMore}
                   >
                     {showAllLowStock ? 'Show Less' : `View More (${lowStockData.data.length - 10} more)`}
@@ -386,7 +387,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
                         </tr>
                       </thead>
                       <tbody>
-                        {console.log("low",lowStockData)}
+                        {console.log("low", lowStockData)}
                         {displayedData.map((item) => (
                           <tr key={item.productid}>
                             <td>{item.productid}</td>
@@ -404,6 +405,8 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
               )}
             </div>
           </div>
+
+          <TopProducts />
         </main>
       </div>
     </div>

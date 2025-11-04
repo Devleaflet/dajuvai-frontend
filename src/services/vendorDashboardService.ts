@@ -4,7 +4,7 @@ class VendorDashboardService {
   private static instance: VendorDashboardService;
   private baseUrl = `${API_BASE_URL}/api`;
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): VendorDashboardService {
     if (!VendorDashboardService.instance) {
@@ -56,6 +56,19 @@ class VendorDashboardService {
   async getVendorStats(token: string) {
     const realToken = token || localStorage.getItem('vendorToken');
     const response = await fetch(`${this.baseUrl}/vendor/dashboard/stats`, {
+      headers: {
+        Authorization: `Bearer ${realToken}`,
+        "Content-Type": "application/json",
+        accept: "application/json",
+      },
+    });
+    if (!response.ok) throw new Error("Failed to fetch stats");
+    return response.json();
+  }
+
+  async getTopsellingProduct(token: string) {
+    const realToken = token || localStorage.getItem('vendorToken');
+    const response = await fetch(`${this.baseUrl}/vendor/dashboard/analytics/top-selling-products`, {
       headers: {
         Authorization: `Bearer ${realToken}`,
         "Content-Type": "application/json",

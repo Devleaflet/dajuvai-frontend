@@ -8,6 +8,8 @@ import { useAuth } from "../context/AuthContext";
 import axiosInstance from "../api/axiosInstance";
 import Skeleton from "../Components/Skeleton/Skeleton";
 import RevenueByCategory from "../Components/AdminDashboard/CategoryRevenue";
+import RevenueBySubCategory from "../Components/AdminDashboard/SubCategoryRevenue";
+import RevenueByVendor from "../Components/AdminDashboard/VendorRevenue";
 
 const STATS_CACHE_KEY = "admin_dashboard_stats";
 const REVENUE_CACHE_KEY = "admin_dashboard_revenue";
@@ -22,6 +24,7 @@ interface StatData {
   totalVendors: number;
   totalProducts: number;
   totalDeliveredRevenue: number;
+  totalShippingRevenue: number;
 }
 
 interface RevenueData {
@@ -139,6 +142,8 @@ export function AdminDashboard() {
       const response = await axiosInstance.get("/api/admin/dashboard/stats", {
         headers: { Authorization: `Bearer ${token}` },
       });
+      console.log("----------stats------------")
+      console.log(response)
       if (response.data && response.data.success) {
         setStats(response.data.data);
         localStorage.setItem(
@@ -754,6 +759,14 @@ export function AdminDashboard() {
                   trend="up"
                   timeframe=""
                 />
+                <StatsCard
+                  title="Total shipping revenue"
+                  value={`Rs. ${Number(stats.totalShippingRevenue).toLocaleString("en-IN")}`}
+                  iconType="sales"
+                  change={0}
+                  trend="up"
+                  timeframe=""
+                />
               </>
             ) : null}
           </div>
@@ -829,7 +842,11 @@ export function AdminDashboard() {
               )}
             </div>
           </div>
-          <RevenueByCategory />
+          <div>
+            <RevenueByCategory />
+            <RevenueBySubCategory />
+            <RevenueByVendor />
+          </div>
         </main>
       </div>
     </div>
