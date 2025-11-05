@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { API_BASE_URL } from '../../config';
+import axiosInstance from '../../api/axiosInstance';
+import { useVendorAuth } from '../../context/VendorAuthContext';
 
 interface TopProductData {
     productId: number;
@@ -10,34 +12,37 @@ interface TopProductData {
 }
 
 const TopProducts = () => {
-    const [data, setData] = useState<TopProductData[]>([]);
+    const { authState } = useVendorAuth();
 
-    useEffect(() => {
-        fetch(`${API_BASE_URL}/api/vendor/dashboard/analytics/top-selling-products`)
-            .then(res => res.json())
-            .then(res => {
-                if (Array.isArray(res)) {
-                    const formattedData = res.map((d: TopProductData) => ({
-                        productId: d.productId,
-                        productName: d.productName,
-                        totalSales: Number(d.totalSales),
-                        totalquantity: Number(d.totalquantity),
-                    }));
-                    setData(formattedData);
-                } else {
-                    setData([]);
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                setData([]);
-            });
-    }, []);
+    // ✅ Fetch function uses axiosInstance (token auto-added via interceptor)
+    const fetchTopProducts = async (): Promise<TopProductData[]> => {
+        const response = await axiosInstance.get(
+            '/api/vendor/dashboard/analytics/top-selling-products',
+            {
+                headers: {
+                    Authorization: `Bearer ${authState?.token}`, // ensures it's explicitly sent
+                },
+            }
+        );
+        return response.data || [];
+    };
+
+    // ✅ useQuery from TanStack for caching, refetching, etc.
+    const { data, isLoading, isError } = useQuery({
+        queryKey: ['topProducts', authState?.token],
+        queryFn: fetchTopProducts,
+        enabled: !!authState?.token, // run only when token is available
+    });
 
     return (
         <div style={styles.container}>
             <h2 style={styles.title}>Top Selling Products</h2>
-            {data.length > 0 ? (
+
+            {isLoading ? (
+                <p style={styles.noData}>Loading...</p>
+            ) : isError ? (
+                <p style={styles.noData}>Error fetching data</p>
+            ) : data && data.length > 0 ? (
                 <ResponsiveContainer width="100%" height={350}>
                     <BarChart
                         data={data}
@@ -61,9 +66,12 @@ const TopProducts = () => {
                         <Tooltip
                             cursor={{ fill: 'rgba(200,200,200,0.1)' }}
                             formatter={(value: number) => `Rs. ${value.toLocaleString()}`}
-                            contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}
+                            contentStyle={{
+                                borderRadius: 8,
+                                border: 'none',
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                            }}
                         />
-                        {/* Bars */}
                         <Bar
                             dataKey="totalSales"
                             fill="#5C6BC0"
@@ -71,7 +79,6 @@ const TopProducts = () => {
                             barSize={18}
                             name="Sales"
                         />
-
                     </BarChart>
                 </ResponsiveContainer>
             ) : (

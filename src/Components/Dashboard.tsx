@@ -8,31 +8,13 @@ import { useVendorAuth } from "../context/VendorAuthContext";
 import VendorHeader from "./VendorHeader";
 import axiosInstance from "../api/axiosInstance";
 import TopProducts from "./VendorDashboard/TopProducts";
+import VendorRevenueByCategory from "./VendorDashboard/RevenueByCategory";
+import VendorRevenueBySubCategory from "./VendorDashboard/RevenueBySubcategory";
 
 interface DashboardProps {
   version?: string;
 }
 
-interface TotalSalesData {
-  vendorId: number;
-  totalSales: number;
-}
-
-interface LowStockData {
-  success: boolean;
-  currentPage: string;
-  totalPage: number;
-  totalData: number;
-  data: Array<{
-    status: string;
-    productid: number;
-    productname: string;
-    vendorid: number;
-    vendorname: string;
-    stock: number;
-    variantStatus: string;
-  }>;
-}
 
 export function Dashboard({ version = "123456" }: DashboardProps) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -356,6 +338,8 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
                   <option value="7">Last 7 Days</option>
                   <option value="10">Last 10 Days</option>
                   <option value="30">Last 30 Days</option>
+                  <option value="60">Last 30 Days</option>
+                  <option value="180">Last 6 months</option>
                 </select>
               </div>
             </div>
@@ -407,6 +391,8 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
           </div>
 
           <TopProducts />
+          <VendorRevenueByCategory />
+          <VendorRevenueBySubCategory />
         </main>
       </div>
     </div>
