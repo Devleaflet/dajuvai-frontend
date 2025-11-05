@@ -711,26 +711,25 @@
   }
 
   /* Hide less critical columns on mobile */
-  .low-stock-table th:nth-child(3), /* Vendor ID */
-  .low-stock-table td:nth-child(3),
-  .low-stock-table th:nth-child(6), /* Variant Status */
-  .low-stock-table td:nth-child(6) {
+  .low-stock-table th:nth-child(1), /* Product ID */
+  .low-stock-table td:nth-child(1) {
     display: none;
   }
 
   /* Ensure essential columns are prioritized and readable */
-  .low-stock-table th:nth-child(1), /* Product ID */
-  .low-stock-table td:nth-child(1),
   .low-stock-table th:nth-child(2), /* Product Name */
-  .low-stock-table td:nth-child(2),
-  .low-stock-table th:nth-child(5), /* Stock */
-  .low-stock-table td:nth-child(5) {
-    min-width: 100px;
+  .low-stock-table td:nth-child(2) {
+    min-width: 150px;
   }
 
-  .low-stock-table th:nth-child(4), /* Vendor Name */
+  .low-stock-table th:nth-child(3), /* Stock */
+  .low-stock-table td:nth-child(3) {
+    min-width: 80px;
+  }
+
+  .low-stock-table th:nth-child(4), /* Variant Status */
   .low-stock-table td:nth-child(4) {
-    min-width: 120px;
+    min-width: 100px;
   }
 }
 

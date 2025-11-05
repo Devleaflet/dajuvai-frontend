@@ -68,7 +68,6 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
         );
       }
       const salesResults = await Promise.all(salesPromises);
-      console.log("salesress", salesResults);
       const labels: string[] = [];
       const totals: number[] = [];
       for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
@@ -115,8 +114,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
         currentPage++;
       } while (currentPage <= totalPages);
 
-      console.log("dataaaaa", { ...lowStockData, data: allData });
-      return { ...lowStockData, data: allData, totalData: allData.length };
+      return { data: allData, totalData: allData.length };
     },
     enabled: !!authState.token,
     staleTime: 5 * 60 * 1000,
@@ -134,7 +132,6 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
   // Initialize Chart.js for Total Sales Chart
   useEffect(() => {
     const ctx = document.getElementById("sales-chart") as HTMLCanvasElement;
-    console.log("saless", salesData)
     if (ctx && salesData && salesData.labels.length > 0) {
       if (chartRef.current) {
         chartRef.current.destroy();
@@ -148,11 +145,11 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
             {
               label: "Total Sales",
               data: salesData.totals,
-              borderColor: "#3B82F6",
-              backgroundColor: "rgba(59, 130, 246, 0.2)",
+              borderColor: "#F97316",
+              backgroundColor: "rgba(249, 115, 22, 0.2)",
               borderWidth: 2,
               pointRadius: 4,
-              pointBackgroundColor: "#3B82F6",
+              pointBackgroundColor: "#F97316",
               tension: 0.4,
             },
             {
@@ -163,7 +160,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
               borderDash: [5, 5],
               pointRadius: 0,
               tension: 0.4,
-              borderColor: "rgba(59, 130, 246, 0.5)",
+              borderColor: "rgba(249, 115, 22, 0.5)",
             },
           ],
         },
@@ -251,12 +248,28 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
                 </div>
               ))}
             </div>
-            {/* Chart Section Skeleton */}
+            {/* Charts Section Skeleton */}
             <div className="dashboard__two-columns">
               <div className="dashboard__column">
                 <div className="section-card revenue-analytics">
                   <div className="skeleton" style={{ width: "100%", height: "300px" }}></div>
                 </div>
+              </div>
+              <div className="dashboard__column">
+                <div className="section-card">
+                  <div className="skeleton" style={{ width: "100%", height: "300px" }}></div>
+                </div>
+              </div>
+            </div>
+            {/* Full Width Sections Skeleton */}
+            <div style={{ marginTop: "32px" }}>
+              <div className="section-card">
+                <div className="skeleton" style={{ width: "100%", height: "250px" }}></div>
+              </div>
+            </div>
+            <div style={{ marginTop: "24px" }}>
+              <div className="section-card">
+                <div className="skeleton" style={{ width: "100%", height: "250px" }}></div>
               </div>
             </div>
             {/* Low Stock Table Skeleton */}
@@ -317,10 +330,16 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
             // timeframe="from yesterday"
             />
           </div>
-          {/* Total Sales Chart Section */}
+          {/* Charts Row */}
           <div className="dashboard__two-columns">
             <div className="dashboard__column">
               <div className="section-card revenue-analytics">
+                <h3
+                  style={{
+                    marginBottom:"5px",
+                    textAlign:"center"
+                  }}
+                >Total Sales</h3>
                 <div className="revenue-analytics__legend">
                   <div className="legend-item">
                     <div className="legend-item__color legend-item__color--revenue"></div>
@@ -338,10 +357,22 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
                   <option value="7">Last 7 Days</option>
                   <option value="10">Last 10 Days</option>
                   <option value="30">Last 30 Days</option>
-                  <option value="60">Last 30 Days</option>
+                  <option value="60">Last 60 Days</option>
                   <option value="180">Last 6 months</option>
                 </select>
               </div>
+            </div>
+            <div className="dashboard__column">
+              <VendorRevenueByCategory />
+            </div>
+          </div>
+          <div className="dashboard__two-columns">
+            <div className="dashboard__column">
+          <TopProducts />
+            </div>
+            <div className="dashboard__column">
+          <VendorRevenueBySubCategory />
+
             </div>
           </div>
           {/* Low Stock Table Section */}
@@ -371,7 +402,6 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
                         </tr>
                       </thead>
                       <tbody>
-                        {console.log("low", lowStockData)}
                         {displayedData.map((item) => (
                           <tr key={item.productid}>
                             <td>{item.productid}</td>
@@ -390,9 +420,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
             </div>
           </div>
 
-          <TopProducts />
-          <VendorRevenueByCategory />
-          <VendorRevenueBySubCategory />
+          
         </main>
       </div>
     </div>
