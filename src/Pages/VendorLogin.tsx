@@ -9,6 +9,7 @@ import close from "../assets/close.png";
 import { Toaster, toast } from "react-hot-toast";
 import popup from "../assets/auth.jpg";
 
+
 interface VendorLoginProps {
   isOpen: boolean;
   onClose: () => void;
@@ -87,6 +88,7 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
       const response = await vendorService.login(userData);
       if (response.success && response.token && response.vendor) {
         vendorLogin(response.token, response.vendor);
+        console.log("----------token-------", response.token)
         navigate("/dashboard");
         onClose();
       } else if (response.message === "Vendor not approved") {

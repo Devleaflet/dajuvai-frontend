@@ -13,25 +13,30 @@ interface TopProductData {
 
 const TopProducts = () => {
     const { authState } = useVendorAuth();
+    const { token, isAuthenticated } = authState;
 
-    // ✅ Fetch function uses axiosInstance (token auto-added via interceptor)
+    if (!isAuthenticated) {
+        console.log("User is not authenticated")
+    } else {
+        console.log("--------Token---------", token)
+    }
+
     const fetchTopProducts = async (): Promise<TopProductData[]> => {
         const response = await axiosInstance.get(
             '/api/vendor/dashboard/analytics/top-selling-products',
             {
                 headers: {
-                    Authorization: `Bearer ${authState?.token}`, // ensures it's explicitly sent
+                    Authorization: `Bearer ${token}`,
                 },
             }
         );
         return response.data || [];
     };
 
-    // ✅ useQuery from TanStack for caching, refetching, etc.
     const { data, isLoading, isError } = useQuery({
         queryKey: ['topProducts', authState?.token],
         queryFn: fetchTopProducts,
-        enabled: !!authState?.token, // run only when token is available
+        enabled: !!authState?.token,
     });
 
     return (

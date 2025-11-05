@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { API_BASE_URL } from '../../config';
+import { useVendorAuth } from '../../context/VendorAuthContext';
 
 interface RevenueData {
     category: string;
@@ -9,9 +10,21 @@ interface RevenueData {
 
 const VendorRevenueByCategory = () => {
     const [data, setData] = useState<RevenueData[]>([]);
+    const { authState } = useVendorAuth();
+    const { token, isAuthenticated } = authState;
+
+    if (!isAuthenticated) {
+        console.log("User is not authenticated")
+    } else {
+        console.log("--------Token---------", token)
+    }
 
     useEffect(() => {
-        fetch(`${API_BASE_URL}/api/vendor/dashboard/analytics/revenue-by-category`)
+        fetch(`${API_BASE_URL}/api/vendor/dashboard/analytics/revenue-by-category`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        })
             .then((res) => res.json())
             .then((res) => {
                 console.log('API Response:', res);
