@@ -842,9 +842,17 @@ export function AdminDashboard() {
               )}
             </div>
           </div>
-          <div>
+          <div className="dashboard__two-columns">
+            <div className="dashboard__column">
             <RevenueByCategory />
+
+            </div>
+            <div className="dashboard__column">
+
             <RevenueBySubCategory />
+            </div>
+          </div>
+          <div>
             <RevenueByVendor />
           </div>
         </main>

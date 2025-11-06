@@ -9,20 +9,49 @@ interface RevenueData {
 
 const RevenueBySubCategory = () => {
     const [data, setData] = useState<RevenueData[]>([]);
+    const today = new Date().toISOString().split('T')[0];
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const defaultStartDate = oneMonthAgo.toISOString().split('T')[0];
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
 
     useEffect(() => {
-        fetch(`${API_BASE_URL}/api/admin/dashboard/analytics/revenue-by-sub-category`)
+        let url = `${API_BASE_URL}/api/admin/dashboard/analytics/revenue-by-sub-category`;
+        if (startDate && endDate) {
+            url += `?startDate=${startDate}&endDate=${endDate}`;
+        }
+        // Fetch API data
+        fetch(url)
             .then((res) => res.json())
             .then((res) => {
                 console.log('API Response:', res);
                 setData(res.data);
             })
             .catch((err) => console.error(err));
-    }, []);
+    }, [startDate, endDate]);
 
     return (
         <div style={styles.container}>
             <h1 style={styles.title}>Revenue by Sub Category</h1>
+            <div style={styles.labelContainer}>
+                <label style={styles.label}>Start Date:</label>
+                <label style={styles.label}>End Date:</label>
+            </div>
+            <div style={styles.filterContainer}>
+                <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    style={styles.dateInput}
+                />
+                <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    style={styles.dateInput}
+                />
+            </div>
             <ResponsiveContainer width="100%" height={400}>
                 <BarChart
                     data={data.map(d => ({ ...d, revenue: parseFloat(d.revenue) }))}
@@ -53,6 +82,29 @@ const styles: { [key: string]: React.CSSProperties } = {
         fontWeight: 'bold',
         marginBottom: '20px',
         textAlign: 'center',
+    },
+    filterContainer: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '10px',
+        marginBottom: '20px',
+    },
+    labelContainer:{
+        display:'flex',
+        justifyContent:"space-between"
+    },
+    label: {
+        fontSize: '14px',
+        fontWeight: '500',
+        color: '#374151',
+    },
+    dateInput: {
+        padding: '8px 12px',
+        border: '1px solid #d1d5db',
+        borderRadius: '4px',
+        fontSize: '14px',
+        backgroundColor: '#fff',
     },
 };
 
