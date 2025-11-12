@@ -184,7 +184,7 @@ const Checkout: React.FC = () => {
   const availablePaymentMethods = [
     { id: 'CASH_ON_DELIVERY', name: 'Cash on Delivery' },
     { id: 'ESEWA', name: 'eSewa' },
-    { id: 'NPX', name: 'Nepal Payment Express (NPX)' },
+    { id: 'NPX', name: 'Nepal Payment System ' },
   ];
 
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);

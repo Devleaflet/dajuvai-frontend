@@ -14,6 +14,10 @@ const EsewaPaymentFailure: React.FC = () => {
     const orderId = search.get('oid');
 
     useEffect(() => {
+
+        console.log('orderId from URL:', orderId);
+        console.log('token from AuthContext:', token);
+        
         const handleFailure = async () => {
             if (!orderId) {
                 setAlertMessage('Missing order ID');
@@ -22,7 +26,7 @@ const EsewaPaymentFailure: React.FC = () => {
             }
 
             try {
-                const response = await fetch(`${API_BASE_URL}/api/order/esewa/fail`, {
+                const response = await fetch(`${API_BASE_URL}/api/order/payment/cancel`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
