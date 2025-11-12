@@ -71,7 +71,7 @@ const NepalPaymentGateway: React.FC = () => {
   // Initialize amount with totalAmount from order if available
   useEffect(() => {
     if (totalAmount) {
-      setAmount(totalAmount.finalTotal.toString());
+      setAmount(totalAmount?.finalTotal?.toString());
     }
   }, [totalAmount]);
 
