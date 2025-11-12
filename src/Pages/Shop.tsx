@@ -1,20 +1,21 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
-import Navbar from "../Components/Navbar";
-import CategorySlider from "../Components/CategorySlider";
-import Footer from "../Components/Footer";
-import PageLoader from "../Components/PageLoader";
-import { useQuery } from "@tanstack/react-query";
-import { fetchReviewOf } from "../api/products";
-import "../Styles/Shop.css";
-import CategoryService from "../services/categoryService";
-import { useAuth } from "../context/AuthContext";
-import { useUI } from "../context/UIContext";
-import type { Product } from "../Components/Types/Product";
-import ProductCard1 from "../ALT/ProductCard1";
-import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
-import { API_BASE_URL } from "../config";
-import { Search, ChevronDown, ChevronUp, Settings2 } from "lucide-react";
+import { useQuery } from '@tanstack/react-query';
+import { toInteger } from 'lodash';
+import { ChevronDown, ChevronUp, Search, Settings2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import ProductCard1 from '../ALT/ProductCard1';
+import { fetchReviewOf } from '../api/products';
+import CategorySlider from '../Components/CategorySlider';
+import Footer from '../Components/Footer';
+import Navbar from '../Components/Navbar';
+import PageLoader from '../Components/PageLoader';
+import type { Product } from '../Components/Types/Product';
+import { API_BASE_URL } from '../config';
+import { useAuth } from '../context/AuthContext';
+import { useUI } from '../context/UIContext';
+import CategoryService from '../services/categoryService';
+import ProductCardSkeleton from '../skeleton/ProductCardSkeleton';
+import '../Styles/Shop.css';
 // Interfaces (unchanged)
 interface Category {
 	id: number;
@@ -32,6 +33,9 @@ interface ProductFilters {
 	dealId?: string | undefined;
 	bannerId?: string | undefined;
 	sort?: string | undefined;
+	page?: number | undefined;
+	limit?: number | undefined;
+	search?: string | undefined;
 }
 interface ApiProduct {
 	id: number;
@@ -40,9 +44,9 @@ interface ApiProduct {
 	basePrice: number | null;
 	stock: number;
 	discount: number | null;
-	discountType: "PERCENTAGE" | "FLAT" | null;
+	discountType: 'PERCENTAGE' | 'FLAT' | null;
 	size: string[];
-	status: "AVAILABLE" | "UNAVAILABLE";
+	status: 'AVAILABLE' | 'UNAVAILABLE';
 	productImages: string[];
 	inventory: {
 		sku: string;
@@ -66,7 +70,7 @@ interface ApiProduct {
 		images?: string[];
 		attributes?: Record<string, any>;
 		discount?: number | string;
-		discountType?: "PERCENTAGE" | "FLAT";
+		discountType?: 'PERCENTAGE' | 'FLAT';
 		basePrice?: number | string;
 		calculatedPrice?: number;
 		[key: string]: any;
@@ -108,30 +112,30 @@ interface ApiProduct {
 // Utility functions (unchanged)
 const toNumber = (v: any): number => {
 	if (v === undefined || v === null) return 0;
-	const n = typeof v === "string" ? parseFloat(v) : Number(v);
+	const n = typeof v === 'string' ? parseFloat(v) : Number(v);
 	return isFinite(n) ? n : 0;
 };
 const calculatePrice = (base: any, disc?: any, discType?: string): number => {
 	const baseNum = toNumber(base);
 	if (!disc || !discType) return baseNum;
-	const d = typeof disc === "string" ? parseFloat(disc) : Number(disc);
+	const d = typeof disc === 'string' ? parseFloat(disc) : Number(disc);
 	if (!isFinite(d)) return baseNum;
-	if (discType === "PERCENTAGE") return baseNum * (1 - d / 100);
-	if (discType === "FIXED" || discType === "FLAT") return baseNum - d;
+	if (discType === 'PERCENTAGE') return baseNum * (1 - d / 100);
+	if (discType === 'FIXED' || discType === 'FLAT') return baseNum - d;
 	return baseNum;
 };
 const apiRequest = async (
 	endpoint: string,
 	token: string | null | undefined = undefined
 ) => {
-	const url = endpoint.startsWith("http")
+	const url = endpoint.startsWith('http')
 		? endpoint
 		: `${API_BASE_URL}${endpoint}`;
 	const response = await fetch(url, {
 		headers: {
-			Authorization: token ? `Bearer ${token}` : "",
-			"Content-Type": "application/json",
-			Accept: "application/json",
+			Authorization: token ? `Bearer ${token}` : '',
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
 		},
 	});
 	if (!response.ok) {
@@ -139,12 +143,12 @@ const apiRequest = async (
 			`API request failed: ${response.status} ${response.statusText}`
 		);
 	}
-	const contentType = response.headers.get("content-type");
-	if (!contentType || !contentType.includes("application/json")) {
+	const contentType = response.headers.get('content-type');
+	if (!contentType || !contentType.includes('application/json')) {
 		const textResponse = await response.text();
 		if (
-			textResponse.trim().startsWith("<!doctype html") ||
-			textResponse.trim().startsWith("<html")
+			textResponse.trim().startsWith('<!doctype html') ||
+			textResponse.trim().startsWith('<html')
 		) {
 			throw new Error(
 				`API endpoint not found. The server returned HTML instead of JSON.`
@@ -157,19 +161,31 @@ const apiRequest = async (
 const buildQueryParams = (filters: ProductFilters): string => {
 	const params = new URLSearchParams();
 	if (filters.categoryId !== undefined && filters.categoryId !== null) {
-		params.append("categoryId", filters.categoryId.toString());
+		params.append('categoryId', filters.categoryId.toString());
 	}
 	if (filters.subcategoryId !== undefined && filters.subcategoryId !== null) {
-		params.append("subcategoryId", filters.subcategoryId.toString());
+		params.append('subcategoryId', filters.subcategoryId.toString());
 	}
 	if (filters.brandId !== undefined && filters.brandId !== null) {
-		params.append("brandId", filters.brandId);
+		params.append('brandId', filters.brandId);
 	}
 	if (filters.dealId !== undefined && filters.dealId !== null) {
-		params.append("dealId", filters.dealId);
+		params.append('dealId', filters.dealId);
 	}
 	if (filters.bannerId !== undefined && filters.bannerId !== null) {
-		params.append("bannerId", filters.bannerId);
+		params.append('bannerId', filters.bannerId);
+	}
+	if (filters.sort !== undefined && filters.sort !== 'all') {
+		params.append('sort', filters.sort);
+	}
+	if (filters.page !== undefined) {
+		params.append('page', filters.page.toString());
+	}
+	if (filters.limit !== undefined) {
+		params.append('limit', filters.limit.toString());
+	}
+	if (filters.search !== undefined) {
+		params.append('search', filters.search);
 	}
 	return params.toString();
 };
@@ -182,10 +198,45 @@ const fetchProductsWithFilters = async (
 			`/api/banners/${filters.bannerId}`,
 			token
 		);
-		if (bannerResponse?.data?.selectedProducts) {
-			return { success: true, data: bannerResponse.data.selectedProducts };
+		let selectedProducts = bannerResponse?.data?.selectedProducts || [];
+		// Client-side search if provided
+		if (filters.search) {
+			const query = filters.search.toLowerCase();
+			selectedProducts = selectedProducts.filter(
+				(item: ApiProduct) =>
+					item.name.toLowerCase().includes(query) ||
+					item.description.toLowerCase().includes(query) ||
+					(item.subcategory?.category?.name || '')
+						.toLowerCase()
+						.includes(query) ||
+					(item.brand?.name || '').toLowerCase().includes(query)
+			);
 		}
-		return { success: true, data: [] };
+		// Client-side sort if provided
+		if (filters.sort && filters.sort !== 'all') {
+			selectedProducts = [...selectedProducts].sort((a, b) => {
+				const priceA = calculatePrice(a.basePrice, a.discount, a.discountType);
+				const priceB = calculatePrice(b.basePrice, b.discount, b.discountType);
+				if (filters.sort === 'low-to-high') return priceA - priceB;
+				if (filters.sort === 'high-to-low') return priceB - priceA;
+				return 0;
+			});
+		}
+		// Client-side pagination
+		const totalItems = selectedProducts.length;
+		const page = filters.page || 1;
+		const limit = filters.limit || 40;
+		const start = (page - 1) * limit;
+		const paginatedProducts = selectedProducts.slice(start, start + limit);
+		return {
+			success: true,
+			data: paginatedProducts,
+			pagination: {
+				current_page: page,
+				total_pages: Math.ceil(totalItems / limit),
+				total_items: totalItems,
+			},
+		};
 	}
 
 	const apiFilters = {
@@ -194,27 +245,31 @@ const fetchProductsWithFilters = async (
 		brandId: filters.brandId,
 		dealId: filters.dealId,
 		bannerId: filters.bannerId,
+		sort: filters.sort,
+		page: filters.page,
+		limit: filters.limit,
+		search: filters.search,
 	};
 
 	const queryParams = buildQueryParams(apiFilters);
 	const endpoint = `/api/categories/all/products${
-		queryParams ? `?${queryParams}` : ""
+		queryParams ? `?${queryParams}` : ''
 	}`;
-	console.log("🔍 Fetching products with filters:", {
+	console.log('🔍 Fetching products with filters:', {
 		filters: apiFilters,
 		originalFilters: filters,
 		queryParams,
 		endpoint,
 		fullUrl: `${API_BASE_URL}${endpoint}`,
-		token: token ? "Present" : "Not present",
+		token: token ? 'Present' : 'Not present',
 	});
 	try {
 		const response = await apiRequest(endpoint, token);
-		console.log("✅ Products API response:", response);
+		console.log('✅ Products API response:', response.meta.total);
 		return response;
 	} catch (error) {
-		console.error("❌ Error fetching products:", error);
-		console.error("❌ Request details:", {
+		console.error('❌ Error fetching products:', error);
+		console.error('❌ Request details:', {
 			endpoint,
 			fullUrl: `${API_BASE_URL}${endpoint}`,
 			filters: apiFilters,
@@ -229,7 +284,7 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 		const { averageRating, reviews } = await fetchReviewOf(item.id);
 		const isDev = Boolean((import.meta as any)?.env?.DEV);
 		if (isDev)
-			console.log("Processing product:", {
+			console.log('Processing product:', {
 				id: item.id,
 				name: item.name,
 				hasVariants: !!item.variants?.length,
@@ -241,26 +296,26 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 				})),
 			});
 		const processImageUrl = (imgUrl: string): string => {
-			if (!imgUrl) return "";
+			if (!imgUrl) return '';
 			const trimmed = imgUrl.trim();
-			if (!trimmed) return "";
-			if (trimmed.startsWith("//")) return `https:${trimmed}`;
+			if (!trimmed) return '';
+			if (trimmed.startsWith('//')) return `https:${trimmed}`;
 			if (
-				trimmed.startsWith("http://") ||
-				trimmed.startsWith("https://") ||
-				trimmed.startsWith("/")
+				trimmed.startsWith('http://') ||
+				trimmed.startsWith('https://') ||
+				trimmed.startsWith('/')
 			) {
 				return trimmed;
 			}
-			const base = API_BASE_URL.replace(/\/?api\/?$/, "");
-			const needsSlash = !trimmed.startsWith("/");
-			const url = `${base}${needsSlash ? "/" : ""}${trimmed}`;
-			return url.replace(/([^:]\/)\/+/g, "$1/");
+			const base = API_BASE_URL.replace(/\/?api\/?$/, '');
+			const needsSlash = !trimmed.startsWith('/');
+			const url = `${base}${needsSlash ? '/' : ''}${trimmed}`;
+			return url.replace(/([^:]\/)\/+/g, '$1/');
 		};
 		const processedProductImages = (item.productImages || [])
 			.filter(
 				(img): img is string =>
-					!!img && typeof img === "string" && img.trim() !== ""
+					!!img && typeof img === 'string' && img.trim() !== ''
 			)
 			.map(processImageUrl)
 			.filter(Boolean);
@@ -273,12 +328,12 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 			const normalizedImages = rawImages
 				.filter(
 					(img): img is string =>
-						!!img && typeof img === "string" && img.trim() !== ""
+						!!img && typeof img === 'string' && img.trim() !== ''
 				)
 				.map(processImageUrl)
 				.filter(Boolean);
 			const primaryImage =
-				typeof (variant as any).image === "string" &&
+				typeof (variant as any).image === 'string' &&
 				(variant as any).image.trim()
 					? processImageUrl((variant as any).image)
 					: normalizedImages[0] || undefined;
@@ -290,17 +345,17 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 		});
 		const variantImagePool = processedVariants
 			.flatMap((v) => [v.image, ...(v.images || [])])
-			.filter((x): x is string => typeof x === "string" && x.length > 0);
+			.filter((x): x is string => typeof x === 'string' && x.length > 0);
 		const getDisplayImage = () => {
 			if (processedProductImages.length > 0) {
 				return processedProductImages[0];
 			}
 			const allVariantImages = processedVariants
 				.flatMap((v) => [v.image, ...(v.images || [])])
-				.filter((x): x is string => typeof x === "string" && x.length > 0);
+				.filter((x): x is string => typeof x === 'string' && x.length > 0);
 			if (allVariantImages.length > 0) return allVariantImages[0];
 			if (isDev)
-				console.log("No valid images found for product, using default image");
+				console.log('No valid images found for product, using default image');
 			return phone;
 		};
 		const displayImage = getDisplayImage();
@@ -348,10 +403,10 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 			description: item.description,
 			originalPrice: originalPriceNum.toString(),
 			discount: item.discount ? `${item.discount}` : undefined,
-			discountPercentage: item.discount ? `${item.discount}%` : "0%",
+			discountPercentage: item.discount ? `${item.discount}%` : '0%',
 			price: displayPriceNum.toString(),
 			rating: Number(averageRating) || 0,
-			ratingCount: reviews?.length?.toString() || "0",
+			ratingCount: reviews?.length?.toString() || '0',
 			isBestSeller: false,
 			freeDelivery: true,
 			image: displayImage,
@@ -362,37 +417,37 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 					? variantImagePool
 					: [phone],
 			variants: processedVariants,
-			category: item.subcategory?.category?.name || "Misc",
+			category: item.subcategory?.category?.name || 'Misc',
 			subcategory: item.subcategory,
-			brand: item.brand?.name || "Unknown",
+			brand: item.brand?.name || 'Unknown',
 			brand_id: item.brand?.id || null,
-			status: item.status === "UNAVAILABLE" ? "OUT_OF_STOCK" : "AVAILABLE",
+			status: item.status === 'UNAVAILABLE' ? 'OUT_OF_STOCK' : 'AVAILABLE',
 			stock: item.stock || 0,
 		};
 	} catch (error) {
 		const isDev = Boolean((import.meta as any)?.env?.DEV);
-		if (isDev) console.error("Error processing product:", error);
+		if (isDev) console.error('Error processing product:', error);
 		const processImageUrl = (imgUrl: string): string => {
-			if (!imgUrl) return "";
+			if (!imgUrl) return '';
 			const trimmed = imgUrl.trim();
-			if (!trimmed) return "";
-			if (trimmed.startsWith("//")) return `https:${trimmed}`;
+			if (!trimmed) return '';
+			if (trimmed.startsWith('//')) return `https:${trimmed}`;
 			if (
-				trimmed.startsWith("http://") ||
-				trimmed.startsWith("https://") ||
-				trimmed.startsWith("/")
+				trimmed.startsWith('http://') ||
+				trimmed.startsWith('https://') ||
+				trimmed.startsWith('/')
 			) {
 				return trimmed;
 			}
-			const base = API_BASE_URL.replace(/\/?api\/?$/, "");
-			const needsSlash = !trimmed.startsWith("/");
-			const url = `${base}${needsSlash ? "/" : ""}${trimmed}`;
-			return url.replace(/([^:]\/)\/+/g, "$1/");
+			const base = API_BASE_URL.replace(/\/?api\/?$/, '');
+			const needsSlash = !trimmed.startsWith('/');
+			const url = `${base}${needsSlash ? '/' : ''}${trimmed}`;
+			return url.replace(/([^:]\/)\/+/g, '$1/');
 		};
 		const processedProductImages = (item.productImages || [])
 			.filter(
 				(img): img is string =>
-					!!img && typeof img === "string" && img.trim() !== ""
+					!!img && typeof img === 'string' && img.trim() !== ''
 			)
 			.map(processImageUrl)
 			.filter(Boolean);
@@ -405,12 +460,12 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 			const normalizedImages = rawImages
 				.filter(
 					(img): img is string =>
-						!!img && typeof img === "string" && img.trim() !== ""
+						!!img && typeof img === 'string' && img.trim() !== ''
 				)
 				.map(processImageUrl)
 				.filter(Boolean);
 			const primaryImage =
-				typeof (variant as any).image === "string" &&
+				typeof (variant as any).image === 'string' &&
 				(variant as any).image.trim()
 					? processImageUrl((variant as any).image)
 					: normalizedImages[0] || undefined;
@@ -422,14 +477,14 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 		});
 		const variantImagePool = processedVariants
 			.flatMap((v) => [v.image, ...(v.images || [])])
-			.filter((x): x is string => typeof x === "string" && x.length > 0);
+			.filter((x): x is string => typeof x === 'string' && x.length > 0);
 		const getFallbackImage = () => {
 			if (processedProductImages.length > 0) {
 				return processedProductImages[0];
 			}
 			const allVariantImages = processedVariants
 				.flatMap((v) => [v.image, ...(v.images || [])])
-				.filter((x): x is string => typeof x === "string" && x.length > 0);
+				.filter((x): x is string => typeof x === 'string' && x.length > 0);
 			if (allVariantImages.length > 0) return allVariantImages[0];
 			return phone;
 		};
@@ -470,14 +525,14 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 		}
 		return {
 			id: item.id,
-			title: item.name || "Unknown Product",
-			description: item.description || "No description available",
+			title: item.name || 'Unknown Product',
+			description: item.description || 'No description available',
 			originalPrice: originalPriceNum.toString(),
 			discount: item.discount ? `${item.discount}` : undefined,
-			discountPercentage: item.discount ? `${item.discount}%` : "0%",
+			discountPercentage: item.discount ? `${item.discount}%` : '0%',
 			price: displayPriceNum.toString(),
 			rating: 0,
-			ratingCount: "0",
+			ratingCount: '0',
 			isBestSeller: false,
 			freeDelivery: true,
 			image: displayImage,
@@ -488,11 +543,11 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 					? variantImagePool
 					: [phone],
 			variants: processedVariants,
-			category: item.subcategory?.category?.name || "Misc",
+			category: item.subcategory?.category?.name || 'Misc',
 			subcategory: item.subcategory,
-			brand: item.brand?.name || "Unknown",
+			brand: item.brand?.name || 'Unknown',
 			brand_id: item.brand?.id || null,
-			status: item.status === "UNAVAILABLE" ? "OUT_OF_STOCK" : "AVAILABLE",
+			status: item.status === 'UNAVAILABLE' ? 'OUT_OF_STOCK' : 'AVAILABLE',
 			stock: item.stock || 0,
 		};
 	}
@@ -501,10 +556,12 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 const Shop: React.FC = () => {
 	const { token } = useAuth();
 	const { cartOpen } = useUI();
+	const PER_PAGE = 40;
+	const [currentPage, setCurrentPage] = useState(1);
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [loading, setLoading] = useState<boolean>(true);
-	const [categorySearch, setCategorySearch] = useState<string>("");
-	const [subcategorySearch, setSubcategorySearch] = useState<string>("");
+	const [categorySearch, setCategorySearch] = useState<string>('');
+	const [subcategorySearch, setSubcategorySearch] = useState<string>('');
 	const [selectedCategory, setSelectedCategory] = useState<number | undefined>(
 		undefined
 	);
@@ -514,10 +571,10 @@ const Shop: React.FC = () => {
 	const [selectedBannerId, setSelectedBannerId] = useState<string | undefined>(
 		undefined
 	);
-	const [sortBy, setSortBy] = useState<string>("all");
+	const [sortBy, setSortBy] = useState<string>('all');
 	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-	const [searchQuery, setSearchQuery] = useState<string>("");
-	const [searchInputValue, setSearchInputValue] = useState<string>("");
+	const [searchQuery, setSearchQuery] = useState<string>('');
+	const [searchInputValue, setSearchInputValue] = useState<string>('');
 	const [showMoreCategories, setShowMoreCategories] = useState<boolean>(false);
 	const [showMoreSubcategories, setShowMoreSubcategories] =
 		useState<boolean>(false);
@@ -529,25 +586,26 @@ const Shop: React.FC = () => {
 		categoryId: selectedCategory,
 		subcategoryId: selectedSubcategory,
 		bannerId: selectedBannerId,
+		search: searchQuery.trim() || undefined,
+		sort: sortBy !== 'all' ? sortBy : undefined,
+		page: currentPage,
+		limit: PER_PAGE,
 	};
-
-	const queryKeyFilters = {
-		...currentFilters,
-		sort: sortBy, // Include sort in query key for proper cache management
-	};
+	const queryKey = ['products', currentFilters];
 	const hasActiveFilters = Boolean(
 		selectedCategory ||
 			selectedSubcategory ||
 			selectedBannerId ||
 			searchQuery.trim() ||
-			(sortBy && sortBy !== "all")
+			(sortBy && sortBy !== 'all')
 	);
 	useEffect(() => {
-		const categoryIdParam = searchParams.get("categoryId");
-		const subcategoryIdParam = searchParams.get("subcategoryId");
-		const bannerIdParam = searchParams.get("bannerId");
-		const searchParam = searchParams.get("search");
-		const sortParam = searchParams.get("sort");
+		const categoryIdParam = searchParams.get('categoryId');
+		const subcategoryIdParam = searchParams.get('subcategoryId');
+		const bannerIdParam = searchParams.get('bannerId');
+		const searchParam = searchParams.get('search');
+		const sortParam = searchParams.get('sort');
+		const pageParam = searchParams.get('page');
 
 		const newCategoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
 		setSelectedCategory(newCategoryId);
@@ -562,39 +620,40 @@ const Shop: React.FC = () => {
 			setSearchQuery(decodedSearch);
 			setSearchInputValue(decodedSearch);
 		} else {
-			setSearchQuery("");
-			setSearchInputValue("");
+			setSearchQuery('');
+			setSearchInputValue('');
 		}
+		setCurrentPage(pageParam ? Number(pageParam) : 1);
 	}, [searchParams]);
 	useEffect(() => {
 		const handleShopFiltersChanged = (event: CustomEvent) => {
 			const { categoryId, subcategoryId, bannerId } = event.detail;
 			const newSearchParams = new URLSearchParams(searchParams);
 			if (categoryId) {
-				newSearchParams.set("categoryId", categoryId.toString());
+				newSearchParams.set('categoryId', categoryId.toString());
 			} else {
-				newSearchParams.delete("categoryId");
+				newSearchParams.delete('categoryId');
 			}
 			if (subcategoryId) {
-				newSearchParams.set("subcategoryId", subcategoryId.toString());
+				newSearchParams.set('subcategoryId', subcategoryId.toString());
 			} else {
-				newSearchParams.delete("subcategoryId");
+				newSearchParams.delete('subcategoryId');
 			}
 			if (bannerId) {
-				newSearchParams.set("bannerId", bannerId.toString());
+				newSearchParams.set('bannerId', bannerId.toString());
 			} else {
-				newSearchParams.delete("bannerId");
+				newSearchParams.delete('bannerId');
 			}
-			newSearchParams.delete("search");
+			newSearchParams.delete('search');
 			setSearchParams(newSearchParams);
 		};
 		window.addEventListener(
-			"shopFiltersChanged",
+			'shopFiltersChanged',
 			handleShopFiltersChanged as EventListener
 		);
 		return () => {
 			window.removeEventListener(
-				"shopFiltersChanged",
+				'shopFiltersChanged',
 				handleShopFiltersChanged as EventListener
 			);
 		};
@@ -603,27 +662,27 @@ const Shop: React.FC = () => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (isSidebarOpen) {
 				const target = event.target as Element;
-				const isFilterButton = target.closest(".filter-button");
-				const isOverlay = target.classList.contains("filter-sidebar-overlay");
+				const isFilterButton = target.closest('.filter-button');
+				const isOverlay = target.classList.contains('filter-sidebar-overlay');
 				if (!isFilterButton && !isOverlay) {
 					setIsSidebarOpen(false);
 				}
 			}
 		};
 		if (isSidebarOpen) {
-			document.addEventListener("mousedown", handleClickOutside);
-			document.addEventListener("touchstart", handleClickOutside);
+			document.addEventListener('mousedown', handleClickOutside);
+			document.addEventListener('touchstart', handleClickOutside);
 		}
 		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-			document.removeEventListener("touchstart", handleClickOutside);
+			document.removeEventListener('mousedown', handleClickOutside);
+			document.removeEventListener('touchstart', handleClickOutside);
 		};
 	}, [isSidebarOpen]);
 	const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
-		queryKey: ["categories"],
+		queryKey: ['categories'],
 		queryFn: async () => {
 			try {
-				const response = await apiRequest("/api/categories", token);
+				const response = await apiRequest('/api/categories', token);
 				if (Array.isArray(response)) return response;
 				if (response?.success && Array.isArray(response.data))
 					return response.data;
@@ -640,7 +699,7 @@ const Shop: React.FC = () => {
 	});
 	const { data: subcategories = [], isLoading: isLoadingSubcategories } =
 		useQuery({
-			queryKey: ["subcategories", selectedCategory],
+			queryKey: ['subcategories', selectedCategory],
 			queryFn: async () => {
 				if (!selectedCategory) return [];
 				try {
@@ -666,44 +725,32 @@ const Shop: React.FC = () => {
 			gcTime: 10 * 60 * 1000,
 		});
 	const {
-		data: productsData,
+		data,
 		isLoading: isLoadingProducts,
 		error: productsError,
 	} = useQuery({
-		// Use the comprehensive query key that includes sort for proper caching
-		queryKey: ["products", queryKeyFilters],
+		queryKey: queryKey,
 		queryFn: async () => {
-			console.log("🔄 Starting products query with filters:", currentFilters);
-			console.log("🔄 Query key filters:", queryKeyFilters);
+			console.log('🔄 Starting products query with filters:', currentFilters);
+			console.log('🔄 Query key filters:', queryKey);
 			try {
 				const response = await fetchProductsWithFilters(currentFilters, token);
-				let productsArray: ApiProduct[] = [];
-				console.log("📦 Processing products response:", {
-					hasResponse: !!response,
-					responseType: typeof response,
-					hasSuccess: response?.success,
-					hasData: !!response?.data,
-					dataIsArray: Array.isArray(response?.data),
-					responseKeys: response ? Object.keys(response) : [],
-				});
-				if (response?.success && Array.isArray(response.data)) {
-					productsArray = response.data;
-					console.log(
-						"✅ Using response.data array, length:",
-						productsArray.length
-					);
-				} else if (Array.isArray(response)) {
-					productsArray = response;
-					console.log(
-						"✅ Using response as array, length:",
-						productsArray.length
-					);
-				} else {
-					console.warn("⚠️ Unexpected response format:", response);
-					productsArray = [];
-				}
+				const productsArray: ApiProduct[] = response.data || response || [];
+
+				const paginationInfo = {
+					current_page: (() => {
+						const p = response?.meta?.page;
+						if (p === undefined || p === null || Number.isNaN(Number(p)))
+							return 1;
+						return toInteger(p);
+					})(),
+					total_pages: response?.meta?.total
+						? Math.max(1, Math.ceil(Number(response.meta.total) / PER_PAGE))
+						: 1,
+					total_items: response?.meta?.total ?? productsArray.length,
+				};
 				console.log(
-					"🔄 Processing products with reviews, count:",
+					'🔄 Processing products with reviews, count:',
 					productsArray.length
 				);
 				const processedProducts = await Promise.all(
@@ -723,31 +770,31 @@ const Shop: React.FC = () => {
 							);
 							return {
 								id: item.id,
-								title: item.name || "Unknown Product",
-								description: item.description || "No description available",
-								originalPrice: "0",
+								title: item.name || 'Unknown Product',
+								description: item.description || 'No description available',
+								originalPrice: '0',
 								discount: item.discount ? `${item.discount}` : undefined,
-								discountPercentage: item.discount ? `${item.discount}%` : "0%",
-								price: "0",
+								discountPercentage: item.discount ? `${item.discount}%` : '0%',
+								price: '0',
 								rating: 0,
-								ratingCount: "0",
+								ratingCount: '0',
 								isBestSeller: false,
 								freeDelivery: true,
 								image: phone,
-								category: "Misc",
-								brand: "Unknown",
+								category: 'Misc',
+								brand: 'Unknown',
 							};
 						}
 					})
 				);
 				console.log(
-					"✅ Successfully processed all products, final count:",
+					'✅ Successfully processed all products, final count:',
 					processedProducts.length
 				);
-				return processedProducts;
+				return { products: processedProducts, meta: paginationInfo };
 			} catch (error) {
-				console.error("❌ Fatal error in products query:", error);
-				console.log("🔍 Fallback condition check:", {
+				console.error('❌ Fatal error in products query:', error);
+				console.log('🔍 Fallback condition check:', {
 					hasCategoryId: !!currentFilters.categoryId,
 					hasSubcategoryId: !!currentFilters.subcategoryId,
 					hasBrandId: !!currentFilters.brandId,
@@ -763,10 +810,19 @@ const Shop: React.FC = () => {
 					currentFilters.bannerId
 				) {
 					console.log(
-						"🔄 Trying fallback: fetching all products without filters"
+						'🔄 Trying fallback: fetching all products without filters'
 					);
 					try {
-						const fallbackResponse = await fetchProductsWithFilters({}, token);
+						const fallbackFilters: ProductFilters = {
+							page: currentFilters.page,
+							limit: currentFilters.limit,
+							sort: currentFilters.sort,
+							search: currentFilters.search,
+						};
+						const fallbackResponse = await fetchProductsWithFilters(
+							fallbackFilters,
+							token
+						);
 						let fallbackProductsArray: ApiProduct[] = [];
 						if (
 							fallbackResponse?.success &&
@@ -777,9 +833,14 @@ const Shop: React.FC = () => {
 							fallbackProductsArray = fallbackResponse;
 						}
 						console.log(
-							"✅ Fallback successful, got products:",
+							'✅ Fallback successful, got products:',
 							fallbackProductsArray.length
 						);
+						const fallbackPagination = fallbackResponse.pagination || {
+							current_page: currentFilters.page || 1,
+							total_pages: 1,
+							total_items: fallbackProductsArray.length,
+						};
 						const processedFallbackProducts = await Promise.all(
 							fallbackProductsArray.map(async (item) => {
 								try {
@@ -788,37 +849,45 @@ const Shop: React.FC = () => {
 								} catch {
 									return {
 										id: item.id,
-										title: item.name || "Unknown Product",
-										description: item.description || "No description available",
-										originalPrice: "0",
+										title: item.name || 'Unknown Product',
+										description: item.description || 'No description available',
+										originalPrice: '0',
 										discount: item.discount ? `${item.discount}` : undefined,
 										discountPercentage: item.discount
 											? `${item.discount}%`
-											: "0%",
-										price: "0",
+											: '0%',
+										price: '0',
 										rating: 0,
-										ratingCount: "0",
+										ratingCount: '0',
 										isBestSeller: false,
 										freeDelivery: true,
 										image: phone,
-										category: "Misc",
-										brand: "Unknown",
+										category: 'Misc',
+										brand: 'Unknown',
 									};
 								}
 							})
 						);
-						return processedFallbackProducts;
+						return {
+							products: processedFallbackProducts,
+							meta: fallbackPagination,
+						};
 					} catch (fallbackError) {
-						console.error("❌ Fallback also failed:", fallbackError);
+						console.error('❌ Fallback also failed:', fallbackError);
 						if (currentFilters.categoryId && currentFilters.subcategoryId) {
 							console.log(
-								"🔄 Trying second fallback: category only without subcategory"
+								'🔄 Trying second fallback: category only without subcategory'
 							);
 							try {
+								const secondFallbackFilters: ProductFilters = {
+									categoryId: currentFilters.categoryId,
+									page: currentFilters.page,
+									limit: currentFilters.limit,
+									sort: currentFilters.sort,
+									search: currentFilters.search,
+								};
 								const secondFallbackResponse = await fetchProductsWithFilters(
-									{
-										categoryId: currentFilters.categoryId,
-									},
+									secondFallbackFilters,
 									token
 								);
 								let secondFallbackProductsArray: ApiProduct[] = [];
@@ -831,9 +900,15 @@ const Shop: React.FC = () => {
 									secondFallbackProductsArray = secondFallbackResponse;
 								}
 								console.log(
-									"✅ Second fallback successful, got products:",
+									'✅ Second fallback successful, got products:',
 									secondFallbackProductsArray.length
 								);
+								const secondFallbackPagination =
+									secondFallbackResponse.pagination || {
+										current_page: currentFilters.page || 1,
+										total_pages: 1,
+										total_items: secondFallbackProductsArray.length,
+									};
 								const processedSecondFallbackProducts = await Promise.all(
 									secondFallbackProductsArray.map(async (item) => {
 										try {
@@ -842,32 +917,35 @@ const Shop: React.FC = () => {
 										} catch {
 											return {
 												id: item.id,
-												title: item.name || "Unknown Product",
+												title: item.name || 'Unknown Product',
 												description:
-													item.description || "No description available",
-												originalPrice: "0",
+													item.description || 'No description available',
+												originalPrice: '0',
 												discount: item.discount
 													? `${item.discount}`
 													: undefined,
 												discountPercentage: item.discount
 													? `${item.discount}%`
-													: "0%",
-												price: "0",
+													: '0%',
+												price: '0',
 												rating: 0,
-												ratingCount: "0",
+												ratingCount: '0',
 												isBestSeller: false,
 												freeDelivery: true,
 												image: phone,
-												category: "Misc",
-												brand: "Unknown",
+												category: 'Misc',
+												brand: 'Unknown',
 											};
 										}
 									})
 								);
-								return processedSecondFallbackProducts;
+								return {
+									products: processedSecondFallbackProducts,
+									meta: secondFallbackPagination,
+								};
 							} catch (secondFallbackError) {
 								console.error(
-									"❌ Second fallback also failed:",
+									'❌ Second fallback also failed:',
 									secondFallbackError
 								);
 							}
@@ -875,7 +953,7 @@ const Shop: React.FC = () => {
 						throw error;
 					}
 				} else {
-					console.log("⚠️ No filters detected, not attempting fallback");
+					console.log('⚠️ No filters detected, not attempting fallback');
 				}
 				throw error;
 			}
@@ -892,46 +970,28 @@ const Shop: React.FC = () => {
 		},
 		retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
 	});
-	const filteredProducts = (productsData || []).filter((product) => {
-		if (searchQuery.trim()) {
-			const query = searchQuery.toLowerCase().trim();
-			const productName = product.title?.toLowerCase() || "";
-			const productDescription = product.description?.toLowerCase() || "";
-			const productCategory = product.category?.toLowerCase() || "";
-			const productBrand = product.brand?.toLowerCase() || "";
-			return (
-				productName.includes(query) ||
-				productDescription.includes(query) ||
-				productCategory.includes(query) ||
-				productBrand.includes(query)
-			);
-		}
-		return true;
-	});
-	const sortedProducts = [...filteredProducts].sort((a, b) => {
-		const priceA = toNumber(a.price);
-		const priceB = toNumber(b.price);
-		if (isNaN(priceA) && isNaN(priceB)) return 0;
-		if (isNaN(priceA)) return 1;
-		if (isNaN(priceB)) return -1;
-		if (sortBy === "low-to-high") return priceA - priceB;
-		if (sortBy === "high-to-low") return priceB - priceA;
-		return 0;
-	});
+	const productsData = data?.products || [];
+	const pagination = data?.meta || {
+		current_page: 1,
+		total_pages: 1,
+		total_items: 0,
+	};
 	const handleCategoryChange = (categoryId: number | undefined): void => {
 		const newSearchParams = new URLSearchParams(searchParams);
 		if (categoryId) {
-			newSearchParams.set("categoryId", categoryId.toString());
+			newSearchParams.set('categoryId', categoryId.toString());
 		} else {
-			newSearchParams.delete("categoryId");
-			setCategorySearch("");
+			newSearchParams.delete('categoryId');
+			setCategorySearch('');
 		}
-		newSearchParams.delete("subcategoryId");
-		newSearchParams.delete("bannerId");
-		setSubcategorySearch("");
+		newSearchParams.delete('subcategoryId');
+		newSearchParams.delete('bannerId');
+		setSubcategorySearch('');
 		setSelectedBannerId(undefined);
-		newSearchParams.delete("search");
+		newSearchParams.delete('search');
+		newSearchParams.set('page', currentPage.toString());
 		setSearchParams(newSearchParams);
+		setCurrentPage(1);
 		if (window.innerWidth <= 992) {
 			setIsSidebarOpen(false);
 		}
@@ -939,29 +999,33 @@ const Shop: React.FC = () => {
 	const handleSubcategoryChange = (subcategoryId: number | undefined): void => {
 		const newSearchParams = new URLSearchParams(searchParams);
 		if (subcategoryId) {
-			newSearchParams.set("subcategoryId", subcategoryId.toString());
+			newSearchParams.set('subcategoryId', subcategoryId.toString());
 		} else {
-			newSearchParams.delete("subcategoryId");
-			setSubcategorySearch("");
+			newSearchParams.delete('subcategoryId');
+			setSubcategorySearch('');
 		}
-		newSearchParams.delete("bannerId");
+		newSearchParams.delete('bannerId');
 		setSelectedBannerId(undefined);
+		newSearchParams.set('page', currentPage.toString());
 		setSearchParams(newSearchParams);
+		setCurrentPage(1);
 		if (window.innerWidth <= 992) {
 			setIsSidebarOpen(false);
 		}
 	};
 	const handleSortChange = (newSort: string | undefined): void => {
-		setSortBy(newSort || "all");
+		setSortBy(newSort || 'all');
 
 		// Update searchParams to include the sort parameter while preserving other filters
 		const newSearchParams = new URLSearchParams(searchParams);
-		if (newSort && newSort !== "all") {
-			newSearchParams.set("sort", newSort);
+		if (newSort && newSort !== 'all') {
+			newSearchParams.set('sort', newSort);
 		} else {
-			newSearchParams.delete("sort");
+			newSearchParams.delete('sort');
 		}
+		newSearchParams.set('page', currentPage.toString());
 		setSearchParams(newSearchParams);
+		setCurrentPage(1);
 
 		if (window.innerWidth <= 992) {
 			setIsSidebarOpen(false);
@@ -971,13 +1035,14 @@ const Shop: React.FC = () => {
 		setIsSidebarOpen(!isSidebarOpen);
 	};
 	const clearAllFilters = (): void => {
-		setSortBy("all");
-		setSearchInputValue("");
-		setCategorySearch("");
-		setSubcategorySearch("");
+		setSortBy('all');
+		setSearchInputValue('');
+		setCategorySearch('');
+		setSubcategorySearch('');
 		setSelectedBannerId(undefined);
 		const newSearchParams = new URLSearchParams();
 		setSearchParams(newSearchParams);
+		setCurrentPage(1);
 		if (window.innerWidth <= 992) {
 			setIsSidebarOpen(false);
 		}
@@ -990,45 +1055,48 @@ const Shop: React.FC = () => {
 		const trimmedSearch = searchInputValue.trim();
 		const newSearchParams = new URLSearchParams(searchParams);
 		if (trimmedSearch) {
-			newSearchParams.set("search", encodeURIComponent(trimmedSearch));
+			newSearchParams.set('search', encodeURIComponent(trimmedSearch));
 		} else {
-			newSearchParams.delete("search");
+			newSearchParams.delete('search');
 		}
-		newSearchParams.delete("categoryId");
-		newSearchParams.delete("subcategoryId");
-		newSearchParams.delete("bannerId");
+		newSearchParams.delete('categoryId');
+		newSearchParams.delete('subcategoryId');
+		newSearchParams.delete('bannerId');
 		setSelectedBannerId(undefined);
+		newSearchParams.set('page', currentPage.toString());
 		setSearchParams(newSearchParams);
+		setCurrentPage(1);
 		if (window.innerWidth <= 992) {
 			setIsSidebarOpen(false);
 		}
 	};
 	const handleClearSearch = () => {
-		setSearchInputValue("");
+		setSearchInputValue('');
 		const newSearchParams = new URLSearchParams(searchParams);
-		newSearchParams.delete("search");
+		newSearchParams.delete('search');
+		newSearchParams.set('page', currentPage.toString());
 		setSearchParams(newSearchParams);
 	};
 	const getCurrentCategoryName = (): string => {
-		if (selectedCategory === undefined) return "All Categories";
+		if (selectedCategory === undefined) return 'All Categories';
 		const category = categories.find(
 			(cat: Category) => cat.id === selectedCategory
 		);
-		return category ? category.name : "Selected Category";
+		return category ? category.name : 'Selected Category';
 	};
 	const getCurrentSubcategoryName = (): string | undefined => {
 		if (selectedSubcategory === undefined) return undefined;
 		const subcategory = subcategories.find(
 			(sub: Subcategory) => sub.id === selectedSubcategory
 		);
-		return subcategory ? subcategory.name : "Selected Subcategory";
+		return subcategory ? subcategory.name : 'Selected Subcategory';
 	};
 	const getDisplayTitle = (): string => {
 		if (searchQuery.trim()) {
 			return `Search Results for "${searchQuery}"`;
 		}
 		if (selectedBannerId) {
-			return "Special Offer Products";
+			return 'Special Offer Products';
 		}
 		return getCurrentCategoryName();
 	};
@@ -1052,7 +1120,7 @@ const Shop: React.FC = () => {
 						<p className="error-text">
 							{productsError instanceof Error
 								? productsError.message
-								: "Unknown error occurred"}
+								: 'Unknown error occurred'}
 						</p>
 						<button
 							onClick={() => window.location.reload()}
@@ -1078,7 +1146,7 @@ const Shop: React.FC = () => {
 								{getDisplayTitle()}
 								{getCurrentSubcategoryName() && (
 									<span className="shop-subtitle">
-										{" > "}
+										{' > '}
 										{getCurrentSubcategoryName()}
 									</span>
 								)}
@@ -1091,7 +1159,7 @@ const Shop: React.FC = () => {
 							>
 								<div
 									className={`search-input-container ${
-										searchInputValue ? "has-clear-button" : ""
+										searchInputValue ? 'has-clear-button' : ''
 									}`}
 								>
 									<input
@@ -1135,10 +1203,10 @@ const Shop: React.FC = () => {
 								) : (
 									<div className="product-count__result">
 										<span className="product-count__number">
-											{sortedProducts.length}
+											{pagination.total_items}
 										</span>
 										<span className="product-count__label">
-											{sortedProducts.length === 1 ? "product" : "products"}{" "}
+											{pagination.total_items === 1 ? 'product' : 'products'}{' '}
 											found
 										</span>
 									</div>
@@ -1159,12 +1227,12 @@ const Shop: React.FC = () => {
 							</button>
 							<div
 								className={`filter-sidebar-overlay ${
-									isSidebarOpen ? "open" : ""
+									isSidebarOpen ? 'open' : ''
 								}`}
 								onClick={toggleSidebar}
 								aria-label="Close filters"
 							/>
-							<div className={`filter-sidebar ${isSidebarOpen ? "open" : ""}`}>
+							<div className={`filter-sidebar ${isSidebarOpen ? 'open' : ''}`}>
 								<div className="filter-sidebar__header">
 									<h3>Filter</h3>
 									<button
@@ -1197,9 +1265,9 @@ const Shop: React.FC = () => {
 									<h4 className="filter-sidebar__section-title">Sort By</h4>
 									<div className="filter-sidebar__radio-list">
 										{[
-											{ value: "all", label: "Default" },
-											{ value: "low-to-high", label: "Price: Low to High" },
-											{ value: "high-to-low", label: "Price: High to Low" },
+											{ value: 'all', label: 'Default' },
+											{ value: 'low-to-high', label: 'Price: Low to High' },
+											{ value: 'high-to-low', label: 'Price: High to Low' },
 										].map((option) => (
 											<div
 												key={option.value}
@@ -1245,7 +1313,7 @@ const Shop: React.FC = () => {
 													value={categorySearch}
 													onChange={(e) => setCategorySearch(e.target.value)}
 													onKeyDown={(e) => {
-														if (e.key === "Enter") {
+														if (e.key === 'Enter') {
 															e.preventDefault();
 															const match = categories.find((cat: Category) =>
 																cat.name
@@ -1323,8 +1391,8 @@ const Shop: React.FC = () => {
 																	className="view-more-categories-button"
 																>
 																	{showMoreCategories
-																		? "View Less"
-																		: "View More"}
+																		? 'View Less'
+																		: 'View More'}
 																</button>
 															)}
 													</>
@@ -1364,7 +1432,7 @@ const Shop: React.FC = () => {
 															setSubcategorySearch(e.target.value)
 														}
 														onKeyDown={(e) => {
-															if (e.key === "Enter") {
+															if (e.key === 'Enter') {
 																e.preventDefault();
 																const match = subcategories.find(
 																	(sub: Subcategory) =>
@@ -1441,8 +1509,8 @@ const Shop: React.FC = () => {
 																	className="view-more-subcategories-button"
 																>
 																	{showMoreSubcategories
-																		? "View Less"
-																		: "View More"}
+																		? 'View Less'
+																		: 'View More'}
 																</button>
 															)}
 														</>
@@ -1457,50 +1525,79 @@ const Shop: React.FC = () => {
 									</div>
 								)}
 							</div>
-							<div className="shop-products">
-								{isLoadingProducts ? (
-									Array(8)
-										.fill(null)
-										.map((_, index) => (
-											<ProductCardSkeleton
-												key={index}
-												count={1}
+							<div>
+								<div className="shop-products">
+									{isLoadingProducts ? (
+										Array(8)
+											.fill(null)
+											.map((_, index) => (
+												<ProductCardSkeleton
+													key={index}
+													count={1}
+												/>
+											))
+									) : pagination.total_items > 0 ? (
+										productsData.map((product) => (
+											<ProductCard1
+												key={product.id}
+												product={product}
 											/>
 										))
-								) : sortedProducts.length > 0 ? (
-									sortedProducts.map((product) => (
-										<ProductCard1
-											key={product.id}
-											product={product}
-										/>
-									))
-								) : (
-									<div className="shop-no-products">
-										<div className="shop-no-products-icon">📦</div>
-										<h3 className="shop-no-products-title">
-											No products found
-										</h3>
-										<p className="shop-no-products-text">
-											{searchQuery.trim()
-												? `No products found matching "${searchQuery}". Try adjusting your search terms or browse categories.`
-												: selectedBannerId
-												? "No products found for this special offer."
-												: selectedCategory === undefined
-												? "No products available at the moment."
-												: `No products found in ${getCurrentCategoryName()}${
-														getCurrentSubcategoryName()
-															? ` > ${getCurrentSubcategoryName()}`
-															: ""
-												  }.`}
-										</p>
-										{hasActiveFilters && (
-											<button
-												onClick={clearAllFilters}
-												className="shop-no-products-clear-button"
-											>
-												Clear All Filters
-											</button>
-										)}
+									) : (
+										<div className="shop-no-products">
+											<div className="shop-no-products-icon">📦</div>
+											<h3 className="shop-no-products-title">
+												No products found
+											</h3>
+											<p className="shop-no-products-text">
+												{searchQuery.trim()
+													? `No products found matching "${searchQuery}". Try adjusting your search terms or browse categories.`
+													: selectedBannerId
+													? 'No products found for this special offer.'
+													: selectedCategory === undefined
+													? 'No products available at the moment.'
+													: `No products found in ${getCurrentCategoryName()}${
+															getCurrentSubcategoryName()
+																? ` > ${getCurrentSubcategoryName()}`
+																: ''
+													  }.`}
+											</p>
+											{hasActiveFilters && (
+												<button
+													onClick={clearAllFilters}
+													className="shop-no-products-clear-button"
+												>
+													Clear All Filters
+												</button>
+											)}
+										</div>
+									)}
+								</div>
+								{pagination.total_pages > 1 && (
+									<div className="pagination-controls">
+										<button
+											className="pagination-button"
+											disabled={currentPage === 1}
+											onClick={() =>
+												setCurrentPage((prev) => Math.max(prev - 1, 1))
+											}
+										>
+											Previous
+										</button>
+										<span className="pagination-info">
+											Page {pagination.current_page} of {pagination.total_pages}
+										</span>
+										<button
+											className="pagination-button"
+											disabled={currentPage >= pagination.total_pages}
+											onClick={() =>
+												setCurrentPage((prev) =>
+													Math.min(prev + 1, pagination.total_pages)
+												)
+											}
+										>
+											Next
+										</button>
 									</div>
 								)}
 							</div>
