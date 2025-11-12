@@ -63,6 +63,9 @@ const NepalPaymentGateway: React.FC = () => {
   const location = useLocation();
   const orderDetails = location.state?.orderDetails;
 
+  console.log("---------------------Order details----------------------")
+  console.log(orderDetails)
+
   if (!orderDetails) {
     return <p className="no-order-details">No order details found.</p>;
   }
@@ -71,7 +74,7 @@ const NepalPaymentGateway: React.FC = () => {
   // Initialize amount with totalAmount from order if available
   useEffect(() => {
     if (totalAmount) {
-      setAmount(totalAmount?.finalTotal?.toString());
+      setAmount(totalAmount.toString());
     }
   }, [totalAmount]);
 
