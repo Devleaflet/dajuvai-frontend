@@ -780,7 +780,7 @@ const Shop: React.FC = () => {
 								ratingCount: '0',
 								isBestSeller: false,
 								freeDelivery: true,
-								image: phone,
+								// image: phone,
 								category: 'Misc',
 								brand: 'Unknown',
 							};
@@ -861,7 +861,7 @@ const Shop: React.FC = () => {
 										ratingCount: '0',
 										isBestSeller: false,
 										freeDelivery: true,
-										image: phone,
+										// image: phone,
 										category: 'Misc',
 										brand: 'Unknown',
 									};
@@ -932,7 +932,7 @@ const Shop: React.FC = () => {
 												ratingCount: '0',
 												isBestSeller: false,
 												freeDelivery: true,
-												image: phone,
+												// image: phone,
 												category: 'Misc',
 												brand: 'Unknown',
 											};
