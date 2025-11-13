@@ -5,9 +5,9 @@
 .navbar {
 	width: 100%;
 	background-color: #ffffff;
-	font-family: "Arial", sans-serif;
+	font-family: 'Arial', sans-serif;
 	position: static;
-	z-index: auto;
+	z-index: 1;
 }
 
 .navbar__container {
@@ -60,7 +60,7 @@
 	width: 100%;
 	position: static;
 	background-color: #ffffff;
-	z-index: 100;
+	z-index: 1000;
 	padding-bottom: 0;
 }
 
@@ -286,7 +286,7 @@
 }
 
 .navbar__link.active,
-.navbar__link[aria-current="page"] {
+.navbar__link[aria-current='page'] {
 	color: #ff9800;
 	border-bottom: 2px solid #ff9800;
 	background: none;
@@ -758,6 +758,7 @@
 @media (max-width: 1200px) {
 	.navbar__container {
 		width: 95%;
+		z-index: 999;
 	}
 }
 
@@ -1300,9 +1301,8 @@
 @media (max-width: 600px) {
 	.navbar__profile-dropdown-card {
 		right: 50%;
-		left: 55%;
+		left: -40px !important;
 		transform: translateX(-50%);
-		min-width: 75vw;
 		padding: 14px 0 8px 0;
 	}
 
@@ -1651,7 +1651,7 @@
 }
 
 .tooltip .tooltip-text::after {
-	content: "";
+	content: '';
 	position: absolute;
 	top: 100%;
 	left: 50%;
@@ -1692,7 +1692,6 @@
 		top: auto !important;
 		bottom: 70px !important;
 		right: 10px !important;
-		left: 10px !important;
 		width: calc(100% - 20px) !important;
 		max-width: none !important;
 	}
