@@ -37,7 +37,7 @@ const EyeOffIcon = () => (
 );
 
 const PasswordProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    const isLocal = false; // set true in development
+    const isLocal = true; // set true in development
 
     // If local, just render without password
     if (isLocal) {
