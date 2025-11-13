@@ -181,11 +181,14 @@ const Checkout: React.FC = () => {
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('CASH_ON_DELIVERY');
 
+
   const availablePaymentMethods = [
-    { id: 'CASH_ON_DELIVERY', name: 'Cash on Delivery' },
-    { id: 'ESEWA', name: 'eSewa' },
-    { id: 'NPX', name: 'Nepal Payment System ' },
+    { id: "CASH_ON_DELIVERY", name: "Cash on Delivery" },
+    { id: "ESEWA", name: "eSewa", disabled: true, message: "Currently unavailable. Please choose another method." },
+    // { id: "ESEWA", name: "eSewa" },
+    { id: "NPX", name: "Nepal Payment System" },
   ];
+
 
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
@@ -1259,7 +1262,7 @@ const Checkout: React.FC = () => {
               </div>
             </div>
 
-            <div className="checkout-container__payment-methods">
+            {/* <div className="checkout-container__payment-methods">
               {availablePaymentMethods.map((method) => (
                 <label
                   key={method.id}
@@ -1276,7 +1279,41 @@ const Checkout: React.FC = () => {
                   <span className="checkout-container__payment-methods-label-text">{method.name}</span>
                 </label>
               ))}
+            </div> */}
+
+
+            <div className="checkout-container__payment-methods">
+              {availablePaymentMethods.map((method) => (
+                <label
+                  key={method.id}
+                  className={`checkout-container__payment-methods-label ${selectedPaymentMethod === method.id ? 'selected' : ''} ${method.disabled ? 'disabled' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    value={method.id}
+                    className="checkout-container__payment-methods-input"
+                    checked={selectedPaymentMethod === method.id}
+                    onChange={!method.disabled ? handlePaymentMethodChange : undefined}
+                    disabled={method.disabled}
+                  />
+                  <span className="checkout-container__payment-methods-label-text">
+                    {method.name}
+                  </span>
+
+                  {method.disabled && (
+                    <p className="checkout-container__payment-methods-message">
+                      {method.message}
+                    </p>
+                  )}
+                </label>
+              ))}
             </div>
+
+
+
+
+
 
             <p className="checkout-container__privacy-note">
               Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our privacy policy.
