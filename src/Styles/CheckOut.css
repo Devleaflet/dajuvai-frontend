@@ -1276,7 +1276,7 @@ body {
 }
 
 /* comment these two css after esewa succesfully works  */
-.checkout-container__payment-methods-label.disabled {
+/* .checkout-container__payment-methods-label.disabled {
 	opacity: 0.6;
 	cursor: not-allowed;
 	position: relative;
@@ -1286,6 +1286,6 @@ body {
 	font-size: 0.8rem;
 	color: #e74c3c;
 	margin-top: 4px;
-}
+} */
 
 /* comment those two css after esewa succesfully works  */

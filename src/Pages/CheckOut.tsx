@@ -215,13 +215,13 @@ const Checkout: React.FC = () => {
 
 	const availablePaymentMethods = [
 		{ id: 'CASH_ON_DELIVERY', name: 'Cash on Delivery' },
-		{
-			id: 'ESEWA',
-			name: 'eSewa',
-			disabled: true,
-			message: 'Currently unavailable. Please choose another method.',
-		},
-		// { id: "ESEWA", name: "eSewa" },
+		// {
+		// 	id: 'ESEWA',
+		// 	name: 'eSewa',
+		// 	disabled: true,
+		// 	message: 'Currently unavailable. Please choose another method.',
+		// },
+		{ id: "ESEWA", name: "eSewa" },
 		{ id: 'NPX', name: 'Nepal Payment System' },
 	];
 
