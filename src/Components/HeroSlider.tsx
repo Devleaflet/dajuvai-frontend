@@ -26,10 +26,12 @@ interface HeroSliderProps {
 
 const fetchHeroBanners = async (): Promise<Slide[]> => {
   const response = await fetch(`${API_BASE_URL}/api/banners?type=HERO`);
+
   if (!response.ok) {
     throw new Error(`Failed to fetch banners: ${response.statusText}`);
   }
   const data = await response.json();
+  console.table(data)
   console.log('Fetched banners:', data);
 
   return data.data
@@ -255,7 +257,8 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   };
 
   if (isLoading) return <SliderSkeleton />;
-  if (error) return <div>Error loading banners: {error.message}</div>;
+  if(error) console.log(error)
+  if (error) return <div>Error loading banners: {error.message}</div>; 
   if (slides.length === 0) return <div>No hero banners available</div>;
 
   return (

@@ -16,6 +16,8 @@ import { useUI } from '../context/UIContext';
 import CategoryService from '../services/categoryService';
 import ProductCardSkeleton from '../skeleton/ProductCardSkeleton';
 import '../Styles/Shop.css';
+import HeroSlider from '../Components/HeroSlider';
+import ProductBannerSlider from '../Components/ProductBannerSlider';
 // Interfaces (unchanged)
 interface Category {
 	id: number;
@@ -252,9 +254,8 @@ const fetchProductsWithFilters = async (
 	};
 
 	const queryParams = buildQueryParams(apiFilters);
-	const endpoint = `/api/categories/all/products${
-		queryParams ? `?${queryParams}` : ''
-	}`;
+	const endpoint = `/api/categories/all/products${queryParams ? `?${queryParams}` : ''
+		}`;
 	console.log('🔍 Fetching products with filters:', {
 		filters: apiFilters,
 		originalFilters: filters,
@@ -323,8 +324,8 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 			const rawImages = Array.isArray((variant as any).images)
 				? (variant as any).images
 				: Array.isArray((variant as any).variantImages)
-				? (variant as any).variantImages
-				: [];
+					? (variant as any).variantImages
+					: [];
 			const normalizedImages = rawImages
 				.filter(
 					(img): img is string =>
@@ -334,7 +335,7 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 				.filter(Boolean);
 			const primaryImage =
 				typeof (variant as any).image === 'string' &&
-				(variant as any).image.trim()
+					(variant as any).image.trim()
 					? processImageUrl((variant as any).image)
 					: normalizedImages[0] || undefined;
 			return {
@@ -414,8 +415,8 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 				processedProductImages.length > 0
 					? processedProductImages
 					: variantImagePool.length > 0
-					? variantImagePool
-					: [phone],
+						? variantImagePool
+						: [phone],
 			variants: processedVariants,
 			category: item.subcategory?.category?.name || 'Misc',
 			subcategory: item.subcategory,
@@ -455,8 +456,8 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 			const rawImages = Array.isArray((variant as any).images)
 				? (variant as any).images
 				: Array.isArray((variant as any).variantImages)
-				? (variant as any).variantImages
-				: [];
+					? (variant as any).variantImages
+					: [];
 			const normalizedImages = rawImages
 				.filter(
 					(img): img is string =>
@@ -466,7 +467,7 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 				.filter(Boolean);
 			const primaryImage =
 				typeof (variant as any).image === 'string' &&
-				(variant as any).image.trim()
+					(variant as any).image.trim()
 					? processImageUrl((variant as any).image)
 					: normalizedImages[0] || undefined;
 			return {
@@ -507,20 +508,20 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 			displayPriceNum =
 				item.discount && item.discountType
 					? calculatePrice(
-							variantBase,
-							item.discount,
-							String(item.discountType)
-					  )
+						variantBase,
+						item.discount,
+						String(item.discountType)
+					)
 					: variantBase;
 		} else {
 			originalPriceNum = productPriceNum;
 			displayPriceNum =
 				item.discount && item.discountType
 					? calculatePrice(
-							productPriceNum,
-							item.discount,
-							String(item.discountType)
-					  )
+						productPriceNum,
+						item.discount,
+						String(item.discountType)
+					)
 					: productPriceNum;
 		}
 		return {
@@ -540,8 +541,8 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 				processedProductImages.length > 0
 					? processedProductImages
 					: variantImagePool.length > 0
-					? variantImagePool
-					: [phone],
+						? variantImagePool
+						: [phone],
 			variants: processedVariants,
 			category: item.subcategory?.category?.name || 'Misc',
 			subcategory: item.subcategory,
@@ -594,10 +595,10 @@ const Shop: React.FC = () => {
 	const queryKey = ['products', currentFilters];
 	const hasActiveFilters = Boolean(
 		selectedCategory ||
-			selectedSubcategory ||
-			selectedBannerId ||
-			searchQuery.trim() ||
-			(sortBy && sortBy !== 'all')
+		selectedSubcategory ||
+		selectedBannerId ||
+		searchQuery.trim() ||
+		(sortBy && sortBy !== 'all')
 	);
 	useEffect(() => {
 		const categoryIdParam = searchParams.get('categoryId');
@@ -1137,6 +1138,7 @@ const Shop: React.FC = () => {
 	return (
 		<>
 			<Navbar />
+			<ProductBannerSlider />
 			<CategorySlider />
 			<div className="shop-max-width-container">
 				<div className="shop-container">
@@ -1158,9 +1160,8 @@ const Shop: React.FC = () => {
 								className="search-form"
 							>
 								<div
-									className={`search-input-container ${
-										searchInputValue ? 'has-clear-button' : ''
-									}`}
+									className={`search-input-container ${searchInputValue ? 'has-clear-button' : ''
+										}`}
 								>
 									<input
 										type="text"
@@ -1226,9 +1227,8 @@ const Shop: React.FC = () => {
 								</span>
 							</button>
 							<div
-								className={`filter-sidebar-overlay ${
-									isSidebarOpen ? 'open' : ''
-								}`}
+								className={`filter-sidebar-overlay ${isSidebarOpen ? 'open' : ''
+									}`}
 								onClick={toggleSidebar}
 								aria-label="Close filters"
 							/>
@@ -1553,14 +1553,13 @@ const Shop: React.FC = () => {
 												{searchQuery.trim()
 													? `No products found matching "${searchQuery}". Try adjusting your search terms or browse categories.`
 													: selectedBannerId
-													? 'No products found for this special offer.'
-													: selectedCategory === undefined
-													? 'No products available at the moment.'
-													: `No products found in ${getCurrentCategoryName()}${
-															getCurrentSubcategoryName()
+														? 'No products found for this special offer.'
+														: selectedCategory === undefined
+															? 'No products available at the moment.'
+															: `No products found in ${getCurrentCategoryName()}${getCurrentSubcategoryName()
 																? ` > ${getCurrentSubcategoryName()}`
 																: ''
-													  }.`}
+															}.`}
 											</p>
 											{hasActiveFilters && (
 												<button

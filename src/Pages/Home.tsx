@@ -9,7 +9,6 @@ import PageLoader from "../Components/PageLoader";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCategory } from "../api/category";
 import SpecialOffers from "../Components/SpecialOffers";
-import CategorySection from "../Components/CategorySection";
 import CategoryCatalogSection from "../Components/CategoryCatalogSection";
 
 const Home = () => {
