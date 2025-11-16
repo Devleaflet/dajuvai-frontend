@@ -839,7 +839,21 @@
 	}
 }
 
+
+
+
 @media (max-width: 1099px) {
+
+	.navbar__profile-dropdown-card {
+		position: fixed !important;
+		/* bottom: 600px !important; */
+		right: 10px !important;
+		width: calc(100% - 20px) !important;
+		max-width: 30vw !important;
+		z-index: 99999 !important;
+		pointer-events: auto !important;
+	}
+
 	.navbar__desktop-links {
 		display: none;
 	}
@@ -876,6 +890,34 @@
 
 	body.navbar--menu-open .navbar__mobile-dock {
 		display: none;
+	}
+
+	.navbar__top {
+		position: sticky;
+		top: 0;
+		z-index: 100;
+		background-color: #ffffff;
+	}
+
+	.navbar__search-row {
+		position: relative;
+		transition: transform 0.3s ease;
+	}
+
+	.navbar__search-row.hidden {
+		transform: translateY(-100%);
+		position: absolute;
+		width: 100%;
+		visibility: hidden;
+	}
+
+	.navbar__account-icon-link {
+		margin-left: 10px;
+	}
+
+	.navbar__mobile-avatar {
+		display: flex;
+		align-items: center;
 	}
 }
 
@@ -973,26 +1015,6 @@
 	}
 }
 
-@media (max-width: 1099px) {
-	.navbar__top {
-		position: sticky;
-		top: 0;
-		z-index: 100;
-		background-color: #ffffff;
-	}
-
-	.navbar__search-row {
-		position: relative;
-		transition: transform 0.3s ease;
-	}
-
-	.navbar__search-row.hidden {
-		transform: translateY(-100%);
-		position: absolute;
-		width: 100%;
-		visibility: hidden;
-	}
-}
 
 .navbar__cart-count {
 	position: absolute;
@@ -1093,6 +1115,7 @@
 		opacity: 0;
 		transform: translateY(-10px);
 	}
+
 	to {
 		opacity: 1;
 		transform: translateY(0);
@@ -1219,11 +1242,11 @@
 	border-radius: 16px;
 	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16);
 	padding: 18px 0 10px 0;
-	z-index: 2000;
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
 	animation: fadeIn 0.2s;
+	height: fit-content;
 }
 
 .navbar__profile-card-header {
@@ -1298,12 +1321,21 @@
 	opacity: 0.8;
 }
 
+.navbar__profile-dropdown-card,
+.navbar__profile-card-link,
+.navbar__profile-card-link * {
+	pointer-events: auto !important;
+}
+
 @media (max-width: 600px) {
 	.navbar__profile-dropdown-card {
-		right: 50%;
-		left: -40px !important;
+		right: 10% !important;
+		left: 60% !important;
 		transform: translateX(-50%);
 		padding: 14px 0 8px 0;
+		z-index: 99999 !important;
+		height: fit-content;
+		pointer-events: auto !important;
 	}
 
 	.navbar__profile-card-header {
@@ -1316,10 +1348,7 @@
 	}
 }
 
-.navbar__mobile-user {
-	margin: 0px 15px;
-	cursor: pointer;
-}
+
 
 .navbar__category-link.skeleton {
 	background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
@@ -1357,6 +1386,7 @@
 	0% {
 		background-position: -200% 0;
 	}
+
 	100% {
 		background-position: 200% 0;
 	}
@@ -1391,6 +1421,7 @@
 	0% {
 		transform: rotate(0deg);
 	}
+
 	100% {
 		transform: rotate(360deg);
 	}
@@ -1484,6 +1515,7 @@
 		opacity: 0;
 		transform: translateX(100%);
 	}
+
 	to {
 		opacity: 1;
 		transform: translateX(0);
@@ -1585,6 +1617,7 @@
 		opacity: 0;
 		transform: translateY(-10px);
 	}
+
 	to {
 		opacity: 1;
 		transform: translateY(0);
@@ -1671,48 +1704,17 @@
 	align-items: center;
 }
 
-@media (max-width: 1099px) {
-	.navbar__account-icon-link {
-		margin-left: 10px;
-	}
 
-	.navbar__mobile-avatar {
-		display: flex;
-		align-items: center;
-	}
-}
-
-.navbar__mobile-user {
-	position: relative;
-}
-
-@media (max-width: 1099px) {
-	.navbar__profile-dropdown-card {
-		position: fixed !important;
-		top: auto !important;
-		bottom: 70px !important;
-		right: 10px !important;
-		width: calc(100% - 20px) !important;
-		max-width: none !important;
-	}
-}
 
 .navbar__mobile-user {
 	position: relative;
 	display: flex;
 	align-items: center;
+	margin: 0px 15px;
+	cursor: pointer;
 }
 
-@media (max-width: 1099px) {
-	.navbar__mobile-user .navbar__profile-dropdown-card {
-		position: absolute !important;
-		top: 100% !important;
-		right: 0 !important;
-		bottom: auto !important;
-		width: 270px !important;
-		margin-top: 10px;
-	}
-}
+
 
 body.no-scroll {
 	overflow: hidden;
@@ -1728,4 +1730,10 @@ body.no-scroll {
 
 body.cart-open .cart {
 	transform: translateX(0);
+}
+
+@media (min-width: 1098px) {
+	.mobile_drop_down_hide_desktop{
+		display: none;
+	}
 }

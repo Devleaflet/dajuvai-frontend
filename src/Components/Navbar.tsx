@@ -150,20 +150,26 @@ const Navbar: React.FC = () => {
 
 	useEffect(() => {
 		function handleClickOutside(event: MouseEvent) {
-			if (
-				profileDropdownOpen &&
-				dropdownTriggerRef.current &&
-				!dropdownTriggerRef.current.contains(event.target as Node) &&
-				profileRef.current &&
-				!profileRef.current.contains(event.target as Node)
-			) {
+			const targetNode = event.target as Node;
+
+			// Determine if the click occurred inside either profile dropdown (desktop or mobile)
+			const isInsideProfileDropdown =
+				(!!profileRef.current && profileRef.current.contains(targetNode)) ||
+				(!!mobileProfileRef.current && mobileProfileRef.current.contains(targetNode));
+
+			// Determine if the click occurred inside the profile trigger (avatar/button)
+			const isInsideTrigger =
+				!!dropdownTriggerRef.current &&
+				dropdownTriggerRef.current.contains(targetNode);
+
+			if (profileDropdownOpen && !isInsideTrigger && !isInsideProfileDropdown) {
 				setProfileDropdownOpen(false);
 			}
 
 			if (
 				moreDropdownOpen &&
 				moreDropdownRef.current &&
-				!moreDropdownRef.current.contains(event.target as Node)
+				!moreDropdownRef.current.contains(targetNode)
 			) {
 				setMoreDropdownOpen(false);
 			}
@@ -215,7 +221,6 @@ const Navbar: React.FC = () => {
 		}
 	};
 
-	// FIXED: Proper cart toggle function that works on all pages
 	const toggleCart = (e?: React.MouseEvent): void => {
 		e?.preventDefault();
 		e?.stopPropagation();
@@ -223,7 +228,6 @@ const Navbar: React.FC = () => {
 		setCartOpen(newState);
 		if (sideMenuOpen) setSideMenuOpen(false);
 
-		// Properly manage body classes for cart state
 		if (newState) {
 			document.body.classList.add('no-scroll');
 			document.body.classList.add('cart-open');
@@ -598,63 +602,62 @@ const Navbar: React.FC = () => {
 			<div className="navbar__side-menu-categories">
 				{showLoading
 					? Array.from({ length: 6 }).map((_, index) => (
-							<div
-								key={index}
-								className="navbar__side-menu-category skeleton"
-							>
-								<div className="skeleton__category"></div>
-							</div>
-					  ))
+						<div
+							key={index}
+							className="navbar__side-menu-category skeleton"
+						>
+							<div className="skeleton__category"></div>
+						</div>
+					))
 					: categories.map((category: Category) => (
-							<div
-								key={category.id}
-								className="navbar__side-menu-category"
+						<div
+							key={category.id}
+							className="navbar__side-menu-category"
+						>
+							<button
+								className="navbar__side-menu-category-button"
+								onClick={() => handleExpandSideMenuCategory(category.id)}
 							>
-								<button
-									className="navbar__side-menu-category-button"
-									onClick={() => handleExpandSideMenuCategory(category.id)}
-								>
-									<span>{category.name}</span>
-									<FaChevronDown
-										size={20}
-										className={`navbar__side-menu-category-icon ${
-											selectedCategory === category.id
-												? 'navbar__side-menu-category-icon--open'
-												: ''
+								<span>{category.name}</span>
+								<FaChevronDown
+									size={20}
+									className={`navbar__side-menu-category-icon ${selectedCategory === category.id
+										? 'navbar__side-menu-category-icon--open'
+										: ''
 										}`}
-									/>
-								</button>
-								{selectedCategory === category.id && (
-									<div className="navbar__side-menu-subcategories">
-										{sideMenuLoading[category.id] ? (
-											<div style={{ padding: 12, color: '#888' }}>
-												Loading...
-											</div>
-										) : (
-											(sideMenuSubcategories[category.id] || []).map(
-												(subcategory: Subcategory) => (
-													<Link
-														key={subcategory.id}
-														to={`/shop?categoryId=${category.id}&subcategoryId=${subcategory.id}`}
-														className="navbar__side-menu-subcategory"
-														onClick={(e) => {
-															e.preventDefault();
-															handleSubcategoryClick(
-																category.id,
-																subcategory.id
-															);
-															setSideMenuOpen(false);
-														}}
-													>
-														{subcategory.name}
-													</Link>
-												)
+								/>
+							</button>
+							{selectedCategory === category.id && (
+								<div className="navbar__side-menu-subcategories">
+									{sideMenuLoading[category.id] ? (
+										<div style={{ padding: 12, color: '#888' }}>
+											Loading...
+										</div>
+									) : (
+										(sideMenuSubcategories[category.id] || []).map(
+											(subcategory: Subcategory) => (
+												<Link
+													key={subcategory.id}
+													to={`/shop?categoryId=${category.id}&subcategoryId=${subcategory.id}`}
+													className="navbar__side-menu-subcategory"
+													onClick={(e) => {
+														e.preventDefault();
+														handleSubcategoryClick(
+															category.id,
+															subcategory.id
+														);
+														setSideMenuOpen(false);
+													}}
+												>
+													{subcategory.name}
+												</Link>
 											)
-										)}
-									</div>
-								)}
-							</div>
-					  ))}
+										)
+									)}
+								</div>
+							)}
+						</div>
+					))}
 			</div>
 		);
 	};
@@ -820,8 +823,8 @@ const Navbar: React.FC = () => {
 											(e.key === 'Enter' || e.key === ' ')
 										) {
 											toggleAuthModal({
-												preventDefault: () => {},
-												stopPropagation: () => {},
+												preventDefault: () => { },
+												stopPropagation: () => { },
 											} as unknown as React.MouseEvent);
 										}
 									}}
@@ -831,74 +834,8 @@ const Navbar: React.FC = () => {
 									{getUserAvatar()}
 								</div>
 
-								{isAuthenticated && profileDropdownOpen && (
-									<div
-										className="navbar__profile-dropdown-card"
-										ref={mobileProfileRef}
-										style={{
-											zIndex: 9999,
-										}}
-									>
-										<div className="navbar__profile-card-header">
-											{getUserAvatar()}
-											<div className="navbar__profile-card-info">
-												<div className="navbar__profile-card-name">
-													{user?.username || user?.email}
-												</div>
-												{user?.email && (
-													<div className="navbar__profile-card-email">
-														{user.email}
-													</div>
-												)}
-											</div>
-										</div>
-										<div className="navbar__profile-card-divider" />
-										{user?.role === 'admin' && (
-											<NavLink
-												to="/admin-dashboard"
-												className="navbar__profile-card-link"
-												onClick={() => setProfileDropdownOpen(false)}
-												style={({ isActive }) => ({
-													color: isActive ? '#f97316' : 'inherit',
-												})}
-											>
-												<FaHome className="navbar__profile-card-icon" /> Admin
-												Dashboard
-											</NavLink>
-										)}
-										{vendorAuthState.isAuthenticated &&
-											vendorAuthState.vendor && (
-												<NavLink
-													to="/dashboard"
-													className="navbar__profile-card-link"
-													onClick={() => setProfileDropdownOpen(false)}
-													style={({ isActive }) => ({
-														color: isActive ? '#f97316' : 'inherit',
-													})}
-												>
-													<FaHome className="navbar__profile-card-icon" />{' '}
-													Vendor Dashboard
-												</NavLink>
-											)}
-										<NavLink
-											to="/user-profile"
-											className="navbar__profile-card-link"
-											onClick={() => setProfileDropdownOpen(false)}
-											style={({ isActive }) => ({
-												color: isActive ? '#f97316' : 'inherit',
-											})}
-										>
-											<FaCog className="navbar__profile-card-icon" /> Settings
-										</NavLink>
-										<button
-											className="navbar__profile-card-link navbar__profile-card-link--logout"
-											onClick={handleFullLogout}
-										>
-											<FaSignOutAlt className="navbar__profile-card-icon" /> Log
-											Out
-										</button>
-									</div>
-								)}
+
+
 							</div>
 
 							<span className="navbar__social-link navbar__social-link--nepal">
@@ -919,6 +856,94 @@ const Navbar: React.FC = () => {
 							</button>
 						</div>
 					</div>
+
+
+					{isAuthenticated && profileDropdownOpen && (
+						<div
+							className="navbar__profile-dropdown-card mobile_drop_down_hide_desktop"
+							ref={mobileProfileRef}
+							style={{
+								zIndex: 999999999,
+							}}
+							onClick={(e) => {
+								console.log("CLICK REGISTERED INSIDE DROPDOWN");
+								e.stopPropagation(); // prevents parent click handlers from blocking
+							}}
+						>
+							{console.log("PROFILE DROPDOWN RENDERED")}
+
+							<div className="navbar__profile-card-header">
+								{getUserAvatar()}
+								<div className="navbar__profile-card-info">
+									<div className="navbar__profile-card-name">
+										{user?.username || user?.email}
+									</div>
+									{user?.email && (
+										<div className="navbar__profile-card-email">
+											{user.email}
+										</div>
+									)}
+								</div>
+							</div>
+
+							<div className="navbar__profile-card-divider" />
+
+							{user?.role === 'admin' && (
+								<NavLink
+									to="/admin-dashboard"
+									className="navbar__profile-card-link"
+									onClick={() => {
+										console.log("Admin Dashboard CLICKED");
+										setProfileDropdownOpen(false);
+									}}
+									style={({ isActive }) => ({
+										color: isActive ? '#f97316' : 'inherit',
+									})}
+								>
+									<FaHome className="navbar__profile-card-icon" /> Admin Dashboard
+								</NavLink>
+							)}
+
+							{vendorAuthState.isAuthenticated && vendorAuthState.vendor && (
+								<NavLink
+									to="/dashboard"
+									className="navbar__profile-card-link"
+									onClick={() => {
+										console.log("Vendor Dashboard CLICKED");
+										setProfileDropdownOpen(false);
+									}}
+									style={({ isActive }) => ({
+										color: isActive ? '#f97316' : 'inherit',
+									})}
+								>
+									<FaHome className="navbar__profile-card-icon" /> Vendor Dashboard
+								</NavLink>
+							)}
+
+							<NavLink
+								to="/user-profile"
+								className="navbar__profile-card-link"
+								onClick={() => setProfileDropdownOpen(false)}
+								style={({ isActive }) => ({
+									color: isActive ? '#f97316' : 'inherit',
+								})}
+							>
+								<FaCog className="navbar__profile-card-icon" /> Settings
+							</NavLink>
+
+							<button
+								className="navbar__profile-card-link navbar__profile-card-link--logout"
+								onClick={(e) => {
+									console.log("LOGOUT BUTTON CLICKED!");
+									e.stopPropagation();
+									handleFullLogout();
+								}}
+							>
+								<FaSignOutAlt className="navbar__profile-card-icon" /> Log Out
+							</button>
+
+						</div>
+					)}
 
 					<div className="navbar__search-row">
 						<div
@@ -1100,8 +1125,8 @@ const Navbar: React.FC = () => {
 											(e.key === 'Enter' || e.key === ' ')
 										) {
 											toggleAuthModal({
-												preventDefault: () => {},
-												stopPropagation: () => {},
+												preventDefault: () => { },
+												stopPropagation: () => { },
 											} as unknown as React.MouseEvent);
 										}
 									}}
@@ -1123,7 +1148,7 @@ const Navbar: React.FC = () => {
 											position: 'absolute',
 											top: 'calc(100% + 10px)',
 											right: 0,
-											zIndex: 9999,
+											zIndex: 99999999999999,
 										}}
 									>
 										<div className="navbar__profile-card-header">
@@ -1213,9 +1238,8 @@ const Navbar: React.FC = () => {
 				</div>
 
 				<div
-					className={`navbar__side-menu ${
-						sideMenuOpen ? 'navbar__side-menu--open' : ''
-					}`}
+					className={`navbar__side-menu ${sideMenuOpen ? 'navbar__side-menu--open' : ''
+						}`}
 					ref={sideMenuRef}
 				>
 					<div className="navbar__side-menu-header">
@@ -1252,9 +1276,8 @@ const Navbar: React.FC = () => {
 							<span>More</span>
 							<FaChevronDown
 								size={20}
-								className={`navbar__side-menu-category-icon ${
-									sideMoreOpen ? 'navbar__side-menu-category-icon--open' : ''
-								}`}
+								className={`navbar__side-menu-category-icon ${sideMoreOpen ? 'navbar__side-menu-category-icon--open' : ''
+									}`}
 							/>
 						</button>
 						{sideMoreOpen && (
@@ -1331,9 +1354,8 @@ const Navbar: React.FC = () => {
 				/>
 
 				<div
-					className={`navbar__overlay ${
-						sideMenuOpen || cartOpen ? 'navbar__overlay--visible' : ''
-					}`}
+					className={`navbar__overlay ${sideMenuOpen || cartOpen ? 'navbar__overlay--visible' : ''
+						}`}
 					onClick={() => {
 						setSideMenuOpen(false);
 						setCartOpen(false);
@@ -1361,9 +1383,8 @@ const Navbar: React.FC = () => {
 								<div
 									key={category.id}
 									ref={(el) => (categoryRefs.current[category.id] = el)}
-									className={`navbar__category${
-										activeDropdown === category.id ? ' active' : ''
-									}`}
+									className={`navbar__category${activeDropdown === category.id ? ' active' : ''
+										}`}
 									onMouseEnter={() => {
 										clearDropdownTimeout();
 										setActiveDropdown(category.id);
@@ -1391,11 +1412,10 @@ const Navbar: React.FC = () => {
 										{category.name}
 										<FaChevronDown
 											size={16}
-											className={`navbar__category-icon ${
-												activeDropdown === category.id
-													? 'navbar__category-icon--active'
-													: ''
-											}`}
+											className={`navbar__category-icon ${activeDropdown === category.id
+												? 'navbar__category-icon--active'
+												: ''
+												}`}
 										/>
 									</div>
 								</div>
@@ -1407,8 +1427,8 @@ const Navbar: React.FC = () => {
 							disabled={
 								categoriesRef.current &&
 								scrollPosition >=
-									categoriesRef.current.scrollWidth -
-										categoriesRef.current.clientWidth
+								categoriesRef.current.scrollWidth -
+								categoriesRef.current.clientWidth
 							}
 						>
 							<FaChevronRight />
