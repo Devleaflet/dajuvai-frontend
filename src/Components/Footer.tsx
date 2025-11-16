@@ -325,13 +325,7 @@ const Footer: React.FC = () => {
 				{/* Copyright Section */}
 				<div className="footer__bottom">
 					<div className="footer__copyright">
-						Copyright Dajuvai © 2025 -{" "}
-						<a
-							href="/"
-							className="footer__copyright-link"
-						>
-							Leaflet Digital Solutions Pvt Ltd.
-						</a>
+						Copyright Dajuvai © 2025 
 					</div>
 				</div>
 			</div>
