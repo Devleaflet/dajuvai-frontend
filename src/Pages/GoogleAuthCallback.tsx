@@ -341,7 +341,7 @@ const GoogleAuthCallback: React.FC = () => {
         )}
       </div>
 
-      <DebugPanel />
+      {/* <DebugPanel /> */}
 
       <style>{`
         @keyframes spin {
