@@ -357,7 +357,7 @@
 
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate} from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const GoogleAuthCallback: React.FC = () => {
   const navigate = useNavigate();
@@ -370,6 +370,17 @@ const GoogleAuthCallback: React.FC = () => {
       setMessage("Successfully authenticated with Google!");
     }, 2000);
   }, []);
+
+  useEffect(() => {
+    if (status === "success") {
+      const timeout = setTimeout(() => {
+        navigate("/", { replace: true });
+      }, 1500);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [status, navigate]);
+
 
   return (
     <div
