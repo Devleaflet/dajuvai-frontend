@@ -147,6 +147,9 @@ export function AdminDashboard() {
 				headers: { Authorization: `Bearer ${token}` },
 			});
 			console.log('----------stats------------');
+			console.log('----------stats------------');
+			console.log('----------stats------------');
+			console.log('----------stats------------');
 			console.log(response);
 			if (response.data && response.data.success) {
 				setStats(response.data.data);

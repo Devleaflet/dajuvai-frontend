@@ -66,6 +66,11 @@ const createVendorAPI = (token: string | null) => ({
 			}
 
 			const result: ApiResponse<Vendor[]> = await response.json();
+			console.log("-------vendor----------")
+			console.log("-------vendor----------")
+			console.log("-------vendor----------")
+			console.log("-------vendor----------")
+			console.log(result)
 			return (result.data || []).map((vendor) => ({
 				...vendor,
 				status: vendor.isVerified ? "Active" : "Inactive",

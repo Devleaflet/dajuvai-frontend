@@ -196,46 +196,46 @@ const GoogleAuthCallback: React.FC = () => {
     }
   };
 
-  const DebugPanel = () => (
-    <details style={{ marginTop: '20px', maxWidth: '800px', textAlign: 'left' }}>
-      <summary style={{ cursor: 'pointer', marginBottom: '10px', fontSize: '14px' }}>
-        Show Debug Information
-      </summary>
-      <div style={{
-        backgroundColor: '#f8f9fa',
-        border: '1px solid #dee2e6',
-        padding: '15px',
-        borderRadius: '8px',
-        maxHeight: '400px',
-        overflowY: 'auto',
-        fontSize: '12px',
-        fontFamily: 'Monaco, Consolas, monospace'
-      }}>
-        <div style={{ marginBottom: '15px' }}>
-          <strong>Environment Info:</strong>
-          <div>Current URL: {window.location.href}</div>
-          <div>API Base URL: {API_BASE_URL}</div>
-          <div>Origin: {window.location.origin}</div>
-          <div>Cookies: {document.cookie || 'None'}</div>
-          <div>Referrer: {document.referrer}</div>
-          <div>Search Params: {window.location.search}</div>
-        </div>
+  // const DebugPanel = () => (
+  //   <details style={{ marginTop: '20px', maxWidth: '800px', textAlign: 'left' }}>
+  //     <summary style={{ cursor: 'pointer', marginBottom: '10px', fontSize: '14px' }}>
+  //       Show Debug Information
+  //     </summary>
+  //     <div style={{
+  //       backgroundColor: '#f8f9fa',
+  //       border: '1px solid #dee2e6',
+  //       padding: '15px',
+  //       borderRadius: '8px',
+  //       maxHeight: '400px',
+  //       overflowY: 'auto',
+  //       fontSize: '12px',
+  //       fontFamily: 'Monaco, Consolas, monospace'
+  //     }}>
+  //       <div style={{ marginBottom: '15px' }}>
+  //         <strong>Environment Info:</strong>
+  //         <div>Current URL: {window.location.href}</div>
+  //         <div>API Base URL: {API_BASE_URL}</div>
+  //         <div>Origin: {window.location.origin}</div>
+  //         <div>Cookies: {document.cookie || 'None'}</div>
+  //         <div>Referrer: {document.referrer}</div>
+  //         <div>Search Params: {window.location.search}</div>
+  //       </div>
 
-        <div>
-          <strong>Debug Logs:</strong>
-          {debugInfo.map((log, index) => (
-            <div key={index} style={{
-              marginBottom: '3px',
-              padding: '2px 0',
-              borderBottom: index < debugInfo.length - 1 ? '1px solid #eee' : 'none'
-            }}>
-              {log}
-            </div>
-          ))}
-        </div>
-      </div>
-    </details>
-  );
+  //       <div>
+  //         <strong>Debug Logs:</strong>
+  //         {debugInfo.map((log, index) => (
+  //           <div key={index} style={{
+  //             marginBottom: '3px',
+  //             padding: '2px 0',
+  //             borderBottom: index < debugInfo.length - 1 ? '1px solid #eee' : 'none'
+  //           }}>
+  //             {log}
+  //           </div>
+  //         ))}
+  //       </div>
+  //     </div>
+  //   </details>
+  // );
 
   return (
     <div
