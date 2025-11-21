@@ -14,6 +14,13 @@ import { WishlistProvider } from "./context/WishlistContext.tsx";
 import { setupAxiosInterceptors } from './api/axiosInstance';
 // import PasswordProtectedRoute from "./Components/SiteProtection/PasswordProtectedRoute.tsx";
 
+if ('scrollRestoration' in window.history) {
+  try {
+    window.history.scrollRestoration = 'manual';
+    console.log('[EntryPoint] scrollRestoration set to manual');
+  } catch {}
+}
+
 setupAxiosInterceptors(() => localStorage.getItem('authToken'));
 console.log('[EntryPoint] Axios interceptor set up with token from localStorage');
 
