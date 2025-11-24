@@ -316,7 +316,7 @@ export const createProduct = async (
 		//"Response Data:", JSON.stringify(response.data, null, 2));
 
 		return response.data;
-	} catch (error: any) {
+	} catch (error) {
 		console.error("=== PRODUCT CREATION ERROR ===");
 		console.error("Error Type:", typeof error);
 		console.error("Error Name:", error.name);
@@ -441,7 +441,7 @@ export const updateProduct = async (
 			data: response.data,
 			message: "Product updated successfully",
 		};
-	} catch (error: any) {
+	} catch (error) {
 		console.error("❌ UPDATE PRODUCT ERROR:", error);
 
 		if (error.response) {
@@ -452,8 +452,7 @@ export const updateProduct = async (
 			// Handle specific error cases
 			if (error.response.status === 400) {
 				throw new Error(
-					`Bad Request: ${
-						error.response.data?.message || "Invalid product data"
+					`Bad Request: ${error.response.data?.message || "Invalid product data"
 					}`
 				);
 			} else if (error.response.status === 401) {
@@ -491,7 +490,8 @@ export const deleteProduct = async (productId: number, token?: string) => {
 		}
 
 		const response = await axios.delete(
-			`${API_BASE_URL}/api/product/${productId}`
+			`${API_BASE_URL}/api/product/${productId}`,
+			{ headers }
 		);
 
 		//"Product deleted successfully:", response.data);
@@ -520,7 +520,7 @@ export const fetchProducts = async (
 	limit: number = 10
 ) => {
 	try {
-		
+
 		//"Making request to:", `/api/vendors/${vendorId}/products`);
 
 		const response = await axiosInstance.get(

@@ -15,7 +15,7 @@ export const fetchCategoryCatalog = async () => {
 			console.warn("⚠️ Unexpected response structure:", response.data);
 			return response.data.data || response.data || [];
 		}
-	} catch (error: any) {
+	} catch (error) {
 		console.error("❌ Failed to fetch categories:", error.message);
 		throw new Error(`Failed to fetch categories: ${error.message}`);
 	}

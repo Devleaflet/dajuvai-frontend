@@ -56,24 +56,24 @@ const AdminProduct: React.FC = () => {
         ...(filterOption !== "all" && { filter: filterOption }),
       });
 
-    
+
 
       const response = await fetch(`${API_BASE_URL}/api/product/admin/products?${queryParams}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      
+
       //('Response status:', response.status);
       //('Request URL:', `${API_BASE_URL}/api/product/admin/products?${queryParams}`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-  
+
       const data = await response.json();
       //('Response data:', data);
-      
+
       if (data.success) {
         setProducts(data.data.products);
         setTotalProducts(data.data.total);
@@ -125,9 +125,7 @@ const AdminProduct: React.FC = () => {
     setIsDeleting(true);
     try {
       await productService.deleteProduct(
-        product.subcategory.category.id,
-        product.subcategory.id,
-        product.id
+        product.id, token
       );
       await fetchProducts();
       setShowDeleteModal(false);
@@ -144,17 +142,17 @@ const AdminProduct: React.FC = () => {
   // Handle sort change - Fixed mapping
   const handleSort = useCallback((newSortOption: string) => {
     //('Sort option selected:', newSortOption);
-    
+
     const backendSortMap: { [key: string]: string } = {
       "newest": "newest",
       "oldest": "oldest",
       "price-asc": "price_low_high",
-      "price-desc": "price_high_low", 
+      "price-desc": "price_high_low",
     };
-    
+
     const backendSortValue = backendSortMap[newSortOption] || "newest";
     //('Mapped to backend sort:', backendSortValue);
-    
+
     setSortOption(backendSortValue);
     setCurrentPage(1);
   }, []);
@@ -206,19 +204,19 @@ const AdminProduct: React.FC = () => {
             <button onClick={fetchProducts}>Retry</button>
           </div>
         )}
-        <Header 
-          onSearch={() => {}} 
+        <Header
+          onSearch={() => { }}
           showSearch={true}  // Changed to true so filter dropdown shows
           onSort={handleSort}
           sortOption={(() => {
             // Reverse map backend value to frontend value for display
             const frontendSortMap: { [key: string]: string } = {
               "newest": "newest",
-              "oldest": "oldest", 
+              "oldest": "oldest",
               "price_low_high": "price-asc",
               "price_high_low": "price-desc",
               "name_asc": "name-asc",
-              "name_desc": "name-desc", 
+              "name_desc": "name-desc",
               "vendor_asc": "vendor-asc",
               "vendor_desc": "vendor-desc",
             };
@@ -263,11 +261,11 @@ const AdminProduct: React.FC = () => {
                     const getDisplayPrice = (): number => {
                       //("helo")
                       // First try product base price
-                      if (product.basePrice && 
-                          (typeof product.basePrice === 'number' && product.basePrice > 0)) {
+                      if (product.basePrice &&
+                        (typeof product.basePrice === 'number' && product.basePrice > 0)) {
                         return product.basePrice;
                       }
-                      
+
                       // If base price is string, try to parse it
                       if (typeof product.basePrice === 'string') {
                         const parsedPrice = parseFloat(product.basePrice);
@@ -275,29 +273,29 @@ const AdminProduct: React.FC = () => {
                           return parsedPrice;
                         }
                       }
-                      
+
                       // Try product.price field
-                      if (product.price && 
-                          (typeof product.price === 'number' && product.price > 0)) {
+                      if (product.price &&
+                        (typeof product.price === 'number' && product.price > 0)) {
                         return product.price;
                       }
-                      
+
                       // Fallback to first variant price
-                      if ( product.variants && product.variants.length > 0) {
-                          //("hieeeee",product.name)
+                      if (product.variants && product.variants.length > 0) {
+                        //("hieeeee",product.name)
 
                         for (const variant of product.variants) {
                           // Try variant.price first
                           if (variant.price && typeof variant.price === 'number' && variant.price > 0) {
                             return variant.price;
                           }
-                          
+
                           // Try variant.basePrice (number)
                           if (variant.basePrice && typeof variant.basePrice === 'number' && variant.basePrice > 0) {
                             //("hiee",product.name)
                             return variant.basePrice;
                           }
-                          
+
                           // Try variant.basePrice (string)
                           if (typeof variant.basePrice === 'string') {
                             const parsedVariantPrice = parseFloat(variant.basePrice);
@@ -307,7 +305,7 @@ const AdminProduct: React.FC = () => {
                           }
                         }
                       }
-                      
+
                       return 0; // Default fallback
                     };
 
@@ -317,7 +315,7 @@ const AdminProduct: React.FC = () => {
                       if (product.stock && typeof product.stock === 'number' && product.stock >= 0) {
                         return product.stock;
                       }
-                      
+
                       // If product stock is string, try to parse it
                       if (typeof product.stock === 'string') {
                         const parsedStock = parseInt(product.stock, 10);
@@ -325,16 +323,16 @@ const AdminProduct: React.FC = () => {
                           return parsedStock;
                         }
                       }
-                      
+
                       // Fallback to first variant stock
                       if (product.variants && product.variants.length > 0) {
-                                                    //("hiee",product.name)
+                        //("hiee",product.name)
 
                         for (const variant of product.variants) {
                           if (variant.stock && typeof variant.stock === 'number' && variant.stock >= 0) {
                             return variant.stock;
                           }
-                          
+
                           if (typeof variant.stock === 'string') {
                             const parsedVariantStock = parseInt(variant.stock, 10);
                             if (!isNaN(parsedVariantStock) && parsedVariantStock >= 0) {
@@ -343,26 +341,26 @@ const AdminProduct: React.FC = () => {
                           }
                         }
                       }
-                      
+
                       return 0; // Default fallback
                     };
 
                     const displayPrice = getDisplayPrice();
                     const displayStock = getDisplayStock();
-                    
+
                     // Get first variant for image fallback
                     const firstVariant = product.hasVariants && product.variants && product.variants.length > 0
                       ? product.variants[0]
                       : null;
                     const variantImgStr = firstVariant
                       ? (
-                          (Array.isArray(firstVariant.variantImages) && typeof firstVariant.variantImages[0] === 'string'
-                            ? (firstVariant.variantImages[0] as string)
-                            : undefined) ||
-                          (Array.isArray(firstVariant.images) && typeof firstVariant.images[0] === 'string'
-                            ? (firstVariant.images[0] as string)
-                            : undefined)
-                        )
+                        (Array.isArray(firstVariant.variantImages) && typeof firstVariant.variantImages[0] === 'string'
+                          ? (firstVariant.variantImages[0] as string)
+                          : undefined) ||
+                        (Array.isArray(firstVariant.images) && typeof firstVariant.images[0] === 'string'
+                          ? (firstVariant.images[0] as string)
+                          : undefined)
+                      )
                       : undefined;
                     const displayImage: string = (product.productImages?.[0]) || variantImgStr || (defaultProductImage as string);
                     return (

@@ -151,8 +151,8 @@ const VendorProduct: React.FC = () => {
 				(product: ApiProduct): Product => {
 					const productImages = Array.isArray(product.productImages)
 						? product.productImages.map((img: string | { url?: string }) =>
-								typeof img === "string" ? img : img.url || ""
-						  )
+							typeof img === "string" ? img : img.url || ""
+						)
 						: [];
 
 					const variantImages: string[] = [];
@@ -219,35 +219,35 @@ const VendorProduct: React.FC = () => {
 
 					const normalizedVariants = Array.isArray((product as any).variants)
 						? (product as any).variants.map((v: any) => {
-								const rawBase =
-									typeof v?.price !== "undefined"
-										? v.price
-										: typeof v?.basePrice !== "undefined"
+							const rawBase =
+								typeof v?.price !== "undefined"
+									? v.price
+									: typeof v?.basePrice !== "undefined"
 										? v.basePrice
 										: typeof v?.originalPrice !== "undefined"
-										? v.originalPrice
-										: typeof product.basePrice !== "undefined"
-										? product.basePrice
-										: (product as any).price;
-								const baseNum =
-									typeof rawBase === "string"
-										? parseFloat(rawBase)
-										: Number(rawBase) || 0;
-								let calc = baseNum;
-								if (
-									discount > 0 &&
-									(discountType === "PERCENTAGE" ||
-										discountType === "FLAT" ||
-										discountType === "FIXED")
-								) {
-									if (discountType === "PERCENTAGE") {
-										calc = baseNum - (baseNum * discount) / 100;
-									} else {
-										calc = baseNum - discount;
-									}
+											? v.originalPrice
+											: typeof product.basePrice !== "undefined"
+												? product.basePrice
+												: (product as any).price;
+							const baseNum =
+								typeof rawBase === "string"
+									? parseFloat(rawBase)
+									: Number(rawBase) || 0;
+							let calc = baseNum;
+							if (
+								discount > 0 &&
+								(discountType === "PERCENTAGE" ||
+									discountType === "FLAT" ||
+									discountType === "FIXED")
+							) {
+								if (discountType === "PERCENTAGE") {
+									calc = baseNum - (baseNum * discount) / 100;
+								} else {
+									calc = baseNum - discount;
 								}
-								return { ...v, calculatedPrice: calc };
-						  })
+							}
+							return { ...v, calculatedPrice: calc };
+						})
 						: undefined;
 
 					let status: "AVAILABLE" | "OUT_OF_STOCK" | "LOW_STOCK" = "AVAILABLE";
@@ -269,8 +269,8 @@ const VendorProduct: React.FC = () => {
 						discountType: (discountType === "PERCENTAGE"
 							? "PERCENTAGE"
 							: discountType === "FLAT" || discountType === "FIXED"
-							? "FLAT"
-							: undefined) as "PERCENTAGE" | "FLAT" | undefined,
+								? "FLAT"
+								: undefined) as "PERCENTAGE" | "FLAT" | undefined,
 						size: product.size || [],
 						status: status,
 						productImages: images,
@@ -417,23 +417,22 @@ const VendorProduct: React.FC = () => {
 			} else {
 				//("VendorProduct: Creating variant product");
 				if (productData.variants && Array.isArray(productData.variants)) {
-					
+
 					formData.append("variants", JSON.stringify(productData.variants));
 
 					productData.variants.forEach((variant, variantIndex) => {
-						
+
 						if (variant.images && Array.isArray(variant.images)) {
-							
+
 							variant.images.forEach((image, imageIndex) => {
-								
+
 								if (image instanceof File) {
 									const imageKey = `variantImages${variantIndex + 1}`;
 									formData.append(imageKey, image);
-									
+
 								} else {
 									console.warn(
-										`VendorProduct: Image ${imageIndex + 1} for variant ${
-											variant.sku
+										`VendorProduct: Image ${imageIndex + 1} for variant ${variant.sku
 										} is not a File:`,
 										image
 									);
@@ -469,17 +468,9 @@ const VendorProduct: React.FC = () => {
 				formData.append("brandId", String(productData.brandId));
 			}
 
-			//("VendorProduct: Final FormData entries:");
-			for (const [key, value] of formData.entries()) {
-				//(`  ${key}:`, value);
-			}
-
-			//("VendorProduct: Making API call to createProduct");
 			throw new Error("Use NewProductModal for creating products");
 		},
 		onSuccess: (data) => {
-			//("Product created successfully:", data);
-			//("Created product data:", data);
 			toast.success("Product created successfully!");
 
 			queryClient.invalidateQueries({
@@ -580,7 +571,7 @@ const VendorProduct: React.FC = () => {
 				updatePayload.status = productData.status || "AVAILABLE";
 			}
 
-		
+
 
 			return updateProduct(productId, categoryId, subcategoryId, updatePayload);
 		},
@@ -609,16 +600,7 @@ const VendorProduct: React.FC = () => {
 	};
 
 	const handleEditProduct = (product: Product) => {
-		//("🚀 EDIT BUTTON CLICKED!");
-		//("=== ORIGINAL PRODUCT DATA ===");
-		//("Full Product Object:", JSON.stringify(product, null, 2));
-		//("Product ID:", product.id);
-		//("Product Name:", product.name);
-		//("Product CategoryId:", product.categoryId);
-		//("Product SubcategoryId:", product.subcategoryId);
-		//("Product Subcategory Object:", product.subcategory);
-		//("Product Category Object:", product.category);
-		//("=== END PRODUCT DATA ===");
+
 
 		let discount: number | null = null;
 		if (product.discount) {
@@ -638,31 +620,28 @@ const VendorProduct: React.FC = () => {
 		};
 		const subcategory =
 			product.subcategory &&
-			typeof product.subcategory === "object" &&
-			"id" in product.subcategory &&
-			"name" in product.subcategory
+				typeof product.subcategory === "object" &&
+				"id" in product.subcategory &&
+				"name" in product.subcategory
 				? {
-						id: product.subcategory.id,
-						name: product.subcategory.name,
-						image: (product.subcategory as SubcategoryType).image || null,
-						createdAt:
-							(product.subcategory as SubcategoryType).createdAt ||
-							new Date().toISOString(),
-						updatedAt:
-							(product.subcategory as SubcategoryType).updatedAt ||
-							new Date().toISOString(),
-				  }
+					id: product.subcategory.id,
+					name: product.subcategory.name,
+					image: (product.subcategory as SubcategoryType).image || null,
+					createdAt:
+						(product.subcategory as SubcategoryType).createdAt ||
+						new Date().toISOString(),
+					updatedAt:
+						(product.subcategory as SubcategoryType).updatedAt ||
+						new Date().toISOString(),
+				}
 				: {
-						id: 0,
-						name: "",
-						image: null,
-						createdAt: new Date().toISOString(),
-						updatedAt: new Date().toISOString(),
-				  };
-		//("🔄 CONVERTING PRODUCT FOR EDITING:");
-		//("Original Product:", product);
-		//("Product Category ID:", product.categoryId);
-		//("Product Subcategory:", product.subcategory);
+					id: 0,
+					name: "",
+					image: null,
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString(),
+				};
+
 
 		let categoryId = product.categoryId || 0;
 		if (
@@ -689,12 +668,12 @@ const VendorProduct: React.FC = () => {
 				typeof product.basePrice === "number"
 					? product.basePrice
 					: product.basePrice
-					? parseFloat(product.basePrice.toString())
-					: typeof product.price === "string"
-					? parseFloat(product.price)
-					: typeof product.price === "number"
-					? product.price
-					: 0,
+						? parseFloat(product.basePrice.toString())
+						: typeof product.price === "string"
+							? parseFloat(product.price)
+							: typeof product.price === "number"
+								? product.price
+								: 0,
 			discount: discount,
 			discountType: (product.discountType === "PERCENTAGE"
 				? "PERCENTAGE"
@@ -703,8 +682,8 @@ const VendorProduct: React.FC = () => {
 				product.status === "OUT_OF_STOCK"
 					? "OUT_OF_STOCK"
 					: product.status === "LOW_STOCK"
-					? "LOW_STOCK"
-					: "AVAILABLE",
+						? "LOW_STOCK"
+						: "AVAILABLE",
 			productImages:
 				product.productImages || (product.image ? [product.image] : []),
 			inventory: [],
@@ -716,16 +695,16 @@ const VendorProduct: React.FC = () => {
 				typeof product.vendor === "object" && product.vendor !== null
 					? product.vendor
 					: {
-							id: 0,
-							businessName: "",
-							email: "",
-							phoneNumber: "",
-							districtId: 0,
-							isVerified: false,
-							createdAt: new Date().toISOString(),
-							updatedAt: new Date().toISOString(),
-							district: { id: 0, name: "" },
-					  },
+						id: 0,
+						businessName: "",
+						email: "",
+						phoneNumber: "",
+						districtId: 0,
+						isVerified: false,
+						createdAt: new Date().toISOString(),
+						updatedAt: new Date().toISOString(),
+						district: { id: 0, name: "" },
+					},
 			brand: null,
 			deal: null,
 			hasVariants: (product as any).hasVariants || false,
@@ -734,17 +713,15 @@ const VendorProduct: React.FC = () => {
 				typeof product.price === "number"
 					? product.price
 					: product.price
-					? parseFloat(product.price.toString())
-					: 0,
+						? parseFloat(product.price.toString())
+						: 0,
 			image: product.image || "",
 			brand_id: product.brand_id || null,
 			bannerId: (product as any).bannerId || null,
 			brandId: (product as any).brandId || null,
 		} as ApiProduct;
 
-		//("✅ Converted ApiProduct:", apiProduct);
-		//("ApiProduct Category ID:", apiProduct.categoryId);
-		//("ApiProduct Subcategory:", apiProduct.subcategory);
+
 		setEditingProduct(apiProduct);
 		setShowEditModal(true);
 	};

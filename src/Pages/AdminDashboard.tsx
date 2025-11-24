@@ -773,7 +773,7 @@ export function AdminDashboard() {
 				<AdminSidebar />
 				<div className={`dashboard ${isMobile ? 'dashboard--mobile' : ''}`}>
 					<Header
-						onSearch={handleSearch}
+						// onSearch={handleSearch}
 						showSearch={false}
 						title="Dashboard"
 					/>
@@ -804,7 +804,7 @@ export function AdminDashboard() {
 			<AdminSidebar />
 			<div className={`dashboard ${isMobile ? 'dashboard--mobile' : ''}`}>
 				<Header
-					onSearch={handleSearch}
+					// onSearch={handleSearch}
 					showSearch={false}
 					title="Dashboard"
 				/>
