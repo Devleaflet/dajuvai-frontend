@@ -37,7 +37,7 @@ const RevenueByCategory = () => {
 		fetch(url)
 			.then((res) => res.json())
 			.then((res) => {
-				console.log('API Response:', res);
+				//('API Response:', res);
 				setData(res.data || []);
 			})
 			.catch((err) => {

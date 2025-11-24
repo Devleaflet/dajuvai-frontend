@@ -256,17 +256,10 @@ const fetchProductsWithFilters = async (
 	const queryParams = buildQueryParams(apiFilters);
 	const endpoint = `/api/categories/all/products${queryParams ? `?${queryParams}` : ''
 		}`;
-	console.log('🔍 Fetching products with filters:', {
-		filters: apiFilters,
-		originalFilters: filters,
-		queryParams,
-		endpoint,
-		fullUrl: `${API_BASE_URL}${endpoint}`,
-		token: token ? 'Present' : 'Not present',
-	});
+	
 	try {
 		const response = await apiRequest(endpoint, token);
-		console.log('✅ Products API response:', response.meta.total);
+		//('✅ Products API response:', response.meta.total);
 		return response;
 	} catch (error) {
 		console.error('❌ Error fetching products:', error);
@@ -284,18 +277,7 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 	try {
 		const { averageRating, reviews } = await fetchReviewOf(item.id);
 		const isDev = Boolean((import.meta as any)?.env?.DEV);
-		if (isDev)
-			console.log('Processing product:', {
-				id: item.id,
-				name: item.name,
-				hasVariants: !!item.variants?.length,
-				productImages: item.productImages,
-				variants: item.variants?.map((v) => ({
-					id: v.id,
-					variantImages: v.images,
-					variantImage: v.image,
-				})),
-			});
+		
 		const processImageUrl = (imgUrl: string): string => {
 			if (!imgUrl) return '';
 			const trimmed = imgUrl.trim();
@@ -356,7 +338,7 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 				.filter((x): x is string => typeof x === 'string' && x.length > 0);
 			if (allVariantImages.length > 0) return allVariantImages[0];
 			if (isDev)
-				console.log('No valid images found for product, using default image');
+				//('No valid images found for product, using default image');
 			return phone;
 		};
 		const displayImage = getDisplayImage();
@@ -732,8 +714,8 @@ const Shop: React.FC = () => {
 	} = useQuery({
 		queryKey: queryKey,
 		queryFn: async () => {
-			console.log('🔄 Starting products query with filters:', currentFilters);
-			console.log('🔄 Query key filters:', queryKey);
+			//('🔄 Starting products query with filters:', currentFilters);
+			//('🔄 Query key filters:', queryKey);
 			try {
 				const response = await fetchProductsWithFilters(currentFilters, token);
 				const productsArray: ApiProduct[] = response.data || response || [];
@@ -750,18 +732,12 @@ const Shop: React.FC = () => {
 						: 1,
 					total_items: response?.meta?.total ?? productsArray.length,
 				};
-				console.log(
-					'🔄 Processing products with reviews, count:',
-					productsArray.length
-				);
+			
 				const processedProducts = await Promise.all(
 					productsArray.map(async (item, index) => {
 						try {
 							const processed = await processProductWithReview(item);
-							console.log(
-								`✅ Processed product ${index + 1}/${productsArray.length}:`,
-								item.name
-							);
+							
 							return processed;
 						} catch (error) {
 							console.error(
@@ -788,21 +764,11 @@ const Shop: React.FC = () => {
 						}
 					})
 				);
-				console.log(
-					'✅ Successfully processed all products, final count:',
-					processedProducts.length
-				);
+				
 				return { products: processedProducts, meta: paginationInfo };
 			} catch (error) {
 				console.error('❌ Fatal error in products query:', error);
-				console.log('🔍 Fallback condition check:', {
-					hasCategoryId: !!currentFilters.categoryId,
-					hasSubcategoryId: !!currentFilters.subcategoryId,
-					hasBrandId: !!currentFilters.brandId,
-					hasDealId: !!currentFilters.dealId,
-					hasBannerId: !!currentFilters.bannerId,
-					currentFilters,
-				});
+				
 				if (
 					currentFilters.categoryId ||
 					currentFilters.subcategoryId ||
@@ -810,9 +776,7 @@ const Shop: React.FC = () => {
 					currentFilters.dealId ||
 					currentFilters.bannerId
 				) {
-					console.log(
-						'🔄 Trying fallback: fetching all products without filters'
-					);
+					
 					try {
 						const fallbackFilters: ProductFilters = {
 							page: currentFilters.page,
@@ -833,10 +797,7 @@ const Shop: React.FC = () => {
 						} else if (Array.isArray(fallbackResponse)) {
 							fallbackProductsArray = fallbackResponse;
 						}
-						console.log(
-							'✅ Fallback successful, got products:',
-							fallbackProductsArray.length
-						);
+						
 						const fallbackPagination = fallbackResponse.pagination || {
 							current_page: currentFilters.page || 1,
 							total_pages: 1,
@@ -876,9 +837,7 @@ const Shop: React.FC = () => {
 					} catch (fallbackError) {
 						console.error('❌ Fallback also failed:', fallbackError);
 						if (currentFilters.categoryId && currentFilters.subcategoryId) {
-							console.log(
-								'🔄 Trying second fallback: category only without subcategory'
-							);
+							
 							try {
 								const secondFallbackFilters: ProductFilters = {
 									categoryId: currentFilters.categoryId,
@@ -900,10 +859,7 @@ const Shop: React.FC = () => {
 								} else if (Array.isArray(secondFallbackResponse)) {
 									secondFallbackProductsArray = secondFallbackResponse;
 								}
-								console.log(
-									'✅ Second fallback successful, got products:',
-									secondFallbackProductsArray.length
-								);
+								
 								const secondFallbackPagination =
 									secondFallbackResponse.pagination || {
 										current_page: currentFilters.page || 1,
@@ -954,7 +910,7 @@ const Shop: React.FC = () => {
 						throw error;
 					}
 				} else {
-					console.log('⚠️ No filters detected, not attempting fallback');
+					//('⚠️ No filters detected, not attempting fallback');
 				}
 				throw error;
 			}
@@ -963,10 +919,7 @@ const Shop: React.FC = () => {
 		gcTime: 10 * 60 * 1000,
 		refetchOnWindowFocus: false,
 		retry: (failureCount, error) => {
-			console.log(
-				`🔄 Retrying products query (attempt ${failureCount + 1}/3):`,
-				error
-			);
+			
 			return failureCount < 2;
 		},
 		retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),

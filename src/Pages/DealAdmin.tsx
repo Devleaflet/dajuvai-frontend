@@ -146,7 +146,7 @@ const DealAdmin: React.FC = () => {
     }
 
     // Debug log: print the payload before sending
-    console.log("[Deal Edit] PATCH payload:", formData);
+    //("[Deal Edit] PATCH payload:", formData);
 
     // Ensure the payload is properly formatted
     const payload = {
@@ -154,7 +154,7 @@ const DealAdmin: React.FC = () => {
       discountPercentage: Number(formData.discountPercentage),
       status: formData.status
     };
-    console.log("[Deal Edit] Formatted payload:", payload);
+    //("[Deal Edit] Formatted payload:", payload);
 
     try {
       const response: ApiResponse<Deal> =

@@ -300,13 +300,6 @@ const AdminCatalog = () => {
 				payload.sectionId = sectionToEdit;
 			}
 
-			console.log(
-				"😂🔥",
-				sectionToEdit,
-				payload,
-				endpoint,
-				selectedProductSource
-			);
 
 			const res = await fetch(endpoint, {
 				method: editingHomepage ? "PUT" : "POST",
@@ -324,7 +317,7 @@ const AdminCatalog = () => {
 			}
 
 			const result = await res.json();
-			console.log(`✅ ${selectedProductSource} section saved`, result);
+			//(`✅ ${selectedProductSource} section saved`, result);
 			const successMessage = editingHomepage
 				? "Homepage section updated successfully"
 				: "Homepage section added successfully";

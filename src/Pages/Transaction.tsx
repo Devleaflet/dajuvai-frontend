@@ -33,7 +33,7 @@ const TransactionSuccess: React.FC = () => {
   useEffect(() => {
     const hitAPIs = async () => {
       if (merchantTxnId) {
-        console.log("🔍 Checking order for MerchantTxnId:", merchantTxnId);
+        //("🔍 Checking order for MerchantTxnId:", merchantTxnId);
         try {
           const orderResponse = await fetch(
             `${API_BASE_URL}/api/order/search/merchant-transactionId`,
@@ -50,7 +50,7 @@ const TransactionSuccess: React.FC = () => {
           if (orderResponse.ok) {
             const orderResult = await orderResponse.json();
             if (orderResult.success && orderResult.data) {
-              console.log("✅ Order retrieved successfully:", orderResult.data);
+              //("✅ Order retrieved successfully:", orderResult.data);
               setOrderData(orderResult.data);
             } else {
               console.warn("❌ No order data found for this transaction ID.");
@@ -102,7 +102,7 @@ const TransactionSuccess: React.FC = () => {
 
   // Loading state
   if (loading) {
-    console.log("⌛ Loading order details...");
+    //("⌛ Loading order details...");
     return (
       <>
         <Navbar />
@@ -120,7 +120,7 @@ const TransactionSuccess: React.FC = () => {
 
   // Failed order (no data found)
   if (!orderData) {
-    console.log(" Order verification failed or order not found.");
+    //(" Order verification failed or order not found.");
     return (
       <>
         <Navbar />
@@ -167,7 +167,7 @@ const TransactionSuccess: React.FC = () => {
   }
 
   // Success case
-  console.log("✅ Payment success for Order ID:", orderData.id);
+  //("✅ Payment success for Order ID:", orderData.id);
 
   const handleDownloadPDF = () => {
     if (!orderData) return;

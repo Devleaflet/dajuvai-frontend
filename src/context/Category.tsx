@@ -60,11 +60,11 @@ const CategoryContextProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!categoryData) return;
 
     try {
-      console.log('🔄 Processing category data in context:', categoryData);
+      //('🔄 Processing category data in context:', categoryData);
       
       // Handle new API structure where categories come directly with subcategories
       const categoriesWithSubcategoriesPromises = categoryData.map(async (category: any) => {
-        console.log('📂 Processing category:', category.name, 'with', category.subcategories?.length || 0, 'subcategories');
+        //('📂 Processing category:', category.name, 'with', category.subcategories?.length || 0, 'subcategories');
         
         // Map subcategories to the expected format
         const subItems = category.subcategories?.map((sub: any) => ({
@@ -84,7 +84,7 @@ const CategoryContextProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
 
       const resolvedCategories = await Promise.all(categoriesWithSubcategoriesPromises);
-      console.log('✅ Resolved categories:', resolvedCategories.length, 'categories with subcategories');
+      //('✅ Resolved categories:', resolvedCategories.length, 'categories with subcategories');
 
       const isDifferent =
         resolvedCategories.length !== categories.length ||
@@ -94,7 +94,7 @@ const CategoryContextProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         );
 
       if (isDifferent) {
-        console.log('🔄 Categories changed, updating state');
+        //('🔄 Categories changed, updating state');
         setCategories(resolvedCategories);
         resolvedCategories.forEach((category) => {
           queryClient.prefetchQuery({
@@ -105,7 +105,7 @@ const CategoryContextProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           });
         });
       } else {
-        console.log('📋 Categories unchanged, skipping update');
+        //('📋 Categories unchanged, skipping update');
       }
     } catch (error) {
       console.error("❌ Error updating categories:", error);

@@ -23,7 +23,7 @@ const GoogleAuthDirect: React.FC = () => {
             const hashData = decodeURIComponent(location.hash.substring(1));
             responseData = JSON.parse(hashData);
           } catch {
-            console.log('No valid JSON in hash');
+            //('No valid JSON in hash');
           }
         }
         
@@ -35,7 +35,7 @@ const GoogleAuthDirect: React.FC = () => {
             try {
               responseData = JSON.parse(decodeURIComponent(responseParam));
             } catch {
-              console.log('No valid JSON in response param');
+              //('No valid JSON in response param');
             }
           }
         }
@@ -47,7 +47,7 @@ const GoogleAuthDirect: React.FC = () => {
             const searchString = location.search.substring(1);
             responseData = JSON.parse(decodeURIComponent(searchString));
           } catch {
-            console.log('Search string is not valid JSON');
+            //('Search string is not valid JSON');
           }
         }
 

@@ -14,7 +14,7 @@ const GoogleAuthCallback: React.FC = () => {
   const addDebugLog = (message: string) => {
     const timestamp = new Date().toISOString();
     const logMessage = `[${timestamp}] ${message}`;
-    console.log(logMessage);
+    //(logMessage);
     setDebugInfo(prev => [...prev, logMessage]);
   };
 

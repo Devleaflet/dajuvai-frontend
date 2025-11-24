@@ -14,9 +14,9 @@ const VendorRevenueBySubCategory = () => {
     const { token, isAuthenticated } = authState;
 
     if (!isAuthenticated) {
-        console.log("User is not authenticated")
+        //("User is not authenticated")
     } else {
-        console.log("--------Token---------", token)
+        //("--------Token---------", token)
     }
 
     useEffect(() => {
@@ -27,7 +27,7 @@ const VendorRevenueBySubCategory = () => {
         })
             .then((res) => res.json())
             .then((res) => {
-                console.log('API Response:', res);
+                //('API Response:', res);
                 if (Array.isArray(res.data) && res.data.length > 0) {
                     setData(res.data);
                 } else {

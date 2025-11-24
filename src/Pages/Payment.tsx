@@ -63,8 +63,8 @@ const NepalPaymentGateway: React.FC = () => {
   const location = useLocation();
   const orderDetails = location.state?.orderDetails;
 
-  console.log("---------------------Order details----------------------")
-  console.log(orderDetails)
+  //("---------------------Order details----------------------")
+  //(orderDetails)
 
   if (!orderDetails) {
     return <p className="no-order-details">No order details found.</p>;
@@ -356,7 +356,7 @@ const NepalPaymentGateway: React.FC = () => {
       try {
         doc.addImage(logoImg, 'WEBP', 85, 5, 40, 16);
       } catch (e) {
-        console.log(e)
+        //(e)
       }
     }
     

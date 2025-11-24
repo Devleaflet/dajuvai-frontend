@@ -74,21 +74,21 @@ const cartReducer = (state: CartItem[], action: ActionType): CartItem[] => {
     }
 
     case "INC_QUANTITY": {
-      console.log('INC_QUANTITY action:', action);
-      console.log('State before INC_QUANTITY:', state);
+      //('INC_QUANTITY action:', action);
+      //('State before INC_QUANTITY:', state);
       const cartItemId = action.payload.cartItemId;
       const newState = state.map((item) => {
         return item.id === cartItemId
           ? { ...item, quantity: item.quantity + action.payload.quantity }
           : item;
       });
-      console.log('State after INC_QUANTITY:', newState);
+      //('State after INC_QUANTITY:', newState);
       return newState;
     }
 
     case "DEC_QUANTITY": {
-      console.log('DEC_QUANTITY action:', action);
-      console.log('State before DEC_QUANTITY:', state);
+      //('DEC_QUANTITY action:', action);
+      //('State before DEC_QUANTITY:', state);
       const cartItemId = action.payload.cartItemId;
       const newState = state
         .map((item) => {
@@ -97,7 +97,7 @@ const cartReducer = (state: CartItem[], action: ActionType): CartItem[] => {
             : item;
         })
         .filter((item) => item.quantity > 0);
-      console.log('State after DEC_QUANTITY:', newState);
+      //('State after DEC_QUANTITY:', newState);
       return newState;
     }
 
@@ -139,7 +139,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     const loadCart = async () => {
       // Don't fetch cart if user is not authenticated
       if (!auth.isAuthenticated) {
-        console.log("User not authenticated, clearing cart");
+        //("User not authenticated, clearing cart");
         setCartItems([]);
         return;
       }
@@ -150,7 +150,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
       } catch (error) {
         // If there's an auth error, clear the cart
         if (axios.isAxiosError(error) && error.response?.status === 401) {
-          console.log("Auth error while fetching cart, clearing cart");
+          //("Auth error while fetching cart, clearing cart");
           setCartItems([]);
         } else {
           console.error("Failed to load cart on mount:", error);
@@ -172,7 +172,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
           setCartItems(items);
         } catch (error) {
           if (axios.isAxiosError(error) && error.response?.status === 401) {
-            console.log("Auth error while refreshing cart, clearing cart");
+            //("Auth error while refreshing cart, clearing cart");
             setCartItems([]);
           } else {
             console.error("Failed to refresh cart on navigation:", error);
@@ -190,7 +190,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const refreshCart = async () => {
       if (!auth.isAuthenticated) {
-        console.log("User not authenticated, clearing cart");
+        //("User not authenticated, clearing cart");
         setCartItems([]);
         return;
       }
@@ -200,7 +200,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
         setCartItems(items);
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 401) {
-          console.log("Auth error while refreshing cart, clearing cart");
+          //("Auth error while refreshing cart, clearing cart");
           setCartItems([]);
         } else {
           console.error("Failed to refresh cart:", error);
@@ -213,7 +213,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
   // Listen for logout event and clear cart
   useEffect(() => {
     const handleLogout = () => {
-      console.log("Clearing cart on logout");
+      //("Clearing cart on logout");
       setCartItems([]);
     };
 
@@ -226,29 +226,29 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const handleCartOnAdd = async (product: Product, quantity = 1, variantId?: number) => {
-    console.log("=== handleCartOnAdd START ===");
-    console.log("Product being added:", product);
-    console.log("Quantity:", quantity);
-    console.log("Current cart items:", cartItems);
-    console.log("Is authenticated:", auth.isAuthenticated);
+    //("=== handleCartOnAdd START ===");
+    //("Product being added:", product);
+    //("Quantity:", quantity);
+    //("Current cart items:", cartItems);
+    //("Is authenticated:", auth.isAuthenticated);
 
     if (!auth.isAuthenticated) {
-      console.log("User not authenticated, cannot add to cart");
+      //("User not authenticated, cannot add to cart");
       return;
     }
 
     // Prevent multiple clicks using product ID
     if (addingItems.has(product.id)) {
-      console.log("Item is already being added, product ID:", product.id);
+      //("Item is already being added, product ID:", product.id);
       return;
     }
 
-    console.log("Adding product ID to addingItems set:", product.id);
+    //("Adding product ID to addingItems set:", product.id);
     // Add item to adding set
     setAddingItems(prev => new Set(prev).add(product.id));
 
     try {
-      console.log("Making API call to add item to cart...");
+      //("Making API call to add item to cart...");
       const payload: any = {
         productId: product.id,
         quantity,
@@ -257,15 +257,15 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
         payload.variantId = variantId;
       }
       const response = await axiosInstance.post("/api/cart", payload, { withCredentials: true });
-      console.log("API response:", response.data);
+      //("API response:", response.data);
 
-      console.log("Refreshing cart from backend...");
+      //("Refreshing cart from backend...");
       // Refresh cart from backend to get the correct item structure
       await refreshCart();
-      console.log("Cart refreshed successfully");
+      //("Cart refreshed successfully");
 
       toast.success("Item added to cart successfully!");
-      console.log("=== handleCartOnAdd SUCCESS ===");
+      //("=== handleCartOnAdd SUCCESS ===");
     } catch (error: any) {
       console.error("=== handleCartOnAdd ERROR ===");
       console.error("Cart POST error:", error?.response?.data || error.message);
@@ -275,8 +275,8 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
         error?.response?.data?.error ||
         error.message;
 
-      console.log("-----------Message---------")
-      console.log(message)
+      //("-----------Message---------")
+      //(message)
 
       if (message.includes("stock")) {
         toast.error("Cannot add more than available stock.");
@@ -288,58 +288,58 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
         toast.error(message)
       }
     } finally {
-      console.log("Removing product ID from addingItems set:", product.id);
+      //("Removing product ID from addingItems set:", product.id);
       // Remove item from adding set
       setAddingItems(prev => {
         const newSet = new Set(prev);
         newSet.delete(product.id);
         return newSet;
       });
-      console.log("=== handleCartOnAdd END ===");
+      //("=== handleCartOnAdd END ===");
     }
   };
 
   const handleCartItemOnDelete = async (cartItem: CartItem) => {
-    console.log("=== handleCartItemOnDelete START ===");
-    console.log("Cart item being deleted:", cartItem);
-    console.log("Cart item ID:", cartItem.id);
-    console.log("Product ID:", cartItem.productId || cartItem.product?.id);
-    console.log("Current cart items:", cartItems);
-    console.log("Is authenticated:", auth.isAuthenticated);
+    //("=== handleCartItemOnDelete START ===");
+    //("Cart item being deleted:", cartItem);
+    //("Cart item ID:", cartItem.id);
+    //("Product ID:", cartItem.productId || cartItem.product?.id);
+    //("Current cart items:", cartItems);
+    //("Is authenticated:", auth.isAuthenticated);
 
     if (!auth.isAuthenticated) {
-      console.log("User not authenticated, cannot delete from cart");
+      //("User not authenticated, cannot delete from cart");
       return;
     }
 
     // Prevent multiple clicks using cart item ID
     if (deletingItems.has(cartItem.id)) {
-      console.log("Item is already being deleted, cart item ID:", cartItem.id);
+      //("Item is already being deleted, cart item ID:", cartItem.id);
       return;
     }
 
-    console.log("Adding cart item ID to deletingItems set:", cartItem.id);
+    //("Adding cart item ID to deletingItems set:", cartItem.id);
     // Add item to deleting set
     setDeletingItems(prev => new Set(prev).add(cartItem.id));
 
     try {
-      console.log("Making API call to delete item from cart...");
-      console.log("Sending cartItemId:", cartItem.id);
+      //("Making API call to delete item from cart...");
+      //("Sending cartItemId:", cartItem.id);
 
       const response = await axiosInstance.delete("/api/cart", {
         data: { cartItemId: cartItem.id },
         withCredentials: true
       });
-      console.log("Delete API response:", response.data);
+      //("Delete API response:", response.data);
 
-      console.log("Refreshing cart from backend...");
+      //("Refreshing cart from backend...");
       // Refresh cart from backend to get the correct state
       await refreshCart();
-      console.log("Cart refreshed successfully after deletion");
+      //("Cart refreshed successfully after deletion");
 
-      console.log("Item deleted successfully from backend");
+      //("Item deleted successfully from backend");
       toast.success("Item removed from cart successfully!");
-      console.log("=== handleCartItemOnDelete SUCCESS ===");
+      //("=== handleCartItemOnDelete SUCCESS ===");
     } catch (error: any) {
       console.error("=== handleCartItemOnDelete ERROR ===");
       console.error("Delete error:", error?.response?.data || error.message);
@@ -350,14 +350,14 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
       // Show error toast notification
       toast.error("Failed to remove item from cart. Please try again.");
     } finally {
-      console.log("Removing cart item ID from deletingItems set:", cartItem.id);
+      //("Removing cart item ID from deletingItems set:", cartItem.id);
       // Remove item from deleting set
       setDeletingItems(prev => {
         const newSet = new Set(prev);
         newSet.delete(cartItem.id);
         return newSet;
       });
-      console.log("=== handleCartItemOnDelete END ===");
+      //("=== handleCartItemOnDelete END ===");
     }
   };
 
@@ -366,12 +366,12 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     amount: number = 1
   ) => {
     if (!auth.isAuthenticated) {
-      console.log("User not authenticated, cannot modify cart");
+      //("User not authenticated, cannot modify cart");
       return;
     }
 
     if (updatingItems.has(cartItemId)) {
-      console.log("Item is already being updated");
+      //("Item is already being updated");
       return;
     }
 
@@ -398,7 +398,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Refresh cart from backend to get the correct state
       await refreshCart();
-      console.log("Quantity increased for cart item:", cartItemId);
+      //("Quantity increased for cart item:", cartItemId);
     } catch (error: any) {
       console.error(
         "Failed to increase quantity:",
@@ -420,12 +420,12 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     amount: number = 1
   ) => {
     if (!auth.isAuthenticated) {
-      console.log("User not authenticated, cannot modify cart");
+      //("User not authenticated, cannot modify cart");
       return;
     }
 
     if (updatingItems.has(cartItemId)) {
-      console.log("Item is already being updated");
+      //("Item is already being updated");
       return;
     }
 
@@ -443,7 +443,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Refresh cart from backend to get the correct state
       await refreshCart();
-      console.log("Quantity decreased for cart item:", cartItemId);
+      //("Quantity decreased for cart item:", cartItemId);
     } catch (error: any) {
       console.error(
         "Failed to decrease quantity:",
@@ -461,40 +461,31 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const refreshCart = async () => {
-    console.log("=== refreshCart START ===");
-    console.log("Is authenticated:", auth.isAuthenticated);
+    //("=== refreshCart START ===");
+    //("Is authenticated:", auth.isAuthenticated);
 
     if (!auth.isAuthenticated) {
-      console.log("User not authenticated, clearing cart");
+      //("User not authenticated, clearing cart");
       setCartItems([]);
       return;
     }
 
     try {
-      console.log("Fetching cart from backend...");
+      //("Fetching cart from backend...");
       const items = await fetchCart();
-      console.log("Fetched cart items from backend:", items);
-      console.log("Number of items fetched:", items.length);
+      //("Fetched cart items from backend:", items);
+      //("Number of items fetched:", items.length);
 
-      // Log the structure of each item for debugging
-      items.forEach((item, index) => {
-        console.log(`Item ${index}:`, {
-          id: item.id,
-          productId: item.productId || item.product?.id,
-          name: item.name,
-          quantity: item.quantity,
-          allFields: Object.keys(item)
-        });
-      });
+     
 
-      console.log("Setting cart items in state...");
+      //("Setting cart items in state...");
       setCartItems(items);
-      console.log("Cart items set successfully");
-      console.log("=== refreshCart SUCCESS ===");
+      //("Cart items set successfully");
+      //("=== refreshCart SUCCESS ===");
     } catch (error) {
       console.error("=== refreshCart ERROR ===");
       if (axios.isAxiosError(error) && error.response?.status === 401) {
-        console.log("Auth error while refreshing cart, clearing cart");
+        //("Auth error while refreshing cart, clearing cart");
         setCartItems([]);
       } else {
         console.error("Failed to refresh cart:", error);

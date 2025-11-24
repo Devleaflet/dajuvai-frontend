@@ -41,7 +41,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
   role,
 }) => {
   const { authState } = useVendorAuth();
-  console.log("AddProductModal: Vendor ID from context:", authState.vendor?.id);
+  //("AddProductModal: Vendor ID from context:", authState.vendor?.id);
   
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
@@ -91,9 +91,9 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 
   const statusOptions = Object.values(InventoryStatus);
 
-  console.log("AddProductModal: Current form data:", formData);
-  console.log("AddProductModal: Current variants:", variants);
-  console.log("AddProductModal: Has variants:", formData.hasVariants);
+  //("AddProductModal: Current form data:", formData);
+  //("AddProductModal: Current variants:", variants);
+  //("AddProductModal: Has variants:", formData.hasVariants);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -212,7 +212,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
   };
 
   const handleVariantAdd = () => {
-    console.log("AddProductModal: Adding variant:", currentVariant);
+    //("AddProductModal: Adding variant:", currentVariant);
     
     if (!currentVariant.sku) {
       toast.error("SKU is required for variant");
@@ -250,7 +250,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       images: [],
     });
     
-    console.log("AddProductModal: Variants after adding:", [...variants, newVariant]);
+    //("AddProductModal: Variants after adding:", [...variants, newVariant]);
   };
 
   const handleVariantRemove = (skuToRemove: string) => {
@@ -258,7 +258,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
   };
 
   const validateForm = () => {
-    console.log("AddProductModal: Validating form with hasVariants:", formData.hasVariants);
+    //("AddProductModal: Validating form with hasVariants:", formData.hasVariants);
     
     if (!formData.name) return "Product name is required";
     if (!selectedCategoryId) return "Category is required";
@@ -308,7 +308,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("AddProductModal: Form submission started");
+    //("AddProductModal: Form submission started");
     
     const validationError = validateForm();
     if (validationError) {
@@ -335,8 +335,8 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     }
     
     try {
-      console.log("AddProductModal: Preparing payload with hasVariants:", formData.hasVariants);
-      console.log("AddProductModal: Current variants:", variants);
+      //("AddProductModal: Preparing payload with hasVariants:", formData.hasVariants);
+      //("AddProductModal: Current variants:", variants);
       
       const payload: ProductFormData = {
         ...formData,
@@ -346,9 +346,9 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
         variants: formData.hasVariants ? variants : undefined,
       };
       
-      console.log("AddProductModal: Final payload:", payload);
-      console.log("AddProductModal: Category ID:", selectedCategoryId);
-      console.log("AddProductModal: Subcategory ID:", selectedSubcategoryId);
+      //("AddProductModal: Final payload:", payload);
+      //("AddProductModal: Category ID:", selectedCategoryId);
+      //("AddProductModal: Subcategory ID:", selectedSubcategoryId);
       
       await onAdd(
         payload,
@@ -396,7 +396,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       setError(null);
       onClose();
       
-      console.log("AddProductModal: Form submission completed successfully");
+      //("AddProductModal: Form submission completed successfully");
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to add product";

@@ -113,9 +113,7 @@ export function AdminDashboard() {
 	const vendorChartRef = useRef<Chart | null>(null);
 	const topProductsChartRef = useRef<Chart | null>(null);
 
-	const handleSearch = (query: string) => {
-		console.log('Searching for:', query);
-	};
+	
 
 	useEffect(() => {
 		const handleResize = () => {
@@ -138,7 +136,7 @@ export function AdminDashboard() {
 					return;
 				}
 			} catch (error) {
-				console.log(error);
+				//(error);
 			}
 		}
 
@@ -146,11 +144,11 @@ export function AdminDashboard() {
 			const response = await axiosInstance.get('/api/admin/dashboard/stats', {
 				headers: { Authorization: `Bearer ${token}` },
 			});
-			console.log('----------stats------------');
-			console.log('----------stats------------');
-			console.log('----------stats------------');
-			console.log('----------stats------------');
-			console.log(response);
+			//('----------stats------------');
+			//('----------stats------------');
+			//('----------stats------------');
+			//('----------stats------------');
+			//(response);
 			if (response.data && response.data.success) {
 				setStats(response.data.data);
 				localStorage.setItem(
@@ -179,7 +177,7 @@ export function AdminDashboard() {
 					return;
 				}
 			} catch (error) {
-				console.log(error);
+				//(error);
 			}
 		}
 
@@ -225,7 +223,7 @@ export function AdminDashboard() {
 					return;
 				}
 			} catch (err) {
-				console.log(err);
+				//(err);
 			}
 		}
 
@@ -271,7 +269,7 @@ export function AdminDashboard() {
 					return;
 				}
 			} catch (err) {
-				console.log(err);
+				//(err);
 			}
 		}
 

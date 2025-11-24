@@ -315,14 +315,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 		try {
 			setIsLoading(true);
 			setError("");
-
-			console.log("Sending signup data:", {
-				username: userData.username,
-				email: userData.email,
-				passwordLength: userData.password.length,
-				confirmPasswordLength: userData.confirmPassword.length,
-			});
-
 			const response = await axios.post<SignupResponse>(
 				`${API_BASE_URL}/api/auth/signup`,
 				userData,
@@ -334,7 +326,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 			);
 
 			setSuccess(response.data.message);
-			console.log("Signup successful:", response.data);
+			//("Signup successful:", response.data);
 
 			setPendingVerificationEmail(userData.email);
 			setShowVerification(true);
@@ -412,7 +404,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 			);
 
 			setSuccess(response.data.message);
-			console.log("Email verification successful:", response.data);
+			//("Email verification successful:", response.data);
 
 			setTimeout(() => {
 				setShowVerification(false);
@@ -457,7 +449,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 			);
 
 			setSuccess(response.data.message);
-			console.log("Verification email resent:", response.data);
+			//("Verification email resent:", response.data);
 			setCountdown(120);
 		} catch (err) {
 			if (axios.isAxiosError(err)) {
@@ -492,7 +484,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 				}
 			);
 
-			console.log("User login successful:", response.data);
+			//("User login successful:", response.data);
 
 			if (response.data.success && response.data.token) {
 				const userData = {
@@ -557,7 +549,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 			callbackUrl
 		)}`;
 
-		console.log("Redirecting to backend Google OAuth:", redirectUrl);
+		//("Redirecting to backend Google OAuth:", redirectUrl);
 		window.location.href = redirectUrl;
 	};
 

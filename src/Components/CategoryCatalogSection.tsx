@@ -37,21 +37,17 @@ const CategoryCatalogSection: React.FC = () => {
 	useEffect(() => {
 		const loadCategories = async () => {
 			try {
-				console.log("Fetching category catalog...");
+				//("Fetching category catalog...");
 				const data = await fetchCategoryCatalog();
-				console.log("Raw data from fetchCategoryCatalog:", data);
+				//("Raw data from fetchCategoryCatalog:", data);
 				const processedCategories = Array.isArray(data) ? data : [];
 				setCategories(processedCategories);
-				console.log("Processed categories state:", processedCategories);
-				console.log(
-					"Subcategories",
-					processedCategories.flatMap((cat) => cat.category.subcategories)
-				);
+				
 			} catch (err) {
 				console.error("Error fetching category catalog:", err);
 				setError(err instanceof Error ? err.message : "Unknown error");
 			} finally {
-				console.log("Loading state set to false");
+				//("Loading state set to false");
 				setLoading(false);
 			}
 		};
@@ -269,13 +265,6 @@ const CategoryCatalogSection: React.FC = () => {
 														src={item.image}
 														alt={item.name}
 														className="category-section__subcategory-image"
-														onError={(e) =>
-															console.log(
-																"Subcategory image failed to load:",
-																e,
-																item.name
-															)
-														}
 													/>
 												</div>
 												<p className="category-section__subcategory-name">

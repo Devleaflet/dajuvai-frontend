@@ -32,7 +32,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 	const [scrollLeft, setScrollLeft] = useState<{ [key: string]: number }>({});
 
 	// Fetch categories with React Query
-	console.log("Before executing fetchCategoryCatalog");
+	//("Before executing fetchCategoryCatalog");
 	const {
 		data: categoryData,
 		isLoading: isCategoryLoading,
@@ -46,7 +46,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 		refetchOnMount: false,
 		refetchOnReconnect: false,
 	});
-	console.log("Category Catalog Data: ", categoryData);
+	//("Category Catalog Data: ", categoryData);
 
 	// Preload images for better performance
 	useEffect(() => {
@@ -63,7 +63,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 	}, [categories]);
 
 	useEffect(() => {
-		console.log("Category data fetched:", categoryData);
+		//("Category data fetched:", categoryData);
 	}, []);
 
 	// Update categories when data is fetched

@@ -56,12 +56,7 @@ const AdminProduct: React.FC = () => {
         ...(filterOption !== "all" && { filter: filterOption }),
       });
 
-      console.log('Fetching products with params:', {
-        page: currentPage,
-        limit: productsPerPage,
-        sort: sortOption,
-        filter: filterOption !== "all" ? filterOption : "none"
-      });
+    
 
       const response = await fetch(`${API_BASE_URL}/api/product/admin/products?${queryParams}`, {
         headers: {
@@ -69,15 +64,15 @@ const AdminProduct: React.FC = () => {
         },
       });
       
-      console.log('Response status:', response.status);
-      console.log('Request URL:', `${API_BASE_URL}/api/product/admin/products?${queryParams}`);
+      //('Response status:', response.status);
+      //('Request URL:', `${API_BASE_URL}/api/product/admin/products?${queryParams}`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
   
       const data = await response.json();
-      console.log('Response data:', data);
+      //('Response data:', data);
       
       if (data.success) {
         setProducts(data.data.products);
@@ -148,7 +143,7 @@ const AdminProduct: React.FC = () => {
 
   // Handle sort change - Fixed mapping
   const handleSort = useCallback((newSortOption: string) => {
-    console.log('Sort option selected:', newSortOption);
+    //('Sort option selected:', newSortOption);
     
     const backendSortMap: { [key: string]: string } = {
       "newest": "newest",
@@ -158,7 +153,7 @@ const AdminProduct: React.FC = () => {
     };
     
     const backendSortValue = backendSortMap[newSortOption] || "newest";
-    console.log('Mapped to backend sort:', backendSortValue);
+    //('Mapped to backend sort:', backendSortValue);
     
     setSortOption(backendSortValue);
     setCurrentPage(1);
@@ -166,14 +161,14 @@ const AdminProduct: React.FC = () => {
 
   // Handle filter change
   const handleFilter = useCallback((newFilterOption: string) => {
-    console.log('Filter option selected:', newFilterOption);
+    //('Filter option selected:', newFilterOption);
     setFilterOption(newFilterOption);
     setCurrentPage(1);
   }, []);
 
   // Handle edit product
   const handleEditProduct = useCallback((product: ApiProduct) => {
-    console.log("AdminProduct: Opening edit modal for product:", product);
+    //("AdminProduct: Opening edit modal for product:", product);
     setProductToEdit(product);
     setShowEditModal(true);
   }, []);
@@ -266,7 +261,7 @@ const AdminProduct: React.FC = () => {
                   products.map((product) => {
                     // Helper function to get valid price from product or variant
                     const getDisplayPrice = (): number => {
-                      console.log("helo")
+                      //("helo")
                       // First try product base price
                       if (product.basePrice && 
                           (typeof product.basePrice === 'number' && product.basePrice > 0)) {
@@ -289,7 +284,7 @@ const AdminProduct: React.FC = () => {
                       
                       // Fallback to first variant price
                       if ( product.variants && product.variants.length > 0) {
-                          console.log("hieeeee",product.name)
+                          //("hieeeee",product.name)
 
                         for (const variant of product.variants) {
                           // Try variant.price first
@@ -299,7 +294,7 @@ const AdminProduct: React.FC = () => {
                           
                           // Try variant.basePrice (number)
                           if (variant.basePrice && typeof variant.basePrice === 'number' && variant.basePrice > 0) {
-                            console.log("hiee",product.name)
+                            //("hiee",product.name)
                             return variant.basePrice;
                           }
                           
@@ -333,7 +328,7 @@ const AdminProduct: React.FC = () => {
                       
                       // Fallback to first variant stock
                       if (product.variants && product.variants.length > 0) {
-                                                    console.log("hiee",product.name)
+                                                    //("hiee",product.name)
 
                         for (const variant of product.variants) {
                           if (variant.stock && typeof variant.stock === 'number' && variant.stock >= 0) {

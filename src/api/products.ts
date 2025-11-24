@@ -40,9 +40,9 @@ export const testProductAPI = async (
 	categoryId: number,
 	subcategoryId: number
 ) => {
-	console.log("🧪 TESTING PRODUCT API ENDPOINT");
-	console.log("Category ID:", categoryId);
-	console.log("Subcategory ID:", subcategoryId);
+	//"🧪 TESTING PRODUCT API ENDPOINT");
+	//"Category ID:", categoryId);
+	//"Subcategory ID:", subcategoryId);
 
 	const testData = new FormData();
 	testData.append("name", "TEST_PRODUCT");
@@ -53,13 +53,13 @@ export const testProductAPI = async (
 	testData.append("status", "AVAILABLE");
 
 	const apiUrl = `/api/categories/${categoryId}/subcategories/${subcategoryId}/products`;
-	console.log("🎯 Test API URL:", apiUrl);
+	//"🎯 Test API URL:", apiUrl);
 
 	try {
 		const response = await axiosInstance.post(apiUrl, testData, {
 			headers: { "Content-Type": "multipart/form-data" },
 		});
-		console.log("✅ Test API Success:", response.data);
+		//"✅ Test API Success:", response.data);
 		return response.data;
 	} catch (error: any) {
 		console.error("❌ Test API Error:", error);
@@ -143,7 +143,7 @@ export const fetchReviewOf = async (id: number) => {
 	const response = await axiosInstance.get(`/api/reviews/${id}`);
 	const { averageRating, reviews } = response.data.data;
 
-	console.log("product = :", { reviews, averageRating });
+	//"product = :", { reviews, averageRating });
 
 	const data = { averageRating, reviews, ratingCount: reviews.length };
 	localStorage.setItem(cacheKey, JSON.stringify(data));
@@ -155,8 +155,8 @@ export const uploadProductImages = async (
 	files: File[]
 ): Promise<{ success: boolean; urls: string[]; message?: string }> => {
 	try {
-		console.log("=== UPLOAD PRODUCT IMAGES START ===");
-		console.log("Files to upload:", files.length);
+		//"=== UPLOAD PRODUCT IMAGES START ===");
+		//"Files to upload:", files.length);
 
 		if (!files || files.length === 0) {
 			throw new Error("No files provided for upload");
@@ -164,11 +164,11 @@ export const uploadProductImages = async (
 
 		const formData = new FormData();
 		files.forEach((file, index) => {
-			console.log(`Adding file ${index + 1}:`, file.name, file.type, file.size);
+			//`Adding file ${index + 1}:`, file.name, file.type, file.size);
 			formData.append("files", file);
 		});
 
-		console.log("=== MAKING UPLOAD REQUEST ===");
+		//"=== MAKING UPLOAD REQUEST ===");
 		const response = await axiosInstance.post(
 			"/api/product/image/upload",
 			formData,
@@ -179,8 +179,8 @@ export const uploadProductImages = async (
 			}
 		);
 
-		console.log("=== UPLOAD SUCCESS ===");
-		console.log("Response:", response.data);
+		//"=== UPLOAD SUCCESS ===");
+		//"Response:", response.data);
 
 		// API returns { success: true, urls: [...] }
 		if (response.data.success && response.data.urls) {
@@ -227,10 +227,10 @@ export const createProduct = async (
 		productImages?: string[]; // URLs from Cloudinary
 	}
 ) => {
-	console.log("🔥 CREATE PRODUCT - NEW JSON API CONTRACT");
-	console.log("Category ID:", categoryId, "Type:", typeof categoryId);
-	console.log("Subcategory ID:", subcategoryId, "Type:", typeof subcategoryId);
-	console.log("Product Data:", JSON.stringify(productData, null, 2));
+	//"🔥 CREATE PRODUCT - NEW JSON API CONTRACT");
+	//"Category ID:", categoryId, "Type:", typeof categoryId);
+	//"Subcategory ID:", subcategoryId, "Type:", typeof subcategoryId);
+	//"Product Data:", JSON.stringify(productData, null, 2));
 
 	try {
 		// Validate required fields
@@ -299,8 +299,8 @@ export const createProduct = async (
 		}
 
 		const apiUrl = `/api/categories/${categoryId}/subcategories/${subcategoryId}/products`;
-		console.log("🎯 API URL:", apiUrl);
-		console.log("📤 Making JSON POST request...");
+		//"🎯 API URL:", apiUrl);
+		//"📤 Making JSON POST request...");
 
 		// Make the JSON POST API call according to new contract
 		const response = await axiosInstance.post(apiUrl, payload, {
@@ -310,10 +310,10 @@ export const createProduct = async (
 			timeout: 30000, // 30 second timeout
 		});
 
-		console.log("=== PRODUCT CREATION SUCCESS ===");
-		console.log("Response Status:", response.status);
-		console.log("Response Headers:", response.headers);
-		console.log("Response Data:", JSON.stringify(response.data, null, 2));
+		//"=== PRODUCT CREATION SUCCESS ===");
+		//"Response Status:", response.status);
+		//"Response Headers:", response.headers);
+		//"Response Data:", JSON.stringify(response.data, null, 2));
 
 		return response.data;
 	} catch (error: any) {
@@ -386,11 +386,11 @@ export const updateProduct = async (
 		productImages?: string[];
 	}
 ) => {
-	console.log("🔄 UPDATING PRODUCT");
-	console.log("Product ID:", productId);
-	console.log("Category ID:", categoryId);
-	console.log("Subcategory ID:", subcategoryId);
-	console.log("Product Data:", productData);
+	//"🔄 UPDATING PRODUCT");
+	//"Product ID:", productId);
+	//"Category ID:", categoryId);
+	//"Subcategory ID:", subcategoryId);
+	//"Product Data:", productData);
 
 	try {
 		// Prepare the JSON payload
@@ -424,10 +424,10 @@ export const updateProduct = async (
 			if (productData.status) payload.status = productData.status;
 		}
 
-		console.log("📤 Final Update Payload:", JSON.stringify(payload, null, 2));
+		//"📤 Final Update Payload:", JSON.stringify(payload, null, 2));
 
 		const apiUrl = `/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}`;
-		console.log("🎯 Update API URL:", apiUrl);
+		//"🎯 Update API URL:", apiUrl);
 
 		const response = await axiosInstance.put(apiUrl, payload, {
 			headers: {
@@ -435,7 +435,7 @@ export const updateProduct = async (
 			},
 		});
 
-		console.log("✅ Product Updated Successfully:", response.data);
+		//"✅ Product Updated Successfully:", response.data);
 		return {
 			success: true,
 			data: response.data,
@@ -494,7 +494,7 @@ export const deleteProduct = async (productId: number, token?: string) => {
 			`${API_BASE_URL}/api/product/${productId}`
 		);
 
-		console.log("Product deleted successfully:", response.data);
+		//"Product deleted successfully:", response.data);
 		return response.data;
 	} catch (error: unknown) {
 		if (typeof error === "object" && error !== null && "response" in error) {
@@ -520,15 +520,8 @@ export const fetchProducts = async (
 	limit: number = 10
 ) => {
 	try {
-		console.log(
-			"fetchProducts called with vendorId:",
-			vendorId,
-			"page:",
-			page,
-			"limit:",
-			limit
-		);
-		console.log("Making request to:", `/api/vendors/${vendorId}/products`);
+		
+		//"Making request to:", `/api/vendors/${vendorId}/products`);
 
 		const response = await axiosInstance.get(
 			`/api/vendors/${vendorId}/products`,
@@ -540,8 +533,8 @@ export const fetchProducts = async (
 			}
 		);
 
-		console.log("fetchProducts response:", response);
-		console.log("fetchProducts response.data:", response.data);
+		//"fetchProducts response:", response);
+		//"fetchProducts response.data:", response.data);
 
 		return response;
 	} catch (error: unknown) {
@@ -563,13 +556,6 @@ export const setupAxiosInterceptors = (
 			if (token && !config.headers.Authorization) {
 				config.headers.Authorization = `Bearer ${token}`;
 			}
-
-			console.log("Request config:", {
-				url: config.url,
-				method: config.method,
-				headers: config.headers,
-				hasAuth: !!config.headers.Authorization,
-			});
 
 			return config;
 		},

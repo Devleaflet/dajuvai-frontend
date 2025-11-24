@@ -21,7 +21,7 @@ const Home = () => {
 		const searchParam = searchParams.get("search");
 		if (searchParam) {
 			const decodedSearch = decodeURIComponent(searchParam);
-			console.log("🏠 Home page received search parameter:", decodedSearch);
+			//("🏠 Home page received search parameter:", decodedSearch);
 
 			// Set the search query in the Navbar by dispatching a custom event
 			window.dispatchEvent(

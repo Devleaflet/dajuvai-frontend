@@ -17,12 +17,12 @@ import { setupAxiosInterceptors } from './api/axiosInstance';
 if ('scrollRestoration' in window.history) {
   try {
     window.history.scrollRestoration = 'manual';
-    console.log('[EntryPoint] scrollRestoration set to manual');
+    //'[EntryPoint] scrollRestoration set to manual');
   } catch {}
 }
 
 setupAxiosInterceptors(() => localStorage.getItem('authToken'));
-console.log('[EntryPoint] Axios interceptor set up with token from localStorage');
+//'[EntryPoint] Axios interceptor set up with token from localStorage');
 
 
 const queryClient = new QueryClient({

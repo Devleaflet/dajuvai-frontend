@@ -132,7 +132,7 @@ const Checkout: React.FC = () => {
 	useEffect(() => {
 		const listener = (event: MessageEvent) => {
 			if (event.data?.action === 'refresh') {
-				console.log('----------------Page refresh----------------------');
+				//('----------------Page refresh----------------------');
 				window.location.reload();
 			}
 		};
@@ -592,7 +592,7 @@ const Checkout: React.FC = () => {
 				};
 			}
 
-			console.log('Sending order ', JSON.stringify(orderData, null, 2));
+			//('Sending order ', JSON.stringify(orderData, null, 2));
 
 			const headers: Record<string, string> = {
 				'Content-Type': 'application/json',
@@ -607,7 +607,7 @@ const Checkout: React.FC = () => {
 			});
 
 			const result = await response.json();
-			console.log('Server response:', result);
+			//('Server response:', result);
 
 			if (result.success) {
 				if (selectedPaymentMethod === 'CASH_ON_DELIVERY') {
@@ -646,14 +646,14 @@ const Checkout: React.FC = () => {
 					setShowAlert(true);
 				} else if (selectedPaymentMethod === 'ESEWA') {
 					if (result.esewaRedirectUrl) {
-						console.log('Redirecting to eSewa:', result.esewaRedirectUrl.url);
+						//('Redirecting to eSewa:', result.esewaRedirectUrl.url);
 						window.location.href = result.esewaRedirectUrl.url;
 					} else {
 						throw new Error('eSewa redirect URL not provided');
 					}
 				}
 				// } else if (selectedPaymentMethod === 'NPX') {
-				//   console.log('Redirecting to NPX payment page');
+				//   //('Redirecting to NPX payment page');
 				//   navigate('/order-page', {
 				//     state: {
 				//       orderDetails: {

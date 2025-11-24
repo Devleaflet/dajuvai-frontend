@@ -58,7 +58,7 @@ const HomepageSections: React.FC = () => {
 				.map((section) => {
 					const mappedProducts: DisplayProduct[] = section.products.map(
 						(product) => {
-							console.log("Product", product);
+							//("Product", product);
 							const primaryImage = getProductPrimaryImage(product, "");
 							const productImages = Array.isArray(product.productImages)
 								? product.productImages

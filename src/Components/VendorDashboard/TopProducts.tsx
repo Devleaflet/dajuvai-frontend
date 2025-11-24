@@ -16,9 +16,9 @@ const TopProducts = () => {
     const { token, isAuthenticated } = authState;
 
     if (!isAuthenticated) {
-        console.log("User is not authenticated")
+        //("User is not authenticated")
     } else {
-        console.log("--------Token---------", token)
+        //("--------Token---------", token)
     }
 
     const fetchTopProducts = async (): Promise<TopProductData[]> => {

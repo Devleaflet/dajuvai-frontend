@@ -26,10 +26,10 @@ export const processGoogleAuthResponse = async (
   navigate: (path: string, options?: { replace?: boolean }) => void
 ) => {
   try {
-    console.log('[GoogleAuthUtils] processGoogleAuthResponse called with:', responseData);
+    //('[GoogleAuthUtils] processGoogleAuthResponse called with:', responseData);
     if (responseData.success && responseData.data) {
       const { userId, email, role, token, username } = responseData.data;
-      console.log('[GoogleAuthUtils] Extracted user:', { userId, email, role, token, username });
+      //('[GoogleAuthUtils] Extracted user:', { userId, email, role, token, username });
 
       // Create user data object
       const userData = {
@@ -41,18 +41,18 @@ export const processGoogleAuthResponse = async (
       };
 
       // Login the user
-      console.log('[GoogleAuthUtils] Calling login() with token and userData:', { token, userData });
+      //('[GoogleAuthUtils] Calling login() with token and userData:', { token, userData });
       login(token, userData);
 
       // Redirect based on role
       if (role === 'admin') {
-        console.log('[GoogleAuthUtils] Navigating to /admin-dashboard');
+        //('[GoogleAuthUtils] Navigating to /admin-dashboard');
         navigate('/admin-dashboard', { replace: true });
       } else if (role === 'vendor') {
-        console.log('[GoogleAuthUtils] Navigating to /dashboard');
+        //('[GoogleAuthUtils] Navigating to /dashboard');
         navigate('/dashboard', { replace: true });
       } else {
-        console.log('[GoogleAuthUtils] Navigating to /');
+        //('[GoogleAuthUtils] Navigating to /');
         navigate('/', { replace: true });
       }
 

@@ -69,14 +69,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const initializeAuth = useCallback(async () => {
     const storedToken = localStorage.getItem("authToken");
     const storedUser = localStorage.getItem("authUser");
-    console.log("[Auth Debug] initializeAuth called");
-    console.log("[Auth Debug] localStorage.authToken:", storedToken);
-    console.log("[Auth Debug] localStorage.authUser:", storedUser);
+    //("[Auth Debug] initializeAuth called");
+    //("[Auth Debug] localStorage.authToken:", storedToken);
+    //("[Auth Debug] localStorage.authUser:", storedUser);
 
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        console.log("[Auth Debug] Parsed user from localStorage:", parsedUser);
+        //("[Auth Debug] Parsed user from localStorage:", parsedUser);
         if (storedToken && isTokenValid(storedToken)) {
           setToken(storedToken);
           setUser(parsedUser);
@@ -106,26 +106,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               };
               setUser(updatedUser);
               localStorage.setItem("authUser", JSON.stringify(updatedUser));
-              console.log("[Auth Debug] User verified with backend:", updatedUser);
+              //("[Auth Debug] User verified with backend:", updatedUser);
             } else {
-              console.log("[Auth Debug] Backend verification failed, clearing auth");
+              //("[Auth Debug] Backend verification failed, clearing auth");
               logout();
             }
           } else {
-            console.log("[Auth Debug] Backend verification failed (HTTP error), clearing auth");
+            //("[Auth Debug] Backend verification failed (HTTP error), clearing auth");
             logout();
           }
         } catch (verifyError) {
           console.error("[Auth Debug] Error verifying with backend:", verifyError);
           // Don't logout on network errors, keep the user logged in
-          console.log("[Auth Debug] Network error during verification, keeping user logged in");
+          //("[Auth Debug] Network error during verification, keeping user logged in");
         }
       } catch (error) {
         console.error("[Auth Debug] Error initializing auth (JSON parse):", error);
         logout();
       }
     } else {
-      console.log("[Auth Debug] No authUser in localStorage after refresh.");
+      //("[Auth Debug] No authUser in localStorage after refresh.");
     }
     setIsLoading(false);
   }, []);
@@ -186,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
         if (response.data.success && response.data.data.token) {
           setToken(response.data.data.token);
-          console.log("Token refreshed successfully");
+          //("Token refreshed successfully");
         } else {
           throw new Error("Failed to refresh token");
         }
@@ -212,7 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const refreshThreshold = 30 * 60 * 1000; // 30 minutes
 
       if (timeUntilExpiry < refreshThreshold && timeUntilExpiry > 0) {
-        console.log(`Token expires in ${Math.round(timeUntilExpiry / 60000)} minutes, refreshing...`);
+        //(`Token expires in ${Math.round(timeUntilExpiry / 60000)} minutes, refreshing...`);
         refreshToken();
       }
     };
@@ -241,7 +241,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Logout function
   const logout = useCallback(() => {
-    console.log("AuthContext logout - user only (full cleanse)");
+    //("AuthContext logout - user only (full cleanse)");
     setToken(null);
     setUser(null);
     localStorage.clear();
@@ -266,8 +266,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Fetch user data by ID
   const fetchUserData = async (userId: number): Promise<UserData | null> => {
     const currentToken = token || localStorage.getItem("authToken");
-    console.log("[Auth Debug] fetchUserData called with userId:", userId);
-    console.log("[Auth Debug] Using token:", currentToken);
+    //("[Auth Debug] fetchUserData called with userId:", userId);
+    //("[Auth Debug] Using token:", currentToken);
     if (!currentToken) {
       console.error("[Auth Debug] No token available for fetching user data");
       return null;
@@ -285,7 +285,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           timeout: 10000,
         }
       );
-      console.log("[Auth Debug] fetchUserData response:", response.data);
+      //("[Auth Debug] fetchUserData response:", response.data);
       if (response.data.success) {
         const userData = response.data.data;
         setUser(userData);

@@ -15,8 +15,8 @@ const FacebookAuthCallback: React.FC = () => {
   useEffect(() => {
     const processCallback = async () => {
       try {
-        console.log('Facebook OAuth callback - Full URL:', window.location.href);
-        console.log('Facebook OAuth callback - Search params:', location.search);
+        //('Facebook OAuth callback - Full URL:', window.location.href);
+        //('Facebook OAuth callback - Search params:', location.search);
         
         // Get URL parameters
         const urlParams = new URLSearchParams(location.search);
@@ -30,13 +30,13 @@ const FacebookAuthCallback: React.FC = () => {
         }
 
         if (!code) {
-          console.log('No authorization code found');
+          //('No authorization code found');
           setError('No authorization code received from Facebook. Please try again.');
           setIsProcessing(false);
           return;
         }
 
-        console.log('Received authorization code from Facebook, calling backend callback...');
+        //('Received authorization code from Facebook, calling backend callback...');
 
         // Call your existing backend callback endpoint
         try {
@@ -47,7 +47,7 @@ const FacebookAuthCallback: React.FC = () => {
           }
 
           const responseData = await response.json();
-          console.log('Backend callback response:', responseData);
+          //('Backend callback response:', responseData);
 
           if (responseData.success && responseData.data) {
             const result = await processGoogleAuthResponse(responseData, login, navigate);
@@ -117,7 +117,7 @@ const FacebookAuthCallback: React.FC = () => {
                     }
                   };
                   
-                  console.log('Testing with manual data:', testData);
+                  //('Testing with manual data:', testData);
                   const result = await processGoogleAuthResponse(testData, login, navigate);
                   
                   if (!result.success) {

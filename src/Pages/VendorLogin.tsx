@@ -88,7 +88,7 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
       const response = await vendorService.login(userData);
       if (response.success && response.token && response.vendor) {
         vendorLogin(response.token, response.vendor);
-        console.log("----------token-------", response.token)
+        //("----------token-------", response.token)
         navigate("/dashboard");
         onClose();
       } else if (response.message === "Vendor not approved") {

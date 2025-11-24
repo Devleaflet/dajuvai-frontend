@@ -14,7 +14,7 @@
 //   useEffect(() => {
 //     const resData = atob(dataQuery);
 //     const resObject = JSON.parse(resData);
-//     console.log(resObject);
+//     //(resObject);
 
 //     setData(resObject);
 //   }, [search]);
@@ -55,8 +55,8 @@ const PaymentSuccess: React.FC = () => {
     const orderId = searchParams.get("oid");
     const tokenParam = searchParams.get("data");
 
-    console.log("OrderId:", orderId);
-    console.log("TokenParam:", tokenParam);
+    //("OrderId:", orderId);
+    //("TokenParam:", tokenParam);
 
     const verifyPayment = async () => {
       if (!tokenParam || !orderId) {
@@ -77,7 +77,7 @@ const PaymentSuccess: React.FC = () => {
         });
 
         const result = await response.json();
-        console.log('Payment verification response:', result);
+        //('Payment verification response:', result);
 
         if (result.success) {
           setAlertMessage('Payment successful! Your order has been confirmed.');

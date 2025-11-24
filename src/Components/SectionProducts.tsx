@@ -169,7 +169,6 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
         .flatMap((v) => [v.image, ...(v.images || [])])
         .filter((x): x is string => typeof x === "string" && x.length > 0);
       if (allVariantImages.length > 0) return allVariantImages[0];
-      if (isDev) console.log("No valid images found for product, using default image");
       return phone;
     };
 

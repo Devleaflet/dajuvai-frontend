@@ -2,18 +2,14 @@ import axios from "axios";
 
 export const fetchCategoryCatalog = async () => {
 	try {
-		console.log("🌐 Fetching categories from /api/home/category/section...");
+		//"🌐 Fetching categories from /api/home/category/section...");
 		const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 		const response = await axios.get(`${apiBaseUrl}/api/home/category/section`);
-		console.log("📦 Raw API response:", response.data);
+		//"📦 Raw API response:", response.data);
 
 		// Handle the response structure based on API documentation
 		if (response.data && response.data.success && response.data.data) {
-			console.log(
-				"✅ Categories fetched successfully:",
-				response.data.data.length,
-				"categories"
-			);
+			
 			return response.data.data;
 		} else {
 			console.warn("⚠️ Unexpected response structure:", response.data);

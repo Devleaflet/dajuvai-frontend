@@ -31,7 +31,7 @@ const fetchProductBanners = async (): Promise<Slide[]> => {
   }
 
   const data = await response.json();
-  console.log("Fetched product banners:", data);
+  //("Fetched product banners:", data);
 
   return data.data
     .filter(

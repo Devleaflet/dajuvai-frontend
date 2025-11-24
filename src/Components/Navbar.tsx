@@ -140,7 +140,7 @@ const Navbar: React.FC = () => {
 	useEffect(() => {
 		const handleStorageChange = (e: StorageEvent) => {
 			if (e.key === 'authUser') {
-				console.log('authUser changed in localStorage:', e.newValue);
+				//('authUser changed in localStorage:', e.newValue);
 			}
 		};
 
@@ -394,7 +394,7 @@ const Navbar: React.FC = () => {
 	useEffect(() => {
 		const handleSetNavbarSearch = (event: CustomEvent) => {
 			const { searchQuery } = event.detail;
-			console.log('🔍 Navbar received search query:', searchQuery);
+			//('🔍 Navbar received search query:', searchQuery);
 			setSearchQuery(searchQuery);
 
 			if (searchQuery && allProducts.length > 0) {
@@ -675,12 +675,9 @@ const Navbar: React.FC = () => {
 			if (activeDropdown) {
 				setDropdownLoading(true);
 				try {
-					console.log(
-						'🔍 Fetching subcategories for category:',
-						activeDropdown
-					);
+					
 					const subs = await fetchSubCategory(activeDropdown);
-					console.log('📦 Received subcategories:', subs);
+					//('📦 Received subcategories:', subs);
 					setDropdownSubcategories(subs || []);
 				} catch (error) {
 					console.error('❌ Error fetching subcategories:', error);
@@ -866,11 +863,10 @@ const Navbar: React.FC = () => {
 								zIndex: 999999999,
 							}}
 							onClick={(e) => {
-								console.log("CLICK REGISTERED INSIDE DROPDOWN");
+								//("CLICK REGISTERED INSIDE DROPDOWN");
 								e.stopPropagation(); // prevents parent click handlers from blocking
 							}}
 						>
-							{console.log("PROFILE DROPDOWN RENDERED")}
 
 							<div className="navbar__profile-card-header">
 								{getUserAvatar()}
@@ -893,7 +889,7 @@ const Navbar: React.FC = () => {
 									to="/admin-dashboard"
 									className="navbar__profile-card-link"
 									onClick={() => {
-										console.log("Admin Dashboard CLICKED");
+										//("Admin Dashboard CLICKED");
 										setProfileDropdownOpen(false);
 									}}
 									style={({ isActive }) => ({
@@ -909,7 +905,7 @@ const Navbar: React.FC = () => {
 									to="/dashboard"
 									className="navbar__profile-card-link"
 									onClick={() => {
-										console.log("Vendor Dashboard CLICKED");
+										//("Vendor Dashboard CLICKED");
 										setProfileDropdownOpen(false);
 									}}
 									style={({ isActive }) => ({
@@ -934,7 +930,7 @@ const Navbar: React.FC = () => {
 							<button
 								className="navbar__profile-card-link navbar__profile-card-link--logout"
 								onClick={(e) => {
-									console.log("LOGOUT BUTTON CLICKED!");
+									//("LOGOUT BUTTON CLICKED!");
 									e.stopPropagation();
 									handleFullLogout();
 								}}

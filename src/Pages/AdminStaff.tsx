@@ -139,10 +139,10 @@ const AdminStaff: React.FC = () => {
         password: formData.password,
         confirmPassword: formData.confirmPassword
       };
-      console.log('Submitting staff data:', staffData);
+      //('Submitting staff data:', staffData);
       
       const response = await staffApi.registerStaff(staffData);
-      console.log('Registration response:', response);
+      //('Registration response:', response);
 
       if (response.success) {
         toast.success('Staff user registered successfully!');

@@ -35,7 +35,7 @@ const AuthRedirect: React.FC = () => {
     const isAuthenticated = isAuthAuthenticated || isVendorAuthenticated;
 
     if (!isAuthenticated && !isLoading && !isPublicRoute && location.pathname !== '/') {
-      console.log("User logged out, redirecting to home from:", location.pathname);
+      //("User logged out, redirecting to home from:", location.pathname);
       navigate("/", { replace: true });
     }
   }, [isAuthAuthenticated, isVendorAuthenticated, authLoading, vendorLoading, location.pathname, navigate]);

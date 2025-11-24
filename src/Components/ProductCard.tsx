@@ -327,13 +327,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 			return;
 		}
 
-		console.log("Navigating to product:", product.id);
+		//("Navigating to product:", product.id);
 
-		console.log("scroll called")
-		console.log("scroll called")
-		console.log("scroll called")
-		console.log("scroll called")
-		console.log("scroll called")
+		//("scroll called")
+		//("scroll called")
+		//("scroll called")
+		//("scroll called")
+		//("scroll called")
 
 		// Navigate first
 		navigate(`/product-page/${product.id}`, { replace: true });
