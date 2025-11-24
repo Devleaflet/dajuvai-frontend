@@ -80,7 +80,7 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
 
   // File upload function
   const uploadFile = async (file: File): Promise<string> => {
-    console.log(`Uploading file: ${file.name}`);
+    //(`Uploading file: ${file.name}`);
     const formData = new FormData();
     formData.append("file", file);
     
@@ -104,7 +104,7 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
       if (!response.data.success || !response.data.data) {
         throw new Error(`No URL returned for file: ${file.name}`);
       }
-      console.log(`File uploaded successfully: ${file.name} -> ${response.data.data}`);
+      //(`File uploaded successfully: ${file.name} -> ${response.data.data}`);
       return response.data.data;
     } catch (error: any) {
       console.error(`Failed to upload file ${file.name}:`, error.response?.data || error.message);
@@ -115,7 +115,7 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
   // File handling methods
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     const files = Array.from(e.target.files || []);
-    console.log(`File input changed for ${field}:`, files.map((f) => f.name));
+    //(`File input changed for ${field}:`, files.map((f) => f.name));
     if (files.length > 0) {
       if (field === "taxDocuments") setTaxFiles((prev) => [...prev, ...files]);
       if (field === "citizenshipDocuments") setCitizenshipFiles((prev) => [...prev, ...files]);
@@ -125,7 +125,7 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
   };
 
   const handleRemoveFile = (index: number, field: string) => {
-    console.log(`Removing file from ${field} at index ${index}`);
+    //(`Removing file from ${field} at index ${index}`);
     if (field === "taxDocuments") setTaxFiles((prev) => prev.filter((_, i) => i !== index));
     if (field === "citizenshipDocuments") setCitizenshipFiles((prev) => prev.filter((_, i) => i !== index));
     if (field === "chequePhoto") setChequeFile(null);
@@ -285,16 +285,16 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
       }
 
       // Upload cheque photo
-      console.log('🔍 DEBUG: chequeFile before upload:', chequeFile);
-      console.log('🔍 DEBUG: formData.chequePhoto before upload:', formData.chequePhoto);
+      //('🔍 DEBUG: chequeFile before upload:', chequeFile);
+      //('🔍 DEBUG: formData.chequePhoto before upload:', formData.chequePhoto);
       if (chequeFile) {
         uploadedChequePhoto = await uploadFile(chequeFile);
-        console.log('🔍 DEBUG: uploadedChequePhoto after upload:', uploadedChequePhoto);
-        console.log('🔍 DEBUG: uploadedChequePhoto type:', typeof uploadedChequePhoto);
+        //('🔍 DEBUG: uploadedChequePhoto after upload:', uploadedChequePhoto);
+        //('🔍 DEBUG: uploadedChequePhoto type:', typeof uploadedChequePhoto);
       } else if (formData.chequePhoto) {
         uploadedChequePhoto = formData.chequePhoto;
-        console.log('🔍 DEBUG: using existing chequePhoto:', uploadedChequePhoto);
-        console.log('🔍 DEBUG: existing chequePhoto type:', typeof uploadedChequePhoto);
+        //('🔍 DEBUG: using existing chequePhoto:', uploadedChequePhoto);
+        //('🔍 DEBUG: existing chequePhoto type:', typeof uploadedChequePhoto);
       }
 
       // Upload profile picture
@@ -302,9 +302,9 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
         uploadedProfilePicture = await uploadFile(profileFile);
       }
 
-      console.log('🔍 DEBUG: Final uploadedChequePhoto before API call:', uploadedChequePhoto);
-      console.log('🔍 DEBUG: Final uploadedChequePhoto type:', typeof uploadedChequePhoto);
-      console.log('🔍 DEBUG: Is uploadedChequePhoto an array?', Array.isArray(uploadedChequePhoto));
+      //('🔍 DEBUG: Final uploadedChequePhoto before API call:', uploadedChequePhoto);
+      //('🔍 DEBUG: Final uploadedChequePhoto type:', typeof uploadedChequePhoto);
+      //('🔍 DEBUG: Is uploadedChequePhoto an array?', Array.isArray(uploadedChequePhoto));
 
       const apiData: Partial<VendorUpdateRequest> = {
         businessName: formData.businessName,
@@ -325,29 +325,29 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
         chequePhoto: uploadedChequePhoto,
       };
 
-      console.log('🔍 DEBUG: apiData before cleanup:', JSON.stringify(apiData, null, 2));
-      console.log('🔍 DEBUG: apiData.chequePhoto before cleanup:', apiData.chequePhoto);
-      console.log('🔍 DEBUG: apiData.chequePhoto type before cleanup:', typeof apiData.chequePhoto);
-      console.log('🔍 DEBUG: Is apiData.chequePhoto an array before cleanup?', Array.isArray(apiData.chequePhoto));
+      //('🔍 DEBUG: apiData before cleanup:', JSON.stringify(apiData, null, 2));
+      //('🔍 DEBUG: apiData.chequePhoto before cleanup:', apiData.chequePhoto);
+      //('🔍 DEBUG: apiData.chequePhoto type before cleanup:', typeof apiData.chequePhoto);
+      //('🔍 DEBUG: Is apiData.chequePhoto an array before cleanup?', Array.isArray(apiData.chequePhoto));
 
       Object.keys(apiData).forEach(key => {
         const value = (apiData as any)[key];
-        console.log(`🔍 DEBUG: Processing key '${key}' with value:`, value, 'type:', typeof value);
+        //(`🔍 DEBUG: Processing key '${key}' with value:`, value, 'type:', typeof value);
         if (value === undefined || value === null || value === '') {
-          console.log(`🔍 DEBUG: Deleting key '${key}' because it's undefined/null/empty`);
+          //(`🔍 DEBUG: Deleting key '${key}' because it's undefined/null/empty`);
           delete (apiData as any)[key];
         }
         if (Array.isArray(value) && value.length === 0) {
-          console.log(`🔍 DEBUG: Deleting key '${key}' because it's an empty array`);
+          //(`🔍 DEBUG: Deleting key '${key}' because it's an empty array`);
           delete (apiData as any)[key];
         }
       });
 
-      console.log('🔍 DEBUG: apiData after cleanup:', JSON.stringify(apiData, null, 2));
-      console.log('🔍 DEBUG: Final apiData.chequePhoto:', apiData.chequePhoto);
-      console.log('🔍 DEBUG: Final apiData.chequePhoto type:', typeof apiData.chequePhoto);
-      console.log('🔍 DEBUG: Is final apiData.chequePhoto an array?', Array.isArray(apiData.chequePhoto));
-      console.log('Sending API data:', apiData);
+      //('🔍 DEBUG: apiData after cleanup:', JSON.stringify(apiData, null, 2));
+      //('🔍 DEBUG: Final apiData.chequePhoto:', apiData.chequePhoto);
+      //('🔍 DEBUG: Final apiData.chequePhoto type:', typeof apiData.chequePhoto);
+      //('🔍 DEBUG: Is final apiData.chequePhoto an array?', Array.isArray(apiData.chequePhoto));
+      //('Sending API data:', apiData);
       await onSave(apiData);
     } catch (error: any) {
       console.error('Error uploading files:', error);

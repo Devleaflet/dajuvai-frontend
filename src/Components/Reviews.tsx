@@ -340,11 +340,11 @@ const Reviews: React.FC<ReviewsProps> = ({
 
             try {
 
-                console.log("-----------Review-------------")
-                console.log(editingReview.rating)
-                console.log(editingReview.comment)
-                console.log(typeof (editingReview.rating))
-                console.log(`${reviewId}`)
+                //("-----------Review-------------")
+                //(editingReview.rating)
+                //(editingReview.comment)
+                //(typeof (editingReview.rating))
+                //(`${reviewId}`)
                 const response = await fetch(`${API_BASE_URL}/api/reviews/${reviewId}`, {
                     method: 'PATCH',
                     headers: {

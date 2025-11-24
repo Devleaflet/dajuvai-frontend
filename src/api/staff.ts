@@ -50,7 +50,7 @@ const staffApi = {
         validateStatus: (status) => status < 500 // do not throw for < 500
       });
       
-      console.log('API Response:', response.data);
+      //'API Response:', response.data);
       
       // Successful response (201 Created)
       if (response.status === 201) {
@@ -93,9 +93,9 @@ const staffApi = {
   // Get all staff users
   async getStaffList(): Promise<ApiResponse<StaffUser[]>> {
     try {
-      console.log('Fetching staff list...');
+      //'Fetching staff list...');
       const response = await axiosInstance.get('/api/auth/staff');
-      console.log('Staff list response:', response.data);
+      //'Staff list response:', response.data);
       // API documentation shows { success: true, data: StaffUser[] }
       return response.data;
     } catch (error: any) {
@@ -108,7 +108,7 @@ const staffApi = {
       
       // Return empty array if endpoint doesn't exist yet or returns 404
       if (error.response?.status === 404) {
-        console.log('Staff endpoint not found, returning empty list');
+        //'Staff endpoint not found, returning empty list');
         return { success: true, data: [] };
       }
       

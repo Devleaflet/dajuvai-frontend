@@ -10,22 +10,17 @@ const axiosInstance = axios.create({
 export const setupAxiosInterceptors = (getTokenFn: () => string | null) => {
   axiosInstance.interceptors.request.use((config) => {
     const token = getTokenFn?.();
-    console.log("Axios interceptor - Token:", token ? `exists (${token.substring(0, 20)}...)` : 'null');
-    console.log("Axios interceptor - URL:", config.url);
-    console.log("Axios interceptor - Method:", config.method);
+    //("Axios interceptor - Token:", token ? `exists (${token.substring(0, 20)}...)` : 'null');
+    //("Axios interceptor - URL:", config.url);
+    //("Axios interceptor - Method:", config.method);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log("Axios interceptor - Authorization header set:", config.headers.Authorization);
+      //("Axios interceptor - Authorization header set:", config.headers.Authorization);
     } else {
       console.warn("Axios interceptor - No token available for request:", config.url);
     }
     
-    console.log("Axios interceptor - Request config:", {
-      url: config.url,
-      method: config.method,
-      headers: config.headers,
-      hasAuth: !!config.headers.Authorization
-    });
+ 
     
     return config;
   }, (error) => {

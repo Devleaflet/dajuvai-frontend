@@ -81,7 +81,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			const fetchProvinces = async () => {
 				try {
 					setIsLoading(true);
-					console.log("Fetching provinces...");
+					//("Fetching provinces...");
 					const provinceResponse = await fetch(
 						"/Nepal-Address-API-main/data/provinces.json"
 					);
@@ -91,7 +91,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 					const data = await provinceResponse.json();
 					const provinces = data.provinces.map(capitalizeFirstLetter);
 					setProvinceData(provinces);
-					console.log("Provinces fetched:", provinces);
+					//("Provinces fetched:", provinces);
 				} catch (err) {
 					console.error("Failed to fetch provinces:", err);
 					setError("Failed to load provinces. Please try again.");
@@ -120,7 +120,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		if (showVerification && countdown > 0) {
 			timer = setTimeout(() => {
 				setCountdown(countdown - 1);
-				console.log("Verification countdown:", countdown - 1);
+				//("Verification countdown:", countdown - 1);
 			}, 1000);
 		}
 		return () => {
@@ -131,7 +131,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 	// Reset form when modal closes
 	useEffect(() => {
 		if (!isOpen) {
-			console.log("Modal closed, resetting form...");
+			//("Modal closed, resetting form...");
 			setEmail("");
 			setPassword("");
 			setConfirmPassword("");
@@ -178,7 +178,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 	async function fetchDistricts(province: string) {
 		try {
 			setIsLoading(true);
-			console.log(`Fetching districts for province: ${province}`);
+			//(`Fetching districts for province: ${province}`);
 			const districtResponse = await fetch(
 				`/Nepal-Address-API-main/data/districtsByProvince/${province.toLowerCase()}.json`
 			);
@@ -189,7 +189,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			const districts = data.districts.map(capitalizeFirstLetter);
 			setDistrictData(districts);
 			setDistrict("");
-			console.log("Districts fetched:", districts);
+			//("Districts fetched:", districts);
 		} catch (error) {
 			console.error("Error fetching district data:", error);
 			setError("Failed to load districts. Please try again.");
@@ -302,9 +302,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 
 			case "taxDocuments":
 				if (Array.isArray(value) && value.length > 0) {
-					console.log("validateField: taxDocuments valid", {
-						length: value.length,
-					});
 					for (const doc of value) {
 						if (!/\.(jpg|jpeg|png|pdf)$/i.test(doc.name)) {
 							return "PAN/VAT documents must be JPG, JPEG, PNG, or PDF";
@@ -446,10 +443,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		isValid: boolean;
 		errors: Record<string, string>;
 	} => {
-		console.log("Validating step", {
-			currentStep,
-			taxDocumentsLength: taxDocuments.length,
-		});
+		
 		const newErrors: Record<string, string> = {};
 		let isValid = true;
 
@@ -550,18 +544,12 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		);
 
 		setTouched((prev) => ({ ...prev, ...currentStepTouched }));
-		console.log("Validation result", {
-			isValid,
-			errors: { ...currentStepErrors, ...newErrors },
-		});
+		
 		return { isValid, errors: newErrors };
 	};
 
 	useEffect(() => {
 		if (currentStep === 3 && taxDocuments.length > 0) {
-			console.log("Step 3: Clearing taxDocuments error", {
-				taxDocumentsLength: taxDocuments.length,
-			});
 			setErrors((prev) => {
 				const newErrors = { ...prev };
 				delete newErrors.taxDocuments;
@@ -683,10 +671,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		documentType: "tax" | "citizenship" | "cheque"
 	) => {
 		const files = e.target.files ? Array.from(e.target.files) : [];
-		console.log(
-			`File change for ${documentType}:`,
-			files.map((f) => f.name)
-		);
+	
 
 		// Validate file count and size
 		if (documentType === "tax" || documentType === "citizenship") {
@@ -764,7 +749,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 	};
 
 	const removeFile = (index: number, documentType: "tax" | "citizenship") => {
-		console.log(`Removing ${documentType} file at index ${index}`);
+		//(`Removing ${documentType} file at index ${index}`);
 		if (documentType === "tax") {
 			const newFiles = taxDocuments.filter((_, i) => i !== index);
 			setTaxDocuments(newFiles);
@@ -875,10 +860,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 				}
 			}
 
-			console.log(
-				"Uploading files:",
-				files.map((f) => f.name)
-			);
+		
 			const uploadPromises = files.map(async (file) => {
 				const formData = new FormData();
 				formData.append("file", file);
@@ -892,7 +874,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 				);
 
 				if (response.data.success && response.data.data) {
-					console.log(`Uploaded file ${file.name}:`, response.data.data);
+					//(`Uploaded file ${file.name}:`, response.data.data);
 					return response.data.data;
 				} else {
 					throw new Error(response.data.msg || "Failed to upload document");
@@ -900,7 +882,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			});
 
 			const urls = await Promise.all(uploadPromises);
-			console.log("Uploaded file URLs:", urls);
+			//("Uploaded file URLs:", urls);
 			return urls;
 		} catch (err) {
 			console.error("File upload failed:", err);
@@ -935,13 +917,13 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		try {
 			setIsLoading(true);
 			setError("");
-			console.log("Submitting signup data:", userData);
+			//("Submitting signup data:", userData);
 			const response = await axios.post<SignupResponse>(
 				`${API_BASE_URL}/api/vendors/request/register`,
 				userData,
 				{ headers: { "Content-Type": "application/json" } }
 			);
-			console.log("Signup response:", response.data);
+			//("Signup response:", response.data);
 			setSuccess(response.data.message);
 			toast.success(
 				"Registration successful! Please check your email for verification code."
@@ -952,7 +934,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			setCountdown(120);
 
 			// Reset form after successful signup
-			console.log("Resetting form after successful signup");
+			//("Resetting form after successful signup");
 			setPassword("");
 			setConfirmPassword("");
 			setBusinessName("");
@@ -993,18 +975,18 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 					setErrors((prev) => ({ ...prev, ...newErrors }));
 					setError("Please correct the validation errors");
 					toast.error("Please correct the validation errors");
-					console.log("Validation errors from server:", newErrors);
+					//("Validation errors from server:", newErrors);
 				} else if (
 					err.response?.status === 400 &&
 					err.response?.data?.message
 				) {
 					setError(err.response.data.message);
 					toast.error(err.response.data.message);
-					console.log("Server error message:", err.response.data.message);
+					//("Server error message:", err.response.data.message);
 				} else if (err.response?.status === 409) {
 					setError(err.response.data.message);
 					toast.error(err.response.data.message);
-					console.log("Conflict error:", err.response.data.message);
+					//("Conflict error:", err.response.data.message);
 				} else {
 					setError(
 						`Signup failed (${
@@ -1012,12 +994,12 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 						}). Please try again.`
 					);
 					toast.error("Signup failed. Please try again.");
-					console.log("Unknown signup error:", err.response?.status);
+					//("Unknown signup error:", err.response?.status);
 				}
 			} else {
 				setError("An unexpected error occurred");
 				toast.error("An unexpected error occurred");
-				console.log("Unexpected error:", err);
+				//("Unexpected error:", err);
 			}
 		} finally {
 			setIsLoading(false);
@@ -1037,7 +1019,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 				return;
 			}
 
-			console.log("Verifying email with token:", verificationToken);
+			//("Verifying email with token:", verificationToken);
 			const response = await axios.post(
 				`${API_BASE_URL}/api/auth/verify`,
 				{ email: pendingVerificationEmail, token: verificationToken },
@@ -1049,13 +1031,13 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 				}
 			);
 
-			console.log("Verification response:", response.data);
+			//("Verification response:", response.data);
 			setShowVerification(false);
 			setIsVerificationComplete(true);
 			setVerificationToken("");
 			setCountdown(0);
 			toast.success("Email verified successfully! Waiting for admin approval.");
-			console.log("Email verification successful");
+			//("Email verification successful");
 		} catch (err) {
 			console.error("Verification error:", err);
 			if (axios.isAxiosError(err)) {
@@ -1071,7 +1053,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 						"The verification code is invalid. Please check the code or request a new one."
 					);
 					toast.error("Invalid verification code. Please try again.");
-					console.log("Invalid verification token");
+					//("Invalid verification token");
 				} else if (
 					errorMessage.toLowerCase().includes("token") &&
 					errorMessage.toLowerCase().includes("expired")
@@ -1080,16 +1062,16 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 						"The verification code has expired. Please request a new code."
 					);
 					toast.error("Verification code expired. Please request a new one.");
-					console.log("Expired verification token");
+					//("Expired verification token");
 				} else {
 					setError(errorMessage);
 					toast.error(errorMessage);
-					console.log("Verification error message:", errorMessage);
+					//("Verification error message:", errorMessage);
 				}
 			} else {
 				setError("An unexpected error occurred during verification");
 				toast.error("Verification failed. Please try again.");
-				console.log("Unexpected verification error:", err);
+				//("Unexpected verification error:", err);
 			}
 		} finally {
 			setIsLoading(false);
@@ -1101,10 +1083,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			setIsLoading(true);
 			setError("");
 			setVerificationToken("");
-			console.log(
-				"Resending verification code for email:",
-				pendingVerificationEmail
-			);
+			
 			const response = await axios.post(
 				`${API_BASE_URL}/api/auth/verify/resend`,
 				{ email: pendingVerificationEmail },
@@ -1115,7 +1094,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 					},
 				}
 			);
-			console.log("Resend verification response:", response.data);
+			//("Resend verification response:", response.data);
 			setSuccess(response.data.message);
 			toast.success("Verification code resent successfully");
 			setCountdown(120);
@@ -1128,13 +1107,13 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 					"Failed to resend verification code";
 				setError(errorMessage);
 				toast.error(errorMessage);
-				console.log("Resend verification error message:", errorMessage);
+				//("Resend verification error message:", errorMessage);
 			} else {
 				setError(
 					"An unexpected error occurred while resending the verification code"
 				);
 				toast.error("Failed to resend verification code");
-				console.log("Unexpected resend error:", err);
+				//("Unexpected resend error:", err);
 			}
 		} finally {
 			setIsLoading(false);
@@ -1150,16 +1129,16 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			} else {
 				toast.error("Please fix the errors in the form before proceeding.");
 			}
-			console.log("Step validation failed, cannot proceed", { errors });
+			//("Step validation failed, cannot proceed", { errors });
 			return;
 		}
 
-		console.log(`Moving to step ${currentStep + 1}`);
+		//(`Moving to step ${currentStep + 1}`);
 		setCurrentStep((prev) => Math.min(prev + 1, 4));
 	};
 
 	const handleBack = () => {
-		console.log(`Moving back to step ${currentStep - 1}`);
+		//(`Moving back to step ${currentStep - 1}`);
 		setCurrentStep((prev) => Math.max(prev - 1, 1));
 	};
 
@@ -1169,7 +1148,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		e.preventDefault();
 		setError("");
 		setSuccess("");
-		console.log("Form submitted, current step:", currentStep);
+		//("Form submitted, current step:", currentStep);
 		setIsLoading(true);
 		if (showVerification) {
 			await handleVerifyEmail();
@@ -1189,7 +1168,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			if (firstError) {
 				toast.error(firstError);
 			}
-			console.log("Full form validation failed", { errors });
+			//("Full form validation failed", { errors });
 			return;
 		}
 
@@ -1223,7 +1202,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		if (!taxDocumentUrls || (blankChequePhoto && !chequePhotoUrl)) {
 			setError("Failed to obtain document URLs. Please try again.");
 			toast.error("Failed to obtain document URLs. Please try again.");
-			console.log("Document upload failed");
+			//("Document upload failed");
 			setIsLoading(false);
 			return;
 		}
@@ -1252,7 +1231,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		if (!userData.chequePhoto) {
 			setError("Blank cheque photo is required");
 			toast.error("Blank cheque photo is required");
-			console.log("Cheque photo missing after upload");
+			//("Cheque photo missing after upload");
 			setIsLoading(false);
 			return;
 		}
@@ -1262,12 +1241,12 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 
 	const togglePasswordVisibility = () => {
 		setShowPassword(!showPassword);
-		console.log("Toggled password visibility:", !showPassword);
+		//("Toggled password visibility:", !showPassword);
 	};
 
 	const toggleConfirmPasswordVisibility = () => {
 		setShowConfirmPassword(!showConfirmPassword);
-		console.log("Toggled confirm password visibility:", !showConfirmPassword);
+		//("Toggled confirm password visibility:", !showConfirmPassword);
 	};
 
 	if (!isOpen) return null;
@@ -1585,10 +1564,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 														...prev,
 														acceptTerms: error,
 													}));
-													console.log(
-														"Accept terms toggled:",
-														e.target.checked
-													);
+												
 												}}
 												disabled={isLoading}
 												style={{
@@ -2167,10 +2143,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 														...prev,
 														acceptListingFee: error,
 													}));
-													console.log(
-														"Accept listing fee toggled:",
-														e.target.checked
-													);
+												
 												}}
 												disabled={isLoading}
 												style={{

@@ -113,7 +113,7 @@ export const VendorAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const logout = () => {
-    console.log("VendorAuthContext logout - using comprehensive logout");
+    //("VendorAuthContext logout - using comprehensive logout");
     setAuthState({ token: null, vendor: null, isAuthenticated: false });
     VendorAuthService.comprehensiveLogout();
   };

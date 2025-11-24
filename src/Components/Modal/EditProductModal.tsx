@@ -364,12 +364,9 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
           setError("Authentication token is missing");
           return;
         }
-        console.log("Auth token being sent:", authToken);
-        console.log("Requesting delete for imageUrl:", imageUrl, "productId:", productId, "categoryId:", categoryId, "subcategoryId:", subcategoryId);
-        console.log("deleteProductImage headers:", {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        });
+        //("Auth token being sent:", authToken);
+        //("Requesting delete for imageUrl:", imageUrl, "productId:", productId, "categoryId:", categoryId, "subcategoryId:", subcategoryId);
+        
         await ProductService.deleteProductImage(categoryId, subcategoryId, productId, imageUrl, authToken);
         
         // Remove from local state after successful deletion
@@ -512,7 +509,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         variants: variantsForSubmit,
       };
 
-      console.log('EditProductModal: Submitting form data:', {
+      //('EditProductModal: Submitting form data:', {
         productId: product.id,
         formData: finalFormData,
         categoryId: categoryId,
@@ -539,7 +536,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   }, [location.search]);
 
   useEffect(() => {
-    console.log("Fetching products for:", categoryId, subcategoryId);
+    //("Fetching products for:", categoryId, subcategoryId);
     // ...fetch logic
   }, [categoryId, subcategoryId]);
 
@@ -602,7 +599,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   };
 
   const handleVariantAddOrUpdate = () => {
-    console.log("EditProductModal: Saving variant:", currentVariant, "editing index:", editingVariantIndex);
+    //("EditProductModal: Saving variant:", currentVariant, "editing index:", editingVariantIndex);
     
     if (!currentVariant.sku) {
       toast.error("SKU is required for variant");
@@ -650,7 +647,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     });
     setEditingVariantIndex(null);
     
-    console.log("EditProductModal: Variants after save:", editingVariantIndex !== null ? variants.map((v,i)=> i===editingVariantIndex? newVariant: v) : [...variants, newVariant]);
+    //("EditProductModal: Variants after save:", editingVariantIndex !== null ? variants.map((v,i)=> i===editingVariantIndex? newVariant: v) : [...variants, newVariant]);
   };
 
   const handleVariantRemove = (skuToRemove: string) => {

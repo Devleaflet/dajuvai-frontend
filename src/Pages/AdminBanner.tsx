@@ -120,7 +120,7 @@ const createBannerAPI = (token: string | null) => ({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const result: ApiResponse<Banner[]> = await response.json();
-      console.log("Banners", result.data);
+      //("Banners", result.data);
       return result.data || [];
     } catch (error) {
       console.error("Error fetching banners:", error);
@@ -580,7 +580,7 @@ const AdminBannerWithTabs = () => {
       if (!banner) {
         throw new Error("Banner not found");
       }
-      console.log("Editing banner:", banner);
+      //("Editing banner:", banner);
       setEditingBanner(banner);
       setShowCreateForm(true);
     } catch (error) {
@@ -1474,7 +1474,7 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
       onError("Mobile image is required");
       return;
     }
-    console.log("source",productSource)
+    //("source",productSource)
     setLoading(true);
     try {
       // Construct JSON payload
@@ -1523,7 +1523,7 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
       }
 
       // Log the payload for debugging
-      console.log("Banner payload:", bannerData);
+      //("Banner payload:", bannerData);
       let savedBanner: Banner;
       if (editingBanner) {
         savedBanner = await bannerAPI.update(editingBanner.id, bannerData);

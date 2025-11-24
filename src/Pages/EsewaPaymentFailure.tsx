@@ -14,6 +14,10 @@ const EsewaPaymentFailure: React.FC = () => {
     const orderId = search.get('oid');
 
     useEffect(() => {
+
+        //('orderId from URL:', orderId);
+        //('token from AuthContext:', token);
+        
         const handleFailure = async () => {
             if (!orderId) {
                 setAlertMessage('Missing order ID');
@@ -33,7 +37,7 @@ const EsewaPaymentFailure: React.FC = () => {
                 });
 
                 const result = await response.json();
-                console.log('Payment failure response:', result);
+                //('Payment failure response:', result);
 
                 if (result.success) {
                     setAlertMessage('Payment failed. Your order has been cancelled.');

@@ -3,7 +3,8 @@
 export interface Product {
   id: number;
   title?: string;
-  description: string;
+  miniDescription: string;
+  longDescription: string;
   price: string | number;
   basePrice?: string | number;
   originalPrice?: string;

@@ -37,7 +37,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   // Form state
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
-    description: "",
+    miniDescription: "",
+    longDescription: "",
     basePrice: null,
     stock: 0,
     discount: null,
@@ -248,10 +249,10 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   const populateFormWithProduct = async () => {
     if (!product) return;
 
-    console.log('🔄 POPULATING FORM WITH PRODUCT DATA:');
-    console.log('Product (prop):', product);
-    console.log('Product Category ID:', product.categoryId);
-    console.log('Product Subcategory:', product.subcategory);
+    //('🔄 POPULATING FORM WITH PRODUCT DATA:');
+    //('Product (prop):', product);
+    //('Product Category ID:', product.categoryId);
+    //('Product Subcategory:', product.subcategory);
 
     // Extract category and subcategory IDs with multiple fallback strategies
     let categoryId = 0;
@@ -284,9 +285,9 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       }
     }
 
-    console.log('🎯 FINAL EXTRACTED IDs:');
-    console.log('Category ID:', categoryId);
-    console.log('Subcategory ID:', subcategoryId);
+    //('🎯 FINAL EXTRACTED IDs:');
+    //('Category ID:', categoryId);
+    //('Subcategory ID:', subcategoryId);
 
     setSelectedCategoryId(categoryId);
 
@@ -295,7 +296,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       try {
         const subs = await fetchSubcategories(categoryId);
         setSubcategories(subs || []);
-        console.log('✅ Loaded subcategories:', subs);
+        //('✅ Loaded subcategories:', subs);
       } catch (error) {
         console.error('Error loading subcategories:', error);
         toast.error('Failed to load subcategories');
@@ -305,7 +306,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     // Fetch freshest product by ID to ensure all variants are present
     let fullProduct: any = product;
     try {
-      console.log('📥 Fetching latest product by ID for full variants:', product.id);
+      //('📥 Fetching latest product by ID for full variants:', product.id);
       const resp = await axiosInstance.get(`/api/product/${product.id}`);
       if (resp?.data?.product) {
         fullProduct = resp.data.product;
@@ -388,12 +389,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     } else if (fullProduct.image) {
       resolvedProductImages = [pickUrl(fullProduct.image)].filter(Boolean);
     }
-    console.log('🖼️ Resolved main product images:', resolvedProductImages);
+    //('🖼️ Resolved main product images:', resolvedProductImages);
 
     // Set form data with all required fields
     setFormData({
       name: fullProduct.name || "",
-      description: fullProduct.description || "",
+      miniDescription: fullProduct.miniDescription || "",
+      longDescription: fullProduct.longDescription || "",
       basePrice: fullProduct.basePrice ?? null,
       stock: Number(fullProduct.stock ?? 0),
       discount: fullProduct.discount ?? null,
@@ -417,7 +419,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     setVariants(mappedVariants);
     setExistingImages(resolvedProductImages);
 
-    console.log('✅ Form populated with category:', categoryId, 'subcategory:', subcategoryId, 'variants:', mappedVariants);
+    //('✅ Form populated with category:', categoryId, 'subcategory:', subcategoryId, 'variants:', mappedVariants);
   };
 
   const handleCategoryChange = async (categoryId: number) => {
@@ -521,53 +523,53 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   };
 
   const validateForm = (): string | null => {
-    console.log('🔍 VALIDATION CHECK:');
-    console.log('- Product name:', formData.name);
-    console.log('- Selected category ID:', selectedCategoryId);
-    console.log('- Subcategory ID:', formData.subcategoryId);
-    console.log('- Has variants:', formData.hasVariants);
-    console.log('- Base price:', formData.basePrice);
-    console.log('- Stock:', formData.stock);
-    console.log('- Variants count:', variants.length);
+    //('🔍 VALIDATION CHECK:');
+    //('- Product name:', formData.name);
+    //('- Selected category ID:', selectedCategoryId);
+    //('- Subcategory ID:', formData.subcategoryId);
+    //('- Has variants:', formData.hasVariants);
+    //('- Base price:', formData.basePrice);
+    //('- Stock:', formData.stock);
+    //('- Variants count:', variants.length);
 
     if (!formData.name.trim()) {
-      console.log('❌ Product name is missing');
+      //('❌ Product name is missing');
       return 'Product name is required';
     }
     if (!selectedCategoryId) {
-      console.log('❌ Category not selected');
+      //('❌ Category not selected');
       return 'Please select a category';
     }
     if (!formData.subcategoryId) {
-      console.log('❌ Subcategory not selected');
+      //('❌ Subcategory not selected');
       return 'Please select a subcategory';
     }
 
     if (!formData.hasVariants) {
       if (formData.basePrice == null || Number(formData.basePrice) <= 0) {
-        console.log('❌ Base price is invalid:', formData.basePrice);
+        //('❌ Base price is invalid:', formData.basePrice);
         return 'Base price is required';
       }
       if (formData.stock == null || Number(formData.stock) < 0) {
-        console.log('❌ Stock is invalid:', formData.stock);
+        //('❌ Stock is invalid:', formData.stock);
         return 'Stock quantity is required';
       }
     } else {
       if (variants.length === 0) {
-        console.log('❌ No variants found');
+        //('❌ No variants found');
         return 'At least one variant is required';
       }
       for (const variant of variants) {
         if (!variant.sku.trim()) {
-          console.log('❌ Variant missing SKU:', variant);
+          //('❌ Variant missing SKU:', variant);
           return 'All variants must have a SKU';
         }
         if (!variant.price || variant.price <= 0) {
-          console.log('❌ Variant invalid price:', variant);
+          //('❌ Variant invalid price:', variant);
           return 'All variants must have a valid price';
         }
         if (variant.stock === undefined || variant.stock < 0) {
-          console.log('❌ Variant invalid stock:', variant);
+          //('❌ Variant invalid stock:', variant);
           return 'All variants must have stock quantity';
         }
       }
@@ -579,12 +581,12 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       if (!formData.discountType) return 'Discount type is required when discount amount is provided';
     }
 
-    console.log('✅ All validation checks passed');
+    //('✅ All validation checks passed');
     return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log('🚀 UPDATE PRODUCT BUTTON CLICKED!');
+    //('🚀 UPDATE PRODUCT BUTTON CLICKED!');
     e.preventDefault();
 
     if (!product) {
@@ -593,7 +595,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       return;
     }
 
-    console.log('🔍 Validating form...');
+    //('🔍 Validating form...');
     const validationError = validateForm();
     if (validationError) {
       console.error('❌ Validation error:', validationError);
@@ -601,25 +603,25 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       return;
     }
 
-    console.log('✅ Form validation passed');
+    //('✅ Form validation passed');
     setIsLoading(true);
 
     try {
-      console.log('🔄 EDIT PRODUCT MODAL SUBMIT START');
-      console.log('🏷️ Selected Category ID:', selectedCategoryId);
-      console.log('📝 Form Data:', formData);
-      console.log('🔄 Variants:', variants);
-      console.log('🖼️ New Images:', images.length);
-      console.log('🖼️ Existing Images:', existingImages.length);
+      //('🔄 EDIT PRODUCT MODAL SUBMIT START');
+      //('🏷️ Selected Category ID:', selectedCategoryId);
+      //('📝 Form Data:', formData);
+      //('🔄 Variants:', variants);
+      //('🖼️ New Images:', images.length);
+      //('🖼️ Existing Images:', existingImages.length);
 
       // Step 1: Upload new images if any
       let newImageUrls: string[] = [];
       if (images.length > 0) {
-        console.log('📤 Uploading new images...');
+        //('📤 Uploading new images...');
         const uploadResponse = await uploadProductImages(images);
         if (uploadResponse.success) {
           newImageUrls = uploadResponse.urls;
-          console.log('✅ Images uploaded successfully:', newImageUrls);
+          //('✅ Images uploaded successfully:', newImageUrls);
         } else {
           throw new Error('Failed to upload images');
         }
@@ -627,7 +629,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
       // Step 2: Combine existing and new images
       const allImages = [...existingImages, ...newImageUrls];
-      console.log('🖼️ All Images:', allImages);
+      //('🖼️ All Images:', allImages);
 
       // Step 3: Prepare product data according to new API contract
       const updatePayload: any = {
@@ -639,7 +641,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       };
 
       // Add optional fields
-      if (formData.description) updatePayload.description = formData.description;
+      if (formData.miniDescription) updatePayload.miniDescription = formData.miniDescription;
+      if (formData.longDescription) updatePayload.longDescription = formData.longDescription;
       if (formData.dealId) updatePayload.dealId = formData.dealId;
       if (formData.bannerId) updatePayload.bannerId = formData.bannerId;
       if (allImages.length > 0) updatePayload.productImages = allImages;
@@ -694,11 +697,11 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         updatePayload.status = formData.status || 'AVAILABLE';
       }
 
-      console.log('=== FINAL UPDATE PAYLOAD FOR API ===');
-      console.log('Update Payload:', JSON.stringify(updatePayload, null, 2));
-      console.log('Product ID:', product.id);
-      console.log('Category ID:', selectedCategoryId);
-      console.log('Subcategory ID:', formData.subcategoryId);
+      //('=== FINAL UPDATE PAYLOAD FOR API ===');
+      //('Update Payload:', JSON.stringify(updatePayload, null, 2));
+      //('Product ID:', product.id);
+      //('Category ID:', selectedCategoryId);
+      //('Subcategory ID:', formData.subcategoryId);
 
       // Step 4: Update product with JSON payload
       const response = await updateProduct(
@@ -726,7 +729,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   const handleClose = () => {
     setFormData({
       name: "",
-      description: "",
+      miniDescription: "",
+      longDescription: "",
       basePrice: null,
       stock: 0,
       discount: null,
@@ -757,8 +761,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
   if (!show) return null;
 
+
+  console.log("-------Form data-------------")
+  console.log(formData)
+
   return (
     <div className="new-product-modal-overlay" >
+      
       <div className="new-product-modal" onClick={(e) => e.stopPropagation()}>
         <div className="new-product-modal-header">
           <h2 className="new-product-modal-title">Edit Product</h2>
@@ -796,11 +805,21 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                 </div>
 
                 <div className="form-group full-width">
-                  <label className="form-label">Description</label>
+                  <label className="form-label">Mini Description</label>
                   <textarea
                     className="form-textarea"
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    value={formData.miniDescription}
+                    onChange={(e) => handleInputChange('miniDescription', e.target.value)}
+                    placeholder="Describe your product's key features and benefits"
+                    rows={4}
+                  />
+                </div>
+                <div className="form-group full-width">
+                  <label className="form-label">Long Description</label>
+                  <textarea
+                    className="form-textarea"
+                    value={formData.longDescription}
+                    onChange={(e) => handleInputChange('longDescription', e.target.value)}
                     placeholder="Describe your product's key features and benefits"
                     rows={4}
                   />

@@ -35,6 +35,7 @@ import Reviews from "../Components/Reviews";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import "../Styles/ProductPage.css";
+import ScrollToTop from "../Components/ScrollToTop";
 
 const CACHE_KEY_REVIEWS = "productReviewsData";
 
@@ -65,9 +66,8 @@ const ProductPage = () => {
 		if (!imgUrl) return ""; // Return empty string if no image URL
 		return imgUrl.startsWith("http")
 			? imgUrl
-			: `${window.location.origin}${
-					imgUrl.startsWith("/") ? "" : "/"
-			  }${imgUrl}`;
+			: `${window.location.origin}${imgUrl.startsWith("/") ? "" : "/"
+			}${imgUrl}`;
 	};
 
 	const {
@@ -182,26 +182,26 @@ const ProductPage = () => {
 
 			const productImages = Array.isArray(apiProduct.productImages)
 				? apiProduct.productImages
-						.map((img: any) => {
-							try {
-								let imgUrl = "";
-								if (typeof img === "string") {
-									try {
-										const parsed = JSON.parse(img);
-										imgUrl = parsed.url || parsed.imageUrl || img;
-									} catch {
-										imgUrl = img;
-									}
-								} else if (img && typeof img === "object") {
-									imgUrl = img.url || img.imageUrl || "";
+					.map((img: any) => {
+						try {
+							let imgUrl = "";
+							if (typeof img === "string") {
+								try {
+									const parsed = JSON.parse(img);
+									imgUrl = parsed.url || parsed.imageUrl || img;
+								} catch {
+									imgUrl = img;
 								}
-								return imgUrl ? toFullUrl(imgUrl) : "";
-							} catch (e) {
-								console.error("Error parsing product image:", e, img);
-								return "";
+							} else if (img && typeof img === "object") {
+								imgUrl = img.url || img.imageUrl || "";
 							}
-						})
-						.filter(Boolean)
+							return imgUrl ? toFullUrl(imgUrl) : "";
+						} catch (e) {
+							console.error("Error parsing product image:", e, img);
+							return "";
+						}
+					})
+					.filter(Boolean)
 				: [];
 
 			const allImages = [
@@ -251,16 +251,16 @@ const ProductPage = () => {
 				apiProduct?.category?.id != null
 					? Number(apiProduct.category.id)
 					: (apiProduct as any)?.categoryId != null
-					? Number((apiProduct as any).categoryId)
-					: undefined;
+						? Number((apiProduct as any).categoryId)
+						: undefined;
 			const derivedCategoryName = apiProduct?.category?.name;
 
 			const derivedSubcategoryId =
 				apiProduct?.subcategory?.id != null
 					? Number(apiProduct.subcategory.id)
 					: (apiProduct as any)?.subcategoryId != null
-					? Number((apiProduct as any).subcategoryId)
-					: undefined;
+						? Number((apiProduct as any).subcategoryId)
+						: undefined;
 			const derivedSubcategoryName = apiProduct?.subcategory?.name;
 
 			return {
@@ -280,16 +280,16 @@ const ProductPage = () => {
 					category:
 						derivedCategoryId != null
 							? {
-									id: derivedCategoryId,
-									name: derivedCategoryName || "Category",
-							  }
+								id: derivedCategoryId,
+								name: derivedCategoryName || "Category",
+							}
 							: undefined,
 					subcategory:
 						derivedSubcategoryId != null
 							? {
-									id: derivedSubcategoryId,
-									name: derivedSubcategoryName || "Subcategory",
-							  }
+								id: derivedSubcategoryId,
+								name: derivedSubcategoryName || "Subcategory",
+							}
 							: undefined,
 					vendor: apiProduct.vendor || {
 						id: null,
@@ -426,10 +426,10 @@ const ProductPage = () => {
 					const vals = Array.isArray(attr?.values)
 						? attr.values.map((v: any) => String(v?.value ?? v)).filter(Boolean)
 						: Array.isArray(attr?.attributeValues)
-						? attr.attributeValues
+							? attr.attributeValues
 								.map((v: any) => String(v?.value ?? v))
 								.filter(Boolean)
-						: [];
+							: [];
 					return label && vals.length ? `${label}: ${vals.join(", ")}` : "";
 				})
 				.filter(Boolean)
@@ -503,8 +503,8 @@ const ProductPage = () => {
 			setSelectedVariant(defaultVar);
 			const imgs =
 				defaultVar &&
-				defaultVar.variantImgUrls &&
-				defaultVar.variantImgUrls.length > 0
+					defaultVar.variantImgUrls &&
+					defaultVar.variantImgUrls.length > 0
 					? defaultVar.variantImgUrls
 					: product.productImages || [];
 			setImageError(
@@ -661,13 +661,13 @@ const ProductPage = () => {
 									: undefined,
 							selectedVariant: selectedVariant
 								? {
-										id: selectedVariant.id,
-										attributes: selectedVariant.attributes,
-										calculatedPrice: selectedVariant.calculatedPrice,
-										originalPrice: selectedVariant.originalPrice,
-										stock: selectedVariant.stock,
-										variantImgUrls: selectedVariant.variantImgUrls,
-								  }
+									id: selectedVariant.id,
+									attributes: selectedVariant.attributes,
+									calculatedPrice: selectedVariant.calculatedPrice,
+									originalPrice: selectedVariant.originalPrice,
+									stock: selectedVariant.stock,
+									variantImgUrls: selectedVariant.variantImgUrls,
+								}
 								: undefined,
 						},
 						quantity,
@@ -822,6 +822,7 @@ const ProductPage = () => {
 
 	return (
 		<div className="app">
+			<ScrollToTop />
 			<Navbar />
 			<main className="product-page">
 				<div className="product-page__container">
@@ -851,9 +852,8 @@ const ProductPage = () => {
 									)}
 									{isZoomActive && currentImage && (
 										<div
-											className={`product-gallery__zoom-box ${
-												isZoomActive ? "active" : ""
-											}`}
+											className={`product-gallery__zoom-box ${isZoomActive ? "active" : ""
+												}`}
 											style={{
 												backgroundImage: `url(${currentImage})`,
 												backgroundSize: `${ZOOM_LEVEL * 100}%`,
@@ -869,11 +869,10 @@ const ProductPage = () => {
 										{currentImages.map((image: string, index: number) => (
 											<button
 												key={index}
-												className={`product-gallery__thumbnail ${
-													selectedImageIndex === index
+												className={`product-gallery__thumbnail ${selectedImageIndex === index
 														? "product-gallery__thumbnail--active"
 														: ""
-												}`}
+													}`}
 												onClick={() => handleImageSelect(index)}
 											>
 												{image && !imageError[index] ? (
@@ -999,11 +998,10 @@ const ProductPage = () => {
 																	{attrType.toUpperCase()}
 																</span>
 																<div
-																	className={`product-options__variant-row ${
-																		hasMultipleOptions
+																	className={`product-options__variant-row ${hasMultipleOptions
 																			? "product-options__variant-row--many"
 																			: ""
-																	}`}
+																		}`}
 																>
 																	{optionValues.map((optionValue) => {
 																		const isSelected =
@@ -1019,19 +1017,16 @@ const ProductPage = () => {
 																		return (
 																			<button
 																				key={optionValue}
-																				className={`product-options__button${
-																					isSelected
+																				className={`product-options__button${isSelected
 																						? " product-options__button--active"
 																						: ""
-																				}${
-																					isOutOfStock
+																					}${isOutOfStock
 																						? " product-options__button--disabled"
 																						: ""
-																				}${
-																					hasMultipleOptions
+																					}${hasMultipleOptions
 																						? " product-options__button--compact"
 																						: ""
-																				}`}
+																					}`}
 																				onClick={() => {
 																					if (isOutOfStock) {
 																						toast(
@@ -1044,7 +1039,7 @@ const ProductPage = () => {
 																					const variant = product.variants.find(
 																						(v) =>
 																							v.attributes?.color ===
-																								optionValue && v.stock > 0
+																							optionValue && v.stock > 0
 																					);
 																					if (variant) {
 																						handleVariantSelect(variant);
@@ -1054,7 +1049,7 @@ const ProductPage = () => {
 																				title={optionValue}
 																			>
 																				{optionValue.length > 8 &&
-																				hasMultipleOptions
+																					hasMultipleOptions
 																					? `${optionValue.substring(0, 6)}...`
 																					: optionValue}
 																			</button>
@@ -1081,11 +1076,10 @@ const ProductPage = () => {
 																{attrType.toUpperCase()}
 															</span>
 															<div
-																className={`product-options__variant-row ${
-																	hasMultipleOptions
+																className={`product-options__variant-row ${hasMultipleOptions
 																		? "product-options__variant-row--many"
 																		: ""
-																}`}
+																	}`}
 															>
 																{optionValues.map((optionValue) => {
 																	const isSelected =
@@ -1107,19 +1101,16 @@ const ProductPage = () => {
 																	return (
 																		<button
 																			key={optionValue}
-																			className={`product-options__button${
-																				isSelected
+																			className={`product-options__button${isSelected
 																					? " product-options__button--active"
 																					: ""
-																			}${
-																				isOutOfStock
+																				}${isOutOfStock
 																					? " product-options__button--disabled"
 																					: ""
-																			}${
-																				hasMultipleOptions
+																				}${hasMultipleOptions
 																					? " product-options__button--compact"
 																					: ""
-																			}`}
+																				}`}
 																			onClick={() => {
 																				if (isOutOfStock) {
 																					toast(
@@ -1134,7 +1125,7 @@ const ProductPage = () => {
 																			title={optionValue}
 																		>
 																			{optionValue.length > 8 &&
-																			hasMultipleOptions
+																				hasMultipleOptions
 																				? `${optionValue.substring(0, 6)}...`
 																				: optionValue}
 																		</button>

@@ -32,12 +32,13 @@ type ProductVariant = {
 
 const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, onSubmit, product }) => {
   const { authState } = useVendorAuth();
-  
+
   // Form state
   const [formData, setFormData] = useState({
     id: product?.id || 0,
     name: product?.name || "",
-    description: product?.description || "",
+    miniDescription: product?.miniDescription || "",
+    longDescription: product?.longDescription || "",
     basePrice: product?.basePrice || 0,
     stock: product?.stock || 0,
     discount: product?.discount || 0,
@@ -134,7 +135,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, on
       // Upload new images
       let productImageUrls = [...formData.productImages.filter(img => typeof img === 'string')];
       const newImageFiles = images.filter(img => img instanceof File) as File[];
-      
+
       if (newImageFiles.length > 0) {
         const uploadResponse = await uploadProductImages(newImageFiles);
         if (uploadResponse.success) {
@@ -177,7 +178,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, on
     setFormData({
       id: product?.id || 0,
       name: product?.name || "",
-      description: product?.description || "",
+      miniDescription: product?.miniDescription || "",
+      longDescription: product?.longDescription || "",
       basePrice: product?.basePrice || 0,
       stock: product?.stock || 0,
       discount: product?.discount || 0,
@@ -207,7 +209,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, on
           <h2 className="new-product-modal-title">Edit Product</h2>
           <button className="new-product-modal-close" onClick={handleClose}>
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         </div>
@@ -219,7 +221,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, on
               <div className="section-header">
                 <h3 className="section-title">Product Information</h3>
               </div>
-              
+
               <div className="form-grid two-columns">
                 <div className="form-group full-width">
                   <label className="form-label required">Product Name</label>
@@ -270,7 +272,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, on
               <div className="section-header">
                 <h3 className="section-title">Product Images</h3>
               </div>
-              
+
               <div className="image-upload-container">
                 <input
                   type="file"
@@ -284,13 +286,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, on
                   <div className="upload-icon">+</div>
                   <div>Click or drag to upload images</div>
                 </label>
-                
+
                 <div className="image-preview-grid">
                   {images.map((img, index) => (
                     <div key={index} className="image-preview">
                       <img src={img instanceof File ? URL.createObjectURL(img) : img} alt={`Preview ${index}`} />
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         className="remove-image"
                         onClick={() => removeImage(index)}
                       >
@@ -304,16 +306,16 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, on
 
             {/* Form Actions */}
             <div className="form-actions">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn btn-secondary"
                 onClick={handleClose}
                 disabled={isLoading}
               >
                 Cancel
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="btn btn-primary"
                 disabled={isLoading}
               >

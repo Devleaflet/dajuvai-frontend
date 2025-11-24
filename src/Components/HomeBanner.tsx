@@ -50,7 +50,7 @@ const HomeBanner: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log("helo", data);
+      //("helo", data);
       // Filter only active hero banners
       const activeBanners = data.data.filter(
         (banner: Banner) =>
@@ -59,7 +59,7 @@ const HomeBanner: React.FC = () => {
           (!banner.startDate || new Date(banner.startDate) <= new Date()) &&
           (!banner.endDate || new Date(banner.endDate) >= new Date())
       );
-      console.log("Filtered active banners:", activeBanners);
+      //("Filtered active banners:", activeBanners);
       setBanners(activeBanners);
     } catch (err) {
       setError("Failed to load banners");
@@ -95,16 +95,16 @@ const HomeBanner: React.FC = () => {
       const dy = e.clientY - mouseDownPos.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       if (distance > dragThreshold) {
-        console.log("Drag detected, ignoring click");
+        //("Drag detected, ignoring click");
         return;
       }
     }
 
-    console.log("HomeBanner clicked!");
+    //("HomeBanner clicked!");
     const currentBanner = banners[currentIndex];
-    console.log("Current banner:", currentBanner);
-    console.log("Current index:", currentIndex);
-    console.log("Total banners:", banners.length);
+    //("Current banner:", currentBanner);
+    //("Current index:", currentIndex);
+    //("Total banners:", banners.length);
 
     if (currentBanner) {
       if (currentBanner.productSource === "category" && currentBanner.selectedCategory) {

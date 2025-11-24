@@ -11,8 +11,10 @@ import { useVendorAuth } from "../context/VendorAuthContext";
 import { Order, OrderDetail } from "../Components/Types/Order";
 import { useQuery } from '@tanstack/react-query';
 import VendorHeader from "../Components/VendorHeader";
+import { useSearchParams } from "react-router-dom";
 
 const VendorOrder: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<string>("All Orders");
   const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -60,6 +62,19 @@ const VendorOrder: React.FC = () => {
     },
     enabled: !!authState.token
   });
+
+  const orderIdFromParams = searchParams.get('orderId');
+
+  useEffect(() => {
+    if (orderIdFromParams && allOrders.length > 0) {
+      const order = allOrders.find(o => o.id.toString() === orderIdFromParams);
+      if (order) {
+        setSelectedOrder(order);
+        fetchOrderDetails(order.id);
+        setIsViewModalOpen(true);
+      }
+    }
+  }, [orderIdFromParams, allOrders]);
 
   // Fetch order details for viewing
   const fetchOrderDetails = async (orderId: number) => {

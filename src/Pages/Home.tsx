@@ -9,7 +9,6 @@ import PageLoader from "../Components/PageLoader";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCategory } from "../api/category";
 import SpecialOffers from "../Components/SpecialOffers";
-import CategorySection from "../Components/CategorySection";
 import CategoryCatalogSection from "../Components/CategoryCatalogSection";
 
 const Home = () => {
@@ -22,7 +21,7 @@ const Home = () => {
 		const searchParam = searchParams.get("search");
 		if (searchParam) {
 			const decodedSearch = decodeURIComponent(searchParam);
-			console.log("🏠 Home page received search parameter:", decodedSearch);
+			//("🏠 Home page received search parameter:", decodedSearch);
 
 			// Set the search query in the Navbar by dispatching a custom event
 			window.dispatchEvent(

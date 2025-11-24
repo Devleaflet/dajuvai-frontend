@@ -211,9 +211,9 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
     setLoading(true);
 
     try {
-      console.log("AdminAddProductModal - User data:", user);
-      console.log("AdminAddProductModal - User role:", user?.role);
-      console.log("AdminAddProductModal - Token:", token ? "Present" : "Missing");
+      //("AdminAddProductModal - User data:", user);
+      //("AdminAddProductModal - User role:", user?.role);
+      //("AdminAddProductModal - Token:", token ? "Present" : "Missing");
 
       if (!user || !token) {
         setErrors(prev => ({ ...prev, general: 'Authentication required' }));
@@ -244,10 +244,10 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
         vendorId: String(selectedVendorId),
       };
 
-      console.log("AdminAddProductModal - Sending payload:", productData);
-      console.log("AdminAddProductModal - Category ID:", formData.categoryId);
-      console.log("AdminAddProductModal - Subcategory ID:", formData.subcategoryId);
-      console.log("AdminAddProductModal - Token:", token ? "Present" : "Missing");
+      //("AdminAddProductModal - Sending payload:", productData);
+      //("AdminAddProductModal - Category ID:", formData.categoryId);
+      //("AdminAddProductModal - Subcategory ID:", formData.subcategoryId);
+      //("AdminAddProductModal - Token:", token ? "Present" : "Missing");
 
       await onAdd(productData, formData.categoryId, formData.subcategoryId, token, role);
       onClose();

@@ -342,14 +342,10 @@ const UserProfile: React.FC = () => {
 		}
 
 		const fetchUserDetails = async () => {
-			console.log("[UserProfile] fetchUserDetails - Starting fetch");
-			console.log("[UserProfile] fetchUserDetails - User ID:", userId);
-			console.log("[UserProfile] fetchUserDetails - Token:", token);
-			console.log(
-				"[UserProfile] fetchUserDetails - Document cookie:",
-				document.cookie
-			);
-
+			//("[UserProfile] fetchUserDetails - Starting fetch");
+			//("[UserProfile] fetchUserDetails - User ID:", userId);
+			//("[UserProfile] fetchUserDetails - Token:", token);
+			
 			setIsLoading((prev) => ({ ...prev, fetchUser: true }));
 			try {
 				const headers: Record<string, string> = {};
@@ -357,19 +353,8 @@ const UserProfile: React.FC = () => {
 
 				if (authToken) {
 					headers.Authorization = `Bearer ${authToken}`;
-					console.log(
-						"[UserProfile] fetchUserDetails - Using token-based auth"
-					);
-				} else {
-					console.log(
-						"[UserProfile] fetchUserDetails - Using cookie-based auth"
-					);
+					
 				}
-
-				console.log(
-					"[UserProfile] fetchUserDetails - Request headers:",
-					headers
-				);
 
 				const response = await axiosInstance.get(`/api/auth/users/${userId}`, {
 					headers,
@@ -377,10 +362,6 @@ const UserProfile: React.FC = () => {
 					timeout: 5000,
 				});
 
-				console.log(
-					"[UserProfile] fetchUserDetails - Response:",
-					response.data
-				);
 
 				// Ensure consistent address structure
 				const userData = response.data.data;
@@ -412,11 +393,11 @@ const UserProfile: React.FC = () => {
 		fetchUserDetails();
 	}, [userId, isAuthLoading, login, token]);
 
-	console.log("💀💀", userDetails);
+	//("💀💀", userDetails);
 
 	useEffect(() => {
 		if (user) {
-			console.log("[Wishlist] document.cookie:", document.cookie);
+			//("[Wishlist] document.cookie:", document.cookie);
 			fetch(`${API_BASE_URL}/api/wishlist`, {
 				credentials: "include",
 			})
@@ -432,24 +413,24 @@ const UserProfile: React.FC = () => {
 
 	useEffect(() => {
 		if (!user) {
-			console.log("[OrderHistory] No user found, skipping fetch.");
+			//("[OrderHistory] No user found, skipping fetch.");
 			return;
 		}
 		setOrdersLoading(true);
 		setOrdersError(null);
 		const url = `${API_BASE_URL}/api/order/customer/history`;
 		const headers = token ? { Authorization: `Bearer ${token}` } : {};
-		console.log("[OrderHistory] document.cookie:", document.cookie);
-		console.log("[OrderHistory] Fetching order history for user:", user);
-		console.log("[OrderHistory] Fetch URL:", url);
+		//("[OrderHistory] document.cookie:", document.cookie);
+		//("[OrderHistory] Fetching order history for user:", user);
+		//("[OrderHistory] Fetch URL:", url);
 		fetch(url, {
 			credentials: "include",
 			headers,
 		})
 			.then((res) => {
-				console.log("[OrderHistory] Response status:", res.status);
+				//("[OrderHistory] Response status:", res.status);
 				return res.json().then((data) => {
-					console.log("[OrderHistory] Response JSON:", data);
+					//("[OrderHistory] Response JSON:", data);
 					return { data };
 				});
 			})
@@ -551,10 +532,6 @@ const UserProfile: React.FC = () => {
 		)
 			return showPopup("error", "Phone number must be 10 digits.");
 
-		console.log(
-			"[UserProfile] handleSave - Starting update for userId:",
-			userId
-		);
 		setIsLoading((prev) => ({ ...prev, saveUser: true }));
 
 		try {
@@ -565,7 +542,7 @@ const UserProfile: React.FC = () => {
 			const authToken = token || localStorage.getItem("authToken");
 			if (authToken) {
 				headers.Authorization = `Bearer ${authToken}`;
-				console.log("[UserProfile] handleSave - Using token:", authToken);
+				//("[UserProfile] handleSave - Using token:", authToken);
 			}
 
 			// Ensure address object structure
@@ -582,7 +559,7 @@ const UserProfile: React.FC = () => {
 				},
 			};
 
-			console.log("[UserProfile] handleSave - Request data:", requestData);
+			//("[UserProfile] handleSave - Request data:", requestData);
 
 			const response = await axiosInstance.put(
 				`/api/auth/users/${userId}`,
@@ -593,12 +570,9 @@ const UserProfile: React.FC = () => {
 				}
 			);
 
-			console.log("[UserProfile] handleSave - API response:", response.data);
+			//("[UserProfile] handleSave - API response:", response.data);
 
 			if (response.data.success) {
-				console.log(
-					"[UserProfile] handleSave - Updating user details and showing success popup"
-				);
 
 				// Normalize the response data structure
 				const updatedData = response.data.data;

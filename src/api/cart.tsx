@@ -1,21 +1,21 @@
 import axiosInstance from "./axiosInstance";
 
 export const fetchCart = async () => {
-  console.log("=== fetchCart START ===");
+  //"=== fetchCart START ===");
   try {
-    console.log("Making GET request to /api/cart...");
+    //"Making GET request to /api/cart...");
     const response = await axiosInstance.get("/api/cart", { withCredentials: true });
-    console.log("Full API response:", response);
-    console.log("Response status:", response.status);
-    console.log("Response data:", response.data);
-    console.log("Response data.data:", response.data.data);
-    console.log("Response data.data.items:", response.data.data.items);
-    console.log("cart found = ", response.data.data.items);
+    //"Full API response:", response);
+    //"Response status:", response.status);
+    //"Response data:", response.data);
+    //"Response data.data:", response.data.data);
+    //"Response data.data.items:", response.data.data.items);
+    //"cart found = ", response.data.data.items);
     
     const items = response.data.data.items;
-    console.log("Returning items:", items);
-    console.log("Number of items:", items.length);
-    console.log("=== fetchCart SUCCESS ===");
+    //"Returning items:", items);
+    //"Number of items:", items.length);
+    //"=== fetchCart SUCCESS ===");
     return items;
   } catch (error: unknown) {
     console.error("=== fetchCart ERROR ===");

@@ -4,7 +4,7 @@ import logo from '../assets/logo.webp';
 import jsPDF from 'jspdf';
 import { API_BASE_URL } from "../config";
 import "../Styles/PaymentNPX.css"
-import { ChevronDown } from "lucide-react";  // ⬅️ add this at the top
+import { ChevronDown } from "lucide-react";  
 
 
 // TypeScript Interfaces
@@ -63,6 +63,9 @@ const NepalPaymentGateway: React.FC = () => {
   const location = useLocation();
   const orderDetails = location.state?.orderDetails;
 
+  //("---------------------Order details----------------------")
+  //(orderDetails)
+
   if (!orderDetails) {
     return <p className="no-order-details">No order details found.</p>;
   }
@@ -71,7 +74,7 @@ const NepalPaymentGateway: React.FC = () => {
   // Initialize amount with totalAmount from order if available
   useEffect(() => {
     if (totalAmount) {
-      setAmount(totalAmount.finalTotal.toString());
+      setAmount(totalAmount.toString());
     }
   }, [totalAmount]);
 
@@ -257,7 +260,7 @@ const NepalPaymentGateway: React.FC = () => {
       const data = await response.json();
       setTransactionStatus(data);
       setStatusLoading(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error checking status:', error);
       setError('Failed to check transaction status');
       setStatusLoading(false);
@@ -352,7 +355,9 @@ const NepalPaymentGateway: React.FC = () => {
     if (logoImg && logoImg instanceof HTMLImageElement && logoImg.src.startsWith(window.location.origin)) {
       try {
         doc.addImage(logoImg, 'WEBP', 85, 5, 40, 16);
-      } catch (e) {}
+      } catch (e) {
+        //(e)
+      }
     }
     
     doc.setFontSize(18);
@@ -425,7 +430,6 @@ const NepalPaymentGateway: React.FC = () => {
               <form onSubmit={handlePayment} className="payment-form">
                 <div className="npx-form-group">
                   <label htmlFor="amount">Amount (NPR)</label>
-                  {console.log("amo",amount)}
                   <input
                     type="number"
                     id="amount"

@@ -1,39 +1,39 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
-import "../Styles/Navbar.css";
+import { useQuery } from '@tanstack/react-query';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'react-hot-toast';
 import {
-	FaSearch,
-	FaShoppingCart,
-	FaUser,
-	FaHeart,
 	FaBars,
-	FaTimes,
 	FaChevronDown,
-	FaCog,
-	FaSignOutAlt,
-	FaHome,
-	FaShoppingBag,
-	FaInfoCircle,
 	FaChevronLeft,
 	FaChevronRight,
-} from "react-icons/fa";
-import { FaFacebook, FaInstagram, FaTiktok, FaWhatsapp } from "react-icons/fa6";
-import logo from "../assets/logo.webp";
-import nepal from "../assets/nepal.gif";
-import { useAuth } from "../context/AuthContext";
-import AuthModal from "./AuthModal";
-import { useCart } from "../context/CartContext";
-import { fetchCategory } from "../api/category";
-import { useCategory } from "../context/Category";
-import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
-import axiosInstance from "../api/axiosInstance";
-import { fetchSubCategory } from "../api/subcategory";
-import { useQuery } from "@tanstack/react-query";
-import { API_BASE_URL } from "../config";
-import { useVendorAuth } from "../context/VendorAuthContext";
-import VendorLogin from "../Pages/VendorLogin";
-import { toast } from "react-hot-toast";
-import { useUI } from "../context/UIContext";
-import Cart from "./Cart";
+	FaCog,
+	FaHeart,
+	FaHome,
+	FaInfoCircle,
+	FaSearch,
+	FaShoppingBag,
+	FaShoppingCart,
+	FaSignOutAlt,
+	FaTimes,
+	FaUser,
+} from 'react-icons/fa';
+import { FaFacebook, FaInstagram, FaTiktok, FaWhatsapp } from 'react-icons/fa6';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import axiosInstance from '../api/axiosInstance';
+import { fetchCategory } from '../api/category';
+import { fetchSubCategory } from '../api/subcategory';
+import logo from '../assets/logo.webp';
+import nepal from '../assets/nepal.gif';
+import { API_BASE_URL } from '../config';
+import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { useCategory } from '../context/Category';
+import { useUI } from '../context/UIContext';
+import { useVendorAuth } from '../context/VendorAuthContext';
+import VendorLogin from '../Pages/VendorLogin';
+import '../Styles/Navbar.css';
+import AuthModal from './AuthModal';
+import Cart from './Cart';
 
 interface Category {
 	id: number;
@@ -62,7 +62,7 @@ const Navbar: React.FC = () => {
 	const mobileProfileRef = useRef<HTMLDivElement>(null);
 	const { authState: vendorAuthState, logout: vendorLogout } = useVendorAuth();
 	const { cartOpen, setCartOpen, sideMenuOpen, setSideMenuOpen } = useUI();
-	const [searchQuery, setSearchQuery] = useState<string>("");
+	const [searchQuery, setSearchQuery] = useState<string>('');
 	const [searchResults, setSearchResults] = useState<any[]>([]);
 	const [showSearchDropdown, setShowSearchDropdown] = useState<boolean>(false);
 	const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
@@ -139,48 +139,54 @@ const Navbar: React.FC = () => {
 
 	useEffect(() => {
 		const handleStorageChange = (e: StorageEvent) => {
-			if (e.key === "authUser") {
-				console.log("authUser changed in localStorage:", e.newValue);
+			if (e.key === 'authUser') {
+				//('authUser changed in localStorage:', e.newValue);
 			}
 		};
 
-		window.addEventListener("storage", handleStorageChange);
-		return () => window.removeEventListener("storage", handleStorageChange);
+		window.addEventListener('storage', handleStorageChange);
+		return () => window.removeEventListener('storage', handleStorageChange);
 	}, []);
 
 	useEffect(() => {
 		function handleClickOutside(event: MouseEvent) {
-			if (
-				profileDropdownOpen &&
-				dropdownTriggerRef.current &&
-				!dropdownTriggerRef.current.contains(event.target as Node) &&
-				profileRef.current &&
-				!profileRef.current.contains(event.target as Node)
-			) {
+			const targetNode = event.target as Node;
+
+			// Determine if the click occurred inside either profile dropdown (desktop or mobile)
+			const isInsideProfileDropdown =
+				(!!profileRef.current && profileRef.current.contains(targetNode)) ||
+				(!!mobileProfileRef.current && mobileProfileRef.current.contains(targetNode));
+
+			// Determine if the click occurred inside the profile trigger (avatar/button)
+			const isInsideTrigger =
+				!!dropdownTriggerRef.current &&
+				dropdownTriggerRef.current.contains(targetNode);
+
+			if (profileDropdownOpen && !isInsideTrigger && !isInsideProfileDropdown) {
 				setProfileDropdownOpen(false);
 			}
 
 			if (
 				moreDropdownOpen &&
 				moreDropdownRef.current &&
-				!moreDropdownRef.current.contains(event.target as Node)
+				!moreDropdownRef.current.contains(targetNode)
 			) {
 				setMoreDropdownOpen(false);
 			}
 		}
 		function handleEsc(event: KeyboardEvent) {
-			if (event.key === "Escape") {
+			if (event.key === 'Escape') {
 				setProfileDropdownOpen(false);
 				setMoreDropdownOpen(false);
 			}
 		}
 		if (profileDropdownOpen || moreDropdownOpen) {
-			document.addEventListener("mousedown", handleClickOutside);
-			document.addEventListener("keydown", handleEsc);
+			document.addEventListener('mousedown', handleClickOutside);
+			document.addEventListener('keydown', handleEsc);
 		}
 		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-			document.removeEventListener("keydown", handleEsc);
+			document.removeEventListener('mousedown', handleClickOutside);
+			document.removeEventListener('keydown', handleEsc);
 		};
 	}, [profileDropdownOpen, moreDropdownOpen]);
 
@@ -191,12 +197,12 @@ const Navbar: React.FC = () => {
 			return (
 				<img
 					src={user.profilePicture}
-					alt={user.username || user.email || "User"}
+					alt={user.username || user.email || 'User'}
 					className="navbar__avatar-image"
 				/>
 			);
 		}
-		const letter = user.username?.charAt(0) || user.email?.charAt(0) || "?";
+		const letter = user.username?.charAt(0) || user.email?.charAt(0) || '?';
 		return (
 			<span className="navbar__avatar-circle">{letter.toUpperCase()}</span>
 		);
@@ -209,30 +215,28 @@ const Navbar: React.FC = () => {
 		setSideMenuOpen(newState);
 		if (cartOpen) setCartOpen(false);
 		if (newState) {
-			document.body.classList.add("navbar--menu-open");
+			document.body.classList.add('navbar--menu-open');
 		} else {
-			document.body.classList.remove("navbar--menu-open");
+			document.body.classList.remove('navbar--menu-open');
 		}
 	};
 
-	// FIXED: Proper cart toggle function that works on all pages
 	const toggleCart = (e?: React.MouseEvent): void => {
 		e?.preventDefault();
 		e?.stopPropagation();
 		const newState = !cartOpen;
 		setCartOpen(newState);
 		if (sideMenuOpen) setSideMenuOpen(false);
-		
-		// Properly manage body classes for cart state
+
 		if (newState) {
-			document.body.classList.add("no-scroll");
-			document.body.classList.add("cart-open");
-			document.body.style.overflow = "hidden";
+			document.body.classList.add('no-scroll');
+			document.body.classList.add('cart-open');
+			document.body.style.overflow = 'hidden';
 		} else {
-			document.body.classList.remove("no-scroll");
-			document.body.classList.remove("cart-open");
-			document.body.classList.remove("navbar--menu-open");
-			document.body.style.overflow = "";
+			document.body.classList.remove('no-scroll');
+			document.body.classList.remove('cart-open');
+			document.body.classList.remove('navbar--menu-open');
+			document.body.style.overflow = '';
 		}
 	};
 
@@ -241,7 +245,7 @@ const Navbar: React.FC = () => {
 		setAuthModalOpen(!authModalOpen);
 		if (sideMenuOpen) {
 			setSideMenuOpen(false);
-			document.body.classList.remove("navbar--menu-open");
+			document.body.classList.remove('navbar--menu-open');
 		}
 	};
 
@@ -250,14 +254,14 @@ const Navbar: React.FC = () => {
 		setVendorAuthModalOpen(!vendorAuthModalOpen);
 		if (sideMenuOpen) {
 			setSideMenuOpen(false);
-			document.body.classList.remove("navbar--menu-open");
+			document.body.classList.remove('navbar--menu-open');
 		}
 	};
 
 	const showComingSoon = () => {
 		setMoreDropdownOpen(false);
-		toast("🚀 Coming soon! This feature will be available soon.", {
-			icon: "✨",
+		toast('🚀 Coming soon! This feature will be available soon.', {
+			icon: '✨',
 		});
 	};
 
@@ -274,56 +278,56 @@ const Navbar: React.FC = () => {
 			}
 		};
 
-		document.addEventListener("click", handleClickOutside);
+		document.addEventListener('click', handleClickOutside);
 		return () => {
-			document.removeEventListener("click", handleClickOutside);
+			document.removeEventListener('click', handleClickOutside);
 		};
 	}, [sideMenuOpen]);
 
 	useEffect(() => {
 		let prevScrollPos = window.pageYOffset;
-		const searchRow = document.querySelector(".navbar__search-row");
+		const searchRow = document.querySelector('.navbar__search-row');
 
 		if (window.pageYOffset > 10) {
-			searchRow?.classList.add("hidden");
+			searchRow?.classList.add('hidden');
 		}
 
 		const handleScroll = (): void => {
 			const currentScrollPos = window.pageYOffset;
 			if (window.innerWidth <= 1099) {
 				if (currentScrollPos <= 10 || prevScrollPos - currentScrollPos > 500) {
-					searchRow?.classList.remove("hidden");
+					searchRow?.classList.remove('hidden');
 				} else {
-					searchRow?.classList.add("hidden");
+					searchRow?.classList.add('hidden');
 				}
 			} else {
-				searchRow?.classList.remove("hidden");
+				searchRow?.classList.remove('hidden');
 			}
 			prevScrollPos = currentScrollPos;
 		};
 
-		window.addEventListener("scroll", handleScroll);
-		window.addEventListener("resize", handleScroll);
+		window.addEventListener('scroll', handleScroll);
+		window.addEventListener('resize', handleScroll);
 
 		return () => {
-			window.removeEventListener("scroll", handleScroll);
-			window.removeEventListener("resize", handleScroll);
+			window.removeEventListener('scroll', handleScroll);
+			window.removeEventListener('resize', handleScroll);
 		};
 	}, []);
 
 	const { data: categoriesData, isLoading: isCategoriesLoading } = useQuery<
 		Category[]
 	>({
-		queryKey: ["categories"],
+		queryKey: ['categories'],
 		queryFn: async () => {
 			try {
-				const response = await axiosInstance.get("/api/categories");
+				const response = await axiosInstance.get('/api/categories');
 				if (!response.data.success) {
-					throw new Error("Failed to fetch categories");
+					throw new Error('Failed to fetch categories');
 				}
 				return response.data.data;
 			} catch (error) {
-				console.error("Error fetching categories:", error);
+				console.error('Error fetching categories:', error);
 				throw error;
 			}
 		},
@@ -346,7 +350,7 @@ const Navbar: React.FC = () => {
 			try {
 				await fetchCategory();
 			} catch (error) {
-				console.error("Error prefetching categories:", error);
+				console.error('Error prefetching categories:', error);
 			}
 		};
 		prefetchCategories();
@@ -365,22 +369,22 @@ const Navbar: React.FC = () => {
 			}
 		};
 
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
+		document.addEventListener('mousedown', handleClickOutside);
+		return () => document.removeEventListener('mousedown', handleClickOutside);
 	}, []);
 
 	const { data: allProducts = [] } = useQuery({
-		queryKey: ["allProducts"],
+		queryKey: ['allProducts'],
 		queryFn: async () => {
 			try {
 				const response = await fetch(
 					`${API_BASE_URL}/api/categories/all/products`
 				);
-				if (!response.ok) throw new Error("Failed to fetch products");
+				if (!response.ok) throw new Error('Failed to fetch products');
 				const data = await response.json();
 				return data.success ? data.data : [];
 			} catch (error) {
-				console.error("Error fetching products:", error);
+				console.error('Error fetching products:', error);
 				return [];
 			}
 		},
@@ -390,7 +394,7 @@ const Navbar: React.FC = () => {
 	useEffect(() => {
 		const handleSetNavbarSearch = (event: CustomEvent) => {
 			const { searchQuery } = event.detail;
-			console.log("🔍 Navbar received search query:", searchQuery);
+			//('🔍 Navbar received search query:', searchQuery);
 			setSearchQuery(searchQuery);
 
 			if (searchQuery && allProducts.length > 0) {
@@ -401,13 +405,13 @@ const Navbar: React.FC = () => {
 		};
 
 		window.addEventListener(
-			"setNavbarSearch",
+			'setNavbarSearch',
 			handleSetNavbarSearch as EventListener
 		);
 
 		return () => {
 			window.removeEventListener(
-				"setNavbarSearch",
+				'setNavbarSearch',
 				handleSetNavbarSearch as EventListener
 			);
 		};
@@ -439,7 +443,7 @@ const Navbar: React.FC = () => {
 						product.productImages?.[0] ||
 						product.variants?.find((v: any) => v?.variantImages?.[0])
 							?.variantImages?.[0] ||
-						"../assets/iphone.jpg",
+						'../assets/iphone.jpg',
 					matchScore: calculateMatchScore(product, searchTerm),
 				}))
 				.sort((a: any, b: any) => b.matchScore - a.matchScore)
@@ -448,7 +452,7 @@ const Navbar: React.FC = () => {
 			setSearchResults(filteredProducts);
 			setShowSearchDropdown(filteredProducts.length > 0);
 		} catch (error) {
-			console.error("Search error:", error);
+			console.error('Search error:', error);
 			setSearchResults([]);
 			setShowSearchDropdown(false);
 		}
@@ -457,7 +461,7 @@ const Navbar: React.FC = () => {
 	const calculateMatchScore = (product: any, searchTerm: string) => {
 		let score = 0;
 		const name = product.name.toLowerCase();
-		const description = product.description?.toLowerCase() || "";
+		const description = product.description?.toLowerCase() || '';
 
 		if (name === searchTerm) score += 100;
 		else if (name.startsWith(searchTerm)) score += 50;
@@ -481,12 +485,12 @@ const Navbar: React.FC = () => {
 
 	const handleSearchResultClick = (productId: number) => {
 		setShowSearchDropdown(false);
-		setSearchQuery("");
+		setSearchQuery('');
 		navigate(`/product-page/${productId}`);
 	};
 
 	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-		if (e.key === "Escape") {
+		if (e.key === 'Escape') {
 			setShowSearchDropdown(false);
 		}
 	};
@@ -498,14 +502,14 @@ const Navbar: React.FC = () => {
 		setSideMenuOpen(false);
 		setActiveDropdown(null);
 
-		const isOnShopPage = window.location.pathname === "/shop";
+		const isOnShopPage = window.location.pathname === '/shop';
 
 		if (isOnShopPage) {
 			const newUrl = `/shop?categoryId=${categoryId}&subcategoryId=${subcategoryId}`;
-			window.history.pushState({}, "", newUrl);
+			window.history.pushState({}, '', newUrl);
 
 			window.dispatchEvent(
-				new CustomEvent("shopFiltersChanged", {
+				new CustomEvent('shopFiltersChanged', {
 					detail: { categoryId, subcategoryId },
 				})
 			);
@@ -536,7 +540,7 @@ const Navbar: React.FC = () => {
 				{dropdownLoading ? (
 					<div
 						className="navbar__dropdown-link"
-						style={{ color: "#666", fontStyle: "italic" }}
+						style={{ color: '#666', fontStyle: 'italic' }}
 					>
 						Loading subcategories...
 					</div>
@@ -556,7 +560,7 @@ const Navbar: React.FC = () => {
 				) : (
 					<div
 						className="navbar__dropdown-link"
-						style={{ color: "#666", fontStyle: "italic" }}
+						style={{ color: '#666', fontStyle: 'italic' }}
 					>
 						No subcategories
 					</div>
@@ -598,70 +602,69 @@ const Navbar: React.FC = () => {
 			<div className="navbar__side-menu-categories">
 				{showLoading
 					? Array.from({ length: 6 }).map((_, index) => (
-							<div
-								key={index}
-								className="navbar__side-menu-category skeleton"
-							>
-								<div className="skeleton__category"></div>
-							</div>
-					  ))
+						<div
+							key={index}
+							className="navbar__side-menu-category skeleton"
+						>
+							<div className="skeleton__category"></div>
+						</div>
+					))
 					: categories.map((category: Category) => (
-							<div
-								key={category.id}
-								className="navbar__side-menu-category"
+						<div
+							key={category.id}
+							className="navbar__side-menu-category"
+						>
+							<button
+								className="navbar__side-menu-category-button"
+								onClick={() => handleExpandSideMenuCategory(category.id)}
 							>
-								<button
-									className="navbar__side-menu-category-button"
-									onClick={() => handleExpandSideMenuCategory(category.id)}
-								>
-									<span>{category.name}</span>
-									<FaChevronDown
-										size={20}
-										className={`navbar__side-menu-category-icon ${
-											selectedCategory === category.id
-												? "navbar__side-menu-category-icon--open"
-												: ""
+								<span>{category.name}</span>
+								<FaChevronDown
+									size={20}
+									className={`navbar__side-menu-category-icon ${selectedCategory === category.id
+										? 'navbar__side-menu-category-icon--open'
+										: ''
 										}`}
-									/>
-								</button>
-								{selectedCategory === category.id && (
-									<div className="navbar__side-menu-subcategories">
-										{sideMenuLoading[category.id] ? (
-											<div style={{ padding: 12, color: "#888" }}>
-												Loading...
-											</div>
-										) : (
-											(sideMenuSubcategories[category.id] || []).map(
-												(subcategory: Subcategory) => (
-													<Link
-														key={subcategory.id}
-														to={`/shop?categoryId=${category.id}&subcategoryId=${subcategory.id}`}
-														className="navbar__side-menu-subcategory"
-														onClick={(e) => {
-															e.preventDefault();
-															handleSubcategoryClick(
-																category.id,
-																subcategory.id
-															);
-															setSideMenuOpen(false);
-														}}
-													>
-														{subcategory.name}
-													</Link>
-												)
+								/>
+							</button>
+							{selectedCategory === category.id && (
+								<div className="navbar__side-menu-subcategories">
+									{sideMenuLoading[category.id] ? (
+										<div style={{ padding: 12, color: '#888' }}>
+											Loading...
+										</div>
+									) : (
+										(sideMenuSubcategories[category.id] || []).map(
+											(subcategory: Subcategory) => (
+												<Link
+													key={subcategory.id}
+													to={`/shop?categoryId=${category.id}&subcategoryId=${subcategory.id}`}
+													className="navbar__side-menu-subcategory"
+													onClick={(e) => {
+														e.preventDefault();
+														handleSubcategoryClick(
+															category.id,
+															subcategory.id
+														);
+														setSideMenuOpen(false);
+													}}
+												>
+													{subcategory.name}
+												</Link>
 											)
-										)}
-									</div>
-								)}
-							</div>
-					  ))}
+										)
+									)}
+								</div>
+							)}
+						</div>
+					))}
 			</div>
 		);
 	};
 
 	useEffect(() => {
 		const params = new URLSearchParams(location.search);
-		const categoryId = params.get("categoryId");
+		const categoryId = params.get('categoryId');
 		if (categoryId) {
 			setActiveDropdown(Number(categoryId));
 		}
@@ -672,15 +675,12 @@ const Navbar: React.FC = () => {
 			if (activeDropdown) {
 				setDropdownLoading(true);
 				try {
-					console.log(
-						"🔍 Fetching subcategories for category:",
-						activeDropdown
-					);
+					
 					const subs = await fetchSubCategory(activeDropdown);
-					console.log("📦 Received subcategories:", subs);
+					//('📦 Received subcategories:', subs);
 					setDropdownSubcategories(subs || []);
 				} catch (error) {
-					console.error("❌ Error fetching subcategories:", error);
+					console.error('❌ Error fetching subcategories:', error);
 					setDropdownSubcategories([]);
 				} finally {
 					setDropdownLoading(false);
@@ -696,29 +696,29 @@ const Navbar: React.FC = () => {
 	const handleFullLogout = async () => {
 		localStorage.clear();
 		sessionStorage.clear();
-		document.cookie.split(";").forEach((c) => {
+		document.cookie.split(';').forEach((c) => {
 			document.cookie = c
-				.replace(/^ +/, "")
-				.replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+				.replace(/^ +/, '')
+				.replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
 		});
 		if (vendorAuthState.isAuthenticated && vendorAuthState.vendor) {
 			vendorLogout();
 		} else {
 			userLogout();
 		}
-		window.location.href = "/";
+		window.location.href = '/';
 	};
 
-	const scrollCategories = (direction: "left" | "right") => {
+	const scrollCategories = (direction: 'left' | 'right') => {
 		if (categoriesRef.current) {
 			const scrollAmount = 200;
 			const newScrollPosition =
-				direction === "left"
+				direction === 'left'
 					? scrollPosition - scrollAmount
 					: scrollPosition + scrollAmount;
 			categoriesRef.current.scrollTo({
 				left: newScrollPosition,
-				behavior: "smooth",
+				behavior: 'smooth',
 			});
 			setScrollPosition(newScrollPosition);
 		}
@@ -733,9 +733,9 @@ const Navbar: React.FC = () => {
 	useEffect(() => {
 		const categoriesContainer = categoriesRef.current;
 		if (categoriesContainer) {
-			categoriesContainer.addEventListener("scroll", updateScrollPosition);
+			categoriesContainer.addEventListener('scroll', updateScrollPosition);
 			return () =>
-				categoriesContainer.removeEventListener("scroll", updateScrollPosition);
+				categoriesContainer.removeEventListener('scroll', updateScrollPosition);
 		}
 	}, []);
 
@@ -775,7 +775,7 @@ const Navbar: React.FC = () => {
 								to="/wishlist"
 								className="navbar__account-icon-link"
 								style={({ isActive }) => ({
-									color: isActive ? "#f97316" : "inherit",
+									color: isActive ? '#f97316' : 'inherit',
 								})}
 							>
 								<FaHeart />
@@ -785,7 +785,11 @@ const Navbar: React.FC = () => {
 								className="navbar__account-icon-link"
 								onClick={toggleCart}
 								ref={cartButtonRef}
-								style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+								style={{
+									background: 'none',
+									border: 'none',
+									cursor: 'pointer',
+								}}
 							>
 								<FaShoppingCart />
 								{cartItems.length > 0 && (
@@ -809,15 +813,15 @@ const Navbar: React.FC = () => {
 											: toggleAuthModal
 									}
 									onKeyDown={(e) => {
-										if (isAuthenticated && (e.key === "Enter" || e.key === " "))
+										if (isAuthenticated && (e.key === 'Enter' || e.key === ' '))
 											setProfileDropdownOpen((v) => !v);
 										if (
 											!isAuthenticated &&
-											(e.key === "Enter" || e.key === " ")
+											(e.key === 'Enter' || e.key === ' ')
 										) {
 											toggleAuthModal({
-												preventDefault: () => {},
-												stopPropagation: () => {},
+												preventDefault: () => { },
+												stopPropagation: () => { },
 											} as unknown as React.MouseEvent);
 										}
 									}}
@@ -827,74 +831,8 @@ const Navbar: React.FC = () => {
 									{getUserAvatar()}
 								</div>
 
-								{isAuthenticated && profileDropdownOpen && (
-									<div
-										className="navbar__profile-dropdown-card"
-										ref={mobileProfileRef}
-										style={{
-											zIndex: 9999,
-										}}
-									>
-										<div className="navbar__profile-card-header">
-											{getUserAvatar()}
-											<div className="navbar__profile-card-info">
-												<div className="navbar__profile-card-name">
-													{user?.username || user?.email}
-												</div>
-												{user?.email && (
-													<div className="navbar__profile-card-email">
-														{user.email}
-													</div>
-												)}
-											</div>
-										</div>
-										<div className="navbar__profile-card-divider" />
-										{user?.role === "admin" && (
-											<NavLink
-												to="/admin-dashboard"
-												className="navbar__profile-card-link"
-												onClick={() => setProfileDropdownOpen(false)}
-												style={({ isActive }) => ({
-													color: isActive ? "#f97316" : "inherit",
-												})}
-											>
-												<FaHome className="navbar__profile-card-icon" /> Admin
-												Dashboard
-											</NavLink>
-										)}
-										{vendorAuthState.isAuthenticated &&
-											vendorAuthState.vendor && (
-												<NavLink
-													to="/dashboard"
-													className="navbar__profile-card-link"
-													onClick={() => setProfileDropdownOpen(false)}
-													style={({ isActive }) => ({
-														color: isActive ? "#f97316" : "inherit",
-													})}
-												>
-													<FaHome className="navbar__profile-card-icon" />{" "}
-													Vendor Dashboard
-												</NavLink>
-											)}
-										<NavLink
-											to="/user-profile"
-											className="navbar__profile-card-link"
-											onClick={() => setProfileDropdownOpen(false)}
-											style={({ isActive }) => ({
-												color: isActive ? "#f97316" : "inherit",
-											})}
-										>
-											<FaCog className="navbar__profile-card-icon" /> Settings
-										</NavLink>
-										<button
-											className="navbar__profile-card-link navbar__profile-card-link--logout"
-											onClick={handleFullLogout}
-										>
-											<FaSignOutAlt className="navbar__profile-card-icon" /> Log
-											Out
-										</button>
-									</div>
-								)}
+
+
 							</div>
 
 							<span className="navbar__social-link navbar__social-link--nepal">
@@ -916,6 +854,93 @@ const Navbar: React.FC = () => {
 						</div>
 					</div>
 
+
+					{isAuthenticated && profileDropdownOpen && (
+						<div
+							className="navbar__profile-dropdown-card mobile_drop_down_hide_desktop"
+							ref={mobileProfileRef}
+							style={{
+								zIndex: 999999999,
+							}}
+							onClick={(e) => {
+								//("CLICK REGISTERED INSIDE DROPDOWN");
+								e.stopPropagation(); // prevents parent click handlers from blocking
+							}}
+						>
+
+							<div className="navbar__profile-card-header">
+								{getUserAvatar()}
+								<div className="navbar__profile-card-info">
+									<div className="navbar__profile-card-name">
+										{user?.username || user?.email}
+									</div>
+									{user?.email && (
+										<div className="navbar__profile-card-email">
+											{user.email}
+										</div>
+									)}
+								</div>
+							</div>
+
+							<div className="navbar__profile-card-divider" />
+
+							{user?.role === 'admin' && (
+								<NavLink
+									to="/admin-dashboard"
+									className="navbar__profile-card-link"
+									onClick={() => {
+										//("Admin Dashboard CLICKED");
+										setProfileDropdownOpen(false);
+									}}
+									style={({ isActive }) => ({
+										color: isActive ? '#f97316' : 'inherit',
+									})}
+								>
+									<FaHome className="navbar__profile-card-icon" /> Admin Dashboard
+								</NavLink>
+							)}
+
+							{vendorAuthState.isAuthenticated && vendorAuthState.vendor && (
+								<NavLink
+									to="/dashboard"
+									className="navbar__profile-card-link"
+									onClick={() => {
+										//("Vendor Dashboard CLICKED");
+										setProfileDropdownOpen(false);
+									}}
+									style={({ isActive }) => ({
+										color: isActive ? '#f97316' : 'inherit',
+									})}
+								>
+									<FaHome className="navbar__profile-card-icon" /> Vendor Dashboard
+								</NavLink>
+							)}
+
+							<NavLink
+								to="/user-profile"
+								className="navbar__profile-card-link"
+								onClick={() => setProfileDropdownOpen(false)}
+								style={({ isActive }) => ({
+									color: isActive ? '#f97316' : 'inherit',
+								})}
+							>
+								<FaCog className="navbar__profile-card-icon" /> Settings
+							</NavLink>
+
+							<button
+								className="navbar__profile-card-link navbar__profile-card-link--logout"
+								onClick={(e) => {
+									//("LOGOUT BUTTON CLICKED!");
+									e.stopPropagation();
+									handleFullLogout();
+								}}
+							>
+								<FaSignOutAlt className="navbar__profile-card-icon" /> Log Out
+							</button>
+
+						</div>
+					)}
+
 					<div className="navbar__search-row">
 						<div
 							className="navbar__search"
@@ -934,7 +959,7 @@ const Navbar: React.FC = () => {
 									className="navbar__search-input"
 									autoComplete="off"
 									style={{
-										outline: "none",
+										outline: 'none',
 									}}
 								/>
 								<button
@@ -975,11 +1000,11 @@ const Navbar: React.FC = () => {
 							<NavLink
 								to="/"
 								className={({ isActive }) =>
-									`navbar__link${isActive ? " active" : ""}`
+									`navbar__link${isActive ? ' active' : ''}`
 								}
 								end
 								style={({ isActive }) => ({
-									color: isActive ? "#f97316" : "inherit",
+									color: isActive ? '#f97316' : 'inherit',
 								})}
 							>
 								Home
@@ -987,10 +1012,10 @@ const Navbar: React.FC = () => {
 							<NavLink
 								to="/shop"
 								className={({ isActive }) =>
-									`navbar__link${isActive ? " active" : ""}`
+									`navbar__link${isActive ? ' active' : ''}`
 								}
 								style={({ isActive }) => ({
-									color: isActive ? "#f97316" : "inherit",
+									color: isActive ? '#f97316' : 'inherit',
 								})}
 							>
 								Shop
@@ -999,10 +1024,10 @@ const Navbar: React.FC = () => {
 							<NavLink
 								to="/contact"
 								className={({ isActive }) =>
-									`navbar__link${isActive ? " active" : ""}`
+									`navbar__link${isActive ? ' active' : ''}`
 								}
 								style={({ isActive }) => ({
-									color: isActive ? "#f97316" : "inherit",
+									color: isActive ? '#f97316' : 'inherit',
 								})}
 							>
 								Contact <span className="navbar__link-icon"></span>
@@ -1016,14 +1041,14 @@ const Navbar: React.FC = () => {
 									className="navbar__link navbar__more-trigger"
 									onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
 									style={{
-										background: "none",
-										border: "none",
-										cursor: "pointer",
-										fontSize: "16px",
-										color: "#42504b",
-										display: "flex",
-										alignItems: "center",
-										gap: "5px",
+										background: 'none',
+										border: 'none',
+										cursor: 'pointer',
+										fontSize: '16px',
+										color: '#42504b',
+										display: 'flex',
+										alignItems: 'center',
+										gap: '5px',
 									}}
 								>
 									More <FaChevronDown size={12} />
@@ -1034,7 +1059,7 @@ const Navbar: React.FC = () => {
 											className="navbar__more-dropdown-link"
 											onClick={showComingSoon}
 											style={{
-												cursor: "pointer",
+												cursor: 'pointer',
 											}}
 										>
 											DajuVai Rental
@@ -1056,12 +1081,16 @@ const Navbar: React.FC = () => {
 								className="navbar__account-link tooltip"
 								onClick={toggleCart}
 								ref={cartButtonRef}
-								style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+								style={{
+									background: 'none',
+									border: 'none',
+									cursor: 'pointer',
+								}}
 							>
 								<FaShoppingCart
 									className="navbar__account-icon"
 									style={{
-										fontSize: "24px",
+										fontSize: '24px',
 									}}
 								/>
 
@@ -1085,15 +1114,15 @@ const Navbar: React.FC = () => {
 											: toggleAuthModal
 									}
 									onKeyDown={(e) => {
-										if (isAuthenticated && (e.key === "Enter" || e.key === " "))
+										if (isAuthenticated && (e.key === 'Enter' || e.key === ' '))
 											setProfileDropdownOpen((v) => !v);
 										if (
 											!isAuthenticated &&
-											(e.key === "Enter" || e.key === " ")
+											(e.key === 'Enter' || e.key === ' ')
 										) {
 											toggleAuthModal({
-												preventDefault: () => {},
-												stopPropagation: () => {},
+												preventDefault: () => { },
+												stopPropagation: () => { },
 											} as unknown as React.MouseEvent);
 										}
 									}}
@@ -1104,7 +1133,7 @@ const Navbar: React.FC = () => {
 								>
 									{getUserAvatar()}
 									<span className="tooltip-text">
-										{isAuthenticated ? "Profile" : "Login"}
+										{isAuthenticated ? 'Profile' : 'Login'}
 									</span>
 								</div>
 								{isAuthenticated && profileDropdownOpen && (
@@ -1112,10 +1141,10 @@ const Navbar: React.FC = () => {
 										className="navbar__profile-dropdown-card"
 										ref={profileRef}
 										style={{
-											position: "absolute",
-											top: "calc(100% + 10px)",
+											position: 'absolute',
+											top: 'calc(100% + 10px)',
 											right: 0,
-											zIndex: 9999,
+											zIndex: 99999999999999,
 										}}
 									>
 										<div className="navbar__profile-card-header">
@@ -1132,13 +1161,13 @@ const Navbar: React.FC = () => {
 											</div>
 										</div>
 										<div className="navbar__profile-card-divider" />
-										{user?.role === "admin" && (
+										{user?.role === 'admin' && (
 											<NavLink
 												to="/admin-dashboard"
 												className="navbar__profile-card-link"
 												onClick={() => setProfileDropdownOpen(false)}
 												style={({ isActive }) => ({
-													color: isActive ? "#f97316" : "inherit",
+													color: isActive ? '#f97316' : 'inherit',
 												})}
 											>
 												<FaHome className="navbar__profile-card-icon" /> Admin
@@ -1152,10 +1181,10 @@ const Navbar: React.FC = () => {
 													className="navbar__profile-card-link"
 													onClick={() => setProfileDropdownOpen(false)}
 													style={({ isActive }) => ({
-														color: isActive ? "#f97316" : "inherit",
+														color: isActive ? '#f97316' : 'inherit',
 													})}
 												>
-													<FaHome className="navbar__profile-card-icon" />{" "}
+													<FaHome className="navbar__profile-card-icon" />{' '}
 													Vendor Dashboard
 												</NavLink>
 											)}
@@ -1164,7 +1193,7 @@ const Navbar: React.FC = () => {
 											className="navbar__profile-card-link"
 											onClick={() => setProfileDropdownOpen(false)}
 											style={({ isActive }) => ({
-												color: isActive ? "#f97316" : "inherit",
+												color: isActive ? '#f97316' : 'inherit',
 											})}
 										>
 											<FaCog className="navbar__profile-card-icon" /> Settings
@@ -1184,7 +1213,7 @@ const Navbar: React.FC = () => {
 								to="/wishlist"
 								className="navbar__account-icon-link tooltip tooltip_wishlist"
 								style={({ isActive }) => ({
-									color: isActive ? "#f97316" : "inherit",
+									color: isActive ? '#f97316' : 'inherit',
 								})}
 							>
 								<FaHeart />
@@ -1205,9 +1234,8 @@ const Navbar: React.FC = () => {
 				</div>
 
 				<div
-					className={`navbar__side-menu ${
-						sideMenuOpen ? "navbar__side-menu--open" : ""
-					}`}
+					className={`navbar__side-menu ${sideMenuOpen ? 'navbar__side-menu--open' : ''
+						}`}
 					ref={sideMenuRef}
 				>
 					<div className="navbar__side-menu-header">
@@ -1244,16 +1272,15 @@ const Navbar: React.FC = () => {
 							<span>More</span>
 							<FaChevronDown
 								size={20}
-								className={`navbar__side-menu-category-icon ${
-									sideMoreOpen ? "navbar__side-menu-category-icon--open" : ""
-								}`}
+								className={`navbar__side-menu-category-icon ${sideMoreOpen ? 'navbar__side-menu-category-icon--open' : ''
+									}`}
 							/>
 						</button>
 						{sideMoreOpen && (
 							<div className="navbar__side-menu-subcategories">
 								<div
 									className="navbar__side-menu-subcategory"
-									style={{ cursor: "pointer" }}
+									style={{ cursor: 'pointer' }}
 									onClick={(e) => {
 										e.preventDefault();
 										showComingSoon();
@@ -1264,7 +1291,7 @@ const Navbar: React.FC = () => {
 								</div>
 								<div
 									className="navbar__side-menu-subcategory"
-									style={{ cursor: "pointer" }}
+									style={{ cursor: 'pointer' }}
 									onClick={(e) => {
 										e.preventDefault();
 										showComingSoon();
@@ -1323,16 +1350,15 @@ const Navbar: React.FC = () => {
 				/>
 
 				<div
-					className={`navbar__overlay ${
-						sideMenuOpen || cartOpen ? "navbar__overlay--visible" : ""
-					}`}
+					className={`navbar__overlay ${sideMenuOpen || cartOpen ? 'navbar__overlay--visible' : ''
+						}`}
 					onClick={() => {
 						setSideMenuOpen(false);
 						setCartOpen(false);
-						document.body.classList.remove("navbar--menu-open");
-						document.body.classList.remove("no-scroll");
-						document.body.classList.remove("cart-open");
-						document.body.style.overflow = "";
+						document.body.classList.remove('navbar--menu-open');
+						document.body.classList.remove('no-scroll');
+						document.body.classList.remove('cart-open');
+						document.body.style.overflow = '';
 					}}
 				></div>
 
@@ -1340,7 +1366,7 @@ const Navbar: React.FC = () => {
 					<div className="navbar__categories-container">
 						<button
 							className="navbar__category-nav navbar__category-nav--left"
-							onClick={() => scrollCategories("left")}
+							onClick={() => scrollCategories('left')}
 							disabled={scrollPosition <= 0}
 						>
 							<FaChevronLeft />
@@ -1353,9 +1379,8 @@ const Navbar: React.FC = () => {
 								<div
 									key={category.id}
 									ref={(el) => (categoryRefs.current[category.id] = el)}
-									className={`navbar__category${
-										activeDropdown === category.id ? " active" : ""
-									}`}
+									className={`navbar__category${activeDropdown === category.id ? ' active' : ''
+										}`}
 									onMouseEnter={() => {
 										clearDropdownTimeout();
 										setActiveDropdown(category.id);
@@ -1383,11 +1408,10 @@ const Navbar: React.FC = () => {
 										{category.name}
 										<FaChevronDown
 											size={16}
-											className={`navbar__category-icon ${
-												activeDropdown === category.id
-													? "navbar__category-icon--active"
-													: ""
-											}`}
+											className={`navbar__category-icon ${activeDropdown === category.id
+												? 'navbar__category-icon--active'
+												: ''
+												}`}
 										/>
 									</div>
 								</div>
@@ -1395,12 +1419,12 @@ const Navbar: React.FC = () => {
 						</div>
 						<button
 							className="navbar__category-nav navbar__category-nav--right"
-							onClick={() => scrollCategories("right")}
+							onClick={() => scrollCategories('right')}
 							disabled={
 								categoriesRef.current &&
 								scrollPosition >=
-									categoriesRef.current.scrollWidth -
-										categoriesRef.current.clientWidth
+								categoriesRef.current.scrollWidth -
+								categoriesRef.current.clientWidth
 							}
 						>
 							<FaChevronRight />
@@ -1447,7 +1471,7 @@ const Navbar: React.FC = () => {
 					className="navbar__mobile-dock-item"
 					end
 					style={({ isActive }) => ({
-						color: isActive ? "#f97316" : "inherit",
+						color: isActive ? '#f97316' : 'inherit',
 					})}
 				>
 					<span className="navbar__mobile-dock-icon">
@@ -1459,7 +1483,7 @@ const Navbar: React.FC = () => {
 					to="/shop"
 					className="navbar__mobile-dock-item"
 					style={({ isActive }) => ({
-						color: isActive ? "#f97316" : "inherit",
+						color: isActive ? '#f97316' : 'inherit',
 					})}
 				>
 					<span className="navbar__mobile-dock-icon">
@@ -1471,7 +1495,7 @@ const Navbar: React.FC = () => {
 					to="/contact"
 					className="navbar__mobile-dock-item"
 					style={({ isActive }) => ({
-						color: isActive ? "#f97316" : "inherit",
+						color: isActive ? '#f97316' : 'inherit',
 					})}
 				>
 					<span className="navbar__mobile-dock-icon">
@@ -1483,7 +1507,7 @@ const Navbar: React.FC = () => {
 					to="/wishlist"
 					className="navbar__mobile-dock-item"
 					style={({ isActive }) => ({
-						color: isActive ? "#f97316" : "inherit",
+						color: isActive ? '#f97316' : 'inherit',
 					})}
 				>
 					<span className="navbar__mobile-dock-icon">
@@ -1506,7 +1530,7 @@ const Navbar: React.FC = () => {
 				<div
 					className="navbar__dropdown-portal"
 					style={{
-						position: "absolute",
+						position: 'absolute',
 						top: dropdownPosition.top,
 						left: dropdownPosition.left,
 						zIndex: 9999,

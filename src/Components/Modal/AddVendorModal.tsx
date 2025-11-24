@@ -72,7 +72,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
 
   useEffect(() => {
     if (!show) {
-      console.log("Modal closed, resetting form");
+      //("Modal closed, resetting form");
       setFormData({
         businessName: "",
         email: "",
@@ -105,7 +105,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    console.log(`Input changed: ${name} = ${value}`);
+    //(`Input changed: ${name} = ${value}`);
     if (name in formData.bankDetails) {
       setFormData((prev) => ({
         ...prev,
@@ -127,7 +127,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
     const files = Array.from(e.target.files || []);
-    console.log(`File input changed for ${field}:`, files.map((f) => f.name));
+    //(`File input changed for ${field}:`, files.map((f) => f.name));
     if (files.length > 0) {
       if (field === "taxDocuments") setTaxFiles((prev) => [...prev, ...files]);
       if (field === "citizenshipDocuments") setCitizenshipFiles((prev) => [...prev, ...files]);
@@ -136,14 +136,14 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
   };
 
   const handleRemoveFile = (index: number, field: string) => {
-    console.log(`Removing file from ${field} at index ${index}`);
+    //(`Removing file from ${field} at index ${index}`);
     if (field === "taxDocuments") setTaxFiles((prev) => prev.filter((_, i) => i !== index));
     if (field === "citizenshipDocuments") setCitizenshipFiles((prev) => prev.filter((_, i) => i !== index));
     if (field === "chequePhoto") setChequeFile(null);
   };
 
   const uploadFile = async (file: File, token: string): Promise<string> => {
-    console.log(`Uploading file: ${file.name}`);
+    //(`Uploading file: ${file.name}`);
     const formData = new FormData();
     formData.append("file", file);
     try {
@@ -160,7 +160,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
       if (!response.data.success || !response.data.data) {
         throw new Error(`No URL returned for file: ${file.name}`);
       }
-      console.log(`File uploaded successfully: ${file.name} -> ${response.data.data}`);
+      //(`File uploaded successfully: ${file.name} -> ${response.data.data}`);
       return response.data.data;
     } catch (error: any) {
       console.error(`Failed to upload file ${file.name}:`, error.response?.data || error.message);
@@ -169,7 +169,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
   };
 
   const validateForm = () => {
-    console.log("Validating form data:", formData);
+    //("Validating form data:", formData);
     const errors: string[] = [];
     const requiredFields = [
       { field: formData.businessName, name: "Business name" },
@@ -247,17 +247,17 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
     }
 
     if (errors.length > 0) {
-      console.log("Validation errors:", errors);
+      //("Validation errors:", errors);
       errors.forEach((err) => toast.error(err));
       return false;
     }
 
-    console.log("Form validation passed");
+    //("Form validation passed");
     return true;
   };
 
   const handleSendVerification = async (email: string) => {
-    console.log("handleSendVerification called with email:", email);
+    //("handleSendVerification called with email:", email);
     try {
       setLoading(true);
       const response = await axios.post<VerificationResponse>(
@@ -271,7 +271,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
           },
         }
       );
-      console.log("Verification email sent response:", response.data);
+      //("Verification email sent response:", response.data);
       toast.success(response.data.message || "Verification code sent successfully!");
       setShowVerification(true);
       setCountdown(120);
@@ -296,11 +296,11 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
 
   const handleVerifyOtp = async () => {
     if (verificationToken.length !== 6 || !/^\d{6}$/.test(verificationToken)) {
-      console.log("Invalid OTP input:", verificationToken);
+      //("Invalid OTP input:", verificationToken);
       toast.error("Please enter a valid 6-digit verification code");
       return;
     }
-    console.log("handleVerifyOtp called with email:", formData.email, "and token:", verificationToken);
+    //("handleVerifyOtp called with email:", formData.email, "and token:", verificationToken);
     try {
       setLoading(true);
       const response = await axios.post<VerificationResponse>(
@@ -314,7 +314,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
           },
         }
       );
-      console.log("OTP verification response:", response.data);
+      //("OTP verification response:", response.data);
       toast.success(response.data.message || "Email verified successfully!");
       setShowVerification(false);
       setIsVerificationComplete(true);
@@ -342,7 +342,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
   };
 
   const handleResendOtp = async () => {
-    console.log("handleResendOtp called with email:", formData.email);
+    //("handleResendOtp called with email:", formData.email);
     try {
       setLoading(true);
       setVerificationToken("");
@@ -357,7 +357,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
           },
         }
       );
-      console.log("Resend OTP response:", response.data);
+      //("Resend OTP response:", response.data);
       toast.success(response.data.message || "Verification code resent successfully!");
       setCountdown(120);
     } catch (err: any) {
@@ -379,9 +379,9 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("handleSubmit called with formData:", formData);
+    //("handleSubmit called with formData:", formData);
     if (!validateForm()) {
-      console.log("Form validation failed");
+      //("Form validation failed");
       return;
     }
 
@@ -391,7 +391,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
     try {
       const district = districts.find((d) => d.name.toLowerCase() === formData.district.toLowerCase());
       if (!district) {
-        console.log("Invalid district selected:", formData.district);
+        //("Invalid district selected:", formData.district);
         toast.error("Selected district is invalid.");
         setLoading(false);
         return;
@@ -401,11 +401,11 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
       // Upload files
       if (taxFiles.length > 0) {
         try {
-          console.log("Uploading tax documents:", taxFiles.map((f) => f.name));
+          //("Uploading tax documents:", taxFiles.map((f) => f.name));
           updatedFormData.taxDocuments = await Promise.all(
             taxFiles.map(async (file) => await uploadFile(file, token))
           );
-          console.log("Tax documents uploaded:", updatedFormData.taxDocuments);
+          //("Tax documents uploaded:", updatedFormData.taxDocuments);
         } catch (error: any) {
           console.error("Error uploading tax documents:", error.message);
           toast.error(`Failed to upload tax documents: ${error.message}`);
@@ -416,9 +416,9 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
 
       if (chequeFile) {
         try {
-          console.log("Uploading cheque photo:", chequeFile.name);
+          //("Uploading cheque photo:", chequeFile.name);
           updatedFormData.chequePhoto = await uploadFile(chequeFile, token);
-          console.log("Cheque photo uploaded:", updatedFormData.chequePhoto);
+          //("Cheque photo uploaded:", updatedFormData.chequePhoto);
         } catch (error: any) {
           console.error("Error uploading cheque photo:", error.message);
           toast.error(`Failed to upload cheque photo: ${error.message}`);
@@ -428,7 +428,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
       } else if (formData.chequePhoto) {
         updatedFormData.chequePhoto = formData.chequePhoto;
       } else {
-        console.log("No cheque photo provided");
+        //("No cheque photo provided");
         toast.error("Cheque photo is required");
         setLoading(false);
         return;
@@ -436,11 +436,11 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
 
       if (citizenshipFiles.length > 0) {
         try {
-          console.log("Uploading citizenship documents:", citizenshipFiles.map((f) => f.name));
+          //("Uploading citizenship documents:", citizenshipFiles.map((f) => f.name));
           updatedFormData.citizenshipDocuments = await Promise.all(
             citizenshipFiles.map(async (file) => await uploadFile(file, token))
           );
-          console.log("Citizenship documents uploaded:", updatedFormData.citizenshipDocuments);
+          //("Citizenship documents uploaded:", updatedFormData.citizenshipDocuments);
         } catch (error: any) {
           console.error("Error uploading citizenship documents:", error.message);
           toast.error(`Failed to upload citizenship documents: ${error.message}`);
@@ -450,7 +450,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
       }
 
 
-      console.log("Calling vendor registration API with updatedFormData:", updatedFormData);
+      //("Calling vendor registration API with updatedFormData:", updatedFormData);
       
       const response = await axios.post(
         `${API_BASE_URL}/api/vendors/request/register`, 
@@ -463,10 +463,10 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
         }
       );
 
-      console.log("Vendor registration API response:", response.data);
+      //("Vendor registration API response:", response.data);
       toast.success("Vendor registered successfully! Please verify your email.");
       
-      console.log("Setting up email verification for:", formData.email);
+      //("Setting up email verification for:", formData.email);
       setShowVerification(true);
       setCountdown(120);
       
@@ -498,12 +498,12 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
   };
 
   if (!show) {
-    console.log("Modal not shown, returning null");
+    //("Modal not shown, returning null");
     return null;
   }
 
   if (districts.length === 0) {
-    console.log("No districts available");
+    //("No districts available");
     return (
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -524,7 +524,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
     );
   }
 
-  console.log("Rendering modal, showVerification:", showVerification, "isVerificationComplete:", isVerificationComplete);
+  //("Rendering modal, showVerification:", showVerification, "isVerificationComplete:", isVerificationComplete);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -557,7 +557,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
                 type="button"
                 className="auth-modal__submit"
                 onClick={() => {
-                  console.log("Closing modal and redirecting to /admin-vendors");
+                  //("Closing modal and redirecting to /admin-vendors");
                   onClose();
                   window.location.href = "/admin-vendors";
                 }}
@@ -570,7 +570,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
               className="auth-modal__form"
               onSubmit={(e) => {
                 e.preventDefault();
-                console.log("Verification form submitted");
+                //("Verification form submitted");
                 handleVerifyOtp();
               }}
             >
@@ -587,7 +587,7 @@ const AddVendorModal: React.FC<AddVendorModalProps> = ({ show, onClose, district
                   placeholder="______"
                   value={verificationToken}
                   onChange={(e) => {
-                    console.log("OTP input changed:", e.target.value);
+                    //("OTP input changed:", e.target.value);
                     setVerificationToken(e.target.value.replace(/\D/g, "").slice(0, 6));
                   }}
                   required

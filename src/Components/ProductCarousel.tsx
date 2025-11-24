@@ -39,7 +39,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
 	const [scrollLeft, setScrollLeft] = useState<number>(0);
 
 	const displayedProducts = isHomepage ? products.slice(0, 25) : products;
-	console.log(products)
+	//(products)
 	useEffect(() => {
 		const checkWidth = (): void => {
 			setShowScrollButtons(window.innerWidth >= 768);

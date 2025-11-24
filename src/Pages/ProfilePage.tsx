@@ -200,7 +200,7 @@ const ProfilePage: React.FC = () => {
 				},
 				withCredentials: true,
 			});
-			console.log("Image upload response:", response.data); // Debug log
+			//("Image upload response:", response.data); // Debug log
 			return response.data.data; // Matches API response { success: true, data: string }
 		} catch (error) {
 			handleError(error, "Failed to upload image");
@@ -217,12 +217,12 @@ const ProfilePage: React.FC = () => {
 			setIsLoading((prev) => ({ ...prev, [`upload_${field}`]: true }));
 			try {
 				const imageUrl = await uploadImage(file);
-				console.log(`Setting ${field} to:`, imageUrl); // Debug log
+				//(`Setting ${field} to:`, imageUrl); // Debug log
 				const fileUrl = URL.createObjectURL(file); // For local preview
 				setVendorDetails((prev) => {
 					if (!prev) return null;
 					const updated = { ...prev, [field]: imageUrl };
-					console.log("Updated vendorDetails:", updated); // Debug log
+					//("Updated vendorDetails:", updated); // Debug log
 					return updated;
 				});
 				setPreviewImages((prev) => ({
@@ -250,12 +250,12 @@ const ProfilePage: React.FC = () => {
 			try {
 				const uploadPromises = files.map((file) => uploadImage(file));
 				const imageUrls = await Promise.all(uploadPromises);
-				console.log(`Setting ${field} to:`, imageUrls); // Debug log
+				//(`Setting ${field} to:`, imageUrls); // Debug log
 				const fileUrls = files.map((file) => URL.createObjectURL(file)); // For local preview
 				setVendorDetails((prev) => {
 					if (!prev) return null;
 					const updated = { ...prev, [field]: imageUrls };
-					console.log("Updated vendorDetails:", updated); // Debug log
+					//("Updated vendorDetails:", updated); // Debug log
 					return updated;
 				});
 				setPreviewImages((prev) => ({
@@ -279,7 +279,7 @@ const ProfilePage: React.FC = () => {
 			setVendorDetails((prev) => {
 				if (!prev) return null;
 				const updated = { ...prev, chequePhoto: "" };
-				console.log("Cleared chequePhoto:", updated); // Debug log
+				//("Cleared chequePhoto:", updated); // Debug log
 				return updated;
 			});
 		} else {
@@ -298,10 +298,7 @@ const ProfilePage: React.FC = () => {
 				if (index !== undefined) {
 					updatedField.splice(index, 1);
 				}
-				console.log(
-					`Removing image from ${field} at index ${index}:`,
-					updatedField
-				); // Debug log
+			
 				return { ...prev, [field]: updatedField };
 			});
 		}
@@ -356,7 +353,7 @@ const ProfilePage: React.FC = () => {
 				district: vendorDetails.businessAddress,
 			};
 
-			console.log("Sending vendor data to /api/vendors:", requestData); // Debug log
+			//("Sending vendor data to /api/vendors:", requestData); // Debug log
 
 			const response = await axios.put(
 				`${API_BASE_URL}/api/vendors/${vendorId}`,

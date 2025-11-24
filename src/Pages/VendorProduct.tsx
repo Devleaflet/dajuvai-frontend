@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
 import { toast } from "react-hot-toast";
 import { fetchProducts, updateProduct, deleteProduct } from "../api/products";
-import Header from "../Components/Header";
 import EditProductModal from "../Components/Modal/EditProductModalRedesigned";
 import NewProductModal from "../Components/NewProductModalRedesigned";
 import Pagination from "../Components/Pagination";
@@ -130,25 +129,14 @@ const VendorProduct: React.FC = () => {
 			if (!authState.vendor?.id || !authState.token)
 				throw new Error("Missing vendor or token");
 
-			console.log(
-				"Fetching vendor products for vendor ID:",
-				authState.vendor.id
-			);
-			console.log(
-				"Current page:",
-				currentPage,
-				"Products per page:",
-				productsPerPage
-			);
-
 			const response = await fetchProducts(
 				Number(authState.vendor.id),
 				currentPage,
 				productsPerPage
 			);
 
-			console.log("Vendor products response:", response);
-			console.log("Response data:", response.data);
+			//("Vendor products response:", response);
+			//("Response data:", response.data);
 
 			if (!response.data || typeof response.data !== "object")
 				throw new Error("Invalid response");
@@ -162,8 +150,8 @@ const VendorProduct: React.FC = () => {
 				(product: ApiProduct): Product => {
 					const productImages = Array.isArray(product.productImages)
 						? product.productImages.map((img: string | { url?: string }) =>
-								typeof img === "string" ? img : img.url || ""
-						  )
+							typeof img === "string" ? img : img.url || ""
+						)
 						: [];
 
 					const variantImages: string[] = [];
@@ -230,35 +218,35 @@ const VendorProduct: React.FC = () => {
 
 					const normalizedVariants = Array.isArray((product as any).variants)
 						? (product as any).variants.map((v: any) => {
-								const rawBase =
-									typeof v?.price !== "undefined"
-										? v.price
-										: typeof v?.basePrice !== "undefined"
+							const rawBase =
+								typeof v?.price !== "undefined"
+									? v.price
+									: typeof v?.basePrice !== "undefined"
 										? v.basePrice
 										: typeof v?.originalPrice !== "undefined"
-										? v.originalPrice
-										: typeof product.basePrice !== "undefined"
-										? product.basePrice
-										: (product as any).price;
-								const baseNum =
-									typeof rawBase === "string"
-										? parseFloat(rawBase)
-										: Number(rawBase) || 0;
-								let calc = baseNum;
-								if (
-									discount > 0 &&
-									(discountType === "PERCENTAGE" ||
-										discountType === "FLAT" ||
-										discountType === "FIXED")
-								) {
-									if (discountType === "PERCENTAGE") {
-										calc = baseNum - (baseNum * discount) / 100;
-									} else {
-										calc = baseNum - discount;
-									}
+											? v.originalPrice
+											: typeof product.basePrice !== "undefined"
+												? product.basePrice
+												: (product as any).price;
+							const baseNum =
+								typeof rawBase === "string"
+									? parseFloat(rawBase)
+									: Number(rawBase) || 0;
+							let calc = baseNum;
+							if (
+								discount > 0 &&
+								(discountType === "PERCENTAGE" ||
+									discountType === "FLAT" ||
+									discountType === "FIXED")
+							) {
+								if (discountType === "PERCENTAGE") {
+									calc = baseNum - (baseNum * discount) / 100;
+								} else {
+									calc = baseNum - discount;
 								}
-								return { ...v, calculatedPrice: calc };
-						  })
+							}
+							return { ...v, calculatedPrice: calc };
+						})
 						: undefined;
 
 					let status: "AVAILABLE" | "OUT_OF_STOCK" | "LOW_STOCK" = "AVAILABLE";
@@ -280,8 +268,8 @@ const VendorProduct: React.FC = () => {
 						discountType: (discountType === "PERCENTAGE"
 							? "PERCENTAGE"
 							: discountType === "FLAT" || discountType === "FIXED"
-							? "FLAT"
-							: undefined) as "PERCENTAGE" | "FLAT" | undefined,
+								? "FLAT"
+								: undefined) as "PERCENTAGE" | "FLAT" | undefined,
 						size: product.size || [],
 						status: status,
 						productImages: images,
@@ -326,7 +314,7 @@ const VendorProduct: React.FC = () => {
 
 		switch (sortOption) {
 			case "newest":
-				console.log(sorted);
+				//(sorted);
 				return sorted.sort(
 					(a: Product, b: Product) =>
 						new Date(b.created_at || 0).getTime() -
@@ -380,15 +368,11 @@ const VendorProduct: React.FC = () => {
 
 	const addProductMutation = useMutation({
 		mutationFn: async (productData: ProductFormData) => {
-			console.log("=== VENDOR PRODUCT CREATION START ===");
-			console.log("VendorProduct: token exists:", !!authState.token);
-			console.log("VendorProduct: vendor exists:", !!authState.vendor);
-			console.log("VendorProduct: vendor ID:", authState.vendor?.id);
-			console.log(
-				"VendorProduct: vendor verified:",
-				authState.vendor?.isVerified
-			);
-			console.log("VendorProduct: Product data received:", productData);
+			//("=== VENDOR PRODUCT CREATION START ===");
+			//("VendorProduct: token exists:", !!authState.token);
+			//("VendorProduct: vendor exists:", !!authState.vendor);
+			//("VendorProduct: vendor ID:", authState.vendor?.id);
+			//("VendorProduct: Product data received:", productData);
 
 			if (!authState.token) {
 				throw new Error("No authentication token found");
@@ -408,7 +392,7 @@ const VendorProduct: React.FC = () => {
 			}
 
 			if (!productData.hasVariants) {
-				console.log("VendorProduct: Creating non-variant product");
+				//("VendorProduct: Creating non-variant product");
 				if (productData.basePrice != null) {
 					formData.append("basePrice", String(productData.basePrice));
 				}
@@ -430,42 +414,24 @@ const VendorProduct: React.FC = () => {
 					});
 				}
 			} else {
-				console.log("VendorProduct: Creating variant product");
+				//("VendorProduct: Creating variant product");
 				if (productData.variants && Array.isArray(productData.variants)) {
-					console.log(
-						"VendorProduct: Adding variants data:",
-						productData.variants
-					);
+
 					formData.append("variants", JSON.stringify(productData.variants));
 
 					productData.variants.forEach((variant, variantIndex) => {
-						console.log(
-							`VendorProduct: Processing variant ${variantIndex + 1} (${
-								variant.sku
-							}):`,
-							variant
-						);
+
 						if (variant.images && Array.isArray(variant.images)) {
-							console.log(
-								`VendorProduct: Variant ${variant.sku} has ${variant.images.length} images`
-							);
+
 							variant.images.forEach((image, imageIndex) => {
-								console.log(
-									`VendorProduct: Processing image ${
-										imageIndex + 1
-									} for variant ${variant.sku}:`,
-									image
-								);
+
 								if (image instanceof File) {
 									const imageKey = `variantImages${variantIndex + 1}`;
 									formData.append(imageKey, image);
-									console.log(
-										`VendorProduct: Added image to FormData with key: ${imageKey}`
-									);
+
 								} else {
 									console.warn(
-										`VendorProduct: Image ${imageIndex + 1} for variant ${
-											variant.sku
+										`VendorProduct: Image ${imageIndex + 1} for variant ${variant.sku
 										} is not a File:`,
 										image
 									);
@@ -501,17 +467,9 @@ const VendorProduct: React.FC = () => {
 				formData.append("brandId", String(productData.brandId));
 			}
 
-			console.log("VendorProduct: Final FormData entries:");
-			for (const [key, value] of formData.entries()) {
-				console.log(`  ${key}:`, value);
-			}
-
-			console.log("VendorProduct: Making API call to createProduct");
 			throw new Error("Use NewProductModal for creating products");
 		},
 		onSuccess: (data) => {
-			console.log("Product created successfully:", data);
-			console.log("Created product data:", data);
 			toast.success("Product created successfully!");
 
 			queryClient.invalidateQueries({
@@ -528,7 +486,7 @@ const VendorProduct: React.FC = () => {
 				],
 			});
 
-			console.log("Cache invalidated and refetch triggered");
+			//("Cache invalidated and refetch triggered");
 			setShowAddModal(false);
 		},
 		onError: (error: Error) => {
@@ -549,11 +507,11 @@ const VendorProduct: React.FC = () => {
 			categoryId: number;
 			subcategoryId: number;
 		}) => {
-			console.log("🔄 EDIT PRODUCT MUTATION START");
-			console.log("Product ID:", productId);
-			console.log("Category ID:", categoryId);
-			console.log("Subcategory ID:", subcategoryId);
-			console.log("Product Data:", productData);
+			//("🔄 EDIT PRODUCT MUTATION START");
+			//("Product ID:", productId);
+			//("Category ID:", categoryId);
+			//("Subcategory ID:", subcategoryId);
+			//("Product Data:", productData);
 
 			if (!authState.token) throw new Error("Authentication token is missing");
 			if (!authState.vendor?.id) throw new Error("Vendor ID is missing");
@@ -612,10 +570,7 @@ const VendorProduct: React.FC = () => {
 				updatePayload.status = productData.status || "AVAILABLE";
 			}
 
-			console.log(
-				"📤 Final Update Payload:",
-				JSON.stringify(updatePayload, null, 2)
-			);
+
 
 			return updateProduct(productId, categoryId, subcategoryId, updatePayload);
 		},
@@ -644,16 +599,7 @@ const VendorProduct: React.FC = () => {
 	};
 
 	const handleEditProduct = (product: Product) => {
-		console.log("🚀 EDIT BUTTON CLICKED!");
-		console.log("=== ORIGINAL PRODUCT DATA ===");
-		console.log("Full Product Object:", JSON.stringify(product, null, 2));
-		console.log("Product ID:", product.id);
-		console.log("Product Name:", product.name);
-		console.log("Product CategoryId:", product.categoryId);
-		console.log("Product SubcategoryId:", product.subcategoryId);
-		console.log("Product Subcategory Object:", product.subcategory);
-		console.log("Product Category Object:", product.category);
-		console.log("=== END PRODUCT DATA ===");
+
 
 		let discount: number | null = null;
 		if (product.discount) {
@@ -673,31 +619,28 @@ const VendorProduct: React.FC = () => {
 		};
 		const subcategory =
 			product.subcategory &&
-			typeof product.subcategory === "object" &&
-			"id" in product.subcategory &&
-			"name" in product.subcategory
+				typeof product.subcategory === "object" &&
+				"id" in product.subcategory &&
+				"name" in product.subcategory
 				? {
-						id: product.subcategory.id,
-						name: product.subcategory.name,
-						image: (product.subcategory as SubcategoryType).image || null,
-						createdAt:
-							(product.subcategory as SubcategoryType).createdAt ||
-							new Date().toISOString(),
-						updatedAt:
-							(product.subcategory as SubcategoryType).updatedAt ||
-							new Date().toISOString(),
-				  }
+					id: product.subcategory.id,
+					name: product.subcategory.name,
+					image: (product.subcategory as SubcategoryType).image || null,
+					createdAt:
+						(product.subcategory as SubcategoryType).createdAt ||
+						new Date().toISOString(),
+					updatedAt:
+						(product.subcategory as SubcategoryType).updatedAt ||
+						new Date().toISOString(),
+				}
 				: {
-						id: 0,
-						name: "",
-						image: null,
-						createdAt: new Date().toISOString(),
-						updatedAt: new Date().toISOString(),
-				  };
-		console.log("🔄 CONVERTING PRODUCT FOR EDITING:");
-		console.log("Original Product:", product);
-		console.log("Product Category ID:", product.categoryId);
-		console.log("Product Subcategory:", product.subcategory);
+					id: 0,
+					name: "",
+					image: null,
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString(),
+				};
+
 
 		let categoryId = product.categoryId || 0;
 		if (
@@ -724,12 +667,12 @@ const VendorProduct: React.FC = () => {
 				typeof product.basePrice === "number"
 					? product.basePrice
 					: product.basePrice
-					? parseFloat(product.basePrice.toString())
-					: typeof product.price === "string"
-					? parseFloat(product.price)
-					: typeof product.price === "number"
-					? product.price
-					: 0,
+						? parseFloat(product.basePrice.toString())
+						: typeof product.price === "string"
+							? parseFloat(product.price)
+							: typeof product.price === "number"
+								? product.price
+								: 0,
 			discount: discount,
 			discountType: (product.discountType === "PERCENTAGE"
 				? "PERCENTAGE"
@@ -738,8 +681,8 @@ const VendorProduct: React.FC = () => {
 				product.status === "OUT_OF_STOCK"
 					? "OUT_OF_STOCK"
 					: product.status === "LOW_STOCK"
-					? "LOW_STOCK"
-					: "AVAILABLE",
+						? "LOW_STOCK"
+						: "AVAILABLE",
 			productImages:
 				product.productImages || (product.image ? [product.image] : []),
 			inventory: [],
@@ -751,16 +694,16 @@ const VendorProduct: React.FC = () => {
 				typeof product.vendor === "object" && product.vendor !== null
 					? product.vendor
 					: {
-							id: 0,
-							businessName: "",
-							email: "",
-							phoneNumber: "",
-							districtId: 0,
-							isVerified: false,
-							createdAt: new Date().toISOString(),
-							updatedAt: new Date().toISOString(),
-							district: { id: 0, name: "" },
-					  },
+						id: 0,
+						businessName: "",
+						email: "",
+						phoneNumber: "",
+						districtId: 0,
+						isVerified: false,
+						createdAt: new Date().toISOString(),
+						updatedAt: new Date().toISOString(),
+						district: { id: 0, name: "" },
+					},
 			brand: null,
 			deal: null,
 			hasVariants: (product as any).hasVariants || false,
@@ -769,17 +712,15 @@ const VendorProduct: React.FC = () => {
 				typeof product.price === "number"
 					? product.price
 					: product.price
-					? parseFloat(product.price.toString())
-					: 0,
+						? parseFloat(product.price.toString())
+						: 0,
 			image: product.image || "",
 			brand_id: product.brand_id || null,
 			bannerId: (product as any).bannerId || null,
 			brandId: (product as any).brandId || null,
 		} as ApiProduct;
 
-		console.log("✅ Converted ApiProduct:", apiProduct);
-		console.log("ApiProduct Category ID:", apiProduct.categoryId);
-		console.log("ApiProduct Subcategory:", apiProduct.subcategory);
+
 		setEditingProduct(apiProduct);
 		setShowEditModal(true);
 	};

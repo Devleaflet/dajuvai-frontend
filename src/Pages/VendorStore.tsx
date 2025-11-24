@@ -101,7 +101,7 @@ const VendorStore: React.FC = () => {
 
 					const transformedProducts: DisplayProduct[] = products.map(
 						(product) => {
-							console.log("vendorproduct", product);
+							//("vendorproduct", product);
 							// Calculate product-level price if basePrice is present; otherwise defer to variants
 							const hasBase =
 								product.basePrice !== null && product.basePrice !== undefined;

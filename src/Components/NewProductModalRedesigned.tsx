@@ -40,6 +40,8 @@ type ProductVariant = {
 type NewProductFormData = {
   name: string;
   description: string;
+  miniDescription: string;
+  longDescription: string;
   basePrice?: number;
   stock?: number;
   discount?: number;
@@ -166,7 +168,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   // Form state
   const [formData, setFormData] = useState<NewProductFormData>({
     name: "",
-    description: "",
+    miniDescription: "",
+    longDescription: "",
     basePrice: undefined,
     stock: undefined,
     discount: undefined,
@@ -452,11 +455,11 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log(' NEW PRODUCT MODAL SUBMIT START');
-    console.log(' Selected Category ID:', selectedCategoryId);
-    console.log(' Form Data:', formData);
-    console.log(' Variants:', variants);
-    console.log(' Images:', images);
+    //(' NEW PRODUCT MODAL SUBMIT START');
+    //(' Selected Category ID:', selectedCategoryId);
+    //(' Form Data:', formData);
+    //(' Variants:', variants);
+    //(' Images:', images);
 
     if (!selectedCategoryId || !formData.subcategoryId) {
       console.error('Missing category or subcategory:', { selectedCategoryId, subcategoryId: formData.subcategoryId });
@@ -497,11 +500,11 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       const imageFiles = images.filter(img => img instanceof File) as File[];
       const existingImageUrls = images.filter(img => typeof img === 'string') as string[];
       if (imageFiles.length > 0) {
-        console.log(' Uploading product images...');
+        //(' Uploading product images...');
         const uploadResponse = await uploadProductImages(imageFiles);
         if (uploadResponse.success) {
           productImageUrls = [...existingImageUrls, ...uploadResponse.urls];
-          console.log(' Product images uploaded successfully:', productImageUrls);
+          //(' Product images uploaded successfully:', productImageUrls);
         } else {
           throw new Error(uploadResponse.message || 'Failed to upload product images');
         }
@@ -525,11 +528,11 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
 
           // Upload any new variant images
           if (variantImageFiles.length > 0) {
-            console.log(` Uploading ${variantImageFiles.length} images for variant ${variant.sku}`);
+            //(` Uploading ${variantImageFiles.length} images for variant ${variant.sku}`);
             const uploadResponse = await uploadProductImages(variantImageFiles);
             if (uploadResponse.success) {
               variantImageUrls = [...variantImageUrls, ...uploadResponse.urls];
-              console.log(` Variant ${variant.sku} images uploaded:`, uploadResponse.urls);
+              //(` Variant ${variant.sku} images uploaded:`, uploadResponse.urls);
             } else {
               console.error(`Failed to upload images for variant ${variant.sku}:`, uploadResponse.message);
             }
@@ -545,7 +548,9 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       // Step 3: Prepare product data according to new API specification
       const productData: any = {
         name: formData.name,
-        description: formData.description || '',
+        miniDescription: formData.miniDescription || '',
+        longDescription: formData.longDescription || '',
+
         hasVariants: formData.hasVariants,
         productImages: productImageUrls,
         dealId: formData.dealId || 0,
@@ -585,10 +590,10 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
         productData.variants = [];
       }
 
-      console.log('=== FINAL PRODUCT DATA FOR API ===');
-      console.log('Product Data:', JSON.stringify(productData, null, 2));
-      console.log('Category ID:', selectedCategoryId);
-      console.log('Subcategory ID:', formData.subcategoryId);
+      //('=== FINAL PRODUCT DATA FOR API ===');
+      //('Product Data:', JSON.stringify(productData, null, 2));
+      //('Category ID:', selectedCategoryId);
+      //('Subcategory ID:', formData.subcategoryId);
 
       // Step 3: Create product with JSON payload
       const response = await createProduct(
@@ -702,15 +707,27 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                 </div>
 
                 <div className="form-group full-width">
-                  <label className="form-label">Description</label>
+                  <label className="form-label">Short Description</label>
                   <textarea
                     className="form-textarea"
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="Describe your product's key features and benefits"
-                    rows={4}
+                    value={formData.miniDescription}
+                    onChange={(e) => handleInputChange('miniDescription', e.target.value)}
+                    placeholder="Write a short 1–2 line summary"
+                    rows={2}
                   />
                 </div>
+
+                <div className="form-group full-width">
+                  <label className="form-label">Detailed Description</label>
+                  <textarea
+                    className="form-textarea"
+                    value={formData.longDescription}
+                    onChange={(e) => handleInputChange('longDescription', e.target.value)}
+                    placeholder="Write the full product details"
+                    rows={5}
+                  />
+                </div>
+
 
                 <div className="form-group">
                   <label className="form-label required">Category</label>

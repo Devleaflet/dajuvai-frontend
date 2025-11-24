@@ -27,7 +27,7 @@ const fetchSpecialDeals = async (): Promise<Offer[]> => {
     throw new Error(`Failed to fetch banners: ${response.statusText}`);
   }
   const data = await response.json();
-  console.log("special", data);
+  //("special", data);
   // Filter for active SPECIAL_DEALS banners that are not expired and map to Offer interface
   const colors = ['#FFF3EA', '#F4F2ED', '#131313', '#FCE9E4', '#E2FFE2', '#E0F2FF'];
   return data.data
@@ -71,8 +71,8 @@ const SpecialOffers: React.FC = () => {
   });
 
   const handleOfferClick = (offer: Offer) => {
-    console.log('hipeee')
-    console.log(offer)
+    //('hipeee')
+    //(offer)
     if (offer.productSource === 'category' && offer.selectedCategory) {
       navigate(`/shop?categoryId=${offer.selectedCategory.id}`);
     } else if (offer.productSource === 'subcategory' && offer.selectedSubcategory) {

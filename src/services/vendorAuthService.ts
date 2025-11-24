@@ -31,7 +31,7 @@ export class VendorAuthService {
         businessAddress: vendorData.businessAddress,
         profilePicture: vendorData.profilePicture,
       };
-      console.log("API Request Payload:", JSON.stringify(payload, null, 2));
+      //("API Request Payload:", JSON.stringify(payload, null, 2));
 
       const response = await fetch(`${API_BASE_URL}/api/vendors/signup`, {
         method: "POST",
@@ -142,7 +142,7 @@ export class VendorAuthService {
         businessAddress: vendorData.businessAddress,
         profilePicture: vendorData.profilePicture,
       };
-      console.log("API Request Payload:", JSON.stringify(payload, null, 2));
+      //("API Request Payload:", JSON.stringify(payload, null, 2));
 
       const response = await fetch(`${API_BASE_URL}/api/vendors/signup`, {
         method: "POST",
@@ -279,10 +279,10 @@ export class VendorAuthService {
         : `+977${vendorData.phoneNumber}`;
 
       // Debug: Log what we received
-      console.log("🔍 VendorAuthService.updateVendor - Received vendorData:", vendorData);
-      console.log("🔍 VendorAuthService.updateVendor - chequePhoto type:", typeof vendorData.chequePhoto);
-      console.log("🔍 VendorAuthService.updateVendor - chequePhoto isArray:", Array.isArray(vendorData.chequePhoto));
-      console.log("🔍 VendorAuthService.updateVendor - chequePhoto value:", vendorData.chequePhoto);
+      //("🔍 VendorAuthService.updateVendor - Received vendorData:", vendorData);
+      //("🔍 VendorAuthService.updateVendor - chequePhoto type:", typeof vendorData.chequePhoto);
+      //("🔍 VendorAuthService.updateVendor - chequePhoto isArray:", Array.isArray(vendorData.chequePhoto));
+      //("🔍 VendorAuthService.updateVendor - chequePhoto value:", vendorData.chequePhoto);
 
       const payload = {
         ...vendorData,
@@ -290,18 +290,9 @@ export class VendorAuthService {
         ...(vendorData.district && { district: vendorData.district }),
       };
 
-      // Debug: Log what we're sending
-      console.log("🔍 VendorAuthService.updateVendor - Final payload chequePhoto:", payload.chequePhoto);
-      console.log("🔍 VendorAuthService.updateVendor - Final payload chequePhoto type:", typeof payload.chequePhoto);
-      console.log("🔍 VendorAuthService.updateVendor - Final payload chequePhoto isArray:", Array.isArray(payload.chequePhoto));
 
-      console.log("Making vendor update request to:", `${API_BASE_URL}/api/vendors/${id}`);
-      console.log("Request headers:", {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token.substring(0, 10)}...`,
-      });
-      console.log("Request payload:", payload);
+      
+      //("Request payload:", payload);
 
       const response = await fetch(`${API_BASE_URL}/api/vendors/${id}`, {
         method: "PUT",
@@ -313,8 +304,8 @@ export class VendorAuthService {
         body: JSON.stringify(payload),
       });
 
-      console.log("Response status:", response.status);
-      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+      //("Response status:", response.status);
+      //("Response headers:", Object.fromEntries(response.headers.entries()));
 
       const contentType = response.headers.get("content-type");
       if (!contentType?.includes("application/json")) {
@@ -327,7 +318,7 @@ export class VendorAuthService {
       }
 
       const data: ApiResponse<Vendor> = await response.json();
-      console.log("Response data:", data);
+      //("Response data:", data);
 
       if (!response.ok) {
         console.error("Update request failed:", {
@@ -362,7 +353,7 @@ export class VendorAuthService {
   }
 
   static logout() {
-    console.log("VendorAuthService logout - clearing all vendor data");
+    //("VendorAuthService logout - clearing all vendor data");
     
     localStorage.removeItem("vendorToken");
     localStorage.removeItem("vendorData");
@@ -389,7 +380,7 @@ export class VendorAuthService {
   }
 
   static comprehensiveLogout() {
-    console.log("Comprehensive logout - clearing all user and vendor data");
+    //("Comprehensive logout - clearing all user and vendor data");
     
     localStorage.removeItem("authToken");
     localStorage.removeItem("authUser");
@@ -423,7 +414,7 @@ export class VendorAuthService {
   }
 
   static clearAllUserData() {
-    console.log("Clearing all user data");
+    //("Clearing all user data");
     
     localStorage.removeItem("authToken");
     localStorage.removeItem("authUser");

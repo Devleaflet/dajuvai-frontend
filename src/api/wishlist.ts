@@ -1,12 +1,35 @@
 import axios from "axios";
 import { API_BASE_URL } from "../config";
 
+let inflight = new Map<string, Promise<any[]>>();
+let cache = new Map<string, { ts: number; data: any[] }>();
+
 export const getWishlist = async (token?: string) => {
-  const res = await axios.get(`${API_BASE_URL}/api/wishlist`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    withCredentials: true,
-  });
-  return res.data.data.items;
+  const key = token ? `bearer:${token}` : "cookie";
+  const cached = cache.get(key);
+  const now = Date.now();
+  if (cached && now - cached.ts < 4000) {
+    return cached.data;
+  }
+  const existing = inflight.get(key);
+  if (existing) return existing;
+  const p = axios
+    .get(`${API_BASE_URL}/api/wishlist`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      withCredentials: true,
+    })
+    .then((res) => {
+      const items = res.data?.data?.items || [];
+      cache.set(key, { ts: Date.now(), data: items });
+      inflight.delete(key);
+      return items;
+    })
+    .catch((e) => {
+      inflight.delete(key);
+      throw e;
+    });
+  inflight.set(key, p);
+  return p;
 };
 
 export const addToWishlist = async (

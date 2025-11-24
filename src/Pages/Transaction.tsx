@@ -33,6 +33,7 @@ const TransactionSuccess: React.FC = () => {
   useEffect(() => {
     const hitAPIs = async () => {
       if (merchantTxnId) {
+        //("🔍 Checking order for MerchantTxnId:", merchantTxnId);
         try {
           const orderResponse = await fetch(
             `${API_BASE_URL}/api/order/search/merchant-transactionId`,
@@ -42,24 +43,28 @@ const TransactionSuccess: React.FC = () => {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
               },
-              body: JSON.stringify({
-                mTransactionId: merchantTxnId,
-              }),
+              body: JSON.stringify({ mTransactionId: merchantTxnId }),
             }
           );
 
           if (orderResponse.ok) {
             const orderResult = await orderResponse.json();
             if (orderResult.success && orderResult.data) {
+              //("✅ Order retrieved successfully:", orderResult.data);
               setOrderData(orderResult.data);
+            } else {
+              console.warn("❌ No order data found for this transaction ID.");
             }
+          } else {
+            console.error("⚠️ Failed to fetch order data. HTTP Error:", orderResponse.status);
           }
         } catch (error) {
-          console.error("Error hitting APIs:", error);
+          console.error("💥 Error hitting APIs:", error);
         } finally {
           setLoading(false);
         }
       } else {
+        console.warn("⚠️ Missing MerchantTxnId in query params.");
         setLoading(false);
       }
     };
@@ -92,11 +97,12 @@ const TransactionSuccess: React.FC = () => {
     }
   };
 
-  const toNumber = (value: string | number): number => {
-    return typeof value === "string" ? parseFloat(value) : value;
-  };
+  const toNumber = (value: string | number): number =>
+    typeof value === "string" ? parseFloat(value) : value;
 
+  // Loading state
   if (loading) {
+    //("⌛ Loading order details...");
     return (
       <>
         <Navbar />
@@ -112,6 +118,57 @@ const TransactionSuccess: React.FC = () => {
     );
   }
 
+  // Failed order (no data found)
+  if (!orderData) {
+    //(" Order verification failed or order not found.");
+    return (
+      <>
+        <Navbar />
+        <div className="transaction-success transaction-success--failed">
+          <div className="transaction-success__wrapper">
+            <div className="transaction-success__header">
+              <div className="transaction-success__header-icon transaction-success__header-icon--failed"></div>
+              <h1 className="transaction-success__header-title">
+                Payment Failed
+              </h1>
+              <p className="transaction-success__header-text">
+                We couldn’t verify your payment or retrieve your order details.
+                Please try again or contact support if the amount was deducted.
+              </p>
+            </div>
+
+            <div className="transaction-success__details">
+              <h2 className="transaction-success__details-title">
+                Transaction Info
+              </h2>
+              <div className="transaction-success__details-grid">
+                <div className="transaction-success__details-item">
+                  <p className="transaction-success__details-label">
+                    Merchant Transaction ID
+                  </p>
+                  <p className="transaction-success__details-value">
+                    {merchantTxnId || "N/A"}
+                  </p>
+                </div>
+                <div className="transaction-success__details-item">
+                  <p className="transaction-success__details-label">
+                    Gateway Transaction ID
+                  </p>
+                  <p className="transaction-success__details-value">
+                    {gatewayTxnId || "N/A"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // Success case
+  //("✅ Payment success for Order ID:", orderData.id);
+
   const handleDownloadPDF = () => {
     if (!orderData) return;
     const doc = new jsPDF();
@@ -120,21 +177,25 @@ const TransactionSuccess: React.FC = () => {
     doc.text("Payment & Order Bill", 105, y, { align: "center" });
     y += 10;
     doc.setFontSize(12);
-    doc.text(`Merchant Transaction ID: ${merchantTxnId || "N/A"}`, 10, y += 10);
-    doc.text(`Gateway Transaction ID: ${gatewayTxnId || "N/A"}`, 10, y += 10);
-    doc.text("Order Details:", 10, y += 15);
-    doc.text(`Order ID: #${orderData.id}`, 10, y += 10);
-    doc.text(`Order Date: ${formatDate(orderData.createdAt)}`, 10, y += 10);
-    doc.text(`Payment Method: ${orderData.paymentMethod.replace("_", " ")}`, 10, y += 10);
-    doc.text(`Instrument Name: ${orderData.instrumentName}`, 10, y += 10);
-    doc.text(`Payment Status: ${orderData.paymentStatus}`, 10, y += 10);
-    doc.text(`Order Status: ${orderData.status}`, 10, y += 10);
-    doc.text(`Ordered By ID: ${orderData.orderedById}`, 10, y += 10);
-    doc.text(`Last Updated: ${formatDate(orderData.updatedAt)}`, 10, y += 10);
-    doc.text("Price Breakdown:", 10, y += 15);
-    doc.text(`Subtotal: Rs ${(toNumber(orderData.totalPrice) - toNumber(orderData.shippingFee)).toFixed(2)}`, 10, y += 10);
-    doc.text(`Shipping Fee: Rs ${toNumber(orderData.shippingFee).toFixed(2)}`, 10, y += 10);
-    doc.text(`Total: Rs ${toNumber(orderData.totalPrice).toFixed(2)}`, 10, y += 10);
+    doc.text(`Merchant Transaction ID: ${merchantTxnId || "N/A"}`, 10, (y += 10));
+    doc.text(`Gateway Transaction ID: ${gatewayTxnId || "N/A"}`, 10, (y += 10));
+    doc.text("Order Details:", 10, (y += 15));
+    doc.text(`Order ID: #${orderData.id}`, 10, (y += 10));
+    doc.text(`Order Date: ${formatDate(orderData.createdAt)}`, 10, (y += 10));
+    doc.text(`Payment Method: ${orderData.paymentMethod.replace("_", " ")}`, 10, (y += 10));
+    doc.text(`Instrument Name: ${orderData.instrumentName}`, 10, (y += 10));
+    doc.text(`Payment Status: ${orderData.paymentStatus}`, 10, (y += 10));
+    doc.text(`Order Status: ${orderData.status}`, 10, (y += 10));
+    doc.text(`Ordered By ID: ${orderData.orderedById}`, 10, (y += 10));
+    doc.text(`Last Updated: ${formatDate(orderData.updatedAt)}`, 10, (y += 10));
+    doc.text("Price Breakdown:", 10, (y += 15));
+    doc.text(
+      `Subtotal: Rs ${(toNumber(orderData.totalPrice) - toNumber(orderData.shippingFee)).toFixed(2)}`,
+      10,
+      (y += 10)
+    );
+    doc.text(`Shipping Fee: Rs ${toNumber(orderData.shippingFee).toFixed(2)}`, 10, (y += 10));
+    doc.text(`Total: Rs ${toNumber(orderData.totalPrice).toFixed(2)}`, 10, (y += 10));
     doc.save(`Order_Bill_${orderData.id}.pdf`);
   };
 
@@ -219,6 +280,7 @@ const TransactionSuccess: React.FC = () => {
                       </span>
                     </div>
                   </div>
+
                   <div className="transaction-success__order-column">
                     <div className="transaction-success__order-item">
                       <span className="transaction-success__order-label">
@@ -262,6 +324,7 @@ const TransactionSuccess: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
                 <div className="transaction-success__price">
                   <h3 className="transaction-success__price-title">
                     Price Breakdown
@@ -298,8 +361,11 @@ const TransactionSuccess: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div style={{ textAlign: 'right', margin: '1.5rem 0' }}>
-                <button onClick={handleDownloadPDF} className="pay-button">Download Bill (PDF)</button>
+
+              <div style={{ textAlign: "right", margin: "1.5rem 0" }}>
+                <button onClick={handleDownloadPDF} className="pay-button">
+                  Download Bill (PDF)
+                </button>
               </div>
             </>
           )}

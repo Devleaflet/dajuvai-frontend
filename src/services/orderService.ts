@@ -119,7 +119,7 @@ export const OrderService = {
       });
 
       if (response.data.success) {
-        console.log(response.data.data);
+        //(response.data.data);
         return response.data.data;
       } else {
         throw new Error(response.data.message || 'Failed to fetch orders');
@@ -229,7 +229,7 @@ export const OrderService = {
   },
 
   trackOrder: async (orderId: number, email: string): Promise<{ success: boolean; orderStatus: string }> => {
-    console.log('Attempting GET request to track order:', orderId, email);
+    //('Attempting GET request to track order:', orderId, email);
 
     try {
       const response = await axios.get(

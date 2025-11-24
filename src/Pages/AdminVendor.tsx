@@ -66,6 +66,11 @@ const createVendorAPI = (token: string | null) => ({
 			}
 
 			const result: ApiResponse<Vendor[]> = await response.json();
+			//("-------vendor----------")
+			//("-------vendor----------")
+			//("-------vendor----------")
+			//("-------vendor----------")
+			//(result)
 			return (result.data || []).map((vendor) => ({
 				...vendor,
 				status: vendor.isVerified ? "Active" : "Inactive",
@@ -120,9 +125,7 @@ const createVendorAPI = (token: string | null) => ({
 				}
 			);
 
-			console.log(
-				`Fetch finished loading: GET "${API_BASE_URL}/api/vendors/unapprove/list"`
-			);
+		
 
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
@@ -183,9 +186,6 @@ const createVendorAPI = (token: string | null) => ({
 				}
 			);
 
-			console.log(
-				`Fetch finished loading: PUT "${API_BASE_URL}/api/vendors/approve/${id}"`
-			);
 
 			if (!response.ok) {
 				let errorMessage = `HTTP error! status: ${response.status}`;
@@ -228,9 +228,6 @@ const createVendorAPI = (token: string | null) => ({
 				headers,
 			});
 
-			console.log(
-				`Fetch finished loading: PUT "${API_BASE_URL}/api/vendors/reject/${id}"`
-			);
 
 			if (!response.ok) {
 				let errorMessage = `HTTP error! status: ${response.status}`;
@@ -282,10 +279,7 @@ const createVendorAPI = (token: string | null) => ({
 					: vendorData.chequePhoto || "", // Ensure it's a string or empty
 			};
 
-			console.log(
-				"Sending PUT request with normalized data:",
-				normalizedVendorData
-			);
+	
 
 			const response = await fetch(`${API_BASE_URL}/api/vendors/${id}`, {
 				method: "PUT",
@@ -293,9 +287,6 @@ const createVendorAPI = (token: string | null) => ({
 				body: JSON.stringify(normalizedVendorData),
 			});
 
-			console.log(
-				`Fetch finished loading: PUT "${API_BASE_URL}/api/vendors/${id}"`
-			);
 
 			if (!response.ok) {
 				let errorMessage = `HTTP error! status: ${response.status}`;
@@ -313,7 +304,7 @@ const createVendorAPI = (token: string | null) => ({
 			}
 
 			const result = await response.json();
-			console.log("PUT response:", result);
+			//("PUT response:", result);
 
 			if (!result.success) {
 				throw new Error(result.message || "Failed to update vendor");
@@ -506,7 +497,7 @@ const AdminVendor: React.FC = () => {
 	const CACHE_TTL = 10 * 60 * 1000;
 
 	const fetchDistricts = useCallback(async () => {
-		console.log("Fetching districts...");
+		//("Fetching districts...");
 		try {
 			if (!token) {
 				throw new Error("No token provided. Please log in.");
@@ -516,12 +507,12 @@ const AdminVendor: React.FC = () => {
 				try {
 					const { data, timestamp } = JSON.parse(cached);
 					if (Array.isArray(data) && Date.now() - timestamp < CACHE_TTL) {
-						console.log("Using cached districts");
+						//("Using cached districts");
 						setDistricts(data);
 						return;
 					}
 				} catch {
-					console.log("Invalid district cache, fetching fresh data");
+					//("Invalid district cache, fetching fresh data");
 				}
 			}
 
@@ -534,7 +525,7 @@ const AdminVendor: React.FC = () => {
 				},
 			});
 
-			console.log(`Fetch finished loading: GET "${API_BASE_URL}/api/district"`);
+			//(`Fetch finished loading: GET "${API_BASE_URL}/api/district"`);
 
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
@@ -560,7 +551,7 @@ const AdminVendor: React.FC = () => {
 	}, [token]);
 
 	const loadUnapprovedCount = useCallback(async () => {
-		console.log("Fetching unapproved vendors...");
+		//("Fetching unapproved vendors...");
 		try {
 			const unapproved = await vendorAPI.getUnapproved();
 			setUnapprovedCount(unapproved.length);
@@ -583,7 +574,7 @@ const AdminVendor: React.FC = () => {
 						return;
 					}
 				} catch {
-					console.log("Invalid vendor cache, fetching fresh data");
+					//("Invalid vendor cache, fetching fresh data");
 				}
 			}
 
@@ -764,7 +755,7 @@ const AdminVendor: React.FC = () => {
 					: vendorData.chequePhoto || "", // Ensure it's a string
 			};
 
-			console.log("Normalized vendor data for update:", normalizedVendorData);
+			//("Normalized vendor data for update:", normalizedVendorData);
 
 			const updatedVendor = await vendorAPI.update(
 				selectedVendor.id,

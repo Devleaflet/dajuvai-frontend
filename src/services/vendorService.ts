@@ -126,7 +126,7 @@ class VendorService {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      console.log('Vendor API response:', response.data);
+      //('Vendor API response:', response.data);
       
       if (response.data.success) {
         return response.data.data;

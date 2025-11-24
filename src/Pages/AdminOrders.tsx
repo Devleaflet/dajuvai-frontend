@@ -8,7 +8,7 @@ import AdminOrdersSkeleton from "../skeleton/AdminOrdersSkeleton";
 import "../Styles/AdminOrders.css";
 import { OrderService } from "../services/orderService";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 
 const ORDER_STATUS_OPTIONS = [
@@ -16,7 +16,11 @@ const ORDER_STATUS_OPTIONS = [
   { value: "PENDING", label: "Pending" },
   { value: "CONFIRMED", label: "Confirmed" },
   { value: "DELIVERED", label: "Delivered" },
-  { value: "CANCELLED", label: "Cancelled" }
+  { value: "CANCELLED", label: "Cancelled" },
+  { value: "SHIPPED", label: "Shipped" },
+  { value: "RETURNED", label: "Returned" },
+  { value: "DELAYED", label: "Delayed" },
+
 ];
 
 interface DisplayOrder {
@@ -49,6 +53,7 @@ interface ModalOrder {
 const AdminOrders: React.FC = () => {
   const { logout, token, isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [orders, setOrders] = useState<DisplayOrder[]>([]);
   const [rawOrders, setRawOrders] = useState<any[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<DisplayOrder[]>([]);
@@ -65,6 +70,8 @@ const AdminOrders: React.FC = () => {
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("all");
   const [dateRangeFilter, setDateRangeFilter] = useState<string>("all");
   const [priceRangeFilter, setPriceRangeFilter] = useState<string>("all");
+
+  const orderIdFromParams = searchParams.get('orderId');
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -117,6 +124,15 @@ const AdminOrders: React.FC = () => {
 
     fetchOrders();
   }, [authLoading, isAuthenticated, token, logout, navigate]);
+
+  useEffect(() => {
+    if (orderIdFromParams && orders.length > 0) {
+      const order = orders.find(o => o.id === orderIdFromParams);
+      if (order) {
+        viewOrderDetails(order);
+      }
+    }
+  }, [orderIdFromParams, orders]);
 
   useEffect(() => {
     let results = orders.filter(

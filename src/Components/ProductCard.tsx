@@ -5,19 +5,15 @@ import { Product } from "./Types/Product";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useUI } from "../context/UIContext";
-import {
-	addToWishlist,
-	removeFromWishlist,
-	getWishlist,
-} from "../api/wishlist";
+import { addToWishlist, removeFromWishlist } from "../api/wishlist";
+import { useWishlist } from "../context/WishlistContext";
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AuthModal from "./AuthModal";
 import defaultProductImage from "../assets/logo.webp";
 import { getProductPrimaryImage } from "../utils/getProductPrimaryImage";
 import { toast } from "react-hot-toast";
 import { API_BASE_URL } from "../config";
-
 interface ProductCardProps {
 	product: Product;
 }
@@ -25,6 +21,7 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 	const { handleCartOnAdd } = useCart();
 	const { token, isAuthenticated } = useAuth();
+	const { wishlist, refreshWishlist } = useWishlist();
 	const { cartOpen } = useUI();
 	const [wishlistLoading, setWishlistLoading] = useState(false);
 	const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -34,9 +31,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 	const [isWishlisted, setIsWishlisted] = useState(false);
 	const [wishlistItemId, setWishlistItemId] = useState<number | null>(null);
 
+	const navigate = useNavigate();
 	const {
 		title,
-		description,
+		miniDescription,
 		price,
 		originalPrice,
 		discount,
@@ -48,47 +46,29 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 		id,
 	} = product;
 
-	// Check if product is already in wishlist when component mounts or auth changes
 	useEffect(() => {
-		const checkWishlistStatus = async () => {
-			if (isAuthenticated && token) {
-				try {
-					const wishlistItems = await getWishlist(token);
-					const variantCount = product.variants?.length || 0;
-					const variantId =
-						variantCount > 0 ? product.variants![0].id : undefined;
-
-					const wishlistItem = wishlistItems.find((item: any) => {
-						// More robust comparison for wishlist items
-						const productMatch =
-							item.productId === id || item.product?.id === id;
-						const variantMatch = variantId
-							? item.variantId === variantId || item.variant?.id === variantId
-							: !item.variantId && !item.variant?.id;
-
-						return productMatch && variantMatch;
-					});
-
-					if (wishlistItem) {
-						setIsWishlisted(true);
-						setWishlistItemId(wishlistItem.id);
-					} else {
-						setIsWishlisted(false);
-						setWishlistItemId(null);
-					}
-				} catch (error) {
-					console.warn("Failed to check wishlist status:", error);
-					setIsWishlisted(false);
-					setWishlistItemId(null);
-				}
+		if (isAuthenticated && token) {
+			const variantCount = product.variants?.length || 0;
+			const variantId = variantCount > 0 ? product.variants![0].id : undefined;
+			const wishlistItem = wishlist.find((item: any) => {
+				const productMatch = item.productId === id || item.product?.id === id;
+				const variantMatch = variantId
+					? item.variantId === variantId || item.variant?.id === variantId
+					: !item.variantId && !item.variant?.id;
+				return productMatch && variantMatch;
+			});
+			if (wishlistItem) {
+				setIsWishlisted(true);
+				setWishlistItemId(wishlistItem.id);
 			} else {
 				setIsWishlisted(false);
 				setWishlistItemId(null);
 			}
-		};
-
-		checkWishlistStatus();
-	}, [id, product.variants, isAuthenticated, token]);
+		} else {
+			setIsWishlisted(false);
+			setWishlistItemId(null);
+		}
+	}, [wishlist, id, product.variants, isAuthenticated, token]);
 
 	// Process image URL helper (same as in getProductPrimaryImage)
 	const processImageUrl = (imgUrl: string): string => {
@@ -235,56 +215,56 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 		setCurrentImageIndex(index);
 	};
 
-const calculatePrice = (
-	basePrice: string | number,
-	discountVal?: string | number,
-	discountType?: string | null
-): number => {
-	const base =
-		typeof basePrice === "string"
-			? parseFloat(basePrice)
-			: Number(basePrice) || 0;
-	if (!discountVal || !discountType) return base;
-	const dVal =
-		typeof discountVal === "string"
-			? parseFloat(discountVal)
-			: Number(discountVal) || 0;
-	if (discountType === "PERCENTAGE") return base * (1 - dVal / 100);
-	if (discountType === "FIXED" || discountType === "FLAT") return base - dVal;
-	return base;
-};
+	const calculatePrice = (
+		basePrice: string | number,
+		discountVal?: string | number,
+		discountType?: string | null
+	): number => {
+		const base =
+			typeof basePrice === "string"
+				? parseFloat(basePrice)
+				: Number(basePrice) || 0;
+		if (!discountVal || !discountType) return base;
+		const dVal =
+			typeof discountVal === "string"
+				? parseFloat(discountVal)
+				: Number(discountVal) || 0;
+		if (discountType === "PERCENTAGE") return base * (1 - dVal / 100);
+		if (discountType === "FIXED" || discountType === "FLAT") return base - dVal;
+		return base;
+	};
 
-let currentPrice = 0;
-let originalPriceDisplay: number | undefined = undefined;
-let discountLabel: string | null = null;
+	let currentPrice = 0;
+	let originalPriceDisplay: number | undefined = undefined;
+	let discountLabel: string | null = null;
 
-// Get base price from variant (if exists) or product
-let baseNum = 0;
-if (variants && variants.length > 0) {
-	// Use first variant's basePrice
-	const variantBase = variants[0]?.basePrice;
-	baseNum = typeof variantBase === "string" ? parseFloat(variantBase) : Number(variantBase) || 0;
-} else {
-	// Use product's basePrice or price
-	const productBase = product.basePrice ?? price;
-	baseNum = typeof productBase === "string" ? parseFloat(productBase) : Number(productBase) || 0;
-}
+	// Get base price from variant (if exists) or product
+	let baseNum = 0;
+	if (variants && variants.length > 0) {
+		// Use first variant's basePrice
+		const variantBase = variants[0]?.basePrice;
+		baseNum = typeof variantBase === "string" ? parseFloat(variantBase) : Number(variantBase) || 0;
+	} else {
+		// Use product's basePrice or price
+		const productBase = product.basePrice ?? price;
+		baseNum = typeof productBase === "string" ? parseFloat(productBase) : Number(productBase) || 0;
+	}
 
-// Apply product-level discount to the base price
-const productDiscount = Number(product.discount) || 0;
-const productDiscountType = product.discountType;
+	// Apply product-level discount to the base price
+	const productDiscount = Number(product.discount) || 0;
+	const productDiscountType = product.discountType;
 
-if (productDiscount > 0 && productDiscountType) {
-	// Calculate discounted price
-	currentPrice = calculatePrice(baseNum, productDiscount, productDiscountType);
-	originalPriceDisplay = baseNum;
-	discountLabel = productDiscountType === "PERCENTAGE" 
-		? `${productDiscount}%` 
-		: `Rs ${productDiscount}`;
-} else {
-	// No discount
-	currentPrice = baseNum;
-}
+	if (productDiscount > 0 && productDiscountType) {
+		// Calculate discounted price
+		currentPrice = calculatePrice(baseNum, productDiscount, productDiscountType);
+		originalPriceDisplay = baseNum;
+		discountLabel = productDiscountType === "PERCENTAGE"
+			? `${productDiscount}%`
+			: `Rs ${productDiscount}`;
+	} else {
+		// No discount
+		currentPrice = baseNum;
+	}
 	const handleWishlist = async () => {
 		if (!isAuthenticated) {
 			setAuthModalOpen(true);
@@ -297,17 +277,17 @@ if (productDiscount > 0 && productDiscountType) {
 			const variantId = variantCount > 0 ? product.variants![0].id : undefined;
 
 			if (isWishlisted && wishlistItemId) {
-				// Remove from wishlist
 				await removeFromWishlist(wishlistItemId, token);
 				toast.success("Removed from wishlist");
 				setIsWishlisted(false);
 				setWishlistItemId(null);
+				await refreshWishlist();
 			} else {
-				// Add to wishlist
 				const addedItem = await addToWishlist(id, variantId, token);
 				toast.success("Added to wishlist");
 				setIsWishlisted(true);
 				setWishlistItemId(addedItem?.id || null);
+				await refreshWishlist();
 			}
 		} catch (e: any) {
 			const status = e?.response?.status;
@@ -320,28 +300,8 @@ if (productDiscount > 0 && productDiscountType) {
 			if (status === 409 || /already/i.test(msg)) {
 				toast("Already present in the wishlist");
 				setIsWishlisted(true);
-				// Try to get the wishlist item ID if we don't have it
 				if (!wishlistItemId) {
-					try {
-						const wishlistItems = await getWishlist(token);
-						const variantId =
-							variantCount > 0 ? product.variants![0].id : undefined;
-						const wishlistItem = wishlistItems.find((item: any) => {
-							const productMatch =
-								item.productId === id || item.product?.id === id;
-							const variantMatch = variantId
-								? item.variantId === variantId || item.variant?.id === variantId
-								: !item.variantId && !item.variant?.id;
-
-							return productMatch && variantMatch;
-						});
-
-						if (wishlistItem) {
-							setWishlistItemId(wishlistItem.id);
-						}
-					} catch (getError) {
-						console.warn("Failed to get wishlist item ID:", getError);
-					}
+					await refreshWishlist();
 				}
 			} else {
 				toast.error(
@@ -356,9 +316,42 @@ if (productDiscount > 0 && productDiscountType) {
 		}
 	};
 
+	const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+		const target = e.target as HTMLElement;
+
+		if (
+			target.closest(".product-card__wishlist-button") ||
+			target.closest(".product-card__cart-button") ||
+			target.closest(".product-card__dot")
+		) {
+			return;
+		}
+
+		//("Navigating to product:", product.id);
+
+		//("scroll called")
+		//("scroll called")
+		//("scroll called")
+		//("scroll called")
+		//("scroll called")
+
+		// Navigate first
+		navigate(`/product-page/${product.id}`, { replace: true });
+
+		// Then FORCE scroll to top on next tick (beats React Router restoration)
+		setTimeout(() => {
+			window.scrollTo(0, 0);
+		}, 0);
+
+		// Extra insurance: also after a tiny delay
+		setTimeout(() => {
+			window.scrollTo(0, 0);
+		}, 100);
+	};
+
 	return (
-		<Link
-			to={`/product-page/${product.id}`}
+		<div
+			onClick={handleCardClick}
 			className="product-card__link-wrapper"
 		>
 			<div
@@ -395,34 +388,33 @@ if (productDiscount > 0 && productDiscountType) {
 					</button>
 				)}
 
-			
-					<div className="product-card__image">
-						<img
-							src={displayImage}
-							alt={title || "Product image"}
-							onError={handleImageError}
-							loading="lazy"
-						/>
 
-						{productImages.length > 1 && (
-							<div className="product-card__pagination product-card__pagination--inside">
-								<div className="product-card__dots">
-									{productImages.slice(0, 5).map((_, index) => (
-										<span
-											key={index}
-											className={`product-card__dot ${
-												index === currentImageIndex
-													? "product-card__dot--active"
-													: ""
+				<div className="product-card__image">
+					<img
+						src={displayImage}
+						alt={title || "Product image"}
+						onError={handleImageError}
+						loading="lazy"
+					/>
+
+					{productImages.length > 1 && (
+						<div className="product-card__pagination product-card__pagination--inside">
+							<div className="product-card__dots">
+								{productImages.slice(0, 5).map((_, index) => (
+									<span
+										key={index}
+										className={`product-card__dot ${index === currentImageIndex
+											? "product-card__dot--active"
+											: ""
 											}`}
-											onClick={(e) => handleDotClick(index, e)}
-										/>
-									))}
-								</div>
+										onClick={(e) => handleDotClick(index, e)}
+									/>
+								))}
 							</div>
-						)}
-					</div>
-				
+						</div>
+					)}
+				</div>
+
 
 				{!cartOpen && (
 					<div className="product-card__cart-button">
@@ -468,7 +460,7 @@ if (productDiscount > 0 && productDiscountType) {
 						>
 							{title}
 						</h3>
-						<p className="product-card__description">{description}</p>
+						<p className="product-card__description">{miniDescription}</p>
 						<div className="product-card__price">
 							<span className="product-card__current-price">
 								Rs {currentPrice.toFixed(2)}
@@ -497,7 +489,7 @@ if (productDiscount > 0 && productDiscountType) {
 					setAuthModalOpen(false);
 				}}
 			/>
-		</Link>
+		</div>
 	);
 };
 

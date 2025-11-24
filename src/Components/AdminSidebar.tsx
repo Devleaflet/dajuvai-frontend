@@ -16,12 +16,10 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLDivElement>)
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Get the current location using React Router's useLocation hook
   const location = useLocation();
 
   return (
     <div className={`sidebar ${isMobile ? "sidebar--dock" : ""}`} {...props}>
-      {/* Only show header in desktop view */}
       {!isMobile && (
         <div className="sidebar__header">
           <Link to="/admin-dashboard" className="sidebar__logo">
@@ -143,6 +141,18 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLDivElement>)
           }
         >
           Orders
+        </NavItem>
+        <NavItem 
+          to="/admin-notifications" 
+          active={location.pathname === "/admin-notifications"}
+          icon={
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          }
+        >
+          Notifications
         </NavItem>
         <NavItem 
           to="/admin-customers" 

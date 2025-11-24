@@ -304,7 +304,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
   };
 
   const handleVariantAdd = () => {
-    console.log("ProductModal: Adding variant:", currentVariant);
+    //("ProductModal: Adding variant:", currentVariant);
     
     if (!currentVariant.sku) {
       alert("SKU is required for variant");
@@ -348,7 +348,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
     setCurrentVariantImages([]);
     setCurrentVariantImagePreviews([]);
     
-    console.log("ProductModal: Variants after adding:", [...variants, newVariant]);
+    //("ProductModal: Variants after adding:", [...variants, newVariant]);
   };
 
   const handleVariantRemove = (skuToRemove: string) => {
@@ -435,12 +435,6 @@ const ProductModal: React.FC<ProductModalProps> = ({
           vendorId: authState.vendor?.id ? String(authState.vendor.id) : "",
           variants: formData.hasVariants ? variants : undefined,
         };
-
-        console.log('ProductModal: Submitting form data:', {
-          formData: finalFormData,
-          hasVariants: formData.hasVariants,
-          variantsCount: variants.length
-        });
 
         await onSubmit(finalFormData);
       } catch (err) {

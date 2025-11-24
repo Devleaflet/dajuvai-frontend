@@ -85,7 +85,8 @@ export interface ListProduct {
 
 export interface ProductFormData {
   name: string;
-  description: string;
+  miniDescription: string;
+  longDescription: string;
   basePrice: string | number | null;
   stock: number;
   discount: string | number | null;

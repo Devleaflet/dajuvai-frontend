@@ -16,13 +16,11 @@ import AdminBannerWithTabs from "./Pages/AdminBanner";
 import AdminCatalog from "./Pages/AdminCatalog";
 import ProductPage from "./Pages/ProductPage";
 import UserProfile from "./Pages/UserProfile";
-import ReturnRefundPolicy from "./Pages/ReturnRefundPolicy"; // Added import
+import ReturnRefundPolicy from "./Pages/ReturnRefundPolicy";
 
-// import VendorSignup from "./Pages/VendorSignup";
 import PageNotFound from "./Pages/PageNotFound";
 import { useAuth } from "./context/AuthContext";
-import ScrollToTop from "./Components/ScrollToTop";
-import type { ReactElement } from 'react';
+import { type ReactElement } from 'react';
 import AdminDistrict from './Pages/AdminDistrict';
 import DealAdmin from './Pages/DealAdmin';
 import AdminPromo from './Pages/AdminPromo';
@@ -30,7 +28,7 @@ import AdminStaff from './Pages/AdminStaff';
 import Shop from "./Pages/Shop";
 import VendorStore from "./Pages/VendorStore";
 import Checkout from "./Pages/CheckOut";
-import { useVendorAuth } from "./context/VendorAuthContext"; // Import useVendorAuth
+import { useVendorAuth } from "./context/VendorAuthContext";
 import NepalPaymentGateway from "./Pages/Payment";
 import TransactionSuccess from "./Pages/Transaction";
 import OrdersList from "./Pages/AdminOrders";
@@ -49,15 +47,12 @@ import EcommerceFAQ from "./Pages/Faq";
 import BecomeVendor from "./Pages/BecomeVendor";
 import UnapprovedVendors from "./Components/UnapprovedVendors";
 import CommissionList from "./Pages/ComissionList";
-// import VendorLogin from "./Pages/VendorLogin"
 import SectionProducts from "./Components/SectionProducts";
-import WebsiteComingSoon from "./Pages/WebsiteComingSoon";
 import VendorTerms from "./Pages/VendorTerms";
-import PasswordProtectedRoute from "./Components/SiteProtection/PasswordProtectedRoute";
 import EsewaPaymentFailure from "./Pages/EsewaPaymentFailure";
 import AdminProfile from "./Pages/AdminProfile";
-// import VendorLoginPage from "./Pages/VendorLoginPage";
-// import VendorSignupPage from "./Pages/VendorSignupPage";
+import { Notifications } from "./Pages/Notifications";
+import ForceScrollToTop from "./Components/ScrollToTop";
 
 // Admin route guards
 // Allows both admin and staff to access admin area
@@ -98,192 +93,186 @@ const ProtectedVendorRoute = ({ children }: { children: ReactElement }) => {
 };
 
 
-// const SHOW_COMING_SOON = true;
-const isAuthenticated = localStorage.getItem("authenticated") === "true";  // comment this line of code and ----
-// const isAuthenticated = true;                                           // --- uncomment this line of code in local 
-
 
 function App() {
   return (
     <>
       <Toaster />
-      <ScrollToTop />
+      <ForceScrollToTop />
       <Routes>
         {/* Root "/" → Coming Soon until unlocked */}
         <Route
           path="/"
-          element={
-            !isAuthenticated ? <WebsiteComingSoon /> : <Home />
-          }
+          element={<Home />}
         />
 
         {/* All other public routes require password */}
         <Route
           path="/contact"
           element={
-            <PasswordProtectedRoute>
-              <About />
-            </PasswordProtectedRoute>
+            // 
+            <About />
+            // 
           }
         />
         <Route
           path="/faq"
           element={
-            <PasswordProtectedRoute>
-              <EcommerceFAQ />
-            </PasswordProtectedRoute>
+            // 
+            <EcommerceFAQ />
+            // 
           }
         />
         <Route
           path="/terms"
           element={
-            <PasswordProtectedRoute>
-              <TermsAndConditions />
-            </PasswordProtectedRoute>
+            // 
+            <TermsAndConditions />
+            // 
           }
         />
         <Route
           path="/vendor/terms"
           element={
-            <PasswordProtectedRoute>
-              <VendorTerms />
-            </PasswordProtectedRoute>
+            // 
+            <VendorTerms />
+            // 
           }
         />
         <Route
           path="/commission-list"
           element={
-            <PasswordProtectedRoute>
-              <CommissionList />
-            </PasswordProtectedRoute>
+            // 
+            <CommissionList />
+            // 
           }
         />
         <Route
           path="/privacy"
           element={
-            <PasswordProtectedRoute>
-              <Privacy />
-            </PasswordProtectedRoute>
+            // 
+            <Privacy />
+            // 
           }
         />
         <Route
-          path="/return-refund-policy" // Added route for Return & Refund Policy
+          path="/return-refund-policy"
           element={
-            <PasswordProtectedRoute>
-              <ReturnRefundPolicy />
-            </PasswordProtectedRoute>
+            // 
+            <ReturnRefundPolicy />
+            // 
           }
         />
         <Route
           path="/becomevendor"
           element={
-            <PasswordProtectedRoute>
-              <BecomeVendor />
-            </PasswordProtectedRoute>
+            // 
+            <BecomeVendor />
+            // 
           }
         />
         <Route
           path="/about"
           element={
-            <PasswordProtectedRoute>
-              <AboutUs />
-            </PasswordProtectedRoute>
+            // 
+            <AboutUs />
+            // 
           }
         />
         <Route
           path="/wishlist"
           element={
-            <PasswordProtectedRoute>
-              <Wishlist />
-            </PasswordProtectedRoute>
+            // 
+            <Wishlist />
+            // 
           }
         />
         <Route
           path="/checkout"
           element={
-            <PasswordProtectedRoute>
-              <Checkout />
-            </PasswordProtectedRoute>
+            // 
+            <Checkout />
+            // 
           }
         />
         <Route
           path="/product-page/:id"
           element={
-            <PasswordProtectedRoute>
-              <ProductPage />
-            </PasswordProtectedRoute>
+            // 
+            <ProductPage />
+            // 
           }
         />
         <Route
           path="/product-page/:categoryId/:subcategoryId/:id"
           element={
-            <PasswordProtectedRoute>
-              <ProductPage />
-            </PasswordProtectedRoute>
+            // 
+            <ProductPage />
+            // 
           }
         />
         <Route
           path="/section/:sectionId"
           element={
-            <PasswordProtectedRoute>
-              <SectionProducts />
-            </PasswordProtectedRoute>
+            // 
+            <SectionProducts />
+            // 
           }
         />
         <Route
           path="/user-profile"
           element={
-            <PasswordProtectedRoute>
-              <UserProfile />
-            </PasswordProtectedRoute>
+            // 
+            <UserProfile />
+            // 
           }
         />
         <Route
           path="/shop"
           element={
-            <PasswordProtectedRoute>
-              <Shop />
-            </PasswordProtectedRoute>
+            // 
+            <Shop />
+            // 
           }
         />
         <Route
           path="/vendor/:vendorId"
           element={
-            <PasswordProtectedRoute>
-              <VendorStore />
-            </PasswordProtectedRoute>
+            // 
+            <VendorStore />
+            // 
           }
         />
         <Route
           path="/order-page"
           element={
-            <PasswordProtectedRoute>
-              <NepalPaymentGateway />
-            </PasswordProtectedRoute>
+            // 
+            <NepalPaymentGateway />
+            // 
           }
         />
         <Route
           path="/order/payment-response"
           element={
-            <PasswordProtectedRoute>
-              <TransactionSuccess />
-            </PasswordProtectedRoute>
+            // 
+            <TransactionSuccess />
+            // 
           }
         />
         <Route
           path="/order/esewa-payment-success"
           element={
-            <PasswordProtectedRoute>
-              <PaymentSuccess />
-            </PasswordProtectedRoute>
+            // 
+            <PaymentSuccess />
+            // 
           }
         />
         <Route
           path="/order/esewa-payment-failure"
           element={
-            <PasswordProtectedRoute>
-              <EsewaPaymentFailure />
-            </PasswordProtectedRoute>
+            // 
+            <EsewaPaymentFailure />
+            // 
           }
         />
 
@@ -299,17 +288,17 @@ function App() {
         <Route
           path="/privacy-policy"
           element={
-            <PasswordProtectedRoute>
-              <PrivacyPolicy />
-            </PasswordProtectedRoute>
+            // 
+            <PrivacyPolicy />
+            // 
           }
         />
         <Route
           path="/data-deletion"
           element={
-            <PasswordProtectedRoute>
-              <DataDeletion />
-            </PasswordProtectedRoute>
+            // 
+            <DataDeletion />
+            // 
           }
         />
 
@@ -339,6 +328,14 @@ function App() {
           }
         />
         <Route
+          path="/vendor-notifications"
+          element={
+            <ProtectedVendorRoute>
+              <Notifications />
+            </ProtectedVendorRoute>
+          }
+        />
+        <Route
           path="/vendor-profile"
           element={
             <ProtectedVendorRoute>
@@ -361,6 +358,14 @@ function App() {
           element={
             <AdminOrStaffRoute>
               <AdminProduct />
+            </AdminOrStaffRoute>
+          }
+        />
+        <Route
+          path="/admin-notifications"
+          element={
+            <AdminOrStaffRoute>
+              <Notifications />
             </AdminOrStaffRoute>
           }
         />
@@ -452,11 +457,11 @@ function App() {
             </AdminOnlyRoute>
           }
         />
-      <Route
+        <Route
           path="/admin-profile"
           element={
             <AdminOrStaffRoute>
-              <AdminProfile/>
+              <AdminProfile />
             </AdminOrStaffRoute>
           }
         />

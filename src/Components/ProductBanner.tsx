@@ -26,7 +26,7 @@ const fetchProductBanners = async (): Promise<Slide[]> => {
     throw new Error(`Failed to fetch banners: ${response.statusText}`);
   }
   const data = await response.json();
-  console.log('Fetched banners:', data);
+  //('Fetched banners:', data);
 
   return data.data
     .filter(
@@ -87,26 +87,26 @@ const ProductBanner: React.FC = () => {
   const goToSlide = (index: number): void => {
     setActiveSlide(index);
     setTranslateX(0);
-    console.log('Go to slide:', index);
+    //('Go to slide:', index);
   };
 
   const goToPrevSlide = (): void => {
     setActiveSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
     setTranslateX(0);
-    console.log('Previous slide');
+    //('Previous slide');
   };
 
   const goToNextSlide = (): void => {
     setActiveSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
     setTranslateX(0);
-    console.log('Next slide');
+    //('Next slide');
   };
 
   const handleDragStart = (clientX: number, clientY: number): void => {
     setIsDragging(true);
     setStartPos({ x: clientX, y: clientY });
     setTranslateX(0);
-    console.log('Drag start at:', { x: clientX, y: clientY });
+    //('Drag start at:', { x: clientX, y: clientY });
   };
 
   const handleDragMove = (clientX: number): void => {
@@ -114,7 +114,7 @@ const ProductBanner: React.FC = () => {
     const currentDrag = clientX - (startPos?.x || 0);
     const maxDrag = sliderRef.current ? sliderRef.current.offsetWidth / 3 : 200;
     setTranslateX(Math.max(-maxDrag, Math.min(maxDrag, currentDrag)));
-    console.log('Dragging, translateX:', currentDrag);
+    //('Dragging, translateX:', currentDrag);
   };
 
   const handleDragEnd = (clientX: number, clientY: number): void => {
@@ -131,7 +131,7 @@ const ProductBanner: React.FC = () => {
     } else {
       setTranslateX(0); // Snap back
     }
-    console.log('Drag end, translateX:', translateX);
+    //('Drag end, translateX:', translateX);
 
     // Check for click (minimal movement)
     if (startPos) {
@@ -179,9 +179,9 @@ const ProductBanner: React.FC = () => {
   };
 
   const handleBannerClick = (slide: Slide) => {
-    console.log('🎯 ProductBanner clicked:', slide);
+    //('🎯 ProductBanner clicked:', slide);
     if (!slide) {
-      console.log('⚠️ No slide found, navigating to /shop');
+      //('⚠️ No slide found, navigating to /shop');
       try {
         navigate('/shop');
       } catch (error) {
@@ -192,7 +192,7 @@ const ProductBanner: React.FC = () => {
     }
 
     if (slide.productSource === 'category' && slide.selectedCategory?.id) {
-      console.log('Navigating to category:', slide.selectedCategory.id);
+      //('Navigating to category:', slide.selectedCategory.id);
       try {
         navigate(`/shop?categoryId=${slide.selectedCategory.id}`);
       } catch (error) {
@@ -204,12 +204,6 @@ const ProductBanner: React.FC = () => {
       slide.selectedSubcategory?.id &&
       slide.selectedSubcategory?.category?.id
     ) {
-      console.log(
-        'Navigating to subcategory:',
-        slide.selectedSubcategory.id,
-        'category:',
-        slide.selectedSubcategory.category.id
-      );
       try {
         navigate(
           `/shop?categoryId=${slide.selectedSubcategory.category.id}&subcategoryId=${slide.selectedSubcategory.id}`
@@ -219,7 +213,7 @@ const ProductBanner: React.FC = () => {
         window.location.href = `/shop?categoryId=${slide.selectedSubcategory.category.id}&subcategoryId=${slide.selectedSubcategory.id}`;
       }
     } else if (slide.productSource === 'manual') {
-      console.log('Navigating to manual banner:', slide.id);
+      //('Navigating to manual banner:', slide.id);
       try {
         navigate(`/shop?bannerId=${slide.id}`);
       } catch (error) {
@@ -227,7 +221,7 @@ const ProductBanner: React.FC = () => {
         window.location.href = `/shop?bannerId=${slide.id}`;
       }
     } else if (slide.productSource === 'external' && slide.externalLink) {
-      console.log('Opening external link:', slide.externalLink);
+      //('Opening external link:', slide.externalLink);
       try {
         window.open(slide.externalLink, '_blank');
       } catch (error) {

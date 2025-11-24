@@ -12,11 +12,8 @@ import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { FaCartPlus } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import {
-	addToWishlist,
-	removeFromWishlist,
-	getWishlist,
-} from "../api/wishlist";
+import { addToWishlist, removeFromWishlist } from "../api/wishlist";
+import { useWishlist } from "../context/WishlistContext";
 import defaultProductImage from "../assets/logo.webp";
 import star from "../assets/star.png";
 import AuthModal from "../Components/AuthModal";
@@ -33,7 +30,8 @@ interface ProductCardProps {
 
 const Product1: React.FC<ProductCardProps> = ({ product }) => {
 	const { handleCartOnAdd } = useCart();
-	const { token, isAuthenticated } = useAuth();
+    const { token, isAuthenticated } = useAuth();
+    const { wishlist, refreshWishlist } = useWishlist();
 	const { cartOpen } = useUI();
 	const [wishlistLoading, setWishlistLoading] = useState(false);
 	const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -43,7 +41,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 
 	const {
 		title,
-		description,
+		miniDescription,
 		price,
 		originalPrice,
 		discount,
@@ -57,46 +55,29 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 		? defaultProductImage
 		: getProductPrimaryImage(product, defaultProductImage);
 
-	// Check if product is already in wishlist when component mounts or auth changes
-	useEffect(() => {
-		const checkWishlistStatus = async () => {
-			if (isAuthenticated && token) {
-				try {
-					const wishlistItems = await getWishlist(token);
-					const variantCount = product.variants?.length || 0;
-					const variantId =
-						variantCount > 0 ? product.variants![0].id : undefined;
-
-					const wishlistItem = wishlistItems.find((item: any) => {
-						const productMatch =
-							item.productId === id || item.product?.id === id;
-						const variantMatch = variantId
-							? item.variantId === variantId || item.variant?.id === variantId
-							: !item.variantId && !item.variant?.id;
-
-						return productMatch && variantMatch;
-					});
-
-					if (wishlistItem) {
-						setIsWishlisted(true);
-						setWishlistItemId(wishlistItem.id);
-					} else {
-						setIsWishlisted(false);
-						setWishlistItemId(null);
-					}
-				} catch (error) {
-					console.warn("Failed to check wishlist status:", error);
-					setIsWishlisted(false);
-					setWishlistItemId(null);
-				}
-			} else {
-				setIsWishlisted(false);
-				setWishlistItemId(null);
-			}
-		};
-
-		checkWishlistStatus();
-	}, [id, product.variants, isAuthenticated, token]);
+    useEffect(() => {
+        if (isAuthenticated && token) {
+            const variantCount = product.variants?.length || 0;
+            const variantId = variantCount > 0 ? product.variants![0].id : undefined;
+            const wishlistItem = wishlist.find((item: any) => {
+                const productMatch = item.productId === id || item.product?.id === id;
+                const variantMatch = variantId
+                    ? item.variantId === variantId || item.variant?.id === variantId
+                    : !item.variantId && !item.variant?.id;
+                return productMatch && variantMatch;
+            });
+            if (wishlistItem) {
+                setIsWishlisted(true);
+                setWishlistItemId(wishlistItem.id);
+            } else {
+                setIsWishlisted(false);
+                setWishlistItemId(null);
+            }
+        } else {
+            setIsWishlisted(false);
+            setWishlistItemId(null);
+        }
+    }, [wishlist, id, product.variants, isAuthenticated, token]);
 
 	const handleImageError = () => {
 		setImageError(true);
@@ -187,19 +168,19 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 			const variantCount = product.variants?.length || 0;
 			const variantId = variantCount > 0 ? product.variants![0].id : undefined;
 
-			if (isWishlisted && wishlistItemId) {
-				// Remove from wishlist
-				await removeFromWishlist(wishlistItemId, token);
-				toast.success("Removed from wishlist");
-				setIsWishlisted(false);
-				setWishlistItemId(null);
-			} else {
-				// Add to wishlist
-				const addedItem = await addToWishlist(id, variantId, token);
-				toast.success("Added to wishlist");
-				setIsWishlisted(true);
-				setWishlistItemId(addedItem?.id || null);
-			}
+            if (isWishlisted && wishlistItemId) {
+                await removeFromWishlist(wishlistItemId, token);
+                toast.success("Removed from wishlist");
+                setIsWishlisted(false);
+                setWishlistItemId(null);
+                await refreshWishlist();
+            } else {
+                const addedItem = await addToWishlist(id, variantId, token);
+                toast.success("Added to wishlist");
+                setIsWishlisted(true);
+                setWishlistItemId(addedItem?.id || null);
+                await refreshWishlist();
+            }
 		} catch (e: any) {
 			const status = e?.response?.status;
 			const msg: string =
@@ -208,42 +189,24 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 				e?.message ||
 				"";
 
-			if (status === 409 || /already/i.test(msg)) {
-				toast("Already present in the wishlist");
-				setIsWishlisted(true);
-				// Try to get the wishlist item ID if we don't have it
-				if (!wishlistItemId) {
-					try {
-						const wishlistItems = await getWishlist(token);
-						const wishlistItem = wishlistItems.find((item: any) => {
-							const productMatch =
-								item.productId === id || item.product?.id === id;
-							const variantMatch = variantId
-								? item.variantId === variantId || item.variant?.id === variantId
-								: !item.variantId && !item.variant?.id;
-
-							return productMatch && variantMatch;
-						});
-
-						if (wishlistItem) {
-							setWishlistItemId(wishlistItem.id);
-						}
-					} catch (getError) {
-						console.warn("Failed to get wishlist item ID:", getError);
-					}
-				}
-			} else {
-				toast.error(
-					isWishlisted
-						? "Failed to remove from wishlist"
-						: "Failed to add to wishlist"
-				);
-				console.error("Wishlist operation failed:", e);
-			}
-		} finally {
-			setWishlistLoading(false);
-		}
-	};
+            if (status === 409 || /already/i.test(msg)) {
+                toast("Already present in the wishlist");
+                setIsWishlisted(true);
+                if (!wishlistItemId) {
+                    await refreshWishlist();
+                }
+            } else {
+                toast.error(
+                    isWishlisted
+                        ? "Failed to remove from wishlist"
+                        : "Failed to add to wishlist"
+                );
+                console.error("Wishlist operation failed:", e);
+            }
+        } finally {
+            setWishlistLoading(false);
+        }
+    };
 
 	return (
 		<Link
@@ -322,8 +285,8 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 					>
 						{title}
 					</h3>
-					{description && (
-						<p className="product1__description">{description}</p>
+					{miniDescription && (
+						<p className="product1__description">{miniDescription}</p>
 					)}
 					<div className="product1__price">
 						<div className="product1__price-row">

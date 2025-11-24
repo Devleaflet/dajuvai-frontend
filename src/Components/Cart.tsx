@@ -195,7 +195,7 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
 
 				try {
 					await handleDecreaseQuantity(itemId, item.quantity);
-					console.log("Successfully removed item via quantity 0");
+					//("Successfully removed item via quantity 0");
 				} catch (quantityError) {
 					console.error("Quantity fallback also failed:", quantityError);
 					addError(

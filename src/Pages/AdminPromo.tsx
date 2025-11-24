@@ -145,13 +145,13 @@ const AdminPromo: React.FC = () => {
   };
 
   const handleDeletePromoCode = async () => {
-    console.log("Delete function called");
+    //("Delete function called");
     if (!token || !showDeleteModal.promoCode) {
-      console.log("Missing token or promo code:", { token: !!token, promoCode: !!showDeleteModal.promoCode });
+      //("Missing token or promo code:", { token: !!token, promoCode: !!showDeleteModal.promoCode });
       return;
     }
 
-    console.log("Attempting to delete promo code:", showDeleteModal.promoCode);
+    //("Attempting to delete promo code:", showDeleteModal.promoCode);
     setSubmitting(true);
     try {
       const response = await PromoService.getInstance().deletePromoCode(
@@ -159,7 +159,7 @@ const AdminPromo: React.FC = () => {
         token
       );
 
-      console.log("Delete response:", response);
+      //("Delete response:", response);
 
       if (response.success) {
         toast.success("Promo code deleted successfully!");
@@ -335,7 +335,7 @@ const AdminPromo: React.FC = () => {
                                              <button
                          className="admin-promo__action-button admin-promo__action-button--delete"
                          onClick={() => {
-                           console.log("Delete button clicked for promo:", promo);
+                           //("Delete button clicked for promo:", promo);
                            setShowDeleteModal({ show: true, promoCode: promo });
                          }}
                          title="Delete promo code"
