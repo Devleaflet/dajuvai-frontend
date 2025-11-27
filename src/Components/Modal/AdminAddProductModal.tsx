@@ -22,7 +22,8 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
   const { token, user } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
+    miniDescription: '',
+    longDescription: '',
     basePrice: '',
     stock: 0,
     discount: '0',
@@ -180,8 +181,11 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
     if (!formData.name?.trim()) {
       newErrors.name = 'Product name is required';
     }
-    if (!formData.description?.trim()) {
-      newErrors.description = 'Product description is required';
+    if (!formData.miniDescription?.trim()) {
+      newErrors.miniDescription = 'Product mini description is required';
+    }
+    if (!formData.longDescription?.trim()) {
+      newErrors.longDescription = 'Product long description is required';
     }
     const price = parseFloat(formData.basePrice?.toString() || '0');
     if (isNaN(price) || price <= 0) {
@@ -227,7 +231,7 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
 
       const productData: ProductFormData = {
         name: formData.name,
-        description: formData.description,
+        miniDescription: formData.miniDescription,
         basePrice: formData.basePrice || 0,
         stock: formData.stock || 0,
         discount: formData.discount || null,
@@ -364,16 +368,29 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
             </div>
 
             <div className="product-modal__field">
-              <label className="product-modal__label">Description *</label>
+              <label className="product-modal__label">Mini Description *</label>
               <textarea
                 name="description"
-                value={formData.description}
+                value={formData.miniDescription}
                 onChange={handleInputChange}
                 required
                 rows={3}
                 className="product-modal__textarea"
               />
-              {errors.description && <span className="product-modal__error">{errors.description}</span>}
+              {errors.miniDescription && <span className="product-modal__error">{errors.miniDescription}</span>}
+            </div>
+          </div>
+            <div className="product-modal__field">
+              <label className="product-modal__label">Mini Description *</label>
+              <textarea
+                name="longdescription"
+                value={formData.longDescription}
+                onChange={handleInputChange}
+                required
+                rows={3}
+                className="product-modal__textarea"
+              />
+              {errors.longDescription && <span className="product-modal__error">{errors.longDescription}</span>}
             </div>
           </div>
 

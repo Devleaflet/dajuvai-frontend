@@ -39,7 +39,6 @@ type ProductVariant = {
 
 type NewProductFormData = {
   name: string;
-  description: string;
   miniDescription: string;
   longDescription: string;
   basePrice?: number;
@@ -619,7 +618,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     // Reset form
     setFormData({
       name: "",
-      description: "",
+      miniDescription: "",
+      longDescription: "",
       basePrice: undefined,
       stock: undefined,
       discount: undefined,

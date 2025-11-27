@@ -267,7 +267,8 @@ const ProductPage = () => {
 				product: {
 					id: apiProduct.id,
 					name: apiProduct.name,
-					description: apiProduct.description,
+					miniDescription: apiProduct.miniDescription,
+					longDescription: apiProduct.longDescription,
 					price: productPrice.toFixed(2),
 					originalPrice:
 						productOriginalPrice > productPrice
@@ -915,10 +916,10 @@ const ProductPage = () => {
 								</div>
 							</div>
 
-							{product.description && (
+							{product.miniDescription && (
 								<div className="product-info__description">
 									<h3>Description</h3>
-									<p>{product.description}</p>
+									<p>{product.miniDescription}</p>
 								</div>
 							)}
 
