@@ -144,7 +144,7 @@
 .new-product-modal-close svg {
   width: 1.25rem;
   height: 1.25rem;
-  stroke: var(--text-primary);
+  stroke: #000000;
   stroke-width: 2;
 }
 
