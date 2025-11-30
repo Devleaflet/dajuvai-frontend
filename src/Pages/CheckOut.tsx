@@ -85,12 +85,12 @@ const OrderSuccessModal: React.FC<{
 						<div className="checkout-success-modal__icon-wrapper">
 							<div className="checkout-success-modal__icon">✓</div>
 						</div>
-						<button
+						{/* <button
 							className="checkout-success-modal__close"
 							onClick={onClose}
 						>
 							×
-						</button>
+						</button> */}
 					</div>
 					<h2 className="checkout-success-modal__title">Order Confirmed!</h2>
 					<p className="checkout-success-modal__message">
@@ -1526,25 +1526,6 @@ const Checkout: React.FC = () => {
 								<span>Rs {finalTotal.toLocaleString()}</span>
 							</div>
 						</div>
-
-						{/* <div className="checkout-container__payment-methods">
-              {availablePaymentMethods.map((method) => (
-                <label
-                  key={method.id}
-                  className={`checkout-container__payment-methods-label ${selectedPaymentMethod === method.id ? 'selected' : ''}`}
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    value={method.id}
-                    className="checkout-container__payment-methods-input"
-                    checked={selectedPaymentMethod === method.id}
-                    onChange={handlePaymentMethodChange}
-                  />
-                  <span className="checkout-container__payment-methods-label-text">{method.name}</span>
-                </label>
-              ))}
-            </div> */}
 
 						<div className="checkout-container__payment-methods">
 							{availablePaymentMethods.map((method) => (
