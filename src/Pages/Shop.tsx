@@ -42,7 +42,7 @@ interface ProductFilters {
 interface ApiProduct {
 	id: number;
 	name: string;
-	miniDescription: string;
+	description: string;
 	longDescription?: string;
 	basePrice: number | null;
 	stock: number;
@@ -208,7 +208,7 @@ const fetchProductsWithFilters = async (
 			selectedProducts = selectedProducts.filter(
 				(item: ApiProduct) =>
 					item.name.toLowerCase().includes(query) ||
-					item.miniDescription.toLowerCase().includes(query) ||
+					item.description.toLowerCase().includes(query) ||
 					(item.subcategory?.category?.name || '')
 						.toLowerCase()
 						.includes(query) ||
@@ -384,7 +384,7 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 		return {
 			id: item.id,
 			title: item.name,
-			miniDescription: item.miniDescription,
+			description: item.description,
 			longDescription: item.longDescription,
 			originalPrice: originalPriceNum.toString(),
 			discount: item.discount ? `${item.discount}` : undefined,
@@ -511,7 +511,7 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 		return {
 			id: item.id,
 			title: item.name || 'Unknown Product',
-			miniDescription: item.miniDescription || 'No description available',
+			description: item.description || 'No description available',
 			longDescription: item.longDescription || 'No description available',
 			originalPrice: originalPriceNum.toString(),
 			discount: item.discount ? `${item.discount}` : undefined,
@@ -751,7 +751,7 @@ const Shop: React.FC = () => {
 							return {
 								id: item.id,
 								title: item.name || 'Unknown Product',
-								miniDescription: item.miniDescription || 'No description available',
+								description: item.description || 'No description available',
 								longDescription: item.longDescription || 'No description available',
 								originalPrice: '0',
 								discount: item.discount ? `${item.discount}` : undefined,
@@ -816,7 +816,7 @@ const Shop: React.FC = () => {
 									return {
 										id: item.id,
 										title: item.name || 'Unknown Product',
-										miniDescription: item.miniDescription || 'No description available',
+										description: item.description || 'No description available',
 										longDescription: item.longDescription || 'No description available',
 										originalPrice: '0',
 										discount: item.discount ? `${item.discount}` : undefined,
@@ -880,8 +880,8 @@ const Shop: React.FC = () => {
 											return {
 												id: item.id,
 												title: item.name || 'Unknown Product',
-												miniDescription:
-													item.miniDescription || 'No description available',
+												description:
+													item.description || 'No description available',
 												longDescription:
 													item.longDescription || 'No description available',
 												originalPrice: '0',

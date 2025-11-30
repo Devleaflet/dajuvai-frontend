@@ -37,7 +37,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, on
   const [formData, setFormData] = useState({
     id: product?.id || 0,
     name: product?.name || "",
-    miniDescription: product?.miniDescription || "",
+    description: product?.description || "",
     longDescription: product?.longDescription || "",
     basePrice: product?.basePrice || 0,
     stock: product?.stock || 0,
@@ -178,7 +178,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({ isOpen, onClose, on
     setFormData({
       id: product?.id || 0,
       name: product?.name || "",
-      miniDescription: product?.miniDescription || "",
+      description: product?.description || "",
       longDescription: product?.longDescription || "",
       basePrice: product?.basePrice || 0,
       stock: product?.stock || 0,

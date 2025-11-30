@@ -5,7 +5,7 @@ import { API_BASE_URL } from "../config";
 interface RawProduct {
 	id: number;
 	name: string;
-	miniDescription: string;
+	description: string;
 	longDescription: string;
 	basePrice: string;
 	discount: string;
@@ -72,7 +72,7 @@ export const testProductAPI = async (
 export interface Product {
 	id: number;
 	title: string; // Maps to `name` in API response
-	miniDescription: string;
+	description: string;
 	longDescription: string;
 	price: string | number; // Maps to `basePrice` in API response
 	basePrice?: string | number; // Maps to `basePrice` in API response
@@ -216,7 +216,7 @@ export const createProduct = async (
 	subcategoryId: number,
 	productData: {
 		name: string;
-		miniDescription?: string;
+		description?: string;
 		longDescription?: string;
 		basePrice?: number;
 		discount?: number;
@@ -278,7 +278,7 @@ export const createProduct = async (
 		};
 
 		// Add optional fields
-		if (productData.miniDescription) payload.miniDescription = productData.miniDescription;
+		if (productData.description) payload.description = productData.description;
 		if (productData.longDescription) payload.longDescription = productData.longDescription;
 		if (productData.discount !== undefined)
 			payload.discount = productData.discount;
@@ -377,7 +377,7 @@ export const updateProduct = async (
 	subcategoryId: number,
 	productData: {
 		name: string;
-		miniDescription?: string;
+		description?: string;
 		longDescription?: string;
 		basePrice?: number;
 		discount?: number;
@@ -406,7 +406,7 @@ export const updateProduct = async (
 		};
 
 		// Add optional fields
-		if (productData.miniDescription) payload.miniDescription = productData.miniDescription;
+		if (productData.description) payload.description = productData.description;
 		if (productData.longDescription) payload.longDescription = productData.longDescription;
 		if (productData.discount !== undefined)
 			payload.discount = productData.discount;
@@ -644,7 +644,7 @@ export const fetchProductsBySection = async (
 		return response.data.data.map((rawProduct) => ({
 			id: rawProduct.id,
 			title: rawProduct.name, // Map name to title
-			miniDescription: rawProduct.miniDescription,
+			description: rawProduct.description,
 			longDescription: rawProduct.longDescription,
 			price: rawProduct.basePrice, // Map basePrice to price
 			basePrice: rawProduct.basePrice,

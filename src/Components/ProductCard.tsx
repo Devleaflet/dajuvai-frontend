@@ -34,7 +34,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 	const navigate = useNavigate();
 	const {
 		title,
-		miniDescription,
+		description,
 		price,
 		originalPrice,
 		discount,
@@ -460,7 +460,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 						>
 							{title}
 						</h3>
-						<p className="product-card__description">{miniDescription}</p>
+						<p className="product-card__description">{description}</p>
 						<div className="product-card__price">
 							<span className="product-card__current-price">
 								Rs {currentPrice.toFixed(2)}

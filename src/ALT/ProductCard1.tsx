@@ -41,7 +41,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 
 	const {
 		title,
-		miniDescription,
+		description,
 		price,
 		originalPrice,
 		discount,
@@ -285,8 +285,8 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 					>
 						{title}
 					</h3>
-					{miniDescription && (
-						<p className="product1__description">{miniDescription}</p>
+					{description && (
+						<p className="product1__description">{description}</p>
 					)}
 					<div className="product1__price">
 						<div className="product1__price-row">

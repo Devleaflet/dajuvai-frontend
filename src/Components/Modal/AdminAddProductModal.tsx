@@ -22,7 +22,7 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
   const { token, user } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
-    miniDescription: '',
+    description: '',
     longDescription: '',
     basePrice: '',
     stock: 0,
@@ -181,8 +181,8 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
     if (!formData.name?.trim()) {
       newErrors.name = 'Product name is required';
     }
-    if (!formData.miniDescription?.trim()) {
-      newErrors.miniDescription = 'Product mini description is required';
+    if (!formData.description?.trim()) {
+      newErrors.description = 'Product mini description is required';
     }
     if (!formData.longDescription?.trim()) {
       newErrors.longDescription = 'Product long description is required';
@@ -231,7 +231,7 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
 
       const productData: ProductFormData = {
         name: formData.name,
-        miniDescription: formData.miniDescription,
+        description: formData.description,
         basePrice: formData.basePrice || 0,
         stock: formData.stock || 0,
         discount: formData.discount || null,
@@ -371,13 +371,13 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
               <label className="product-modal__label">Mini Description *</label>
               <textarea
                 name="description"
-                value={formData.miniDescription}
+                value={formData.description}
                 onChange={handleInputChange}
                 required
                 rows={3}
                 className="product-modal__textarea"
               />
-              {errors.miniDescription && <span className="product-modal__error">{errors.miniDescription}</span>}
+              {errors.description && <span className="product-modal__error">{errors.description}</span>}
             </div>
           </div>
             <div className="product-modal__field">

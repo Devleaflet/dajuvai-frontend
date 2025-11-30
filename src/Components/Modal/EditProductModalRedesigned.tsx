@@ -37,7 +37,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   // Form state
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
-    miniDescription: "",
+    description: "",
     longDescription: "",
     basePrice: null,
     stock: 0,
@@ -394,7 +394,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     // Set form data with all required fields
     setFormData({
       name: fullProduct.name || "",
-      miniDescription: fullProduct.miniDescription || "",
+      description: fullProduct.description || "",
       longDescription: fullProduct.longDescription || "",
       basePrice: fullProduct.basePrice ?? null,
       stock: Number(fullProduct.stock ?? 0),
@@ -641,7 +641,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       };
 
       // Add optional fields
-      if (formData.miniDescription) updatePayload.miniDescription = formData.miniDescription;
+      if (formData.description) updatePayload.description = formData.description;
       if (formData.longDescription) updatePayload.longDescription = formData.longDescription;
       if (formData.dealId) updatePayload.dealId = formData.dealId;
       if (formData.bannerId) updatePayload.bannerId = formData.bannerId;
@@ -729,7 +729,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   const handleClose = () => {
     setFormData({
       name: "",
-      miniDescription: "",
+      description: "",
       longDescription: "",
       basePrice: null,
       stock: 0,
@@ -808,8 +808,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                   <label className="form-label">Mini Description</label>
                   <textarea
                     className="form-textarea"
-                    value={formData.miniDescription}
-                    onChange={(e) => handleInputChange('miniDescription', e.target.value)}
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
                     placeholder="Describe your product's key features and benefits"
                     rows={4}
                   />

@@ -39,7 +39,7 @@ type ProductVariant = {
 
 type NewProductFormData = {
   name: string;
-  miniDescription: string;
+  description: string;
   longDescription: string;
   basePrice?: number;
   stock?: number;
@@ -167,7 +167,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   // Form state
   const [formData, setFormData] = useState<NewProductFormData>({
     name: "",
-    miniDescription: "",
+    description: "",
     longDescription: "",
     basePrice: undefined,
     stock: undefined,
@@ -547,7 +547,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       // Step 3: Prepare product data according to new API specification
       const productData: any = {
         name: formData.name,
-        miniDescription: formData.miniDescription || '',
+        description: formData.description || '',
         longDescription: formData.longDescription || '',
 
         hasVariants: formData.hasVariants,
@@ -618,7 +618,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     // Reset form
     setFormData({
       name: "",
-      miniDescription: "",
+      description: "",
       longDescription: "",
       basePrice: undefined,
       stock: undefined,
@@ -710,8 +710,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                   <label className="form-label">Short Description</label>
                   <textarea
                     className="form-textarea"
-                    value={formData.miniDescription}
-                    onChange={(e) => handleInputChange('miniDescription', e.target.value)}
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
                     placeholder="Write a short 1–2 line summary"
                     rows={2}
                   />
