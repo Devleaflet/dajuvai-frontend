@@ -3,7 +3,6 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { VendorAuthService } from "../services/vendorAuthService";
 
-// Define the props interface for the Header component
 interface HeaderProps {
   onSearch: (query: string) => void;
   showSearch?: boolean;
@@ -12,16 +11,24 @@ interface HeaderProps {
   sortOption?: string;
   onFilter?: (filterOption: string) => void;
   filterOption?: string;
+  vendors: {
+    businessName: string; id: string; name: string 
+}[];  
+  selectedVendor: string | null;  
+  onVendorChange: (vendorId: string) => void;  
 }
 
-const Header: React.FC<HeaderProps> = ({ 
-  onSearch, 
-  showSearch = true, 
-  title, 
-  onSort, 
+const Header: React.FC<HeaderProps> = ({
+  onSearch,
+  showSearch = true,
+  title,
+  onSort,
   sortOption = "newest",
   onFilter,
-  filterOption = "all"
+  filterOption = "all",
+  vendors,
+  selectedVendor,
+  onVendorChange
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -69,7 +76,7 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <>
       <header className="dashboard__header">
-        <h1 className="dashboard__title">{title || ""}</h1> 
+        <h1 className="dashboard__title">{title || ""}</h1>
         <div className="dashboard__user" ref={dropdownRef}>
           <div className="dashboard__avatar">
             <span className="dashboard__avatar-text">
@@ -129,6 +136,23 @@ const Header: React.FC<HeaderProps> = ({
                 <option value="out_of_stock">Out of Stock</option>
               </select>
             )}
+            
+            {/* Vendor Dropdown */}
+            <div>
+              <select
+                value={selectedVendor || ""}
+                onChange={(e) => onVendorChange(e.target.value)}
+                className="dashboard__vendor-select"
+                style={{ minWidth: 180, height: 38, borderRadius: 20, border: '1px solid #e5e7eb', padding: '0 12px', background: '#fff', fontSize: 14 }}
+              >
+                <option value="">All vendors</option>
+                {vendors.map((vendor) => (
+                  <option key={vendor.id} value={vendor.id}>
+                    {vendor.businessName}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
       </div>

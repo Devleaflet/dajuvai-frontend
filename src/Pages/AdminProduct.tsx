@@ -9,7 +9,6 @@ import ProductService from "../services/productService";
 import "../Styles/AdminProduct.css";
 import { toast } from "react-hot-toast";
 import { ApiProduct } from "../Components/Types/ApiProduct";
-import { ProductFormData } from "../types/product";
 import defaultProductImage from "../assets/logo.webp";
 import { API_BASE_URL } from "../config";
 
@@ -40,6 +39,10 @@ const AdminProduct: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const [vendor, setVendor] = useState([]);
+  const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
+
+
   const productService = ProductService;
 
   // Fetch products from backend with pagination, sorting, and filtering
@@ -54,9 +57,8 @@ const AdminProduct: React.FC = () => {
         limit: productsPerPage.toString(),
         sort: sortOption,
         ...(filterOption !== "all" && { filter: filterOption }),
+        ...(selectedVendor && selectedVendor !== '' && { vendorId: selectedVendor }),
       });
-
-
 
       const response = await fetch(`${API_BASE_URL}/api/product/admin/products?${queryParams}`, {
         headers: {
@@ -64,15 +66,11 @@ const AdminProduct: React.FC = () => {
         },
       });
 
-      //('Response status:', response.status);
-      //('Request URL:', `${API_BASE_URL}/api/product/admin/products?${queryParams}`);
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      //('Response data:', data);
 
       if (data.success) {
         setProducts(data.data.products);
@@ -88,21 +86,62 @@ const AdminProduct: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [token, isAuthenticated, currentPage, productsPerPage, sortOption, filterOption]);
+  }, [token, isAuthenticated, currentPage, productsPerPage, sortOption, filterOption, selectedVendor]);
+
+
+  const fetchVendors = useCallback(async () => {
+    if (!token || !isAuthenticated) return;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/vendors/partial/vendors`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(data)
+      if (data.success) {
+        setVendor(data.data);
+      } else {
+        throw new Error(data.message || "Failed to fetch vendors");
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to load vendors";
+      console.error('Fetch products error:', err);
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, isAuthenticated]);
+
+  const handleVendorChange = (vendorId: string) => {
+    console.log("----------------Vendor changed-------")
+    console.log(vendorId)
+    setSelectedVendor(vendorId);
+  };
 
   // Load products on mount and when dependencies change
   useEffect(() => {
+    console.log("Fetching products for vendor:", selectedVendor);
+
     fetchProducts();
-  }, [fetchProducts]);
+  }, [selectedVendor, fetchProducts]);
+
+  useEffect(() => {
+    fetchVendors();
+  }, [fetchVendors])
 
   // Save callback from modal: modal already performed the API update
   const handleSaveProduct = useCallback(
-    async (
-      _productId: number,
-      _product: ProductFormData,
-      _categoryId: number,
-      _subcategoryId: number
-    ) => {
+    async () => {
       try {
         setIsUpdating(true);
         await fetchProducts();
@@ -225,6 +264,9 @@ const AdminProduct: React.FC = () => {
           onFilter={handleFilter}
           filterOption={filterOption}
           title="Product Management"
+          vendors={vendor}
+          selectedVendor={selectedVendor}
+          onVendorChange={handleVendorChange}
         />
         <div className="admin-products__list-container">
           <div className="admin-products__header">
