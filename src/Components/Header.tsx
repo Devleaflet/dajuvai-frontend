@@ -4,18 +4,20 @@ import { useNavigate } from "react-router-dom";
 import { VendorAuthService } from "../services/vendorAuthService";
 
 interface HeaderProps {
-  onSearch: (query: string) => void;
+  onSearch?: (query: string) => void;
   showSearch?: boolean;
   title?: string;
   onSort?: (sortOption: string) => void;
   sortOption?: string;
   onFilter?: (filterOption: string) => void;
   filterOption?: string;
-  vendors: {
-    businessName: string; id: string; name: string 
-}[];  
-  selectedVendor: string | null;  
-  onVendorChange: (vendorId: string) => void;  
+  vendors?: {
+    businessName: string;
+    id: string;
+    name: string;
+  }[];
+  selectedVendor?: string | null;
+  onVendorChange?: (vendorId: string) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -26,9 +28,9 @@ const Header: React.FC<HeaderProps> = ({
   sortOption = "newest",
   onFilter,
   filterOption = "all",
-  vendors,
-  selectedVendor,
-  onVendorChange
+  vendors = [],
+  selectedVendor = null,
+  onVendorChange = () => { }
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -136,7 +138,7 @@ const Header: React.FC<HeaderProps> = ({
                 <option value="out_of_stock">Out of Stock</option>
               </select>
             )}
-            
+
             {/* Vendor Dropdown */}
             <div>
               <select
