@@ -45,7 +45,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 	const [bankName, setBankName] = useState<string>("");
 	const [accountNumber, setAccountNumber] = useState<string>("");
 	const [bankBranch, setBankBranch] = useState<string>("");
-	const [bankCode, setBankCode] = useState<string>("");
 	const [bankAddress, setBankAddress] = useState<string>("");
 	const [blankChequePhoto, setBlankChequePhoto] = useState<File | null>(null);
 	const [acceptTerms, setAcceptTerms] = useState<boolean>(false);
@@ -148,7 +147,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			setBankName("");
 			setAccountNumber("");
 			setBankBranch("");
-			setBankCode("");
 			setBankAddress("");
 			setBlankChequePhoto(null);
 			setAcceptTerms(false);
@@ -265,40 +263,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 				if (value !== password) return "Passwords do not match";
 				return "";
 
-			case "accountName":
-				if (!value.trim()) return "Account name is required";
-				if (value.length < 3)
-					return "Account name must be at least 3 characters";
-				return "";
-
-			case "bankName":
-				if (!value.trim()) return "Bank name is required";
-				if (value.length < 3) return "Bank name must be at least 3 characters";
-				return "";
-
-			case "accountNumber":
-				if (!value.trim()) return "Account number is required";
-				if (!/^[0-9 ]+$/.test(value))
-					return "Only numbers and spaces are allowed in account number";
-				if (value.replace(/\s/g, "").length < 8)
-					return "Account number must be at least 8 digits";
-				return "";
-
-			case "bankBranch":
-				if (!value.trim()) return "Bank branch is required";
-				if (value.length < 3)
-					return "Bank branch must be at least 3 characters";
-				return "";
-
-			case "bankCode":
-				if (value && !/^[A-Za-z0-9]{4,}$/.test(value))
-					return "Invalid bank code format";
-				return "";
-
-			case "bankAddress":
-				if (value && value.length < 5)
-					return "Bank address must be at least 5 characters";
-				return "";
 
 			case "taxDocuments":
 				if (Array.isArray(value) && value.length > 0) {
@@ -327,14 +291,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 				}
 				if (value.length > 5)
 					return "Cannot upload more than 5 citizenship documents";
-				return "";
-
-			case "blankChequePhoto":
-				if (!value) return "Blank cheque photo is required";
-				if (!/\.(jpg|jpeg|png)$/i.test(value.name))
-					return "Blank cheque photo must be JPG, JPEG, or PNG";
-				if (value.size > 5 * 1024 * 1024)
-					return "Blank cheque photo size exceeds 5MB limit";
 				return "";
 
 			case "acceptTerms":
@@ -418,9 +374,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			case "bankBranch":
 				setBankBranch(value);
 				break;
-			case "bankCode":
-				setBankCode(value);
-				break;
 			case "bankAddress":
 				setBankAddress(value);
 				break;
@@ -472,7 +425,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 						"bankName",
 						"accountNumber",
 						"bankBranch",
-						"bankCode",
 						"bankAddress",
 						"blankChequePhoto",
 						"acceptListingFee",
@@ -507,7 +459,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 				bankName,
 				accountNumber,
 				bankBranch,
-				bankCode,
 				bankAddress,
 				taxDocuments,
 				citizenshipDocuments,
@@ -593,7 +544,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			"bankName",
 			"accountNumber",
 			"bankBranch",
-			"bankCode",
 			"bankAddress",
 			"taxDocuments",
 			"citizenshipDocuments",
@@ -632,8 +582,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 					? accountNumber
 					: field === "bankBranch"
 					? bankBranch
-					: field === "bankCode"
-					? bankCode
 					: field === "bankAddress"
 					? bankAddress
 					: field === "taxDocuments"
@@ -906,11 +854,10 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		citizenshipDocuments: string[];
 		chequePhoto: string;
 		bankDetails: {
-			accountName: string;
-			bankName: string;
-			accountNumber: string;
-			bankBranch: string;
-			bankCode?: string;
+			accountName?: string;
+			bankName?: string;
+			accountNumber?: string;
+			bankBranch?: string;
 			bankAddress?: string;
 		};
 	}) => {
@@ -950,7 +897,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			setBankName("");
 			setAccountNumber("");
 			setBankBranch("");
-			setBankCode("");
 			setBankAddress("");
 			setBlankChequePhoto(null);
 			setAcceptTerms(false);
@@ -1020,7 +966,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			}
 
 			//("Verifying email with token:", verificationToken);
-			const response = await axios.post(
+			await axios.post(
 				`${API_BASE_URL}/api/auth/verify`,
 				{ email: pendingVerificationEmail, token: verificationToken },
 				{
@@ -1224,7 +1170,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			bankName: bankName.trim(),
 			accountNumber: accountNumber.trim(),
 			bankBranch: bankBranch.trim(),
-			bankCode: bankCode.trim() || undefined,
 			bankAddress: bankAddress.trim() || undefined,
 		};
 
@@ -1968,7 +1913,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 													value={accountName}
 													onChange={handleInputChange}
 													onBlur={handleBlur}
-													required
 													disabled={isLoading}
 													style={{
 														background: "transparent",
@@ -1989,7 +1933,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 													value={bankName}
 													onChange={handleInputChange}
 													onBlur={handleBlur}
-													required
 													disabled={isLoading}
 													style={{
 														background: "transparent",
@@ -2016,7 +1959,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 													value={accountNumber}
 													onChange={handleInputChange}
 													onBlur={handleBlur}
-													required
 													disabled={isLoading}
 													style={{
 														background: "transparent",
@@ -2039,7 +1981,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 													value={bankBranch}
 													onChange={handleInputChange}
 													onBlur={handleBlur}
-													required
 													disabled={isLoading}
 													style={{
 														background: "transparent",
@@ -2050,26 +1991,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 											</div>
 										</div>
 										<div className="auth-modal__form-group auth-modal__form-group--grid">
-											<div>
-												<label className="auth-modal__label">Bank Code</label>
-												<input
-													type="text"
-													className={`auth-modal__input ${
-														errors.bankCode && touched.bankCode ? "error" : ""
-													}`}
-													placeholder="Enter bank code"
-													name="bankCode"
-													value={bankCode}
-													onChange={handleInputChange}
-													onBlur={handleBlur}
-													disabled={isLoading}
-													style={{
-														background: "transparent",
-														border: "1px solid #ddd",
-														borderRadius: "4px",
-													}}
-												/>
-											</div>
 											<div>
 												<label className="auth-modal__label">
 													Bank Address
@@ -2095,7 +2016,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 												/>
 											</div>
 										</div>
-										<div className="document-section">
+										{/* <div className="document-section">
 											<h3 className="cheque-header">
 												Cheque Photo (JPG, JPEG, or PNG, required)
 												{blankChequePhoto && (
@@ -2122,7 +2043,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 													/>
 												</div>
 											</div>
-										</div>
+										</div> */}
 
 										<div className="auth-modal__checkbox">
 											<input
