@@ -374,9 +374,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			case "bankBranch":
 				setBankBranch(value);
 				break;
-			case "bankAddress":
-				setBankAddress(value);
-				break;
+
 		}
 
 		// Clear the error for this field when user starts typing
@@ -425,8 +423,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 							"bankName",
 							"accountNumber",
 							"bankBranch",
-							"bankAddress",
-							"blankChequePhoto",
 							"acceptListingFee",
 						];
 
@@ -459,10 +455,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 				bankName,
 				accountNumber,
 				bankBranch,
-				bankAddress,
 				taxDocuments,
 				citizenshipDocuments,
-				blankChequePhoto,
 				acceptTerms,
 				acceptListingFee,
 			};
@@ -544,10 +538,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			"bankName",
 			"accountNumber",
 			"bankBranch",
-			"bankAddress",
 			"taxDocuments",
 			"citizenshipDocuments",
-			"blankChequePhoto",
 			"acceptTerms",
 			"acceptListingFee",
 		];
@@ -839,7 +831,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		bankName?: string;
 		accountNumber?: string;
 		bankBranch?: string;
-		bankAddress?: string;
 	}) => {
 		try {
 			setIsLoading(true);
@@ -1262,8 +1253,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 									<input
 										type="text"
 										className={`auth-modal__input auth-modal__input--verification ${errors.verificationToken && touched.verificationToken
-												? "error"
-												: ""
+											? "error"
+											: ""
 											}`}
 										placeholder="______"
 										name="verificationToken"
@@ -1326,13 +1317,13 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 										<div className="auth-modal__form-group auth-modal__form-group--grid">
 											<div>
 												<label className="auth-modal__label">
-													Business Name
+													Business Name *
 												</label>
 												<input
 													type="text"
 													className={`auth-modal__input ${errors.businessName && touched.businessName
-															? "error"
-															: ""
+														? "error"
+														: ""
 														}`}
 													placeholder="Enter business name"
 													name="businessName"
@@ -1350,13 +1341,13 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 											</div>
 											<div>
 												<label className="auth-modal__label">
-													Phone Number
+													Phone Number *
 												</label>
 												<input
 													type="text"
 													className={`auth-modal__input ${errors.phoneNumber && touched.phoneNumber
-															? "error"
-															: ""
+														? "error"
+														: ""
 														}`}
 													placeholder="Enter phone number"
 													name="phoneNumber"
@@ -1396,7 +1387,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 												/>
 											</div>
 											<div>
-												<label className="auth-modal__label">Province</label>
+												<label className="auth-modal__label">Province *</label>
 												<select
 													className={`auth-modal__input ${errors.province && touched.province ? "error" : ""
 														}`}
@@ -1426,7 +1417,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 										</div>
 										<div className="auth-modal__form-group auth-modal__form-group--grid">
 											<div>
-												<label className="auth-modal__label">District</label>
+												<label className="auth-modal__label">District *</label>
 												<select
 													className={`auth-modal__input ${errors.district && touched.district ? "error" : ""
 														}`}
@@ -1506,14 +1497,14 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 										<div className="auth-modal__form-group auth-modal__form-group--grid">
 											<div>
 												<label className="auth-modal__label">
-													Business Registration Number
+													Business Registration Number *
 												</label>
 												<input
 													type="text"
 													className={`auth-modal__input ${errors.businessRegNumber &&
-															touched.businessRegNumber
-															? "error"
-															: ""
+														touched.businessRegNumber
+														? "error"
+														: ""
 														}`}
 													placeholder="Enter business registration number"
 													name="businessRegNumber"
@@ -1531,7 +1522,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 											</div>
 											<div>
 												<label className="auth-modal__label">
-													Vat/Pan Number{" "}
+													Vat/Pan Number * {" "}
 													<span style={{ fontSize: "9px" }}>
 														(Pan/Vat no must be 9)
 													</span>
@@ -1557,7 +1548,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 										</div>
 										<div className="auth-modal__form-group auth-modal__form-group--grid">
 											<div>
-												<label className="auth-modal__label">Email</label>
+												<label className="auth-modal__label">Email *</label>
 												<input
 													type="email"
 													className={`auth-modal__input ${errors.email && touched.email ? "error" : ""
@@ -1577,7 +1568,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 												/>
 											</div>
 											<div style={{ position: "relative" }}>
-												<label className="auth-modal__label">Password</label>
+												<label className="auth-modal__label">Password *</label>
 												<input
 													type={showPassword ? "text" : "password"}
 													className={`auth-modal__input ${errors.password && touched.password ? "error" : ""
@@ -1601,7 +1592,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 													style={{
 														position: "absolute",
 														right: "-5px",
-														top: "60px",
+														top: "50px",
 														marginRight: "15px",
 														transform: "translateY(-70%)",
 														background: "none",
@@ -1667,13 +1658,13 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 										>
 											<div style={{ position: "relative" }}>
 												<label className="auth-modal__label">
-													Confirm Password
+													Confirm Password *
 												</label>
 												<input
 													type={showConfirmPassword ? "text" : "password"}
 													className={`auth-modal__input ${errors.confirmPassword && touched.confirmPassword
-															? "error"
-															: ""
+														? "error"
+														: ""
 														}`}
 													placeholder="Confirm password"
 													name="confirmPassword"
@@ -1694,7 +1685,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 													style={{
 														position: "absolute",
 														right: "10px",
-														top: "60px",
+														top: "50px",
 														transform: "translateY(-70%)",
 														background: "none",
 														border: "none",
@@ -1859,29 +1850,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 									<>
 										<div className="auth-modal__form-group auth-modal__form-group--grid">
 											<div>
-												<label className="auth-modal__label">
-													Bank Account Name
-												</label>
-												<input
-													type="text"
-													className={`auth-modal__input ${errors.accountName && touched.accountName
-															? "error"
-															: ""
-														}`}
-													placeholder="Enter account name"
-													name="accountName"
-													value={accountName}
-													onChange={handleInputChange}
-													onBlur={handleBlur}
-													disabled={isLoading}
-													style={{
-														background: "transparent",
-														border: "1px solid #ddd",
-														borderRadius: "4px",
-													}}
-												/>
-											</div>
-											<div>
 												<label className="auth-modal__label">Bank Name</label>
 												<input
 													type="text"
@@ -1900,6 +1868,30 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 													}}
 												/>
 											</div>
+											<div>
+												<label className="auth-modal__label">
+													Account Holder Name
+												</label>
+												<input
+													type="text"
+													className={`auth-modal__input ${errors.accountName && touched.accountName
+														? "error"
+														: ""
+														}`}
+													placeholder="Enter account name"
+													name="accountName"
+													value={accountName}
+													onChange={handleInputChange}
+													onBlur={handleBlur}
+													disabled={isLoading}
+													style={{
+														background: "transparent",
+														border: "1px solid #ddd",
+														borderRadius: "4px",
+													}}
+												/>
+											</div>
+
 										</div>
 										<div className="auth-modal__form-group auth-modal__form-group--grid">
 											<div>
@@ -1909,8 +1901,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 												<input
 													type="text"
 													className={`auth-modal__input ${errors.accountNumber && touched.accountNumber
-															? "error"
-															: ""
+														? "error"
+														: ""
 														}`}
 													placeholder="Enter account number"
 													name="accountNumber"
@@ -1930,8 +1922,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 												<input
 													type="text"
 													className={`auth-modal__input ${errors.bankBranch && touched.bankBranch
-															? "error"
-															: ""
+														? "error"
+														: ""
 														}`}
 													placeholder="Enter bank branch"
 													name="bankBranch"
@@ -1947,31 +1939,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 												/>
 											</div>
 										</div>
-										<div className="auth-modal__form-group auth-modal__form-group--grid">
-											<div>
-												<label className="auth-modal__label">
-													Bank Address
-												</label>
-												<input
-													type="text"
-													className={`auth-modal__input ${errors.bankAddress && touched.bankAddress
-															? "error"
-															: ""
-														}`}
-													placeholder="Enter bank address"
-													name="bankAddress"
-													value={bankAddress}
-													onChange={handleInputChange}
-													onBlur={handleBlur}
-													disabled={isLoading}
-													style={{
-														background: "transparent",
-														border: "1px solid #ddd",
-														borderRadius: "4px",
-													}}
-												/>
-											</div>
-										</div>
+
 										{/* <div className="document-section">
 											<h3 className="cheque-header">
 												Cheque Photo (JPG, JPEG, or PNG, required)
