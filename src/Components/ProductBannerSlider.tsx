@@ -144,6 +144,7 @@ const ProductBannerSlider: React.FC<ProductBannerSliderProps> = ({ onLoad }) => 
 
     setTranslateX(0);
     setStartPos(null);
+    startAutoSlide();
   };
 
   const handleBannerClick = (slide: Slide) => {
