@@ -105,6 +105,17 @@ const Navbar: React.FC = () => {
 	const cartOrderRef = useRef<Map<number, number>>(new Map());
 	const nextOrderIndexRef = useRef(0);
 
+	const unlockBodyScroll = () => {
+		document.body.style.overflow = '';
+		document.body.style.position = '';
+		document.body.style.top = '';
+
+		document.body.classList.remove('navbar--menu-open');
+		document.body.classList.remove('no-scroll');
+		document.body.classList.remove('cart-open');
+	};
+
+
 	useEffect(() => {
 		cartItems.forEach((item) => {
 			if (!cartOrderRef.current.has(item.id)) {
@@ -502,6 +513,11 @@ const Navbar: React.FC = () => {
 		setSideMenuOpen(false);
 		setActiveDropdown(null);
 
+		unlockBodyScroll();
+		setSideMenuOpen(false);
+		setCartOpen(false);
+
+
 		const isOnShopPage = window.location.pathname === '/shop';
 
 		if (isOnShopPage) {
@@ -675,7 +691,7 @@ const Navbar: React.FC = () => {
 			if (activeDropdown) {
 				setDropdownLoading(true);
 				try {
-					
+
 					const subs = await fetchSubCategory(activeDropdown);
 					//('📦 Received subcategories:', subs);
 					setDropdownSubcategories(subs || []);

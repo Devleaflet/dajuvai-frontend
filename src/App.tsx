@@ -100,13 +100,11 @@ function App() {
       <Toaster />
       <ForceScrollToTop />
       <Routes>
-        {/* Root "/" → Coming Soon until unlocked */}
         <Route
           path="/"
           element={<Home />}
         />
 
-        {/* All other public routes require password */}
         <Route
           path="/contact"
           element={
