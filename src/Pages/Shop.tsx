@@ -16,9 +16,8 @@ import { useUI } from '../context/UIContext';
 import CategoryService from '../services/categoryService';
 import ProductCardSkeleton from '../skeleton/ProductCardSkeleton';
 import '../Styles/Shop.css';
-import HeroSlider from '../Components/HeroSlider';
 import ProductBannerSlider from '../Components/ProductBannerSlider';
-// Interfaces (unchanged)
+
 interface Category {
 	id: number;
 	name: string;
@@ -641,26 +640,7 @@ const Shop: React.FC = () => {
 			);
 		};
 	}, [searchParams, setSearchParams]);
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (isSidebarOpen) {
-				const target = event.target as Element;
-				const isFilterButton = target.closest('.filter-button');
-				const isOverlay = target.classList.contains('filter-sidebar-overlay');
-				if (!isFilterButton && !isOverlay) {
-					setIsSidebarOpen(false);
-				}
-			}
-		};
-		if (isSidebarOpen) {
-			document.addEventListener('mousedown', handleClickOutside);
-			document.addEventListener('touchstart', handleClickOutside);
-		}
-		return () => {
-			document.removeEventListener('mousedown', handleClickOutside);
-			document.removeEventListener('touchstart', handleClickOutside);
-		};
-	}, [isSidebarOpen]);
+	
 	const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
 		queryKey: ['categories'],
 		queryFn: async () => {
@@ -714,8 +694,6 @@ const Shop: React.FC = () => {
 	} = useQuery({
 		queryKey: queryKey,
 		queryFn: async () => {
-			//('🔄 Starting products query with filters:', currentFilters);
-			//('🔄 Query key filters:', queryKey);
 			try {
 				const response = await fetchProductsWithFilters(currentFilters, token);
 				const productsArray: ApiProduct[] = response.data || response || [];
