@@ -67,6 +67,11 @@ const ProductBannerSlider: React.FC<ProductBannerSliderProps> = ({ onLoad }) => 
   const clickThreshold = 5;
   const swipeThreshold = sliderRef.current ? sliderRef.current.offsetWidth / 4 : 100;
 
+  const AUTO_SLIDE_DELAY = 3000;
+
+  const autoSlideRef = useRef<NodeJS.Timeout | null>(null);
+
+
   const { data: slides = [], isLoading, error } = useQuery<Slide[], Error>({
     queryKey: ['productBanners'],
     queryFn: fetchProductBanners,
@@ -76,13 +81,38 @@ const ProductBannerSlider: React.FC<ProductBannerSliderProps> = ({ onLoad }) => 
 
   useEffect(() => {
     onLoad?.();
+
+    if (slides.length > 1) {
+      startAutoSlide();
+    }
+
+    return () => {
+      clearAutoSlide();
+    };
   }, [slides]);
 
-  const goToSlide = (index: number) => setActiveSlide(index);
-  const goToPrevSlide = () => setActiveSlide(prev => (prev === 0 ? slides.length - 1 : prev - 1));
-  const goToNextSlide = () => setActiveSlide(prev => (prev === slides.length - 1 ? 0 : prev + 1));
+
+  const goToSlide = (index: number) => {
+    clearAutoSlide();
+    setActiveSlide(index);
+    setTranslateX(0);
+    startAutoSlide();
+  };
+  const goToPrevSlide = () => {
+    clearAutoSlide();
+    setActiveSlide(prev => (prev === 0 ? slides.length - 1 : prev - 1));
+    setTranslateX(0);
+    startAutoSlide();
+  };
+  const goToNextSlide = () => {
+    clearAutoSlide();
+    setActiveSlide(prev => (prev === slides.length - 1 ? 0 : prev + 1));
+    setTranslateX(0);
+    startAutoSlide();
+  };
 
   const handleDragStart = (x: number, y: number) => {
+    clearAutoSlide();
     setIsDragging(true);
     setStartPos({ x, y });
     setTranslateX(0);
@@ -143,6 +173,27 @@ const ProductBannerSlider: React.FC<ProductBannerSliderProps> = ({ onLoad }) => 
 
     navigate('/shop');
   };
+
+  const clearAutoSlide = () => {
+    if (autoSlideRef.current) {
+      clearInterval(autoSlideRef.current);
+      autoSlideRef.current = null;
+    }
+  };
+
+  const startAutoSlide = () => {
+    clearAutoSlide();
+
+    if (slides.length <= 1) return;
+
+    autoSlideRef.current = setInterval(() => {
+      setActiveSlide((prev) =>
+        prev === slides.length - 1 ? 0 : prev + 1
+      );
+      setTranslateX(0);
+    }, AUTO_SLIDE_DELAY);
+  };
+
 
   if (isLoading) return <SliderSkeleton />;
   if (error) return <div>Error loading banners: {error.message}</div>;

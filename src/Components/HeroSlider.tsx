@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import '../Styles/HeroSlider.css';
@@ -81,6 +80,17 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
+
+  useEffect(() => {
+    if (slides.length > 1) {
+      startAutoSlide();
+    }
+
+    return () => {
+      clearAutoSlide();
+    };
+  }, [slides]);
+
 
   useEffect(() => {
     onLoad?.();
@@ -207,7 +217,7 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
       slide.selectedSubcategory?.id &&
       slide.selectedSubcategory?.category?.id
     ) {
-      
+
       try {
         navigate(
           `/shop?categoryId=${slide.selectedSubcategory.category.id}&subcategoryId=${slide.selectedSubcategory.id}`
@@ -251,9 +261,32 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
     }
   };
 
+  const AUTO_SLIDE_DELAY = 3000; 
+
+  const autoSlideRef = useRef<NodeJS.Timeout | null>(null)
+
+  const clearAutoSlide = () => {
+    if (autoSlideRef.current) {
+      clearInterval(autoSlideRef.current);
+      autoSlideRef.current = null;
+    }
+  };
+
+  const startAutoSlide = () => {
+    clearAutoSlide();
+
+    autoSlideRef.current = setInterval(() => {
+      setActiveSlide((prev) =>
+        prev === slides.length - 1 ? 0 : prev + 1
+      );
+      setTranslateX(0);
+    }, AUTO_SLIDE_DELAY);
+  };
+
+
   if (isLoading) return <SliderSkeleton />;
-  if(error) //(error)
-  if (error) return <div>Error loading banners: {error.message}</div>; 
+  if (error) //(error)
+    if (error) return <div>Error loading banners: {error.message}</div>;
   if (slides.length === 0) return <div>No hero banners available</div>;
 
   return (
