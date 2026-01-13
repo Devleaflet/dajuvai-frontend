@@ -601,18 +601,9 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       return;
     }
 
-    //('✅ Form validation passed');
     setIsLoading(true);
 
     try {
-      //('🔄 EDIT PRODUCT MODAL SUBMIT START');
-      //('🏷️ Selected Category ID:', selectedCategoryId);
-      //('📝 Form Data:', formData);
-      //('🔄 Variants:', variants);
-      //('🖼️ New Images:', images.length);
-      //('🖼️ Existing Images:', existingImages.length);
-
-      // Step 1: Upload new images if any
       let newImageUrls: string[] = [];
       if (images.length > 0) {
         //('📤 Uploading new images...');
@@ -640,7 +631,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
       // Add optional fields
       if (formData.description) updatePayload.description = formData.description;
-      if (formData.dealId) updatePayload.dealId = formData.dealId;
+      updatePayload.dealId = formData.dealId ?? null;
       if (formData.bannerId) updatePayload.bannerId = formData.bannerId;
       if (allImages.length > 0) updatePayload.productImages = allImages;
 
@@ -694,13 +685,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         updatePayload.status = formData.status || 'AVAILABLE';
       }
 
-      //('=== FINAL UPDATE PAYLOAD FOR API ===');
-      //('Update Payload:', JSON.stringify(updatePayload, null, 2));
-      //('Product ID:', product.id);
-      //('Category ID:', selectedCategoryId);
-      //('Subcategory ID:', formData.subcategoryId);
-
-      // Step 4: Update product with JSON payload
       const response = await updateProduct(
         product.id,
         selectedCategoryId,
@@ -846,7 +830,11 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                   <select
                     className="form-select"
                     value={formData.dealId || 0}
-                    onChange={(e) => handleInputChange('dealId', Number(e.target.value) || undefined)}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      handleInputChange('dealId', value === 0 ? null : value);
+                    }}
+
                   >
                     <option value={0}>No deal</option>
                     {deals.map((deal) => (

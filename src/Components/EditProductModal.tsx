@@ -24,6 +24,7 @@ type ProductVariant = {
   id?: number;
   sku: string;
   price: number;
+  basePrice: number;
   stock: number;
   status: InventoryStatus;
   attributes: any[];

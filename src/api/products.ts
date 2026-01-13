@@ -381,103 +381,78 @@ export const updateProduct = async (
 		stock?: number;
 		hasVariants: boolean;
 		variants?: any[];
-		dealId?: number;
-		bannerId?: number;
+		dealId?: number | null;      
+		bannerId?: number | null;    
 		productImages?: string[];
 	}
 ) => {
-	//"🔄 UPDATING PRODUCT");
-	//"Product ID:", productId);
-	//"Category ID:", categoryId);
-	//"Subcategory ID:", subcategoryId);
-	//"Product Data:", productData);
-
 	try {
-		// Prepare the JSON payload
 		const payload: any = {
 			name: productData.name,
-			subcategoryId: subcategoryId,
+			subcategoryId,
 			hasVariants: productData.hasVariants,
 		};
 
-		// Add optional fields
-		if (productData.description) payload.description = productData.description;
+		// Optional fields
+		if (productData.description !== undefined)
+			payload.description = productData.description;
+
 		if (productData.discount !== undefined)
 			payload.discount = productData.discount;
-		if (productData.discountType)
+
+		if (productData.discountType !== undefined)
 			payload.discountType = productData.discountType;
-		if (productData.dealId) payload.dealId = productData.dealId;
-		if (productData.bannerId) payload.bannerId = productData.bannerId;
-		if (productData.productImages)
+
+		if (productData.dealId === null) {
+			payload.dealId = null;              // REMOVE deal
+		} else if (productData.dealId !== undefined) {
+			payload.dealId = productData.dealId; // SET deal
+		}
+
+		if (productData.bannerId === null) {
+			payload.bannerId = null;
+		} else if (productData.bannerId !== undefined) {
+			payload.bannerId = productData.bannerId;
+		}
+
+		if (productData.productImages !== undefined)
 			payload.productImages = productData.productImages;
 
-		// Add fields based on whether product has variants
+		// Variants / non-variants
 		if (productData.hasVariants) {
-			if (productData.variants && productData.variants.length > 0) {
+			if (productData.variants?.length) {
 				payload.variants = productData.variants;
 			}
 		} else {
-			// For non-variant products, these fields are required
 			if (productData.basePrice !== undefined)
 				payload.basePrice = productData.basePrice;
-			if (productData.stock !== undefined) payload.stock = productData.stock;
-			if (productData.status) payload.status = productData.status;
+
+			if (productData.stock !== undefined)
+				payload.stock = productData.stock;
+
+			if (productData.status !== undefined)
+				payload.status = productData.status;
 		}
 
-		//"📤 Final Update Payload:", JSON.stringify(payload, null, 2));
+		console.log(" FINAL UPDATE PAYLOAD:", payload);
 
 		const apiUrl = `/api/categories/${categoryId}/subcategories/${subcategoryId}/products/${productId}`;
-		//"🎯 Update API URL:", apiUrl);
 
 		const response = await axiosInstance.put(apiUrl, payload, {
-			headers: {
-				"Content-Type": "application/json",
-			},
+			headers: { "Content-Type": "application/json" },
 		});
 
-		//"✅ Product Updated Successfully:", response.data);
 		return {
 			success: true,
 			data: response.data,
 			message: "Product updated successfully",
 		};
-	} catch (error) {
+	} catch (error: any) {
 		console.error("❌ UPDATE PRODUCT ERROR:", error);
-
-		if (error.response) {
-			console.error("Response Status:", error.response.status);
-			console.error("Response Data:", error.response.data);
-			console.error("Response Headers:", error.response.headers);
-
-			// Handle specific error cases
-			if (error.response.status === 400) {
-				throw new Error(
-					`Bad Request: ${error.response.data?.message || "Invalid product data"
-					}`
-				);
-			} else if (error.response.status === 401) {
-				throw new Error("Authentication failed. Please login again.");
-			} else if (error.response.status === 403) {
-				throw new Error("Not authorized to update this product.");
-			} else if (error.response.status === 404) {
-				throw new Error("Product not found.");
-			} else if (error.response.status === 500) {
-				throw new Error("Server error. Please try again later.");
-			}
-
-			throw new Error(
-				`Update failed: ${error.response.data?.message || "Unknown error"}`
-			);
-		} else if (error.request) {
-			console.error("Request Error:", error.request);
-			throw new Error("Network error: No response from server");
-		} else {
-			console.error("Setup Error:", error.message);
-		}
-
 		throw error;
 	}
 };
+
 
 export const deleteProduct = async (productId: number, token?: string) => {
 	try {

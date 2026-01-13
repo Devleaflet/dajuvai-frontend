@@ -107,7 +107,6 @@ export interface ProductFormData {
   // New fields for variant support
   hasVariants: boolean;
   variants?: ProductVariant[];
-  bannerId?: number | null;
   brandId?: number | null;
 }
 

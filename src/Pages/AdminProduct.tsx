@@ -232,6 +232,39 @@ const AdminProduct: React.FC = () => {
       </div>
     );
   }
+  const toNumber = (v: any): number => {
+    if (v === undefined || v === null) return 0;
+    const n = typeof v === 'string' ? parseFloat(v) : Number(v);
+    return isFinite(n) ? n : 0;
+  };
+  const applyDiscount = (
+    base: number,
+    discount?: number,
+    discountType?: string
+  ): number => {
+    const d = Number(discount);
+    if (!isFinite(d) || d <= 0) return base;
+
+    const type = discountType || 'PERCENTAGE';
+
+    if (type === 'PERCENTAGE') return base * (1 - d / 100);
+    if (type === 'FLAT') return base - d;
+
+    return base;
+  };
+
+
+
+  const applyDeal = (price: number, deal?: any): number => {
+    if (!deal || deal.status !== 'ENABLED') return price;
+
+    const percent = Number(deal.discountPercentage);
+    if (!isFinite(percent) || percent <= 0) return price;
+
+    return price * (1 - percent / 100);
+  };
+
+
 
   return (
     <div className="admin-products">
@@ -300,56 +333,41 @@ const AdminProduct: React.FC = () => {
                 ) : products.length > 0 ? (
                   products.map((product) => {
                     // Helper function to get valid price from product or variant
-                    const getDisplayPrice = (): number => {
-                      //("helo")
-                      // First try product base price
-                      if (product.basePrice &&
-                        (typeof product.basePrice === 'number' && product.basePrice > 0)) {
-                        return product.basePrice;
+                    const getDisplayPrice = (product: ApiProduct): number => {
+                      let basePrice = Number(product.basePrice ?? 0);
+
+                      if ((!basePrice || basePrice === 0) && product.variants?.length) {
+                        basePrice = Number(product.variants[0].basePrice ?? 0);
                       }
 
-                      // If base price is string, try to parse it
-                      if (typeof product.basePrice === 'string') {
-                        const parsedPrice = parseFloat(product.basePrice);
-                        if (!isNaN(parsedPrice) && parsedPrice > 0) {
-                          return parsedPrice;
-                        }
-                      }
+                      if (!basePrice) return 0;
 
-                      // Try product.price field
-                      if (product.price &&
-                        (typeof product.price === 'number' && product.price > 0)) {
-                        return product.price;
-                      }
+                      const afterProductDiscount = applyDiscount(
+                        basePrice,
+                        product.discount,
+                        product.discountType
+                      );
 
-                      // Fallback to first variant price
-                      if (product.variants && product.variants.length > 0) {
-                        //("hieeeee",product.name)
+                      const afterDealDiscount = applyDeal(
+                        afterProductDiscount,
+                        product.deal
+                      );
 
-                        for (const variant of product.variants) {
-                          // Try variant.price first
-                          if (variant.price && typeof variant.price === 'number' && variant.price > 0) {
-                            return variant.price;
-                          }
+                      console.log("Final price", afterDealDiscount)
 
-                          // Try variant.basePrice (number)
-                          if (variant.basePrice && typeof variant.basePrice === 'number' && variant.basePrice > 0) {
-                            //("hiee",product.name)
-                            return variant.basePrice;
-                          }
-
-                          // Try variant.basePrice (string)
-                          if (typeof variant.basePrice === 'string') {
-                            const parsedVariantPrice = parseFloat(variant.basePrice);
-                            if (!isNaN(parsedVariantPrice) && parsedVariantPrice > 0) {
-                              return parsedVariantPrice;
-                            }
-                          }
-                        }
-                      }
-
-                      return 0; // Default fallback
+                      return Math.max(afterDealDiscount, 0);
                     };
+
+                    console.log({
+                      id: product.id,
+                      base: product.basePrice,
+                      discount: product.discount,
+                      discountType: product.discountType,
+                      dealPercent: product.deal,
+                      finalFrontend: getDisplayPrice(product)
+                    });
+
+
 
                     // Helper function to get valid stock from product or variant
                     const getDisplayStock = (): number => {
@@ -387,7 +405,9 @@ const AdminProduct: React.FC = () => {
                       return 0; // Default fallback
                     };
 
-                    const displayPrice = getDisplayPrice();
+                    const displayPrice = getDisplayPrice(product);
+
+                    console.log("Display Price: ", displayPrice)
                     const displayStock = getDisplayStock();
 
                     // Get first variant for image fallback

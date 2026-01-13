@@ -111,11 +111,7 @@ interface ApiProduct {
 	} | null;
 }
 // Utility functions (unchanged)
-const toNumber = (v: any): number => {
-	if (v === undefined || v === null) return 0;
-	const n = typeof v === 'string' ? parseFloat(v) : Number(v);
-	return isFinite(n) ? n : 0;
-};
+
 const calculatePrice = (base: any, disc?: any, discType?: string): number => {
 	const baseNum = toNumber(base);
 	if (!disc || !discType) return baseNum;
@@ -125,6 +121,40 @@ const calculatePrice = (base: any, disc?: any, discType?: string): number => {
 	if (discType === 'FIXED' || discType === 'FLAT') return baseNum - d;
 	return baseNum;
 };
+
+
+const toNumber = (v: any): number => {
+	if (v === undefined || v === null) return 0;
+	const n = typeof v === 'string' ? parseFloat(v) : Number(v);
+	return isFinite(n) ? n : 0;
+};
+
+const applyDiscount = (
+	base: number,
+	discount?: number | null,
+	discountType?: string | null
+): number => {
+	const d = toNumber(discount);
+	if (!d || d <= 0) return base;
+
+	const type = discountType || 'PERCENTAGE';
+
+	if (type === 'PERCENTAGE') return base * (1 - d / 100);
+	if (type === 'FLAT') return base - d;
+
+	return base;
+};
+
+const applyDeal = (price: number, deal?: any): number => {
+	if (!deal || deal.status !== 'ENABLED') return price;
+
+	const percent = toNumber(deal.discountPercentage);
+	if (!percent || percent <= 0) return price;
+
+	return price * (1 - percent / 100);
+};
+
+
 const apiRequest = async (
 	endpoint: string,
 	token: string | null | undefined = undefined
@@ -255,7 +285,7 @@ const fetchProductsWithFilters = async (
 	const queryParams = buildQueryParams(apiFilters);
 	const endpoint = `/api/categories/all/products${queryParams ? `?${queryParams}` : ''
 		}`;
-	
+
 	try {
 		const response = await apiRequest(endpoint, token);
 		//('✅ Products API response:', response.meta.total);
@@ -272,268 +302,104 @@ const fetchProductsWithFilters = async (
 	}
 };
 // Updated processProductWithReview function
-const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
-	try {
-		const { averageRating, reviews } = await fetchReviewOf(item.id);
-		const isDev = Boolean((import.meta as any)?.env?.DEV);
-		
-		const processImageUrl = (imgUrl: string): string => {
-			if (!imgUrl) return '';
-			const trimmed = imgUrl.trim();
-			if (!trimmed) return '';
-			if (trimmed.startsWith('//')) return `https:${trimmed}`;
-			if (
-				trimmed.startsWith('http://') ||
-				trimmed.startsWith('https://') ||
-				trimmed.startsWith('/')
-			) {
-				return trimmed;
-			}
-			const base = API_BASE_URL.replace(/\/?api\/?$/, '');
-			const needsSlash = !trimmed.startsWith('/');
-			const url = `${base}${needsSlash ? '/' : ''}${trimmed}`;
-			return url.replace(/([^:]\/)\/+/g, '$1/');
-		};
-		const processedProductImages = (item.productImages || [])
-			.filter(
-				(img): img is string =>
-					!!img && typeof img === 'string' && img.trim() !== ''
-			)
-			.map(processImageUrl)
-			.filter(Boolean);
-		const processedVariants = (item.variants || []).map((variant) => {
-			const rawImages = Array.isArray((variant as any).images)
-				? (variant as any).images
-				: Array.isArray((variant as any).variantImages)
-					? (variant as any).variantImages
-					: [];
-			const normalizedImages = rawImages
-				.filter(
-					(img): img is string =>
-						!!img && typeof img === 'string' && img.trim() !== ''
-				)
-				.map(processImageUrl)
-				.filter(Boolean);
-			const primaryImage =
-				typeof (variant as any).image === 'string' &&
-					(variant as any).image.trim()
-					? processImageUrl((variant as any).image)
-					: normalizedImages[0] || undefined;
-			return {
-				...variant,
-				image: primaryImage,
-				images: normalizedImages,
-			};
-		});
-		const variantImagePool = processedVariants
-			.flatMap((v) => [v.image, ...(v.images || [])])
-			.filter((x): x is string => typeof x === 'string' && x.length > 0);
-		const getDisplayImage = () => {
-			if (processedProductImages.length > 0) {
-				return processedProductImages[0];
-			}
-			const allVariantImages = processedVariants
-				.flatMap((v) => [v.image, ...(v.images || [])])
-				.filter((x): x is string => typeof x === 'string' && x.length > 0);
-			if (allVariantImages.length > 0) return allVariantImages[0];
-			if (isDev)
-				//('No valid images found for product, using default image');
-			return phone;
-		};
-		const displayImage = getDisplayImage();
-		// Updated price calculation logic
-		let displayPriceNum = 0;
-		let originalPriceNum = 0;
-		const productPriceNum = toNumber(item.basePrice);
+const processProductWithReview = async (
+	item: ApiProduct
+): Promise<Product> => {
+	const { averageRating, reviews } = await fetchReviewOf(item.id);
+
+	const processImageUrl = (imgUrl: string): string => {
+		if (!imgUrl) return '';
+		const trimmed = imgUrl.trim();
+		if (!trimmed) return '';
+		if (trimmed.startsWith('//')) return `https:${trimmed}`;
 		if (
-			(item.basePrice === null ||
-				item.basePrice === undefined ||
-				productPriceNum === 0) &&
-			(item.variants?.length || 0) > 0
+			trimmed.startsWith('http://') ||
+			trimmed.startsWith('https://') ||
+			trimmed.startsWith('/')
 		) {
-			const first = item.variants![0] as any;
-			// Use the first variant's basePrice for original price
-			const variantBase = toNumber(
-				first?.basePrice ?? first?.price ?? first?.originalPrice ?? 0
-			);
-			originalPriceNum = variantBase;
-			// Apply product-level discount to variant's basePrice
-			if (item.discount && item.discountType) {
-				displayPriceNum = calculatePrice(
-					variantBase,
-					item.discount,
-					String(item.discountType)
-				);
-			} else {
-				displayPriceNum = variantBase;
-			}
-		} else {
-			originalPriceNum = productPriceNum;
-			if (item.discount && item.discountType) {
-				displayPriceNum = calculatePrice(
-					productPriceNum,
-					item.discount,
-					String(item.discountType)
-				);
-			} else {
-				displayPriceNum = productPriceNum;
-			}
+			return trimmed;
 		}
+		const base = API_BASE_URL.replace(/\/?api\/?$/, '');
+		return `${base}/${trimmed}`.replace(/([^:]\/)\/+/g, '$1/');
+	};
+
+	const processedProductImages = (item.productImages || [])
+		.filter((img): img is string => !!img && typeof img === 'string')
+		.map(processImageUrl);
+
+	const processedVariants = (item.variants || []).map((variant: any) => {
+		const rawImages = Array.isArray(variant.images)
+			? variant.images
+			: Array.isArray(variant.variantImages)
+				? variant.variantImages
+				: [];
+
+		const images = rawImages
+			.filter((img: any): img is string => !!img && typeof img === 'string')
+			.map(processImageUrl);
+
 		return {
-			id: item.id,
-			title: item.name,
-			description: item.description,
-			originalPrice: originalPriceNum.toString(),
-			discount: item.discount ? `${item.discount}` : undefined,
-			discountPercentage: item.discount ? `${item.discount}%` : '0%',
-			price: displayPriceNum.toString(),
-			rating: Number(averageRating) || 0,
-			ratingCount: reviews?.length?.toString() || '0',
-			isBestSeller: false,
-			freeDelivery: true,
-			image: displayImage,
-			productImages:
-				processedProductImages.length > 0
-					? processedProductImages
-					: variantImagePool.length > 0
-						? variantImagePool
-						: [phone],
-			variants: processedVariants,
-			category: item.subcategory?.category?.name || 'Misc',
-			subcategory: item.subcategory,
-			brand: item.brand?.name || 'Unknown',
-			brand_id: item.brand?.id || null,
-			status: item.status === 'UNAVAILABLE' ? 'OUT_OF_STOCK' : 'AVAILABLE',
-			stock: item.stock || 0,
+			...variant,
+			image: images[0],
+			images,
 		};
-	} catch (error) {
-		const isDev = Boolean((import.meta as any)?.env?.DEV);
-		if (isDev) console.error('Error processing product:', error);
-		const processImageUrl = (imgUrl: string): string => {
-			if (!imgUrl) return '';
-			const trimmed = imgUrl.trim();
-			if (!trimmed) return '';
-			if (trimmed.startsWith('//')) return `https:${trimmed}`;
-			if (
-				trimmed.startsWith('http://') ||
-				trimmed.startsWith('https://') ||
-				trimmed.startsWith('/')
-			) {
-				return trimmed;
-			}
-			const base = API_BASE_URL.replace(/\/?api\/?$/, '');
-			const needsSlash = !trimmed.startsWith('/');
-			const url = `${base}${needsSlash ? '/' : ''}${trimmed}`;
-			return url.replace(/([^:]\/)\/+/g, '$1/');
-		};
-		const processedProductImages = (item.productImages || [])
-			.filter(
-				(img): img is string =>
-					!!img && typeof img === 'string' && img.trim() !== ''
-			)
-			.map(processImageUrl)
-			.filter(Boolean);
-		const processedVariants = (item.variants || []).map((variant) => {
-			const rawImages = Array.isArray((variant as any).images)
-				? (variant as any).images
-				: Array.isArray((variant as any).variantImages)
-					? (variant as any).variantImages
-					: [];
-			const normalizedImages = rawImages
-				.filter(
-					(img): img is string =>
-						!!img && typeof img === 'string' && img.trim() !== ''
-				)
-				.map(processImageUrl)
-				.filter(Boolean);
-			const primaryImage =
-				typeof (variant as any).image === 'string' &&
-					(variant as any).image.trim()
-					? processImageUrl((variant as any).image)
-					: normalizedImages[0] || undefined;
-			return {
-				...variant,
-				image: primaryImage,
-				images: normalizedImages,
-			};
-		});
-		const variantImagePool = processedVariants
-			.flatMap((v) => [v.image, ...(v.images || [])])
-			.filter((x): x is string => typeof x === 'string' && x.length > 0);
-		const getFallbackImage = () => {
-			if (processedProductImages.length > 0) {
-				return processedProductImages[0];
-			}
-			const allVariantImages = processedVariants
-				.flatMap((v) => [v.image, ...(v.images || [])])
-				.filter((x): x is string => typeof x === 'string' && x.length > 0);
-			if (allVariantImages.length > 0) return allVariantImages[0];
-			return phone;
-		};
-		const displayImage = getFallbackImage();
-		// Fallback price calculation
-		let displayPriceNum = 0;
-		let originalPriceNum = 0;
-		const productPriceNum = toNumber(item.basePrice);
-		if (
-			(item.basePrice === null ||
-				item.basePrice === undefined ||
-				productPriceNum === 0) &&
-			(item.variants?.length || 0) > 0
-		) {
-			const first = item.variants![0] as any;
-			const variantBase = toNumber(
-				first?.basePrice ?? first?.price ?? first?.originalPrice ?? 0
-			);
-			originalPriceNum = variantBase;
-			displayPriceNum =
-				item.discount && item.discountType
-					? calculatePrice(
-						variantBase,
-						item.discount,
-						String(item.discountType)
-					)
-					: variantBase;
-		} else {
-			originalPriceNum = productPriceNum;
-			displayPriceNum =
-				item.discount && item.discountType
-					? calculatePrice(
-						productPriceNum,
-						item.discount,
-						String(item.discountType)
-					)
-					: productPriceNum;
-		}
-		return {
-			id: item.id,
-			title: item.name || 'Unknown Product',
-			description: item.description || 'No description available',
-			originalPrice: originalPriceNum.toString(),
-			discount: item.discount ? `${item.discount}` : undefined,
-			discountPercentage: item.discount ? `${item.discount}%` : '0%',
-			price: displayPriceNum.toString(),
-			rating: 0,
-			ratingCount: '0',
-			isBestSeller: false,
-			freeDelivery: true,
-			image: displayImage,
-			productImages:
-				processedProductImages.length > 0
-					? processedProductImages
-					: variantImagePool.length > 0
-						? variantImagePool
-						: [phone],
-			variants: processedVariants,
-			category: item.subcategory?.category?.name || 'Misc',
-			subcategory: item.subcategory,
-			brand: item.brand?.name || 'Unknown',
-			brand_id: item.brand?.id || null,
-			status: item.status === 'UNAVAILABLE' ? 'OUT_OF_STOCK' : 'AVAILABLE',
-			stock: item.stock || 0,
-		};
+	});
+
+	const displayImage =
+		processedProductImages[0] ||
+		processedVariants.flatMap(v => v.images)[0] ||
+		phone;
+
+
+	let basePrice = toNumber(item.basePrice);
+
+	if ((!basePrice || basePrice === 0) && processedVariants.length > 0) {
+		basePrice = toNumber(processedVariants[0].basePrice);
 	}
+
+	const afterProductDiscount = applyDiscount(
+		basePrice,
+		item.discount,
+		item.discountType
+	);
+
+	const finalPrice = applyDeal(
+		afterProductDiscount,
+		item.deal
+	);
+
+	// --------------------------------------------------------------
+
+	return {
+		id: item.id,
+		title: item.name,
+		description: item.description,
+		originalPrice: basePrice.toString(),
+		price: Math.max(finalPrice, 0).toString(),
+		discount: item.discount ? `${item.discount}` : undefined,
+		discountPercentage: item.discount ? `${item.discount}%` : '0%',
+		rating: Number(averageRating) || 0,
+		ratingCount: reviews?.length?.toString() || '0',
+		isBestSeller: false,
+		freeDelivery: true,
+		image: displayImage,
+		productImages:
+			processedProductImages.length > 0
+				? processedProductImages
+				: processedVariants.flatMap(v => v.images).length > 0
+					? processedVariants.flatMap(v => v.images)
+					: [phone],
+		variants: processedVariants,
+		category: item.subcategory?.category?.name || 'Misc',
+		subcategory: item.subcategory,
+		brand: item.brand?.name || 'Unknown',
+		brand_id: item.brand?.id || null,
+		status: item.status === 'UNAVAILABLE' ? 'OUT_OF_STOCK' : 'AVAILABLE',
+		stock: item.stock || 0,
+	};
 };
+
+
 // Rest of the Shop component (unchanged)
 const Shop: React.FC = () => {
 	const { token } = useAuth();
@@ -640,7 +506,7 @@ const Shop: React.FC = () => {
 			);
 		};
 	}, [searchParams, setSearchParams]);
-	
+
 	const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
 		queryKey: ['categories'],
 		queryFn: async () => {
@@ -710,12 +576,12 @@ const Shop: React.FC = () => {
 						: 1,
 					total_items: response?.meta?.total ?? productsArray.length,
 				};
-			
+
 				const processedProducts = await Promise.all(
 					productsArray.map(async (item, index) => {
 						try {
 							const processed = await processProductWithReview(item);
-							
+
 							return processed;
 						} catch (error) {
 							console.error(
@@ -742,11 +608,11 @@ const Shop: React.FC = () => {
 						}
 					})
 				);
-				
+
 				return { products: processedProducts, meta: paginationInfo };
 			} catch (error) {
 				console.error('❌ Fatal error in products query:', error);
-				
+
 				if (
 					currentFilters.categoryId ||
 					currentFilters.subcategoryId ||
@@ -754,7 +620,7 @@ const Shop: React.FC = () => {
 					currentFilters.dealId ||
 					currentFilters.bannerId
 				) {
-					
+
 					try {
 						const fallbackFilters: ProductFilters = {
 							page: currentFilters.page,
@@ -775,7 +641,7 @@ const Shop: React.FC = () => {
 						} else if (Array.isArray(fallbackResponse)) {
 							fallbackProductsArray = fallbackResponse;
 						}
-						
+
 						const fallbackPagination = fallbackResponse.pagination || {
 							current_page: currentFilters.page || 1,
 							total_pages: 1,
@@ -815,7 +681,7 @@ const Shop: React.FC = () => {
 					} catch (fallbackError) {
 						console.error('❌ Fallback also failed:', fallbackError);
 						if (currentFilters.categoryId && currentFilters.subcategoryId) {
-							
+
 							try {
 								const secondFallbackFilters: ProductFilters = {
 									categoryId: currentFilters.categoryId,
@@ -837,7 +703,7 @@ const Shop: React.FC = () => {
 								} else if (Array.isArray(secondFallbackResponse)) {
 									secondFallbackProductsArray = secondFallbackResponse;
 								}
-								
+
 								const secondFallbackPagination =
 									secondFallbackResponse.pagination || {
 										current_page: currentFilters.page || 1,
@@ -897,7 +763,7 @@ const Shop: React.FC = () => {
 		gcTime: 10 * 60 * 1000,
 		refetchOnWindowFocus: false,
 		retry: (failureCount, error) => {
-			
+
 			return failureCount < 2;
 		},
 		retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),

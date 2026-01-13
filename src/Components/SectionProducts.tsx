@@ -28,6 +28,7 @@ interface ApiProduct {
   discountType: "PERCENTAGE" | "FLAT" | null;
   size: string[];
   status: string;
+  finalPrice: number;
   productImages: string[];
   inventory: { sku: string; quantity: number; status: string }[];
   vendorId: number;
