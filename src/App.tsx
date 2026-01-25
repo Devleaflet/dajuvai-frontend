@@ -53,6 +53,7 @@ import EsewaPaymentFailure from "./Pages/EsewaPaymentFailure";
 import AdminProfile from "./Pages/AdminProfile";
 import { Notifications } from "./Pages/Notifications";
 import ForceScrollToTop from "./Components/ScrollToTop";
+import usePageTracking from "./Hook/usePageTracking";
 
 // Admin route guards
 // Allows both admin and staff to access admin area
@@ -95,6 +96,7 @@ const ProtectedVendorRoute = ({ children }: { children: ReactElement }) => {
 
 
 function App() {
+  usePageTracking()
   return (
     <>
       <Toaster />
