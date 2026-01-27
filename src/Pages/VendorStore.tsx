@@ -7,7 +7,7 @@ import defaultProductImage from "../assets/logo.webp";
 import Navbar from "../Components/Navbar";
 import Footer from "../Components/Footer";
 import { Product as DisplayProduct } from "../Components/Types/Product";
-import { FiMail, FiPhone, FiMapPin, FiSearch } from "react-icons/fi";
+import { FiMail, FiMapPin, FiSearch } from "react-icons/fi";
 
 interface ApiProduct {
 	id: number;
@@ -137,6 +137,7 @@ const VendorStore: React.FC = () => {
 								id: v.id,
 								sku: v.sku,
 								basePrice: v.basePrice,
+								finalPrice: v.finalPrice,
 								discount: v.discount,
 								discountType: v.discountType,
 								images: v.variantImages || [],
@@ -149,10 +150,10 @@ const VendorStore: React.FC = () => {
 								title: product.name,
 								name: product.name,
 								description: product.description || "",
-								// If product-level price is unavailable, set 0 to trigger variant-based price in ProductCard1
-								price: priceNum > 0 ? priceNum.toFixed(2) : 0,
-								originalPrice: originalPrice,
+								basePrice: product.basePrice,
+								finalPrice: product.finalPrice,
 								discount: discount > 0 ? String(product.discount) : undefined,
+								hasVariants: product.hasVariants,
 								// Map rating info from backend if present
 								rating:
 									Number(
@@ -162,12 +163,10 @@ const VendorStore: React.FC = () => {
 									(Array.isArray((product as any).reviews)
 										? (product as any).reviews.length
 										: undefined) ??
-										(product as any).count ??
-										(product as any).ratingCount ??
-										0
+									(product as any).count ??
+									(product as any).ratingCount ??
+									0
 								),
-								isBestSeller: false,
-								freeDelivery: false,
 								category: {
 									id: product.subcategory.id,
 									name: product.subcategory.name,
@@ -183,7 +182,6 @@ const VendorStore: React.FC = () => {
 								vendorId: product.vendorId,
 								productImages: product.productImages || [],
 								variants,
-								basePrice: product.basePrice || undefined,
 								discountType: (product.discountType || "").toUpperCase() as any,
 								colors: [],
 								memoryOptions: product.size || [],
@@ -385,6 +383,8 @@ const VendorStore: React.FC = () => {
 		return <VendorStoreSkeleton />;
 	}
 
+
+
 	return (
 		<>
 			<Navbar />
@@ -503,12 +503,20 @@ const VendorStore: React.FC = () => {
 
 						{sortedProducts.length > 0 ? (
 							<div className="vendor-store__product-grid">
-								{sortedProducts.map((product) => (
-									<ProductCard1
-										key={product.id}
-										product={product}
-									/>
-								))}
+								{sortedProducts.map((product) => {
+
+									console.log(
+										"➡️ Sending product (JSON):",
+										JSON.parse(JSON.stringify(product))
+									);
+
+									return (
+										<ProductCard1
+											key={product.id}
+											product={product}
+										/>
+									);
+								})}
 							</div>
 						) : (
 							<div className="no-products">

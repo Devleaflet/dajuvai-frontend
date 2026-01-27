@@ -35,14 +35,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 	const {
 		title,
 		description,
-		price,
-		originalPrice,
-		discount,
 		rating,
 		ratingCount,
 		isBestSeller,
-		freeDelivery,
-		variants,
 		id,
 	} = product;
 
@@ -215,56 +210,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 		setCurrentImageIndex(index);
 	};
 
-	const calculatePrice = (
-		basePrice: string | number,
-		discountVal?: string | number,
-		discountType?: string | null
-	): number => {
-		const base =
-			typeof basePrice === "string"
-				? parseFloat(basePrice)
-				: Number(basePrice) || 0;
-		if (!discountVal || !discountType) return base;
-		const dVal =
-			typeof discountVal === "string"
-				? parseFloat(discountVal)
-				: Number(discountVal) || 0;
-		if (discountType === "PERCENTAGE") return base * (1 - dVal / 100);
-		if (discountType === "FIXED" || discountType === "FLAT") return base - dVal;
-		return base;
-	};
-
-	let currentPrice = 0;
-	let originalPriceDisplay: number | undefined = undefined;
-	let discountLabel: string | null = null;
-
-	// Get base price from variant (if exists) or product
-	let baseNum = 0;
-	if (variants && variants.length > 0) {
-		// Use first variant's basePrice
-		const variantBase = variants[0]?.basePrice;
-		baseNum = typeof variantBase === "string" ? parseFloat(variantBase) : Number(variantBase) || 0;
-	} else {
-		// Use product's basePrice or price
-		const productBase = product.basePrice ?? price;
-		baseNum = typeof productBase === "string" ? parseFloat(productBase) : Number(productBase) || 0;
-	}
-
-	// Apply product-level discount to the base price
-	const productDiscount = Number(product.discount) || 0;
-	const productDiscountType = product.discountType;
-
-	if (productDiscount > 0 && productDiscountType) {
-		// Calculate discounted price
-		currentPrice = calculatePrice(baseNum, productDiscount, productDiscountType);
-		originalPriceDisplay = baseNum;
-		discountLabel = productDiscountType === "PERCENTAGE"
-			? `${productDiscount}%`
-			: `Rs ${productDiscount}`;
-	} else {
-		// No discount
-		currentPrice = baseNum;
-	}
 	const handleWishlist = async () => {
 		if (!isAuthenticated) {
 			setAuthModalOpen(true);
@@ -327,14 +272,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 			return;
 		}
 
-		//("Navigating to product:", product.id);
-
-		//("scroll called")
-		//("scroll called")
-		//("scroll called")
-		//("scroll called")
-		//("scroll called")
-
 		// Navigate first
 		navigate(`/product-page/${product.id}`, { replace: true });
 
@@ -348,6 +285,54 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 			window.scrollTo(0, 0);
 		}, 100);
 	};
+
+
+	// Collect variant prices 
+	const variantPrices = Array.isArray(product.variants)
+		? product.variants
+			.filter(v => v?.basePrice && v.status !== "OUT_OF_STOCK")
+			.map(v => ({
+				base: Number(v.basePrice),
+				final: v.finalPrice
+					? Number(v.finalPrice)
+					: Number(v.basePrice),
+			}))
+		: [];
+
+	// Find cheapest variant
+	const lowestVariant = variantPrices.length
+		? variantPrices.reduce((min, v) =>
+			v.final < min.final ? v : min
+		)
+		: null;
+
+	const basePriceNum =
+		product.basePrice !== null
+			? Number(product.basePrice)
+			: lowestVariant?.base ?? null;
+
+	const finalPriceNum =
+		product.finalPrice !== null
+			? Number(product.finalPrice)
+			: lowestVariant?.final ?? basePriceNum;
+
+	const hasDiscount =
+		basePriceNum &&
+		finalPriceNum &&
+		basePriceNum > finalPriceNum;
+
+	const isVariantProduct = product.hasVariants;
+
+	const discountLabel = hasDiscount
+		? isVariantProduct
+			? product.discountType === "PERCENTAGE"
+				? `UP TO ${product.discount}%`
+				: `UP TO Rs ${product.discount}`
+			: product.discountType === "PERCENTAGE"
+				? `${product.discount}%`
+				: `Rs ${product.discount}`
+		: null;
+
 
 	return (
 		<div
@@ -463,19 +448,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 						<p className="product-card__description">{description}</p>
 						<div className="product-card__price">
 							<span className="product-card__current-price">
-								Rs {currentPrice.toFixed(2)}
+								Rs {finalPriceNum?.toFixed(2)}
 							</span>
+
 							<div className="product-card__price-details">
-								{typeof originalPriceDisplay === "number" &&
-									originalPriceDisplay > currentPrice && (
+								{hasDiscount && (
+									<>
 										<span className="product-card__original-price">
-											{originalPriceDisplay.toFixed(2)}
+											Rs {basePriceNum?.toFixed(2)}
 										</span>
-									)}
-								{Number(discount) == 0 || discount === "0" ? null : (
-									<span className="product-card__discount">
-										{discountLabel}
-									</span>
+
+										{discountLabel && (
+											<span className="product-card__discount">
+												{discountLabel}
+											</span>
+										)}
+									</>
 								)}
 							</div>
 						</div>

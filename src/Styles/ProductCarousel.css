@@ -436,7 +436,7 @@
 }
 
 .product-card__original-price {
-	font-size: 14px;
+	font-size: 12px;
 	color: #858484;
 	text-decoration: line-through;
 	white-space: nowrap;
@@ -449,7 +449,7 @@
 }
 
 .product-card__discount {
-	font-size: 14px;
+	font-size: 12px;
 	font-weight: 600;
 	color: rgba(76, 175, 80, 1);
 }

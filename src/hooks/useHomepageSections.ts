@@ -18,6 +18,7 @@ export interface HomepageProduct {
   userId: number | null;
   brand_id: number | null;
   dealId: number | null;
+  finalPrice:  number;
   created_at: string;
   updated_at: string;
   // Optional fields for variant-aware rendering

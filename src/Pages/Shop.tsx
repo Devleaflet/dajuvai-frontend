@@ -9,7 +9,6 @@ import CategorySlider from '../Components/CategorySlider';
 import Footer from '../Components/Footer';
 import Navbar from '../Components/Navbar';
 import PageLoader from '../Components/PageLoader';
-import type { Product } from '../Components/Types/Product';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../context/UIContext';
@@ -17,6 +16,8 @@ import CategoryService from '../services/categoryService';
 import ProductCardSkeleton from '../skeleton/ProductCardSkeleton';
 import '../Styles/Shop.css';
 import ProductBannerSlider from '../Components/ProductBannerSlider';
+import { Deal } from '../services/dealService';
+import { Product } from '../Components/Types/EditProductTypes';
 
 interface Category {
 	id: number;
@@ -43,7 +44,9 @@ interface ApiProduct {
 	name: string;
 	description: string;
 	basePrice: number | null;
+	finalPrice: number;
 	stock: number;
+	hasVariants: boolean;
 	discount: number | null;
 	discountType: 'PERCENTAGE' | 'FLAT' | null;
 	size: string[];
@@ -63,8 +66,8 @@ interface ApiProduct {
 	variants?: Array<{
 		id?: number;
 		name?: string;
-		price?: number | string;
-		originalPrice?: number | string;
+		basePrice?: number | string;
+		finalPrice: number;
 		stock?: number;
 		sku?: string;
 		image?: string;
@@ -72,7 +75,6 @@ interface ApiProduct {
 		attributes?: Record<string, any>;
 		discount?: number | string;
 		discountType?: 'PERCENTAGE' | 'FLAT';
-		basePrice?: number | string;
 		calculatedPrice?: number;
 		[key: string]: any;
 	}>;
@@ -105,12 +107,8 @@ interface ApiProduct {
 		id: number;
 		name: string;
 	} | null;
-	deal: {
-		id: number;
-		title: string;
-	} | null;
+	deal: Deal
 }
-// Utility functions (unchanged)
 
 const calculatePrice = (base: any, disc?: any, discType?: string): number => {
 	const baseNum = toNumber(base);
@@ -197,9 +195,6 @@ const buildQueryParams = (filters: ProductFilters): string => {
 	if (filters.subcategoryId !== undefined && filters.subcategoryId !== null) {
 		params.append('subcategoryId', filters.subcategoryId.toString());
 	}
-	if (filters.brandId !== undefined && filters.brandId !== null) {
-		params.append('brandId', filters.brandId);
-	}
 	if (filters.dealId !== undefined && filters.dealId !== null) {
 		params.append('dealId', filters.dealId);
 	}
@@ -239,9 +234,7 @@ const fetchProductsWithFilters = async (
 					item.description.toLowerCase().includes(query) ||
 					(item.subcategory?.category?.name || '')
 						.toLowerCase()
-						.includes(query) ||
-					(item.brand?.name || '').toLowerCase().includes(query)
-			);
+						.includes(query));
 		}
 		// Client-side sort if provided
 		if (filters.sort && filters.sort !== 'all') {
@@ -273,7 +266,6 @@ const fetchProductsWithFilters = async (
 	const apiFilters = {
 		categoryId: filters.categoryId,
 		subcategoryId: filters.subcategoryId,
-		brandId: filters.brandId,
 		dealId: filters.dealId,
 		bannerId: filters.bannerId,
 		sort: filters.sort,
@@ -288,7 +280,6 @@ const fetchProductsWithFilters = async (
 
 	try {
 		const response = await apiRequest(endpoint, token);
-		//('✅ Products API response:', response.meta.total);
 		return response;
 	} catch (error) {
 		console.error('❌ Error fetching products:', error);
@@ -347,8 +338,7 @@ const processProductWithReview = async (
 
 	const displayImage =
 		processedProductImages[0] ||
-		processedVariants.flatMap(v => v.images)[0] ||
-		phone;
+		processedVariants.flatMap(v => v.images)[0];
 
 
 	let basePrice = toNumber(item.basePrice);
@@ -368,20 +358,22 @@ const processProductWithReview = async (
 		item.deal
 	);
 
-	// --------------------------------------------------------------
 
+	// finalized items to be sent to other product card components 
 	return {
 		id: item.id,
 		title: item.name,
 		description: item.description,
-		originalPrice: basePrice.toString(),
+		basePrice: basePrice,
+		finalPrice: item.finalPrice,
+		stock: item.stock,
+		deal: item.deal,
+		dealId: item.dealId,
 		price: Math.max(finalPrice, 0).toString(),
 		discount: item.discount ? `${item.discount}` : undefined,
 		discountPercentage: item.discount ? `${item.discount}%` : '0%',
 		rating: Number(averageRating) || 0,
 		ratingCount: reviews?.length?.toString() || '0',
-		isBestSeller: false,
-		freeDelivery: true,
 		image: displayImage,
 		productImages:
 			processedProductImages.length > 0
@@ -389,10 +381,10 @@ const processProductWithReview = async (
 				: processedVariants.flatMap(v => v.images).length > 0
 					? processedVariants.flatMap(v => v.images)
 					: [phone],
+		hasVariants: item.hasVariants,
 		variants: processedVariants,
 		category: item.subcategory?.category?.name || 'Misc',
 		subcategory: item.subcategory,
-		brand: item.brand?.name || 'Unknown',
 		brand_id: item.brand?.id || null,
 		status: item.status === 'UNAVAILABLE' ? 'OUT_OF_STOCK' : 'AVAILABLE',
 		stock: item.stock || 0,
@@ -733,7 +725,6 @@ const Shop: React.FC = () => {
 												ratingCount: '0',
 												isBestSeller: false,
 												freeDelivery: true,
-												// image: phone,
 												category: 'Misc',
 												brand: 'Unknown',
 											};
@@ -746,7 +737,6 @@ const Shop: React.FC = () => {
 								};
 							} catch (secondFallbackError) {
 								console.error(
-									'❌ Second fallback also failed:',
 									secondFallbackError
 								);
 							}
@@ -769,6 +759,8 @@ const Shop: React.FC = () => {
 		retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
 	});
 	const productsData = data?.products || [];
+	console.log("----------Product data-------------")
+	console.log(productsData)
 	const pagination = data?.meta || {
 		current_page: 1,
 		total_pages: 1,
@@ -1335,10 +1327,12 @@ const Shop: React.FC = () => {
 											))
 									) : pagination.total_items > 0 ? (
 										productsData.map((product) => (
-											<ProductCard1
-												key={product.id}
-												product={product}
-											/>
+											<>
+												<ProductCard1
+													key={product.id}
+													product={product}
+												/>
+											</>
 										))
 									) : (
 										<div className="shop-no-products">

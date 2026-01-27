@@ -21,7 +21,7 @@ import { Product } from "../Components/Types/Product";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useUI } from "../context/UIContext";
-import { getProductPrimaryImage } from "../utils/getProductPrimaryImage";
+import { getProductPrimaryImage } from '../utils/getProductPrimaryImage';
 import "../ALT/ProductCartd1.css";
 
 interface ProductCardProps {
@@ -30,8 +30,8 @@ interface ProductCardProps {
 
 const Product1: React.FC<ProductCardProps> = ({ product }) => {
 	const { handleCartOnAdd } = useCart();
-    const { token, isAuthenticated } = useAuth();
-    const { wishlist, refreshWishlist } = useWishlist();
+	const { token, isAuthenticated } = useAuth();
+	const { wishlist, refreshWishlist } = useWishlist();
 	const { cartOpen } = useUI();
 	const [wishlistLoading, setWishlistLoading] = useState(false);
 	const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -39,123 +39,50 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 	const [isWishlisted, setIsWishlisted] = useState(false);
 	const [wishlistItemId, setWishlistItemId] = useState<number | null>(null);
 
+
 	const {
 		title,
 		description,
-		price,
-		originalPrice,
-		discount,
 		rating,
 		ratingCount,
 		isBestSeller,
 		id,
 	} = product;
 
+
+
 	const displayImage = imageError
 		? defaultProductImage
 		: getProductPrimaryImage(product, defaultProductImage);
 
-    useEffect(() => {
-        if (isAuthenticated && token) {
-            const variantCount = product.variants?.length || 0;
-            const variantId = variantCount > 0 ? product.variants![0].id : undefined;
-            const wishlistItem = wishlist.find((item: any) => {
-                const productMatch = item.productId === id || item.product?.id === id;
-                const variantMatch = variantId
-                    ? item.variantId === variantId || item.variant?.id === variantId
-                    : !item.variantId && !item.variant?.id;
-                return productMatch && variantMatch;
-            });
-            if (wishlistItem) {
-                setIsWishlisted(true);
-                setWishlistItemId(wishlistItem.id);
-            } else {
-                setIsWishlisted(false);
-                setWishlistItemId(null);
-            }
-        } else {
-            setIsWishlisted(false);
-            setWishlistItemId(null);
-        }
-    }, [wishlist, id, product.variants, isAuthenticated, token]);
+	useEffect(() => {
+		if (isAuthenticated && token) {
+			const variantCount = product.variants?.length || 0;
+			const variantId = variantCount > 0 ? product.variants![0].id : undefined;
+			const wishlistItem = wishlist.find((item: any) => {
+				const productMatch = item.productId === id || item.product?.id === id;
+				const variantMatch = variantId
+					? item.variantId === variantId || item.variant?.id === variantId
+					: !item.variantId && !item.variant?.id;
+				return productMatch && variantMatch;
+			});
+			if (wishlistItem) {
+				setIsWishlisted(true);
+				setWishlistItemId(wishlistItem.id);
+			} else {
+				setIsWishlisted(false);
+				setWishlistItemId(null);
+			}
+		} else {
+			setIsWishlisted(false);
+			setWishlistItemId(null);
+		}
+	}, [wishlist, id, product.variants, isAuthenticated, token]);
 
 	const handleImageError = () => {
 		setImageError(true);
 	};
 
-	// Compute display price: if product price is null/0, fall back to first variant's price
-	const toNumber = (v: any): number => {
-		if (v === undefined || v === null) return 0;
-		const n = typeof v === "string" ? parseFloat(v) : Number(v);
-		return isFinite(n) ? n : 0;
-	};
-
-	const calculatePrice = (base: any, disc?: any, discType?: string): number => {
-		const baseNum = toNumber(base);
-		if (!disc || !discType) return baseNum;
-		const d = typeof disc === "string" ? parseFloat(disc) : Number(disc);
-		if (!isFinite(d)) return baseNum;
-		if (discType === "PERCENTAGE") return baseNum * (1 - d / 100);
-		if (discType === "FIXED" || discType === "FLAT") return baseNum - d;
-		return baseNum;
-	};
-
-	let displayPriceNum = 0;
-	const productPriceNum = toNumber(price as any);
-	if (
-		(price === null || price === undefined || productPriceNum === 0) &&
-		(product.variants?.length || 0) > 0
-	) {
-		const first = product.variants![0] as any;
-		const variantBase =
-			first?.price ??
-			first?.originalPrice ??
-			first?.basePrice ??
-			product.basePrice ??
-			product.price;
-		if (
-			typeof first?.calculatedPrice === "number" &&
-			isFinite(first.calculatedPrice)
-		) {
-			displayPriceNum = first.calculatedPrice as number;
-		} else if (first?.discount && first?.discountType) {
-			displayPriceNum = calculatePrice(
-				variantBase,
-				first.discount,
-				String(first.discountType)
-			);
-		} else if (product.discount && product.discountType) {
-			displayPriceNum = calculatePrice(
-				variantBase,
-				product.discount as any,
-				String(product.discountType)
-			);
-		} else {
-			displayPriceNum = toNumber(variantBase);
-		}
-	} else {
-		displayPriceNum = productPriceNum;
-	}
-
-	// Remove .00 if it's a whole number
-	const formatPrice = (price: number): string => {
-		return price % 1 === 0
-			? `Rs. ${price.toFixed(0)}`
-			: `Rs. ${price.toFixed(2)}`;
-	};
-
-	const displayPrice = formatPrice(displayPriceNum);
-
-	// Check if original price should be shown (only if there's a discount or original price differs)
-	const originalPriceNum = toNumber(originalPrice);
-	const showOriginalPrice =
-		originalPrice &&
-		discount &&
-		Number(discount) > 0 &&
-		originalPriceNum !== displayPriceNum;
-	const formattedOriginalPrice = showOriginalPrice
-		? formatPrice(originalPriceNum)
-		: "";
 
 	const handleWishlist = async () => {
 		if (!isAuthenticated) {
@@ -168,19 +95,19 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 			const variantCount = product.variants?.length || 0;
 			const variantId = variantCount > 0 ? product.variants![0].id : undefined;
 
-            if (isWishlisted && wishlistItemId) {
-                await removeFromWishlist(wishlistItemId, token);
-                toast.success("Removed from wishlist");
-                setIsWishlisted(false);
-                setWishlistItemId(null);
-                await refreshWishlist();
-            } else {
-                const addedItem = await addToWishlist(id, variantId, token);
-                toast.success("Added to wishlist");
-                setIsWishlisted(true);
-                setWishlistItemId(addedItem?.id || null);
-                await refreshWishlist();
-            }
+			if (isWishlisted && wishlistItemId) {
+				await removeFromWishlist(wishlistItemId, token);
+				toast.success("Removed from wishlist");
+				setIsWishlisted(false);
+				setWishlistItemId(null);
+				await refreshWishlist();
+			} else {
+				const addedItem = await addToWishlist(id, variantId, token);
+				toast.success("Added to wishlist");
+				setIsWishlisted(true);
+				setWishlistItemId(addedItem?.id || null);
+				await refreshWishlist();
+			}
 		} catch (e: any) {
 			const status = e?.response?.status;
 			const msg: string =
@@ -189,24 +116,76 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 				e?.message ||
 				"";
 
-            if (status === 409 || /already/i.test(msg)) {
-                toast("Already present in the wishlist");
-                setIsWishlisted(true);
-                if (!wishlistItemId) {
-                    await refreshWishlist();
-                }
-            } else {
-                toast.error(
-                    isWishlisted
-                        ? "Failed to remove from wishlist"
-                        : "Failed to add to wishlist"
-                );
-                console.error("Wishlist operation failed:", e);
-            }
-        } finally {
-            setWishlistLoading(false);
-        }
-    };
+			if (status === 409 || /already/i.test(msg)) {
+				toast("Already present in the wishlist");
+				setIsWishlisted(true);
+				if (!wishlistItemId) {
+					await refreshWishlist();
+				}
+			} else {
+				toast.error(
+					isWishlisted
+						? "Failed to remove from wishlist"
+						: "Failed to add to wishlist"
+				);
+				console.error("Wishlist operation failed:", e);
+			}
+		} finally {
+			setWishlistLoading(false);
+		}
+	};
+
+
+	function getProductFinalPrice(product: Product): number | null {
+		const normalize = (obj: any): number | null => {
+			const price = obj?.finalPrice ?? obj?.basePrice ?? null;
+			return price != null && Number(price) > 0 ? Number(price) : null;
+		};
+
+		// ✅ No variants → use product price
+		if (!product.hasVariants) {
+			return normalize(product);
+		}
+
+		// ✅ Variants → lowest AVAILABLE variant price
+		const validVariants = product.variants?.filter(
+			(v) => v && v.status !== "OUT_OF_STOCK" && normalize(v) !== null
+		);
+
+		if (!validVariants?.length) return null;
+
+		return Math.min(...validVariants.map(v => normalize(v)!));
+	}
+
+	function getProductBasePrice(product: Product): number | null {
+		const normalize = (obj: any): number | null => {
+			const price = obj?.basePrice ?? obj?.finalPrice ?? null;
+			return price != null && Number(price) > 0 ? Number(price) : null;
+		};
+
+		// ✅ No variants
+		if (!product.hasVariants) {
+			return normalize(product);
+		}
+
+		// ✅ Variants only
+		const validVariants = product.variants?.filter(
+			(v) => v && v.status !== "OUT_OF_STOCK" && normalize(v) !== null
+		);
+
+		if (!validVariants?.length) return null;
+
+		return Math.min(...validVariants.map(v => normalize(v)!));
+	}
+	const finalPrice = getProductFinalPrice(product);
+	const basePrice = getProductBasePrice(product);
+	const savingPrice =
+		basePrice != null &&
+			finalPrice != null &&
+			basePrice > finalPrice
+			? (basePrice - finalPrice).toFixed(2)
+			: null;
+
 
 	return (
 		<Link
@@ -290,14 +269,20 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 					)}
 					<div className="product1__price">
 						<div className="product1__price-row">
-							<span className="product1__current-price">{displayPrice}</span>
-							{discount && Number(discount) > 0 && (
-								<span className="product1__discount">{discount}%</span>
+							<span className="product1__current-price">
+								Rs {finalPrice?.toLocaleString()}
+							</span>
+
+							{savingPrice && (
+								<span className="product1__discount">
+									Save Rs {savingPrice}
+								</span>
 							)}
 						</div>
-						{showOriginalPrice && (
+
+						{savingPrice && (
 							<span className="product1__original-price">
-								{formattedOriginalPrice}
+								Rs {basePrice?.toLocaleString()}
 							</span>
 						)}
 					</div>

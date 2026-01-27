@@ -70,10 +70,11 @@ const HomepageSections: React.FC = () => {
 								description: product.description,
 								price: product.basePrice,
 								basePrice: product.basePrice,
+								finalPrice: product.finalPrice,
 								originalPrice: undefined,
 								discount: product.discount,
 								discountType: (product.discountType === "PERCENTAGE" ||
-								product.discountType === "FLAT"
+									product.discountType === "FLAT"
 									? product.discountType
 									: undefined) as DisplayProduct["discountType"],
 								rating:
@@ -84,9 +85,9 @@ const HomepageSections: React.FC = () => {
 									(Array.isArray((product as any).reviews)
 										? (product as any).reviews.length
 										: undefined) ??
-										(product as any).reviewCount ??
-										(product as any).ratingCount ??
-										0
+									(product as any).reviewCount ??
+									(product as any).ratingCount ??
+									0
 								),
 								isBestSeller: false,
 								freeDelivery: true,

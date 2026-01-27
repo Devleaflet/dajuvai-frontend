@@ -131,6 +131,7 @@ export interface ProductVariant {
   sku: string;
   price: number;
   stock: number;
+  finalPrice: number;
   status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
   // Use unified complex attributes shape
   attributes: Attribute[];
@@ -161,6 +162,7 @@ export interface ApiProduct {
   name: string;
   description: string;
   basePrice: number | null;
+  finalPrice: number;
   stock: number;
   discount: number | null;
   discountType: 'PERCENTAGE' | 'FLAT' | null;

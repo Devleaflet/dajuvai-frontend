@@ -138,8 +138,30 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
     }
   };
 
+  const getVariantBasePrice = (variants: any[]) => {
+    if (!variants || variants.length === 0) return undefined;
+
+    return Math.min(
+      ...variants
+        .map(v => Number(v.basePrice))
+        .filter(v => !isNaN(v))
+    );
+  };
+
+  const getVariantFinalPrice = (variants: any[]) => {
+    if (!variants || variants.length === 0) return undefined;
+
+    return Math.min(
+      ...variants
+        .map(v => Number(v.finalPrice))
+        .filter(v => !isNaN(v))
+    );
+  };
+
+
   // Convert ApiProduct to UIProduct
   const convertToUIProduct = (apiProduct: ApiProduct): UIProduct => {
+    const hasVariants = apiProduct.hasVariants && apiProduct.variants?.length > 0;
     // Derive IDs from multiple possible shapes
     const categoryId =
       (apiProduct as any).categoryId ??
@@ -150,25 +172,23 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
       (apiProduct as any)?.subcategory?.id ??
       (fallbackSubcategoryId != null ? Number(fallbackSubcategoryId) : undefined);
 
-    // Map ApiProduct to UI Product expected by ProductCard
+
     return {
       id: apiProduct.id,
       title: apiProduct.name,
       description: apiProduct.description || '',
-      price: (apiProduct as any).price ?? apiProduct.basePrice ?? 0,
-      basePrice: apiProduct.basePrice ?? undefined,
-      originalPrice: undefined,
+      basePrice: apiProduct.basePrice,
+      finalprice: apiProduct.finalPrice,
+      hasVariants: apiProduct.hasVariants,
       discount: (apiProduct as any).discount ?? undefined,
       discountType: apiProduct.discountType ?? undefined,
       rating: Number((apiProduct as any).avgRating?.avg ?? (apiProduct as any).rating ?? 0) || 0,
       ratingCount: String(
         (Array.isArray((apiProduct as any).reviews) ? (apiProduct as any).reviews.length : undefined) ??
-          (apiProduct as any).avgRating?.count ??
-          (apiProduct as any).ratingCount ??
-          0
+        (apiProduct as any).avgRating?.count ??
+        (apiProduct as any).ratingCount ??
+        0
       ),
-      isBestSeller: false,
-      freeDelivery: false,
       image: apiProduct.image || (apiProduct.productImages && apiProduct.productImages[0]) || '',
       stock: (apiProduct as any).stock ?? undefined,
       category: categoryId != null ? { id: Number(categoryId) } as any : undefined,
@@ -176,8 +196,8 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
       productImages: apiProduct.productImages || [],
       variants: (apiProduct.variants || []).map((v: any) => ({
         id: v.id,
-        price: v.price ?? v.basePrice,
-        originalPrice: v.originalPrice ?? v.basePrice,
+        basePrice: v.price ?? v.basePrice,
+        finalprice: v.finalPrice,
         stock: v.stock,
         sku: v.sku,
         image: Array.isArray(v.variantImages) ? v.variantImages[0] : v.image,
@@ -257,9 +277,8 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
         )}
         <div
           ref={scrollContainerRef}
-          className={`recommended-products__slider ${
-            isDragging ? "recommended-products__slider--dragging" : ""
-          }`}
+          className={`recommended-products__slider ${isDragging ? "recommended-products__slider--dragging" : ""
+            }`}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}

@@ -1,5 +1,7 @@
 // src/Types/Product.ts
 
+import { Deal } from "./Deal";
+
 export interface Product {
   id: number;
   title?: string;
@@ -7,6 +9,7 @@ export interface Product {
   price: string | number;
   basePrice?: string | number;
   originalPrice?: string;
+  finalPrice: number;
   discount?: string;
   rating: number;
   ratingCount: string | number;
@@ -17,6 +20,7 @@ export interface Product {
   created_at?:string
   brand?: string;
   name?: string;
+  hasVariants: boolean;
   category?: any;
   subcategory?: { id: number; name: string; category?: any };
   vendor?: string;
@@ -34,6 +38,7 @@ export interface Product {
   categoryId?: number;
   subcategoryId?: number;
   brand_id?: number | null;
+  deal: Deal;
   dealId?: number | null;
   status?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
   discountType?: "PERCENTAGE" | "FLAT";
@@ -43,6 +48,7 @@ export interface Product {
     name?: string;
     price?: number | string;
     originalPrice?: number | string;
+    finalPrice: number;
     stock?: number;
     sku?: string;
     image?: string;
