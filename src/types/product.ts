@@ -3,8 +3,10 @@ export interface Product {
   name: string;
   description: string;
   price: string | number;
-  basePrice?: string | number | null;
+  basePrice?: number | null;
+  finalPrice?: number | null;
   stock: number;
+  hasVariants: boolean;
   discount: string | number | null;
   discountType: "PERCENTAGE" | "FLAT" | null;
   size: string[];
@@ -178,7 +180,7 @@ export interface ApiProduct {
   brand_id: number | null;
   dealId: number | null;
   bannerId: number | null;
-  created_at: string;
+  createdAt: string;
   updated_at: string;
   categoryId: number;
   subcategory: {

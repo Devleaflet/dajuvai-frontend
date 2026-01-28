@@ -40,14 +40,18 @@
 
 /* Updated search styles */
 .dashboard__search {
-	width: 800px; /* Allow it to take natural width */
-	min-width: 200px; /* Ensure it has a minimum width */
+	width: 800px;
+	/* Allow it to take natural width */
+	min-width: 200px;
+	/* Ensure it has a minimum width */
 	position: relative;
-	flex-grow: 1; /* Allow it to expand but not dominate */
+	flex-grow: 1;
+	/* Allow it to expand but not dominate */
 }
 
 .dashboard__search-input {
-	width: 100%; /* Full width within its container */
+	width: 100%;
+	/* Full width within its container */
 	padding: 10px 16px 10px 40px;
 	border: 1px solid #e5e7eb;
 	border-radius: 24px;
@@ -73,7 +77,8 @@
 	border-radius: 7px;
 	height: 25px;
 	border: 1px solid rgba(128, 128, 128, 0.321);
-	min-width: 180px; /* Consistent minimum width */
+	min-width: 180px;
+	/* Consistent minimum width */
 }
 
 /* Responsive adjustments */
@@ -85,11 +90,13 @@
 	}
 
 	.dashboard__search {
-		width: 100%; /* Full width on mobile */
+		width: 100%;
+		/* Full width on mobile */
 	}
 
 	.vendor-product__sort-select {
-		width: 100%; /* Full width on mobile */
+		width: 100%;
+		/* Full width on mobile */
 	}
 }
 
@@ -343,7 +350,8 @@
 .vendor-product__modal-body {
 	padding: 24px;
 	max-height: 70vh;
-	overflow-y: auto; /* Add scroll for long content */
+	overflow-y: auto;
+	/* Add scroll for long content */
 }
 
 .vendor-product__form-group {
@@ -410,6 +418,7 @@
 	background-color: #ff6b35;
 	color: white;
 }
+
 .product-status {
 	display: inline-block;
 	padding: 4px 8px;
@@ -475,6 +484,7 @@
 	cursor: pointer;
 	transition: background-color 0.2s;
 }
+
 /* No results message */
 .vendor-product__no-results {
 	text-align: center;
@@ -509,7 +519,8 @@
 	}
 
 	.dashboard {
-		overflow: auto; /* Enable scrolling */
+		overflow: auto;
+		/* Enable scrolling */
 	}
 }
 
@@ -562,6 +573,7 @@
 		justify-content: center;
 	}
 }
+
 .vendor-product__sort-select {
 	border-radius: 7px;
 	height: 25px;
@@ -576,36 +588,43 @@
 	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 	margin-bottom: 2rem;
 }
+
 .vendor-product__skeleton-header {
 	margin-bottom: 1.2rem;
 }
+
 .vendor-product__skeleton-search {
 	width: 220px;
 	height: 2.2rem;
 	border-radius: 0.7rem;
 	margin-bottom: 0.5rem;
 }
+
 .vendor-product__skeleton-tabs {
 	display: flex;
 	gap: 0.7rem;
 	margin-bottom: 1.2rem;
 }
+
 .vendor-product__skeleton-tab {
 	width: 110px;
 	height: 2rem;
 	border-radius: 0.7rem;
 }
+
 .vendor-product__skeleton-table {
 	display: flex;
 	flex-direction: column;
 	gap: 1.1rem;
 }
+
 .vendor-product__skeleton-row {
 	display: flex;
 	align-items: center;
 	gap: 1.2rem;
 	margin-bottom: 0.2rem;
 }
+
 .vendor-product__skeleton-cell {
 	background: #eaeaea;
 	border-radius: 0.5rem;
@@ -617,6 +636,7 @@
 	overflow: hidden;
 	background: #eaeaea;
 }
+
 .shimmer::after {
 	content: "";
 	position: absolute;
@@ -624,14 +644,13 @@
 	left: -150px;
 	height: 100%;
 	width: 150px;
-	background: linear-gradient(
-		90deg,
-		rgba(234, 234, 234, 0) 0%,
-		rgba(255, 255, 255, 0.7) 50%,
-		rgba(234, 234, 234, 0) 100%
-	);
+	background: linear-gradient(90deg,
+			rgba(234, 234, 234, 0) 0%,
+			rgba(255, 255, 255, 0.7) 50%,
+			rgba(234, 234, 234, 0) 100%);
 	animation: shimmer 1.2s infinite;
 }
+
 @keyframes shimmer {
 	100% {
 		left: 100%;
@@ -642,17 +661,21 @@
 	.vendor-product__skeleton {
 		padding: 1rem 0.3rem;
 	}
+
 	.vendor-product__skeleton-header {
 		margin-bottom: 0.7rem;
 	}
+
 	.vendor-product__skeleton-search {
 		width: 100%;
 		height: 2rem;
 	}
+
 	.vendor-product__skeleton-tab {
 		width: 80px;
 		height: 1.5rem;
 	}
+
 	.vendor-product__skeleton-row {
 		gap: 0.5rem;
 	}
@@ -781,4 +804,28 @@
 	height: 16px;
 	background: url("../assets/edit-icon.svg") no-repeat center;
 	background-size: contain;
+}
+
+/* Deal badge */
+.deal-badge {
+	display: inline-block;
+	padding: 4px 10px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 600;
+	background: #dcfce7;
+	color: #166534;
+}
+
+.deal-badge--no {
+	background: #f3f4f6;
+	color: #6b7280;
+}
+
+.product-status.low-stock {
+	background-color: #fed7aa;
+	color: #9a3412;
+	padding: 4px 8px;
+	border-radius: 8px;
+	font-weight: 600;
 }

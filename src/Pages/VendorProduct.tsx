@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useState } from "react";
 import { toast } from "react-hot-toast";
 import { fetchProducts, updateProduct, deleteProduct } from "../api/products";
-import Header from "../Components/Header";
 import EditProductModal from "../Components/Modal/EditProductModalRedesigned";
 import NewProductModal from "../Components/NewProductModalRedesigned";
 import Pagination from "../Components/Pagination";
@@ -70,6 +69,7 @@ const ProductListSkeleton: React.FC = () => {
 	);
 };
 
+
 const VendorProduct: React.FC = () => {
 	const { authState } = useVendorAuth();
 	const queryClient = useQueryClient();
@@ -126,9 +126,11 @@ const VendorProduct: React.FC = () => {
 			productsPerPage,
 			authState.token,
 		],
+		enabled: !!authState.vendor?.id && !!authState.token,
 		queryFn: async () => {
-			if (!authState.vendor?.id || !authState.token)
+			if (!authState.vendor?.id || !authState.token) {
 				throw new Error("Missing vendor or token");
+			}
 
 			const response = await fetchProducts(
 				Number(authState.vendor.id),
@@ -136,168 +138,112 @@ const VendorProduct: React.FC = () => {
 				productsPerPage
 			);
 
-			//("Vendor products response:", response);
-			//("Response data:", response.data);
-
-			if (!response.data || typeof response.data !== "object")
-				throw new Error("Invalid response");
 			if (
-				!response.data.success ||
-				!response.data.data ||
-				!Array.isArray(response.data.data.product)
-			)
+				!response?.data?.success ||
+				!Array.isArray(response.data.data?.product)
+			) {
 				throw new Error("Invalid response format");
+			}
+
 			const products: Product[] = response.data.data.product.map(
 				(product: ApiProduct): Product => {
+					const hasVariants = !!(product as any).hasVariants;
+
 					const productImages = Array.isArray(product.productImages)
-						? product.productImages.map((img: string | { url?: string }) =>
-							typeof img === "string" ? img : img.url || ""
+						? product.productImages.map((img: any) =>
+							typeof img === "string" ? img : img?.url || ""
 						)
 						: [];
 
 					const variantImages: string[] = [];
-					if (
-						(product as any).hasVariants &&
-						(product as any).variants &&
-						Array.isArray((product as any).variants)
-					) {
+					if (hasVariants && Array.isArray((product as any).variants)) {
 						(product as any).variants.forEach((variant: any) => {
-							if (
-								variant.variantImages &&
-								Array.isArray(variant.variantImages)
-							) {
-								variant.variantImages.forEach(
-									(img: string | { url?: string }) => {
-										const imageUrl =
-											typeof img === "string" ? img : img.url || "";
-										if (imageUrl && !variantImages.includes(imageUrl)) {
-											variantImages.push(imageUrl);
-										}
-									}
-								);
+							if (Array.isArray(variant.variantImages)) {
+								variant.variantImages.forEach((img: any) => {
+									const url = typeof img === "string" ? img : img?.url;
+									if (url) variantImages.push(url);
+								});
 							}
 						});
 					}
 
-					const images = [...productImages, ...variantImages].filter(Boolean);
-					let basePrice = 0;
-					if (typeof product.basePrice === "number")
-						basePrice = product.basePrice;
-					else if (typeof product.basePrice === "string")
-						basePrice = parseFloat(product.basePrice);
-					else if (
-						typeof product.basePrice === "undefined" ||
-						product.basePrice === null
-					)
-						basePrice = 0;
-					let discount = 0;
-					if (typeof product.discount === "number") discount = product.discount;
-					else if (typeof product.discount === "string")
-						discount = parseFloat(product.discount);
-					else if (
-						typeof product.discount === "undefined" ||
-						product.discount === null
-					)
-						discount = 0;
-					const discountType = (product.discountType || "").toUpperCase();
-					let price = basePrice;
+					const images = [...new Set([...productImages, ...variantImages])];
+
+					const basePrice =
+						typeof product.basePrice === "string"
+							? parseFloat(product.basePrice)
+							: Number(product.basePrice || 0);
+
+					const finalPrice =
+						typeof (product as any).finalPrice === "string"
+							? parseFloat((product as any).finalPrice)
+							: Number((product as any).finalPrice || 0);
+
+					let displayPrice = "—";
 					let originalPrice: string | undefined = undefined;
-					if (
-						discount > 0 &&
-						(discountType === "PERCENTAGE" ||
-							discountType === "FLAT" ||
-							discountType === "FIXED")
-					) {
-						if (discountType === "PERCENTAGE") {
-							price = basePrice - (basePrice * discount) / 100;
-							originalPrice = basePrice.toFixed(2);
-						} else if (discountType === "FLAT" || discountType === "FIXED") {
-							price = basePrice - discount;
+
+					if (!hasVariants) {
+						displayPrice = finalPrice.toFixed(2);
+						if (basePrice > finalPrice) {
 							originalPrice = basePrice.toFixed(2);
 						}
 					}
 
-					const normalizedVariants = Array.isArray((product as any).variants)
-						? (product as any).variants.map((v: any) => {
-							const rawBase =
-								typeof v?.price !== "undefined"
-									? v.price
-									: typeof v?.basePrice !== "undefined"
-										? v.basePrice
-										: typeof v?.originalPrice !== "undefined"
-											? v.originalPrice
-											: typeof product.basePrice !== "undefined"
-												? product.basePrice
-												: (product as any).price;
-							const baseNum =
-								typeof rawBase === "string"
-									? parseFloat(rawBase)
-									: Number(rawBase) || 0;
-							let calc = baseNum;
-							if (
-								discount > 0 &&
-								(discountType === "PERCENTAGE" ||
-									discountType === "FLAT" ||
-									discountType === "FIXED")
-							) {
-								if (discountType === "PERCENTAGE") {
-									calc = baseNum - (baseNum * discount) / 100;
-								} else {
-									calc = baseNum - discount;
-								}
-							}
-							return { ...v, calculatedPrice: calc };
-						})
+					const normalizedVariants = hasVariants
+						? (product as any).variants.map((v: any) => ({
+							...v,
+							basePrice:
+								typeof v.basePrice === "string"
+									? parseFloat(v.basePrice)
+									: Number(v.basePrice || 0),
+							finalPrice:
+								typeof v.finalPrice === "string"
+									? parseFloat(v.finalPrice)
+									: Number(v.finalPrice || v.price || 0),
+						}))
 						: undefined;
 
 					let status: "AVAILABLE" | "OUT_OF_STOCK" | "LOW_STOCK" = "AVAILABLE";
 					if (product.status === "OUT_OF_STOCK") status = "OUT_OF_STOCK";
 					else if (product.status === "LOW_STOCK") status = "LOW_STOCK";
-					const mappedProduct: Product = {
+
+					return {
 						id: product.id,
 						name: product.name,
 						title: product.name,
 						description: product.description,
-						price: price.toFixed(2),
-						basePrice: basePrice,
-						originalPrice: originalPrice,
-						stock: product.stock,
-						discount:
-							discount !== null && discount !== undefined
-								? discount.toString()
-								: "0",
-						discountType: (discountType === "PERCENTAGE"
-							? "PERCENTAGE"
-							: discountType === "FLAT" || discountType === "FIXED"
-								? "FLAT"
-								: undefined) as "PERCENTAGE" | "FLAT" | undefined,
-						size: product.size || [],
-						status: status,
-						productImages: images,
-						variants: normalizedVariants,
-						subcategory: product.subcategory,
-						vendor: product.vendor?.businessName || "",
-						category: product.subcategory?.name || "",
-						categoryId: product.categoryId,
-						subcategoryId: product.subcategory?.id || 0,
-						brand_id: product.brand_id,
+
+						finalPrice: product.finalPrice,
+
+						deal: product.deal,
+
 						dealId: product.dealId,
+
+						// basePrice: hasVariants ? 0 : basePrice,
+						originalPrice,
+
+						stock: product.stock,
+						status,
+
+						hasVariants,
+						variants: normalizedVariants,
+
+						discount: product.discount?.toString() || "0",
+						discountType: product.discountType,
+
+						productImages: images,
+						image: images[0] || "",
+
+						subcategory: product.subcategory,
+						category: product.subcategory?.name || "",
+						subcategoryId: product.subcategory?.id || 0,
+
+						vendor: product.vendor?.businessName || "",
+
 						rating: 0,
 						ratingCount: 0,
-						image:
-							images.length > 0 && typeof images[0] === "string"
-								? images[0]
-								: "",
-						piece: product.stock,
-						availableColor: product.size?.join(", ") || "",
-						onSale: !!product.discount,
-						isFeatured: false,
-						isBestSeller: false,
-						freeDelivery: false,
 						created_at: product.created_at,
 					};
-
-					return mappedProduct;
 				}
 			);
 
@@ -305,40 +251,66 @@ const VendorProduct: React.FC = () => {
 				products,
 				total: response.data.data.total || products.length,
 				serverTotal: response.data.data.total || products.length,
-			} as { products: Product[]; total: number; serverTotal: number };
+			};
 		},
-		enabled: !!authState.vendor?.id && !!authState.token,
 	});
 
 	const sortProducts = (products: Product[]) => {
 		const sorted = [...products];
 
+		const getPriceValue = (p: Product): number => {
+			if (p.hasVariants && Array.isArray(p.variants) && p.variants.length > 0) {
+				const prices = p.variants
+					.map((v: any) => {
+						const val =
+							typeof v.finalPrice === "string"
+								? parseFloat(v.finalPrice)
+								: Number(v.finalPrice ?? v.price);
+						return isNaN(val) ? null : val;
+					})
+					.filter((v: number | null): v is number => v !== null);
+
+				return prices.length > 0 ? Math.min(...prices) : Number.POSITIVE_INFINITY;
+			}
+
+			const value =
+				typeof p.price === "string" ? parseFloat(p.price) : Number(p.price);
+
+			return isNaN(value) ? Number.POSITIVE_INFINITY : value;
+		};
+
 		switch (sortOption) {
 			case "newest":
-				//(sorted);
 				return sorted.sort(
-					(a: Product, b: Product) =>
+					(a, b) =>
 						new Date(b.created_at || 0).getTime() -
 						new Date(a.created_at || 0).getTime()
 				);
+
 			case "oldest":
 				return sorted.sort(
-					(a: Product, b: Product) =>
+					(a, b) =>
 						new Date(a.created_at || 0).getTime() -
 						new Date(b.created_at || 0).getTime()
 				);
+
 			case "price-asc":
-				return sorted.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+				return sorted.sort((a, b) => getPriceValue(a) - getPriceValue(b));
+
 			case "price-desc":
-				return sorted.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+				return sorted.sort((a, b) => getPriceValue(b) - getPriceValue(a));
+
 			case "name-asc":
 				return sorted.sort((a, b) => a.name.localeCompare(b.name));
+
 			case "name-desc":
 				return sorted.sort((a, b) => b.name.localeCompare(a.name));
+
 			default:
 				return sorted;
 		}
 	};
+
 
 	const handleProductSubmit = (success: boolean) => {
 		if (success) {
@@ -369,11 +341,6 @@ const VendorProduct: React.FC = () => {
 
 	const addProductMutation = useMutation({
 		mutationFn: async (productData: ProductFormData) => {
-			//("=== VENDOR PRODUCT CREATION START ===");
-			//("VendorProduct: token exists:", !!authState.token);
-			//("VendorProduct: vendor exists:", !!authState.vendor);
-			//("VendorProduct: vendor ID:", authState.vendor?.id);
-			//("VendorProduct: Product data received:", productData);
 
 			if (!authState.token) {
 				throw new Error("No authentication token found");

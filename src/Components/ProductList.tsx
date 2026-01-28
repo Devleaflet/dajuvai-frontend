@@ -18,21 +18,7 @@ const ProductList: React.FC<ProductListProps> = ({
 	isMobile,
 	showVendor,
 }) => {
-	// Helper function to compute discounted price
-	const calculatePrice = (
-		basePrice: string | number,
-		discount?: string,
-		discountType?: string
-	): number => {
-		const base =
-			typeof basePrice === "string" ? parseFloat(basePrice) : basePrice;
-		if (!discount || !discountType) return base;
-		const discountValue = parseFloat(discount) || 0;
-		if (discountType === "FIXED" || discountType === "FLAT") {
-			return base - discountValue;
-		}
-		return base;
-	};
+
 
 	// Normalize/complete image URLs similar to Shop page
 	const processImageUrl = (imgUrl: string): string => {
@@ -86,6 +72,32 @@ const ProductList: React.FC<ProductListProps> = ({
 		return defaultProductImage;
 	};
 
+	const getLowestVariantPrice = (product: Product): number | null => {
+		if (!product.variants || product.variants.length === 0) return null;
+
+		const prices = product.variants
+			.map((v: any) => {
+				const val =
+					typeof v.finalPrice === "string"
+						? parseFloat(v.finalPrice)
+						: Number(v.finalPrice ?? v.price);
+				return isNaN(val) ? null : val;
+			})
+			.filter((v): v is number => v !== null);
+
+		return prices.length > 0 ? Math.min(...prices) : null;
+	};
+
+	const getVariantStock = (product: Product): number => {
+		if (!product.variants || product.variants.length === 0)
+			return product.stock ?? 0;
+
+		return product.variants.reduce(
+			(sum: number, v: any) => sum + (Number(v.stock) || 0),
+			0
+		);
+	};
+
 	return (
 		<div className="dashboard__card vendor-product__table-container">
 			<table className="dashboard__table">
@@ -97,6 +109,8 @@ const ProductList: React.FC<ProductListProps> = ({
 						{showVendor && <th>Vendor</th>}
 						<th>Price</th>
 						<th>Stock</th>
+						<th>Deal</th>
+						<th>Variants</th>
 						<th>Status</th>
 						<th>Action</th>
 					</tr>
@@ -113,55 +127,22 @@ const ProductList: React.FC<ProductListProps> = ({
 						</tr>
 					) : (
 						products.map((product) => {
-							let numericStock = 0;
-							let displayPrice = 0;
 							const displayImage = getDisplayImage(product);
+							const hasDeal = product.deal !== null;
+							let numericStock = product.hasVariants
+								? getVariantStock(product)
+								: product.stock ?? 0;
 
-							if (product.variants && product.variants.length > 0) {
-								const firstVariant = product.variants[0] as any;
-								numericStock = (firstVariant?.stock ??
-									product.stock ??
-									0) as number;
+							let displayPrice: number | null = null;
 
-								const variantBase = (firstVariant?.price ??
-									firstVariant?.originalPrice ??
-									firstVariant?.basePrice ??
-									product.basePrice ??
-									product.price) as number | string | undefined;
-								const hasCalculated =
-									typeof firstVariant?.calculatedPrice === "number" &&
-									isFinite(firstVariant.calculatedPrice);
-
-								if (hasCalculated) {
-									displayPrice = firstVariant.calculatedPrice as number;
-								} else if (
-									firstVariant?.discount &&
-									firstVariant?.discountType
-								) {
-									displayPrice = calculatePrice(
-										variantBase ?? 0,
-										String(firstVariant.discount),
-										String(firstVariant.discountType)
-									);
-								} else if (product.discount && product.discountType) {
-									displayPrice = calculatePrice(
-										variantBase ?? 0,
-										String(product.discount),
-										String(product.discountType)
-									);
-								} else {
-									displayPrice =
-										typeof variantBase === "string"
-											? parseFloat(variantBase)
-											: Number(variantBase) || 0;
-								}
+							if (product.hasVariants) {
+								displayPrice = getLowestVariantPrice(product);
 							} else {
-								numericStock = product.stock ?? 0;
-								displayPrice = calculatePrice(
-									product.price,
-									product.discount as any,
-									product.discountType as any
-								);
+								const val =
+									typeof product.price === "string"
+										? parseFloat(product.finalPrice)
+										: Number(product.finalPrice);
+								displayPrice = isNaN(val) ? null : val;
 							}
 
 							const statusDisplay = (() => {
@@ -188,7 +169,8 @@ const ProductList: React.FC<ProductListProps> = ({
 							return (
 								<tr
 									key={product.id}
-									className="dashboard__table-row"
+									className={`dashboard__table-row ${product.status === "LOW_STOCK" ? "row-low-stock" : ""
+										}`}
 								>
 									<td>
 										<div
@@ -205,8 +187,33 @@ const ProductList: React.FC<ProductListProps> = ({
 										{product.subcategory?.name || product.category || "Unknown"}
 									</td>
 									{showVendor && <td>{product.vendor || "Unknown"}</td>}
-									<td>Rs. {displayPrice.toFixed(2)}</td>
+									<td>
+										{displayPrice !== null ? (
+											<>
+												Rs. {displayPrice.toFixed(2)}
+												{product.hasVariants && (
+													<span className="variant-price-note"> (from)</span>
+												)}
+											</>
+										) : (
+											<span className="price-na">—</span>
+										)}
+									</td>
 									<td>{numericStock}</td>
+									<td>
+										{hasDeal ? (
+											<span className="deal-badge">Yes</span>
+										) : (
+											<span className="deal-badge deal-badge--no">No</span>
+										)}
+									</td>
+									<td>
+										{product.hasVariants ? (
+											<span className="deal-badge">Yes</span>
+										) : (
+											<span className="deal-badge deal-badge--no">No</span>
+										)}
+									</td>
 									<td>{statusDisplay}</td>
 									<td>
 										<div className="vendor-product__actions-cell">

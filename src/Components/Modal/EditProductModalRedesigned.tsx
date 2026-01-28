@@ -884,7 +884,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                   <h3 className="section-title">Pricing & Inventory</h3>
                 </div>
 
-                <div className="form-grid three-columns">
+                <div className="form-grid two-columns">
                   <div className="form-group">
                     <label className="form-label required">Base Price</label>
                     <input
@@ -910,20 +910,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                       min="0"
                       required
                     />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label required">Status</label>
-                    <select
-                      className="form-select"
-                      value={formData.status}
-                      onChange={(e) => handleInputChange('status', e.target.value as InventoryStatus)}
-                      required
-                    >
-                      <option value={InventoryStatus.AVAILABLE}>Available</option>
-                      <option value={InventoryStatus.OUT_OF_STOCK}>Out of Stock</option>
-                      <option value={InventoryStatus.LOW_STOCK}>Low Stock</option>
-                    </select>
                   </div>
                 </div>
               </div>

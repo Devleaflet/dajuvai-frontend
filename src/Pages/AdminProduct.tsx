@@ -11,6 +11,7 @@ import { toast } from "react-hot-toast";
 import { ApiProduct } from "../Components/Types/ApiProduct";
 import defaultProductImage from "../assets/logo.webp";
 import { API_BASE_URL } from "../config";
+import { formatTimeAgo } from "../utils/formattime";
 
 const SkeletonRow: React.FC = () => (
   <tr>
@@ -123,8 +124,6 @@ const AdminProduct: React.FC = () => {
   }, [token, isAuthenticated]);
 
   const handleVendorChange = (vendorId: string) => {
-    console.log("----------------Vendor changed-------")
-    console.log(vendorId)
     setSelectedVendor(vendorId);
   };
 
@@ -232,38 +231,30 @@ const AdminProduct: React.FC = () => {
       </div>
     );
   }
-  const toNumber = (v: any): number => {
-    if (v === undefined || v === null) return 0;
-    const n = typeof v === 'string' ? parseFloat(v) : Number(v);
-    return isFinite(n) ? n : 0;
+
+  const getAdminDisplayPrice = (product: ApiProduct): number | null => {
+    if (product.hasVariants && Array.isArray(product.variants)) {
+      const prices = product.variants
+        .map((v: any) => {
+          const val =
+            typeof v.finalPrice === "string"
+              ? parseFloat(v.finalPrice)
+              : Number(v.finalPrice);
+          return isNaN(val) ? null : val;
+        })
+        .filter((v): v is number => v !== null);
+
+      return prices.length > 0 ? Math.min(...prices) : null;
+    }
+
+    //  Non-variant product → product.finalPrice
+    const val =
+      typeof product.finalPrice === "string"
+        ? parseFloat(product.finalPrice)
+        : Number(product.finalPrice);
+
+    return isNaN(val) ? null : val;
   };
-  const applyDiscount = (
-    base: number,
-    discount?: number,
-    discountType?: string
-  ): number => {
-    const d = Number(discount);
-    if (!isFinite(d) || d <= 0) return base;
-
-    const type = discountType || 'PERCENTAGE';
-
-    if (type === 'PERCENTAGE') return base * (1 - d / 100);
-    if (type === 'FLAT') return base - d;
-
-    return base;
-  };
-
-
-
-  const applyDeal = (price: number, deal?: any): number => {
-    if (!deal || deal.status !== 'ENABLED') return price;
-
-    const percent = Number(deal.discountPercentage);
-    if (!isFinite(percent) || percent <= 0) return price;
-
-    return price * (1 - percent / 100);
-  };
-
 
 
   return (
@@ -320,8 +311,12 @@ const AdminProduct: React.FC = () => {
                   <th>Image</th>
                   <th>ID</th>
                   <th>Name</th>
+                  <th>Vendor</th>
                   <th>Price</th>
-                  <th>Stock</th>
+                  <th>Variants</th>
+                  <th>Discount</th>
+                  <th>Status</th>
+                  <th>Created</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -332,44 +327,19 @@ const AdminProduct: React.FC = () => {
                   ))
                 ) : products.length > 0 ? (
                   products.map((product) => {
-                    // Helper function to get valid price from product or variant
-                    const getDisplayPrice = (product: ApiProduct): number => {
-                      let basePrice = Number(product.basePrice ?? 0);
 
-                      if ((!basePrice || basePrice === 0) && product.variants?.length) {
-                        basePrice = Number(product.variants[0].basePrice ?? 0);
-                      }
+                    const productDiscountLabel =
+                      product.discount && Number(product.discount) > 0
+                        ? product.discountType === "PERCENTAGE"
+                          ? `${product.discount}%`
+                          : `₹${product.discount}`
+                        : null;
 
-                      if (!basePrice) return 0;
+                    const dealDiscountLabel =
+                      product.deal && product.deal.discountPercentage
+                        ? `Deal ${product.deal.discountPercentage}%`
+                        : null;
 
-                      const afterProductDiscount = applyDiscount(
-                        basePrice,
-                        product.discount,
-                        product.discountType
-                      );
-
-                      const afterDealDiscount = applyDeal(
-                        afterProductDiscount,
-                        product.deal
-                      );
-
-                      console.log("Final price", afterDealDiscount)
-
-                      return Math.max(afterDealDiscount, 0);
-                    };
-
-                    console.log({
-                      id: product.id,
-                      base: product.basePrice,
-                      discount: product.discount,
-                      discountType: product.discountType,
-                      dealPercent: product.deal,
-                      finalFrontend: getDisplayPrice(product)
-                    });
-
-
-
-                    // Helper function to get valid stock from product or variant
                     const getDisplayStock = (): number => {
 
                       if (product.stock && typeof product.stock === 'number' && product.stock >= 0) {
@@ -405,9 +375,8 @@ const AdminProduct: React.FC = () => {
                       return 0; // Default fallback
                     };
 
-                    const displayPrice = getDisplayPrice(product);
+                    const displayPrice = getAdminDisplayPrice(product);
 
-                    console.log("Display Price: ", displayPrice)
                     const displayStock = getDisplayStock();
 
                     // Get first variant for image fallback
@@ -427,6 +396,7 @@ const AdminProduct: React.FC = () => {
                     const displayImage: string = (product.productImages?.[0]) || variantImgStr || (defaultProductImage as string);
                     return (
                       <tr key={product.id} className={`admin-products__table-row ${displayStock === 0 ? 'out-of-stock' : ''}`}>
+                        {/* Product Image  */}
                         <td className="admin-products__image-cell">
                           <img
                             src={displayImage}
@@ -434,14 +404,145 @@ const AdminProduct: React.FC = () => {
                             className="admin-products__product-image"
                           />
                         </td>
+
+                        {/* Product Id  */}
                         <td>{product.id}</td>
+
+                        {/* Product Name  */}
                         <td>{product.name}</td>
-                        <td>Rs. {displayPrice.toFixed ? displayPrice.toFixed(2) : Number(displayPrice).toFixed(2)}</td>
+
+                        {/* Vendor Name  */}
                         <td>
-                          <span className={displayStock === 0 ? 'stock-zero' : 'stock-available'}>
-                            {displayStock}
+                          {product.vendor?.businessName || "Unknown"}
+                        </td>
+
+                        {/* Product Final Price  */}
+                        <td>
+                          {displayPrice !== null ? (
+                            <>
+                              Rs. {displayPrice.toFixed(2)}
+                              {/* {product.hasVariants && (
+                                <span> (lowest)</span>
+                              )} */}
+                            </>
+                          ) : (
+                            <span className="price-na">—</span>
+                          )}
+                        </td>
+
+
+                        {/* Product Variant  */}
+                        <td style={{ textAlign: "center" }}>
+                          {product.hasVariants ? (
+                            <span
+                              style={{
+                                backgroundColor: "#e3f2fd",
+                                color: "#1565c0",
+                                padding: "4px 10px",
+                                borderRadius: "999px",
+                                fontSize: "12px",
+                                fontWeight: 600
+                              }}
+                            >
+                              {product.variants?.length || 0}
+                            </span>
+                          ) : (
+                            <span style={{ color: "#bbb" }}>—</span>
+                          )}
+                        </td>
+
+
+                        {/* Product Discount and Deal  */}
+                        <td>
+                          {productDiscountLabel || dealDiscountLabel ? (
+                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                              {productDiscountLabel && (
+                                <span
+                                  style={{
+                                    background: "#e0f2fe",
+                                    color: "#0369a1",
+                                    padding: "2px 6px",
+                                    borderRadius: 6,
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {productDiscountLabel}
+                                </span>
+                              )}
+
+                              {dealDiscountLabel && (
+                                <span
+                                  style={{
+                                    background: "#dcfce7",
+                                    color: "#166534",
+                                    padding: "2px 6px",
+                                    borderRadius: 6,
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {dealDiscountLabel}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span style={{ color: "#9ca3af" }}>—</span>
+                          )}
+                        </td>
+
+
+                        {/* Product Status */}
+                        <td style={{ textAlign: "center" }}>
+                          <span
+                            style={{
+                              padding: "4px 12px",
+                              borderRadius: "999px",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              textTransform: "uppercase",
+                              display: "inline-block",
+                              minWidth: "100px",
+                              color:
+                                product.status === "AVAILABLE"
+                                  ? "#1b5e20"
+                                  : "#b71c1c",
+                              backgroundColor:
+                                product.status === "AVAILABLE"
+                                  ? "#e8f5e9"
+                                  : "#fdecea",
+                              border:
+                                product.status === "AVAILABLE"
+                                  ? "1px solid #a5d6a7"
+                                  : "1px solid #f5c6cb"
+                            }}
+                          >
+                            {product.status || ""}
                           </span>
                         </td>
+
+
+                        {/* Created at  */}
+                        <td>
+                          <span
+                            style={{
+                              color:
+                                Date.now() - new Date(product.createdAt).getTime() < 24 * 60 * 60 * 1000
+                                  ? "#16a34a"
+                                  : "#374151",
+                              fontWeight:
+                                Date.now() - new Date(product.createdAt).getTime() < 24 * 60 * 60 * 1000
+                                  ? 600
+                                  : 400,
+                            }}
+                            title={new Date(product.createdAt).toLocaleString()}
+                          >
+                            {formatTimeAgo(product.createdAt)}
+                          </span>
+                        </td>
+
+                        {/* Action buttons  */}
+                        {/* Edit products  */}
                         <td>
                           <div className="admin-products__actions">
                             <button
@@ -473,6 +574,8 @@ const AdminProduct: React.FC = () => {
                                 />
                               </svg>
                             </button>
+
+                            {/* Delete Button  */}
                             <button
                               className="admin-products__action-btn admin-products__delete-btn"
                               onClick={() => {

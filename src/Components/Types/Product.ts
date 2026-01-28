@@ -7,8 +7,7 @@ export interface Product {
   title?: string;
   description: string;
   price: string | number;
-  basePrice?: string | number;
-  originalPrice?: string;
+  basePrice?:  number;
   finalPrice: number;
   discount?: string;
   rating: number;
