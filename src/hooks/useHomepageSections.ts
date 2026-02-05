@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { API_BASE_URL } from '../config';
 import type { ProductVariant } from '../types/product';
+import { Deal } from '../services/dealService';
 
 export interface HomepageProduct {
   id: number;
   name: string;
   description: string;
-  basePrice: string;
+  basePrice: number;
   stock: number;
   discount: string;
   discountType?: string;
@@ -18,6 +19,7 @@ export interface HomepageProduct {
   userId: number | null;
   brand_id: number | null;
   dealId: number | null;
+  deal: Deal;
   finalPrice:  number;
   created_at: string;
   updated_at: string;

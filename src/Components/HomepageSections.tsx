@@ -69,9 +69,10 @@ const HomepageSections: React.FC = () => {
 								title: product.name,
 								description: product.description,
 								price: product.basePrice,
+								hasVariants: product.hasVariants,
+								deal: product.deal ?? null,
 								basePrice: product.basePrice,
 								finalPrice: product.finalPrice,
-								originalPrice: undefined,
 								discount: product.discount,
 								discountType: (product.discountType === "PERCENTAGE" ||
 									product.discountType === "FLAT"
@@ -95,7 +96,7 @@ const HomepageSections: React.FC = () => {
 								stock: product.stock,
 								productImages,
 								variants: (product as any).variants,
-							} as DisplayProduct;
+							} satisfies DisplayProduct;
 						}
 					);
 					return (

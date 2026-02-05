@@ -8,7 +8,7 @@ import { useUI } from "../context/UIContext";
 import { addToWishlist, removeFromWishlist } from "../api/wishlist";
 import { useWishlist } from "../context/WishlistContext";
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import AuthModal from "./AuthModal";
 import defaultProductImage from "../assets/logo.webp";
 import { getProductPrimaryImage } from "../utils/getProductPrimaryImage";
@@ -37,7 +37,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 		description,
 		rating,
 		ratingCount,
-		isBestSeller,
 		id,
 	} = product;
 
@@ -273,7 +272,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 		}
 
 		// Navigate first
-		navigate(`/product-page/${product.id}`, { replace: true });
+		navigate(`/product-page/${product.id}`);
 
 		// Then FORCE scroll to top on next tick (beats React Router restoration)
 		setTimeout(() => {
@@ -296,42 +295,49 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 				final: v.finalPrice
 					? Number(v.finalPrice)
 					: Number(v.basePrice),
+				discount: v.discount ?? 0,
+				discountType: v.discountType,
 			}))
 		: [];
 
-	// Find cheapest variant
 	const lowestVariant = variantPrices.length
 		? variantPrices.reduce((min, v) =>
 			v.final < min.final ? v : min
 		)
 		: null;
 
-	const basePriceNum =
-		product.basePrice !== null
-			? Number(product.basePrice)
-			: lowestVariant?.base ?? null;
+	const isVariantProduct = product.hasVariants && lowestVariant;
 
-	const finalPriceNum =
-		product.finalPrice !== null
+	const basePriceNum = isVariantProduct
+		? lowestVariant.base
+		: product.basePrice !== null
+			? Number(product.basePrice)
+			: null;
+
+	const finalPriceNum = isVariantProduct
+		? lowestVariant.final
+		: product.finalPrice !== null
 			? Number(product.finalPrice)
-			: lowestVariant?.final ?? basePriceNum;
+			: basePriceNum;
+
 
 	const hasDiscount =
-		basePriceNum &&
-		finalPriceNum &&
+		basePriceNum !== null &&
+		finalPriceNum !== null &&
 		basePriceNum > finalPriceNum;
 
-	const isVariantProduct = product.hasVariants;
+
 
 	const discountLabel = hasDiscount
 		? isVariantProduct
-			? product.discountType === "PERCENTAGE"
-				? `UP TO ${product.discount}%`
-				: `UP TO Rs ${product.discount}`
+			? lowestVariant.discountType === "PERCENTAGE"
+				? `${lowestVariant.discount}%`
+				: `Rs ${lowestVariant.discount}`
 			: product.discountType === "PERCENTAGE"
 				? `${product.discount}%`
 				: `Rs ${product.discount}`
 		: null;
+
 
 
 	return (
@@ -344,11 +350,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 				onMouseEnter={() => setIsHovering(true)}
 				onMouseLeave={() => setIsHovering(false)}
 			>
-				<div className="product-card__header">
-					{isBestSeller && (
-						<span className="product-card__tag">Best seller</span>
-					)}
-				</div>
 
 				{!cartOpen && (
 					<button
