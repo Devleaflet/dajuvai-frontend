@@ -878,7 +878,7 @@ html {
 	width: 100%;
 	max-width: 100%;
 	box-sizing: border-box;
-	overflow: hidden;
+	overflow: auto;
 }
 
 .vendor-details__header {

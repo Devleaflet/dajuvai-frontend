@@ -46,6 +46,7 @@ const AdminProduct: React.FC = () => {
 
   const productService = ProductService;
 
+
   // Fetch products from backend with pagination, sorting, and filtering
   const fetchProducts = useCallback(async () => {
     if (!token || !isAuthenticated) return;

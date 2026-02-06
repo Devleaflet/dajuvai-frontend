@@ -12,9 +12,9 @@ interface HeaderProps {
   onFilter?: (filterOption: string) => void;
   filterOption?: string;
   vendors?: {
-    businessName: string;
-    id: string;
-    name: string;
+    businessName?: string;
+    id: string | number;
+    name?: string;
   }[];
   selectedVendor?: string | null;
   onVendorChange?: (vendorId: string) => void;
@@ -30,7 +30,8 @@ const Header: React.FC<HeaderProps> = ({
   filterOption = "all",
   vendors = [],
   selectedVendor = null,
-  onVendorChange = () => { }
+  onVendorChange = () => { },
+
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -140,21 +141,23 @@ const Header: React.FC<HeaderProps> = ({
             )}
 
             {/* Vendor Dropdown */}
-            <div>
-              <select
-                value={selectedVendor || ""}
-                onChange={(e) => onVendorChange(e.target.value)}
-                className="dashboard__vendor-select"
-                style={{ minWidth: 180, height: 38, borderRadius: 20, border: '1px solid #e5e7eb', padding: '0 12px', background: '#fff', fontSize: 14 }}
-              >
-                <option value="">All vendors</option>
-                {vendors.map((vendor) => (
-                  <option key={vendor.id} value={vendor.id}>
-                    {vendor.businessName}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {vendors && vendors.length > 0 && (
+              <div>
+                <select
+                  value={selectedVendor || ""}
+                  onChange={(e) => onVendorChange(e.target.value)}
+                  className="dashboard__vendor-select"
+                  style={{ minWidth: 180, height: 38, borderRadius: 20, border: '1px solid #e5e7eb', padding: '0 12px', background: '#fff', fontSize: 14 }}
+                >
+                  <option value="">All vendors</option>
+                  {vendors.map((vendor) => (
+                    <option key={vendor.id} value={vendor.id}>
+                      {vendor.businessName || vendor.name || "Unknown Vendor"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         )}
       </div>

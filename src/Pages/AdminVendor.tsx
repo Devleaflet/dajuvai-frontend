@@ -66,11 +66,6 @@ const createVendorAPI = (token: string | null) => ({
 			}
 
 			const result: ApiResponse<Vendor[]> = await response.json();
-			//("-------vendor----------")
-			//("-------vendor----------")
-			//("-------vendor----------")
-			//("-------vendor----------")
-			//(result)
 			return (result.data || []).map((vendor) => ({
 				...vendor,
 				status: vendor.isVerified ? "Active" : "Inactive",
@@ -79,19 +74,19 @@ const createVendorAPI = (token: string | null) => ({
 				taxDocuments: Array.isArray(vendor.taxDocuments)
 					? vendor.taxDocuments
 					: vendor.taxDocuments
-					? [vendor.taxDocuments]
-					: [],
+						? [vendor.taxDocuments]
+						: [],
 				businessRegNumber: vendor.businessRegNumber || "N/A",
 				citizenshipDocuments: Array.isArray(vendor.citizenshipDocuments)
 					? vendor.citizenshipDocuments
 					: vendor.citizenshipDocuments
-					? [vendor.citizenshipDocuments]
-					: [],
+						? [vendor.citizenshipDocuments]
+						: [],
 				chequePhoto: Array.isArray(vendor.chequePhoto)
 					? vendor.chequePhoto
 					: vendor.chequePhoto
-					? [vendor.chequePhoto]
-					: [],
+						? [vendor.chequePhoto]
+						: [],
 				accountName: vendor.accountName || "N/A",
 				bankName: vendor.bankName || "N/A",
 				accountNumber: vendor.accountNumber || "N/A",
@@ -125,7 +120,7 @@ const createVendorAPI = (token: string | null) => ({
 				}
 			);
 
-		
+
 
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
@@ -140,19 +135,19 @@ const createVendorAPI = (token: string | null) => ({
 				taxDocuments: Array.isArray(vendor.taxDocuments)
 					? vendor.taxDocuments
 					: vendor.taxDocuments
-					? [vendor.taxDocuments]
-					: [],
+						? [vendor.taxDocuments]
+						: [],
 				businessRegNumber: vendor.businessRegNumber || "N/A",
 				citizenshipDocuments: Array.isArray(vendor.citizenshipDocuments)
 					? vendor.citizenshipDocuments
 					: vendor.citizenshipDocuments
-					? [vendor.citizenshipDocuments]
-					: [],
+						? [vendor.citizenshipDocuments]
+						: [],
 				chequePhoto: Array.isArray(vendor.chequePhoto)
 					? vendor.chequePhoto
 					: vendor.chequePhoto
-					? [vendor.chequePhoto]
-					: [],
+						? [vendor.chequePhoto]
+						: [],
 				accountName: vendor.accountName || "N/A",
 				bankName: vendor.bankName || "N/A",
 				accountNumber: vendor.accountNumber || "N/A",
@@ -279,7 +274,7 @@ const createVendorAPI = (token: string | null) => ({
 					: vendorData.chequePhoto || "", // Ensure it's a string or empty
 			};
 
-	
+
 
 			const response = await fetch(`${API_BASE_URL}/api/vendors/${id}`, {
 				method: "PUT",
@@ -311,35 +306,36 @@ const createVendorAPI = (token: string | null) => ({
 			}
 
 			if (!result.data) {
-				return {
-					id,
-					...normalizedVendorData,
-					phoneNumber: normalizedVendorData.phoneNumber || "N/A",
-					taxNumber: normalizedVendorData.taxNumber || "N/A",
-					taxDocuments: Array.isArray(normalizedVendorData.taxDocuments)
-						? normalizedVendorData.taxDocuments
-						: normalizedVendorData.taxDocuments
-						? [normalizedVendorData.taxDocuments]
-						: [],
-					businessRegNumber: normalizedVendorData.businessRegNumber || "N/A",
-					citizenshipDocuments: Array.isArray(
-						normalizedVendorData.citizenshipDocuments
-					)
-						? normalizedVendorData.citizenshipDocuments
-						: normalizedVendorData.citizenshipDocuments
-						? [normalizedVendorData.citizenshipDocuments]
-						: [],
-					chequePhoto: normalizedVendorData.chequePhoto || "",
-					accountName: normalizedVendorData.accountName || "N/A",
-					bankName: normalizedVendorData.bankName || "N/A",
-					accountNumber: normalizedVendorData.accountNumber || "N/A",
-					bankBranch: normalizedVendorData.bankBranch || "N/A",
-					bankCode: normalizedVendorData.bankCode || "N/A",
-					businessAddress: normalizedVendorData.businessAddress || "N/A",
-					profilePicture: normalizedVendorData.profilePicture || "N/A",
-					isVerified: false,
-					status: "Inactive",
-				} as Vendor;
+				throw new Error("Vendor update did not return vendor data");
+				// return {
+				// 	id,
+				// 	...normalizedVendorData,
+				// 	phoneNumber: normalizedVendorData.phoneNumber || "N/A",
+				// 	taxNumber: normalizedVendorData.taxNumber || "N/A",
+				// 	taxDocuments: Array.isArray(normalizedVendorData.taxDocuments)
+				// 		? normalizedVendorData.taxDocuments
+				// 		: normalizedVendorData.taxDocuments
+				// 		? [normalizedVendorData.taxDocuments]
+				// 		: [],
+				// 	businessRegNumber: normalizedVendorData.businessRegNumber || "N/A",
+				// 	citizenshipDocuments: Array.isArray(
+				// 		normalizedVendorData.citizenshipDocuments
+				// 	)
+				// 		? normalizedVendorData.citizenshipDocuments
+				// 		: normalizedVendorData.citizenshipDocuments
+				// 		? [normalizedVendorData.citizenshipDocuments]
+				// 		: [],
+				// 	chequePhoto: normalizedVendorData.chequePhoto || "",
+				// 	accountName: normalizedVendorData.accountName || "N/A",
+				// 	bankName: normalizedVendorData.bankName || "N/A",
+				// 	accountNumber: normalizedVendorData.accountNumber || "N/A",
+				// 	bankBranch: normalizedVendorData.bankBranch || "N/A",
+				// 	bankCode: normalizedVendorData.bankCode || "N/A",
+				// 	businessAddress: normalizedVendorData.businessAddress || "N/A",
+				// 	profilePicture: normalizedVendorData.profilePicture || "N/A",
+				// 	isVerified: false,
+				// 	status: "Inactive",
+				// } as Vendor;
 			}
 
 			return {
@@ -349,14 +345,14 @@ const createVendorAPI = (token: string | null) => ({
 				taxDocuments: Array.isArray(result.data.taxDocuments)
 					? result.data.taxDocuments
 					: result.data.taxDocuments
-					? [result.data.taxDocuments]
-					: [],
+						? [result.data.taxDocuments]
+						: [],
 				businessRegNumber: result.data.businessRegNumber || "N/A",
 				citizenshipDocuments: Array.isArray(result.data.citizenshipDocuments)
 					? result.data.citizenshipDocuments
 					: result.data.citizenshipDocuments
-					? [result.data.citizenshipDocuments]
-					: [],
+						? [result.data.citizenshipDocuments]
+						: [],
 				chequePhoto: result.data.chequePhoto || "",
 				accountName: result.data.accountName || "N/A",
 				bankName: result.data.bankName || "N/A",
@@ -657,8 +653,8 @@ const AdminVendor: React.FC = () => {
 					typeof vendor.district === "object" && vendor.district
 						? vendor.district.name
 						: typeof vendor.district === "string"
-						? vendor.district
-						: "";
+							? vendor.district
+							: "";
 				return (
 					(vendor.businessName || "").toLowerCase().includes(searchTerm) ||
 					(vendor.email || "").toLowerCase().includes(searchTerm) ||
@@ -703,8 +699,8 @@ const AdminVendor: React.FC = () => {
 					typeof vendor.district === "object" && vendor.district
 						? vendor.district.name
 						: typeof vendor.district === "string"
-						? vendor.district
-						: "";
+							? vendor.district
+							: "";
 				return districtName === districtFilter;
 			});
 		}
@@ -872,205 +868,325 @@ const AdminVendor: React.FC = () => {
 					title="Vendor Management"
 				/>
 				<div className="admin-vendors__content">
-					{unapprovedCount > 0 && (
-						<div className="admin-vendors__unapproved-count">
-							<span>{unapprovedCount} unapproved vendors</span>
+					<div className="admin-vendors__stats-grid">
+						<div className="admin-vendors__stat-card">
+							<div className="stat-icon total-icon">
+								<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+									<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+									<circle cx="9" cy="7" r="4"></circle>
+									<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+									<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+								</svg>
+							</div>
+							<div className="stat-info">
+								<h3>Total Vendors</h3>
+								<p>{vendors.length}</p>
+							</div>
 						</div>
-					)}
-					<div className="admin-vendors__filter-container">
-						<select
-							value={districtFilter}
-							onChange={(e) => setDistrictFilter(e.target.value)}
-							className="admin-vendors__filter-select"
-						>
-							<option value="all">All Districts</option>
-							{districts.map((district) => (
-								<option
-									key={district.id}
-									value={district.name}
-								>
-									{district.name}
-								</option>
-							))}
-						</select>
-						<select
-							value={statusFilter}
-							onChange={(e) => setStatusFilter(e.target.value)}
-							className="admin-vendors__filter-select"
-						>
-							<option value="all">All Statuses</option>
-							<option value="Active">Active</option>
-							<option value="Inactive">Inactive</option>
-						</select>
-						<select
-							value={approvalFilter}
-							onChange={(e) => setApprovalFilter(e.target.value)}
-							className="admin-vendors__filter-select"
-						>
-							<option value="all">All Approvals</option>
-							<option value="approved">Approved</option>
-							<option value="pending">Pending Approval</option>
-						</select>
-						<input
-							type="date"
-							value={startDate}
-							onChange={(e) => setStartDate(e.target.value)}
-							className="admin-vendors__filter-date"
-						/>
-						<input
-							type="date"
-							value={endDate}
-							onChange={(e) => setEndDate(e.target.value)}
-							className="admin-vendors__filter-date"
-						/>
-						<button
-							onClick={handleFilter}
-							className="admin-vendors__filter-button"
-						>
-							Apply Filters
-						</button>
+						<div className="admin-vendors__stat-card warning">
+							<div className="stat-icon pending-icon">
+								<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+									<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+									<line x1="12" y1="9" x2="12" y2="13"></line>
+									<line x1="12" y1="17" x2="12.01" y2="17"></line>
+								</svg>
+							</div>
+							<div className="stat-info">
+								<h3>Pending Approval</h3>
+								<p>{unapprovedCount}</p>
+							</div>
+						</div>
+						<div className="admin-vendors__stat-card success">
+							<div className="stat-icon active-icon">
+								<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+									<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+									<polyline points="22 4 12 14.01 9 11.01"></polyline>
+								</svg>
+							</div>
+							<div className="stat-info">
+								<h3>Active Vendors</h3>
+								<p>{vendors.filter(v => v.status === "Active").length}</p>
+							</div>
+						</div>
 					</div>
-					{error && <p className="admin-vendors__error">{error}</p>}
-					<div className="admin-vendors__list-container">
-						<div className="admin-vendors__table-container">
-							<table className="admin-vendors__table">
-								<thead className="admin-vendors__table-head">
-									<tr>
-										<th
-											onClick={() => handleSort("businessName")}
-											className="admin-vendors__name-column"
-										>
-											Business Name
-										</th>
-										<th
-											onClick={() => handleSort("email")}
-											className="admin-vendors__email-column"
-										>
-											Email
-										</th>
-										<th
-											onClick={() => handleSort("phoneNumber")}
-											className="admin-vendors__phone-column"
-										>
-											Phone
-										</th>
-										<th
-											onClick={() => handleSort("district")}
-											className="admin-vendors__district-column"
-										>
-											District
-										</th>
-										<th
-											onClick={() => handleSort("status")}
-											className="admin-vendors__status-column"
-										>
-											Status
-										</th>
-										<th
-											onClick={() => handleSort("isApproved")}
-											className="admin-vendors__approval-column"
-										>
-											Approval Status
-										</th>
-										<th className="admin-vendors__actions-column">Actions</th>
-									</tr>
-								</thead>
-								<tbody>
-									{loading ? (
-										Array.from({ length: vendorsPerPage }).map((_, index) => (
-											<SkeletonRow key={index} />
-										))
-									) : currentVendors.length === 0 ? (
+
+					{/* Pending Approvals Section */}
+					{vendors.filter(v => !v.isApproved).length > 0 && (
+						<div className="admin-vendors__section pending-section">
+							<div className="section-header">
+								<h2>Pending Verification Requests</h2>
+								<span className="badge warning">{vendors.filter(v => !v.isApproved).length} Pending</span>
+							</div>
+							<div className="admin-vendors__table-container">
+								<table className="admin-vendors__table">
+									<thead className="admin-vendors__table-head">
 										<tr>
-											<td
-												colSpan={7}
-												className="admin-vendors__table-row"
-											>
-												No vendors found
-											</td>
+											<th>Business Name</th>
+											<th>Email</th>
+											<th>Phone</th>
+											<th>District</th>
+											<th>Documents</th>
+											<th>Actions</th>
 										</tr>
-									) : (
-										currentVendors.map((vendor) => (
-											<tr
-												key={vendor.id}
-												className="admin-vendors__table-row"
-											>
-												<td className="admin-vendors__name-column">
-													{vendor.businessName}
-												</td>
-												<td className="admin-vendors__email-column">
-													{vendor.email}
-												</td>
-												<td className="admin-vendors__phone-column">
-													{vendor.phoneNumber}
-												</td>
+									</thead>
+									<tbody>
+										{vendors.filter(v => !v.isApproved).map((vendor) => (
+											<tr key={vendor.id} className="admin-vendors__table-row highlight-row">
+												<td className="admin-vendors__name-column">{vendor.businessName}</td>
+												<td className="admin-vendors__email-column">{vendor.email}</td>
+												<td className="admin-vendors__phone-column">{vendor.phoneNumber}</td>
 												<td className="admin-vendors__district-column">
-													{typeof vendor.district === "object" &&
-													vendor.district
+													{(typeof vendor.district === "object" && vendor.district)
 														? vendor.district.name
-														: vendor.district || "N/A"}
+														: (typeof vendor.district === "string" ? vendor.district : "N/A")}
 												</td>
-												<td className="admin-vendors__status-column">
-													{vendor.status}
-												</td>
-												<td className="admin-vendors__approval-column">
-													<span
-														className={`approval-status ${
-															vendor.isApproved ? "approved" : "pending"
-														}`}
+												<td>
+													<button
+														onClick={() => {
+															setSelectedVendor(vendor);
+															setShowViewModal(true);
+														}}
+														className="view-docs-btn"
 													>
-														{vendor.isApproved ? "Approved" : "Pending"}
-													</span>
+														View Docs
+													</button>
 												</td>
 												<td className="admin-vendors__actions-column">
 													<div className="admin-vendors__actions">
 														<button
-															onClick={() => handleEditVendor(vendor)}
-															className="admin-vendors__action-btn admin-vendors__action-btn--edit"
+															onClick={() => handleApproveClick(vendor.id)}
+															className="admin-vendors__action-btn admin-vendors__action-btn--approve"
+															disabled={approvingVendorId === vendor.id}
+															title="Approve"
 														>
-															Edit
+															<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+																<polyline points="20 6 9 17 4 12"></polyline>
+															</svg>
+															{approvingVendorId === vendor.id ? "..." : "Approve"}
 														</button>
 														<button
-															onClick={() => {
-																setSelectedVendor(vendor);
-																setShowViewModal(true);
-															}}
-															className="admin-vendors__action-btn admin-vendors__action-btn--view"
-														>
-															View
-														</button>
-														{!vendor.isApproved && (
-															<button
-																onClick={() => handleApproveClick(vendor.id)}
-																className="admin-vendors__action-btn admin-vendors__action-btn--approve"
-																disabled={approvingVendorId === vendor.id}
-															>
-																{approvingVendorId === vendor.id
-																	? "Approving..."
-																	: "Approve"}
-															</button>
-														)}
-														<button
-															onClick={() => handleDeleteVendor(vendor.id)}
+															onClick={() => handleRejectClick(vendor.id)}
 															className="admin-vendors__action-btn admin-vendors__action-btn--delete"
+															title="Reject"
 														>
-															Delete
+															<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+																<line x1="18" y1="6" x2="6" y2="18"></line>
+																<line x1="6" y1="6" x2="18" y2="18"></line>
+															</svg>
+															Reject
 														</button>
 													</div>
 												</td>
 											</tr>
-										))
-									)}
-								</tbody>
-							</table>
+										))}
+									</tbody>
+								</table>
+							</div>
 						</div>
-						<div className="admin-vendors__pagination-container">
-							<Pagination
-								currentPage={currentPage}
-								totalItems={filteredVendors.length}
-								itemsPerPage={vendorsPerPage}
-								onPageChange={setCurrentPage}
+					)}
+
+					<div className="admin-vendors__section">
+						<div className="section-header">
+							<h2>All Vendors</h2>
+						</div>
+						<div className="admin-vendors__filter-container">
+							<select
+								value={districtFilter}
+								onChange={(e) => setDistrictFilter(e.target.value)}
+								className="admin-vendors__filter-select"
+							>
+								<option value="all">All Districts</option>
+								{districts.map((district) => (
+									<option
+										key={district.id}
+										value={district.name}
+									>
+										{district.name}
+									</option>
+								))}
+							</select>
+							<select
+								value={statusFilter}
+								onChange={(e) => setStatusFilter(e.target.value)}
+								className="admin-vendors__filter-select"
+							>
+								<option value="all">All Statuses</option>
+								<option value="Active">Active</option>
+								<option value="Inactive">Inactive</option>
+							</select>
+							<select
+								value={approvalFilter}
+								onChange={(e) => setApprovalFilter(e.target.value)}
+								className="admin-vendors__filter-select"
+							>
+								<option value="all">All Approvals</option>
+								<option value="approved">Approved</option>
+								<option value="pending">Pending Approval</option>
+							</select>
+							<input
+								type="date"
+								value={startDate}
+								onChange={(e) => setStartDate(e.target.value)}
+								className="admin-vendors__filter-date"
 							/>
+							<input
+								type="date"
+								value={endDate}
+								onChange={(e) => setEndDate(e.target.value)}
+								className="admin-vendors__filter-date"
+							/>
+							<button
+								onClick={handleFilter}
+								className="admin-vendors__filter-button"
+							>
+								Apply Filters
+							</button>
+						</div>
+						{error && <p className="admin-vendors__error">{error}</p>}
+						<div className="admin-vendors__list-container">
+							<div className="admin-vendors__table-container">
+								<table className="admin-vendors__table">
+									<thead className="admin-vendors__table-head">
+										<tr>
+											<th
+												onClick={() => handleSort("businessName")}
+												className="admin-vendors__name-column"
+											>
+												Business Name
+											</th>
+											<th
+												onClick={() => handleSort("email")}
+												className="admin-vendors__email-column"
+											>
+												Email
+											</th>
+											<th
+												onClick={() => handleSort("phoneNumber")}
+												className="admin-vendors__phone-column"
+											>
+												Phone
+											</th>
+											<th
+												onClick={() => handleSort("district")}
+												className="admin-vendors__district-column"
+											>
+												District
+											</th>
+											<th
+												onClick={() => handleSort("status")}
+												className="admin-vendors__status-column"
+											>
+												Status
+											</th>
+											<th
+												onClick={() => handleSort("isApproved")}
+												className="admin-vendors__approval-column"
+											>
+												Approval Status
+											</th>
+											<th className="admin-vendors__actions-column">Actions</th>
+										</tr>
+									</thead>
+									<tbody>
+										{loading ? (
+											Array.from({ length: vendorsPerPage }).map((_, index) => (
+												<SkeletonRow key={index} />
+											))
+										) : currentVendors.length === 0 ? (
+											<tr>
+												<td
+													colSpan={7}
+													className="admin-vendors__table-row"
+												>
+													No vendors found
+												</td>
+											</tr>
+										) : (
+											currentVendors.map((vendor) => (
+												<tr
+													key={vendor.id}
+													className="admin-vendors__table-row"
+												>
+													<td className="admin-vendors__name-column">
+														{vendor.businessName}
+													</td>
+													<td className="admin-vendors__email-column">
+														{vendor.email}
+													</td>
+													<td className="admin-vendors__phone-column">
+														{vendor.phoneNumber}
+													</td>
+													<td className="admin-vendors__district-column">
+														{typeof vendor.district === "object" &&
+															vendor.district
+															? vendor.district.name
+															: vendor.district || "N/A"}
+													</td>
+													<td className="admin-vendors__status-column">
+														{vendor.status}
+													</td>
+													<td className="admin-vendors__approval-column">
+														<span
+															className={`approval-status ${vendor.isApproved ? "approved" : "pending"
+																}`}
+														>
+															{vendor.isApproved ? "Approved" : "Pending"}
+														</span>
+													</td>
+													<td className="admin-vendors__actions-column">
+														<div className="admin-vendors__actions">
+															<button
+																onClick={() => handleEditVendor(vendor)}
+																className="admin-vendors__action-btn admin-vendors__action-btn--edit"
+															>
+																Edit
+															</button>
+															<button
+																onClick={() => {
+																	setSelectedVendor(vendor);
+																	setShowViewModal(true);
+																}}
+																className="admin-vendors__action-btn admin-vendors__action-btn--view"
+															>
+																View
+															</button>
+															{!vendor.isApproved && (
+																<button
+																	onClick={() => handleApproveClick(vendor.id)}
+																	className="admin-vendors__action-btn admin-vendors__action-btn--approve"
+																	disabled={approvingVendorId === vendor.id}
+																>
+																	{approvingVendorId === vendor.id
+																		? "..."
+																		: "Approve"}
+																</button>
+															)}
+															<button
+																onClick={() => handleDeleteVendor(vendor.id)}
+																className="admin-vendors__action-btn admin-vendors__action-btn--delete"
+															>
+																Delete
+															</button>
+														</div>
+													</td>
+												</tr>
+											))
+										)}
+									</tbody>
+								</table>
+							</div>
+							<div className="admin-vendors__pagination-container">
+								<div className="admin-vendors__pagination-info">
+									Showing {(currentPage - 1) * vendorsPerPage + 1}-
+									{Math.min(currentPage * vendorsPerPage, filteredVendors.length)}{" "}
+									out of {filteredVendors.length}
+								</div>
+								<Pagination
+									currentPage={currentPage}
+									totalPages={Math.ceil(filteredVendors.length / vendorsPerPage)}
+									onPageChange={setCurrentPage}
+								/>
+							</div>
 						</div>
 					</div>
 					<VendorEditModal

@@ -18,6 +18,7 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -28,6 +29,7 @@
     opacity: 0;
     transform: translateY(-10px) scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -40,7 +42,6 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 800px;
- 
   position: relative;
   overflow: hidden;
   max-height: 90vh;
@@ -110,8 +111,10 @@
 
 .detail-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Reduced minmax to 220px */
-  gap: 12px; /* Reduced gap from 16px to 12px */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  /* Reduced minmax to 220px */
+  gap: 12px;
+  /* Reduced gap from 16px to 12px */
   margin-bottom: 24px;
 }
 
@@ -121,7 +124,8 @@
 
 .detail-item {
   background: #f9fafb;
-  padding: 12px; /* Reduced padding from 16px */
+  padding: 12px;
+  /* Reduced padding from 16px */
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
   border: 1px solid #e5e8eb;
@@ -155,9 +159,10 @@
 
 .form-input {
   width: 100%;
-  max-width: 300px; /* Added max-width to prevent overflow */
-height: 30px;
- 
+  max-width: 300px;
+  /* Added max-width to prevent overflow */
+  height: 30px;
+
 
   border-radius: 6px;
   font-size: 14px;
@@ -283,7 +288,8 @@ input[type="file"] {
   justify-content: flex-end;
   gap: 15px;
   padding: 20px 24px;
-  width: 100%; /* Ensure full width */
+  width: 100%;
+  /* Ensure full width */
 
 }
 
@@ -356,8 +362,10 @@ input[type="file"] {
   }
 
   .form-input {
-    max-width: 180px; /* Further reduce on smaller screens */
-    padding: 6px 8px; /* Reduce padding more */
+    max-width: 180px;
+    /* Further reduce on smaller screens */
+    padding: 6px 8px;
+    /* Reduce padding more */
   }
 }
 
@@ -375,7 +383,8 @@ input[type="file"] {
   }
 
   .detail-item {
-    padding: 10px; /* Further reduce padding */
+    padding: 10px;
+    /* Further reduce padding */
   }
 
   .document-section {
@@ -383,8 +392,10 @@ input[type="file"] {
   }
 
   .form-input {
-    max-width: 150px; /* Even smaller on very small screens */
-    padding: 5px 6px; /* Minimum padding */
+    max-width: 150px;
+    /* Even smaller on very small screens */
+    padding: 5px 6px;
+    /* Minimum padding */
   }
 }
 
@@ -393,7 +404,7 @@ input[type="file"] {
 
 
 .cheque-container {
-  background-image: url('../assets/cheque.png'); 
+  background-image: url('../assets/cheque.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -403,7 +414,7 @@ input[type="file"] {
   border-radius: 8px;
   overflow: hidden;
   width: 100%;
-  filter: blur(2px); 
+  filter: blur(2px);
 }
 
 .cheque-container .document-item {
@@ -454,10 +465,12 @@ input[type="file"] {
 .file-name {
   font-size: 12px;
   color: #1f2937;
-  background: rgba(255, 255, 255, 0.9); /* Slight background for readability */
+  background: rgba(255, 255, 255, 0.9);
+  /* Slight background for readability */
   padding: 4px 8px;
   border-radius: 4px;
-  margin-left: 5px; /* Space between button and file name */
+  margin-left: 5px;
+  /* Space between button and file name */
 }
 
 .remove-btn {
@@ -473,7 +486,8 @@ input[type="file"] {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  margin-left: 5px; /* Space between file name and remove button */
+  margin-left: 5px;
+  /* Space between file name and remove button */
 }
 
 .remove-btn:hover {
@@ -489,5 +503,6 @@ input[type="file"] {
 
 /* Hide file-upload when no file is selected (handled by conditional rendering in JSX) */
 .cheque-container .file-upload {
-  display: none; /* This will be overridden by the conditional rendering */
+  display: none;
+  /* This will be overridden by the conditional rendering */
 }

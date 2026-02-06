@@ -5,28 +5,33 @@ import { Vendor } from "../Types/vendor";
 interface VendorViewModalProps {
   show: boolean;
   onClose: () => void;
-  vendor: Vendor | null; // Changed from any to Vendor
+  vendor: Vendor | null;
 }
 
-const VendorViewModal: React.FC<VendorViewModalProps> = ({ show, onClose, vendor }) => {
+const VendorViewModal: React.FC<VendorViewModalProps> = ({
+  show,
+  onClose,
+  vendor,
+}) => {
   if (!show || !vendor) return null;
 
-  const renderDetailItem = (label: string, value: any, type: string = "default") => {
-    const displayValue = value || "N/A";
-    const isHighlight = type === "business" || type === "email";
-
+  const renderDetailItem = (
+    label: string,
+    value: React.ReactNode
+  ) => {
     return (
-      <div className={`detail-item ${isHighlight ? 'highlight' : ''}`} data-type={type}>
-        <p>
-          <strong>{label}</strong>
-          <span className="value">{displayValue}</span>
-        </p>
+      <div className="detail-item">
+        <span className="detail-label">{label}</span>
+        <span className="detail-value">{value || "N/A"}</span>
       </div>
     );
   };
 
-  const renderDocumentSection = (title: string, documents: string[] | string) => {
-    if (!documents || (Array.isArray(documents) && documents.length === 0)) {
+  const renderDocumentSection = (
+    title: string,
+    documents: string[] | null
+  ) => {
+    if (!documents || documents.length === 0) {
       return (
         <div className="document-section">
           <h3>{title}</h3>
@@ -35,30 +40,29 @@ const VendorViewModal: React.FC<VendorViewModalProps> = ({ show, onClose, vendor
       );
     }
 
-    const documentArray = Array.isArray(documents) ? documents : [documents];
-
     return (
       <div className="document-section">
         <h3>{title}</h3>
         <div className="document-container">
-          {documentArray.map((url: string, idx: number) => (
-            <div key={idx} className="document-item">
-              <a 
-                href={url} 
-                target="_blank" 
-                rel="noopener noreferrer" 
+          {documents.map((url, index) => (
+            <div key={index} className="document-item">
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="document-link"
-                title={`View ${title} ${idx + 1}`}
               >
-                <img 
-                  src={url} 
-                  alt={`${title} ${idx + 1}`} 
+                <img
+                  src={url}
+                  alt={`${title} ${index + 1}`}
                   className="document-image"
                   onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23f3f4f6"/><text x="50" y="50" text-anchor="middle" dy=".3em" fill="%236b7280">No Image</text></svg>';
+                    const img = e.target as HTMLImageElement;
+                    img.src =
+                      'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" fill="%23e5e7eb"/><text x="60" y="60" text-anchor="middle" dy=".35em" fill="%236b7280" font-size="12">No Image</text></svg>';
                   }}
                 />
+                <div className="document-overlay">View</div>
               </a>
             </div>
           ))}
@@ -69,44 +73,68 @@ const VendorViewModal: React.FC<VendorViewModalProps> = ({ show, onClose, vendor
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
         <div className="modal-header">
           <h2 className="modal-title">Vendor Details</h2>
-          <button className="close-btn" onClick={onClose} aria-label="Close modal">
+          <button
+            className="close-btn"
+            onClick={onClose}
+            aria-label="Close modal"
+          >
             ×
           </button>
         </div>
 
-        <div className="vendor-details">
+        {/* Content */}
+        <div className="vendor-view-vendor-details">
+          {/* Basic Info */}
           <div className="detail-grid">
-            {renderDetailItem("ID: ", vendor.id, "id")}
-            {renderDetailItem("Business Name: ", vendor.businessName, "business")}
-            {renderDetailItem("Email: ", vendor.email, "email")}
-            {renderDetailItem("Phone Number: ", vendor.phoneNumber, "contact")}
-            {renderDetailItem("District: ", vendor.district?.name, "location")}
-            {renderDetailItem("Status: ", 
+            {renderDetailItem("Vendor ID", vendor.id)}
+            {renderDetailItem("Business Name", vendor.businessName)}
+            {renderDetailItem("Email", vendor.email)}
+            {renderDetailItem("Phone Number", vendor.phoneNumber)}
+            {renderDetailItem("District", vendor.district?.name)}
+            {renderDetailItem(
+              "Status",
               vendor.isVerified ? (
                 <span className="status-badge active">Active</span>
               ) : (
                 <span className="status-badge inactive">Inactive</span>
-              ), "default"
+              )
             )}
           </div>
 
+          {/* Business & Bank Info */}
           <div className="detail-grid">
-            {renderDetailItem("PAN Number: ", vendor.taxNumber, "business")}
-            {renderDetailItem("Business Reg Number: ", vendor.businessRegNumber, "business")}
-            {renderDetailItem("Account Name: ", vendor.accountName, "financial")}
-            {renderDetailItem("Bank Name: ", vendor.bankName, "financial")}
-            {renderDetailItem("Account Number: ", vendor.accountNumber, "financial")}
-            {renderDetailItem("Bank Branch: ", vendor.bankBranch, "financial")}
-            {renderDetailItem("Bank Code: ", vendor.bankCode, "financial")}
-    
+            {renderDetailItem("PAN Number", vendor.taxNumber)}
+            {renderDetailItem(
+              "Business Registration No.",
+              vendor.businessRegNumber
+            )}
+            {renderDetailItem("Account Name", vendor.accountName)}
+            {renderDetailItem("Bank Name", vendor.bankName)}
+            {renderDetailItem("Account Number", vendor.accountNumber)}
+            {renderDetailItem("Bank Branch", vendor.bankBranch)}
+            {renderDetailItem("Bank Code", vendor.bankCode)}
           </div>
 
-          {renderDocumentSection("PAN Documents", vendor.taxDocuments)}
-          {renderDocumentSection("Citizenship Documents", vendor.citizenshipDocuments)}
-          {renderDocumentSection("Cheque Photo", vendor.chequePhoto)}
+          {/* Documents */}
+          {renderDocumentSection(
+            "PAN Documents",
+            vendor.taxDocuments
+          )}
+          {renderDocumentSection(
+            "Citizenship Documents",
+            vendor.citizenshipDocuments
+          )}
+          {renderDocumentSection(
+            "Cheque Photos",
+            vendor.chequePhoto
+          )}
         </div>
       </div>
     </div>
