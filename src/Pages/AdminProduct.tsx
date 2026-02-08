@@ -330,7 +330,7 @@ const AdminProduct: React.FC = () => {
                   products.map((product) => {
 
                     const productDiscountLabel =
-                      product.discount && Number(product.discount) > 0
+                      !product.hasVariants && !product.deal && product.discount && Number(product.discount) > 0
                         ? product.discountType === "PERCENTAGE"
                           ? `${product.discount}%`
                           : `₹${product.discount}`

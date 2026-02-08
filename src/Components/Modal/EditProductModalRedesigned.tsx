@@ -81,6 +81,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   // Image state
   const [images, setImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
+  const isDealActive = Boolean(formData.dealId);
+
 
   // Helpers: parse and dedupe values from comma-separated text
   const parseValues = (text: string): string[] => {
@@ -171,6 +173,9 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       price: 0,
       stock: 0,
       status: InventoryStatus.AVAILABLE,
+      discount: 0,
+      discountType: 'PERCENTAGE',
+      finalPrice: 0,
       attributes: cleanSpecs.map((spec, i) => ({
         type: spec.type,
         values: [{ value: combo[i], nestedAttributes: [] }]
@@ -360,6 +365,9 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
           price: Number(v.basePrice || 0),
           stock: Number(v.stock || 0),
           status: v.status || InventoryStatus.AVAILABLE,
+          discount: v.discount ?? 0,
+          discountType: v.discountType || 'PERCENTAGE',
+          finalPrice: Number(v.finalPrice || v.basePrice || 0),
           attributes: normalizeVariantAttributes(v.attributes),
           images: imgs,
           variantImages: imgs,
@@ -447,6 +455,9 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       price: 0,
       stock: 0,
       status: InventoryStatus.AVAILABLE,
+      discount: 0,
+      discountType: 'PERCENTAGE',
+      finalPrice: 0,
       attributes: [],
       images: [],
       variantImages: []
@@ -521,14 +532,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   };
 
   const validateForm = (): string | null => {
-    //('🔍 VALIDATION CHECK:');
-    //('- Product name:', formData.name);
-    //('- Selected category ID:', selectedCategoryId);
-    //('- Subcategory ID:', formData.subcategoryId);
-    //('- Has variants:', formData.hasVariants);
-    //('- Base price:', formData.basePrice);
-    //('- Stock:', formData.stock);
-    //('- Variants count:', variants.length);
 
     if (!formData.name.trim()) {
       //('❌ Product name is missing');
@@ -584,19 +587,15 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    //('🚀 UPDATE PRODUCT BUTTON CLICKED!');
     e.preventDefault();
 
     if (!product) {
-      console.error('❌ No product to update');
       toast.error('No product to update');
       return;
     }
 
-    //('🔍 Validating form...');
     const validationError = validateForm();
     if (validationError) {
-      console.error('❌ Validation error:', validationError);
       toast.error(validationError);
       return;
     }
@@ -604,87 +603,91 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     setIsLoading(true);
 
     try {
+      /* -------------------- PRODUCT IMAGES -------------------- */
       let newImageUrls: string[] = [];
+
       if (images.length > 0) {
-        //('📤 Uploading new images...');
         const uploadResponse = await uploadProductImages(images);
-        if (uploadResponse.success) {
-          newImageUrls = uploadResponse.urls;
-          //('✅ Images uploaded successfully:', newImageUrls);
-        } else {
+        if (!uploadResponse.success) {
           throw new Error('Failed to upload images');
         }
+        newImageUrls = uploadResponse.urls;
       }
 
-      // Step 2: Combine existing and new images
       const allImages = [...existingImages, ...newImageUrls];
-      //('🖼️ All Images:', allImages);
 
-      // Step 3: Prepare product data according to new API contract
+      const isDealActive = Boolean(formData.dealId);
+
+      /* -------------------- BASE PAYLOAD -------------------- */
       const updatePayload: any = {
         name: formData.name,
         subcategoryId: formData.subcategoryId,
         hasVariants: formData.hasVariants,
-        discount: formData.discount !== undefined && formData.discount !== null ? parseFloat(formData.discount.toString()) : 0,
-        discountType: formData.discountType || 'PERCENTAGE'
+        dealId: formData.dealId ?? null,
       };
 
-      // Add optional fields
       if (formData.description) updatePayload.description = formData.description;
-      updatePayload.dealId = formData.dealId ?? null;
       if (formData.bannerId) updatePayload.bannerId = formData.bannerId;
       if (allImages.length > 0) updatePayload.productImages = allImages;
 
-      // Handle variants vs non-variants
-      if (formData.hasVariants) {
-        if (variants.length > 0) {
-          // Upload new variant images and merge with existing URLs
-          const variantsWithImageUrls = await Promise.all(
-            variants.map(async (variant) => {
-              const variantImages = (variant.images || variant.variantImages || []) as (File | string)[];
-              const variantImageFiles = variantImages.filter(img => img instanceof File) as File[];
-              let variantImageUrls = variantImages.filter(img => typeof img === 'string') as string[];
+      /* -------------------- DISCOUNT (PRODUCT LEVEL) -------------------- */
+      if (!isDealActive) {
+        updatePayload.discount =
+          formData.discount != null ? Number(formData.discount) : 0;
+        updatePayload.discountType =
+          formData.discountType || 'PERCENTAGE';
+      }
 
-              if (variantImageFiles.length > 0) {
-                try {
-                  const uploadResponse = await uploadProductImages(variantImageFiles);
-                  if (uploadResponse.success) {
-                    variantImageUrls = [...variantImageUrls, ...uploadResponse.urls];
-                  } else {
-                    console.error('Failed to upload some variant images:', uploadResponse.message);
-                  }
-                } catch (err) {
-                  console.error('Variant image upload error:', err);
-                }
+      /* -------------------- VARIANT PRODUCTS -------------------- */
+      if (formData.hasVariants && variants.length > 0) {
+        const variantsWithImages = await Promise.all(
+          variants.map(async (variant) => {
+            const imgs = (variant.images || variant.variantImages || []) as (File | string)[];
+            const files = imgs.filter(img => img instanceof File) as File[];
+            let urls = imgs.filter(img => typeof img === 'string') as string[];
+
+            if (files.length > 0) {
+              const uploadResponse = await uploadProductImages(files);
+              if (uploadResponse.success) {
+                urls = [...urls, ...uploadResponse.urls];
               }
+            }
 
-              return { ...variant, images: variantImageUrls };
-            })
-          );
+            return { ...variant, images: urls };
+          })
+        );
 
-          // Convert variants to match API structure
-          updatePayload.variants = variantsWithImageUrls.map((variant: ProductVariant) => ({
-            sku: variant.sku,
-            basePrice: variant.price,
-            discount: 0,
-            discountType: 'PERCENTAGE',
-            attributes: (variant.attributes || []).reduce((acc, attr) => {
-              const key = attr.type?.trim().toLowerCase();
-              const firstVal = attr.values && attr.values[0] ? attr.values[0].value : '';
-              if (key && firstVal) (acc as any)[key] = firstVal;
-              return acc;
-            }, {} as Record<string, string>),
-            variantImages: (variant.images || []) as string[],
-            stock: variant.stock,
-            status: variant.status || 'AVAILABLE'
-          }));
-        }
-      } else {
-        updatePayload.basePrice = typeof formData.basePrice === 'string' ? parseFloat(formData.basePrice) : formData.basePrice;
-        updatePayload.stock = typeof formData.stock === 'string' ? parseInt(formData.stock) : formData.stock;
+        updatePayload.variants = variantsWithImages.map((variant) => ({
+          sku: variant.sku,
+          basePrice: variant.price,
+          stock: variant.stock,
+          status: variant.status || 'AVAILABLE',
+
+          /* Deal overrides variant discount */
+          discount: isDealActive ? 0 : Number(variant.discount || 0),
+          discountType: isDealActive
+            ? 'PERCENTAGE'
+            : variant.discountType || 'PERCENTAGE',
+
+          attributes: (variant.attributes || []).reduce((acc, attr) => {
+            const key = attr.type?.trim().toLowerCase();
+            const val = attr.values?.[0]?.value;
+            if (key && val) acc[key] = val;
+            return acc;
+          }, {} as Record<string, string>),
+
+          variantImages: variant.images as string[],
+        }));
+      }
+
+      /* -------------------- SIMPLE PRODUCT -------------------- */
+      if (!formData.hasVariants) {
+        updatePayload.basePrice = Number(formData.basePrice);
+        updatePayload.stock = Number(formData.stock);
         updatePayload.status = formData.status || 'AVAILABLE';
       }
 
+      /* -------------------- API CALL -------------------- */
       const response = await updateProduct(
         product.id,
         selectedCategoryId,
@@ -692,20 +695,22 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         updatePayload
       );
 
-      if (response.success) {
-        toast.success('Product updated successfully!');
-        await onSave(product.id, formData, selectedCategoryId, formData.subcategoryId);
-        handleClose();
-      } else {
+      if (!response.success) {
         throw new Error('Failed to update product');
       }
+
+      toast.success('Product updated successfully!');
+      await onSave(product.id, formData, selectedCategoryId, formData.subcategoryId);
+      handleClose();
+
     } catch (error: any) {
-      console.error('Error updating product:', error);
+      console.error('Update product error:', error);
       toast.error(error.message || 'Failed to update product');
     } finally {
       setIsLoading(false);
     }
   };
+
 
   const handleClose = () => {
     setFormData({
@@ -919,13 +924,14 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
             {!formData.hasVariants && (
               <div className="form-section">
                 <div className="section-header">
-                  <div className="section-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z" />
-                    </svg>
-                  </div>
                   <h3 className="section-title">Discount</h3>
                 </div>
+
+                {isDealActive && (
+                  <div className="info-banner">
+                    Discount is controlled by the selected deal.
+                  </div>
+                )}
 
                 <div className="form-grid two-columns">
                   <div className="form-group">
@@ -934,10 +940,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                       type="number"
                       className="form-input"
                       value={formData.discount || ''}
-                      onChange={(e) => handleInputChange('discount', e.target.value === '' ? undefined : Number(e.target.value))}
-                      placeholder="0.00"
-                      min="0"
-                      step="0.01"
+                      disabled={isDealActive}
+                      onChange={(e) =>
+                        handleInputChange(
+                          'discount',
+                          e.target.value === '' ? undefined : Number(e.target.value)
+                        )
+                      }
                     />
                   </div>
 
@@ -946,7 +955,10 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     <select
                       className="form-select"
                       value={formData.discountType || ''}
-                      onChange={(e) => handleInputChange('discountType', e.target.value || undefined)}
+                      disabled={isDealActive}
+                      onChange={(e) =>
+                        handleInputChange('discountType', e.target.value || undefined)
+                      }
                     >
                       <option value="">No discount</option>
                       <option value="PERCENTAGE">Percentage (%)</option>
@@ -956,6 +968,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                 </div>
               </div>
             )}
+
 
 
             {/* Variants Section */}
@@ -1092,63 +1105,44 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                         </div>
 
                         <div className="form-group">
-                          <label className="form-label required">Status</label>
+                          <label className="form-label">Discount Amount</label>
+
+                          {isDealActive && (
+                            <div className="info-hint">
+                              Discount overridden by deal
+                            </div>
+                          )}
+
+                          <input
+                            type="number"
+                            className="form-input"
+                            value={variant.discount || ''}
+                            disabled={isDealActive}
+                            onChange={(e) =>
+                              updateVariant(
+                                index,
+                                'discount',
+                                e.target.value === '' ? 0 : Number(e.target.value)
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Discount Type</label>
                           <select
                             className="form-select"
-                            value={variant.status}
-                            onChange={(e) => updateVariant(index, 'status', e.target.value as InventoryStatus)}
-                            required
+                            value={variant.discountType || 'PERCENTAGE'}
+                            disabled={isDealActive}
+                            onChange={(e) =>
+                              updateVariant(index, 'discountType', e.target.value)
+                            }
                           >
-                            <option value={InventoryStatus.AVAILABLE}>Available</option>
-                            <option value={InventoryStatus.OUT_OF_STOCK}>Out of Stock</option>
-                            <option value={InventoryStatus.LOW_STOCK}>Low Stock</option>
+                            <option value="PERCENTAGE">Percentage (%)</option>
+                            <option value="FLAT">Fixed Amount</option>
                           </select>
                         </div>
-                      </div>
 
-                      <div className="form-group full-width">
-                        <label className="form-label">Attributes</label>
-                        <input
-                          type="text"
-                          className="form-input"
-                          value={newAttribute.type}
-                          onChange={(e) => setNewAttribute({ ...newAttribute, type: e.target.value })}
-                          placeholder="Attribute Type (e.g., Color)"
-                        />
-                        <input
-                          type="text"
-                          className="form-input"
-                          value={newAttribute.values[0]?.value || ''}
-                          onChange={(e) => setNewAttribute({
-                            ...newAttribute,
-                            values: [{ value: e.target.value, nestedAttributes: [] }]
-                          })}
-                          placeholder="Attribute Value (e.g., Red)"
-                        />
-                        <button
-                          type="button"
-                          className="btn btn-add"
-                          onClick={() => addAttribute(index)}
-                          disabled={!newAttribute.type || !newAttribute.values[0]?.value}
-                        >
-                          Add Attribute
-                        </button>
-                        {variant.attributes && variant.attributes.length > 0 && (
-                          <div className="attribute-tags">
-                            {variant.attributes.map((attr, attrIndex) => (
-                              <div key={attrIndex} className="attribute-tag">
-                                {attr.type}: {attr.values.map(v => v.value).join(', ')}
-                                <button
-                                  type="button"
-                                  className="attribute-remove"
-                                  onClick={() => removeAttribute(index, attrIndex)}
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
                       </div>
 
                       <div className="form-group full-width">
@@ -1209,8 +1203,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
               </div>
             )}
 
-            {/* Discount Section */}
-            {formData.hasVariants && (
+            {/* Hide product-level discount when product has variants or deal is active */}
+            {false && (
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon">

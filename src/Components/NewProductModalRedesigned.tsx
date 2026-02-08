@@ -24,6 +24,8 @@ type ProductVariant = {
   price: number;
   stock: number;
   status: InventoryStatus;
+  discount?: number | string | null;
+  discountType?: string | null;
   attributes: {
     type: string;
     values: {
@@ -209,6 +211,9 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   // Image state: support both local Files and already-uploaded URLs
   const [images, setImages] = useState<Array<File | string>>([]);
 
+  const isDealActive = Boolean(formData.dealId);
+
+
   // Load data on mount
   useEffect(() => {
     if (isOpen) {
@@ -271,6 +276,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       price: 0,
       stock: 0,
       status: InventoryStatus.AVAILABLE,
+      discount: 0,
+      discountType: 'PERCENTAGE',
       attributes: [],
       images: [],
     };
@@ -412,6 +419,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
         price: 0,
         stock: 0,
         status: InventoryStatus.AVAILABLE,
+        discount: 0,
+        discountType: 'PERCENTAGE',
         attributes: cleanSpecs.map((spec, i) => ({
           type: spec.type,
           values: [{ value: combo[i] }]
@@ -452,14 +461,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    //(' NEW PRODUCT MODAL SUBMIT START');
-    //(' Selected Category ID:', selectedCategoryId);
-    //(' Form Data:', formData);
-    //(' Variants:', variants);
-    //(' Images:', images);
-
     if (!selectedCategoryId || !formData.subcategoryId) {
-      console.error('Missing category or subcategory:', { selectedCategoryId, subcategoryId: formData.subcategoryId });
       toast.error('Please select category and subcategory');
       return;
     }
@@ -473,142 +475,116 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     setIsLoading(true);
 
     try {
-      // Prepare variants data
-      const variantsData = variants.map(variant => ({
-        sku: variant.sku,
-        price: variant.price,
-        stock: variant.stock,
-        status: variant.status,
-        attributes: variant.attributes.map(attr => ({
-          type: attr.type,
-          values: attr.values.map(val => ({
-            value: val.value,
-            nestedAttributes: val.nestedAttributes?.map(nested => ({
-              type: nested.type,
-              values: nested.values
-            })) || []
-          }))
-        })),
-        images: variant.images
-      }));
+      const isDealActive = Boolean(formData.dealId);
 
-      // Step 1: Upload main product images first to get URLs and merge with any existing URL strings
-      let productImageUrls: string[] = [];
+      /* ---------------- PRODUCT IMAGES ---------------- */
       const imageFiles = images.filter(img => img instanceof File) as File[];
       const existingImageUrls = images.filter(img => typeof img === 'string') as string[];
+
+      let productImageUrls: string[] = [...existingImageUrls];
+
       if (imageFiles.length > 0) {
-        //(' Uploading product images...');
         const uploadResponse = await uploadProductImages(imageFiles);
-        if (uploadResponse.success) {
-          productImageUrls = [...existingImageUrls, ...uploadResponse.urls];
-          //(' Product images uploaded successfully:', productImageUrls);
-        } else {
+        if (!uploadResponse.success) {
           throw new Error(uploadResponse.message || 'Failed to upload product images');
         }
-      } else {
-        // No new files, keep any existing URLs (if any)
-        productImageUrls = [...existingImageUrls];
+        productImageUrls = [...existingImageUrls, ...uploadResponse.urls];
       }
 
-      // Warn if files were selected but no URLs were produced
-      if (imageFiles.length > 0 && productImageUrls.length === existingImageUrls.length) {
-        console.warn('No product image URLs returned from upload');
-        toast.warn('Product images failed to upload. Please try again or add via Edit later.');
-      }
-
-      // Step 2: Upload variant images and collect their URLs
+      /* ---------------- VARIANT IMAGES ---------------- */
       const variantsWithImageUrls = await Promise.all(
-        variantsData.map(async (variant) => {
-          const variantImages = variant.images || [];
-          const variantImageFiles = variantImages.filter(img => img instanceof File) as File[];
-          let variantImageUrls = variantImages.filter(img => typeof img === 'string') as string[];
+        variants.map(async (variant) => {
+          const imgs = variant.images || [];
+          const files = imgs.filter(img => img instanceof File) as File[];
+          let urls = imgs.filter(img => typeof img === 'string') as string[];
 
-          // Upload any new variant images
-          if (variantImageFiles.length > 0) {
-            //(` Uploading ${variantImageFiles.length} images for variant ${variant.sku}`);
-            const uploadResponse = await uploadProductImages(variantImageFiles);
+          if (files.length > 0) {
+            const uploadResponse = await uploadProductImages(files);
             if (uploadResponse.success) {
-              variantImageUrls = [...variantImageUrls, ...uploadResponse.urls];
-              //(` Variant ${variant.sku} images uploaded:`, uploadResponse.urls);
-            } else {
-              console.error(`Failed to upload images for variant ${variant.sku}:`, uploadResponse.message);
+              urls = [...urls, ...uploadResponse.urls];
             }
           }
 
-          return {
-            ...variant,
-            images: variantImageUrls
-          };
+          return { ...variant, images: urls };
         })
       );
 
-      // Step 3: Prepare product data according to new API specification
+      /* ---------------- BASE PAYLOAD ---------------- */
       const productData: any = {
         name: formData.name,
         description: formData.description || '',
         hasVariants: formData.hasVariants,
         productImages: productImageUrls,
-        dealId: formData.dealId || 0,
-        bannerId: 0,
-        discount: formData.discount !== undefined && formData.discount !== null ? parseFloat(formData.discount.toString()) : 0,
-        discountType: formData.discountType || 'PERCENTAGE'
+        dealId: formData.dealId ?? null,
+        bannerId: null
       };
 
+      /* ---------------- PRODUCT DISCOUNT ---------------- */
+      if (!isDealActive) {
+        productData.discount =
+          formData.discount != null ? Number(formData.discount) : 0;
+        productData.discountType =
+          formData.discountType || 'PERCENTAGE';
+      }
+
+      /* ---------------- VARIANT PRODUCTS ---------------- */
       if (formData.hasVariants) {
-        // For variant products, structure variants according to API spec
         productData.variants = variantsWithImageUrls.map((variant) => ({
           sku: variant.sku,
           basePrice: variant.price,
-          discount: 0,
-          discountType: 'PERCENTAGE',
-          attributes: variant.attributes ?
-            variant.attributes.reduce((acc: any, attr: any) => {
-              const key = (attr.type || '').toString().trim().toLowerCase();
-              const firstVal = attr.values && attr.values[0] ? attr.values[0].value : '';
-              if (key && firstVal) acc[key] = firstVal;
-              return acc;
-            }, {}) : {},
-          variantImages: variant.images,
           stock: variant.stock,
-          status: variant.status
+          status: variant.status,
+
+          // 🔑 deal overrides variant discount
+          discount: isDealActive ? 0 : Number(variant.discount || 0),
+          discountType: isDealActive
+            ? 'PERCENTAGE'
+            : variant.discountType || 'PERCENTAGE',
+
+          attributes: (variant.attributes || []).reduce((acc: any, attr) => {
+            const key = attr.type?.trim().toLowerCase();
+            const val = attr.values?.[0]?.value;
+            if (key && val) acc[key] = val;
+            return acc;
+          }, {}),
+
+          variantImages: variant.images
         }));
 
-        // Set base product fields for variant products
+        // base product fields for variant products
         productData.basePrice = 0;
         productData.stock = 0;
         productData.status = 'AVAILABLE';
-      } else {
-        // For non-variant products
-        productData.basePrice = parseFloat(formData.basePrice?.toString() || '0');
-        productData.stock = parseInt(formData.stock?.toString() || '0');
+      }
+
+      /* ---------------- SIMPLE PRODUCT ---------------- */
+      if (!formData.hasVariants) {
+        productData.basePrice = Number(formData.basePrice);
+        productData.stock = Number(formData.stock);
         productData.status = formData.status || 'AVAILABLE';
         productData.variants = [];
       }
 
-      //('=== FINAL PRODUCT DATA FOR API ===');
-      //('Product Data:', JSON.stringify(productData, null, 2));
-      //('Category ID:', selectedCategoryId);
-      //('Subcategory ID:', formData.subcategoryId);
-
-      // Step 3: Create product with JSON payload
-      const response = await createProduct(
+      /* ---------------- API CALL ---------------- */
+      await createProduct(
         selectedCategoryId,
         formData.subcategoryId,
         productData
       );
 
-      // Treat successful resolve as success; API shape may not include a 'success' flag
       toast.success('Product created successfully!');
       onSubmit(true);
       handleClose();
+
     } catch (error: any) {
-      console.error('Error creating product:', error);
+      console.error('Create product error:', error);
       toast.error(error.message || 'Failed to create product');
       onSubmit(false);
     } finally {
       setIsLoading(false);
     }
   };
+
 
   const handleClose = () => {
     // Reset form
@@ -791,7 +767,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
 
 
 
-            {/* Non-Variant Product Section */}
+            {/* Pricing Section (Non-Variant Only) */}
             {!formData.hasVariants && (
               <div className="form-section">
                 <div className="section-header">
@@ -803,7 +779,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                   <h3 className="section-title">Pricing & Inventory</h3>
                 </div>
 
-                <div className="form-grid three-columns">
+                <div className="form-grid two-columns">
                   <div className="form-group">
                     <label className="form-label required">Base Price</label>
                     <input
@@ -830,27 +806,12 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                       required
                     />
                   </div>
-
-                  <div className="form-group">
-                    <label className="form-label required">Status</label>
-                    <select
-                      className="form-select"
-                      value={formData.status}
-                      onChange={(e) => handleInputChange('status', e.target.value as InventoryStatus)}
-                      required
-                    >
-                      <option value={InventoryStatus.AVAILABLE}>Available</option>
-                      <option value={InventoryStatus.OUT_OF_STOCK}>Out of Stock</option>
-                      <option value={InventoryStatus.LOW_STOCK}>Low Stock</option>
-                    </select>
-                  </div>
                 </div>
               </div>
             )}
 
-
-            {/* Discount Section */}
-            {!formData.hasVariants && (
+            {/* Discount Section (Non-Variant Only and No Deal) */}
+            {!formData.hasVariants && !formData.dealId && (
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon">
@@ -1027,19 +988,34 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                           />
                         </div>
 
-                        <div className="form-group">
-                          <label className="form-label required">Status</label>
-                          <select
-                            className="form-select"
-                            value={variant.status}
-                            onChange={(e) => updateVariant(index, 'status', e.target.value as InventoryStatus)}
-                            required
-                          >
-                            <option value={InventoryStatus.AVAILABLE}>Available</option>
-                            <option value={InventoryStatus.OUT_OF_STOCK}>Out of Stock</option>
-                            <option value={InventoryStatus.LOW_STOCK}>Low Stock</option>
-                          </select>
-                        </div>
+                        {!formData.dealId && (
+                          <>
+                            <div className="form-group">
+                              <label className="form-label">Discount Amount</label>
+                              <input
+                                type="number"
+                                className="form-input"
+                                value={variant.discount || ''}
+                                onChange={(e) => updateVariant(index, 'discount', e.target.value === '' ? 0 : Number(e.target.value))}
+                                placeholder="0.00"
+                                min="0"
+                                step="0.01"
+                              />
+                            </div>
+
+                            <div className="form-group">
+                              <label className="form-label">Discount Type</label>
+                              <select
+                                className="form-select"
+                                value={variant.discountType || 'PERCENTAGE'}
+                                onChange={(e) => updateVariant(index, 'discountType', e.target.value)}
+                              >
+                                <option value="PERCENTAGE">Percentage (%)</option>
+                                <option value="FLAT">Fixed Amount</option>
+                              </select>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       {/* Attributes (read-only summary) */}

@@ -140,6 +140,8 @@ export interface ProductVariant {
   // Keep both images fields to support UI and API payload compatibility
   images: (File | string)[];
   variantImages: (File | string)[];
+  discount?: number | string | null;
+  discountType?: 'PERCENTAGE' | 'FLAT' | null;
   imagePreviews?: string[]; // For client-side preview URLs
 }
 
