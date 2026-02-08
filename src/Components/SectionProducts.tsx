@@ -1,4 +1,3 @@
-// src/Pages/SectionProducts.tsx
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -16,6 +15,7 @@ import { API_BASE_URL } from "../config";
 import phone from "../assets/phone.png";
 import "../Styles/Shop.css";
 import "../Styles/ProductCard.css";
+// import { ApiProduct } from '../types/product';
 
 // Define interfaces (same as provided)
 interface ApiProduct {
@@ -99,7 +99,6 @@ const calculatePrice = (base: any, disc?: any, discType?: string): number => {
   return baseNum;
 };
 
-// API request function (unchanged)
 const apiRequest = async (endpoint: string, token: string | null | undefined = undefined) => {
   const url = endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`;
   const response = await fetch(url, {
@@ -122,7 +121,6 @@ const apiRequest = async (endpoint: string, token: string | null | undefined = u
 const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
   try {
     const { averageRating, reviews } = await fetchReviewOf(item.id);
-    const isDev = Boolean((import.meta as any)?.env?.DEV);
 
     const processImageUrl = (imgUrl: string): string => {
       if (!imgUrl) return "";
@@ -147,8 +145,8 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
       const rawImages = Array.isArray((variant as any).images)
         ? (variant as any).images
         : Array.isArray((variant as any).variantImages)
-        ? (variant as any).variantImages
-        : [];
+          ? (variant as any).variantImages
+          : [];
       const normalizedImages = rawImages
         .filter((img): img is string => !!img && typeof img === "string" && img.trim() !== "")
         .map(processImageUrl)
@@ -157,7 +155,19 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
         typeof (variant as any).image === "string" && (variant as any).image.trim()
           ? processImageUrl((variant as any).image)
           : normalizedImages[0] || undefined;
-      return { ...variant, image: primaryImage, images: normalizedImages };
+
+      const vBasePrice = Number(variant.basePrice) || 0;
+      const vFinalPrice = Number(variant.finalPrice) || vBasePrice;
+
+      return {
+        ...variant,
+        image: primaryImage,
+        images: normalizedImages,
+        basePrice: vBasePrice,
+        finalPrice: vFinalPrice,
+        price: vFinalPrice.toString(),
+        originalPrice: vBasePrice.toString()
+      };
     });
 
     const variantImagePool = processedVariants
@@ -166,46 +176,22 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
 
     const getDisplayImage = () => {
       if (processedProductImages.length > 0) return processedProductImages[0];
-      const allVariantImages = processedVariants
-        .flatMap((v) => [v.image, ...(v.images || [])])
-        .filter((x): x is string => typeof x === "string" && x.length > 0);
-      if (allVariantImages.length > 0) return allVariantImages[0];
+      if (variantImagePool.length > 0) return variantImagePool[0];
       return phone;
     };
 
     const displayImage = getDisplayImage();
 
-    // Calculate display price (aligned with ProductCard1)
-    let displayPriceNum = 0;
-    const productPriceNum = toNumber(item.basePrice);
-    if ((item.basePrice === null || item.basePrice === undefined || productPriceNum === 0) && (item.variants?.length || 0) > 0) {
-      const first = item.variants![0] as any;
-      const variantBase = first?.price ?? first?.originalPrice ?? first?.basePrice ?? item.basePrice ?? 0;
-      if (typeof first?.calculatedPrice === 'number' && isFinite(first.calculatedPrice)) {
-        displayPriceNum = first.calculatedPrice as number;
-      } else if (first?.discount && first?.discountType) {
-        displayPriceNum = calculatePrice(variantBase, first.discount, String(first.discountType));
-      } else if (item.discount && item.discountType) {
-        displayPriceNum = calculatePrice(variantBase, item.discount, String(item.discountType));
-      } else {
-        displayPriceNum = toNumber(variantBase);
-      }
-    } else {
-      if (item.discount && item.discountType) {
-        displayPriceNum = calculatePrice(productPriceNum, item.discount, String(item.discountType));
-      } else {
-        displayPriceNum = productPriceNum;
-      }
-    }
+    const basePrice = Number(item.basePrice) || 0;
+    const finalPrice = Number(item.finalPrice) || basePrice;
 
     return {
       id: item.id,
       title: item.name || "Unknown Product",
       description: item.description || "No description available",
-      originalPrice: item.basePrice?.toString() || "0",
-      discount: item.discount ? `${item.discount}` : undefined,
-      discountPercentage: item.discount ? `${item.discount}%` : "0%",
-      price: displayPriceNum.toString(),
+      basePrice,
+      finalPrice,
+      price: finalPrice.toString(),
       rating: Number(averageRating) || 0,
       ratingCount: reviews?.length?.toString() || "0",
       isBestSeller: item.stock > 20,
@@ -215,110 +201,43 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
         processedProductImages.length > 0
           ? processedProductImages
           : variantImagePool.length > 0
-          ? variantImagePool
-          : [phone],
-      variants: processedVariants,
+            ? variantImagePool
+            : [phone],
+      variants: processedVariants as any,
+      hasVariants: processedVariants.length > 0,
       category: item.subcategory?.category?.name || "Misc",
       subcategory: item.subcategory,
       brand: item.brand?.name || "Unknown",
       brand_id: item.brand?.id || null,
       status: item.status === "UNAVAILABLE" ? "OUT_OF_STOCK" : "AVAILABLE",
       stock: item.stock || 0,
+      deal: (item as any).deal || null,
     };
   } catch (error) {
     const isDev = Boolean((import.meta as any)?.env?.DEV);
     if (isDev) console.error("Error processing product:", error);
-    // Fallback logic (unchanged for brevity, but includes same image processing)
-    const processImageUrl = (imgUrl: string): string => {
-      if (!imgUrl) return "";
-      const trimmed = imgUrl.trim();
-      if (!trimmed) return "";
-      if (trimmed.startsWith("//")) return `https:${trimmed}`;
-      if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/")) {
-        return trimmed;
-      }
-      const base = API_BASE_URL.replace(/\/?api\/?$/, "");
-      const needsSlash = !trimmed.startsWith("/");
-      const url = `${base}${needsSlash ? "/" : ""}${trimmed}`;
-      return url.replace(/([^:]\/)\/+/g, "$1/");
-    };
-
-    const processedProductImages = (item.productImages || [])
-      .filter((img): img is string => !!img && typeof img === "string" && img.trim() !== "")
-      .map(processImageUrl)
-      .filter(Boolean);
-
-    const processedVariants = (item.variants || []).map((variant) => {
-      const rawImages = Array.isArray((variant as any).images)
-        ? (variant as any).images
-        : Array.isArray((variant as any).variantImages)
-        ? (variant as any).variantImages
-        : [];
-      const normalizedImages = rawImages
-        .filter((img): img is string => !!img && typeof img === "string" && img.trim() !== "")
-        .map(processImageUrl)
-        .filter(Boolean);
-      const primaryImage =
-        typeof (variant as any).image === "string" && (variant as any).image.trim()
-          ? processImageUrl((variant as any).image)
-          : normalizedImages[0] || undefined;
-      return { ...variant, image: primaryImage, images: normalizedImages };
-    });
-
-    const variantImagePool = processedVariants
-      .flatMap((v) => [v.image, ...(v.images || [])])
-      .filter((x): x is string => typeof x === "string" && x.length > 0);
-
-    const getFallbackImage = () => {
-      if (processedProductImages.length > 0) return processedProductImages[0];
-      const allVariantImages = processedVariants
-        .flatMap((v) => [v.image, ...(v.images || [])])
-        .filter((x): x is string => typeof x === "string" && x.length > 0);
-      if (allVariantImages.length > 0) return allVariantImages[0];
-      return phone;
-    };
-    const displayImage = getFallbackImage();
-
-    // Calculate display price for fallback
-    let displayPriceNum = 0;
-    const productPriceNum = toNumber(item.basePrice);
-    if ((item.basePrice === null || item.basePrice === undefined || productPriceNum === 0) && (item.variants?.length || 0) > 0) {
-      const first = item.variants![0] as any;
-      const variantBase = first?.price ?? first?.originalPrice ?? first?.basePrice ?? item.basePrice ?? 0;
-      if (typeof first?.calculatedPrice === 'number' && isFinite(first.calculatedPrice)) {
-        displayPriceNum = first.calculatedPrice as number;
-      } else if (first?.discount && first?.discountType) {
-        displayPriceNum = calculatePrice(variantBase, first.discount, String(first.discountType));
-      } else if (item.discount && item.discountType) {
-        displayPriceNum = calculatePrice(variantBase, item.discount, String(item.discountType));
-      } else {
-        displayPriceNum = toNumber(variantBase);
-      }
-    } else {
-      if (item.discount && item.discountType) {
-        displayPriceNum = calculatePrice(productPriceNum, item.discount, String(item.discountType));
-      } else {
-        displayPriceNum = productPriceNum;
-      }
-    }
 
     return {
       id: item.id,
       title: item.name || "Unknown Product",
       description: item.description || "No description available",
-      originalPrice: item.basePrice?.toString() || "0",
-      discountPercentage: "0%",
-      price: "0",
+      basePrice: Number(item.basePrice) || 0,
+      finalPrice: Number(item.finalPrice) || Number(item.basePrice) || 0,
+      price: item.finalPrice?.toString() || item.basePrice?.toString() || "0",
       rating: 0,
       ratingCount: "0",
       isBestSeller: false,
       freeDelivery: true,
-      image: displayImage,
+      image: phone,
       category: "Misc",
       brand: "Unknown",
+      hasVariants: false,
+      deal: null,
     };
   }
 };
+
+
 
 const SectionProducts: React.FC = () => {
   const { token } = useAuth();
@@ -385,8 +304,8 @@ const SectionProducts: React.FC = () => {
               id: item.id,
               title: item.name || "Unknown Product",
               description: item.description || "No description available",
-              originalPrice: item.basePrice?.toString() || "0",
-              discountPercentage: "0%",
+              basePrice: Number(item.basePrice) || 0,
+              finalPrice: Number(item.finalPrice) || Number(item.basePrice) || 0,
               price: "0",
               rating: 0,
               ratingCount: "0",
@@ -395,6 +314,8 @@ const SectionProducts: React.FC = () => {
               image: phone,
               category: "Misc",
               brand: "Unknown",
+              hasVariants: false,
+              deal: null,
             };
           }
         })

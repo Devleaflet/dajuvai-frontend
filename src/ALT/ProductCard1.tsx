@@ -136,55 +136,32 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 	};
 
 
-	function getProductFinalPrice(product: Product): number | null {
-		const normalize = (obj: any): number | null => {
-			const price = obj?.finalPrice ?? obj?.basePrice ?? null;
-			return price != null && Number(price) > 0 ? Number(price) : null;
-		};
+	// Price Determination (Aligned with backend source of truth)
+	const getDisplayPrices = () => {
+		if (product.hasVariants && product.variants?.length) {
+			const validVariants = product.variants
+				.filter(v => v.status !== "OUT_OF_STOCK")
+				.map(v => ({
+					base: Number(v.basePrice) || 0,
+					final: Number(v.finalPrice) || (Number(v.basePrice) || 0)
+				}));
 
-		// ✅ No variants → use product price
-		if (!product.hasVariants) {
-			return normalize(product);
+			if (validVariants.length > 0) {
+				const lowest = validVariants.reduce((prev, curr) =>
+					curr.final < prev.final ? curr : prev
+				);
+				return { base: lowest.base, final: lowest.final };
+			}
 		}
 
-		// ✅ Variants → lowest AVAILABLE variant price
-		const validVariants = product.variants?.filter(
-			(v) => v && v.status !== "OUT_OF_STOCK" && normalize(v) !== null
-		);
-
-		if (!validVariants?.length) return null;
-
-		return Math.min(...validVariants.map(v => normalize(v)!));
-	}
-
-	function getProductBasePrice(product: Product): number | null {
-		const normalize = (obj: any): number | null => {
-			const price = obj?.basePrice ?? obj?.finalPrice ?? null;
-			return price != null && Number(price) > 0 ? Number(price) : null;
+		return {
+			base: Number(product.basePrice) || 0,
+			final: Number(product.finalPrice) || (Number(product.basePrice) || 0)
 		};
+	};
 
-		// ✅ No variants
-		if (!product.hasVariants) {
-			return normalize(product);
-		}
-
-		// ✅ Variants only
-		const validVariants = product.variants?.filter(
-			(v) => v && v.status !== "OUT_OF_STOCK" && normalize(v) !== null
-		);
-
-		if (!validVariants?.length) return null;
-
-		return Math.min(...validVariants.map(v => normalize(v)!));
-	}
-	const finalPrice = getProductFinalPrice(product);
-	const basePrice = getProductBasePrice(product);
-	const savingPrice =
-		basePrice != null &&
-			finalPrice != null &&
-			basePrice > finalPrice
-			? (basePrice - finalPrice).toFixed(2)
-			: null;
+	const { base: basePrice, final: finalPrice } = getDisplayPrices();
+	const savingPrice = (basePrice > finalPrice) ? (basePrice - finalPrice).toFixed(2) : null;
 
 
 	return (

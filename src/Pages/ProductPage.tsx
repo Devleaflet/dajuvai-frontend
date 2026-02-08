@@ -4,24 +4,7 @@ import { toast } from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
 import { Truck, Undo2, ShieldCheck, Phone } from "lucide-react";
 
-interface Category {
-	id: number;
-	name: string;
-	createdBy?: {
-		id: number;
-		username: string;
-	};
-	subcategories?: Array<{
-		id: number;
-		name: string;
-	}>;
-}
 
-interface Subcategory {
-	id: number;
-	name: string;
-	category?: Category;
-}
 
 import React from "react";
 import axiosInstance from "../api/axiosInstance";
@@ -38,6 +21,21 @@ import "../Styles/ProductPage.css";
 import ScrollToTop from "../Components/ScrollToTop";
 
 const CACHE_KEY_REVIEWS = "productReviewsData";
+
+
+
+interface Category {
+	id: number;
+	name: string;
+	createdBy?: {
+		id: number;
+		username: string;
+	};
+	subcategories?: Array<{
+		id: number;
+		name: string;
+	}>;
+}
 
 interface Review {
 	id: number;
@@ -97,7 +95,6 @@ const ProductPage = () => {
 	const quantityInputRef = useRef<HTMLInputElement>(null);
 
 	const ZOOM_LEVEL = 3;
-	const ZOOM_BOX_SIZE = 450;
 
 	const { handleCartOnAdd } = useCart();
 	const { token, isAuthenticated } = useAuth();
@@ -110,6 +107,9 @@ const ProductPage = () => {
 
 			const response = await axiosInstance.get(`/api/product/${id}`);
 			const apiProduct = response.data.product;
+
+			console.log("----------------------API Products------------")
+			console.log(apiProduct)
 
 			if (!apiProduct) {
 				throw new Error("Product not found");
@@ -150,24 +150,13 @@ const ProductPage = () => {
 					}
 
 					const basePrice = parseFloat(variant.basePrice) || 0;
-					const discount = parseFloat(variant.discount) || 0;
-					let price = basePrice;
-					let savings = 0;
-
-					if (variant.discountType === "PERCENTAGE") {
-						savings = basePrice * (discount / 100);
-						price = basePrice - savings;
-					} else if (variant.discountType === "FLAT") {
-						savings = discount;
-						price = basePrice - discount;
-					}
+					const finalPrice = parseFloat(variant.finalPrice) || 0;
 
 					const variantData = {
 						...variant,
 						variantImgUrls,
-						calculatedPrice: price,
-						calculatedSavings: savings,
-						originalPrice: basePrice,
+						finalPrice,
+						basePrice,
 						stock: variant.stock || 0,
 						status: variant.status || "AVAILABLE",
 					};
@@ -208,27 +197,8 @@ const ProductPage = () => {
 				...new Set([...productImages, ...variantImages]),
 			].filter(Boolean);
 
-			let productPrice = 0;
-			let productOriginalPrice = 0;
-
-			if (apiProduct.hasVariants) {
-				if (defaultVariant) {
-					productPrice = defaultVariant.calculatedPrice;
-					productOriginalPrice = defaultVariant.originalPrice;
-				}
-			} else {
-				const basePrice = parseFloat(apiProduct.basePrice) || 0;
-				const discount = parseFloat(apiProduct.discount) || 0;
-
-				productOriginalPrice = basePrice;
-				productPrice = basePrice;
-
-				if (apiProduct.discountType === "PERCENTAGE") {
-					productPrice = basePrice - basePrice * (discount / 100);
-				} else if (apiProduct.discountType === "FLAT") {
-					productPrice = basePrice - discount;
-				}
-			}
+			const basePrice = parseFloat(apiProduct.basePrice) || 0;
+			const finalPrice = parseFloat(apiProduct.finalPrice) || 0;
 
 			const sizeOptions = new Set<string>();
 			const colorOptions = new Set<string>();
@@ -268,11 +238,11 @@ const ProductPage = () => {
 					id: apiProduct.id,
 					name: apiProduct.name,
 					description: apiProduct.description,
-					price: productPrice.toFixed(2),
-					originalPrice:
-						productOriginalPrice > productPrice
-							? productOriginalPrice.toFixed(2)
-							: undefined,
+					finalPrice: finalPrice,
+					basePrice: basePrice,
+					price: finalPrice.toFixed(2),
+					originalPrice: basePrice > finalPrice ? basePrice.toFixed(2) : undefined,
+					deal: apiProduct.deal,
 					rating: 0,
 					ratingCount: "0",
 					image: allImages[0] || "",
@@ -299,7 +269,6 @@ const ProductPage = () => {
 					colors: Array.from(colorOptions),
 					sizeOptions: Array.from(sizeOptions),
 					stock: apiProduct.stock || defaultVariant?.stock || 0,
-					isBestSeller: false,
 					variants: allVariants,
 					hasVariants: apiProduct.hasVariants || false,
 					selectedVariant: defaultVariant,
@@ -417,48 +386,6 @@ const ProductPage = () => {
 			staleTime: 5 * 60 * 1000,
 		});
 
-	const formatVariantAttributes = (attributes: any): string => {
-		if (!attributes) return "";
-		if (Array.isArray(attributes)) {
-			return attributes
-				.map((attr: any) => {
-					const label = String(attr?.type ?? attr?.attributeType ?? "");
-					const vals = Array.isArray(attr?.values)
-						? attr.values.map((v: any) => String(v?.value ?? v)).filter(Boolean)
-						: Array.isArray(attr?.attributeValues)
-							? attr.attributeValues
-								.map((v: any) => String(v?.value ?? v))
-								.filter(Boolean)
-							: [];
-					return label && vals.length ? `${label}: ${vals.join(", ")}` : "";
-				})
-				.filter(Boolean)
-				.join(", ");
-		}
-		if (typeof attributes === "object") {
-			return Object.entries(attributes)
-				.map(([key, value]) => {
-					if (value == null) return "";
-					if (Array.isArray(value)) {
-						const vals = value
-							.map((v: any) => String(v?.value ?? v))
-							.filter(Boolean);
-						return `${key}: ${vals.join(", ")}`;
-					}
-					if (typeof value === "object") {
-						const val = (value as any).value ?? (value as any).name ?? "";
-						return val
-							? `${key}: ${String(val)}`
-							: `${key}: ${JSON.stringify(value)}`;
-					}
-					return `${key}: ${String(value)}`;
-				})
-				.filter(Boolean)
-				.join(", ");
-		}
-		return String(attributes);
-	};
-
 	const { data: categoryData } = useQuery<{ data: Category }>({
 		queryKey: ["category", categoryId],
 		queryFn: async () => {
@@ -477,12 +404,6 @@ const ProductPage = () => {
 		staleTime: 5 * 60 * 1000,
 	});
 
-	const subcategory = categoryData?.data?.subcategories?.find(
-		(sub: any) => sub.id === Number(subcategoryId)
-	);
-
-	const displayCategory = categoryData?.data || product?.category;
-	const displaySubcategory = subcategory || product?.subcategory;
 	const reviews = (reviewsData?.reviews || []).map((review: Review) => ({
 		...review,
 		userName:
@@ -547,18 +468,16 @@ const ProductPage = () => {
 
 	const getCurrentPrice = () => {
 		if (selectedVariant) {
-			return selectedVariant.calculatedPrice || 0;
+			return selectedVariant.finalPrice || 0;
 		}
-		return parseFloat(product?.price || "0");
+		return parseFloat(product?.finalPrice || "0");
 	};
 
 	const getOriginalPrice = () => {
 		if (selectedVariant) {
-			return (
-				selectedVariant.originalPrice || selectedVariant.calculatedPrice || 0
-			);
+			return selectedVariant.basePrice || 0;
 		}
-		return parseFloat(product?.originalPrice || product?.price || "0");
+		return parseFloat(product?.basePrice || "0");
 	};
 
 	const handleVariantSelect = (variant: any) => {
@@ -599,12 +518,6 @@ const ProductPage = () => {
 		setZoomPosition({ x: percentX, y: percentY });
 	};
 
-	const showNotification = (message: string) => {
-		setToastMessage(message);
-		setShowToast(true);
-		setTimeout(() => setShowToast(false), 3000);
-	};
-
 	const handleAddToCart = () => {
 		if (!isAuthenticated) {
 			setAuthModalOpen(true);
@@ -613,7 +526,6 @@ const ProductPage = () => {
 		if (!product) return;
 		const variantId = selectedVariant?.id;
 		handleCartOnAdd(product, quantity, variantId);
-		// showNotification("");
 	};
 
 	const handleAddToWishlist = async () => {
@@ -655,16 +567,13 @@ const ProductPage = () => {
 							...product,
 							selectedColor,
 							price: getCurrentPrice().toFixed(2),
-							originalPrice:
-								getOriginalPrice() > getCurrentPrice()
-									? getOriginalPrice().toFixed(2)
-									: undefined,
+							basePrice: getOriginalPrice().toFixed(2),
 							selectedVariant: selectedVariant
 								? {
 									id: selectedVariant.id,
 									attributes: selectedVariant.attributes,
-									calculatedPrice: selectedVariant.calculatedPrice,
-									originalPrice: selectedVariant.originalPrice,
+									finalPrice: selectedVariant.finalPrice,
+									basePrice: selectedVariant.basePrice,
 									stock: selectedVariant.stock,
 									variantImgUrls: selectedVariant.variantImgUrls,
 								}
@@ -812,14 +721,6 @@ const ProductPage = () => {
 		}
 	});
 
-	// Sort colors and sizes
-	const uniqueColors = Object.keys(colorSizeMap).sort((a, b) =>
-		a.localeCompare(b)
-	);
-	const sortedSizes = Object.keys(sizeColorMap).sort(
-		(a, b) => Number(a) - Number(b)
-	);
-
 	return (
 		<div className="app">
 			<ScrollToTop />
@@ -870,8 +771,8 @@ const ProductPage = () => {
 											<button
 												key={index}
 												className={`product-gallery__thumbnail ${selectedImageIndex === index
-														? "product-gallery__thumbnail--active"
-														: ""
+													? "product-gallery__thumbnail--active"
+													: ""
 													}`}
 												onClick={() => handleImageSelect(index)}
 											>
@@ -999,8 +900,8 @@ const ProductPage = () => {
 																</span>
 																<div
 																	className={`product-options__variant-row ${hasMultipleOptions
-																			? "product-options__variant-row--many"
-																			: ""
+																		? "product-options__variant-row--many"
+																		: ""
 																		}`}
 																>
 																	{optionValues.map((optionValue) => {
@@ -1018,8 +919,8 @@ const ProductPage = () => {
 																			<button
 																				key={optionValue}
 																				className={`product-options__button${isSelected
-																						? " product-options__button--active"
-																						: ""
+																					? " product-options__button--active"
+																					: ""
 																					}${isOutOfStock
 																						? " product-options__button--disabled"
 																						: ""
@@ -1077,8 +978,8 @@ const ProductPage = () => {
 															</span>
 															<div
 																className={`product-options__variant-row ${hasMultipleOptions
-																		? "product-options__variant-row--many"
-																		: ""
+																	? "product-options__variant-row--many"
+																	: ""
 																	}`}
 															>
 																{optionValues.map((optionValue) => {
@@ -1102,8 +1003,8 @@ const ProductPage = () => {
 																		<button
 																			key={optionValue}
 																			className={`product-options__button${isSelected
-																					? " product-options__button--active"
-																					: ""
+																				? " product-options__button--active"
+																				: ""
 																				}${isOutOfStock
 																					? " product-options__button--disabled"
 																					: ""
@@ -1222,7 +1123,7 @@ const ProductPage = () => {
 							</div>
 						</div>
 
-						{/* Vendor Details Section */}
+						{/* -------------Vendor Details Section ------------------ */}
 						<div className="vendor-details">
 							<div className="vendor-details__header">
 								<h3 className="vendor-details__title">Seller Information</h3>
@@ -1319,6 +1220,7 @@ const ProductPage = () => {
 					</div>
 				</div>
 
+				{/* -----------------Reviews section ----------------------  */}
 				<div
 					id="reviews-section"
 					className="product-page__reviews"
@@ -1338,6 +1240,9 @@ const ProductPage = () => {
 					/>
 				</div>
 
+
+
+				{/* ---------------- Recommended products -----------------  */}
 				<div className="product-page__recommended">
 					<RecommendedProducts
 						products={recommendedProducts ?? []}

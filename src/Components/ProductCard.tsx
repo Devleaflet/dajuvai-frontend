@@ -286,57 +286,36 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 	};
 
 
-	// Collect variant prices 
-	const variantPrices = Array.isArray(product.variants)
-		? product.variants
-			.filter(v => v?.basePrice && v.status !== "OUT_OF_STOCK")
-			.map(v => ({
-				base: Number(v.basePrice),
-				final: v.finalPrice
-					? Number(v.finalPrice)
-					: Number(v.basePrice),
-				discount: v.discount ?? 0,
-				discountType: v.discountType,
-			}))
-		: [];
+	// Price Determination (Aligned with backend source of truth)
+	const getDisplayPrices = () => {
+		if (product.hasVariants && product.variants?.length) {
+			const validVariants = product.variants
+				.filter(v => v.status !== "OUT_OF_STOCK")
+				.map(v => ({
+					base: Number(v.basePrice) || 0,
+					final: Number(v.finalPrice) || (Number(v.basePrice) || 0)
+				}));
 
-	const lowestVariant = variantPrices.length
-		? variantPrices.reduce((min, v) =>
-			v.final < min.final ? v : min
-		)
-		: null;
+			if (validVariants.length > 0) {
+				const lowest = validVariants.reduce((prev, curr) =>
+					curr.final < prev.final ? curr : prev
+				);
+				return { base: lowest.base, final: lowest.final };
+			}
+		}
 
-	const isVariantProduct = product.hasVariants && lowestVariant;
+		return {
+			base: Number(product.basePrice) || 0,
+			final: Number(product.finalPrice) || (Number(product.basePrice) || 0)
+		};
+	};
 
-	const basePriceNum = isVariantProduct
-		? lowestVariant.base
-		: product.basePrice !== null
-			? Number(product.basePrice)
-			: null;
+	const { base: basePriceNum, final: finalPriceNum } = getDisplayPrices();
 
-	const finalPriceNum = isVariantProduct
-		? lowestVariant.final
-		: product.finalPrice !== null
-			? Number(product.finalPrice)
-			: basePriceNum;
+	const hasDiscount = basePriceNum > finalPriceNum;
+	const savedAmount = hasDiscount ? basePriceNum - finalPriceNum : 0;
+	const discountLabel = hasDiscount ? `Save Rs ${savedAmount.toFixed(2)}` : null;
 
-
-	const hasDiscount =
-		basePriceNum !== null &&
-		finalPriceNum !== null &&
-		basePriceNum > finalPriceNum;
-
-
-
-	const discountLabel = hasDiscount
-		? isVariantProduct
-			? lowestVariant.discountType === "PERCENTAGE"
-				? `${lowestVariant.discount}%`
-				: `Rs ${lowestVariant.discount}`
-			: product.discountType === "PERCENTAGE"
-				? `${product.discount}%`
-				: `Rs ${product.discount}`
-		: null;
 
 
 

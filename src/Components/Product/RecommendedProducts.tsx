@@ -29,6 +29,8 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
   const [scrollLeft, setScrollLeft] = useState<number>(0);
   const scrollAmount = 300;
 
+  console.log(products);
+
   // Filter out current product from recommendations
   const filteredProducts = products.filter(p => p.id !== currentProductId);
 
@@ -178,7 +180,7 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
       title: apiProduct.name,
       description: apiProduct.description || '',
       basePrice: apiProduct.basePrice,
-      finalprice: apiProduct.finalPrice,
+      finalPrice: apiProduct.finalPrice,
       hasVariants: apiProduct.hasVariants,
       discount: (apiProduct as any).discount ?? undefined,
       discountType: apiProduct.discountType ?? undefined,
@@ -289,6 +291,8 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
         >
           {filteredProducts.slice(0, 8).map((product) => {
             const uiProduct = convertToUIProduct(product);
+            console.log("----------UI PRODUCT-----------")
+            console.log(uiProduct)
             return (
               <div key={product.id} className="recommended-product-card__wrapper">
                 <ProductCard1 product={uiProduct} />

@@ -217,9 +217,8 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
 					</button>
 				)}
 				<div
-					className={`product-carousel__products ${
-						isDragging ? "product-carousel__products--dragging" : ""
-					}`}
+					className={`product-carousel__products ${isDragging ? "product-carousel__products--dragging" : ""
+						}`}
 					ref={scrollContainerRef}
 					onMouseDown={handleMouseDown}
 					onMouseMove={handleMouseMove}
@@ -231,16 +230,16 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
 				>
 					{isLoading
 						? Array.from({ length: 6 }).map((_, index) => (
-								<ProductCardSkeleton key={`skeleton-${index}`} />
-						  ))
+							<ProductCardSkeleton key={`skeleton-${index}`} />
+						))
 						: displayedProducts.map((product) => (
-								<div
-									key={product.id}
-									className="product-card__wrapper"
-								>
-									<ProductCard product={product} />
-								</div>
-						  ))}
+							<div
+								key={product.id}
+								className="product-card__wrapper"
+							>
+								<ProductCard product={product} />
+							</div>
+						))}
 				</div>
 			</div>
 		</section>

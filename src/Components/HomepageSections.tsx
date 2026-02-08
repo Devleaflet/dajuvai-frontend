@@ -58,7 +58,6 @@ const HomepageSections: React.FC = () => {
 				.map((section) => {
 					const mappedProducts: DisplayProduct[] = section.products.map(
 						(product) => {
-							//("Product", product);
 							const primaryImage = getProductPrimaryImage(product, "");
 							const productImages = Array.isArray(product.productImages)
 								? product.productImages
@@ -103,7 +102,7 @@ const HomepageSections: React.FC = () => {
 						<ProductCarousel
 							key={section.id}
 							title={section.title}
-							sectionId={section.id} // Add sectionId prop
+							sectionId={section.id} 
 							products={mappedProducts}
 							showTitle={true}
 						/>
