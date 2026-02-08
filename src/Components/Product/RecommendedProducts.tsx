@@ -29,7 +29,6 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
   const [scrollLeft, setScrollLeft] = useState<number>(0);
   const scrollAmount = 300;
 
-  console.log(products);
 
   // Filter out current product from recommendations
   const filteredProducts = products.filter(p => p.id !== currentProductId);
@@ -198,15 +197,18 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
       productImages: apiProduct.productImages || [],
       variants: (apiProduct.variants || []).map((v: any) => ({
         id: v.id,
-        basePrice: v.price ?? v.basePrice,
-        finalprice: v.finalPrice,
+        basePrice: v.basePrice ?? v.price,
+        finalPrice: v.finalPrice,
         stock: v.stock,
         sku: v.sku,
-        image: Array.isArray(v.variantImages) ? v.variantImages[0] : v.image,
-        images: Array.isArray(v.variantImages) ? v.variantImages : Array.isArray(v.images) ? v.images : undefined,
+        image: Array.isArray(v.variantImages) ? v.variantImages[0] : (v.image || (Array.isArray(v.images) ? v.images[0] : undefined)),
+        images: Array.isArray(v.variantImages) ? v.variantImages : Array.isArray(v.images) ? v.images : (v.image ? [v.image] : undefined),
         discount: v.discount,
         discountType: v.discountType,
         attributes: v.attributes,
+        status: v.status || "AVAILABLE",
+        hasVariants: false, // Variants themselves don't have variants
+        deal: apiProduct.deal || null,
       })),
     };
   };
@@ -291,8 +293,6 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
         >
           {filteredProducts.slice(0, 8).map((product) => {
             const uiProduct = convertToUIProduct(product);
-            console.log("----------UI PRODUCT-----------")
-            console.log(uiProduct)
             return (
               <div key={product.id} className="recommended-product-card__wrapper">
                 <ProductCard1 product={uiProduct} />
