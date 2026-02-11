@@ -152,6 +152,7 @@
 
 /* Very small device adjustments (iPhone SE) */
 @media (max-width: 340px) {
+
 	.auth-modal__form-group--grid,
 	.auth-modal__form-group--single {
 		gap: 12px;
@@ -196,6 +197,7 @@
 }
 
 @keyframes bounceBackground {
+
 	0%,
 	100% {
 		transform: translateX(0);
@@ -217,6 +219,40 @@
 	font-size: 24px;
 	color: #333;
 	padding: 0 20px;
+}
+
+.auth-modal__step-title {
+	text-align: center;
+	font-size: 18px;
+	font-weight: 600;
+	color: #333;
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+
+.auth-modal__step-desc {
+	text-align: center;
+	font-size: 13px;
+	color: #666;
+	margin-bottom: 20px;
+	padding: 0 30px;
+	line-height: 1.4;
+}
+
+.auth-modal__helper-text {
+	font-size: 11px;
+	color: #888;
+	margin-top: 4px;
+	display: block;
+	line-height: 1.3;
+}
+
+.auth-modal__info-icon {
+	color: #ff5722;
+	font-size: 12px;
+	vertical-align: middle;
+	margin-left: 5px;
+	cursor: help;
 }
 
 .auth-modal__tabs {
@@ -528,6 +564,7 @@ body.auth-modal--open {
 	}
 
 	@keyframes bounceBackground {
+
 		0%,
 		100% {
 			transform: translateX(0);
@@ -1057,8 +1094,7 @@ body.auth-modal--open {
 	border-radius: 10px;
 }
 
-.auth-modal__content::-webkit-scrollbar-thumb:hover {
-}
+.auth-modal__content::-webkit-scrollbar-thumb:hover {}
 
 /* Firefox support */
 .auth-modal__content {

@@ -69,7 +69,7 @@ const createVendorAPI = (token: string | null) => ({
 			return (result.data || []).map((vendor) => ({
 				...vendor,
 				status: (vendor.isVerified && (vendor.isApproved !== false)) ? "Active" : "Inactive",
-				isApproved: vendor.isApproved !== undefined ? vendor.isApproved : true, // Preserve isApproved, default to true for existing vendors
+				isApproved: vendor.isApproved !== undefined ? vendor.isApproved : true,
 				taxNumber: vendor.taxNumber || "N/A",
 				taxDocuments: Array.isArray(vendor.taxDocuments)
 					? vendor.taxDocuments
@@ -130,7 +130,7 @@ const createVendorAPI = (token: string | null) => ({
 			return (result.data || []).map((vendor) => ({
 				...vendor,
 				status: "Inactive",
-				isApproved: vendor.isApproved || false, // Preserve the isApproved status
+				isApproved: vendor.isApproved || false,
 				taxNumber: vendor.taxNumber || "N/A",
 				taxDocuments: Array.isArray(vendor.taxDocuments)
 					? vendor.taxDocuments
@@ -264,22 +264,10 @@ const createVendorAPI = (token: string | null) => ({
 				Authorization: `Bearer ${token}`,
 			};
 
-			// Normalize chequePhoto to a string
-			const normalizedVendorData = {
-				...vendorData,
-				chequePhoto: Array.isArray(vendorData.chequePhoto)
-					? vendorData.chequePhoto.length > 0
-						? vendorData.chequePhoto[0] // Use the first item if multiple
-						: ""
-					: vendorData.chequePhoto || "", // Ensure it's a string or empty
-			};
-
-
-
-			const response = await fetch(`${API_BASE_URL}/api/vendors/${id}`, {
+			const response = await fetch(`${API_BASE_URL}/api/vendors/v2/${id}`, {
 				method: "PUT",
 				headers,
-				body: JSON.stringify(normalizedVendorData),
+				body: JSON.stringify(vendorData),
 			});
 
 
@@ -307,60 +295,36 @@ const createVendorAPI = (token: string | null) => ({
 
 			if (!result.data) {
 				throw new Error("Vendor update did not return vendor data");
-				// return {
-				// 	id,
-				// 	...normalizedVendorData,
-				// 	phoneNumber: normalizedVendorData.phoneNumber || "N/A",
-				// 	taxNumber: normalizedVendorData.taxNumber || "N/A",
-				// 	taxDocuments: Array.isArray(normalizedVendorData.taxDocuments)
-				// 		? normalizedVendorData.taxDocuments
-				// 		: normalizedVendorData.taxDocuments
-				// 		? [normalizedVendorData.taxDocuments]
-				// 		: [],
-				// 	businessRegNumber: normalizedVendorData.businessRegNumber || "N/A",
-				// 	citizenshipDocuments: Array.isArray(
-				// 		normalizedVendorData.citizenshipDocuments
-				// 	)
-				// 		? normalizedVendorData.citizenshipDocuments
-				// 		: normalizedVendorData.citizenshipDocuments
-				// 		? [normalizedVendorData.citizenshipDocuments]
-				// 		: [],
-				// 	chequePhoto: normalizedVendorData.chequePhoto || "",
-				// 	accountName: normalizedVendorData.accountName || "N/A",
-				// 	bankName: normalizedVendorData.bankName || "N/A",
-				// 	accountNumber: normalizedVendorData.accountNumber || "N/A",
-				// 	bankBranch: normalizedVendorData.bankBranch || "N/A",
-				// 	bankCode: normalizedVendorData.bankCode || "N/A",
-				// 	businessAddress: normalizedVendorData.businessAddress || "N/A",
-				// 	profilePicture: normalizedVendorData.profilePicture || "N/A",
-				// 	isVerified: false,
-				// 	status: "Inactive",
-				// } as Vendor;
 			}
 
 			return {
 				...result.data,
-				phoneNumber: result.data.phoneNumber || "N/A",
-				taxNumber: result.data.taxNumber || "N/A",
+				phoneNumber: result.data.phoneNumber || "",
+				taxNumber: result.data.taxNumber || "",
 				taxDocuments: Array.isArray(result.data.taxDocuments)
 					? result.data.taxDocuments
 					: result.data.taxDocuments
 						? [result.data.taxDocuments]
 						: [],
-				businessRegNumber: result.data.businessRegNumber || "N/A",
+				businessRegNumber: result.data.businessRegNumber || "",
 				citizenshipDocuments: Array.isArray(result.data.citizenshipDocuments)
 					? result.data.citizenshipDocuments
 					: result.data.citizenshipDocuments
 						? [result.data.citizenshipDocuments]
 						: [],
-				chequePhoto: result.data.chequePhoto || "",
-				accountName: result.data.accountName || "N/A",
-				bankName: result.data.bankName || "N/A",
-				accountNumber: result.data.accountNumber || "N/A",
-				bankBranch: result.data.bankBranch || "N/A",
-				bankCode: result.data.bankCode || "N/A",
-				businessAddress: result.data.businessAddress || "N/A",
-				profilePicture: result.data.profilePicture || "N/A",
+				chequePhoto: Array.isArray(result.data.chequePhoto)
+					? result.data.chequePhoto
+					: result.data.chequePhoto
+						? [result.data.chequePhoto]
+						: [],
+				paymentOptions: result.data.paymentOptions || [],
+				accountName: result.data.accountName || "",
+				bankName: result.data.bankName || "",
+				accountNumber: result.data.accountNumber || "",
+				bankBranch: result.data.bankBranch || "",
+				bankCode: result.data.bankCode || "",
+				businessAddress: result.data.businessAddress || "",
+				profilePicture: result.data.profilePicture || "",
 				isVerified: !!result.data.isVerified,
 				status: result.data.isVerified ? "Active" : "Inactive",
 			};
@@ -729,21 +693,11 @@ const AdminVendor: React.FC = () => {
 		if (!selectedVendor?.id) return;
 
 		try {
-			// Normalize chequePhoto before sending
-			const normalizedVendorData = {
-				...vendorData,
-				chequePhoto: Array.isArray(vendorData.chequePhoto)
-					? vendorData.chequePhoto.length > 0
-						? vendorData.chequePhoto[0] // Use the first item
-						: ""
-					: vendorData.chequePhoto || "", // Ensure it's a string
-			};
-
-			//("Normalized vendor data for update:", normalizedVendorData);
+			//("Vendor data for update:", vendorData);
 
 			const updatedVendor = await vendorAPI.update(
 				selectedVendor.id,
-				normalizedVendorData
+				vendorData
 			);
 			setVendors((prev) =>
 				prev.map((v) => (v.id === selectedVendor.id ? updatedVendor : v))
@@ -945,9 +899,9 @@ const AdminVendor: React.FC = () => {
 															disabled={approvingVendorId === vendor.id}
 															title="Approve"
 														>
-															<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+															{/* <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
 																<polyline points="20 6 9 17 4 12"></polyline>
-															</svg>
+															</svg> */}
 															{approvingVendorId === vendor.id ? "..." : "Approve"}
 														</button>
 														<button
@@ -955,10 +909,10 @@ const AdminVendor: React.FC = () => {
 															className="admin-vendors__action-btn admin-vendors__action-btn--delete"
 															title="Reject"
 														>
-															<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+															{/* <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
 																<line x1="18" y1="6" x2="6" y2="18"></line>
 																<line x1="6" y1="6" x2="18" y2="18"></line>
-															</svg>
+															</svg> */}
 															Reject
 														</button>
 													</div>

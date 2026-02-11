@@ -6,7 +6,8 @@ import "../Styles/AuthModal.css";
 import close from "../assets/close.png";
 import { Toaster, toast } from "react-hot-toast";
 import popup from "../assets/auth.jpg";
-import { FaInfoCircle } from "react-icons/fa";
+import { FaInfoCircle, FaTrash, FaPlus, FaWallet, FaUniversity } from "react-icons/fa";
+import { PaymentType, PaymentOptionInput } from "../Components/Types/vendor";
 
 interface VendorSignupProps {
 	isOpen: boolean;
@@ -41,14 +42,18 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 	const [taxNumber, setTaxNumber] = useState<string>("");
 	const [taxDocuments, setTaxDocuments] = useState<File[]>([]);
 	const [citizenshipDocuments, setCitizenshipDocuments] = useState<File[]>([]);
+	const [acceptTerms, setAcceptTerms] = useState<boolean>(false);
+	const [acceptListingFee, setAcceptListingFee] = useState<boolean>(false);
+
+	// New Payment Options state
+	const [paymentOptions, setPaymentOptions] = useState<PaymentOptionInput[]>([]);
+	const [currentPaymentType, setCurrentPaymentType] = useState<PaymentType | "">("");
+	const [walletNumber, setWalletNumber] = useState<string>("");
 	const [accountName, setAccountName] = useState<string>("");
 	const [bankName, setBankName] = useState<string>("");
 	const [accountNumber, setAccountNumber] = useState<string>("");
 	const [bankBranch, setBankBranch] = useState<string>("");
-	const [bankAddress, setBankAddress] = useState<string>("");
-	const [blankChequePhoto, setBlankChequePhoto] = useState<File | null>(null);
-	const [acceptTerms, setAcceptTerms] = useState<boolean>(false);
-	const [acceptListingFee, setAcceptListingFee] = useState<boolean>(false);
+	const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
 
 	// UI states
 	const [districtData, setDistrictData] = useState<string[]>([]);
@@ -147,8 +152,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			setBankName("");
 			setAccountNumber("");
 			setBankBranch("");
-			setBankAddress("");
-			setBlankChequePhoto(null);
 			setAcceptTerms(false);
 			setAcceptListingFee(false);
 			setDistrictData([]);
@@ -307,6 +310,22 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 					return "Verification code must be a 6-digit number";
 				return "";
 
+			case "walletNumber":
+				if (!value.trim()) return "Wallet number is required";
+				return "";
+
+			// case "accountNumber":
+			// 	if (!value.trim()) return "Account number is required";
+			// 	return "";
+
+			// case "accountName":
+			// 	if (!value.trim()) return "Account name is required";
+			// 	return "";
+
+			// case "bankName":
+			// 	if (!value.trim()) return "Bank name is required";
+			// 	return "";
+
 			default:
 				return "";
 		}
@@ -374,6 +393,9 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			case "bankBranch":
 				setBankBranch(value);
 				break;
+			case "walletNumber":
+				setWalletNumber(value);
+				break;
 
 		}
 
@@ -423,6 +445,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 							"bankName",
 							"accountNumber",
 							"bankBranch",
+							"walletNumber",
 							"acceptListingFee",
 						];
 
@@ -545,48 +568,28 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		];
 
 		fieldsToValidate.forEach((field) => {
-			const value =
-				field === "businessName"
-					? businessName
-					: field === "phoneNumber"
-						? phoneNumber
-						: field === "telePhone"
-							? telePhone
-							: field === "businessRegNumber"
-								? businessRegNumber
-								: field === "province"
-									? province
-									: field === "district"
-										? district
-										: field === "taxNumber"
-											? taxNumber
-											: field === "email"
-												? email
-												: field === "password"
-													? password
-													: field === "confirmPassword"
-														? confirmPassword
-														: field === "accountName"
-															? accountName
-															: field === "bankName"
-																? bankName
-																: field === "accountNumber"
-																	? accountNumber
-																	: field === "bankBranch"
-																		? bankBranch
-																		: field === "bankAddress"
-																			? bankAddress
-																			: field === "taxDocuments"
-																				? taxDocuments
-																				: field === "citizenshipDocuments"
-																					? citizenshipDocuments
-																					: field === "blankChequePhoto"
-																						? blankChequePhoto
-																						: field === "acceptTerms"
-																							? acceptTerms
-																							: field === "acceptListingFee"
-																								? acceptListingFee
-																								: null;
+			let value: any = null;
+			switch (field) {
+				case "businessName": value = businessName; break;
+				case "phoneNumber": value = phoneNumber; break;
+				case "telePhone": value = telePhone; break;
+				case "businessRegNumber": value = businessRegNumber; break;
+				case "province": value = province; break;
+				case "district": value = district; break;
+				case "taxNumber": value = taxNumber; break;
+				case "email": value = email; break;
+				case "password": value = password; break;
+				case "confirmPassword": value = confirmPassword; break;
+				case "accountName": value = accountName; break;
+				case "bankName": value = bankName; break;
+				case "accountNumber": value = accountNumber; break;
+				case "bankBranch": value = bankBranch; break;
+				case "walletNumber": value = walletNumber; break;
+				case "taxDocuments": value = taxDocuments; break;
+				case "citizenshipDocuments": value = citizenshipDocuments; break;
+				case "acceptTerms": value = acceptTerms; break;
+				case "acceptListingFee": value = acceptListingFee; break;
+			}
 
 			const error = validateField(field, value);
 			if (error) {
@@ -663,16 +666,10 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			setTouched((prev) => ({ ...prev, citizenshipDocuments: true }));
 			const error = validateField("citizenshipDocuments", newFiles);
 			setErrors((prev) => ({ ...prev, citizenshipDocuments: error }));
-		} else if (documentType === "cheque" && files.length > 0) {
-			setBlankChequePhoto(files[0]);
-			setTouched((prev) => ({ ...prev, blankChequePhoto: true }));
-			const error = validateField("blankChequePhoto", files[0]);
-			setErrors((prev) => ({ ...prev, blankChequePhoto: error }));
 		}
 	};
 
 	const removeFile = (index: number, documentType: "tax" | "citizenship") => {
-		//(`Removing ${documentType} file at index ${index}`);
 		if (documentType === "tax") {
 			const newFiles = taxDocuments.filter((_, i) => i !== index);
 			setTaxDocuments(newFiles);
@@ -686,6 +683,54 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			const error = validateField("citizenshipDocuments", newFiles);
 			setErrors((prev) => ({ ...prev, citizenshipDocuments: error }));
 		}
+	};
+
+	const handleAddPaymentOption = () => {
+		if (!currentPaymentType) {
+			toast.error("Please select a payment method type");
+			return;
+		}
+
+		const isWallet = ["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType);
+
+		if (isWallet) {
+			if (!walletNumber.trim() || !accountName.trim()) {
+				toast.error("Wallet number and account name are required for wallet types.");
+				return;
+			}
+		} else {
+			if (!accountNumber.trim() || !bankName.trim() || !accountName.trim() || !bankBranch.trim()) {
+				toast.error("Account number, bank name, account name, and branch are required for NPS.");
+				return;
+			}
+		}
+
+		const newOption: PaymentOptionInput = {
+			paymentType: currentPaymentType as PaymentType,
+			details: isWallet ? {
+				walletNumber,
+				accountName
+			} : {
+				accountNumber,
+				bankName,
+				accountName,
+				branch: bankBranch
+			},
+			isActive: true
+		};
+
+		setPaymentOptions([...paymentOptions, newOption]);
+
+		// Reset current inputs
+		setWalletNumber("");
+		setAccountNumber("");
+		setBankName("");
+		setAccountName("");
+		setBankBranch("");
+	};
+
+	const removePaymentOption = (index: number) => {
+		setPaymentOptions(paymentOptions.filter((_, i) => i !== index));
 	};
 
 	const renderFilePreview = (
@@ -815,29 +860,13 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		}
 	};
 
-	const handleSignup = async (userData: {
-		businessName: string;
-		email: string;
-		password: string;
-		phoneNumber: string;
-		telePhone: string;
-		businessRegNumber: string;
-		province: string;
-		district: string;
-		taxNumber: string;
-		taxDocuments: string[];
-		citizenshipDocuments: string[];
-		accountName?: string;
-		bankName?: string;
-		accountNumber?: string;
-		bankBranch?: string;
-	}) => {
+	const handleSignup = async (userData: any) => {
 		try {
 			setIsLoading(true);
 			setError("");
 			//("Submitting signup data:", userData);
 			const response = await axios.post<SignupResponse>(
-				`${API_BASE_URL}/api/vendors/request/register`,
+				`${API_BASE_URL}/api/vendors/request/register-v2`,
 				userData,
 				{ headers: { "Content-Type": "application/json" } }
 			);
@@ -868,8 +897,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			setBankName("");
 			setAccountNumber("");
 			setBankBranch("");
-			setBankAddress("");
-			setBlankChequePhoto(null);
 			setAcceptTerms(false);
 			setAcceptListingFee(false);
 			setCurrentStep(1);
@@ -1090,19 +1117,16 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 
 		// Revalidate files explicitly
 		const taxDocsError = validateField("taxDocuments", taxDocuments);
-		const chequeError = validateField("blankChequePhoto", blankChequePhoto);
-		if (taxDocsError || chequeError) {
+		if (taxDocsError) {
 			setErrors((prev) => ({
 				...prev,
 				taxDocuments: taxDocsError,
-				blankChequePhoto: chequeError,
 			}));
 			setTouched((prev) => ({
 				...prev,
 				taxDocuments: true,
-				blankChequePhoto: true,
 			}));
-			toast.error(taxDocsError || chequeError);
+			toast.error(taxDocsError);
 			setIsLoading(false);
 			return;
 		}
@@ -1111,14 +1135,17 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		const citizenshipDocumentUrls = await handleFileUpload(
 			citizenshipDocuments
 		);
-		const chequePhotoUrl = blankChequePhoto
-			? await handleFileUpload([blankChequePhoto])
-			: null;
 
-		if (!taxDocumentUrls || (blankChequePhoto && !chequePhotoUrl)) {
+		if (!taxDocumentUrls) {
 			setError("Failed to obtain document URLs. Please try again.");
 			toast.error("Failed to obtain document URLs. Please try again.");
-			//("Document upload failed");
+			setIsLoading(false);
+			return;
+		}
+
+		if (paymentOptions.length === 0) {
+			setError("Please add at least one payment method.");
+			toast.error("Please add at least one payment method.");
 			setIsLoading(false);
 			return;
 		}
@@ -1135,11 +1162,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			taxNumber: taxNumber.trim(),
 			taxDocuments: taxDocumentUrls,
 			citizenshipDocuments: citizenshipDocumentUrls || [],
-			accountName: accountName.trim(),
-			bankName: bankName.trim(),
-			accountNumber: accountNumber.trim(),
-			bankBranch: bankBranch.trim(),
-			bankAddress: bankAddress.trim() || undefined,
+			paymentOptions: paymentOptions,
 		};
 
 
@@ -1206,8 +1229,34 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 				)}
 
 				{!showVerification && !isVerificationComplete && (
-					<div className="auth-modal__step-indicator">
-						Step {currentStep} of 4
+					<div style={{ marginBottom: "15px" }}>
+						<div className="auth-modal__step-indicator">
+							Step {currentStep} of 4
+						</div>
+						{currentStep === 1 && (
+							<>
+								<div className="auth-modal__step-title">Basic Business Information</div>
+								<div className="auth-modal__step-desc">Tell us about your business to get started. These details will be visible to customers.</div>
+							</>
+						)}
+						{currentStep === 2 && (
+							<>
+								<div className="auth-modal__step-title">Registration & Security</div>
+								<div className="auth-modal__step-desc">Enter your legal business identifiers and set up your account credentials.</div>
+							</>
+						)}
+						{currentStep === 3 && (
+							<>
+								<div className="auth-modal__step-title">Document Verification</div>
+								<div className="auth-modal__step-desc">Upload copies of your business registration and tax documents for identity verification.</div>
+							</>
+						)}
+						{currentStep === 4 && (
+							<>
+								<div className="auth-modal__step-title">Payment Settlement</div>
+								<div className="auth-modal__step-desc">Add at least one payment method where you'd like to receive your earnings.</div>
+							</>
+						)}
 					</div>
 				)}
 
@@ -1226,7 +1275,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 								</strong>
 							</p>
 							<p>
-								This process may take 24-48 hours. Thank you for your patience!
+								This process may take 24-48 hours. Our verification team will review your application.
+								If you have any questions, please contact us at <strong>support@dajuvai.com</strong>.
 							</p>
 						</div>
 						<button
@@ -1387,7 +1437,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 												/>
 											</div>
 											<div>
-												<label className="auth-modal__label">Province *</label>
 												<select
 													className={`auth-modal__input ${errors.province && touched.province ? "error" : ""
 														}`}
@@ -1413,6 +1462,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 														</option>
 													))}
 												</select>
+												<span className="auth-modal__helper-text">Select the province where your business is registered.</span>
 											</div>
 										</div>
 										<div className="auth-modal__form-group auth-modal__form-group--grid">
@@ -1498,6 +1548,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 											<div>
 												<label className="auth-modal__label">
 													Business Registration Number *
+													<FaInfoCircle className="auth-modal__info-icon" title="Enter the official registration number from your business license." />
 												</label>
 												<input
 													type="text"
@@ -1524,8 +1575,9 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 												<label className="auth-modal__label">
 													Vat/Pan Number * {" "}
 													<span style={{ fontSize: "9px" }}>
-														(Pan/Vat no must be 9)
+														(9 digits required)
 													</span>
+													<FaInfoCircle className="auth-modal__info-icon" title="9-digit permanent account number issued by the tax office." />
 												</label>
 												<input
 													type="text"
@@ -1757,9 +1809,10 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 										>
 											<div>
 												<label className="auth-modal__label">
-													Please attach your business and PAN/VAT document(s)
-													(JPG, JPEG, PNG, or PDF, required)
+													Business & PAN/VAT Document(s) *
+													<FaInfoCircle className="auth-modal__info-icon" title="Required: Upload clear photos or PDFs of your Business Registration and VAT/PAN certificates." />
 												</label>
+												<span className="auth-modal__helper-text" style={{ marginBottom: "8px" }}>Accepted: JPG, PNG, PDF. Max 5MB per file.</span>
 												<div className="auth-modal__file-upload">
 													<label
 														htmlFor="taxDocument"
@@ -1806,9 +1859,10 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 										>
 											<div>
 												<label className="auth-modal__label">
-													Ownership Citizenship Document(s) (Optional, JPG,
-													JPEG, PNG, or PDF)
+													Ownership Citizenship Document(s) (Optional)
+													<FaInfoCircle className="auth-modal__info-icon" title="Optional: Providing citizenship documents can help speed up the verification process." />
 												</label>
+												<span className="auth-modal__helper-text" style={{ marginBottom: "8px" }}>Front and back views preferred for IDs.</span>
 												<div className="auth-modal__file-upload">
 													<label
 														htmlFor="citizenshipDocument"
@@ -1848,126 +1902,175 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 
 								{currentStep === 4 && (
 									<>
-										<div className="auth-modal__form-group auth-modal__form-group--grid">
-											<div>
-												<label className="auth-modal__label">Bank Name</label>
-												<input
-													type="text"
-													className={`auth-modal__input ${errors.bankName && touched.bankName ? "error" : ""
-														}`}
-													placeholder="Enter bank name"
-													name="bankName"
-													value={bankName}
-													onChange={handleInputChange}
-													onBlur={handleBlur}
-													disabled={isLoading}
-													style={{
-														background: "transparent",
-														border: "1px solid #ddd",
-														borderRadius: "4px",
-													}}
-												/>
-											</div>
-											<div>
-												<label className="auth-modal__label">
-													Account Holder Name
-												</label>
-												<input
-													type="text"
-													className={`auth-modal__input ${errors.accountName && touched.accountName
-														? "error"
-														: ""
-														}`}
-													placeholder="Enter account name"
-													name="accountName"
-													value={accountName}
-													onChange={handleInputChange}
-													onBlur={handleBlur}
-													disabled={isLoading}
-													style={{
-														background: "transparent",
-														border: "1px solid #ddd",
-														borderRadius: "4px",
-													}}
-												/>
-											</div>
+										<div className="auth-modal__payment-section">
+											<label className="auth-modal__label">
+												Payment Options *
+												<FaInfoCircle className="auth-modal__info-icon" title="We use these details to settle your sales earnings. You can add multiple methods." />
+											</label>
+											<span className="auth-modal__helper-text" style={{ marginBottom: "15px" }}>Add at least one wallet or bank account.</span>
 
-										</div>
-										<div className="auth-modal__form-group auth-modal__form-group--grid">
-											<div>
-												<label className="auth-modal__label">
-													Bank Account Number
-												</label>
-												<input
-													type="text"
-													className={`auth-modal__input ${errors.accountNumber && touched.accountNumber
-														? "error"
-														: ""
-														}`}
-													placeholder="Enter account number"
-													name="accountNumber"
-													value={accountNumber}
-													onChange={handleInputChange}
-													onBlur={handleBlur}
-													disabled={isLoading}
-													style={{
-														background: "transparent",
-														border: "1px solid #ddd",
-														borderRadius: "4px",
-													}}
-												/>
-											</div>
-											<div>
-												<label className="auth-modal__label">Bank Branch</label>
-												<input
-													type="text"
-													className={`auth-modal__input ${errors.bankBranch && touched.bankBranch
-														? "error"
-														: ""
-														}`}
-													placeholder="Enter bank branch"
-													name="bankBranch"
-													value={bankBranch}
-													onChange={handleInputChange}
-													onBlur={handleBlur}
-													disabled={isLoading}
-													style={{
-														background: "transparent",
-														border: "1px solid #ddd",
-														borderRadius: "4px",
-													}}
-												/>
-											</div>
-										</div>
-
-										{/* <div className="document-section">
-											<h3 className="cheque-header">
-												Cheque Photo (JPG, JPEG, or PNG, required)
-												{blankChequePhoto && (
-													<span className="file-name">
-														{blankChequePhoto.name}
-													</span>
-												)}
-											</h3>
-											<div
-												className="document-container cheque-container"
-												onClick={() =>
-													document.getElementById("chequePhoto")?.click()
-												}
-												style={{ cursor: "pointer" }}
-											>
-												<div className="document-item file-upload">
-													<input
-														type="file"
-														id="chequePhoto"
-														accept="image/jpeg,image/png"
-														onChange={(e) => handleFileChange(e, "cheque")}
-														aria-label="Upload Cheque Photo"
-														style={{ display: "none" }}
-													/>
+											{paymentOptions.length > 0 && (
+												<div className="auth-modal__payment-list" style={{ marginBottom: "20px" }}>
+													{paymentOptions.map((option, index) => (
+														<div key={index} className="auth-modal__payment-item" style={{
+															display: "flex",
+															justifyContent: "space-between",
+															alignItems: "center",
+															padding: "10px",
+															background: "#f9f9f9",
+															border: "1px solid #eee",
+															borderRadius: "4px",
+															marginBottom: "8px"
+														}}>
+															<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+																{["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(option.paymentType) ? <FaWallet color="#4caf50" /> : <FaUniversity color="#2196f3" />}
+																<div>
+																	<div style={{ fontWeight: "bold", fontSize: "14px" }}>{option.paymentType}</div>
+																	<div style={{ fontSize: "12px", color: "#666" }}>
+																		{option.details.accountName} - {option.details.walletNumber || option.details.accountNumber}
+																	</div>
+																</div>
+															</div>
+															<button
+																type="button"
+																onClick={() => removePaymentOption(index)}
+																style={{ background: "none", border: "none", color: "#ff5722", cursor: "pointer" }}
+															>
+																<FaTrash />
+															</button>
+														</div>
+													))}
 												</div>
+											)}
+
+											<div className="auth-modal__add-payment" style={{
+												padding: "15px",
+												border: "1px dashed #ccc",
+												borderRadius: "8px",
+												background: "#fff"
+											}}>
+												<div className="auth-modal__form-group">
+													<label className="auth-modal__label">Choose Method Type</label>
+													<select
+														className="auth-modal__input"
+														value={currentPaymentType}
+														onChange={(e) => setCurrentPaymentType(e.target.value as PaymentType)}
+														style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+													>
+														<option value="">Select a method...</option>
+														<option value="ESEWA">eSewa</option>
+														<option value="KHALTI">Khalti</option>
+														<option value="IMEPAY">IME Pay</option>
+														<option value="FONEPAY">FonePay</option>
+														<option value="NPS">Bank</option>
+													</select>
+
+													{currentPaymentType && (
+														<div style={{ marginTop: "10px", padding: "10px", background: "#f0f7ff", borderRadius: "4px", borderLeft: "4px solid #2196f3" }}>
+															<div style={{ fontWeight: "600", fontSize: "12px", color: "#0056b3", marginBottom: "4px" }}>
+																{["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType) ? "Digital Wallet (Instant Settlement)" : "Bank Transfer (Standard Settlement)"}
+															</div>
+															<p style={{ fontSize: "11px", color: "#444", margin: 0, lineHeight: "1.4" }}>
+																{["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType)
+																	? "Use this for fast, automated payments. Recommended for local vendors with frequent payouts."
+																	: "Funds will be transferred directly to your bank account. Suitable for larger, bulk settlements."}
+															</p>
+														</div>
+													)}
+												</div>
+
+												{currentPaymentType && (
+													["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType) ? (
+														<div className="auth-modal__form-group auth-modal__form-group--grid">
+															<div>
+																<label className="auth-modal__label">Wallet Number *</label>
+																<input
+																	type="text"
+																	className="auth-modal__input"
+																	name="walletNumber"
+																	value={walletNumber}
+																	onChange={(e) => setWalletNumber(e.target.value)}
+																	placeholder="Enter wallet number"
+																	style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+																/>
+															</div>
+															<div>
+																<label className="auth-modal__label">Account Holder Name *</label>
+																<input
+																	type="text"
+																	className="auth-modal__input"
+																	name="accountName"
+																	value={accountName}
+																	onChange={(e) => setAccountName(e.target.value)}
+																	placeholder="Enter name"
+																	style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+																/>
+															</div>
+														</div>
+													) : (
+														<>
+															<div className="auth-modal__form-group auth-modal__form-group--grid">
+																<div>
+																	<label className="auth-modal__label">Bank Name *</label>
+																	<input
+																		type="text"
+																		className="auth-modal__input"
+																		value={bankName}
+																		onChange={(e) => setBankName(e.target.value)}
+																		placeholder="Enter bank name"
+																		style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+																	/>
+																</div>
+																<div>
+																	<label className="auth-modal__label">Account Holder Name *</label>
+																	<input
+																		type="text"
+																		className="auth-modal__input"
+																		value={accountName}
+																		onChange={(e) => setAccountName(e.target.value)}
+																		placeholder="Enter name"
+																		style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+																	/>
+																</div>
+															</div>
+															<div className="auth-modal__form-group auth-modal__form-group--grid">
+																<div>
+																	<label className="auth-modal__label">Account Number *</label>
+																	<input
+																		type="text"
+																		className="auth-modal__input"
+																		value={accountNumber}
+																		onChange={(e) => setAccountNumber(e.target.value)}
+																		placeholder="Enter account number"
+																		style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+																	/>
+																</div>
+																<div>
+																	<label className="auth-modal__label">Bank Branch *</label>
+																	<input
+																		type="text"
+																		className="auth-modal__input"
+																		value={bankBranch}
+																		onChange={(e) => setBankBranch(e.target.value)}
+																		placeholder="Enter branch"
+																		style={{ background: "transparent", border: "1px solid #ddd", borderRadius: "4px" }}
+																	/>
+																</div>
+															</div>
+														</>
+													)
+												)}
+
+												<button
+													type="button"
+													className="auth-modal__back-button-improved"
+													onClick={handleAddPaymentOption}
+													style={{ marginTop: "10px", width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+												>
+													<FaPlus fontSize="12px" /> Add Payment Method
+												</button>
 											</div>
-										</div> */}
+										</div>
 
 										<div className="auth-modal__checkbox">
 											<input
@@ -2040,11 +2143,12 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 									</button>
 								</div>
 							</>
-						)}
-					</form>
+						)
+						}
+					</form >
 				)}
-			</div>
-		</div>
+			</div >
+		</div >
 	);
 };
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, FC } from 'react';
-import { Vendor, District, VendorUpdateRequest } from '../Types/vendor';
+import { Vendor, District, VendorUpdateRequest, PaymentType, PaymentOptionInput } from '../Types/vendor';
+import { FaTrash, FaPlus, FaWallet, FaUniversity } from 'react-icons/fa';
 import '../../Styles/AdminVendor.css';
 import '../../Styles/AddVendorModal.css';
 import { toast } from 'react-hot-toast';
@@ -33,14 +34,7 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
     taxNumber: string;
     taxDocuments: string[];
     citizenshipDocuments: string[];
-    chequePhoto: string;
-    bankDetails: {
-      accountName: string;
-      bankName: string;
-      accountNumber: string;
-      bankBranch: string;
-      bankCode: string;
-    };
+    paymentOptions: PaymentOptionInput[];
     businessAddress: string;
     profilePicture: string;
   }
@@ -64,17 +58,18 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
     taxNumber: '',
     taxDocuments: [],
     citizenshipDocuments: [],
-    chequePhoto: '',
-    bankDetails: {
-      accountName: '',
-      bankName: '',
-      accountNumber: '',
-      bankBranch: '',
-      bankCode: '',
-    },
+    paymentOptions: [],
     businessAddress: '',
     profilePicture: '',
   });
+
+  // Payment Options UI state
+  const [currentPaymentType, setCurrentPaymentType] = useState<PaymentType | "">("");
+  const [walletNumber, setWalletNumber] = useState<string>("");
+  const [accountName, setAccountName] = useState<string>("");
+  const [bankName, setBankName] = useState<string>("");
+  const [accountNumber, setAccountNumber] = useState<string>("");
+  const [bankBranch, setBankBranch] = useState<string>("");
 
   const [errors, setErrors] = useState<Partial<Record<keyof VendorFormData, string>>>({});
 
@@ -83,7 +78,7 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
     //(`Uploading file: ${file.name}`);
     const formData = new FormData();
     formData.append("file", file);
-    
+
     // Get token from localStorage
     const token = localStorage.getItem('authToken');
     if (!token) {
@@ -128,8 +123,60 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
     //(`Removing file from ${field} at index ${index}`);
     if (field === "taxDocuments") setTaxFiles((prev) => prev.filter((_, i) => i !== index));
     if (field === "citizenshipDocuments") setCitizenshipFiles((prev) => prev.filter((_, i) => i !== index));
-    if (field === "chequePhoto") setChequeFile(null);
     if (field === "profilePicture") setProfileFile(null);
+  };
+
+  const handleAddPaymentOption = () => {
+    if (!currentPaymentType) {
+      toast.error("Please select a payment method type");
+      return;
+    }
+    const isWallet = ["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType);
+
+    if (isWallet) {
+      if (!walletNumber.trim() || !accountName.trim()) {
+        toast.error("Wallet number and account name are required for wallet types.");
+        return;
+      }
+    } else {
+      if (!accountNumber.trim() || !bankName.trim() || !accountName.trim() || !bankBranch.trim()) {
+        toast.error("Account number, bank name, account name, and branch are required for NPS.");
+        return;
+      }
+    }
+
+    const newOption: PaymentOptionInput = {
+      paymentType: currentPaymentType as PaymentType,
+      details: isWallet ? {
+        walletNumber,
+        accountName
+      } : {
+        accountNumber,
+        bankName,
+        accountName,
+        branch: bankBranch
+      },
+      isActive: true
+    };
+
+    setFormData(prev => ({
+      ...prev,
+      paymentOptions: [...prev.paymentOptions, newOption]
+    }));
+
+    // Reset current inputs
+    setWalletNumber("");
+    setAccountNumber("");
+    setBankName("");
+    setAccountName("");
+    setBankBranch("");
+  };
+
+  const removePaymentOption = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      paymentOptions: prev.paymentOptions.filter((_, i) => i !== index)
+    }));
   };
 
   useEffect(() => {
@@ -137,12 +184,13 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
       let districtName = '';
       let districtId = 0;
 
-      if (typeof vendor.district === 'object' && vendor.district) {
-        districtId = vendor.district.id;
-        districtName = vendor.district.name || '';
-      } else if (typeof vendor.district === 'string') {
-        districtName = vendor.district;
-        const foundDistrict = districts.find(d => d.name === vendor.district);
+      const districtField = vendor.district;
+      if (districtField && typeof districtField === 'object') {
+        districtId = districtField.id;
+        districtName = districtField.name || '';
+      } else if (typeof districtField === 'string') {
+        districtName = districtField;
+        const foundDistrict = districts.find(d => d.name === districtField);
         districtId = foundDistrict?.id || 0;
       }
 
@@ -158,14 +206,7 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
         taxNumber: vendor.taxNumber || '',
         taxDocuments: vendor.taxDocuments || [],
         citizenshipDocuments: vendor.citizenshipDocuments || [],
-        chequePhoto: vendor.chequePhoto || '',
-        bankDetails: {
-          accountName: vendor.accountName || '',
-          bankName: vendor.bankName || '',
-          accountNumber: vendor.accountNumber || '',
-          bankBranch: vendor.bankBranch || '',
-          bankCode: vendor.bankCode || '',
-        },
+        paymentOptions: (vendor.paymentOptions as any) || [],
         businessAddress: vendor.businessAddress || '',
         profilePicture: vendor.profilePicture || '',
       });
@@ -195,16 +236,7 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
   ) => {
     const { name, value } = e.target;
 
-    if (name.startsWith('bankDetails.')) {
-      const bankField = name.split('.')[1];
-      setFormData((prev) => ({
-        ...prev,
-        bankDetails: {
-          ...prev.bankDetails,
-          [bankField]: value,
-        },
-      }));
-    } else if (name === 'districtId') {
+    if (name === 'districtId') {
       const selectedDistrict = districts.find(d => d.id === parseInt(value));
       setFormData((prev) => ({
         ...prev,
@@ -221,27 +253,20 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
 
   const handleDocumentChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    field: 'taxDocuments' | 'citizenshipDocuments' | 'chequePhoto'
+    field: 'taxDocuments' | 'citizenshipDocuments'
   ) => {
     const value = e.target.value.trim();
     if (!value) return;
 
     setFormData((prev) => {
-      if (field === 'chequePhoto') {
-        return {
-          ...prev,
-          chequePhoto: value,
-        };
-      } else {
-        const currentArray = [...prev[field]];
-        if (!currentArray.includes(value)) {
-          currentArray.push(value);
-        }
-        return {
-          ...prev,
-          [field]: currentArray,
-        };
+      const currentArray = [...prev[field]];
+      if (!currentArray.includes(value)) {
+        currentArray.push(value);
       }
+      return {
+        ...prev,
+        [field]: currentArray,
+      };
     });
   };
 
@@ -284,27 +309,10 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
         uploadedCitizenshipDocs.push(url);
       }
 
-      // Upload cheque photo
-      //('🔍 DEBUG: chequeFile before upload:', chequeFile);
-      //('🔍 DEBUG: formData.chequePhoto before upload:', formData.chequePhoto);
-      if (chequeFile) {
-        uploadedChequePhoto = await uploadFile(chequeFile);
-        //('🔍 DEBUG: uploadedChequePhoto after upload:', uploadedChequePhoto);
-        //('🔍 DEBUG: uploadedChequePhoto type:', typeof uploadedChequePhoto);
-      } else if (formData.chequePhoto) {
-        uploadedChequePhoto = formData.chequePhoto;
-        //('🔍 DEBUG: using existing chequePhoto:', uploadedChequePhoto);
-        //('🔍 DEBUG: existing chequePhoto type:', typeof uploadedChequePhoto);
-      }
-
       // Upload profile picture
       if (profileFile) {
         uploadedProfilePicture = await uploadFile(profileFile);
       }
-
-      //('🔍 DEBUG: Final uploadedChequePhoto before API call:', uploadedChequePhoto);
-      //('🔍 DEBUG: Final uploadedChequePhoto type:', typeof uploadedChequePhoto);
-      //('🔍 DEBUG: Is uploadedChequePhoto an array?', Array.isArray(uploadedChequePhoto));
 
       const apiData: Partial<VendorUpdateRequest> = {
         businessName: formData.businessName,
@@ -315,38 +323,11 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
         taxNumber: formData.taxNumber,
         businessAddress: formData.businessAddress,
         profilePicture: uploadedProfilePicture,
-        accountName: formData.bankDetails.accountName,
-        bankName: formData.bankDetails.bankName,
-        accountNumber: formData.bankDetails.accountNumber,
-        bankBranch: formData.bankDetails.bankBranch,
-        bankCode: formData.bankDetails.bankCode,
         taxDocuments: uploadedTaxDocs.filter(doc => doc && doc.trim() !== '') as string[],
         citizenshipDocuments: uploadedCitizenshipDocs.filter(doc => doc && doc.trim() !== '') as string[],
-        chequePhoto: uploadedChequePhoto,
+        paymentOptions: formData.paymentOptions,
       };
 
-      //('🔍 DEBUG: apiData before cleanup:', JSON.stringify(apiData, null, 2));
-      //('🔍 DEBUG: apiData.chequePhoto before cleanup:', apiData.chequePhoto);
-      //('🔍 DEBUG: apiData.chequePhoto type before cleanup:', typeof apiData.chequePhoto);
-      //('🔍 DEBUG: Is apiData.chequePhoto an array before cleanup?', Array.isArray(apiData.chequePhoto));
-
-      Object.keys(apiData).forEach(key => {
-        const value = (apiData as any)[key];
-        //(`🔍 DEBUG: Processing key '${key}' with value:`, value, 'type:', typeof value);
-        if (value === undefined || value === null || value === '') {
-          //(`🔍 DEBUG: Deleting key '${key}' because it's undefined/null/empty`);
-          delete (apiData as any)[key];
-        }
-        if (Array.isArray(value) && value.length === 0) {
-          //(`🔍 DEBUG: Deleting key '${key}' because it's an empty array`);
-          delete (apiData as any)[key];
-        }
-      });
-
-      //('🔍 DEBUG: apiData after cleanup:', JSON.stringify(apiData, null, 2));
-      //('🔍 DEBUG: Final apiData.chequePhoto:', apiData.chequePhoto);
-      //('🔍 DEBUG: Final apiData.chequePhoto type:', typeof apiData.chequePhoto);
-      //('🔍 DEBUG: Is final apiData.chequePhoto an array?', Array.isArray(apiData.chequePhoto));
       //('Sending API data:', apiData);
       await onSave(apiData);
     } catch (error: any) {
@@ -586,154 +567,200 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
                 </div>
               )}
               {/* Show existing documents */}
-               {formData.citizenshipDocuments && formData.citizenshipDocuments.length > 0 && (
-                 <div className="vendor-edit-modal__document-list">
-                   <p className="vendor-edit-modal__label">Current Documents:</p>
-                   {formData.citizenshipDocuments.map((doc, index) => (
-                     <div key={index} className="vendor-edit-modal__document-item">
-                       <a
-                         href={doc}
-                         target="_blank"
-                         rel="noopener noreferrer"
-                         className="vendor-edit-modal__document-link"
-                       >
-                         Document {index + 1}
-                       </a>
-                       <button
-                         type="button"
-                         onClick={() => handleRemoveDocument('citizenshipDocuments', index)}
-                         className="vendor-edit-modal__document-remove"
-                       >
-                         Remove
-                       </button>
-                     </div>
-                   ))}
-                 </div>
-               )}
-             </div>
-           </div>
-
-          <div className="vendor-edit-modal__form-group">
-            <label className="vendor-edit-modal__label">
-              Cheque Photo
-            </label>
-            <div className="document-section">
-              <div className="document-container">
-                <div className="document-item file-upload">
-                  <label htmlFor="chequePhoto" className="file-label">
-                    Choose File
-                  </label>
-                  <input
-                    type="file"
-                    id="chequePhoto"
-                    accept="image/*,application/pdf"
-                    onChange={(e) => handleFileChange(e, "chequePhoto")}
-                    style={{ display: 'none' }}
-                  />
-                </div>
-              </div>
-              {/* Show new file to be uploaded */}
-              {chequeFile && (
-                <div className="file-list">
-                  <p className="vendor-edit-modal__label">New File to Upload:</p>
-                  <div className="file-item">
-                    <span className="file-name">{chequeFile.name}</span>
-                    <button
-                      type="button"
-                      className="remove-btn"
-                      onClick={() => handleRemoveFile(0, "chequePhoto")}
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
-              )}
-              {/* Show existing cheque photo */}
-              {formData.chequePhoto && !chequeFile && (
+              {formData.citizenshipDocuments && formData.citizenshipDocuments.length > 0 && (
                 <div className="vendor-edit-modal__document-list">
-                  <p className="vendor-edit-modal__label">Current Cheque Photo:</p>
-                  <div className="vendor-edit-modal__document-item">
-                    <a
-                      href={formData.chequePhoto}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="vendor-edit-modal__document-link"
-                    >
-                      View Cheque Photo
-                    </a>
-                  </div>
+                  <p className="vendor-edit-modal__label">Current Documents:</p>
+                  {formData.citizenshipDocuments.map((doc, index) => (
+                    <div key={index} className="vendor-edit-modal__document-item">
+                      <a
+                        href={doc}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="vendor-edit-modal__document-link"
+                      >
+                        Document {index + 1}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDocument('citizenshipDocuments', index)}
+                        className="vendor-edit-modal__document-remove"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           </div>
 
           <div className="vendor-edit-modal__section-title">
-            Bank Details
+            Payment Options
           </div>
           <div className="vendor-edit-modal__form-group">
-            <label htmlFor="bankDetails.accountName" className="vendor-edit-modal__label">
-              Account Name
-            </label>
-            <input
-              type="text"
-              id="bankDetails.accountName"
-              name="bankDetails.accountName"
-              value={formData.bankDetails?.accountName || ''}
-              onChange={handleChange}
-              className="vendor-edit-modal__input"
-            />
-          </div>
-          <div className="vendor-edit-modal__form-group">
-            <label htmlFor="bankDetails.bankName" className="vendor-edit-modal__label">
-              Bank Name
-            </label>
-            <input
-              type="text"
-              id="bankDetails.bankName"
-              name="bankDetails.bankName"
-              value={formData.bankDetails?.bankName || ''}
-              onChange={handleChange}
-              className="vendor-edit-modal__input"
-            />
-          </div>
-          <div className="vendor-edit-modal__form-group">
-            <label htmlFor="bankDetails.accountNumber" className="vendor-edit-modal__label">
-              Account Number
-            </label>
-            <input
-              type="text"
-              id="bankDetails.accountNumber"
-              name="bankDetails.accountNumber"
-              value={formData.bankDetails?.accountNumber || ''}
-              onChange={handleChange}
-              className="vendor-edit-modal__input"
-            />
-          </div>
-          <div className="vendor-edit-modal__form-group">
-            <label htmlFor="bankDetails.bankBranch" className="vendor-edit-modal__label">
-              Bank Branch
-            </label>
-            <input
-              type="text"
-              id="bankDetails.bankBranch"
-              name="bankDetails.bankBranch"
-              value={formData.bankDetails?.bankBranch || ''}
-              onChange={handleChange}
-              className="vendor-edit-modal__input"
-            />
-          </div>
-          <div className="vendor-edit-modal__form-group">
-            <label htmlFor="bankDetails.bankCode" className="vendor-edit-modal__label">
-              Bank Code
-            </label>
-            <input
-              type="text"
-              id="bankDetails.bankCode"
-              name="bankDetails.bankCode"
-              value={formData.bankDetails?.bankCode || ''}
-              onChange={handleChange}
-              className="vendor-edit-modal__input"
-            />
+            <label className="vendor-edit-modal__label">Payment Options *</label>
+
+            {formData.paymentOptions.length > 0 && (
+              <div className="vendor-edit-modal__payment-list" style={{ marginBottom: "20px" }}>
+                {formData.paymentOptions.map((option, index) => (
+                  <div key={index} className="vendor-edit-modal__payment-item" style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "10px",
+                    background: "#f9f9f9",
+                    border: "1px solid #eee",
+                    borderRadius: "4px",
+                    marginBottom: "8px"
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      {["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(option.paymentType) ? <FaWallet color="#4caf50" /> : <FaUniversity color="#2196f3" />}
+                      <div>
+                        <div style={{ fontWeight: "bold", fontSize: "14px" }}>{option.paymentType}</div>
+                        <div style={{ fontSize: "12px", color: "#666" }}>
+                          {option.details.accountName} - {option.details.walletNumber || option.details.accountNumber}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removePaymentOption(index)}
+                      style={{ background: "none", border: "none", color: "#ff5722", cursor: "pointer" }}
+                    >
+                      <FaTrash />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="vendor-edit-modal__add-payment" style={{
+              padding: "15px",
+              border: "1px dashed #ccc",
+              borderRadius: "8px",
+              background: "#fff"
+            }}>
+              <div className="vendor-edit-modal__form-group">
+                <label className="vendor-edit-modal__label">Choose Method Type</label>
+                <select
+                  className="vendor-edit-modal__select"
+                  value={currentPaymentType}
+                  onChange={(e) => setCurrentPaymentType(e.target.value as PaymentType)}
+                >
+                  <option value="">Select a method...</option>
+                  <option value="ESEWA">eSewa</option>
+                  <option value="KHALTI">Khalti</option>
+                  <option value="IMEPAY">IME Pay</option>
+                  <option value="FONEPAY">Fonepay</option>
+                  <option value="NPS">Bank Transfer (NPS)</option>
+                </select>
+
+                {currentPaymentType && (
+                  <div style={{ marginTop: "10px", padding: "10px", background: "#f0f7ff", borderRadius: "4px", borderLeft: "4px solid #2196f3" }}>
+                    <div style={{ fontWeight: "600", fontSize: "12px", color: "#0056b3", marginBottom: "4px" }}>
+                      {["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType) ? "Digital Wallet (Instant Settlement)" : "Bank Transfer (Standard Settlement)"}
+                    </div>
+                    <p style={{ fontSize: "11px", color: "#444", margin: 0, lineHeight: "1.4" }}>
+                      {["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType)
+                        ? "Use this for fast, automated payments. Recommended for local vendors with frequent payouts."
+                        : "Funds will be transferred directly to your bank account. Suitable for larger, bulk settlements."}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {currentPaymentType && (
+                ["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType) ? (
+                  <>
+                    <div className="vendor-edit-modal__form-group">
+                      <label className="vendor-edit-modal__label">Wallet Number</label>
+                      <input
+                        type="text"
+                        className="vendor-edit-modal__input"
+                        value={walletNumber}
+                        onChange={(e) => setWalletNumber(e.target.value)}
+                        placeholder="e.g. 98XXXXXXXX"
+                      />
+                    </div>
+                    <div className="vendor-edit-modal__form-group">
+                      <label className="vendor-edit-modal__label">Account Name</label>
+                      <input
+                        type="text"
+                        className="vendor-edit-modal__input"
+                        value={accountName}
+                        onChange={(e) => setAccountName(e.target.value)}
+                        placeholder="Account Holder Name"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="vendor-edit-modal__form-group">
+                      <label className="vendor-edit-modal__label">Bank Name</label>
+                      <input
+                        type="text"
+                        className="vendor-edit-modal__input"
+                        value={bankName}
+                        onChange={(e) => setBankName(e.target.value)}
+                        placeholder="e.g. Nabil Bank"
+                      />
+                    </div>
+                    <div className="vendor-edit-modal__form-group">
+                      <label className="vendor-edit-modal__label">Account Number</label>
+                      <input
+                        type="text"
+                        className="vendor-edit-modal__input"
+                        value={accountNumber}
+                        onChange={(e) => setAccountNumber(e.target.value)}
+                        placeholder="Account Number"
+                      />
+                    </div>
+                    <div className="vendor-edit-modal__form-group">
+                      <label className="vendor-edit-modal__label">Account Name</label>
+                      <input
+                        type="text"
+                        className="vendor-edit-modal__input"
+                        value={accountName}
+                        onChange={(e) => setAccountName(e.target.value)}
+                        placeholder="Account Holder Name"
+                      />
+                    </div>
+                    <div className="vendor-edit-modal__form-group">
+                      <label className="vendor-edit-modal__label">Bank Branch</label>
+                      <input
+                        type="text"
+                        className="vendor-edit-modal__input"
+                        value={bankBranch}
+                        onChange={(e) => setBankBranch(e.target.value)}
+                        placeholder="e.g. New Road Branch"
+                      />
+                    </div>
+                  </>
+                )
+              )}
+
+              <button
+                type="button"
+                className="vendor-edit-modal__button vendor-edit-modal__button--add"
+                onClick={handleAddPaymentOption}
+                style={{
+                  marginTop: "10px",
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  background: "#4caf50",
+                  color: "white",
+                  padding: "10px",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer"
+                }}
+              >
+                <FaPlus /> Add Payment Method
+              </button>
+            </div>
           </div>
 
           <div className="vendor-edit-modal__form-group">
