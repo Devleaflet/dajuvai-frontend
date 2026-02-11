@@ -68,7 +68,7 @@ const createVendorAPI = (token: string | null) => ({
 			const result: ApiResponse<Vendor[]> = await response.json();
 			return (result.data || []).map((vendor) => ({
 				...vendor,
-				status: vendor.isVerified ? "Active" : "Inactive",
+				status: (vendor.isVerified && (vendor.isApproved !== false)) ? "Active" : "Inactive",
 				isApproved: vendor.isApproved !== undefined ? vendor.isApproved : true, // Preserve isApproved, default to true for existing vendors
 				taxNumber: vendor.taxNumber || "N/A",
 				taxDocuments: Array.isArray(vendor.taxDocuments)
@@ -218,8 +218,8 @@ const createVendorAPI = (token: string | null) => ({
 				Authorization: `Bearer ${token}`,
 			};
 
-			const response = await fetch(`${API_BASE_URL}/api/vendors/reject/${id}`, {
-				method: "PUT",
+			const response = await fetch(`${API_BASE_URL}/api/vendors/${id}`, {
+				method: "DELETE",
 				headers,
 			});
 
@@ -475,7 +475,6 @@ const AdminVendor: React.FC = () => {
 		key: keyof Vendor;
 		direction: "asc" | "desc";
 	} | null>(null);
-	const [unapprovedCount, setUnapprovedCount] = useState(0);
 	const [districtFilter, setDistrictFilter] = useState("all");
 	const [startDate, setStartDate] = useState("");
 	const [endDate, setEndDate] = useState("");
@@ -547,32 +546,13 @@ const AdminVendor: React.FC = () => {
 	}, [token]);
 
 	const loadUnapprovedCount = useCallback(async () => {
-		//("Fetching unapproved vendors...");
-		try {
-			const unapproved = await vendorAPI.getUnapproved();
-			setUnapprovedCount(unapproved.length);
-		} catch (err) {
-			console.error("Failed to load unapproved count:", err);
-		}
-	}, [vendorAPI]);
+		// Derive from vendors state directly in render logic
+	}, []);
 
 	const loadVendors = useCallback(async () => {
 		try {
 			setLoading(true);
-			const cached = localStorage.getItem(CACHE_KEY_VENDORS);
-			if (cached) {
-				try {
-					const { data, timestamp } = JSON.parse(cached);
-					if (Array.isArray(data) && Date.now() - timestamp < CACHE_TTL) {
-						setVendors(data);
-						setFilteredVendors(data);
-						setLoading(false);
-						return;
-					}
-				} catch {
-					//("Invalid vendor cache, fetching fresh data");
-				}
-			}
+			// Removing cache retrieval to ensure fresh data for debugging discrepancy
 
 			// Fetch both approved and unapproved vendors
 			const [approvedVendors, unapprovedVendors] = await Promise.all([
@@ -580,13 +560,21 @@ const AdminVendor: React.FC = () => {
 				vendorAPI.getUnapproved(),
 			]);
 
-			// Combine and deduplicate vendors (in case there's overlap)
-			const allVendors = [...approvedVendors];
-			unapprovedVendors.forEach((unapprovedVendor) => {
-				if (!allVendors.find((v) => v.id === unapprovedVendor.id)) {
-					allVendors.push(unapprovedVendor);
-				}
+			// Use a Map to merge vendors, prioritizing data from the unapproved list
+			const vendorMap = new Map<number, Vendor>();
+
+			// Add approved vendors first
+			approvedVendors.forEach(v => vendorMap.set(v.id, v));
+
+			// Overwrite with unapproved vendor data (this ensures isApproved is correctly false/null)
+			unapprovedVendors.forEach(v => {
+				vendorMap.set(v.id, {
+					...v,
+					isApproved: false // Explicitly set if from this list
+				});
 			});
+
+			const allVendors = Array.from(vendorMap.values());
 
 			setVendors(allVendors);
 			setFilteredVendors(allVendors);
@@ -818,10 +806,8 @@ const AdminVendor: React.FC = () => {
 				);
 				toast.success("Vendor rejected successfully");
 			}
-			setUnapprovedCount((prev) => prev - 1);
 			localStorage.removeItem(CACHE_KEY_VENDORS);
 			await loadVendors();
-			await loadUnapprovedCount();
 		} catch (error) {
 			toast.error(
 				error instanceof Error
@@ -893,7 +879,7 @@ const AdminVendor: React.FC = () => {
 							</div>
 							<div className="stat-info">
 								<h3>Pending Approval</h3>
-								<p>{unapprovedCount}</p>
+								<p>{vendors.filter(v => v.isApproved === false || v.isApproved === null).length}</p>
 							</div>
 						</div>
 						<div className="admin-vendors__stat-card success">
@@ -911,11 +897,11 @@ const AdminVendor: React.FC = () => {
 					</div>
 
 					{/* Pending Approvals Section */}
-					{vendors.filter(v => !v.isApproved).length > 0 && (
+					{vendors.filter(v => v.isApproved === false || v.isApproved === null).length > 0 && (
 						<div className="admin-vendors__section pending-section">
 							<div className="section-header">
 								<h2>Pending Verification Requests</h2>
-								<span className="badge warning">{vendors.filter(v => !v.isApproved).length} Pending</span>
+								<span className="badge warning">{vendors.filter(v => v.isApproved === false || v.isApproved === null).length} Pending</span>
 							</div>
 							<div className="admin-vendors__table-container">
 								<table className="admin-vendors__table">
@@ -930,7 +916,7 @@ const AdminVendor: React.FC = () => {
 										</tr>
 									</thead>
 									<tbody>
-										{vendors.filter(v => !v.isApproved).map((vendor) => (
+										{vendors.filter(v => v.isApproved === false || v.isApproved === null).map((vendor) => (
 											<tr key={vendor.id} className="admin-vendors__table-row highlight-row">
 												<td className="admin-vendors__name-column">{vendor.businessName}</td>
 												<td className="admin-vendors__email-column">{vendor.email}</td>
