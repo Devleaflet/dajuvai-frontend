@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef, act } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Popup from "reactjs-popup";
 import "reactjs-popup/dist/index.css";
-import axiosInstance from "../api/axiosInstance";
 import { API_BASE_URL } from "../config";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import { Sidebar } from "../Components/Sidebar";
@@ -10,6 +9,30 @@ import VendorHeader from "../Components/VendorHeader";
 import "../Styles/ProfilePage.css";
 import type { VendorUpdateRequest } from "../Components/Types/vendor";
 import axios from "axios";
+import { FaTrash, FaPlus, FaWallet, FaUniversity } from 'react-icons/fa';
+
+interface VendorProfile {
+	id: number;
+	businessName: string;
+	email: string;
+	phoneNumber: string;
+	businessAddress: string;
+	profilePicture?: string;
+	isVerified?: boolean;
+	district?: { id: number; name: string };
+	taxNumber?: string;
+	taxDocuments?: string[] | null;
+	businessRegNumber?: string;
+	citizenshipDocuments?: string[] | null;
+}
+
+interface PaymentOption {
+	id: number;
+	paymentType: "KHALTI" | "ESEWA" | "BANK";
+	details: Record<string, any>;
+	qrCodeImage?: string;
+	isActive: boolean;
+}
 
 interface VendorProfile {
 	id: number;
@@ -25,11 +48,8 @@ interface VendorProfile {
 	businessRegNumber?: string;
 	citizenshipDocuments?: string[] | null;
 	chequePhoto?: string | null;
-	accountName: string;
-	bankName: string;
-	accountNumber: string;
-	bankBranch: string;
-	bankCode: string;
+
+	paymentOptions?: PaymentOption[];
 }
 
 interface FormState {
@@ -63,6 +83,16 @@ const ProfilePage: React.FC = () => {
 		type: "success" | "error";
 		content: string;
 	} | null>(null);
+	// Payment UI state
+	const [currentPaymentType, setCurrentPaymentType] =
+		useState<"ESEWA" | "KHALTI" | "BANK" | "">("");
+
+	const [walletNumber, setWalletNumber] = useState("");
+	const [accountName, setAccountName] = useState("");
+	const [bankName, setBankName] = useState("");
+	const [accountNumber, setAccountNumber] = useState("");
+	const [bankBranch, setBankBranch] = useState("");
+
 	const [previewImages, setPreviewImages] = useState<{
 		chequePhoto: string;
 		citizenshipDocuments: string[];
@@ -123,6 +153,86 @@ const ProfilePage: React.FC = () => {
 		}
 	};
 
+	const handleAddPaymentOption = () => {
+		if (!currentPaymentType) {
+			showPopup("error", "Please select a payment method type");
+			return;
+		}
+
+		const isWallet = ["ESEWA", "KHALTI"].includes(currentPaymentType);
+
+		if (isWallet) {
+			if (!walletNumber.trim() || !accountName.trim()) {
+				showPopup("error", "Wallet number and account name required");
+				return;
+			}
+		} else {
+			if (
+				!accountNumber.trim() ||
+				!bankName.trim() ||
+				!accountName.trim() ||
+				!bankBranch.trim()
+			) {
+				showPopup("error", "All bank details required");
+				return;
+			}
+		}
+
+		const newOption = {
+			paymentType: currentPaymentType,
+			details: isWallet
+				? {
+					walletNumber,
+					accountName,
+				}
+				: {
+					accountNumber,
+					bankName,
+					accountName,
+					branch: bankBranch,
+				},
+			isActive: true,
+		};
+		// Check for duplicate payment types
+		const isDuplicate = vendorDetails?.paymentOptions?.some(
+			(opt) => opt.paymentType === currentPaymentType
+		);
+
+		if (isDuplicate) {
+			showPopup("error", "This payment type is already added.");
+			return;
+		}
+
+
+		setVendorDetails((prev) =>
+			prev
+				? {
+					...prev,
+					paymentOptions: [...(prev.paymentOptions || []), newOption],
+				}
+				: prev
+		);
+
+		// reset
+		setWalletNumber("");
+		setAccountNumber("");
+		setBankName("");
+		setAccountName("");
+		setBankBranch("");
+	};
+
+	const removePaymentOption = (index: number) => {
+		setVendorDetails((prev) =>
+			prev
+				? {
+					...prev,
+					paymentOptions: prev.paymentOptions?.filter((_, i) => i !== index),
+				}
+				: prev
+		);
+	};
+
+
 	const fetchVendorDetails = async () => {
 		setIsLoading((prev) => ({ ...prev, fetchVendor: true }));
 		try {
@@ -143,14 +253,9 @@ const ProfilePage: React.FC = () => {
 				businessAddress: vendorData.district?.name || "",
 				taxNumber: vendorData.taxNumber || "",
 				businessRegNumber: vendorData.businessRegNumber || "",
-				chequePhoto: vendorData.chequePhoto || "",
 				citizenshipDocuments: vendorData.citizenshipDocuments || [],
 				taxDocuments: vendorData.taxDocuments || [],
-				accountName: vendorData.accountName || "",
-				bankName: vendorData.bankName || "",
-				accountNumber: vendorData.accountNumber || "",
-				bankBranch: vendorData.bankBranch || "",
-				bankCode: vendorData.bankCode || "",
+				paymentOptions: vendorData.paymentOptions || [],
 			};
 
 			setVendorDetails(normalizedVendorData);
@@ -298,7 +403,7 @@ const ProfilePage: React.FC = () => {
 				if (index !== undefined) {
 					updatedField.splice(index, 1);
 				}
-			
+
 				return { ...prev, [field]: updatedField };
 			});
 		}
@@ -345,18 +450,13 @@ const ProfilePage: React.FC = () => {
 				chequePhoto: vendorDetails.chequePhoto || "",
 				citizenshipDocuments: vendorDetails.citizenshipDocuments || [],
 				taxDocuments: vendorDetails.taxDocuments || [],
-				accountName: vendorDetails.accountName || "",
-				bankName: vendorDetails.bankName || "",
-				accountNumber: vendorDetails.accountNumber || "",
-				bankBranch: vendorDetails.bankBranch || "",
-				bankCode: vendorDetails.bankCode || "",
 				district: vendorDetails.businessAddress,
+				paymentOptions: vendorDetails.paymentOptions || [],
 			};
 
-			//("Sending vendor data to /api/vendors:", requestData); // Debug log
 
 			const response = await axios.put(
-				`${API_BASE_URL}/api/vendors/${vendorId}`,
+				`${API_BASE_URL}/api/vendors/v2/${vendorId}`,
 				requestData,
 				{
 					withCredentials: true,
@@ -540,145 +640,7 @@ const ProfilePage: React.FC = () => {
 						)}
 					</div>
 				</div>
-				<div className="vendor-profile-form__row">
-					<div className="vendor-profile-form__group vendor-profile-form__group--half">
-						<label>Account Name</label>
-						{isEditing ? (
-							<input
-								type="text"
-								name="accountName"
-								value={vendorDetails.accountName ?? ""}
-								onChange={(e) => handleInputChange(e, "accountName")}
-								className="vendor-profile-form__input"
-							/>
-						) : (
-							<div className="vendor-profile-form__display">
-								{vendorDetails.accountName || "Not provided"}
-							</div>
-						)}
-					</div>
-					<div className="vendor-profile-form__group vendor-profile-form__group--half">
-						<label>Bank Name</label>
-						{isEditing ? (
-							<input
-								type="text"
-								name="bankName"
-								value={vendorDetails.bankName ?? ""}
-								onChange={(e) => handleInputChange(e, "bankName")}
-								className="vendor-profile-form__input"
-							/>
-						) : (
-							<div className="vendor-profile-form__display">
-								{vendorDetails.bankName || "Not provided"}
-							</div>
-						)}
-					</div>
-				</div>
-				<div className="vendor-profile-form__row">
-					<div className="vendor-profile-form__group vendor-profile-form__group--half">
-						<label>Account Number</label>
-						{isEditing ? (
-							<input
-								type="text"
-								name="accountNumber"
-								value={vendorDetails.accountNumber ?? ""}
-								onChange={(e) => handleInputChange(e, "accountNumber")}
-								className="vendor-profile-form__input"
-							/>
-						) : (
-							<div className="vendor-profile-form__display">
-								{vendorDetails.accountNumber || "Not provided"}
-							</div>
-						)}
-					</div>
-					<div className="vendor-profile-form__group vendor-profile-form__group--half">
-						<label>Bank Branch</label>
-						{isEditing ? (
-							<input
-								type="text"
-								name="bankBranch"
-								value={vendorDetails.bankBranch ?? ""}
-								onChange={(e) => handleInputChange(e, "bankBranch")}
-								className="vendor-profile-form__input"
-							/>
-						) : (
-							<div className="vendor-profile-form__display">
-								{vendorDetails.bankBranch || "Not provided"}
-							</div>
-						)}
-					</div>
-				</div>
-				<div className="vendor-profile-form__row">
-					<div className="vendor-profile-form__group vendor-profile-form__group--half">
-						<label>Bank Code</label>
-						{isEditing ? (
-							<input
-								type="text"
-								name="bankCode"
-								value={vendorDetails.bankCode ?? ""}
-								onChange={(e) => handleInputChange(e, "bankCode")}
-								className="vendor-profile-form__input"
-							/>
-						) : (
-							<div className="vendor-profile-form__display">
-								{vendorDetails.bankCode || "Not provided"}
-							</div>
-						)}
-					</div>
-				</div>
-				<div className="vendor-profile-form__row">
-					<div className="vendor-profile-form__group">
-						<label>Cheque Photo</label>
-						{isEditing ? (
-							<>
-								<div
-									className="vendor-profile-form__upload-box"
-									onClick={() => chequeInputRef.current?.click()}
-								>
-									<p>
-										{isLoading.upload_chequePhoto
-											? "Uploading..."
-											: "Click to upload cheque photo"}
-									</p>
-								</div>
-								<input
-									type="file"
-									ref={chequeInputRef}
-									onChange={(e) => handleFileChange(e, "chequePhoto")}
-									className="vendor-profile-form__input-hidden"
-									accept="image/*"
-								/>
-								<div className="vendor-profile-form__preview">
-									{previewImages.chequePhoto && (
-										<div className="vendor-profile-form__preview-item">
-											<img
-												src={previewImages.chequePhoto}
-												alt="Cheque Preview"
-											/>
-											<button
-												className="vendor-profile-form__preview-remove"
-												onClick={() => handleRemoveImage("chequePhoto")}
-											>
-												×
-											</button>
-										</div>
-									)}
-								</div>
-							</>
-						) : (
-							<div className="vendor-profile-form__display">
-								{vendorDetails.chequePhoto ? (
-									<img
-										src={vendorDetails.chequePhoto}
-										alt="Cheque"
-									/>
-								) : (
-									"Not provided"
-								)}
-							</div>
-						)}
-					</div>
-				</div>
+
 				<div className="vendor-profile-form__row">
 					<div className="vendor-profile-form__group">
 						<label>Citizenship Documents</label>
@@ -730,18 +692,19 @@ const ProfilePage: React.FC = () => {
 							<div className="vendor-profile-form__display">
 								{vendorDetails.citizenshipDocuments?.length
 									? vendorDetails.citizenshipDocuments.map((doc, index) => (
-											<div key={index}>
-												<img
-													src={doc}
-													alt="Citizenship Document"
-												/>
-											</div>
-									  ))
+										<div key={index}>
+											<img
+												src={doc}
+												alt="Citizenship Document"
+											/>
+										</div>
+									))
 									: "Not provided"}
 							</div>
 						)}
 					</div>
 				</div>
+
 				<div className="vendor-profile-form__row">
 					<div className="vendor-profile-form__group">
 						<label>Tax Documents</label>
@@ -789,18 +752,237 @@ const ProfilePage: React.FC = () => {
 							<div className="vendor-profile-form__display">
 								{vendorDetails.taxDocuments?.length
 									? vendorDetails.taxDocuments.map((doc, index) => (
-											<div key={index}>
-												<img
-													src={doc}
-													alt="Tax Document"
-												/>
-											</div>
-									  ))
+										<div key={index}>
+											<img
+												src={doc}
+												alt="Tax Document"
+											/>
+										</div>
+									))
 									: "Not provided"}
 							</div>
 						)}
 					</div>
+
 				</div>
+				<div className="vendor-profile-form__row">
+					<div className="vendor-profile-form__group">
+						<label>Payment Options</label>
+
+						{/* Existing Payment Methods */}
+						{vendorDetails.paymentOptions?.length > 0 && (
+							<div className="vendor-edit-modal__payment-list" style={{ marginBottom: "20px" }}>
+								{vendorDetails.paymentOptions.map((option, index) => (
+									<div
+										key={index}
+										className="vendor-edit-modal__payment-item"
+										style={{
+											display: "flex",
+											justifyContent: "space-between",
+											alignItems: "center",
+											padding: "10px",
+											background: "#f9f9f9",
+											border: "1px solid #eee",
+											borderRadius: "4px",
+											marginBottom: "8px",
+										}}
+									>
+										<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+											{["ESEWA", "KHALTI"].includes(option.paymentType) ? (
+												<FaWallet color="#4caf50" />
+											) : (
+												<FaUniversity color="#2196f3" />
+											)}
+											<div>
+												<div style={{ fontWeight: "bold", fontSize: "14px" }}>
+													{option.paymentType}
+												</div>
+												<div style={{ fontSize: "12px", color: "#666" }}>
+													{option.details.accountName} -{" "}
+													{option.details.walletNumber ||
+														option.details.accountNumber}
+												</div>
+											</div>
+										</div>
+
+										{isEditing && (
+											<button
+												type="button"
+												onClick={() => removePaymentOption(index)}
+												style={{
+													background: "none",
+													border: "none",
+													color: "#ff5722",
+													cursor: "pointer",
+												}}
+											>
+												<FaTrash />
+											</button>
+										)}
+									</div>
+								))}
+							</div>
+						)}
+
+						{/* Add New Payment Method */}
+						{isEditing && (
+							<div
+								className="vendor-edit-modal__add-payment"
+								style={{
+									padding: "15px",
+									border: "1px dashed #ccc",
+									borderRadius: "8px",
+									background: "#fff",
+								}}
+							>
+								<div className="vendor-profile-form__group">
+									<label>Choose Method Type</label>
+									<select
+										className="vendor-profile-form__input"
+										value={currentPaymentType}
+										onChange={(e) =>
+											setCurrentPaymentType(e.target.value as any)
+										}
+									>
+										<option value="">Select a method...</option>
+										<option value="ESEWA">eSewa</option>
+										<option value="KHALTI">Khalti</option>
+										<option value="BANK">Bank Transfer</option>
+									</select>
+
+									{currentPaymentType && (
+										<div
+											style={{
+												marginTop: "10px",
+												padding: "10px",
+												background: "#f0f7ff",
+												borderRadius: "4px",
+												borderLeft: "4px solid #2196f3",
+											}}
+										>
+											<div
+												style={{
+													fontWeight: "600",
+													fontSize: "12px",
+													color: "#0056b3",
+													marginBottom: "4px",
+												}}
+											>
+												{["ESEWA", "KHALTI"].includes(currentPaymentType)
+													? "Digital Wallet (Instant Settlement)"
+													: "Bank Transfer (Standard Settlement)"}
+											</div>
+											<p
+												style={{
+													fontSize: "11px",
+													color: "#444",
+													margin: 0,
+													lineHeight: "1.4",
+												}}
+											>
+												{["ESEWA", "KHALTI"].includes(currentPaymentType)
+													? "Use this for fast, automated payments. Recommended for local vendors with frequent payouts."
+													: "Funds will be transferred directly to your bank account. Suitable for larger, bulk settlements."}
+											</p>
+										</div>
+									)}
+								</div>
+
+								{currentPaymentType &&
+									(["ESEWA", "KHALTI"].includes(currentPaymentType) ? (
+										<>
+											<div className="vendor-profile-form__group">
+												<label>Wallet Number</label>
+												<input
+													type="text"
+													className="vendor-profile-form__input"
+													value={walletNumber}
+													onChange={(e) => setWalletNumber(e.target.value)}
+													placeholder="e.g. 98XXXXXXXX"
+												/>
+											</div>
+											<div className="vendor-profile-form__group">
+												<label>Account Name</label>
+												<input
+													type="text"
+													className="vendor-profile-form__input"
+													value={accountName}
+													onChange={(e) => setAccountName(e.target.value)}
+													placeholder="Account Holder Name"
+												/>
+											</div>
+										</>
+									) : (
+										<>
+											<div className="vendor-profile-form__group">
+												<label>Bank Name</label>
+												<input
+													type="text"
+													className="vendor-profile-form__input"
+													value={bankName}
+													onChange={(e) => setBankName(e.target.value)}
+													placeholder="e.g. Nabil Bank"
+												/>
+											</div>
+											<div className="vendor-profile-form__group">
+												<label>Account Number</label>
+												<input
+													type="text"
+													className="vendor-profile-form__input"
+													value={accountNumber}
+													onChange={(e) => setAccountNumber(e.target.value)}
+													placeholder="Account Number"
+												/>
+											</div>
+											<div className="vendor-profile-form__group">
+												<label>Account Name</label>
+												<input
+													type="text"
+													className="vendor-profile-form__input"
+													value={accountName}
+													onChange={(e) => setAccountName(e.target.value)}
+													placeholder="Account Holder Name"
+												/>
+											</div>
+											<div className="vendor-profile-form__group">
+												<label>Bank Branch</label>
+												<input
+													type="text"
+													className="vendor-profile-form__input"
+													value={bankBranch}
+													onChange={(e) => setBankBranch(e.target.value)}
+													placeholder="e.g. New Road Branch"
+												/>
+											</div>
+										</>
+									))}
+
+								<button
+									type="button"
+									onClick={handleAddPaymentOption}
+									style={{
+										marginTop: "10px",
+										width: "100%",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										gap: "8px",
+										background: "#4caf50",
+										color: "white",
+										padding: "10px",
+										border: "none",
+										borderRadius: "4px",
+										cursor: "pointer",
+									}}
+								>
+									<FaPlus /> Add Payment Method
+								</button>
+							</div>
+						)}
+					</div>
+				</div>
+
+
 				{isEditing ? (
 					<div className="vendor-profile-form__actions">
 						<button
@@ -862,9 +1044,8 @@ const ProfilePage: React.FC = () => {
 					</p>
 					<div className="vendor-credentials__actions">
 						<button
-							className={`vendor-profile-form__help ${
-								credentialsMode === "forgot" ? "active" : ""
-							}`}
+							className={`vendor-profile-form__help ${credentialsMode === "forgot" ? "active" : ""
+								}`}
 							onClick={() => setCredentialsMode("forgot")}
 						>
 							Forgot Password
@@ -1049,11 +1230,10 @@ const ProfilePage: React.FC = () => {
 						title="Profile Management"
 					/>
 					<div
-						className={`vendor-profile-card ${
-							activeTab === "details" || activeTab === "credentials"
-								? "vendor-profile-card--wide"
-								: ""
-						}`}
+						className={`vendor-profile-card ${activeTab === "details" || activeTab === "credentials"
+							? "vendor-profile-card--wide"
+							: ""
+							}`}
 					>
 						<div className="vendor-profile-sidebar">
 							{isLoading.fetchVendor ? (
@@ -1082,11 +1262,10 @@ const ProfilePage: React.FC = () => {
 										<button
 											key={tab}
 											onClick={() => handleTabChange(tab)}
-											className={`vendor-profile-sidebar__button ${
-												activeTab === tab
-													? "vendor-profile-sidebar__button--primary"
-													: "vendor-profile-sidebar__button--secondary"
-											}`}
+											className={`vendor-profile-sidebar__button ${activeTab === tab
+												? "vendor-profile-sidebar__button--primary"
+												: "vendor-profile-sidebar__button--secondary"
+												}`}
 										>
 											{tab === "details"
 												? "Manage Details"
