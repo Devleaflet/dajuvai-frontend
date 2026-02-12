@@ -382,7 +382,7 @@ interface ConfirmationModalProps {
 	show: boolean;
 	onClose: () => void;
 	onConfirm: () => void;
-	action: "approve" | "reject";
+	action: "approve" | "reject" | "delete";
 }
 
 const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -393,23 +393,169 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 }) => {
 	if (!show) return null;
 
+	const getActionConfig = () => {
+		switch (action) {
+			case "approve":
+				return {
+					icon: "✓",
+					color: "#4caf50",
+					title: "Approve Vendor",
+					message: "Are you sure you want to approve this vendor? They will be able to start selling products.",
+					confirmText: "Yes, Approve",
+					cancelText: "Cancel"
+				};
+			case "reject":
+				return {
+					icon: "✕",
+					color: "#f44336",
+					title: "Reject Vendor",
+					message: "Are you sure you want to reject this vendor? They will be notified of the rejection.",
+					confirmText: "Yes, Reject",
+					cancelText: "Cancel"
+				};
+			case "delete":
+				return {
+					icon: "🗑",
+					color: "#ff5722",
+					title: "Delete Vendor",
+					message: "Are you sure you want to delete this vendor? This action cannot be undone and all vendor data will be permanently removed.",
+					confirmText: "Yes, Delete",
+					cancelText: "Cancel"
+				};
+		}
+	};
+
+	const config = getActionConfig();
+
 	return (
-		<div className="modal-overlay">
-			<div className="modal-content">
-				<h2>Confirm {action.charAt(0).toUpperCase() + action.slice(1)}</h2>
-				<p>Are you sure you want to {action} this vendor?</p>
-				<div className="modal-buttons">
-					<button
-						onClick={onConfirm}
-						className="confirm-btn"
-					>
-						Yes
-					</button>
+		<div
+			className="modal-overlay"
+			onClick={onClose}
+			style={{
+				position: 'fixed',
+				top: 0,
+				left: 0,
+				right: 0,
+				bottom: 0,
+				backgroundColor: 'rgba(0, 0, 0, 0.5)',
+				display: 'flex',
+				alignItems: 'center',
+				justifyContent: 'center',
+				zIndex: 1000,
+				backdropFilter: 'blur(4px)'
+			}}
+		>
+			<div
+				className="modal-content"
+				onClick={(e) => e.stopPropagation()}
+				style={{
+					backgroundColor: 'white',
+					borderRadius: '12px',
+					padding: '0',
+					maxWidth: '480px',
+					width: '90%',
+					boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+					animation: 'slideIn 0.3s ease-out'
+				}}
+			>
+				{/* Header */}
+				<div style={{
+					background: `linear-gradient(135deg, ${config.color} 0%, ${config.color}dd 100%)`,
+					padding: '24px',
+					borderRadius: '12px 12px 0 0',
+					color: 'white',
+					textAlign: 'center'
+				}}>
+					<div style={{
+						fontSize: '48px',
+						marginBottom: '12px',
+						lineHeight: 1
+					}}>
+						{config.icon}
+					</div>
+					<h2 style={{
+						margin: 0,
+						fontSize: '24px',
+						fontWeight: '600'
+					}}>
+						{config.title}
+					</h2>
+				</div>
+
+				{/* Content */}
+				<div style={{
+					padding: '32px 24px'
+				}}>
+					<p style={{
+						margin: 0,
+						fontSize: '16px',
+						lineHeight: '1.6',
+						color: '#555',
+						textAlign: 'center'
+					}}>
+						{config.message}
+					</p>
+				</div>
+
+				{/* Buttons */}
+				<div style={{
+					padding: '0 24px 24px',
+					display: 'flex',
+					gap: '12px',
+					justifyContent: 'center'
+				}}>
 					<button
 						onClick={onClose}
-						className="cancel-btn"
+						style={{
+							flex: 1,
+							padding: '12px 24px',
+							fontSize: '15px',
+							fontWeight: '500',
+							border: '2px solid #e0e0e0',
+							borderRadius: '8px',
+							backgroundColor: 'white',
+							color: '#666',
+							cursor: 'pointer',
+							transition: 'all 0.2s ease',
+							outline: 'none'
+						}}
+						onMouseEnter={(e) => {
+							e.currentTarget.style.backgroundColor = '#f5f5f5';
+							e.currentTarget.style.borderColor = '#ccc';
+						}}
+						onMouseLeave={(e) => {
+							e.currentTarget.style.backgroundColor = 'white';
+							e.currentTarget.style.borderColor = '#e0e0e0';
+						}}
 					>
-						No
+						{config.cancelText}
+					</button>
+					<button
+						onClick={onConfirm}
+						style={{
+							flex: 1,
+							padding: '12px 24px',
+							fontSize: '15px',
+							fontWeight: '600',
+							border: 'none',
+							borderRadius: '8px',
+							backgroundColor: config.color,
+							color: 'white',
+							cursor: 'pointer',
+							transition: 'all 0.2s ease',
+							outline: 'none',
+							boxShadow: `0 4px 12px ${config.color}40`
+						}}
+						onMouseEnter={(e) => {
+							e.currentTarget.style.transform = 'translateY(-2px)';
+							e.currentTarget.style.boxShadow = `0 6px 16px ${config.color}60`;
+						}}
+						onMouseLeave={(e) => {
+							e.currentTarget.style.transform = 'translateY(0)';
+							e.currentTarget.style.boxShadow = `0 4px 12px ${config.color}40`;
+						}}
+					>
+						{config.confirmText}
 					</button>
 				</div>
 			</div>
@@ -448,6 +594,8 @@ const AdminVendor: React.FC = () => {
 	const [approvingVendorId, setApprovingVendorId] = useState<number | null>(
 		null
 	);
+	const [showDeleteModal, setShowDeleteModal] = useState(false);
+	const [vendorToDelete, setVendorToDelete] = useState<number | null>(null);
 
 	const vendorAPI = useMemo(() => createVendorAPI(token), [token]);
 
@@ -776,11 +924,18 @@ const AdminVendor: React.FC = () => {
 		}
 	};
 
-	const handleDeleteVendor = async (id: number) => {
+	const handleDeleteClick = (id: number) => {
+		setVendorToDelete(id);
+		setShowDeleteModal(true);
+	};
+
+	const handleDeleteVendor = async () => {
+		if (!vendorToDelete) return;
+
 		try {
-			await vendorAPI.delete(id);
-			setVendors((prev) => prev.filter((v) => v.id !== id));
-			setFilteredVendors((prev) => prev.filter((v) => v.id !== id));
+			await vendorAPI.delete(vendorToDelete);
+			setVendors((prev) => prev.filter((v) => v.id !== vendorToDelete));
+			setFilteredVendors((prev) => prev.filter((v) => v.id !== vendorToDelete));
 			localStorage.removeItem(CACHE_KEY_VENDORS);
 			await loadVendors();
 			toast.success("Vendor deleted successfully");
@@ -788,6 +943,9 @@ const AdminVendor: React.FC = () => {
 			toast.error(
 				error instanceof Error ? error.message : "Failed to delete vendor"
 			);
+		} finally {
+			setShowDeleteModal(false);
+			setVendorToDelete(null);
 		}
 	};
 
@@ -1102,7 +1260,7 @@ const AdminVendor: React.FC = () => {
 																</button>
 															)}
 															<button
-																onClick={() => handleDeleteVendor(vendor.id)}
+																onClick={() => handleDeleteClick(vendor.id)}
 																className="admin-vendors__action-btn admin-vendors__action-btn--delete"
 															>
 																Delete
@@ -1156,6 +1314,15 @@ const AdminVendor: React.FC = () => {
 						}}
 						onConfirm={handleConfirm}
 						action={confirmAction || "approve"}
+					/>
+					<ConfirmationModal
+						show={showDeleteModal}
+						onClose={() => {
+							setShowDeleteModal(false);
+							setVendorToDelete(null);
+						}}
+						onConfirm={handleDeleteVendor}
+						action="delete"
 					/>
 				</div>
 			</div>

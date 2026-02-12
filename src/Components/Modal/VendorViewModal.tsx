@@ -71,6 +71,96 @@ const VendorViewModal: React.FC<VendorViewModalProps> = ({
     );
   };
 
+  const renderPaymentOptions = () => {
+    if (!vendor.paymentOptions || vendor.paymentOptions.length === 0) {
+      return (
+        <div className="payment-section">
+          <h3>Payment Options</h3>
+          <span className="na-text">No payment options available</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="payment-section">
+        <h3>Payment Options</h3>
+        <div className="payment-options-container">
+          {vendor.paymentOptions.map((option, index) => (
+            <div key={option.id || index} className="payment-option-card">
+              <div className="payment-header">
+                <h4>{option.paymentType}</h4>
+                <span className={`payment-status ${option.isActive ? 'active' : 'inactive'}`}>
+                  {option.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+
+              <div className="payment-details">
+                {option.paymentType === 'BANK' ? (
+                  <>
+                    {option.details.bankName && (
+                      <div className="payment-detail-item">
+                        <span className="payment-label">Bank Name:</span>
+                        <span className="payment-value">{option.details.bankName}</span>
+                      </div>
+                    )}
+                    {option.details.accountNumber && (
+                      <div className="payment-detail-item">
+                        <span className="payment-label">Account Number:</span>
+                        <span className="payment-value">{option.details.accountNumber}</span>
+                      </div>
+                    )}
+                    {option.details.accountName && (
+                      <div className="payment-detail-item">
+                        <span className="payment-label">Account Name:</span>
+                        <span className="payment-value">{option.details.accountName}</span>
+                      </div>
+                    )}
+                    {option.details.branch && (
+                      <div className="payment-detail-item">
+                        <span className="payment-label">Branch:</span>
+                        <span className="payment-value">{option.details.branch}</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {option.details.walletNumber && (
+                      <div className="payment-detail-item">
+                        <span className="payment-label">Wallet Number:</span>
+                        <span className="payment-value">{option.details.walletNumber}</span>
+                      </div>
+                    )}
+                    {option.details.accountName && (
+                      <div className="payment-detail-item">
+                        <span className="payment-label">Account Name:</span>
+                        <span className="payment-value">{option.details.accountName}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {option.qrCodeImage && (
+                <div className="qr-code-section">
+                  <span className="qr-label">QR Code:</span>
+                  <img
+                    src={option.qrCodeImage}
+                    alt={`${option.paymentType} QR Code`}
+                    className="qr-code-image"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect width="120" height="120" fill="%23e5e7eb"/><text x="60" y="60" text-anchor="middle" dy=".35em" fill="%236b7280" font-size="12">No QR</text></svg>';
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
@@ -97,44 +187,44 @@ const VendorViewModal: React.FC<VendorViewModalProps> = ({
             {renderDetailItem("Business Name", vendor.businessName)}
             {renderDetailItem("Email", vendor.email)}
             {renderDetailItem("Phone Number", vendor.phoneNumber)}
+            {renderDetailItem("Telephone", vendor.telePhone)}
             {renderDetailItem("District", vendor.district?.name)}
             {renderDetailItem(
-              "Status",
+              "Verified",
               vendor.isVerified ? (
-                <span className="status-badge active">Active</span>
+                <span className="status-badge active">Yes</span>
               ) : (
-                <span className="status-badge inactive">Inactive</span>
+                <span className="status-badge inactive">No</span>
+              )
+            )}
+            {renderDetailItem(
+              "Approved",
+              vendor.isApproved ? (
+                <span className="status-badge active">Yes</span>
+              ) : (
+                <span className="status-badge inactive">No</span>
               )
             )}
           </div>
 
-          {/* Business & Bank Info */}
+          {/* Business Info */}
           <div className="detail-grid">
-            {renderDetailItem("PAN Number", vendor.taxNumber)}
-            {renderDetailItem(
-              "Business Registration No.",
-              vendor.businessRegNumber
-            )}
-            {renderDetailItem("Account Name", vendor.accountName)}
-            {renderDetailItem("Bank Name", vendor.bankName)}
-            {renderDetailItem("Account Number", vendor.accountNumber)}
-            {renderDetailItem("Bank Branch", vendor.bankBranch)}
-            {renderDetailItem("Bank Code", vendor.bankCode)}
+            {renderDetailItem("Business Registration No.", vendor.businessRegNumber)}
+            {renderDetailItem("Tax Number (PAN)", vendor.taxNumber)}
           </div>
 
           {/* Documents */}
           {renderDocumentSection(
-            "PAN Documents",
+            "Tax Documents",
             vendor.taxDocuments
           )}
           {renderDocumentSection(
             "Citizenship Documents",
             vendor.citizenshipDocuments
           )}
-          {renderDocumentSection(
-            "Cheque Photos",
-            vendor.chequePhoto
-          )}
+
+          {/* Payment Options */}
+          {renderPaymentOptions()}
         </div>
       </div>
     </div>

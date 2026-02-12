@@ -1,100 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
-
-export interface Vendor {
-  id: number;
-  businessName: string;
-  email: string;
-  businessAddress?: string;
-  phoneNumber: string;
-  profilePicture?: string;
-  taxNumber?: string;
-  taxDocuments: string[] | null;
-  businessRegNumber?: string;
-  citizenshipDocuments: string[] | null;
-  chequePhoto: string[] | null;
-  accountName?: string;
-  bankName?: string;
-  accountNumber?: string;
-  bankBranch?: string;
-  bankCode?: string;
-  verificationCode: string | null;
-  verificationCodeExpire: string | null;
-  isVerified: boolean;
-  isApproved: boolean | null;
-  resetToken: string | null;
-  resetTokenExpire: string | null;
-  resendCount: number;
-  resendBlockUntil: string | null;
-  createdAt: string;
-  updatedAt: string;
-  district: District;
-  status: "Active" | "Inactive";
-}
-
-export interface VendorSignupRequest {
-  businessName: string;
-  email: string;
-  password: string;
-  phoneNumber: string;
-  districtId: number;
-  taxNumber: string;
-  taxDocuments: string[];
-  businessRegNumber: string;
-  citizenshipDocuments?: string[] | null;
-  chequePhoto: string[];
-  bankDetails: {
-    accountName: string;
-    bankName: string;
-    accountNumber: string;
-    bankBranch: string;
-    bankCode: string;
-  };
-  businessAddress?: string;
-  profilePicture?: string;
-}
-
-export interface VendorLoginData {
-  email: string;
-  password: string;
-}
-
-export interface VendorUpdateData {
-  id: number;
-  businessName: string;
-  email: string;
-  phoneNumber: string;
-  isVerified: boolean;
-  taxNumber?: string;
-  taxDocuments?: string[] | null;
-  businessRegNumber?: string;
-  citizenshipDocuments?: string[] | null;
-  chequePhoto?: string[] | null;
-  bankDetails?: {
-    accountName: string;
-    bankName: string;
-    accountNumber: string;
-    bankBranch: string;
-    bankCode: string;
-  };
-  districtId?: number;
-  businessAddress?: string;
-  profilePicture?: string;
-}
-
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  vendor?: T;
-  message?: string;
-  errors?: { path: string[]; message: string }[];
-  token?: string;
-}
-
-export interface District {
-  id: number;
-  name: string;
-}
+import { Vendor, VendorUpdateRequest, VendorSignupRequest, VendorLoginRequest } from '../Components/Types/vendor';
 
 class VendorService {
   private static instance: VendorService;
@@ -111,6 +17,14 @@ class VendorService {
     return VendorService.instance;
   }
 
+  // Get current vendor profile
+  async getCurrentVendorProfile(token: string): Promise<Vendor> {
+    const response = await axios.get(`${this.baseURL}/profile`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data.data;
+  }
+
   // Get all vendors (Admin only)
   async getAllVendors(token: string): Promise<Vendor[]> {
     const response = await axios.get(`${this.baseURL}`, {
@@ -125,9 +39,9 @@ class VendorService {
       const response = await axios.get(`${this.baseURL}/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       //('Vendor API response:', response.data);
-      
+
       if (response.data.success) {
         return response.data.data;
       } else {
@@ -160,7 +74,7 @@ class VendorService {
   }
 
   // Update vendor information
-  async updateVendor(id: number, data: VendorUpdateData, token: string): Promise<Vendor> {
+  async updateVendor(id: number, data: VendorUpdateRequest, token: string): Promise<Vendor> {
     const response = await axios.put(`${this.baseURL}/${id}`, data, {
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -168,13 +82,13 @@ class VendorService {
   }
 
   // Vendor signup
-  async signup(data: VendorSignupData) {
+  async signup(data: VendorSignupRequest) {
     const response = await axios.post(`${this.baseURL}/signup`, data);
     return response.data;
   }
 
   // Vendor login
-  async login(data: VendorLoginData) {
+  async login(data: VendorLoginRequest) {
     const response = await axios.post(`${this.baseURL}/login`, data);
     return response.data;
   }
