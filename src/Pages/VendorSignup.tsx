@@ -691,7 +691,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			return;
 		}
 
-		const isWallet = ["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType);
+		const isWallet = ["ESEWA", "KHALTI"].includes(currentPaymentType);
 
 		if (isWallet) {
 			if (!walletNumber.trim() || !accountName.trim()) {
@@ -700,7 +700,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			}
 		} else {
 			if (!accountNumber.trim() || !bankName.trim() || !accountName.trim() || !bankBranch.trim()) {
-				toast.error("Account number, bank name, account name, and branch are required for NPS.");
+				toast.error("Account number, bank name, account name, and branch are required for Bank.");
 				return;
 			}
 		}
@@ -1923,7 +1923,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 															marginBottom: "8px"
 														}}>
 															<div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-																{["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(option.paymentType) ? <FaWallet color="#4caf50" /> : <FaUniversity color="#2196f3" />}
+																{["ESEWA", "KHALTI"].includes(option.paymentType) ? <FaWallet color="#4caf50" /> : <FaUniversity color="#2196f3" />}
 																<div>
 																	<div style={{ fontWeight: "bold", fontSize: "14px" }}>{option.paymentType}</div>
 																	<div style={{ fontSize: "12px", color: "#666" }}>
@@ -1960,18 +1960,16 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 														<option value="">Select a method...</option>
 														<option value="ESEWA">eSewa</option>
 														<option value="KHALTI">Khalti</option>
-														<option value="IMEPAY">IME Pay</option>
-														<option value="FONEPAY">FonePay</option>
-														<option value="NPS">Bank</option>
+														<option value="BANK">Bank</option>
 													</select>
 
 													{currentPaymentType && (
 														<div style={{ marginTop: "10px", padding: "10px", background: "#f0f7ff", borderRadius: "4px", borderLeft: "4px solid #2196f3" }}>
 															<div style={{ fontWeight: "600", fontSize: "12px", color: "#0056b3", marginBottom: "4px" }}>
-																{["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType) ? "Digital Wallet (Instant Settlement)" : "Bank Transfer (Standard Settlement)"}
+																{["ESEWA", "KHALTI"].includes(currentPaymentType) ? "Digital Wallet (Instant Settlement)" : "Bank Transfer (Standard Settlement)"}
 															</div>
 															<p style={{ fontSize: "11px", color: "#444", margin: 0, lineHeight: "1.4" }}>
-																{["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType)
+																{["ESEWA", "KHALTI"].includes(currentPaymentType)
 																	? "Use this for fast, automated payments. Recommended for local vendors with frequent payouts."
 																	: "Funds will be transferred directly to your bank account. Suitable for larger, bulk settlements."}
 															</p>
@@ -1980,7 +1978,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 												</div>
 
 												{currentPaymentType && (
-													["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType) ? (
+													["ESEWA", "KHALTI"].includes(currentPaymentType) ? (
 														<div className="auth-modal__form-group auth-modal__form-group--grid">
 															<div>
 																<label className="auth-modal__label">Wallet Number *</label>

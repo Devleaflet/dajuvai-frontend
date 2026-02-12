@@ -131,7 +131,7 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
       toast.error("Please select a payment method type");
       return;
     }
-    const isWallet = ["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType);
+    const isWallet = ["ESEWA", "KHALTI"].includes(currentPaymentType);
 
     if (isWallet) {
       if (!walletNumber.trim() || !accountName.trim()) {
@@ -140,7 +140,7 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
       }
     } else {
       if (!accountNumber.trim() || !bankName.trim() || !accountName.trim() || !bankBranch.trim()) {
-        toast.error("Account number, bank name, account name, and branch are required for NPS.");
+        toast.error("Account number, bank name, account name, and branch are required for Bank.");
         return;
       }
     }
@@ -614,7 +614,7 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
                     marginBottom: "8px"
                   }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      {["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(option.paymentType) ? <FaWallet color="#4caf50" /> : <FaUniversity color="#2196f3" />}
+                      {["ESEWA", "KHALTI"].includes(option.paymentType) ? <FaWallet color="#4caf50" /> : <FaUniversity color="#2196f3" />}
                       <div>
                         <div style={{ fontWeight: "bold", fontSize: "14px" }}>{option.paymentType}</div>
                         <div style={{ fontSize: "12px", color: "#666" }}>
@@ -650,18 +650,16 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
                   <option value="">Select a method...</option>
                   <option value="ESEWA">eSewa</option>
                   <option value="KHALTI">Khalti</option>
-                  <option value="IMEPAY">IME Pay</option>
-                  <option value="FONEPAY">Fonepay</option>
-                  <option value="NPS">Bank Transfer (NPS)</option>
+                  <option value="BANK">Bank Transfer</option>
                 </select>
 
                 {currentPaymentType && (
                   <div style={{ marginTop: "10px", padding: "10px", background: "#f0f7ff", borderRadius: "4px", borderLeft: "4px solid #2196f3" }}>
                     <div style={{ fontWeight: "600", fontSize: "12px", color: "#0056b3", marginBottom: "4px" }}>
-                      {["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType) ? "Digital Wallet (Instant Settlement)" : "Bank Transfer (Standard Settlement)"}
+                      {["ESEWA", "KHALTI"].includes(currentPaymentType) ? "Digital Wallet (Instant Settlement)" : "Bank Transfer (Standard Settlement)"}
                     </div>
                     <p style={{ fontSize: "11px", color: "#444", margin: 0, lineHeight: "1.4" }}>
-                      {["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType)
+                      {["ESEWA", "KHALTI"].includes(currentPaymentType)
                         ? "Use this for fast, automated payments. Recommended for local vendors with frequent payouts."
                         : "Funds will be transferred directly to your bank account. Suitable for larger, bulk settlements."}
                     </p>
@@ -670,7 +668,7 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
               </div>
 
               {currentPaymentType && (
-                ["ESEWA", "KHALTI", "IMEPAY", "FONEPAY"].includes(currentPaymentType) ? (
+                ["ESEWA", "KHALTI"].includes(currentPaymentType) ? (
                   <>
                     <div className="vendor-edit-modal__form-group">
                       <label className="vendor-edit-modal__label">Wallet Number</label>

@@ -1,4 +1,4 @@
-export type PaymentType = "ESEWA" | "KHALTI" | "IMEPAY" | "FONEPAY" | "NPS";
+export type PaymentType = "ESEWA" | "KHALTI" | "BANK";
 
 export interface PaymentOption {
 	id: number;
