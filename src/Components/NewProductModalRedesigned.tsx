@@ -5,7 +5,7 @@ import "../Styles/NewProductModal.css";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import { dealApiService } from '../services/apiDeals';
 import { Deal } from '../Components/Types/Deal';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 
 export enum InventoryStatus {
   AVAILABLE = 'AVAILABLE',
@@ -259,6 +259,10 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   };
 
   const handleInputChange = (field: keyof NewProductFormData, value: any) => {
+    if (field === 'discountType' && !value) {
+      setFormData(prev => ({ ...prev, discountType: undefined, discount: 0 }));
+      return;
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
 
     // Auto-progress steps
@@ -334,7 +338,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       if (droppedFiles.length > 0) {
         setImages(prev => [...prev, ...droppedFiles]);
         setCurrentStep(3);
-        toast.info(`${droppedFiles.length} image${droppedFiles.length > 1 ? 's' : ''} added`);
+        toast(`${droppedFiles.length} image${droppedFiles.length > 1 ? 's' : ''} added`);
       }
       dt.clearData();
     }
@@ -450,9 +454,12 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     }
 
     // Validate discount if provided
-    if (formData.discount !== undefined && formData.discount !== null) {
+    if (formData.discountType && (!formData.discount || formData.discount <= 0)) {
+      return 'Please enter a discount amount when a discount type is selected';
+    }
+    if (formData.discount !== undefined && formData.discount !== null && formData.discount > 0) {
       if (formData.discount < 0) return 'Discount cannot be negative';
-      if (!formData.discountType) return 'Discount type is required when discount amount is provided';
+      if (!formData.discountType) return 'Please select a discount type (Percentage or Flat)';
     }
 
     return null;

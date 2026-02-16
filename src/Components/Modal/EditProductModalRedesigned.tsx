@@ -446,6 +446,10 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   };
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
+    if (field === 'discountType' && !value) {
+      setFormData(prev => ({ ...prev, discountType: undefined, discount: 0 }));
+      return;
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -576,10 +580,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       }
     }
 
-    // Validate discount if provided
-    if (formData.discount !== undefined && formData.discount !== null) {
+    // Validate discount — both fields must be filled together or neither
+    if (formData.discountType && (!formData.discount || Number(formData.discount) <= 0)) {
+      return 'Please enter a discount amount when a discount type is selected';
+    }
+    if (formData.discount !== undefined && formData.discount !== null && Number(formData.discount) > 0) {
       if (formData.discount < 0) return 'Discount cannot be negative';
-      if (!formData.discountType) return 'Discount type is required when discount amount is provided';
+      if (!formData.discountType) return 'Please select a discount type (Percentage or Flat)';
     }
 
     //('✅ All validation checks passed');
@@ -705,7 +712,17 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
     } catch (error: any) {
       console.error('Update product error:', error);
-      toast.error(error.message || 'Failed to update product');
+      const status = error?.response?.status;
+      const serverMessage = error?.response?.data?.message;
+      if (status === 401) {
+        toast.error('Session expired. Please log in again.');
+      } else if (status === 403) {
+        toast.error('You are not authorized to update this product.');
+      } else if (serverMessage) {
+        toast.error(serverMessage);
+      } else {
+        toast.error(error.message || 'Failed to update product');
+      }
     } finally {
       setIsLoading(false);
     }

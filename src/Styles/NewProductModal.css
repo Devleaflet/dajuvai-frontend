@@ -60,7 +60,10 @@
   box-shadow: var(--shadow-lg);
   width: 100%;
   max-width: 900px;
+  height: 95vh;
   max-height: 95vh;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   animation: slideUp 0.3s ease-out;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -152,7 +155,8 @@
 .new-product-modal-body {
   padding: 2rem;
   overflow-y: auto;
-  max-height: calc(95vh - 140px);
+  flex: 1 1 0;
+  min-height: 0;
   background: #ffffff;
 }
 
@@ -915,12 +919,17 @@
   }
 
   .new-product-modal {
+    height: calc(100vh - 4rem);
     max-height: calc(100vh - 4rem);
     border-radius: var(--radius-lg);
   }
 
   .new-product-modal-header {
-    padding: 1rem 1.5rem;
+    padding: 1rem 0.75rem;
+  }
+
+  .new-product-modal-body {
+    padding: 1rem 0.75rem;
   }
 
   .new-product-modal-title {
@@ -929,13 +938,17 @@
 
   .new-product-modal-close {
     top: 0.75rem;
-    right: 0.75rem;
+    right: 0.5rem;
     width: 2rem;
     height: 2rem;
   }
 
   .new-product-form {
-    padding: 1.5rem;
+    padding: 0.75rem;
+  }
+
+  .form-section {
+    padding: 1rem 0.75rem;
   }
 
   .form-grid.two-columns,
@@ -945,7 +958,7 @@
 
   .button-group {
     flex-direction: column;
-    padding: 1rem 1.5rem;
+    padding: 0.75rem;
   }
 
   .form-progress {
@@ -994,28 +1007,36 @@
     border-radius: 0;
   }
 
+  .new-product-modal-header {
+    padding: 0.75rem 0.5rem;
+  }
+
   .new-product-modal-body {
-    max-height: calc(100vh - 180px);
+    padding: 0.75rem 0.5rem;
   }
 
   .new-product-form {
-    padding: 1rem;
+    padding: 0.5rem;
+  }
+
+  .form-section {
+    padding: 0.75rem 0.5rem;
   }
 
   .button-group {
-    padding: 1rem;
+    padding: 0.75rem 0.5rem;
   }
 
   .form-grid {
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .variant-card {
-    padding: 0.75rem;
+    padding: 0.75rem 0.5rem;
   }
 
   .variants-section {
-    padding: 1rem;
+    padding: 0.75rem 0.5rem;
   }
 }
 
