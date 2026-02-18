@@ -113,7 +113,7 @@ export function AdminDashboard() {
 	const vendorChartRef = useRef<Chart | null>(null);
 	const topProductsChartRef = useRef<Chart | null>(null);
 
-	
+
 
 	useEffect(() => {
 		const handleResize = () => {
@@ -205,8 +205,7 @@ export function AdminDashboard() {
 	};
 
 	const getVendorsCacheKey = () =>
-		`${VENDORS_CACHE_KEY}_${vendorsStartDate || 'all'}_${
-			vendorsEndDate || 'all'
+		`${VENDORS_CACHE_KEY}_${vendorsStartDate || 'all'}_${vendorsEndDate || 'all'
 		}_${vendorsPage}`;
 
 	const fetchVendorsSales = async () => {
@@ -251,8 +250,7 @@ export function AdminDashboard() {
 	};
 
 	const getTopProductsCacheKey = () =>
-		`${TOP_PRODUCTS_CACHE_KEY}_${topProductsStartDate || 'all'}_${
-			topProductsEndDate || 'all'
+		`${TOP_PRODUCTS_CACHE_KEY}_${topProductsStartDate || 'all'}_${topProductsEndDate || 'all'
 		}_${topProductsPage}`;
 
 	const fetchTopProducts = async () => {

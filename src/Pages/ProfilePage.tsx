@@ -769,6 +769,25 @@ const ProfilePage: React.FC = () => {
 					<div className="vendor-profile-form__group">
 						<label>Payment Options</label>
 
+						{/* Empty state — view mode, no payment methods */}
+						{!isEditing && !vendorDetails.paymentOptions?.length && (
+							<div className="payment-empty-state">
+								<div className="payment-empty-state__icon">
+									<FaWallet size={28} />
+								</div>
+								<h4 className="payment-empty-state__title">No Payment Methods Added</h4>
+								<p className="payment-empty-state__desc">
+									You haven't added any payment methods yet.
+								</p>
+								<button
+									className="payment-empty-state__cta"
+									onClick={() => setIsEditing(true)}
+								>
+									Add Payment Method
+								</button>
+							</div>
+						)}
+
 						{/* Existing Payment Methods */}
 						{vendorDetails.paymentOptions?.length > 0 && (
 							<div className="vendor-edit-modal__payment-list" style={{ marginBottom: "20px" }}>
@@ -1048,7 +1067,7 @@ const ProfilePage: React.FC = () => {
 								}`}
 							onClick={() => setCredentialsMode("forgot")}
 						>
-							Forgot Password
+							Change Password
 						</button>
 					</div>
 				</div>

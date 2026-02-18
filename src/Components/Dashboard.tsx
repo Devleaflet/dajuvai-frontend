@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from "react-router-dom";
 import "../Styles/Dashboard.css";
 import { Sidebar } from "./Sidebar";
 import { Chart } from "chart.js/auto";
@@ -20,9 +21,11 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [days, setDays] = useState<number>(10); // State for days selector
   const [showAllLowStock, setShowAllLowStock] = useState<boolean>(false); // State for showing more data
+  const [bannerDismissed, setBannerDismissed] = useState(false);
   const docketHeight = useDocketHeight();
   const chartRef = useRef<Chart | null>(null);
   const { authState } = useVendorAuth();
+  const navigate = useNavigate();
 
   // TanStack Query for stats
   const {
@@ -119,6 +122,22 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
     enabled: !!authState.token,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Fetch vendor profile to check payment methods
+  const { data: vendorData } = useQuery({
+    queryKey: ["vendor-profile-banner", authState.token],
+    queryFn: async () => {
+      if (!authState.token) throw new Error("No token");
+      const res = await axiosInstance.get("/api/vendors/auth/vendor", {
+        headers: { Authorization: `Bearer ${authState.token}` },
+      });
+      return res.data.vendor;
+    },
+    enabled: !!authState.token,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const hasNoPaymentMethod = !vendorData?.paymentOptions?.length;
 
   useEffect(() => {
     const handleResize = () => {
@@ -295,6 +314,34 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
       <div className={`dashboard ${isMobile ? "dashboard--mobile" : ""}`}>
         <VendorHeader title="Dashboard" showSearch={false} />
         <main className="dashboard__main" style={{ paddingBottom: isMobile ? `${docketHeight + 24}px` : "24px" }}>
+          {/* Payment method warning banner */}
+          {!bannerDismissed && hasNoPaymentMethod && (
+            <div className="payment-warning-banner">
+              <span className="payment-warning-banner__icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </span>
+              <p className="payment-warning-banner__msg">
+                Want a smoother payment experience? Add a payment method anytime.
+              </p>
+              <button
+                className="payment-warning-banner__cta"
+                onClick={() => navigate("/vendor-profile")}
+              >
+                Add Payment Method
+              </button>
+              <button
+                className="payment-warning-banner__close"
+                onClick={() => setBannerDismissed(true)}
+                aria-label="Dismiss banner"
+              >
+                ×
+              </button>
+            </div>
+          )}
           {/* Stats Section */}
           <div className="dashboard__stats">
             <StatsCard
@@ -336,8 +383,8 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
               <div className="section-card revenue-analytics">
                 <h3
                   style={{
-                    marginBottom:"5px",
-                    textAlign:"center"
+                    marginBottom: "5px",
+                    textAlign: "center"
                   }}
                 >Total Sales</h3>
                 <div className="revenue-analytics__legend">
@@ -368,10 +415,10 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
           </div>
           <div className="dashboard__two-columns">
             <div className="dashboard__column">
-          <TopProducts />
+              <TopProducts />
             </div>
             <div className="dashboard__column">
-          <VendorRevenueBySubCategory />
+              <VendorRevenueBySubCategory />
 
             </div>
           </div>
@@ -420,7 +467,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
             </div>
           </div>
 
-          
+
         </main>
       </div>
     </div>

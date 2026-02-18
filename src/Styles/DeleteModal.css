@@ -1,81 +1,141 @@
 
-
 .delete-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 999;
-  }
-  
-  .delete-modal__overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-  }
-  
-  .delete-modal__content {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: #fff;
-    padding: 1rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    max-width: 400px;
-    width: 85%;
-    min-width: 200px;
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  animation: dm-backdrop-in 0.15s ease;
 }
-  
-  .delete-modal__title {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    color: #333;
-  }
-  
-  .delete-modal__message {
-    font-size: 1rem;
-    margin-bottom: 1.5rem;
-    color: #666;
-  }
-  
-  .delete-modal__actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-  }
-  
-  .delete-modal__cancel-btn {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 4px;
-    background-color: #f4f4f4;
-    color: #333;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-  }
-  
-  .delete-modal__cancel-btn:hover {
-    background-color: #e0e0e0;
-  }
-  
-  .delete-modal__delete-btn {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 4px;
-    background-color: #e74c3c;
-    color: #fff;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-  }
-  
-  .delete-modal__delete-btn:hover {
-    background-color: #c0392b;
-  }
+
+@keyframes dm-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.delete-modal__overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+}
+
+.delete-modal__content {
+  position: relative;
+  background-color: #fff;
+  padding: 2rem 2rem 1.75rem;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  max-width: 420px;
+  width: 90%;
+  text-align: center;
+  animation: dm-modal-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes dm-modal-in {
+  from { opacity: 0; transform: scale(0.88) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Trash icon badge */
+.delete-modal__icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #fff0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+
+.delete-modal__icon svg {
+  width: 28px;
+  height: 28px;
+  color: #dc3545;
+}
+
+.delete-modal__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+  color: #1a1a2e;
+}
+
+.delete-modal__message {
+  font-size: 0.9rem;
+  margin: 0 0 1.75rem;
+  color: #555;
+  line-height: 1.6;
+}
+
+.delete-modal__product-name {
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.delete-modal__actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.delete-modal__cancel-btn,
+.delete-modal__delete-btn {
+  padding: 0.6rem 1.4rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.1s ease, opacity 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.delete-modal__cancel-btn {
+  background-color: #f0f0f5;
+  color: #444;
+}
+
+.delete-modal__cancel-btn:not(:disabled):hover {
+  background-color: #e2e2ea;
+  transform: translateY(-1px);
+}
+
+.delete-modal__cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.delete-modal__delete-btn {
+  background-color: #dc3545;
+  color: #fff;
+  min-width: 100px;
+}
+
+.delete-modal__delete-btn:not(:disabled):hover {
+  background-color: #b02a37;
+  transform: translateY(-1px);
+}
+
+.delete-modal__delete-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* Spinner */
+.delete-modal__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: dm-spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes dm-spin {
+  to { transform: rotate(360deg); }
+}

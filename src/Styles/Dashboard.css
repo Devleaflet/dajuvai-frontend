@@ -99,6 +99,68 @@
   padding: 12px;
 }
 
+/* ── Payment method warning banner ── */
+.payment-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.payment-warning-banner__icon {
+  color: #f59e0b;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.payment-warning-banner__msg {
+  flex: 1;
+  font-size: 0.875rem;
+  color: #78350f;
+  margin: 0;
+  min-width: 0;
+}
+
+.payment-warning-banner__cta {
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.payment-warning-banner__cta:hover {
+  background: #d97706;
+}
+
+.payment-warning-banner__close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: #92400e;
+  cursor: pointer;
+  padding: 0 2px;
+  margin-left: auto;
+  transition: color 0.15s ease;
+}
+
+.payment-warning-banner__close:hover {
+  color: #78350f;
+}
+
 .dashboard__stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

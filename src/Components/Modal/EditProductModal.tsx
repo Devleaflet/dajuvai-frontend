@@ -116,7 +116,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
           product.basePrice != null ? product.basePrice.toString() : "0",
         stock: product.stock || 0,
         discount: product.discount != null ? product.discount.toString() : "0",
-        discountType: product.discountType || "PERCENTAGE",
+        discountType: product.discountType || "NONE",
         size: product.size || [],
         status: (product.status as InventoryStatus) || InventoryStatus.AVAILABLE,
         productImages: product.productImages || [],
@@ -863,10 +863,11 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                   <label className="product-modal__label">Discount Type</label>
                   <select
                     name="discountType"
-                    value={formData.discountType || "PERCENTAGE"}
+                    value={formData.discountType || "NONE"}
                     onChange={handleInputChange}
                     className="product-modal__select"
                   >
+                    <option value="NONE">No discount</option>
                     <option value="PERCENTAGE">Percentage</option>
                     <option value="FLAT">Fixed Amount</option>
                   </select>

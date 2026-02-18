@@ -221,6 +221,53 @@
 	margin-top: 20px;
 }
 
+/* ── Payment options empty state ── */
+.payment-empty-state {
+	text-align: center;
+	padding: 2rem 1rem;
+	border: 2px dashed #e5e7eb;
+	border-radius: 10px;
+	background: #fafafa;
+	margin-top: 0.5rem;
+}
+
+.payment-empty-state__icon {
+	color: #9ca3af;
+	margin-bottom: 0.75rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.payment-empty-state__title {
+	font-size: 1rem;
+	font-weight: 600;
+	color: #374151;
+	margin: 0 0 0.4rem;
+}
+
+.payment-empty-state__desc {
+	font-size: 0.875rem;
+	color: #6b7280;
+	margin: 0 0 1.25rem;
+}
+
+.payment-empty-state__cta {
+	background: #4caf50;
+	color: #fff;
+	border: none;
+	border-radius: 6px;
+	padding: 0.5rem 1.25rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.payment-empty-state__cta:hover {
+	background: #388e3c;
+}
+
 .vendor-btn-edit--primary {
 	padding: 10px 20px;
 	background-color: #f97316;

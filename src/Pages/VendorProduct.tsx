@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { toast } from "react-hot-toast";
 import { fetchProducts, updateProduct, deleteProduct } from "../api/products";
 import EditProductModal from "../Components/Modal/EditProductModalRedesigned";
+import DeleteModal from "../Components/Modal/DeleteModal";
 import NewProductModal from "../Components/NewProductModalRedesigned";
 import Pagination from "../Components/Pagination";
 import ProductList from "../Components/ProductList";
@@ -84,6 +85,7 @@ const VendorProduct: React.FC = () => {
 	const [sortOption, setSortOption] = useState<string>("newest");
 	const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
 	const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+	const [lowStockBannerDismissed, setLowStockBannerDismissed] = useState<boolean>(false);
 
 	React.useEffect(() => {
 		setCurrentPage(1);
@@ -106,10 +108,14 @@ const VendorProduct: React.FC = () => {
 				],
 			});
 			toast.success("Product deleted successfully!");
+			setShowDeleteDialog(false);
+			setProductToDelete(null);
 		},
 		onError: (error: Error) => {
 			console.error("Error deleting product:", error);
 			toast.error(error.message || "Failed to delete product");
+			setShowDeleteDialog(false);
+			setProductToDelete(null);
 		},
 	});
 
@@ -315,7 +321,6 @@ const VendorProduct: React.FC = () => {
 	const handleProductSubmit = (success: boolean) => {
 		if (success) {
 			queryClient.invalidateQueries({ queryKey: ["vendor-products"] });
-			toast.success("Product created successfully!");
 		}
 	};
 
@@ -329,8 +334,6 @@ const VendorProduct: React.FC = () => {
 			deleteProductMutation.mutate({
 				productId: productToDelete.id,
 			});
-			setShowDeleteDialog(false);
-			setProductToDelete(null);
 		}
 	};
 
@@ -709,6 +712,7 @@ const VendorProduct: React.FC = () => {
 
 	const products: Product[] = productData?.products || [];
 	const totalProducts = productData?.serverTotal || productData?.total || 0;
+	const lowStockCount = products.filter((p) => p.status === "LOW_STOCK").length;
 	const displayProducts = products;
 
 	const filteredProducts = products.filter((product) => {
@@ -813,6 +817,25 @@ const VendorProduct: React.FC = () => {
 						paddingBottom: isMobile ? `${docketHeight + 24}px` : "24px",
 					}}
 				>
+					{!lowStockBannerDismissed && lowStockCount > 0 && (
+						<div className="low-stock-banner">
+							<span className="low-stock-banner__icon">
+								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+									<line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+									<line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+								</svg>
+							</span>
+							<p className="low-stock-banner__msg">
+								You have <strong>{lowStockCount}</strong> product{lowStockCount > 1 ? "s" : ""} with low stock. Consider restocking soon.
+							</p>
+							<button
+								className="low-stock-banner__close"
+								onClick={() => setLowStockBannerDismissed(true)}
+								aria-label="Dismiss"
+							>×</button>
+						</div>
+					)}
 					<div className="vendor-product__actions">
 						<button
 							className="vendor-product__add-btn"
@@ -846,31 +869,13 @@ const VendorProduct: React.FC = () => {
 							product={editingProduct}
 						/>
 					)}
-					{showDeleteDialog && productToDelete && (
-						<div className="vendor-product__delete-dialog">
-							<div className="vendor-product__delete-dialog-content">
-								<h3>Confirm Delete</h3>
-								<p>
-									Are you sure you want to delete "<b>{productToDelete.name}</b>
-									"? This action cannot be undone.
-								</p>
-								<div className="vendor-product__delete-dialog-actions">
-									<button
-										className="vendor-product__delete-dialog-cancel"
-										onClick={cancelDeleteProduct}
-									>
-										Cancel
-									</button>
-									<button
-										className="vendor-product__delete-dialog-confirm"
-										onClick={confirmDeleteProduct}
-									>
-										Delete
-									</button>
-								</div>
-							</div>
-						</div>
-					)}
+					<DeleteModal
+						show={showDeleteDialog}
+						onClose={cancelDeleteProduct}
+						onDelete={confirmDeleteProduct}
+						productName={productToDelete?.name || "Product"}
+						isLoading={deleteProductMutation.isPending}
+					/>
 					{loading ? (
 						<ProductListSkeleton />
 					) : isError ? (

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Search, Plus, Edit, Trash2, X } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import "../Styles/AdminCatalog.css";
 import { AdminSidebar } from "../Components/AdminSidebar";
 import Header from "../Components/Header";

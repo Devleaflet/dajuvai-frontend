@@ -27,6 +27,7 @@ export function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [activeTab, setActiveTab] = useState("All");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isMarkingAll, setIsMarkingAll] = useState(false);
 
   const formatTime = (dateString) => {
     const now = new Date();
@@ -92,6 +93,26 @@ export function Notifications() {
     }
   };
 
+  const markAllAsRead = async () => {
+    const unread = notifications.filter(n => !n.read);
+    if (!unread.length) return;
+    setIsMarkingAll(true);
+    try {
+      await Promise.allSettled(
+        unread.map(n =>
+          axiosInstance.patch(`/api/notification/${n.id}`, { isRead: true }, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        )
+      );
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsMarkingAll(false);
+    }
+  };
+
   const handleNotificationClick = async (notification) => {
     if (!notification.read) {
       await markAsRead(notification.id);
@@ -133,7 +154,18 @@ export function Notifications() {
           <div className="notifications-container">
             <div className="notifications-header">
               <h1>Notifications</h1>
-              <span className="unread-badge">({unreadCount} Unread)</span>
+              <div className="notifications-header__right">
+                <span className="unread-badge">({unreadCount} Unread)</span>
+                {unreadCount > 0 && (
+                  <button
+                    className="mark-all-btn"
+                    onClick={markAllAsRead}
+                    disabled={isMarkingAll}
+                  >
+                    {isMarkingAll ? "Marking..." : "Mark all as read"}
+                  </button>
+                )}
+              </div>
             </div>
             <div className="tabs">
               <button

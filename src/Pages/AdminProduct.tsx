@@ -650,11 +650,13 @@ const AdminProduct: React.FC = () => {
       <DeleteModal
         show={showDeleteModal}
         onClose={() => {
+          if (isDeleting) return;
           setShowDeleteModal(false);
           setProductToDelete(null);
         }}
         onDelete={handleDeleteProduct}
         productName={productToDelete?.name || "Product"}
+        isLoading={isDeleting}
       />
     </div>
   );

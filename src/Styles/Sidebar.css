@@ -65,6 +65,34 @@
   color: #f97316;
 }
 
+/* Icon wrapper — needed for badge positioning */
+.sidebar__icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Notification badge */
+.sidebar__badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: 0 0 0 2px #fff;
+}
+
 .sidebar__icon {
   width: 20px;
   height: 20px;

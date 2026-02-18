@@ -174,7 +174,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       stock: 0,
       status: InventoryStatus.AVAILABLE,
       discount: 0,
-      discountType: 'PERCENTAGE',
+      discountType: 'NONE',
       finalPrice: 0,
       attributes: cleanSpecs.map((spec, i) => ({
         type: spec.type,
@@ -366,7 +366,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
           stock: Number(v.stock || 0),
           status: v.status || InventoryStatus.AVAILABLE,
           discount: v.discount ?? 0,
-          discountType: v.discountType || 'PERCENTAGE',
+          discountType: v.discountType || 'NONE',
           finalPrice: Number(v.finalPrice || v.basePrice || 0),
           attributes: normalizeVariantAttributes(v.attributes),
           images: imgs,
@@ -405,7 +405,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       basePrice: fullProduct.basePrice ?? null,
       stock: Number(fullProduct.stock ?? 0),
       discount: fullProduct.discount ?? null,
-      discountType: fullProduct.discountType ?? null,
+      discountType: fullProduct.discountType ?? 'NONE',
       size: Array.isArray(fullProduct.size) ? fullProduct.size : [],
       status: fullProduct.status || InventoryStatus.AVAILABLE,
       productImages: resolvedProductImages as (File | string)[],
@@ -446,8 +446,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   };
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
-    if (field === 'discountType' && !value) {
-      setFormData(prev => ({ ...prev, discountType: undefined, discount: 0 }));
+    if (field === 'discountType' && (!value || value === 'NONE')) {
+      setFormData(prev => ({ ...prev, discountType: 'NONE', discount: 0 }));
       return;
     }
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -460,7 +460,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       stock: 0,
       status: InventoryStatus.AVAILABLE,
       discount: 0,
-      discountType: 'PERCENTAGE',
+      discountType: 'NONE',
       finalPrice: 0,
       attributes: [],
       images: [],
@@ -581,12 +581,12 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     }
 
     // Validate discount — both fields must be filled together or neither
-    if (formData.discountType && (!formData.discount || Number(formData.discount) <= 0)) {
+    if (formData.discountType && formData.discountType !== 'NONE' && (!formData.discount || Number(formData.discount) <= 0)) {
       return 'Please enter a discount amount when a discount type is selected';
     }
     if (formData.discount !== undefined && formData.discount !== null && Number(formData.discount) > 0) {
-      if (formData.discount < 0) return 'Discount cannot be negative';
-      if (!formData.discountType) return 'Please select a discount type (Percentage or Flat)';
+      if (Number(formData.discount) < 0) return 'Discount cannot be negative';
+      if (!formData.discountType || formData.discountType === 'NONE') return 'Please select a discount type (Percentage or Flat)';
     }
 
     //('✅ All validation checks passed');
@@ -642,7 +642,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         updatePayload.discount =
           formData.discount != null ? Number(formData.discount) : 0;
         updatePayload.discountType =
-          formData.discountType || 'PERCENTAGE';
+          formData.discountType || 'NONE';
       }
 
       /* -------------------- VARIANT PRODUCTS -------------------- */
@@ -673,8 +673,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
           /* Deal overrides variant discount */
           discount: isDealActive ? 0 : Number(variant.discount || 0),
           discountType: isDealActive
-            ? 'PERCENTAGE'
-            : variant.discountType || 'PERCENTAGE',
+            ? 'NONE'
+            : variant.discountType || 'NONE',
 
           attributes: (variant.attributes || []).reduce((acc, attr) => {
             const key = attr.type?.trim().toLowerCase();
@@ -736,7 +736,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       basePrice: null,
       stock: 0,
       discount: null,
-      discountType: null,
+      discountType: 'NONE',
       size: [],
       status: InventoryStatus.AVAILABLE,
       productImages: [],
@@ -971,13 +971,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     <label className="form-label">Discount Type</label>
                     <select
                       className="form-select"
-                      value={formData.discountType || ''}
+                      value={formData.discountType || 'NONE'}
                       disabled={isDealActive}
                       onChange={(e) =>
-                        handleInputChange('discountType', e.target.value || undefined)
+                        handleInputChange('discountType', e.target.value)
                       }
                     >
-                      <option value="">No discount</option>
+                      <option value="NONE">No discount</option>
                       <option value="PERCENTAGE">Percentage (%)</option>
                       <option value="FLAT">Fixed Amount</option>
                     </select>
@@ -1149,12 +1149,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                           <label className="form-label">Discount Type</label>
                           <select
                             className="form-select"
-                            value={variant.discountType || 'PERCENTAGE'}
+                            value={variant.discountType || 'NONE'}
                             disabled={isDealActive}
                             onChange={(e) =>
                               updateVariant(index, 'discountType', e.target.value)
                             }
                           >
+                            <option value="NONE">No discount</option>
                             <option value="PERCENTAGE">Percentage (%)</option>
                             <option value="FLAT">Fixed Amount</option>
                           </select>
@@ -1250,10 +1251,10 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     <label className="form-label">Discount Type</label>
                     <select
                       className="form-select"
-                      value={formData.discountType || ''}
-                      onChange={(e) => handleInputChange('discountType', e.target.value || undefined)}
+                      value={formData.discountType || 'NONE'}
+                      onChange={(e) => handleInputChange('discountType', e.target.value)}
                     >
-                      <option value="">No discount</option>
+                      <option value="NONE">No discount</option>
                       <option value="PERCENTAGE">Percentage (%)</option>
                       <option value="FLAT">Fixed Amount</option>
                     </select>

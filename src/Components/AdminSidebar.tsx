@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "../Styles/Sidebar.css";
 import { useAuth } from "../context/AuthContext";
+import { API_BASE_URL } from "../config";
 
 export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1000);
-  const { user } = useAuth();
+  const [unapprovedCount, setUnapprovedCount] = useState(0);
+  const { user, token } = useAuth();
 
   useEffect(() => {
     const handleResize = () => {
@@ -17,6 +19,39 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLDivElement>)
   }, []);
 
   const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname === "/admin-vendors") {
+      setUnapprovedCount(0);
+      return;
+    }
+
+    if (!token) return;
+
+    const fetchUnapprovedCount = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/vendors/unapprove/list`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) return;
+        const result = await response.json();
+        if (result.success) {
+          setUnapprovedCount(result.data?.length ?? 0);
+        }
+      } catch {
+        // silently ignore — badge simply won't show
+      }
+    };
+
+    fetchUnapprovedCount();
+    const interval = setInterval(fetchUnapprovedCount, 60_000);
+    return () => clearInterval(interval);
+  }, [token, location.pathname]);
 
   return (
     <div className={`sidebar ${isMobile ? "sidebar--dock" : ""}`} {...props}>
@@ -166,9 +201,10 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLDivElement>)
         >
           Customers
         </NavItem>
-        <NavItem 
-          to="/admin-vendors" 
+        <NavItem
+          to="/admin-vendors"
           active={location.pathname === "/admin-vendors"}
+          badge={unapprovedCount}
           icon={
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19 21V5C19 3.89543 18.1046 3 17 3H7C5.89543 3 5 3.89543 5 5V21M19 21H5M19 21H21M5 21H3M9 7H15M9 11H15M9 15H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -228,16 +264,26 @@ interface NavItemProps {
   icon: React.ReactNode;
   children: React.ReactNode;
   active?: boolean;
+  badge?: number;
 }
 
-function NavItem({ to, icon, children, active }: NavItemProps) {
+function NavItem({ to, icon, children, active, badge }: NavItemProps) {
+  const badgeLabel = badge && badge > 0
+    ? (badge > 99 ? "99+" : String(badge))
+    : null;
+
   return (
     <Link
       to={to}
       className={`sidebar__item ${active ? "sidebar__item--active" : ""}`}
       title={String(children)}
     >
-      <span className="sidebar__icon">{icon}</span>
+      <span className="sidebar__icon-wrap">
+        {icon}
+        {badgeLabel && (
+          <span className="sidebar__badge">{badgeLabel}</span>
+        )}
+      </span>
       <span className="sidebar__text">{children}</span>
     </Link>
   );

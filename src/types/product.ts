@@ -8,7 +8,7 @@ export interface Product {
   stock: number;
   hasVariants: boolean;
   discount: string | number | null;
-  discountType: "PERCENTAGE" | "FLAT" | null;
+  discountType: "PERCENTAGE" | "FLAT" | "NONE" | null;
   size: string[];
   status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
   productImages: string[];
@@ -91,7 +91,7 @@ export interface ProductFormData {
   basePrice: string | number | null;
   stock: number;
   discount: string | number | null;
-  discountType: "PERCENTAGE" | "FLAT" | null;
+  discountType: "PERCENTAGE" | "FLAT" | "NONE" | null;
   size: string[];
   status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
   productImages: (File | string)[];
@@ -141,7 +141,7 @@ export interface ProductVariant {
   images: (File | string)[];
   variantImages: (File | string)[];
   discount?: number | string | null;
-  discountType?: 'PERCENTAGE' | 'FLAT' | null;
+  discountType?: 'PERCENTAGE' | 'FLAT' | 'NONE' | null;
   imagePreviews?: string[]; // For client-side preview URLs
 }
 
@@ -150,7 +150,7 @@ export interface NewProductFormData {
   description?: string;
   basePrice?: number;
   discount?: number;
-  discountType?: 'PERCENTAGE' | 'FLAT';
+  discountType?: 'PERCENTAGE' | 'FLAT' | 'NONE';
   status?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
   stock?: number;
   hasVariants: boolean;
@@ -169,7 +169,7 @@ export interface ApiProduct {
   finalPrice: number;
   stock: number;
   discount: number | null;
-  discountType: 'PERCENTAGE' | 'FLAT' | null;
+  discountType: 'PERCENTAGE' | 'FLAT' | 'NONE' | null;
   size: string[];
   status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
   productImages: string[];

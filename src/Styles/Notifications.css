@@ -41,11 +41,40 @@
   font-weight: 600;
 }
 
+.notifications-header__right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
 .unread-badge {
   background-color: rgba(255, 255, 255, 0.2);
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   font-size: 0.875rem;
+}
+
+.mark-all-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.mark-all-btn:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.mark-all-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .tabs {

@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom"; // Import useLocation
 import "../Styles/Sidebar.css";
+import { useVendorAuth } from "../context/VendorAuthContext";
+import axiosInstance from "../api/axiosInstance";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function Sidebar({ ...props }: SidebarProps) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1000);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const { authState } = useVendorAuth();
 
   useEffect(() => {
     const handleResize = () => {
@@ -18,6 +22,35 @@ export function Sidebar({ ...props }: SidebarProps) {
 
   // Get the current location using React Router's useLocation hook
   const location = useLocation();
+
+  // Fetch unread count — reset to 0 when on the notifications page, poll otherwise
+  useEffect(() => {
+    if (location.pathname === "/vendor-notifications") {
+      setUnreadCount(0);
+      return;
+    }
+
+    if (!authState.token) return;
+
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await axiosInstance.get("/api/notification", {
+          headers: { Authorization: `Bearer ${authState.token}` },
+        });
+        if (response.data?.success) {
+          const count = response.data.data.filter((n: { isRead: boolean }) => !n.isRead).length;
+          setUnreadCount(count);
+        }
+      } catch {
+        // silently ignore — badge simply won't show
+      }
+    };
+
+    fetchUnreadCount();
+    // Poll every 60 seconds to keep count fresh
+    const interval = setInterval(fetchUnreadCount, 60_000);
+    return () => clearInterval(interval);
+  }, [authState.token, location.pathname]);
 
   return (
     <div className={`sidebar ${isMobile ? "sidebar--dock" : ""}`} {...props}>
@@ -78,6 +111,7 @@ export function Sidebar({ ...props }: SidebarProps) {
             </svg>
           }
           active={location.pathname === "/vendor-notifications"}
+          badge={unreadCount}
         >
           Notifications
         </NavItem>
@@ -97,21 +131,31 @@ interface NavItemProps {
   to: string;
   icon: string | React.ReactNode;
   children: React.ReactNode;
-  active?: boolean; // Add active prop
+  active?: boolean;
+  badge?: number;
 }
 
-function NavItem({ to, icon, children, active }: NavItemProps) {
+function NavItem({ to, icon, children, active, badge }: NavItemProps) {
+  const badgeLabel = badge && badge > 0
+    ? (badge > 99 ? "99+" : String(badge))
+    : null;
+
   return (
     <Link
       to={to}
       className={`sidebar__item ${active ? "sidebar__item--active" : ""}`}
       title={String(children)}
     >
-      {typeof icon === 'string' ? (
-        <span className={`sidebar__icon sidebar__icon--${icon}`}></span>
-      ) : (
-        icon
-      )}
+      <span className="sidebar__icon-wrap">
+        {typeof icon === 'string' ? (
+          <span className={`sidebar__icon sidebar__icon--${icon}`}></span>
+        ) : (
+          icon
+        )}
+        {badgeLabel && (
+          <span className="sidebar__badge">{badgeLabel}</span>
+        )}
+      </span>
       <span className="sidebar__text">{children}</span>
     </Link>
   );
