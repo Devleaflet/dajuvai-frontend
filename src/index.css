@@ -1,8 +1,15 @@
-body{
+body {
   font-family: 'Poppins', system-ui, Avenir, Helvetica, Arial, sans-serif;
   margin: 0px;
   padding: 0px;
 }
-*{
+
+* {
   font-family: 'Poppins', system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+input,
+textarea,
+select {
+  font-size: 16px;
 }
