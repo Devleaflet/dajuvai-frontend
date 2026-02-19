@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import VendorService from "../services/vendorService";
+import { VendorAuthService } from "../services/vendorAuthService";
 import { API_BASE_URL } from "../config";
 import "../Styles/AuthModal.css";
 import close from "../assets/close.png";
@@ -31,6 +32,16 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string>("");
   const [countdown, setCountdown] = useState<number>(0);
 
+  // Forgot / Reset password states
+  const [showForgotPassword, setShowForgotPassword] = useState<boolean>(false);
+  const [showResetPassword, setShowResetPassword] = useState<boolean>(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState<string>("");
+  const [resetToken, setResetToken] = useState<string>("");
+  const [newPassword, setNewPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+
   const modalRef = useRef<HTMLDivElement | null>(null);
 
   // Handle modal click outside
@@ -40,29 +51,18 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
     } else {
       document.body.classList.remove("auth-modal--open");
     }
-
-    // const handleClickOutside = (event: MouseEvent): void => {
-    //   if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-    //     onClose();
-    //   }
-    // };
-
-    // document.addEventListener("mousedown", handleClickOutside);
-    // return () => {
-    //   document.removeEventListener("mousedown", handleClickOutside);
-    // };
   }, [isOpen, onClose]);
 
   // Handle countdown timer
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (showVerification && countdown > 0) {
+    if ((showVerification || showResetPassword) && countdown > 0) {
       timer = setTimeout(() => setCountdown(countdown - 1), 1000);
     }
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [countdown, showVerification]);
+  }, [countdown, showVerification, showResetPassword]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -76,6 +76,14 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
       setPendingVerificationEmail("");
       setCountdown(0);
       setShowPassword(false);
+      setShowForgotPassword(false);
+      setShowResetPassword(false);
+      setForgotPasswordEmail("");
+      setResetToken("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
     }
   }, [isOpen]);
 
@@ -181,6 +189,95 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleForgotPasswordRequest = async () => {
+    if (!forgotPasswordEmail.trim()) {
+      setError("Email is required");
+      toast.error("Email is required");
+      return;
+    }
+    try {
+      setIsLoading(true);
+      setError("");
+      setSuccess("");
+      const result = await VendorAuthService.forgotPassword(forgotPasswordEmail.trim());
+      if (result.success) {
+        toast.success("Reset code sent to your email");
+        setShowForgotPassword(false);
+        setShowResetPassword(true);
+        setCountdown(120);
+      } else {
+        setError(result.message);
+        toast.error(result.message);
+      }
+    } catch {
+      setError("Failed to send reset email");
+      toast.error("Failed to send reset email");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendResetCode = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+      const result = await VendorAuthService.forgotPassword(forgotPasswordEmail.trim());
+      if (result.success) {
+        toast.success("Reset code resent to your email");
+        setCountdown(120);
+      } else {
+        setError(result.message);
+        toast.error(result.message);
+      }
+    } catch {
+      setError("Failed to resend reset code");
+      toast.error("Failed to resend reset code");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async () => {
+    if (resetToken.length !== 6 || !/^\d{6}$/.test(resetToken)) {
+      setError("Please enter a valid 6-digit reset code");
+      toast.error("Please enter a valid 6-digit reset code");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setError("Password must be at least 8 characters");
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match");
+      toast.error("Passwords do not match");
+      return;
+    }
+    try {
+      setIsLoading(true);
+      setError("");
+      setSuccess("");
+      const result = await VendorAuthService.resetPassword(newPassword, confirmPassword, resetToken);
+      if (result.success) {
+        toast.success("Password reset successfully! Please login.");
+        setShowResetPassword(false);
+        setForgotPasswordEmail("");
+        setResetToken("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setCountdown(0);
+      } else {
+        setError(result.message);
+        toast.error(result.message);
+      }
+    } catch {
+      setError("Failed to reset password");
+      toast.error("Failed to reset password");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setError("");
@@ -193,6 +290,16 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
         return;
       }
       await handleVerifyEmail();
+      return;
+    }
+
+    if (showForgotPassword) {
+      await handleForgotPasswordRequest();
+      return;
+    }
+
+    if (showResetPassword) {
+      await handleResetPasswordSubmit();
       return;
     }
 
@@ -227,7 +334,7 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="auth-modal__title">
-          {showVerification ? "Verify Your Email" : "Vendor Login"}
+          {showVerification ? "Verify Your Email" : showForgotPassword ? "Forgot Password" : showResetPassword ? "Reset Password" : "Vendor Login"}
         </div>
 
         {error && <div className="auth-modal__message auth-modal__message--error">{error}</div>}
@@ -279,6 +386,144 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
                 </button>
               </div>
             </>
+          ) : showForgotPassword ? (
+            <>
+              <div className="auth-modal__verification-info">
+                <p>Enter your registered email and we'll send you a 6-digit reset code.</p>
+              </div>
+              <div className="auth-modal__form-group" style={{ width: "100%", maxWidth: "400px", margin: "0 auto" }}>
+                <label className="auth-modal__label">Email</label>
+                <input
+                  type="email"
+                  className="auth-modal__input"
+                  placeholder="Enter your email"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  style={{ width: "100%", boxSizing: "border-box" }}
+                />
+              </div>
+              <button
+                type="submit"
+                className="auth-modal__submit"
+                disabled={isLoading || !forgotPasswordEmail.trim()}
+              >
+                {isLoading ? "Sending..." : "SEND RESET CODE"}
+              </button>
+              <div className="auth-modal__verification-actions">
+                <button
+                  type="button"
+                  className="auth-modal__link-button"
+                  onClick={() => { setShowForgotPassword(false); setError(""); setSuccess(""); }}
+                >
+                  Back to Login
+                </button>
+              </div>
+            </>
+          ) : showResetPassword ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", width: "100%", maxWidth: "400px", margin: "0 auto" }}>
+              <div className="auth-modal__verification-info">
+                <p>Enter the reset code sent to</p>
+                <strong>{forgotPasswordEmail}</strong>
+                <p>and choose a new password.</p>
+              </div>
+              <div style={{ width: "100%" }}>
+                <label className="auth-modal__label">Reset Code</label>
+                <input
+                  type="text"
+                  className="auth-modal__input auth-modal__input--verification"
+                  placeholder="______"
+                  value={resetToken}
+                  onChange={(e) => setResetToken(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  required
+                  disabled={isLoading}
+                  maxLength={6}
+                  inputMode="numeric"
+                  pattern="\d{6}"
+                />
+              </div>
+              <div style={{ width: "100%", position: "relative" }}>
+                <label className="auth-modal__label">New Password</label>
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  className="auth-modal__input"
+                  placeholder="Min. 8 characters"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  style={{ width: "100%", boxSizing: "border-box" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  style={{ position: "absolute", right: "10px", top: "53%", transform: "translateY(-70%)", background: "none", border: "none", cursor: "pointer", padding: "0" }}
+                  aria-label={showNewPassword ? "Hide password" : "Show password"}
+                >
+                  {showNewPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6z" /><circle cx="12" cy="12" r="3" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 12s4-6 10-6c2.5 0 4.7 1 6.5 2.5" /><path d="M22 12s-4 6-10 6c-2.5 0-4.7-1-6.5-2.5" /><circle cx="12" cy="12" r="3" /><line x1="3" y1="3" x2="21" y2="21" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              <div style={{ width: "100%", position: "relative" }}>
+                <label className="auth-modal__label">Confirm Password</label>
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  className="auth-modal__input"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  style={{ width: "100%", boxSizing: "border-box" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{ position: "absolute", right: "10px", top: "53%", transform: "translateY(-70%)", background: "none", border: "none", cursor: "pointer", padding: "0" }}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6z" /><circle cx="12" cy="12" r="3" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 12s4-6 10-6c2.5 0 4.7 1 6.5 2.5" /><path d="M22 12s-4 6-10 6c-2.5 0-4.7-1-6.5-2.5" /><circle cx="12" cy="12" r="3" /><line x1="3" y1="3" x2="21" y2="21" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              <button
+                type="submit"
+                className="auth-modal__submit"
+                disabled={isLoading || resetToken.length !== 6 || newPassword.length < 8 || newPassword !== confirmPassword}
+              >
+                {isLoading ? "Resetting..." : "RESET PASSWORD"}
+              </button>
+              <div className="auth-modal__verification-actions">
+                <button
+                  type="button"
+                  className="auth-modal__link-button"
+                  onClick={handleResendResetCode}
+                  disabled={isLoading || countdown > 0}
+                >
+                  Resend Reset Code
+                  {countdown > 0 && (
+                    <span className="auth-modal__countdown">
+                      {" "}({Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, "0")})
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
           ) : (
             <div className="auth-modal__login-form" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", width: "100%", maxWidth: "400px", margin: "0 auto" }}>
               <div style={{ width: "100%" }}>
@@ -312,7 +557,7 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
                   style={{
                     position: "absolute",
                     right: "10px",
-                    top: "70%",
+                    top: "53%",
                     transform: "translateY(-70%)",
                     background: "none",
                     border: "none",
@@ -323,36 +568,41 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
+                    // Eye Open
                     <svg
                       width="20"
                       height="20"
                       viewBox="0 0 24 24"
                       fill="none"
-                      stroke="#888"
-                      strokeWidth="2"
+                      stroke="#666"
+                      strokeWidth="1.8"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     >
-                      <ellipse cx="12" cy="12" rx="10" ry="7" />
-                      <circle cx="12" cy="12" r="3.5" />
+                      <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6z" />
+                      <circle cx="12" cy="12" r="3" />
                     </svg>
                   ) : (
+                    // Eye Closed
                     <svg
                       width="20"
                       height="20"
                       viewBox="0 0 24 24"
                       fill="none"
-                      stroke="#888"
-                      strokeWidth="2"
+                      stroke="#666"
+                      strokeWidth="1.8"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     >
-                      <path d="M1 1l22 22" />
-                      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" />
-                      <path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" />
+                      <path d="M2 12s4-6 10-6c2.5 0 4.7 1 6.5 2.5" />
+                      <path d="M22 12s-4 6-10 6c-2.5 0-4.7-1-6.5-2.5" />
+                      <circle cx="12" cy="12" r="3" />
+                      <line x1="3" y1="3" x2="21" y2="21" />
                     </svg>
                   )}
+
                 </button>
+                <button className="vendor-login-forgot-password" type="button" onClick={() => { setShowForgotPassword(true); setError(""); setSuccess(""); }}>Forgot Password</button>
               </div>
               <button type="submit" className="auth-modal__submit" disabled={isLoading}>
                 {isLoading ? "Loading..." : "LOG IN"}

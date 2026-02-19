@@ -376,6 +376,46 @@ const createVendorAPI = (token: string | null) => ({
 			throw error;
 		}
 	},
+
+	async changeVendorPassword(vendorId: number, newPass: string, confirmPass: string): Promise<void> {
+		try {
+			if (!token) {
+				throw new Error("No token provided. Please log in.");
+			}
+			const response = await fetch(
+				`${API_BASE_URL}/api/auth/admin/vendors/${vendorId}/change-vendor-password`,
+				{
+					method: "PUT",
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json",
+						Authorization: `Bearer ${token}`,
+					},
+					body: JSON.stringify({ newPass, confirmPass }),
+				}
+			);
+
+			if (!response.ok) {
+				let errorMessage = `HTTP error! status: ${response.status}`;
+				try {
+					const errorText = await response.text();
+					const errorData = JSON.parse(errorText);
+					if (errorData.message) errorMessage = errorData.message;
+				} catch {
+					// ignore parse error
+				}
+				throw new Error(errorMessage);
+			}
+
+			const result = await response.json();
+			if (!result.success) {
+				throw new Error(result.message || "Failed to change vendor password");
+			}
+		} catch (error) {
+			console.error("Error changing vendor password:", error);
+			throw error;
+		}
+	},
 });
 
 interface ConfirmationModalProps {
@@ -563,6 +603,220 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 	);
 };
 
+interface ChangePasswordModalProps {
+	show: boolean;
+	onClose: () => void;
+	onSubmit: (newPass: string, confirmPass: string) => Promise<void>;
+	loading: boolean;
+	error: string;
+}
+
+const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
+	show,
+	onClose,
+	onSubmit,
+	loading,
+	error,
+}) => {
+	const [newPass, setNewPass] = useState("");
+	const [confirmPass, setConfirmPass] = useState("");
+	const [showNew, setShowNew] = useState(false);
+	const [showConfirm, setShowConfirm] = useState(false);
+	const [localError, setLocalError] = useState("");
+
+	useEffect(() => {
+		if (!show) {
+			setNewPass("");
+			setConfirmPass("");
+			setShowNew(false);
+			setShowConfirm(false);
+			setLocalError("");
+		}
+	}, [show]);
+
+	if (!show) return null;
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setLocalError("");
+		if (newPass.length < 8) {
+			setLocalError("Password must be at least 8 characters.");
+			return;
+		}
+		if (newPass !== confirmPass) {
+			setLocalError("Passwords do not match.");
+			return;
+		}
+		await onSubmit(newPass, confirmPass);
+	};
+
+	const displayError = localError || error;
+
+	const eyeOpen = (
+		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+			<path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6z" /><circle cx="12" cy="12" r="3" />
+		</svg>
+	);
+	const eyeClosed = (
+		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+			<path d="M2 12s4-6 10-6c2.5 0 4.7 1 6.5 2.5" /><path d="M22 12s-4 6-10 6c-2.5 0-4.7-1-6.5-2.5" /><circle cx="12" cy="12" r="3" /><line x1="3" y1="3" x2="21" y2="21" />
+		</svg>
+	);
+
+	return (
+		<div
+			onClick={onClose}
+			style={{
+				position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+				backgroundColor: "rgba(0,0,0,0.5)", display: "flex",
+				alignItems: "center", justifyContent: "center",
+				zIndex: 1000, backdropFilter: "blur(4px)",
+			}}
+		>
+			<div
+				onClick={(e) => e.stopPropagation()}
+				style={{
+					backgroundColor: "white", borderRadius: "12px",
+					maxWidth: "440px", width: "90%",
+					boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+					animation: "slideIn 0.3s ease-out", overflow: "hidden",
+				}}
+			>
+				{/* Header */}
+				<div style={{
+					background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
+					padding: "24px", color: "white", textAlign: "center",
+				}}>
+					<div style={{ fontSize: "40px", marginBottom: "10px", lineHeight: 1 }}>🔑</div>
+					<h2 style={{ margin: 0, fontSize: "22px", fontWeight: 600 }}>Change Vendor Password</h2>
+					<p style={{ margin: "6px 0 0", fontSize: "13px", opacity: 0.85 }}>
+						Set a new password for this vendor account
+					</p>
+				</div>
+
+				{/* Form */}
+				<form onSubmit={handleSubmit} style={{ padding: "28px 24px 24px" }}>
+					{displayError && (
+						<div style={{
+							backgroundColor: "#fef2f2", border: "1px solid #fca5a5",
+							borderRadius: "8px", padding: "10px 14px",
+							color: "#dc2626", fontSize: "14px", marginBottom: "18px",
+						}}>
+							{displayError}
+						</div>
+					)}
+
+					{/* New Password */}
+					<div style={{ marginBottom: "16px" }}>
+						<label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#374151", marginBottom: "6px" }}>
+							New Password
+						</label>
+						<div style={{ position: "relative" }}>
+							<input
+								type={showNew ? "text" : "password"}
+								value={newPass}
+								onChange={(e) => setNewPass(e.target.value)}
+								placeholder="Min. 8 characters"
+								required
+								disabled={loading}
+								style={{
+									width: "100%", boxSizing: "border-box",
+									padding: "10px 40px 10px 12px",
+									border: "1px solid #d1d5db", borderRadius: "8px",
+									fontSize: "14px", outline: "none",
+								}}
+								onFocus={(e) => { e.currentTarget.style.borderColor = "#6366f1"; }}
+								onBlur={(e) => { e.currentTarget.style.borderColor = "#d1d5db"; }}
+							/>
+							<button
+								type="button"
+								onClick={() => setShowNew(!showNew)}
+								style={{
+									position: "absolute", right: "10px", top: "50%",
+									transform: "translateY(-50%)", background: "none",
+									border: "none", cursor: "pointer", padding: 0, lineHeight: 0,
+								}}
+								aria-label={showNew ? "Hide password" : "Show password"}
+							>
+								{showNew ? eyeOpen : eyeClosed}
+							</button>
+						</div>
+					</div>
+
+					{/* Confirm Password */}
+					<div style={{ marginBottom: "24px" }}>
+						<label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#374151", marginBottom: "6px" }}>
+							Confirm Password
+						</label>
+						<div style={{ position: "relative" }}>
+							<input
+								type={showConfirm ? "text" : "password"}
+								value={confirmPass}
+								onChange={(e) => setConfirmPass(e.target.value)}
+								placeholder="Re-enter new password"
+								required
+								disabled={loading}
+								style={{
+									width: "100%", boxSizing: "border-box",
+									padding: "10px 40px 10px 12px",
+									border: "1px solid #d1d5db", borderRadius: "8px",
+									fontSize: "14px", outline: "none",
+								}}
+								onFocus={(e) => { e.currentTarget.style.borderColor = "#6366f1"; }}
+								onBlur={(e) => { e.currentTarget.style.borderColor = "#d1d5db"; }}
+							/>
+							<button
+								type="button"
+								onClick={() => setShowConfirm(!showConfirm)}
+								style={{
+									position: "absolute", right: "10px", top: "50%",
+									transform: "translateY(-50%)", background: "none",
+									border: "none", cursor: "pointer", padding: 0, lineHeight: 0,
+								}}
+								aria-label={showConfirm ? "Hide password" : "Show password"}
+							>
+								{showConfirm ? eyeOpen : eyeClosed}
+							</button>
+						</div>
+					</div>
+
+					{/* Buttons */}
+					<div style={{ display: "flex", gap: "12px" }}>
+						<button
+							type="button"
+							onClick={onClose}
+							disabled={loading}
+							style={{
+								flex: 1, padding: "11px 0", fontSize: "14px", fontWeight: 500,
+								border: "2px solid #e0e0e0", borderRadius: "8px",
+								backgroundColor: "white", color: "#666", cursor: "pointer",
+							}}
+							onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#f5f5f5"; }}
+							onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "white"; }}
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							disabled={loading || newPass.length < 8 || newPass !== confirmPass}
+							style={{
+								flex: 1, padding: "11px 0", fontSize: "14px", fontWeight: 600,
+								border: "none", borderRadius: "8px",
+								backgroundColor: (loading || newPass.length < 8 || newPass !== confirmPass) ? "#a5b4fc" : "#6366f1",
+								color: "white",
+								cursor: (loading || newPass.length < 8 || newPass !== confirmPass) ? "not-allowed" : "pointer",
+								boxShadow: "0 4px 12px rgba(99,102,241,0.3)",
+							}}
+						>
+							{loading ? "Updating..." : "Update Password"}
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	);
+};
+
 const AdminVendor: React.FC = () => {
 	const { token, isAuthenticated } = useAuth();
 	const navigate = useNavigate();
@@ -596,6 +850,12 @@ const AdminVendor: React.FC = () => {
 	);
 	const [showDeleteModal, setShowDeleteModal] = useState(false);
 	const [vendorToDelete, setVendorToDelete] = useState<number | null>(null);
+
+	// Change password modal state
+	const [showChangePwdModal, setShowChangePwdModal] = useState(false);
+	const [changePwdVendorId, setChangePwdVendorId] = useState<number | null>(null);
+	const [changePwdLoading, setChangePwdLoading] = useState(false);
+	const [changePwdError, setChangePwdError] = useState("");
 
 	const vendorAPI = useMemo(() => createVendorAPI(token), [token]);
 
@@ -949,6 +1209,29 @@ const AdminVendor: React.FC = () => {
 		}
 	};
 
+	const handleChangePasswordClick = (vendorId: number) => {
+		setChangePwdVendorId(vendorId);
+		setChangePwdError("");
+		setShowChangePwdModal(true);
+	};
+
+	const handleChangePasswordSubmit = async (newPass: string, confirmPass: string) => {
+		if (!changePwdVendorId) return;
+		try {
+			setChangePwdLoading(true);
+			setChangePwdError("");
+			await vendorAPI.changeVendorPassword(changePwdVendorId, newPass, confirmPass);
+			toast.success("Vendor password updated successfully");
+			setShowChangePwdModal(false);
+			setChangePwdVendorId(null);
+		} catch (error) {
+			const msg = error instanceof Error ? error.message : "Failed to change password";
+			setChangePwdError(msg);
+		} finally {
+			setChangePwdLoading(false);
+		}
+	};
+
 	const indexOfLastVendor = currentPage * vendorsPerPage;
 	const indexOfFirstVendor = indexOfLastVendor - vendorsPerPage;
 	const currentVendors = filteredVendors.slice(
@@ -1260,6 +1543,13 @@ const AdminVendor: React.FC = () => {
 																</button>
 															)}
 															<button
+																onClick={() => handleChangePasswordClick(vendor.id)}
+																className="admin-vendors__action-btn admin-vendors__action-btn--edit"
+																title="Change Password"
+															>
+																Change Password
+															</button>
+															<button
 																onClick={() => handleDeleteClick(vendor.id)}
 																className="admin-vendors__action-btn admin-vendors__action-btn--delete"
 															>
@@ -1323,6 +1613,17 @@ const AdminVendor: React.FC = () => {
 						}}
 						onConfirm={handleDeleteVendor}
 						action="delete"
+					/>
+					<ChangePasswordModal
+						show={showChangePwdModal}
+						onClose={() => {
+							setShowChangePwdModal(false);
+							setChangePwdVendorId(null);
+							setChangePwdError("");
+						}}
+						onSubmit={handleChangePasswordSubmit}
+						loading={changePwdLoading}
+						error={changePwdError}
 					/>
 				</div>
 			</div>
