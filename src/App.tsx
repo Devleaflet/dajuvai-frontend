@@ -99,7 +99,7 @@ function App() {
   usePageTracking()
   return (
     <>
-      <Toaster />
+      <Toaster containerStyle={{ zIndex: 99999 }} />
       <ForceScrollToTop />
       <Routes>
         <Route

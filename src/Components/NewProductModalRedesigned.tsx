@@ -16,7 +16,7 @@ export enum InventoryStatus {
 interface NewProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (success: boolean) => void;
+  onSubmit: (success: boolean, errorMessage?: string) => void;
 }
 
 type ProductVariant = {
@@ -440,6 +440,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     if (!formData.name.trim()) return 'Product name is required';
     if (!selectedCategoryId) return 'Please select a category';
     if (!formData.subcategoryId) return 'Please select a subcategory';
+    if (!formData.stock) return 'Stock quantity is required';
 
     if (!formData.hasVariants) {
       if (!formData.basePrice || formData.basePrice <= 0) return 'Base price is required';
@@ -468,14 +469,9 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedCategoryId || !formData.subcategoryId) {
-      toast.error('Please select category and subcategory');
-      return;
-    }
-
     const validationError = validateForm();
     if (validationError) {
-      toast.error(validationError);
+      onSubmit(false, validationError);
       return;
     }
 
@@ -579,14 +575,12 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
         productData
       );
 
-      toast.success('Product created successfully!');
       onSubmit(true);
       handleClose();
 
     } catch (error: any) {
       console.error('Create product error:', error);
-      toast.error(error.message || 'Failed to create product');
-      onSubmit(false);
+      onSubmit(false, error.message || 'Failed to create product');
     } finally {
       setIsLoading(false);
     }
@@ -680,7 +674,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     placeholder="Enter a compelling product name"
-                    required
                   />
                 </div>
 
@@ -701,7 +694,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                     className="form-select"
                     value={selectedCategoryId}
                     onChange={(e) => handleCategoryChange(Number(e.target.value))}
-                    required
                   >
                     <option value={0}>Choose a category</option>
                     {categories.map((category) => (
@@ -718,7 +710,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                     className="form-select"
                     value={formData.subcategoryId}
                     onChange={(e) => handleInputChange('subcategoryId', Number(e.target.value))}
-                    required
                     disabled={subcategories.length === 0}
                   >
                     <option value={0}>Choose a subcategory</option>
@@ -797,7 +788,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                       placeholder="0.00"
                       min="0"
                       step="0.01"
-                      required
                     />
                   </div>
 
@@ -810,7 +800,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                       onChange={(e) => handleInputChange('stock', Number(e.target.value))}
                       placeholder="0"
                       min="0"
-                      required
                     />
                   </div>
                 </div>
@@ -964,7 +953,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                             value={variant.sku}
                             onChange={(e) => updateVariant(index, 'sku', e.target.value)}
                             placeholder="SKU-001"
-                            required
                           />
                         </div>
 
@@ -978,7 +966,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                             placeholder="0.00"
                             min="0"
                             step="0.01"
-                            required
                           />
                         </div>
 
@@ -991,7 +978,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                             onChange={(e) => updateVariant(index, 'stock', Number(e.target.value))}
                             placeholder="0"
                             min="0"
-                            required
                           />
                         </div>
 
@@ -1215,12 +1201,10 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                 >
                   <div className="btn-content">
                     {isLoading && (
-                      <div className="loading-spinner">
-                        <div className="loading-dots">
-                          <div className="dot"></div>
-                          <div className="dot"></div>
-                          <div className="dot"></div>
-                        </div>
+                      <div className="loading-dots">
+                        <div className="dot"></div>
+                        <div className="dot"></div>
+                        <div className="dot"></div>
                       </div>
                     )}
                     <span>{isLoading ? 'Creating Product...' : 'Create Product'}</span>

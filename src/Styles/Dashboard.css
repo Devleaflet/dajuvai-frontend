@@ -141,6 +141,28 @@
   transition: background 0.15s ease;
 }
 
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .payment-warning-banner {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    padding: 8px 10px;
+  }
+
+  .payment-warning-banner__msg {
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+  }
+
+  .payment-warning-banner__cta {
+    width: 100%;
+    padding: 0.5rem 0;
+    font-size: 0.85rem;
+  }
+}
+
+
 .payment-warning-banner__cta:hover {
   background: #d97706;
 }
@@ -621,17 +643,22 @@
 
 .table-container {
   width: 100%;
-  max-height: 400px; /* Fixed height for the table container */
-  overflow-x: auto; /* Enable horizontal scrolling */
-  overflow-y: auto; /* Enable vertical scrolling for more data */
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  max-height: 400px;
+  /* Fixed height for the table container */
+  overflow-x: auto;
+  /* Enable horizontal scrolling */
+  overflow-y: auto;
+  /* Enable vertical scrolling for more data */
+  -webkit-overflow-scrolling: touch;
+  /* Smooth scrolling on iOS */
 }
 
 .low-stock-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 16px;
-  min-width: 600px; /* Ensure table is wide enough to prevent text wrapping */
+  min-width: 600px;
+  /* Ensure table is wide enough to prevent text wrapping */
 }
 
 .low-stock-table th,
@@ -640,7 +667,8 @@
   border: 1px solid #e5e7eb;
   text-align: left;
   font-size: 14px;
-  white-space: nowrap; /* Prevent text wrapping in cells */
+  white-space: nowrap;
+  /* Prevent text wrapping in cells */
 }
 
 .low-stock-table th {
@@ -659,7 +687,7 @@
   right: 24px;
   background: #fff;
   border-radius: 10px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.13);
   min-width: 140px;
   z-index: 1001;
   display: flex;
@@ -714,7 +742,8 @@
   .dashboard__table-row td:nth-child(2),
   .dashboard__table-header th:nth-child(4),
   .dashboard__table-row td:nth-child(4) {
-    display: none; /* Hide location and piece columns on small screens */
+    display: none;
+    /* Hide location and piece columns on small screens */
   }
 
   .dashboard__table-header th,
@@ -756,7 +785,8 @@
 /* Mobile-responsive styles for low stock table */
 @media (max-width: 768px) {
   .table-container {
-    max-height: 300px; /* Smaller fixed height for mobile */
+    max-height: 300px;
+    /* Smaller fixed height for mobile */
     overflow-x: auto;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -773,23 +803,27 @@
   }
 
   /* Hide less critical columns on mobile */
-  .low-stock-table th:nth-child(1), /* Product ID */
+  .low-stock-table th:nth-child(1),
+  /* Product ID */
   .low-stock-table td:nth-child(1) {
     display: none;
   }
 
   /* Ensure essential columns are prioritized and readable */
-  .low-stock-table th:nth-child(2), /* Product Name */
+  .low-stock-table th:nth-child(2),
+  /* Product Name */
   .low-stock-table td:nth-child(2) {
     min-width: 150px;
   }
 
-  .low-stock-table th:nth-child(3), /* Stock */
+  .low-stock-table th:nth-child(3),
+  /* Stock */
   .low-stock-table td:nth-child(3) {
     min-width: 80px;
   }
 
-  .low-stock-table th:nth-child(4), /* Variant Status */
+  .low-stock-table th:nth-child(4),
+  /* Variant Status */
   .low-stock-table td:nth-child(4) {
     min-width: 100px;
   }
@@ -808,12 +842,14 @@
 }
 
 .view-more-button:hover {
-  background-color: #e56b15; /* Slightly darker shade for hover effect */
+  background-color: #e56b15;
+  /* Slightly darker shade for hover effect */
 }
 
 .view-more-button:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.3); /* Focus ring for accessibility */
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.3);
+  /* Focus ring for accessibility */
 }
 
 /* Mobile-responsive styles */

@@ -318,9 +318,13 @@ const VendorProduct: React.FC = () => {
 	};
 
 
-	const handleProductSubmit = (success: boolean) => {
+	const handleProductSubmit = (success: boolean, errorMessage?: string) => {
 		if (success) {
 			queryClient.invalidateQueries({ queryKey: ["vendor-products"] });
+			toast.success("Product added successfully!");
+			setShowAddModal(false);
+		} else {
+			toast.error(errorMessage || "Failed to add product. Please check all required fields.");
 		}
 	};
 
@@ -341,130 +345,6 @@ const VendorProduct: React.FC = () => {
 		setShowDeleteDialog(false);
 		setProductToDelete(null);
 	};
-
-	const addProductMutation = useMutation({
-		mutationFn: async (productData: ProductFormData) => {
-
-			if (!authState.token) {
-				throw new Error("No authentication token found");
-			}
-
-			if (!authState.vendor) {
-				throw new Error("No vendor data found");
-			}
-
-			const formData = new FormData();
-			formData.append("name", String(productData.name));
-			formData.append("subcategoryId", String(productData.subcategoryId));
-			formData.append("hasVariants", String(productData.hasVariants));
-
-			if (productData.description) {
-				formData.append("description", String(productData.description));
-			}
-
-			if (!productData.hasVariants) {
-				//("VendorProduct: Creating non-variant product");
-				if (productData.basePrice != null) {
-					formData.append("basePrice", String(productData.basePrice));
-				}
-				if (productData.stock != null) {
-					formData.append("stock", String(productData.stock));
-				}
-				if (productData.status) {
-					formData.append("status", String(productData.status));
-				}
-
-				if (
-					productData.productImages &&
-					Array.isArray(productData.productImages)
-				) {
-					productData.productImages.forEach((image, index) => {
-						if (index < 5 && image instanceof File) {
-							formData.append("productImages", image);
-						}
-					});
-				}
-			} else {
-				//("VendorProduct: Creating variant product");
-				if (productData.variants && Array.isArray(productData.variants)) {
-
-					formData.append("variants", JSON.stringify(productData.variants));
-
-					productData.variants.forEach((variant, variantIndex) => {
-
-						if (variant.images && Array.isArray(variant.images)) {
-
-							variant.images.forEach((image, imageIndex) => {
-
-								if (image instanceof File) {
-									const imageKey = `variantImages${variantIndex + 1}`;
-									formData.append(imageKey, image);
-
-								} else {
-									console.warn(
-										`VendorProduct: Image ${imageIndex + 1} for variant ${variant.sku
-										} is not a File:`,
-										image
-									);
-								}
-							});
-						} else {
-							console.error(
-								`VendorProduct: Variant ${variant.sku} has no images or images is not an array:`,
-								variant.images
-							);
-						}
-					});
-				}
-			}
-
-			if (productData.discount && Number(productData.discount) > 0) {
-				formData.append("discount", Number(productData.discount).toFixed(2));
-				formData.append(
-					"discountType",
-					String(productData.discountType || "PERCENTAGE")
-				);
-			}
-
-			if (productData.dealId != null) {
-				formData.append("dealId", String(productData.dealId));
-			}
-
-			if (productData.bannerId != null) {
-				formData.append("bannerId", String(productData.bannerId));
-			}
-
-			if (productData.brandId != null) {
-				formData.append("brandId", String(productData.brandId));
-			}
-
-			throw new Error("Use NewProductModal for creating products");
-		},
-		onSuccess: (data) => {
-			toast.success("Product created successfully!");
-
-			queryClient.invalidateQueries({
-				queryKey: ["vendor-products"],
-			});
-
-			queryClient.refetchQueries({
-				queryKey: [
-					"vendor-products",
-					authState.vendor?.id,
-					currentPage,
-					productsPerPage,
-					authState.token,
-				],
-			});
-
-			//("Cache invalidated and refetch triggered");
-			setShowAddModal(false);
-		},
-		onError: (error: Error) => {
-			console.error("Error creating product:", error);
-			toast.error(error.message || "Failed to create product");
-		},
-	});
 
 	const editProductMutation = useMutation({
 		mutationFn: async ({
@@ -557,17 +437,6 @@ const VendorProduct: React.FC = () => {
 			});
 		},
 	});
-
-	const handleAddProduct = (productData: ProductFormData) => {
-		addProductMutation.mutate(productData, {
-			onSuccess: () => {
-				setShowAddModal(false);
-			},
-			onError: (err: Error) => {
-				toast.error(err.message || "Failed to add product.");
-			},
-		});
-	};
 
 	const handleEditProduct = (product: Product) => {
 
@@ -821,9 +690,9 @@ const VendorProduct: React.FC = () => {
 						<div className="low-stock-banner">
 							<span className="low-stock-banner__icon">
 								<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-									<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-									<line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-									<line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+									<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+									<line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+									<line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
 								</svg>
 							</span>
 							<p className="low-stock-banner__msg">

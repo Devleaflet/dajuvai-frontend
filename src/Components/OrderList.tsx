@@ -8,13 +8,9 @@ interface OrderListProps {
   onView: (order: Order) => void;
 }
 
-const OrderList: React.FC<OrderListProps> = ({ orders, isMobile, onView }) => {
+const OrderList: React.FC<OrderListProps> = ({ orders, onView }) => {
   return (
     <div className="vendor-order__table-container">
-      {isMobile && (
-        <p className="vendor-order__mobile-warning">Viewing on mobile: Limited layout</p>
-      )}
-
       <table className="vendor-order__table">
         <thead className="dashboard__table-header">
           <tr>
