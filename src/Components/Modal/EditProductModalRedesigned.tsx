@@ -1285,7 +1285,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                   </svg>
                 </div>
                 <div className="upload-text">Drop images here or click to browse</div>
-                <div className="upload-hint">PNG, JPG, GIF up to 10MB each</div>
+                <div className="upload-hint">PNG, JPG, GIF up to 5MB each</div>
                 <input
                   id="image-upload"
                   type="file"
