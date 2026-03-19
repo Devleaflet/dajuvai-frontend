@@ -16,6 +16,7 @@ interface PromoCode {
 	id: number;
 	promoCode: string;
 	discountPercentage: number;
+	applyOn: 'LINE_TOTAL' | 'SHIPPING';
 }
 
 interface CartItem {
@@ -30,14 +31,17 @@ interface CartItem {
 		id?: number;
 		name?: string;
 		sku?: string;
-		attributes?: any;
-		attributeValues?: any;
-		attrs?: any;
-		attributeSpecs?: any;
+		attributes?: Record<string, unknown>;
+		attributeValues?: Record<string, unknown>;
+		attrs?: Record<string, unknown>;
+		attributeSpecs?: Record<string, unknown>;
 		stock?: number;
+		calculatedPrice?: number;
+		originalPrice?: number;
+		variantImgUrls?: string[];
 	};
-	attributes?: any;
-	variantAttributes?: any;
+	attributes?: Record<string, unknown>;
+	variantAttributes?: Record<string, unknown>;
 	product?: {
 		id: number;
 		name: string;
@@ -68,7 +72,6 @@ const OrderSuccessModal: React.FC<{
 	paymentMethod: string;
 }> = ({
 	open,
-	onClose,
 	onViewOrder,
 	onContinueShopping,
 	totalAmount,
@@ -912,11 +915,11 @@ const Checkout: React.FC = () => {
 
 	const total = subtotal + totalShipping;
 
-	const discountPercentage = appliedPromoCode
-		? appliedPromoCode.discountPercentage
-		: 0;
+	const discountPercentage = appliedPromoCode?.discountPercentage ?? 0;
+	const discountBase =
+		appliedPromoCode?.applyOn === 'SHIPPING' ? totalShipping : subtotal;
 	const discountAmount = appliedPromoCode
-		? Math.round((total * discountPercentage) / 100)
+		? Math.round((discountBase * discountPercentage) / 100)
 		: 0;
 	const finalTotal = total - discountAmount;
 
@@ -1325,6 +1328,10 @@ const Checkout: React.FC = () => {
 							{isSavingBilling ? 'Saving...' : 'Save Billing Details'}
 						</button>
 
+
+
+
+						{/* -------------------------- Promo code -----------------------------  */}
 						<div className="checkout-container__promo-section-left">
 							<h3 style={{ marginBottom: '1rem', color: '#333' }}>
 								Have a Promo Code?
@@ -1428,8 +1435,11 @@ const Checkout: React.FC = () => {
 											fontWeight: '600',
 										}}
 									>
-										✓ "{appliedPromoCode.promoCode}" applied (
-										{appliedPromoCode.discountPercentage}% off)
+										✓ "{appliedPromoCode.promoCode}" applied —{' '}
+										{appliedPromoCode.discountPercentage}% off{' '}
+										{appliedPromoCode.applyOn === 'SHIPPING'
+											? 'on shipping cost'
+											: 'on product subtotal'}
 									</span>
 									<button
 										type="button"
@@ -1582,7 +1592,11 @@ const Checkout: React.FC = () => {
 
 							{appliedPromoCode && (
 								<div className="checkout-container__order-total">
-									<span>Discount ({discountPercentage}%):</span>
+									<span>
+										{appliedPromoCode.applyOn === 'SHIPPING'
+											? `Shipping Discount (${discountPercentage}%):`
+											: `Subtotal Discount (${discountPercentage}%):`}
+									</span>
 									<span style={{ color: 'green' }}>
 										- Rs {discountAmount.toLocaleString()}
 									</span>
