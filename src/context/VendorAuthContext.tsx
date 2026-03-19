@@ -90,8 +90,8 @@ export const VendorAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     try {
       if (!authState.token) return;
       
-      const response = await axiosInstance.post('/api/auth/refresh', {}, {
-        headers: { Authorization: `Bearer ${authState.token}` }
+      const response = await axiosInstance.post('/api/vendors/refresh-token', {}, {
+        withCredentials: true,
       });
       
       if (response.data.success && response.data.token) {

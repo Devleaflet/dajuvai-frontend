@@ -1,4 +1,4 @@
-import React, { useContext, createContext, useReducer, useEffect, useState } from "react";
+import React, { useContext, createContext, useReducer, useEffect, useState, useRef } from "react";
 import axiosInstance from "../api/axiosInstance";
 import { Product } from "../Components/Types/Product";
 import iphone from "../assets/iphone.jpg";
@@ -7,6 +7,8 @@ import { useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { io, Socket } from "socket.io-client";
+import { API_BASE_URL } from "../config";
 
 // Define cart item type with proper ID structure
 interface CartItem {
@@ -109,6 +111,7 @@ const cartReducer = (state: CartItem[], action: ActionType): CartItem[] => {
 // Context type
 interface CartContextType {
   cartItems: CartItem[];
+  cartCount: number;
   handleCartOnAdd: (product: Product, quantity?: number, variantId?: number) => void;
   handleCartItemOnDelete: (cartItem: CartItem) => void;
   handleIncreaseQuantity: (cartItemId: number, quantity?: number) => void;
@@ -130,6 +133,9 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
   const [deletingItems, setDeletingItems] = useState<Set<number>>(new Set());
   const [addingItems, setAddingItems] = useState<Set<number>>(new Set());
   const [updatingItems, setUpdatingItems] = useState<Set<number>>(new Set());
+  const [cartCount, setCartCount] = useState<number>(0);
+  const socketRef = useRef<Socket | null>(null);
+  const refreshDebounceRef = useRef<number | null>(null);
 
   const location = useLocation();
   const auth = useAuth();
@@ -223,6 +229,8 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const setCartItems = (items: CartItem[]) => {
     dispatch({ type: "SET_ITEMS", payload: items });
+    const count = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    setCartCount(count);
   };
 
   const handleCartOnAdd = async (product: Product, quantity = 1, variantId?: number) => {
@@ -495,10 +503,75 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  // Connect to Socket.IO for cart count updates
+  useEffect(() => {
+    if (!auth.isAuthenticated || !auth.token) {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
+      return;
+    }
+
+    const isCartPage = ["/checkout", "/cart"].some((page) =>
+      location.pathname.includes(page)
+    );
+
+    const socket = io(API_BASE_URL, {
+      transports: ["websocket"],
+      withCredentials: true,
+      auth: {
+        token: auth.token,
+      },
+    });
+
+    socketRef.current = socket;
+
+    const debouncedRefreshCart = () => {
+      if (refreshDebounceRef.current) {
+        window.clearTimeout(refreshDebounceRef.current);
+      }
+      refreshDebounceRef.current = window.setTimeout(() => {
+        refreshCart();
+        refreshDebounceRef.current = null;
+      }, 300);
+    };
+
+    const handleCartUpdate = (payload?: { count?: number }) => {
+      console.log("Socket cart update:", payload);
+      if (typeof payload?.count === "number") {
+        toast.success("Cart updated via socketio")
+        setCartCount(payload.count);
+      }
+      if (isCartPage) {
+        debouncedRefreshCart();
+      }
+    };
+
+    socket.on("cart:update", handleCartUpdate);
+    socket.on("cart:count", handleCartUpdate);
+
+    socket.on("connect_error", (err) => {
+      console.error("Socket connect error:", err);
+    });
+
+    return () => {
+      socket.off("cart:update", handleCartUpdate);
+      socket.off("cart:count", handleCartUpdate);
+      if (refreshDebounceRef.current) {
+        window.clearTimeout(refreshDebounceRef.current);
+        refreshDebounceRef.current = null;
+      }
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [auth.isAuthenticated, auth.token, location.pathname]);
+
   return (
     <CartContext.Provider
       value={{
         cartItems,
+        cartCount,
         setCartItems,
         handleCartOnAdd,
         handleCartItemOnDelete,

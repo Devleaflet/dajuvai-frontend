@@ -100,7 +100,7 @@ const Navbar: React.FC = () => {
 	const searchRef = useRef<HTMLDivElement>(null);
 	const moreDropdownRef = useRef<HTMLDivElement>(null);
 
-	const { cartItems } = useCart();
+	const { cartItems, cartCount } = useCart();
 
 	const cartOrderRef = useRef<Map<number, number>>(new Map());
 	const nextOrderIndexRef = useRef(0);
@@ -808,9 +808,9 @@ const Navbar: React.FC = () => {
 								}}
 							>
 								<FaShoppingCart />
-								{cartItems.length > 0 && (
+								{cartCount > 0 && (
 									<span className="navbar__cart-count navbar__cart-count--mobile">
-										{cartItems.length}
+										{cartCount}
 									</span>
 								)}
 							</button>
@@ -1110,8 +1110,8 @@ const Navbar: React.FC = () => {
 									}}
 								/>
 
-								{cartItems.length > 0 && (
-									<span className="navbar__cart-count">{cartItems.length}</span>
+								{cartCount > 0 && (
+									<span className="navbar__cart-count">{cartCount}</span>
 								)}
 
 								<span className="tooltip-text">View Cart</span>

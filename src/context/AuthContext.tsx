@@ -56,36 +56,30 @@ const isTokenValid = (token: string): boolean => {
   return expiration ? expiration > Date.now() : false;
 };
 
-// AuthProvider component to wrap the app
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<Partial<UserData> | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Determine if user is authenticated
+
   const isAuthenticated = !!user;
 
   // Initialize auth state
   const initializeAuth = useCallback(async () => {
     const storedToken = localStorage.getItem("authToken");
     const storedUser = localStorage.getItem("authUser");
-    //("[Auth Debug] initializeAuth called");
-    //("[Auth Debug] localStorage.authToken:", storedToken);
-    //("[Auth Debug] localStorage.authUser:", storedUser);
 
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        //("[Auth Debug] Parsed user from localStorage:", parsedUser);
         if (storedToken && isTokenValid(storedToken)) {
           setToken(storedToken);
           setUser(parsedUser);
           setIsLoading(false);
-          return; // Skip /api/auth/me verification for token-based users
+          return;
         }
-        // If no valid token, try cookie-based verification
         setUser(parsedUser);
-        // Verify with backend that the user is still authenticated (cookie/cookie-based auth)
         try {
           const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
             credentials: 'include',
@@ -96,7 +90,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (response.ok) {
             const data = await response.json();
             if (data.success && data.data) {
-              // Update user data with latest from server
               const updatedUser = {
                 id: data.data.userId,
                 email: data.data.email,
@@ -106,26 +99,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               };
               setUser(updatedUser);
               localStorage.setItem("authUser", JSON.stringify(updatedUser));
-              //("[Auth Debug] User verified with backend:", updatedUser);
             } else {
-              //("[Auth Debug] Backend verification failed, clearing auth");
               logout();
             }
           } else {
-            //("[Auth Debug] Backend verification failed (HTTP error), clearing auth");
             logout();
           }
         } catch (verifyError) {
           console.error("[Auth Debug] Error verifying with backend:", verifyError);
-          // Don't logout on network errors, keep the user logged in
           //("[Auth Debug] Network error during verification, keeping user logged in");
         }
       } catch (error) {
         console.error("[Auth Debug] Error initializing auth (JSON parse):", error);
         logout();
       }
-    } else {
-      //("[Auth Debug] No authUser in localStorage after refresh.");
     }
     setIsLoading(false);
   }, []);
@@ -135,16 +122,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initializeAuth();
   }, [initializeAuth]);
 
-  // Sync auth state across tabs
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "authToken" || e.key === "authUser") {
         if (!e.newValue) {
-          // Token or user removed in another tab
           setToken(null);
           setUser(null);
         } else if (e.key === "authToken" && e.newValue !== token) {
-          // Token updated in another tab
           initializeAuth();
         }
       }
@@ -174,18 +158,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const refreshToken = async () => {
       try {
         const response = await axios.post(
-          `${API_BASE_URL}/api/auth/refresh`,
+          `${API_BASE_URL}/api/auth/refresh-token`,
           {},
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
             withCredentials: true,
             timeout: 10000, // 10 second timeout
           }
         );
-        if (response.data.success && response.data.data.token) {
-          setToken(response.data.data.token);
+        if (response.data.success && response.data.token) {
+          setToken(response.data.token);
           //("Token refreshed successfully");
         } else {
           throw new Error("Failed to refresh token");
@@ -208,8 +189,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const now = Date.now();
       const timeUntilExpiry = expiration - now;
 
-      // Much more conservative refresh threshold - only refresh 30 minutes before expiry
-      const refreshThreshold = 30 * 60 * 1000; // 30 minutes
+      // Refresh threshold must be less than the token lifetime (15 min)
+      const refreshThreshold = 2 * 60 * 1000; // 2 minutes before expiry
 
       if (timeUntilExpiry < refreshThreshold && timeUntilExpiry > 0) {
         //(`Token expires in ${Math.round(timeUntilExpiry / 60000)} minutes, refreshing...`);
@@ -217,8 +198,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Check token expiration every 15 minutes (instead of 5)
-    const interval = setInterval(checkTokenExpiration, 15 * 60 * 1000);
+    // Check token expiration every 2 minutes
+    const interval = setInterval(checkTokenExpiration, 2 * 60 * 1000);
     checkTokenExpiration(); // Check immediately on token change
 
     return () => clearInterval(interval);
