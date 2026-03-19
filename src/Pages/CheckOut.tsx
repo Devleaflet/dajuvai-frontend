@@ -74,58 +74,58 @@ const OrderSuccessModal: React.FC<{
 	totalAmount,
 	paymentMethod,
 }) => {
-	if (!open) return null;
+		if (!open) return null;
 
-	return (
-		<div className="checkout-success-modal-overlay">
-			<div className="checkout-success-modal">
-				<div className="checkout-success-modal__content">
-					<div className="checkout-success-modal__header">
-						<div className="checkout-success-modal__icon-wrapper">
-							<div className="checkout-success-modal__icon">✓</div>
-						</div>
-						{/* <button
+		return (
+			<div className="checkout-success-modal-overlay">
+				<div className="checkout-success-modal">
+					<div className="checkout-success-modal__content">
+						<div className="checkout-success-modal__header">
+							<div className="checkout-success-modal__icon-wrapper">
+								<div className="checkout-success-modal__icon">✓</div>
+							</div>
+							{/* <button
 							className="checkout-success-modal__close"
 							onClick={onClose}
 						>
 							×
 						</button> */}
-					</div>
-					<h2 className="checkout-success-modal__title">Order Confirmed!</h2>
-					<p className="checkout-success-modal__message">
-						Thank you for your purchase! Your order has been successfully placed
-						and is being processed. You'll receive a confirmation email with
-						your order details shortly.
-					</p>
-					<div className="checkout-success-modal__order-info">
-						<div className="checkout-success-modal__info-item">
-							<span>Order Total:</span>
-							<span>Rs {totalAmount.toLocaleString()}</span>
 						</div>
-						<div className="checkout-success-modal__info-item">
-							<span>Payment Method:</span>
-							<span>{paymentMethod.replace(/_/g, ' ')}</span>
+						<h2 className="checkout-success-modal__title">Order Confirmed!</h2>
+						<p className="checkout-success-modal__message">
+							Thank you for your purchase! Your order has been successfully placed
+							and is being processed. You'll receive a confirmation email with
+							your order details shortly.
+						</p>
+						<div className="checkout-success-modal__order-info">
+							<div className="checkout-success-modal__info-item">
+								<span>Order Total:</span>
+								<span>Rs {totalAmount.toLocaleString()}</span>
+							</div>
+							<div className="checkout-success-modal__info-item">
+								<span>Payment Method:</span>
+								<span>{paymentMethod.replace(/_/g, ' ')}</span>
+							</div>
 						</div>
-					</div>
-					<div className="checkout-success-modal__actions">
-						<button
-							className="checkout-success-modal__btn checkout-success-modal__btn--primary"
-							onClick={onViewOrder}
-						>
-							View Order Details
-						</button>
-						<button
-							className="checkout-success-modal__btn checkout-success-modal__btn--secondary"
-							onClick={onContinueShopping}
-						>
-							Continue Shopping
-						</button>
+						<div className="checkout-success-modal__actions">
+							<button
+								className="checkout-success-modal__btn checkout-success-modal__btn--primary"
+								onClick={onViewOrder}
+							>
+								View Order Details
+							</button>
+							<button
+								className="checkout-success-modal__btn checkout-success-modal__btn--secondary"
+								onClick={onContinueShopping}
+							>
+								Continue Shopping
+							</button>
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-	);
-};
+		);
+	};
 
 const Checkout: React.FC = () => {
 	useEffect(() => {
@@ -169,13 +169,13 @@ const Checkout: React.FC = () => {
 				variantId: product.selectedVariant?.id,
 				variant: product.selectedVariant
 					? {
-							id: product.selectedVariant.id,
-							attributes: product.selectedVariant.attributes,
-							calculatedPrice: product.selectedVariant.calculatedPrice,
-							originalPrice: product.selectedVariant.originalPrice,
-							stock: product.selectedVariant.stock,
-							variantImgUrls: product.selectedVariant.variantImgUrls,
-					  }
+						id: product.selectedVariant.id,
+						attributes: product.selectedVariant.attributes,
+						calculatedPrice: product.selectedVariant.calculatedPrice,
+						originalPrice: product.selectedVariant.originalPrice,
+						stock: product.selectedVariant.stock,
+						variantImgUrls: product.selectedVariant.variantImgUrls,
+					}
 					: undefined,
 				product: {
 					id: product.id,
@@ -183,12 +183,12 @@ const Checkout: React.FC = () => {
 					vendorId: product.vendor?.id,
 					vendor: product.vendor
 						? {
-								id: product.vendor.id,
-								businessName: product.vendor.businessName || 'Unknown Vendor',
-								district: product.vendor.district || {
-									name: 'Unknown District',
-								},
-						  }
+							id: product.vendor.id,
+							businessName: product.vendor.businessName || 'Unknown Vendor',
+							district: product.vendor.district || {
+								name: 'Unknown District',
+							},
+						}
 						: undefined,
 				},
 			},
@@ -214,16 +214,12 @@ const Checkout: React.FC = () => {
 
 	const availablePaymentMethods = [
 		{ id: 'CASH_ON_DELIVERY', name: 'Cash on Delivery' },
-		// {
-		// 	id: 'ESEWA',
-		// 	name: 'eSewa',
-		// 	disabled: true,
-		// 	message: 'Currently unavailable. Please choose another method.',
-		// },
 		{ id: "ESEWA", name: "eSewa" },
 		{ id: 'NPX', name: 'Nepal Payment System' },
 	];
 
+	const [isLoadingUser, setIsLoadingUser] = useState(false);
+	const [isSavingBilling, setIsSavingBilling] = useState(false);
 	const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 	const [showAlert, setShowAlert] = useState(false);
 	const [alertMessage, setAlertMessage] = useState('');
@@ -250,6 +246,68 @@ const Checkout: React.FC = () => {
 		};
 		fetchData();
 	}, []);
+
+	const handleSaveBillingDetails = async () => {
+		if (!user?.id || !token) return;
+
+		const fieldsToValidate = ['fullName', 'province', 'district', 'city', 'streetAddress', 'phoneNumber'];
+		const newErrors: Record<string, string> = {};
+		let isValid = true;
+
+		fieldsToValidate.forEach((field) => {
+			const error = validateField(field, billingDetails[field as keyof typeof billingDetails]);
+			if (error) {
+				newErrors[field] = error;
+				isValid = false;
+			}
+		});
+
+		if (!isValid) {
+			setErrors((prev) => ({ ...prev, ...newErrors }));
+			setTouched((prev) => ({ ...prev, ...Object.fromEntries(fieldsToValidate.map((f) => [f, true])) }));
+			setAlertMessage('Please fix the form errors before saving.');
+			setShowAlert(true);
+			return;
+		}
+
+		setIsSavingBilling(true);
+		try {
+			const response = await fetch(`${API_BASE_URL}/api/auth/users/${user.id}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`,
+				},
+				credentials: 'include',
+				body: JSON.stringify({
+					fullName: billingDetails.fullName,
+					phoneNumber: billingDetails.phoneNumber,
+					address: {
+						province: billingDetails.province,
+						district: billingDetails.district,
+						city: billingDetails.city,
+						localAddress: billingDetails.streetAddress,
+						landmark: billingDetails.landmark || undefined,
+					},
+				}),
+			});
+
+			const result = await response.json();
+			if (response.ok && result.success) {
+				setAlertMessage('Billing details saved successfully!');
+				setShowAlert(true);
+			} else {
+				setAlertMessage(result.message || 'Failed to save billing details.');
+				setShowAlert(true);
+			}
+		} catch (error) {
+			console.error('Error saving billing details:', error);
+			setAlertMessage('An error occurred while saving. Please try again.');
+			setShowAlert(true);
+		} finally {
+			setIsSavingBilling(false);
+		}
+	};
 
 	function capitalizeFirstLetter(string: string) {
 		return string.charAt(0).toUpperCase() + string.slice(1);
@@ -438,6 +496,7 @@ const Checkout: React.FC = () => {
 			console.warn('User or token not available, skipping user data fetch');
 			return;
 		}
+		setIsLoadingUser(true);
 		try {
 			const response = await fetch(
 				`${API_BASE_URL}/api/auth/users/${user.id}`,
@@ -462,7 +521,7 @@ const Checkout: React.FC = () => {
 					streetAddress: data.data.address?.localAddress || '',
 					phoneNumber:
 						data.data.phoneNumber &&
-						validateField('phoneNumber', data.data.phoneNumber) === ''
+							validateField('phoneNumber', data.data.phoneNumber) === ''
 							? data.data.phoneNumber
 							: '',
 					city: data.data.address?.city || '',
@@ -488,6 +547,8 @@ const Checkout: React.FC = () => {
 			console.error('Error fetching user data:', error);
 			setAlertMessage('An error occurred while fetching user data.');
 			setShowAlert(true);
+		} finally {
+			setIsLoadingUser(false);
 		}
 	};
 
@@ -1075,6 +1136,11 @@ const Checkout: React.FC = () => {
 				<h2>Billing Details</h2>
 				<div className="checkout-container__content">
 					<div className="checkout-container__billing-details">
+						{isLoadingUser && (
+							<p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+								Loading your saved details...
+							</p>
+						)}
 						<div className="checkout-container__form-group">
 							<label className="checkout-container__form-label">
 								Full Name *
@@ -1086,9 +1152,9 @@ const Checkout: React.FC = () => {
 								onChange={handleInputChange}
 								onBlur={handleBlur}
 								placeholder="Enter your Full Name"
-								className={`checkout-container__form-group-input ${
-									errors.fullName && touched.fullName ? 'error' : ''
-								}`}
+								disabled={isLoadingUser}
+								className={`checkout-container__form-group-input ${errors.fullName && touched.fullName ? 'error' : ''
+									}`}
 								required
 							/>
 							{errors.fullName && touched.fullName && (
@@ -1108,9 +1174,8 @@ const Checkout: React.FC = () => {
 								value={billingDetails.province}
 								onChange={handleInputChange}
 								onBlur={handleBlur}
-								className={`checkout-container__form-group-select ${
-									errors.province && touched.province ? 'error' : ''
-								}`}
+								className={`checkout-container__form-group-select ${errors.province && touched.province ? 'error' : ''
+									}`}
 								required
 							>
 								<option value="">Select Province</option>
@@ -1140,9 +1205,8 @@ const Checkout: React.FC = () => {
 								value={billingDetails.district}
 								onChange={handleInputChange}
 								onBlur={handleBlur}
-								className={`checkout-container__form-group-select ${
-									errors.district && touched.district ? 'error' : ''
-								}`}
+								className={`checkout-container__form-group-select ${errors.district && touched.district ? 'error' : ''
+									}`}
 								required
 							>
 								<option value="">Select District</option>
@@ -1172,9 +1236,8 @@ const Checkout: React.FC = () => {
 								onChange={handleInputChange}
 								onBlur={handleBlur}
 								placeholder="Enter your city"
-								className={`checkout-container__form-group-input ${
-									errors.city && touched.city ? 'error' : ''
-								}`}
+								className={`checkout-container__form-group-input ${errors.city && touched.city ? 'error' : ''
+									}`}
 								required
 							/>
 							{errors.city && touched.city && (
@@ -1196,9 +1259,8 @@ const Checkout: React.FC = () => {
 								onChange={handleInputChange}
 								onBlur={handleBlur}
 								placeholder="Enter your street address"
-								className={`checkout-container__form-group-input ${
-									errors.streetAddress && touched.streetAddress ? 'error' : ''
-								}`}
+								className={`checkout-container__form-group-input ${errors.streetAddress && touched.streetAddress ? 'error' : ''
+									}`}
 								required
 							/>
 							{errors.streetAddress && touched.streetAddress && (
@@ -1220,9 +1282,8 @@ const Checkout: React.FC = () => {
 								onChange={handleInputChange}
 								onBlur={handleBlur}
 								placeholder="Enter Nearest Landmark (Eg: Apartments, Hospital, School etc)"
-								className={`checkout-container__form-group-input ${
-									errors.landmark && touched.landmark ? 'error' : ''
-								}`}
+								className={`checkout-container__form-group-input ${errors.landmark && touched.landmark ? 'error' : ''
+									}`}
 							/>
 							{errors.landmark && touched.landmark && (
 								<div className="error-message">
@@ -1243,9 +1304,8 @@ const Checkout: React.FC = () => {
 								onChange={handleInputChange}
 								onBlur={handleBlur}
 								placeholder="9xxxxxxxxx"
-								className={`checkout-container__form-group-input ${
-									errors.phoneNumber && touched.phoneNumber ? 'error' : ''
-								}`}
+								className={`checkout-container__form-group-input ${errors.phoneNumber && touched.phoneNumber ? 'error' : ''
+									}`}
 								maxLength={10}
 								required
 							/>
@@ -1256,6 +1316,14 @@ const Checkout: React.FC = () => {
 								</div>
 							)}
 						</div>
+						<button
+							type="button"
+							className='checkout_save_billing_details_btn'
+							onClick={handleSaveBillingDetails}
+							disabled={isSavingBilling || isLoadingUser}
+						>
+							{isSavingBilling ? 'Saving...' : 'Save Billing Details'}
+						</button>
 
 						<div className="checkout-container__promo-section-left">
 							<h3 style={{ marginBottom: '1rem', color: '#333' }}>
@@ -1382,6 +1450,7 @@ const Checkout: React.FC = () => {
 								</div>
 							)}
 						</div>
+
 					</div>
 
 					<div className="checkout-container__order-summary">
@@ -1470,8 +1539,8 @@ const Checkout: React.FC = () => {
 														Rs {group.shippingCost.toLocaleString()}
 														{normalizeDistrict(billingDetails.district) ===
 															normalizeDistrict(group.vendorDistrict) && (
-															<small> (Same district)</small>
-														)}
+																<small> (Same district)</small>
+															)}
 													</span>
 													<div className="checkout-container__delivery-time">
 														<small>
@@ -1530,9 +1599,8 @@ const Checkout: React.FC = () => {
 							{availablePaymentMethods.map((method) => (
 								<label
 									key={method.id}
-									className={`checkout-container__payment-methods-label ${
-										selectedPaymentMethod === method.id ? 'selected' : ''
-									} ${method.disabled ? 'disabled' : ''}`}
+									className={`checkout-container__payment-methods-label ${selectedPaymentMethod === method.id ? 'selected' : ''
+										} ${method.disabled ? 'disabled' : ''}`}
 								>
 									<input
 										type="radio"
@@ -1600,9 +1668,8 @@ const Checkout: React.FC = () => {
 						)}
 
 						<button
-							className={`checkout-container__place-order-btn${
-								!termsAgreed || isPlacingOrder ? '--disabled' : ''
-							}`}
+							className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''
+								}`}
 							disabled={!termsAgreed || isPlacingOrder}
 							onClick={handlePlaceOrder}
 						>

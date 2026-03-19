@@ -1,9 +1,6 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config';
 
-// Remove or comment out unused import
-// import { ShippingAddress } from ...
-
 interface OrderedBy {
   id: number;
   username: string;
