@@ -540,7 +540,6 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     const handleCartUpdate = (payload?: { count?: number }) => {
       console.log("Socket cart update:", payload);
       if (typeof payload?.count === "number") {
-        toast.success("Cart updated via socketio")
         setCartCount(payload.count);
       }
       if (isCartPage) {

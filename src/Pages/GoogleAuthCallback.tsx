@@ -36,9 +36,10 @@ const GoogleAuthCallback: React.FC = () => {
 
         // Method 1: Check for direct token in URL params (successful auth)
         const urlToken = searchParams.get('token');
+        const urlRefreshToken = searchParams.get('refreshToken');
         if (urlToken) {
           addDebugLog('Found token in URL parameters');
-          await handleTokenAuth(urlToken);
+          await handleTokenAuth(urlToken, urlRefreshToken);
           return;
         }
 
@@ -68,7 +69,7 @@ const GoogleAuthCallback: React.FC = () => {
     handleCallback();
   }, [searchParams, navigate, login]);
 
-  const handleTokenAuth = async (token: string) => {
+  const handleTokenAuth = async (token: string, refreshToken?: string | null) => {
     try {
       addDebugLog('Authenticating with URL token');
 
@@ -96,7 +97,7 @@ const GoogleAuthCallback: React.FC = () => {
           isVerified: true,
         };
 
-        login(token, userData);
+        login(token, userData, refreshToken ?? undefined);
         addDebugLog('Login successful with URL token');
         setStatus('success');
         setMessage('Successfully authenticated with Google!');

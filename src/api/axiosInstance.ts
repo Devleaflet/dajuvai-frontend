@@ -41,6 +41,14 @@ export const setupAxiosInterceptors = (getTokenFn: () => string | null) => {
         }
       });
 
+      // If we get a 401 and there's a stored token, it's invalid — clear it
+      // so the user is prompted to log in again instead of silently failing
+      if (error.response?.status === 401 && localStorage.getItem('authToken')) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('authUser');
+        localStorage.removeItem('authRefreshToken');
+      }
+
       return Promise.reject(error);
     }
   );

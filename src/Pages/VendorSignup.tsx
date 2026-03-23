@@ -864,13 +864,11 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		try {
 			setIsLoading(true);
 			setError("");
-			//("Submitting signup data:", userData);
 			const response = await axios.post<SignupResponse>(
 				`${API_BASE_URL}/api/vendors/request/register-v2`,
 				userData,
 				{ headers: { "Content-Type": "application/json" } }
 			);
-			//("Signup response:", response.data);
 			setSuccess(response.data.message);
 			toast.success(
 				"Registration successful! Please check your email for verification code."
@@ -1091,7 +1089,6 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		e.preventDefault();
 		setError("");
 		setSuccess("");
-		//("Form submitted, current step:", currentStep);
 		setIsLoading(true);
 		if (showVerification) {
 			await handleVerifyEmail();

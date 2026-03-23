@@ -24,6 +24,7 @@ interface SignupResponse {
 interface LoginResponse {
 	success: boolean;
 	token: string;
+	refreshToken?: string;
 	data: {
 		userId: number;
 		email: string;
@@ -481,6 +482,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 					headers: {
 						"Content-Type": "application/json",
 					},
+					withCredentials: true,
 				}
 			);
 
@@ -495,7 +497,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 					isVerified: true,
 				};
 
-				login(response.data.token, userData);
+				login(response.data.token, userData, response.data.refreshToken);
 
 				if (response.data.data.userId) {
 					try {

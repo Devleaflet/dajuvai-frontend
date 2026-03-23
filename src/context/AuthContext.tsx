@@ -19,7 +19,7 @@ interface UserData {
 interface AuthContextType {
   user: UserData | null;
   token: string | null;
-  login: (token: string | null, user: UserData) => void;
+  login: (token: string | null, user: UserData, refreshToken?: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -151,20 +151,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [token, user]);
 
+  // Logout function
+  const logout = useCallback(() => {
+    //("AuthContext logout - user only (full cleanse)");
+    setToken(null);
+    setUser(null);
+    localStorage.clear();
+    sessionStorage.clear();
+    // Attempt to clear all cookies (best effort, not HttpOnly)
+    document.cookie.split(';').forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, '')
+        .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
+    });
+    // Call logout API (non-blocking)
+    axios
+      .post(`${API_BASE_URL}/api/auth/logout`, {}, {
+        withCredentials: true,
+        timeout: 5000
+      })
+      .catch((err) => console.error("Logout API error (non-critical):", err));
+    // Reload the page to ensure all state is reset
+    window.location.href = '/';
+  }, []);
+
   // Token refresh logic - Much more conservative approach
   useEffect(() => {
     if (!token || !isAuthenticated) return;
 
     const refreshToken = async () => {
       try {
+        const storedRefreshToken = localStorage.getItem("authRefreshToken");
         const response = await axios.post(
           `${API_BASE_URL}/api/auth/refresh-token`,
           {},
           {
             withCredentials: true,
-            timeout: 10000, // 10 second timeout
+            timeout: 10000,
+            headers: storedRefreshToken
+              ? { Authorization: `Bearer ${storedRefreshToken}` }
+              : {},
           }
         );
+        console.log("-------------REFRESH TOKEN ---------------")
+        console.log(response)
+        console.log("-------------REFRESH TOKEN ---------------")
         if (response.data.success && response.data.token) {
           setToken(response.data.token);
           //("Token refreshed successfully");
@@ -189,11 +220,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const now = Date.now();
       const timeUntilExpiry = expiration - now;
 
-      // Refresh threshold must be less than the token lifetime (15 min)
-      const refreshThreshold = 2 * 60 * 1000; // 2 minutes before expiry
+      const refreshThreshold = 5 * 60 * 1000; // 5 minutes before expiry
 
       if (timeUntilExpiry < refreshThreshold && timeUntilExpiry > 0) {
-        //(`Token expires in ${Math.round(timeUntilExpiry / 60000)} minutes, refreshing...`);
         refreshToken();
       }
     };
@@ -203,11 +232,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkTokenExpiration(); // Check immediately on token change
 
     return () => clearInterval(interval);
-  }, [token, isAuthenticated]);
+  }, [token, isAuthenticated, logout]);
 
   // Login function
-  const login = (newToken: string | null, newUser: UserData) => {
-    // Accept login if either a token or a user is provided (for cookie-based auth)
+  const login = (newToken: string | null, newUser: UserData, newRefreshToken?: string) => {
     if (!newToken && !newUser) {
       console.error("No token or user provided to login function");
       return;
@@ -216,33 +244,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(newToken);
       localStorage.setItem("authToken", newToken);
     }
+    if (newRefreshToken) {
+      localStorage.setItem("authRefreshToken", newRefreshToken);
+    }
     setUser(newUser);
     localStorage.setItem("authUser", JSON.stringify(newUser));
   };
-
-  // Logout function
-  const logout = useCallback(() => {
-    //("AuthContext logout - user only (full cleanse)");
-    setToken(null);
-    setUser(null);
-    localStorage.clear();
-    sessionStorage.clear();
-    // Attempt to clear all cookies (best effort, not HttpOnly)
-    document.cookie.split(';').forEach((c) => {
-      document.cookie = c
-        .replace(/^ +/, '')
-        .replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
-    });
-    // Call logout API (non-blocking)
-    axios
-      .post(`${API_BASE_URL}/api/auth/logout`, {}, {
-        withCredentials: true,
-        timeout: 5000
-      })
-      .catch((err) => console.error("Logout API error (non-critical):", err));
-    // Reload the page to ensure all state is reset
-    window.location.href = '/';
-  }, []);
 
   // Fetch user data by ID
   const fetchUserData = async (userId: number): Promise<UserData | null> => {
