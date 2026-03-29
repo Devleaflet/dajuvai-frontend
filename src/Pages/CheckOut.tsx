@@ -1120,20 +1120,6 @@ const Checkout: React.FC = () => {
 				/>
 			</form>
 
-			{showAlert &&
-				alertMessage &&
-				selectedPaymentMethod === 'CASH_ON_DELIVERY' && (
-					<div className="checkout-container__alert">
-						<span
-							role="img"
-							aria-label="success"
-							style={{ fontSize: '1.5em', marginRight: '0.5em' }}
-						>
-							✓
-						</span>
-						{alertMessage}
-					</div>
-				)}
 
 			<div className="checkout-container">
 				<h2>Billing Details</h2>
