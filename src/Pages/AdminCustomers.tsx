@@ -15,7 +15,9 @@ interface User {
 	username: string;
 	email: string;
 	role: string;
+	provider: string;
 	isVerified: boolean;
+	profilePicture?: string;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -32,7 +34,7 @@ interface ApiResponse<T> {
 const SkeletonRow: React.FC = () => {
 	return (
 		<tr>
-			{[...Array(5)].map((_, index) => (
+			{[...Array(8)].map((_, index) => (
 				<td key={index}>
 					<div className="skeleton skeleton-text"></div>
 				</td>
@@ -76,9 +78,31 @@ const createUserAPI = (token: string | null) => ({
 const ROLE_OPTIONS = [
 	{ value: "all", label: "All Roles" },
 	{ value: "user", label: "User" },
-	{ value: "vendor", label: "Vendor" },
 	{ value: "admin", label: "Admin" },
 ];
+
+// Provider filter options
+const PROVIDER_OPTIONS = [
+	{ value: "all", label: "All Login Types" },
+	{ value: "local", label: "Email / Password" },
+	{ value: "google", label: "Google" },
+];
+
+const timeAgo = (dateStr: string): string => {
+	const diff = Date.now() - new Date(dateStr).getTime();
+	const mins = Math.floor(diff / 60000);
+	const hours = Math.floor(mins / 60);
+	const days = Math.floor(hours / 24);
+	const months = Math.floor(days / 30);
+	const years = Math.floor(days / 365);
+
+	if (mins < 1) return "just now";
+	if (mins < 60) return `${mins} min ago`;
+	if (hours < 24) return `${hours} hr ago`;
+	if (days < 30) return `${days} d ago`;
+	if (months < 12) return `${months} month${months > 1 ? "s" : ""} ago`;
+	return `${years} yr${years > 1 ? "s" : ""} ago`;
+};
 
 const AdminCustomers: React.FC = () => {
 	const { token, isAuthenticated } = useAuth();
@@ -93,6 +117,7 @@ const AdminCustomers: React.FC = () => {
 		direction: "asc" | "desc";
 	} | null>(null);
 	const [roleFilter, setRoleFilter] = useState("all");
+	const [providerFilter, setProviderFilter] = useState("all");
 	const [startDate, setStartDate] = useState("");
 	const [endDate, setEndDate] = useState("");
 	const [searchQuery, setSearchQuery] = useState("");
@@ -127,6 +152,14 @@ const AdminCustomers: React.FC = () => {
 			);
 		}
 
+		// Apply provider filter
+		if (providerFilter !== "all") {
+			filtered = filtered.filter(
+				(user) =>
+					(user.provider ?? "local").toLowerCase() === providerFilter.toLowerCase()
+			);
+		}
+
 		// Apply date range filter
 		if (startDate || endDate) {
 			filtered = filtered.filter((user) => {
@@ -152,7 +185,7 @@ const AdminCustomers: React.FC = () => {
 
 		setFilteredUsers(filtered);
 		setCurrentPage(1);
-	}, [users, searchQuery, roleFilter, startDate, endDate]);
+	}, [users, searchQuery, roleFilter, providerFilter, startDate, endDate]);
 
 	const loadUsers = useCallback(async () => {
 		try {
@@ -265,10 +298,23 @@ const AdminCustomers: React.FC = () => {
 							className="admin-orders__filter-select"
 						>
 							{ROLE_OPTIONS.map((option) => (
-								<option
-									key={option.value}
-									value={option.value}
-								>
+								<option key={option.value} value={option.value}>
+									{option.label}
+								</option>
+							))}
+						</select>
+					</div>
+
+					<div className="admin-orders__filter-group">
+						<label htmlFor="providerFilter">Login Type:</label>
+						<select
+							id="providerFilter"
+							value={providerFilter}
+							onChange={(e) => setProviderFilter(e.target.value)}
+							className="admin-orders__filter-select"
+						>
+							{PROVIDER_OPTIONS.map((option) => (
+								<option key={option.value} value={option.value}>
 									{option.label}
 								</option>
 							))}
@@ -300,6 +346,7 @@ const AdminCustomers: React.FC = () => {
 					<button
 						onClick={() => {
 							setRoleFilter("all");
+							setProviderFilter("all");
 							setStartDate("");
 							setEndDate("");
 							setSearchQuery("");
@@ -354,11 +401,35 @@ const AdminCustomers: React.FC = () => {
 											(sortConfig.direction === "asc" ? "↑" : "↓")}
 									</th>
 									<th
+										onClick={() => handleSort("provider")}
+										className="sortable"
+									>
+										Login Type{" "}
+										{sortConfig?.key === "provider" &&
+											(sortConfig.direction === "asc" ? "↑" : "↓")}
+									</th>
+									<th
+										onClick={() => handleSort("isVerified")}
+										className="sortable"
+									>
+										Verified{" "}
+										{sortConfig?.key === "isVerified" &&
+											(sortConfig.direction === "asc" ? "↑" : "↓")}
+									</th>
+									<th
 										onClick={() => handleSort("createdAt")}
 										className="sortable"
 									>
-										Created At{" "}
+										Joined{" "}
 										{sortConfig?.key === "createdAt" &&
+											(sortConfig.direction === "asc" ? "↑" : "↓")}
+									</th>
+									<th
+										onClick={() => handleSort("updatedAt")}
+										className="sortable"
+									>
+										Last Updated{" "}
+										{sortConfig?.key === "updatedAt" &&
 											(sortConfig.direction === "asc" ? "↑" : "↓")}
 									</th>
 								</tr>
@@ -369,22 +440,76 @@ const AdminCustomers: React.FC = () => {
 										<SkeletonRow key={index} />
 									))
 								) : currentUsers.length > 0 ? (
-									currentUsers.map((user) => (
-										<tr
-											key={user.id}
-											className="admin-orders__table-row"
-										>
-											<td>{user.id}</td>
-											<td>{user.username}</td>
-											<td>{user.email}</td>
-											<td>{user.role}</td>
-											<td>{new Date(user.createdAt).toLocaleDateString()}</td>
-										</tr>
-									))
+									currentUsers.map((user) => {
+										const provider = (user.provider ?? "local").toLowerCase();
+										const isGoogle = provider === "google";
+										return (
+											<tr
+												key={user.id}
+												className="admin-orders__table-row"
+											>
+												<td>{user.id}</td>
+												<td>
+													{user.profilePicture ? (
+														<span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+															<img
+																src={user.profilePicture}
+																alt={user.username}
+																style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }}
+															/>
+															{user.username}
+														</span>
+													) : (
+														user.username
+													)}
+												</td>
+												<td>{user.email}</td>
+												<td>
+													<span className={`admin-orders__status-badge admin-orders__status-badge--${user.role.toLowerCase()}`}>
+														{user.role}
+													</span>
+												</td>
+												<td>
+													<span
+														style={{
+															display: "inline-flex",
+															alignItems: "center",
+															gap: "0.35rem",
+															padding: "0.2rem 0.6rem",
+															borderRadius: "999px",
+															fontSize: "0.78rem",
+															fontWeight: 500,
+															background: isGoogle ? "#fce8e6" : "#e8f0fe",
+															color: isGoogle ? "#d93025" : "#1a73e8",
+														}}
+													>
+														{isGoogle ? "🔵 Google" : "✉ Email"}
+													</span>
+												</td>
+												<td>
+													<span
+														style={{
+															display: "inline-block",
+															padding: "0.2rem 0.6rem",
+															borderRadius: "999px",
+															fontSize: "0.78rem",
+															fontWeight: 500,
+															background: user.isVerified ? "#e6f4ea" : "#fce8e6",
+															color: user.isVerified ? "#1e7e34" : "#c0392b",
+														}}
+													>
+														{user.isVerified ? "✔ Verified" : "✘ Unverified"}
+													</span>
+												</td>
+												<td>{timeAgo(user.createdAt)}</td>
+												<td>{timeAgo(user.updatedAt)}</td>
+											</tr>
+										);
+									})
 								) : (
 									<tr>
 										<td
-											colSpan={5}
+											colSpan={8}
 											className="admin-orders__no-data"
 										>
 											No users found
