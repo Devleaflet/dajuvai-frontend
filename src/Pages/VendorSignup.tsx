@@ -1061,7 +1061,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 		}
 	};
 
-	const handleNext = () => {
+	const handleNext = async () => {
 		const { isValid, errors } = validateStep();
 		if (!isValid) {
 			const firstError = Object.values(errors)[0];
@@ -1070,11 +1070,29 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 			} else {
 				toast.error("Please fix the errors in the form before proceeding.");
 			}
-			//("Step validation failed, cannot proceed", { errors });
 			return;
 		}
 
-		//(`Moving to step ${currentStep + 1}`);
+		if (currentStep === 2) {
+			try {
+				setIsLoading(true);
+				const response = await axios.get(`${API_BASE_URL}/api/auth/user/check-email`, {
+					params: { email },
+				});
+				console.log(response)
+				if (response.data.exists) {
+					setErrors((prev) => ({ ...prev, email: "Email is already registered" }));
+					toast.error("Email is already registered");
+					return;
+				}
+			} catch {
+				toast.error("Could not verify email. Please try again.");
+				return;
+			} finally {
+				setIsLoading(false);
+			}
+		}
+
 		setCurrentStep((prev) => Math.min(prev + 1, 4));
 	};
 
@@ -1496,6 +1514,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 										</div>
 										<div className=" auth-modal__checkbox">
 											<input
+												id="acceptTerms"
 												type="checkbox"
 												name="acceptTerms"
 												checked={acceptTerms}
@@ -1524,8 +1543,9 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 												}}
 											/>
 											<label
+												htmlFor="acceptTerms"
 												className=""
-												style={{ background: "transparent" }}
+												style={{ background: "transparent", cursor: "pointer" }}
 											>
 												I accept the{" "}
 												<Link
@@ -2069,6 +2089,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 
 										<div className="auth-modal__checkbox">
 											<input
+												id="acceptListingFee"
 												type="checkbox"
 												name="acceptListingFee"
 												checked={acceptListingFee}
@@ -2097,8 +2118,9 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 												}}
 											/>
 											<label
+												htmlFor="acceptListingFee"
 												className=""
-												style={{ background: "transparent" }}
+												style={{ background: "transparent", cursor: "pointer" }}
 											>
 												I accept the listing fee (
 												<Link

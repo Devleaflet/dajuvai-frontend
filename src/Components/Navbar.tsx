@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import {
 	FaBars,
@@ -384,110 +384,62 @@ const Navbar: React.FC = () => {
 		return () => document.removeEventListener('mousedown', handleClickOutside);
 	}, []);
 
-	const { data: allProducts = [] } = useQuery({
-		queryKey: ['allProducts'],
-		queryFn: async () => {
-			try {
-				const response = await fetch(
-					`${API_BASE_URL}/api/categories/all/products`
-				);
-				if (!response.ok) throw new Error('Failed to fetch products');
-				const data = await response.json();
-				return data.success ? data.data : [];
-			} catch (error) {
-				console.error('Error fetching products:', error);
-				return [];
-			}
-		},
-		staleTime: 5 * 60 * 1000,
-	});
+	const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
-	useEffect(() => {
-		const handleSetNavbarSearch = (event: CustomEvent) => {
-			const { searchQuery } = event.detail;
-			//('🔍 Navbar received search query:', searchQuery);
-			setSearchQuery(searchQuery);
-
-			if (searchQuery && allProducts.length > 0) {
-				setTimeout(() => {
-					handleSearch();
-				}, 100);
-			}
-		};
-
-		window.addEventListener(
-			'setNavbarSearch',
-			handleSetNavbarSearch as EventListener
-		);
-
-		return () => {
-			window.removeEventListener(
-				'setNavbarSearch',
-				handleSetNavbarSearch as EventListener
-			);
-		};
-	}, [allProducts]);
-
-	const handleSearch = async (e?: React.FormEvent) => {
-		e?.preventDefault();
-		if (!searchQuery.trim() || !allProducts.length) {
+	const handleSearch = useCallback(async (query: string) => {
+		if (!query.trim()) {
 			setSearchResults([]);
 			setShowSearchDropdown(false);
 			return;
 		}
-
 		try {
-			const searchTerm = searchQuery.toLowerCase().trim();
-
-			const filteredProducts = allProducts
-				.filter((product: any) => {
-					const nameMatch = product.name.toLowerCase().includes(searchTerm);
-					const descMatch = product.description
-						?.toLowerCase()
-						.includes(searchTerm);
-					return nameMatch || descMatch;
-				})
-				.map((product: any) => ({
-					id: product.id,
-					name: product.name,
-					image:
-						product.productImages?.[0] ||
-						product.variants?.find((v: any) => v?.variantImages?.[0])
-							?.variantImages?.[0] ||
-						'../assets/iphone.jpg',
-					matchScore: calculateMatchScore(product, searchTerm),
-				}))
-				.sort((a: any, b: any) => b.matchScore - a.matchScore)
-				.slice(0, 3);
-
-			setSearchResults(filteredProducts);
-			setShowSearchDropdown(filteredProducts.length > 0);
+			const response = await fetch(
+				`${API_BASE_URL}/api/categories/all/products?search=${encodeURIComponent(query.trim())}`
+			);
+			if (!response.ok) throw new Error('Search failed');
+			const data = await response.json();
+			const results = (data.success ? data.data : []).slice(0, 5).map((product: { id: number; name: string; productImages?: string[]; variants?: { variantImages?: string[] }[] }) => ({
+				id: product.id,
+				name: product.name,
+				image:
+					product.productImages?.[0] ||
+					product.variants?.find((v) => v?.variantImages?.[0])?.variantImages?.[0] ||
+					'../assets/iphone.jpg',
+			}));
+			setSearchResults(results);
+			setShowSearchDropdown(results.length > 0);
 		} catch (error) {
 			console.error('Search error:', error);
 			setSearchResults([]);
 			setShowSearchDropdown(false);
 		}
-	};
+	}, []);
 
-	const calculateMatchScore = (product: any, searchTerm: string) => {
-		let score = 0;
-		const name = product.name.toLowerCase();
-		const description = product.description?.toLowerCase() || '';
+	useEffect(() => {
+		const handleSetNavbarSearch = (event: CustomEvent) => {
+			const { searchQuery: query } = event.detail;
+			setSearchQuery(query);
+			if (query) handleSearch(query);
+		};
 
-		if (name === searchTerm) score += 100;
-		else if (name.startsWith(searchTerm)) score += 50;
-		else if (name.includes(searchTerm)) score += 30;
-		if (description.includes(searchTerm)) score += 10;
+		window.addEventListener('setNavbarSearch', handleSetNavbarSearch as EventListener);
+		return () => window.removeEventListener('setNavbarSearch', handleSetNavbarSearch as EventListener);
+	}, [handleSearch]);
 
-		return score;
+	const handleSearchSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+		handleSearch(searchQuery);
 	};
 
 	const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = e.target.value;
 		setSearchQuery(value);
 
+		if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+
 		if (value.trim()) {
-			handleSearch();
+			searchDebounceRef.current = setTimeout(() => handleSearch(value), 300);
 		} else {
 			setSearchResults([]);
 			setShowSearchDropdown(false);
@@ -963,7 +915,7 @@ const Navbar: React.FC = () => {
 							ref={searchRef}
 						>
 							<form
-								onSubmit={handleSearch}
+								onSubmit={handleSearchSubmit}
 								className="navbar__search-form"
 							>
 								<input
