@@ -88,6 +88,16 @@ const ProductList: React.FC<ProductListProps> = ({
 		return prices.length > 0 ? Math.min(...prices) : null;
 	};
 
+	const getVariantStatus = (product: Product): "AVAILABLE" | "LOW_STOCK" | "OUT_OF_STOCK" => {
+		const variants = product.variants || [];
+		if (variants.length === 0) return "OUT_OF_STOCK";
+		const allOutOfStock = variants.every((v) => v.status === "OUT_OF_STOCK");
+		if (allOutOfStock) return "OUT_OF_STOCK";
+		const anyLowOrOut = variants.some((v) => v.status === "LOW_STOCK" || v.status === "OUT_OF_STOCK");
+		if (anyLowOrOut) return "LOW_STOCK";
+		return "AVAILABLE";
+	};
+
 	const getVariantStock = (product: Product): number => {
 		if (!product.variants || product.variants.length === 0)
 			return product.stock ?? 0;
@@ -145,20 +155,24 @@ const ProductList: React.FC<ProductListProps> = ({
 								displayPrice = isNaN(val) ? null : val;
 							}
 
+							const effectiveStatus = product.hasVariants
+								? getVariantStatus(product)
+								: product.status;
+
 							const statusDisplay = (() => {
-								if (product.status === "OUT_OF_STOCK") {
+								if (effectiveStatus === "OUT_OF_STOCK") {
 									return (
 										<span className="product-status out-of-stock">
 											Out of Stock
 										</span>
 									);
 								}
-								if (product.status === "LOW_STOCK") {
+								if (effectiveStatus === "LOW_STOCK") {
 									return (
 										<span className="product-status low-stock">Low Stock</span>
 									);
 								}
-								if (product.status === "AVAILABLE") {
+								if (effectiveStatus === "AVAILABLE") {
 									return (
 										<span className="product-status available">Available</span>
 									);
@@ -169,7 +183,7 @@ const ProductList: React.FC<ProductListProps> = ({
 							return (
 								<tr
 									key={product.id}
-									className={`dashboard__table-row ${product.status === "LOW_STOCK" ? "row-low-stock" : ""
+									className={`dashboard__table-row ${effectiveStatus === "LOW_STOCK" ? "row-low-stock" : ""
 										}`}
 								>
 									<td>

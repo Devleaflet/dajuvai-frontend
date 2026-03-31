@@ -53,6 +53,7 @@ export interface Product {
     image?: string;
     images?: string[];
     attributes?: Record<string, any>;
+    status?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
     [key: string]: any;
   }>;
   

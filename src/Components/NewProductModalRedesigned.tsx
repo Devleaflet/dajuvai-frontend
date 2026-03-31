@@ -7,11 +7,7 @@ import { dealApiService } from '../services/apiDeals';
 import { Deal } from '../Components/Types/Deal';
 import { toast } from 'react-hot-toast';
 
-export enum InventoryStatus {
-  AVAILABLE = 'AVAILABLE',
-  OUT_OF_STOCK = 'OUT_OF_STOCK',
-  LOW_STOCK = 'LOW_STOCK'
-}
+import { InventoryStatus } from './Types/InventoryStatus';
 
 interface NewProductModalProps {
   isOpen: boolean;
@@ -440,11 +436,9 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     if (!formData.name.trim()) return 'Product name is required';
     if (!selectedCategoryId) return 'Please select a category';
     if (!formData.subcategoryId) return 'Please select a subcategory';
-    if (!formData.stock) return 'Stock quantity is required';
-
     if (!formData.hasVariants) {
       if (!formData.basePrice || formData.basePrice <= 0) return 'Base price is required';
-      if (formData.stock === undefined || formData.stock < 0) return 'Stock quantity is required';
+      if (!formData.stock) return 'Stock quantity is required';
     } else {
       if (variants.length === 0) return 'At least one variant is required';
       for (const variant of variants) {
