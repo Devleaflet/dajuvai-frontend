@@ -178,6 +178,20 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLDivElement>)
           Orders
         </NavItem>
         <NavItem 
+          to="/admin-delivery" 
+          active={location.pathname === "/admin-delivery"}
+          icon={
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 17C5 18.1046 5.89543 19 7 19C8.10457 19 9 18.1046 9 17C9 15.8954 8.10457 15 7 15C5.89543 15 5 15.8954 5 17Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M15 17C15 18.1046 15.8954 19 17 19C18.1046 19 19 18.1046 19 17C19 15.8954 18.1046 15 17 15C15.8954 15 15 15.8954 15 17Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M5 15H3V5C3 3.89543 3.89543 3 5 3H16V13L15.3 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M16 10H19.5L21 13V15H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          }
+        >
+          Delivery
+        </NavItem>
+        <NavItem 
           to="/admin-notifications" 
           active={location.pathname === "/admin-notifications"}
           icon={

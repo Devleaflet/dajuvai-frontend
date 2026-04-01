@@ -48,7 +48,7 @@ interface Category {
 interface Subcategory {
 	id: number;
 	name: string;
-	category_id: number;
+	category_id?: number;
 }
 
 const Navbar: React.FC = () => {
@@ -94,7 +94,7 @@ const Navbar: React.FC = () => {
 
 	const sideMenuRef = useRef<HTMLDivElement>(null);
 	const hamburgerRef = useRef<HTMLButtonElement>(null);
-	const cartButtonRef = useRef<HTMLAnchorElement>(null);
+	const cartButtonRef = useRef<any>(null);
 	const profileRef = useRef<HTMLDivElement>(null);
 	const dropdownTriggerRef = useRef<HTMLDivElement>(null);
 	const searchRef = useRef<HTMLDivElement>(null);
@@ -146,7 +146,7 @@ const Navbar: React.FC = () => {
 		if (isAuthenticated && user?.id && !user.username) {
 			fetchUserData(user.id);
 		}
-	}, [isAuthenticated, user, fetchUserData]);
+	}, [isAuthenticated, user?.id, user?.username, fetchUserData]);
 
 	useEffect(() => {
 		const handleStorageChange = (e: StorageEvent) => {
@@ -541,7 +541,7 @@ const Navbar: React.FC = () => {
 		setSelectedCategory(selectedCategory === categoryId ? null : categoryId);
 		if (selectedCategory !== categoryId) {
 			setSideMenuLoading((prev) => ({ ...prev, [categoryId]: true }));
-			const subs = await fetchSubCategory(categoryId);
+			const subs = (await fetchSubCategory(categoryId)) as Subcategory[];
 			setSideMenuSubcategories((prev) => ({
 				...prev,
 				[categoryId]: subs || [],
@@ -868,6 +868,21 @@ const Navbar: React.FC = () => {
 								</NavLink>
 							)}
 
+							{user?.role === 'rider' && (
+								<NavLink
+									to="/rider-delivery"
+									className="navbar__profile-card-link"
+									onClick={() => {
+										setProfileDropdownOpen(false);
+									}}
+									style={({ isActive }) => ({
+										color: isActive ? '#f97316' : 'inherit',
+									})}
+								>
+									<FaHome className="navbar__profile-card-icon" /> Rider Delivery
+								</NavLink>
+							)}
+
 							{vendorAuthState.isAuthenticated && vendorAuthState.vendor && (
 								<NavLink
 									to="/dashboard"
@@ -1140,6 +1155,18 @@ const Navbar: React.FC = () => {
 											>
 												<FaHome className="navbar__profile-card-icon" /> Admin
 												Dashboard
+											</NavLink>
+										)}
+										{user?.role === 'rider' && (
+											<NavLink
+												to="/rider-delivery"
+												className="navbar__profile-card-link"
+												onClick={() => setProfileDropdownOpen(false)}
+												style={({ isActive }) => ({
+													color: isActive ? '#f97316' : 'inherit',
+												})}
+											>
+												<FaHome className="navbar__profile-card-icon" /> Rider Delivery
 											</NavLink>
 										)}
 										{vendorAuthState.isAuthenticated &&

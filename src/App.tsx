@@ -54,6 +54,8 @@ import AdminProfile from "./Pages/AdminProfile";
 import { Notifications } from "./Pages/Notifications";
 import ForceScrollToTop from "./Components/ScrollToTop";
 import usePageTracking from "./Hook/usePageTracking";
+import AdminDelivery from "./Pages/AdminDelivery";
+import RiderDelivery from "./Pages/RiderDelivery";
 
 // Admin route guards
 // Allows both admin and staff to access admin area
@@ -73,6 +75,16 @@ const AdminOnlyRoute = ({ children }: { children: ReactElement }) => {
   if (isLoading) return <div>Loading...</div>;
   if (!isAuthenticated || !user) return <Navigate to="/" replace />;
   if (user.role !== 'admin') return <Navigate to="/" replace />;
+  return children;
+};
+
+// Rider route guard
+const RiderRoute = ({ children }: { children: ReactElement }) => {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) return <div>Loading...</div>;
+  if (!isAuthenticated || !user) return <Navigate to="/" replace />;
+  if (user.role !== 'rider' && user.role !== 'admin' && user.role !== 'staff') return <Navigate to="/" replace />;
   return children;
 };
 
@@ -463,6 +475,22 @@ function App() {
             <AdminOrStaffRoute>
               <AdminProfile />
             </AdminOrStaffRoute>
+          }
+        />
+        <Route
+          path="/admin-delivery"
+          element={
+            // <AdminOrStaffRoute>
+              <AdminDelivery />
+            // </AdminOrStaffRoute>
+          }
+        />
+        <Route
+          path="/rider-delivery"
+          element={
+            // <RiderRoute>
+              <RiderDelivery />
+            // </RiderRoute>
           }
         />
 

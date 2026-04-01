@@ -387,7 +387,7 @@ const processProductWithReview = async (
 		subcategory: item.subcategory,
 		brand_id: item.brand?.id || null,
 		status: item.status === 'UNAVAILABLE' ? 'OUT_OF_STOCK' : 'AVAILABLE',
-		stock: item.stock || 0,
+		stock: item.stock || 0
 	};
 };
 

@@ -318,10 +318,10 @@ const UserProfile: React.FC = () => {
 				.then((data) => {
 					if (data.success && data.data) {
 						login(null, {
-							id: data.data.userId,
-							email: data.data.email,
+							id: data.data.id || data.data.userId,
+							email: data.data.email || "",
 							role: data.data.role,
-							username: data.data.email.split("@")[0],
+							username: data.data.username || (data.data.email ? data.data.email.split("@")[0] : "User"),
 							isVerified: true,
 							provider: data.data.provider,
 						});
