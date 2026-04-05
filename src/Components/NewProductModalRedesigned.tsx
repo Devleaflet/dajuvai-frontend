@@ -609,13 +609,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
 
 
 
-  // Initialize with one variant if hasVariants is true
-  useEffect(() => {
-    if (formData.hasVariants && variants.length === 0) {
-      addVariant();
-    }
-  }, [formData.hasVariants]);
-
   const handleAttributeChange = (variantIndex: number, attributes: Array<{
     type: string;
     values: Array<{
@@ -1085,49 +1078,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
             )}
 
 
-            {/* Discount Section */}
-            {formData.hasVariants && (
-              <div className="form-section">
-                <div className="section-header">
-                  <div className="section-icon">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L12 2L3 7V9C3 14.55 6.84 19.74 12 21C17.16 19.74 21 14.55 21 9Z" />
-                    </svg>
-                  </div>
-                  <h3 className="section-title">Discount</h3>
-                </div>
-
-                <div className="form-grid two-columns">
-                  <div className="form-group">
-                    <label className="form-label">Discount Amount</label>
-                    <input
-                      type="number"
-                      className="form-input"
-                      value={formData.discount || ''}
-                      onChange={(e) => handleInputChange('discount', e.target.value === '' ? undefined : Number(e.target.value))}
-                      placeholder="0.00"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Discount Type</label>
-                    <select
-                      className="form-select"
-                      value={formData.discountType || ''}
-                      onChange={(e) => handleInputChange('discountType', e.target.value || undefined)}
-                    >
-                      <option value="">No discount</option>
-                      <option value="PERCENTAGE">Percentage (%)</option>
-                      <option value="FLAT">Fixed Amount</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Image Upload Section */}
+            {!formData.hasVariants && (
             <div className="form-section">
               <div className="section-header">
                 <div className="section-icon">
@@ -1181,6 +1133,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                 </div>
               )}
             </div>
+            )}
 
             {/* Submit Buttons */}
             <div className="form-section">

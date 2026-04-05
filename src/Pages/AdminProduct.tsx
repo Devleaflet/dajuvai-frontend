@@ -333,7 +333,7 @@ const AdminProduct: React.FC = () => {
                       !product.hasVariants && !product.deal && product.discount && Number(product.discount) > 0
                         ? product.discountType === "PERCENTAGE"
                           ? `${product.discount}%`
-                          : `₹${product.discount}`
+                          : `Rs ${product.discount}`
                         : null;
 
                     const dealDiscountLabel =
