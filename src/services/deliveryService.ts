@@ -16,7 +16,7 @@ export const createRider = async (
     payload: CreateRiderPayload,
 ): Promise<Rider> => {
     const res = await axiosInstance.post<ApiResponse<Rider>>(
-        "/api/delivery/admin/riders",
+        "/api/delivery/riders",
         payload,
     );
     if (!res.data.success)
@@ -26,7 +26,7 @@ export const createRider = async (
 
 export const getAllRiders = async (): Promise<Rider[]> => {
     const res = await axiosInstance.get<ApiResponse<Rider[]>>(
-        "/api/delivery/admin/riders",
+        "/api/delivery/riders",
     );
     if (!res.data.success)
         throw new Error(res.data.message || "Failed to fetch riders");
@@ -35,7 +35,7 @@ export const getAllRiders = async (): Promise<Rider[]> => {
 
 export const getRiderById = async (riderId: number): Promise<Rider> => {
     const res = await axiosInstance.get<ApiResponse<Rider>>(
-        `/api/delivery/admin/riders/${riderId}`,
+        `/api/delivery/riders/${riderId}`,
     );
     if (!res.data.success)
         throw new Error(res.data.message || "Failed to fetch rider");
@@ -47,7 +47,7 @@ export const resetRiderPassword = async (
     newPassword: string,
 ) => {
     const res = await axiosInstance.put<ApiResponse<Rider>>(
-        `/api/delivery/admin/riders/${riderId}/reset-password`,
+        `/api/delivery/riders/${riderId}/reset-password`,
         { newPassword },
     );
 
@@ -62,7 +62,7 @@ export const resetRiderPassword = async (
 
 export const getProcessingOrders = async (): Promise<Order[]> => {
     const res = await axiosInstance.get<ApiResponse<Order[]>>(
-        "/api/delivery/admin/orders/processing",
+        "/api/delivery/orders/processing",
     );
     if (!res.data.success)
         throw new Error(
@@ -106,7 +106,7 @@ export const getWarehouseQueue = async (
     limit = 10,
 ): Promise<GetWarehouseOrderQueueResponse> => {
     const res = await axiosInstance.get<GetWarehouseOrderQueueResponse>(
-        "/api/delivery/admin/warehouse-order-queue",
+        "/api/delivery/warehouse-order-queue",
         { params: { page, limit } },
     );
     if (!res.data.success) throw new Error("Failed to fetch warehouse queue");
@@ -133,7 +133,7 @@ export const getAllAssignments = async (
     limit = 10,
 ): Promise<GetAllAssignmentsResponse> => {
     const res = await axiosInstance.get<GetAllAssignmentsResponse>(
-        "/api/delivery/admin/assignments",
+        "/api/delivery/assignments",
         { params: { page, limit } },
     );
     if (!res.data.success) throw new Error("Failed to fetch assignments");
@@ -212,7 +212,7 @@ export const resetFailedOrder = async (orderId: number): Promise<Order> => {
 export const getFailedOrders = async (): Promise<DeliveryAssignment[]> => {
     // filters for failed on client
     const res = await axiosInstance.get<GetAllAssignmentsResponse>(
-        "/api/delivery/admin/assignments",
+        "/api/delivery/assignments",
         { params: { page: 1, limit: 100 } },
     );
     if (!res.data.success) throw new Error("Failed to fetch assignments");
