@@ -73,7 +73,7 @@ export const getProcessingOrders = async (): Promise<Order[]> => {
 
 export const getProcessingOrder = async (orderId: number): Promise<Order> => {
     const res = await axiosInstance.get<ApiResponse<Order>>(
-        `/api/delivery/admin/orders/${orderId}/processing`,
+        `/api/delivery/orders/${orderId}/processing`,
     );
     if (!res.data.success)
         throw new Error(res.data.message || "Failed to fetch order");
@@ -82,7 +82,7 @@ export const getProcessingOrder = async (orderId: number): Promise<Order> => {
 
 export const collectItem = async (orderItemId: number): Promise<void> => {
     const res = await axiosInstance.put<ApiMessageResponse>(
-        `/api/delivery/admin/orders/orderItems/${orderItemId}/collect-items`,
+        `/api/delivery/orders/orderItems/${orderItemId}/collect-items`,
     );
     if (!res.data.success)
         throw new Error(res.data.message || "Failed to collect item");
@@ -90,7 +90,7 @@ export const collectItem = async (orderItemId: number): Promise<void> => {
 
 export const markAtWarehouse = async (orderId: number): Promise<Order> => {
     const res = await axiosInstance.patch<ApiResponse<Order>>(
-        `/api/delivery/admin/orders/${orderId}/returned-warehouse`,
+        `/api/delivery/orders/${orderId}/returned-warehouse`,
     );
     if (!res.data.success)
         throw new Error(
@@ -118,7 +118,7 @@ export const assignRider = async (
     riderId: number,
 ): Promise<DeliveryAssignment> => {
     const res = await axiosInstance.post<ApiResponse<DeliveryAssignment>>(
-        `/api/delivery/admin/orders/${orderId}/assign-rider`,
+        `/api/delivery/orders/${orderId}/assign-rider`,
         { riderId },
     );
     if (!res.data.success)
@@ -144,7 +144,7 @@ export const getOrderAssignment = async (
     orderId: number,
 ): Promise<DeliveryAssignment> => {
     const res = await axiosInstance.get<ApiResponse<DeliveryAssignment>>(
-        `/api/delivery/admin/orders/${orderId}/assignment`,
+        `/api/delivery/orders/${orderId}/assignment`,
     );
     if (!res.data.success)
         throw new Error(res.data.message || "Failed to fetch assignment");
