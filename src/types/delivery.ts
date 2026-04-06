@@ -118,6 +118,7 @@ export interface CreateRiderPayload {
     email: string;
     phoneNumber: string;
     password: string;
+    documentUrl: string;
 }
 
 export interface Rider {

@@ -12,7 +12,24 @@ import type {
     PaginatedResponse,
 } from "../types/delivery";
 
-// ─── Riders ─────────────────────────────────────────────────────────────────
+// ─── Riders ────────────────────────────────────────────────────────────────
+
+export const uploadDocument = async (doc: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", doc);
+
+    const res = await axiosInstance.post<ApiResponse<string>>(
+        `/api/image?folder=rider_documents`,
+        formData,
+        {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        },
+    );
+
+    return res.data.data;
+};
 
 export const createRider = async (
     payload: CreateRiderPayload,
