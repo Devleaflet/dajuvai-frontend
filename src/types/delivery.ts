@@ -209,13 +209,14 @@ export interface DeliveryAssignment {
 export interface Pagination {
     currentPage: number;
     totalPages: number;
+    total: number;
 }
 
 export interface PaginatedResponse<T> {
     success: boolean;
     data: T[];
-    total: number;
     pagination: Pagination;
+    message?: string;
 }
 
 export interface GetWarehouseOrderQueueResponse {

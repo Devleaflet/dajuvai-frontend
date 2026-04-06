@@ -8,6 +8,8 @@ import type {
     ApiResponse,
     ApiMessageResponse,
     CreateRiderPayload,
+    OrderItem,
+    PaginatedResponse,
 } from "../types/delivery";
 
 // ─── Riders ─────────────────────────────────────────────────────────────────
@@ -80,12 +82,14 @@ export const getProcessingOrder = async (orderId: number): Promise<Order> => {
     return res.data.data;
 };
 
-export const collectItem = async (orderItemId: number): Promise<void> => {
-    const res = await axiosInstance.put<ApiMessageResponse>(
+export const collectItem = async (orderItemId: number): Promise<OrderItem> => {
+    const res = await axiosInstance.put<ApiResponse<OrderItem>>(
         `/api/admin/delivery/orders/orderItems/${orderItemId}/collect-items`,
     );
     if (!res.data.success)
         throw new Error(res.data.message || "Failed to collect item");
+
+    return res.data.data;
 };
 
 export const markAtWarehouse = async (orderId: number): Promise<Order> => {
@@ -104,8 +108,8 @@ export const markAtWarehouse = async (orderId: number): Promise<Order> => {
 export const getWarehouseQueue = async (
     page = 1,
     limit = 10,
-): Promise<GetWarehouseOrderQueueResponse> => {
-    const res = await axiosInstance.get<GetWarehouseOrderQueueResponse>(
+): Promise<PaginatedResponse<Order>> => {
+    const res = await axiosInstance.get<PaginatedResponse<Order>>(
         "/api/admin/delivery/warehouse-order-queue",
         { params: { page, limit } },
     );
@@ -131,8 +135,8 @@ export const assignRider = async (
 export const getAllAssignments = async (
     page = 1,
     limit = 10,
-): Promise<GetAllAssignmentsResponse> => {
-    const res = await axiosInstance.get<GetAllAssignmentsResponse>(
+): Promise<PaginatedResponse<DeliveryAssignment>> => {
+    const res = await axiosInstance.get<PaginatedResponse<DeliveryAssignment>>(
         "/api/admin/delivery/assignments",
         { params: { page, limit } },
     );
@@ -209,9 +213,12 @@ export const resetFailedOrder = async (orderId: number): Promise<Order> => {
 };
 
 // ─── Failed Orders ──────────────────────────────────────────────────────────
+
+// NO BACKEND ENDPOINT FOR FAILED ORDER - FILTER THROUGH NORMAL ENDPOINT
+// NO PAGINATION - FETCH 100
+
 export const getFailedOrders = async (): Promise<DeliveryAssignment[]> => {
-    // filters for failed on client
-    const res = await axiosInstance.get<GetAllAssignmentsResponse>(
+    const res = await axiosInstance.get<PaginatedResponse<DeliveryAssignment>>(
         "/api/admin/delivery/assignments",
         { params: { page: 1, limit: 100 } },
     );

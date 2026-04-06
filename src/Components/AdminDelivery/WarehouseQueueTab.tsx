@@ -2,7 +2,12 @@ import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "react-hot-toast";
 import Pagination from "../Pagination";
 import StatusBadge from "./StatusBadge";
-import { getWarehouseQueue, getAllRiders, assignRider, markAtWarehouse } from "../../services/deliveryService";
+import {
+    getWarehouseQueue,
+    getAllRiders,
+    assignRider,
+    markAtWarehouse,
+} from "../../services/deliveryService";
 import type { Order, Rider } from "../../types/delivery";
 
 export default function WarehouseQueueTab() {
@@ -28,14 +33,16 @@ export default function WarehouseQueueTab() {
                 getAllRiders(),
             ]);
             // Handle both array and paginated response shapes
-            const items = Array.isArray(queueRes)
-                ? (queueRes as Order[])
-                : ((queueRes as any).data?.orders ??
-                  (queueRes as any).data ??
-                  []);
-            const tp = Array.isArray(queueRes)
-                ? 1
-                : ((queueRes as any).totalPages ?? 1);
+            // const items = Array.isArray(queueRes)
+            //     ? (queueRes as Order[])
+            //     : ((queueRes as any).data?.orders ??
+            //       (queueRes as any).data ??
+            //       []);
+
+            const items = queueRes.data ?? [];
+
+            const tp = queueRes.pagination.totalPages ?? null;
+
             setOrders(items);
             setTotalPages(tp);
             setRiders(ridersRes);
