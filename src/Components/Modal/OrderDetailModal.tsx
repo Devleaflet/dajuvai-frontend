@@ -78,6 +78,17 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase() || 'U';
   };
 
+  const vendorSummary =
+    detailedOrder?.orderItems && detailedOrder.orderItems.length > 0
+      ? [
+          ...new Set(
+            detailedOrder.orderItems
+              .map((item: any) => item?.vendor?.businessName)
+              .filter(Boolean)
+          ),
+        ].join(', ')
+      : order.vendorName || 'N/A';
+
   return (
     <div className="modal-overlay">
       <div className="order-modal order-detail-modal" style={{ maxWidth: '600px', margin: '0 auto', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
@@ -121,7 +132,9 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                 </div>
                 <div className="order-modal__customer-name">
                   <h3 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: '#222' }}>
-                    {detailedOrder?.orderedBy?.name || `${order.firstName || 'Unknown'} ${order.lastName || 'User'}`}
+                    {detailedOrder?.orderedBy?.fullName ||
+                      detailedOrder?.orderedBy?.username ||
+                      `${order.firstName || 'Unknown'} ${order.lastName || 'User'}`}
                   </h3>
                   <p className="order-modal__order-id" style={{ fontSize: '14px', color: '#666', margin: '4px 0 0' }}>Order ID: {order.id}</p>
                 </div>
@@ -188,6 +201,13 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     {detailedOrder?.paymentMethod || 'N/A'}
                   </span>
                 </div>
+
+                <div className="order-modal__detail-item order-modal__detail-item--full" style={{ gridColumn: '1 / -1' }}>
+                  <span className="order-modal__label" style={{ fontSize: '14px', color: '#666', display: 'block', marginBottom: '4px' }}>Vendors</span>
+                  <span className="order-modal__value" style={{ fontSize: '14px', color: '#222', fontWeight: 500 }}>
+                    {vendorSummary || 'N/A'}
+                  </span>
+                </div>
                 
                 <div className="order-modal__detail-item order-modal__detail-item--full" style={{ gridColumn: '1 / -1' }}>
                   <span className="order-modal__label" style={{ fontSize: '14px', color: '#666', display: 'block', marginBottom: '4px' }}>Address</span>
@@ -234,6 +254,18 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                           </div>
                           <div style={{ fontSize: '13px', color: '#666', marginBottom: '6px' }}>
                             Product ID: <span style={{ color: '#333', fontWeight: 500 }}>{item.productId}</span>
+                          </div>
+                          <div style={{ fontSize: '13px', color: '#666', marginBottom: '6px' }}>
+                            Vendor:{" "}
+                            <span style={{ color: '#333', fontWeight: 500 }}>
+                              {item.vendor?.businessName || 'N/A'}
+                            </span>
+                            {item.variant?.sku ? (
+                              <>
+                                {" "}• SKU:{" "}
+                                <span style={{ color: '#333', fontWeight: 500 }}>{item.variant.sku}</span>
+                              </>
+                            ) : null}
                           </div>
                           <div style={{ display: 'flex', gap: '20px', fontSize: '13px', color: '#555' }}>
                             <div>Qty: <span style={{ color: '#222', fontWeight: 500 }}>{item.quantity}</span></div>

@@ -241,6 +241,16 @@ const AdminOrders: React.FC = () => {
       rawOrders.find((o) => o.id.toString() === displayOrder.id) || {};
     const orderedBy = rawOrder.orderedBy || {};
     const shippingAddress = rawOrder.shippingAddress || {};
+    const vendorNames =
+      rawOrder.orderItems && Array.isArray(rawOrder.orderItems)
+        ? [
+            ...new Set(
+              rawOrder.orderItems
+                .map((item: any) => item?.vendor?.businessName)
+                .filter(Boolean)
+            ),
+          ]
+        : [];
 
     const username =
       orderedBy.username || displayOrder.customer || "Unknown User";
@@ -267,7 +277,10 @@ const AdminOrders: React.FC = () => {
         shippingAddress.streetAddress || shippingAddress.localAddress || "N/A",
       town: shippingAddress.town || shippingAddress.city || "N/A",
       state: shippingAddress.state || shippingAddress.province || "N/A",
-      vendorName: rawOrder.vendorName || "N/A",
+      vendorName:
+        vendorNames.length > 0
+          ? vendorNames.join(", ")
+          : rawOrder.vendorName || "N/A",
       profileImage: undefined,
     };
   };

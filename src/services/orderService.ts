@@ -35,27 +35,51 @@ interface OrderItem {
 interface ShippingAddress {
   city: string;
   district: string;
-  streetAddress: string;
+  streetAddress?: string;
+  localAddress?: string;
   province: string;
+  landmark?: string;
 }
 
 interface Product {
+  id?: number;
   name: string;
   basePrice: number;
+  productImages?: string[];
 }
 
 interface DetailedOrderItem {
+  id?: number;
   productId: number;
   quantity: number;
   price: number;
   vendorId: number;
   product: Product;
+  vendor?: {
+    id: number;
+    businessName: string;
+    district?: { id: number; name: string };
+  };
+  variant?: {
+    id: string;
+    sku: string;
+    basePrice: number;
+    finalPrice: number;
+    discount: number;
+    discountType: string;
+    attributes?: Record<string, string>;
+    variantImages?: string[];
+    stock?: number;
+    status?: string;
+  } | null;
 }
 
 interface DetailedOrderedBy {
   id: number;
-  username: string;
+  username?: string;
+  fullName?: string;
   email: string;
+  phoneNumber?: string;
 }
 
 export interface DetailedOrder {

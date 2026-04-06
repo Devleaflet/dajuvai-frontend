@@ -155,7 +155,7 @@ export const getOrderAssignment = async (
 
 export const getRiderAssignments = async (): Promise<DeliveryAssignment[]> => {
     const res = await axiosInstance.get<ApiResponse<DeliveryAssignment[]>>(
-        "/api/delivery/rider/my-assignments",
+        "/api/delivery/my-assignments",
     );
     if (!res.data.success)
         throw new Error(
