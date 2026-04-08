@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { setupAxiosInterceptors } from '../api/axiosInstance';
 import axiosInstance from '../api/axiosInstance';
 import { VendorAuthService } from '../services/vendorAuthService';
 
@@ -80,11 +79,18 @@ export const VendorAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     initializeAuth();
   }, []);
 
-  // Setup axios interceptors
+  // Axios interceptors are set up once in src/main.tsx to avoid stacking/overriding.
+
+  // If the global axios interceptor detects a vendor 401, it will clear storage and emit this event.
   useEffect(() => {
-    // Always get the latest token from localStorage for every request
-    setupAxiosInterceptors(() => localStorage.getItem('vendorToken'), logout, refreshToken);
-  }, [authState.token]);
+    const handleVendorLoggedOut = () => {
+      setAuthState({ token: null, vendor: null, isAuthenticated: false });
+      delete (axiosInstance.defaults.headers.common as any).Authorization;
+    };
+    window.addEventListener("vendorLoggedOut", handleVendorLoggedOut as any);
+    return () =>
+      window.removeEventListener("vendorLoggedOut", handleVendorLoggedOut as any);
+  }, []);
 
   const refreshToken = async () => {
     try {
@@ -113,9 +119,12 @@ export const VendorAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const logout = () => {
-    //("VendorAuthContext logout - using comprehensive logout");
     setAuthState({ token: null, vendor: null, isAuthenticated: false });
-    VendorAuthService.comprehensiveLogout();
+    localStorage.removeItem("vendorToken");
+    localStorage.removeItem("vendorData");
+    delete (axiosInstance.defaults.headers.common as any).Authorization;
+    VendorAuthService.logout();
+    window.location.href = "/";
   };
 
   return (

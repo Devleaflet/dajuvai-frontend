@@ -98,7 +98,8 @@ const ProtectedVendorRoute = ({ children }: { children: ReactElement }) => {
   }
 
   // Only redirect if not authenticated and not loading
-  if (!authState.isAuthenticated) {
+  const hasVendorToken = !!(authState.token || localStorage.getItem("vendorToken"));
+  if (!authState.isAuthenticated || !hasVendorToken || !authState.vendor) {
     return <Navigate to="/" replace />;
   }
 

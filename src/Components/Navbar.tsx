@@ -115,6 +115,14 @@ const Navbar: React.FC = () => {
 		document.body.classList.remove('cart-open');
 	};
 
+	// Treat vendor auth as a first-class auth state for the navbar profile UI.
+	const isVendorAuthenticated =
+		!!vendorAuthState.token &&
+		!!vendorAuthState.vendor &&
+		vendorAuthState.isAuthenticated;
+
+	const isProfileAuthenticated = isAuthenticated || isVendorAuthenticated;
+
 
 	useEffect(() => {
 		cartItems.forEach((item) => {
@@ -203,20 +211,34 @@ const Navbar: React.FC = () => {
 
 	const getUserAvatar = () => {
 		if (isLoading) return <div className="navbar__avatar-loading"></div>;
-		if (!isAuthenticated || !user) return <FaUser />;
-		if (user.profilePicture) {
+
+		// Prefer user avatar when a user is logged in.
+		if (isAuthenticated && user) {
+			if (user.profilePicture) {
+				return (
+					<img
+						src={user.profilePicture}
+						alt={user.username || user.email || 'User'}
+						className="navbar__avatar-image"
+					/>
+				);
+			}
+			const letter = user.username?.charAt(0) || user.email?.charAt(0) || '?';
 			return (
-				<img
-					src={user.profilePicture}
-					alt={user.username || user.email || 'User'}
-					className="navbar__avatar-image"
-				/>
+				<span className="navbar__avatar-circle">{letter.toUpperCase()}</span>
 			);
 		}
-		const letter = user.username?.charAt(0) || user.email?.charAt(0) || '?';
-		return (
-			<span className="navbar__avatar-circle">{letter.toUpperCase()}</span>
-		);
+
+		// Fallback: vendor avatar when vendor is logged in (home page should still show a dropdown).
+		if (isVendorAuthenticated && vendorAuthState.vendor) {
+			const name = vendorAuthState.vendor.businessName || 'Vendor';
+			const letter = name.charAt(0) || 'V';
+			return (
+				<span className="navbar__avatar-circle">{letter.toUpperCase()}</span>
+			);
+		}
+
+		return <FaUser />;
 	};
 
 	const toggleSideMenu = (e?: React.MouseEvent): void => {
@@ -662,19 +684,15 @@ const Navbar: React.FC = () => {
 	}, [activeDropdown]);
 
 	const handleFullLogout = async () => {
-		localStorage.clear();
-		sessionStorage.clear();
-		document.cookie.split(';').forEach((c) => {
-			document.cookie = c
-				.replace(/^ +/, '')
-				.replace(/=.*/, '=;expires=' + new Date().toUTCString() + ';path=/');
-		});
+		// Do not clear all browser storage here.
+		// Vendor and User auth live side-by-side in localStorage; the respective logout
+		// functions should clear only their own keys.
 		if (vendorAuthState.isAuthenticated && vendorAuthState.vendor) {
 			vendorLogout();
-		} else {
-			userLogout();
+			return;
 		}
-		window.location.href = '/';
+
+		userLogout();
 	};
 
 	const scrollCategories = (direction: 'left' | 'right') => {
@@ -711,7 +729,7 @@ const Navbar: React.FC = () => {
 		<nav className="navbar">
 			<div className="navbar__container">
 				<div className="nav_bar_right">
-					{!isLoading && !isAuthenticated && (
+					{!isLoading && !isVendorAuthenticated && (
 						<a
 							className="navbar__top-link"
 							onClick={toggleVendorAuthModal}
@@ -776,15 +794,18 @@ const Navbar: React.FC = () => {
 									role="button"
 									aria-label="Profile"
 									onClick={
-										isAuthenticated
+										isProfileAuthenticated
 											? () => setProfileDropdownOpen((v) => !v)
 											: toggleAuthModal
 									}
 									onKeyDown={(e) => {
-										if (isAuthenticated && (e.key === 'Enter' || e.key === ' '))
+										if (
+											isProfileAuthenticated &&
+											(e.key === 'Enter' || e.key === ' ')
+										)
 											setProfileDropdownOpen((v) => !v);
 										if (
-											!isAuthenticated &&
+											!isProfileAuthenticated &&
 											(e.key === 'Enter' || e.key === ' ')
 										) {
 											toggleAuthModal({
@@ -823,7 +844,7 @@ const Navbar: React.FC = () => {
 					</div>
 
 
-					{isAuthenticated && profileDropdownOpen && (
+					{isProfileAuthenticated && profileDropdownOpen && (
 						<div
 							className="navbar__profile-dropdown-card mobile_drop_down_hide_desktop"
 							ref={mobileProfileRef}
@@ -840,11 +861,14 @@ const Navbar: React.FC = () => {
 								{getUserAvatar()}
 								<div className="navbar__profile-card-info">
 									<div className="navbar__profile-card-name">
-										{user?.username || user?.email}
+										{user?.username ||
+											user?.email ||
+											vendorAuthState.vendor?.businessName ||
+											'Vendor'}
 									</div>
-									{user?.email && (
+									{(user?.email || vendorAuthState.vendor?.email) && (
 										<div className="navbar__profile-card-email">
-											{user.email}
+											{user?.email || vendorAuthState.vendor?.email}
 										</div>
 									)}
 								</div>
@@ -899,16 +923,31 @@ const Navbar: React.FC = () => {
 								</NavLink>
 							)}
 
-							<NavLink
-								to="/user-profile"
-								className="navbar__profile-card-link"
-								onClick={() => setProfileDropdownOpen(false)}
-								style={({ isActive }) => ({
-									color: isActive ? '#f97316' : 'inherit',
-								})}
-							>
-								<FaCog className="navbar__profile-card-icon" /> Settings
-							</NavLink>
+							{isAuthenticated && (
+								<NavLink
+									to="/user-profile"
+									className="navbar__profile-card-link"
+									onClick={() => setProfileDropdownOpen(false)}
+									style={({ isActive }) => ({
+										color: isActive ? '#f97316' : 'inherit',
+									})}
+								>
+									<FaCog className="navbar__profile-card-icon" /> Settings
+								</NavLink>
+							)}
+
+							{!isAuthenticated && isVendorAuthenticated && (
+								<NavLink
+									to="/vendor-profile"
+									className="navbar__profile-card-link"
+									onClick={() => setProfileDropdownOpen(false)}
+									style={({ isActive }) => ({
+										color: isActive ? '#f97316' : 'inherit',
+									})}
+								>
+									<FaCog className="navbar__profile-card-icon" /> Vendor Profile
+								</NavLink>
+							)}
 
 							<button
 								className="navbar__profile-card-link navbar__profile-card-link--logout"
@@ -1092,15 +1131,18 @@ const Navbar: React.FC = () => {
 									className="navbar__user-avatar tooltip"
 									tabIndex={0}
 									onClick={
-										isAuthenticated
+										isProfileAuthenticated
 											? () => setProfileDropdownOpen((v) => !v)
 											: toggleAuthModal
 									}
 									onKeyDown={(e) => {
-										if (isAuthenticated && (e.key === 'Enter' || e.key === ' '))
+										if (
+											isProfileAuthenticated &&
+											(e.key === 'Enter' || e.key === ' ')
+										)
 											setProfileDropdownOpen((v) => !v);
 										if (
-											!isAuthenticated &&
+											!isProfileAuthenticated &&
 											(e.key === 'Enter' || e.key === ' ')
 										) {
 											toggleAuthModal({
@@ -1116,10 +1158,10 @@ const Navbar: React.FC = () => {
 								>
 									{getUserAvatar()}
 									<span className="tooltip-text">
-										{isAuthenticated ? 'Profile' : 'Login'}
+										{isProfileAuthenticated ? 'Profile' : 'Login'}
 									</span>
 								</div>
-								{isAuthenticated && profileDropdownOpen && (
+								{isProfileAuthenticated && profileDropdownOpen && (
 									<div
 										className="navbar__profile-dropdown-card"
 										ref={profileRef}
@@ -1134,11 +1176,14 @@ const Navbar: React.FC = () => {
 											{getUserAvatar()}
 											<div className="navbar__profile-card-info">
 												<div className="navbar__profile-card-name">
-													{user?.username || user?.email}
+													{user?.username ||
+														user?.email ||
+														vendorAuthState.vendor?.businessName ||
+														'Vendor'}
 												</div>
-												{user?.email && (
+												{(user?.email || vendorAuthState.vendor?.email) && (
 													<div className="navbar__profile-card-email">
-														{user.email}
+														{user?.email || vendorAuthState.vendor?.email}
 													</div>
 												)}
 											</div>
@@ -1183,16 +1228,31 @@ const Navbar: React.FC = () => {
 													Vendor Dashboard
 												</NavLink>
 											)}
-										<NavLink
-											to="/user-profile"
-											className="navbar__profile-card-link"
-											onClick={() => setProfileDropdownOpen(false)}
-											style={({ isActive }) => ({
-												color: isActive ? '#f97316' : 'inherit',
-											})}
-										>
-											<FaCog className="navbar__profile-card-icon" /> Settings
-										</NavLink>
+										{isAuthenticated && (
+											<NavLink
+												to="/user-profile"
+												className="navbar__profile-card-link"
+												onClick={() => setProfileDropdownOpen(false)}
+												style={({ isActive }) => ({
+													color: isActive ? '#f97316' : 'inherit',
+												})}
+											>
+												<FaCog className="navbar__profile-card-icon" /> Settings
+											</NavLink>
+										)}
+
+										{!isAuthenticated && isVendorAuthenticated && (
+											<NavLink
+												to="/vendor-profile"
+												className="navbar__profile-card-link"
+												onClick={() => setProfileDropdownOpen(false)}
+												style={({ isActive }) => ({
+													color: isActive ? '#f97316' : 'inherit',
+												})}
+											>
+												<FaCog className="navbar__profile-card-icon" /> Vendor Profile
+											</NavLink>
+										)}
 										<button
 											className="navbar__profile-card-link navbar__profile-card-link--logout"
 											onClick={handleFullLogout}
@@ -1244,7 +1304,7 @@ const Navbar: React.FC = () => {
 						<h3 className="navbar__side-menu-title">Menu</h3>
 					</div>
 					<div className="navbar__side-menu-category">
-						{!isLoading && !isAuthenticated && (
+						{!isLoading && !isVendorAuthenticated && (
 							<a
 								href="/vendor-login"
 								className="navbar__side-menu-category-button"

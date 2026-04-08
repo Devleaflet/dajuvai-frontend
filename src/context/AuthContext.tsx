@@ -182,17 +182,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         //("AuthContext logout - user only (full cleanse)");
         setToken(null);
         setUser(null);
-        localStorage.clear();
-        sessionStorage.clear();
-        // Attempt to clear all cookies (best effort, not HttpOnly)
-        document.cookie.split(";").forEach((c) => {
-            document.cookie = c
-                .replace(/^ +/, "")
-                .replace(
-                    /=.*/,
-                    "=;expires=" + new Date().toUTCString() + ";path=/",
-                );
-        });
+
+        // IMPORTANT: Do not nuke the whole browser storage here.
+        // Vendors use separate keys (vendorToken/vendorData) and should not be logged out
+        // when user auth expires or /api/auth/me returns 401.
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("authUser");
+        localStorage.removeItem("authRefreshToken");
+
+        // Keep sessionStorage mostly intact as it can contain vendor/session UI state.
+        // If you want a stronger reset for user-only flows, clear only user-related keys here.
+
+        // Clear only known user cookies (best-effort; cannot clear HttpOnly cookies from JS).
+        document.cookie = "authToken=; Max-Age=0; path=/;";
+        document.cookie = "authRefreshToken=; Max-Age=0; path=/;";
         // Call logout API (non-blocking)
         axios
             .post(
@@ -372,12 +375,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return `Logged in as ${user.username || user.email || "User"}`;
     };
 
-    // Setup axios interceptors
-    useEffect(() => {
-        setupAxiosInterceptors(
-            () => token || localStorage.getItem("authToken"),
-        );
-    }, [token]);
+    // Axios interceptors are set up once in src/main.tsx to avoid stacking/overriding.
 
     return (
         <AuthContext.Provider

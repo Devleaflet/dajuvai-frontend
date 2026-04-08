@@ -96,7 +96,7 @@ const Header: React.FC<HeaderProps> = ({
           {dropdownOpen && (
             <div className="dashboard__dropdown-menu">
               <button className="dashboard__dropdown-item" onClick={() => { setDropdownOpen(false); navigate("/"); }}>Home</button>
-              <button className="dashboard__dropdown-item" onClick={() => { setDropdownOpen(false); VendorAuthService.comprehensiveLogout(); }}>Logout</button>
+              <button className="dashboard__dropdown-item" onClick={() => { setDropdownOpen(false); logout(); }}>Logout</button>
             </div>
           )}
         </div>
