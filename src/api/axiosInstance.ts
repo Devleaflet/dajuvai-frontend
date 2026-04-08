@@ -12,7 +12,6 @@ let responseInterceptorId: number | null = null;
 export const setupAxiosInterceptors = (
   getTokenFn: () => string | null,
   onUnauthorized?: () => void,
-  tokenStorageKey: "authToken" | "vendorToken" = "authToken",
 ) => {
   if (requestInterceptorId !== null) {
     axiosInstance.interceptors.request.eject(requestInterceptorId);
@@ -27,9 +26,11 @@ export const setupAxiosInterceptors = (
       url.startsWith("/api/vendor") || url.startsWith("/api/vendors");
 
     // Use vendor token only for vendor endpoints; otherwise use user token.
+    // Fall back to vendorToken for non-vendor-prefixed endpoints when no authToken
+    // is present (e.g. vendor adding/updating a product at /api/categories/…/products).
     const token = isVendorRequest
       ? localStorage.getItem("vendorToken")
-      : (getTokenFn?.() ?? localStorage.getItem("authToken"));
+      : (getTokenFn?.() ?? localStorage.getItem("authToken") ?? localStorage.getItem("vendorToken"));
     //("Axios interceptor - Token:", token ? `exists (${token.substring(0, 20)}...)` : 'null');
     //("Axios interceptor - URL:", config.url);
     //("Axios interceptor - Method:", config.method);

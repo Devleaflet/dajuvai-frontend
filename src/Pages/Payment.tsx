@@ -4,7 +4,7 @@ import logo from '../assets/logo.webp';
 import jsPDF from 'jspdf';
 import { API_BASE_URL } from "../config";
 import "../Styles/PaymentNPX.css"
-import { ChevronDown } from "lucide-react";  
+import { ChevronDown } from "lucide-react";
 
 
 // TypeScript Interfaces
@@ -88,7 +88,7 @@ const NepalPaymentGateway: React.FC = () => {
   useEffect(() => {
     const statusParam = getUrlParam('status');
     const txnId = getUrlParam('txnId');
-    
+
     if (statusParam || txnId) {
       setStatusMode(true);
       if (txnId) {
@@ -197,28 +197,45 @@ const NepalPaymentGateway: React.FC = () => {
   }, [amount, instrumentCode]);
 
   // Handle payment submission
+  // const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
   const handlePayment = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
+
     if (!amount || !instrumentCode) {
       setError('Please fill all required fields');
       return;
     }
+
     setIsLoading(true);
     setError('');
+
     try {
-      const response = await fetch(`${API_BASE_URL}/api/payments/initiate-payment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: parseInt(amount),
-          instrumentCode,
-          transactionRemarks: remarks,
-          orderId,
-        }),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/payments/initiate-payment`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: parseInt(amount),
+            instrumentCode,
+            transactionRemarks: remarks,
+            orderId,
+          }),
+        }
+      );
+
       const data: PaymentInitResponse = await response.json();
+
+      console.log("-------------Init payment response--------------");
+      console.log(data);
+
       if (data.success) {
         localStorage.setItem('currentTxnId', data.merchantTxnId);
+
+        // Wait for 1 minute
+        // await delay(60_000);
+
         submitPaymentForm(data.paymentUrl, data.formData);
       } else {
         setIsLoading(false);
@@ -230,7 +247,6 @@ const NepalPaymentGateway: React.FC = () => {
       setError('Payment initiation failed');
     }
   };
-
   // Submit payment form
   const submitPaymentForm = (actionUrl: string, formData: Record<string, string>): void => {
     const form = document.createElement('form');
@@ -349,7 +365,7 @@ const NepalPaymentGateway: React.FC = () => {
     const transaction = transactionStatus.data;
     const doc = new jsPDF();
     let y = 20;
-    
+
     // Add logo (if possible and safe)
     const logoImg = document.querySelector('.logo-header img');
     if (logoImg && logoImg instanceof HTMLImageElement && logoImg.src.startsWith(window.location.origin)) {
@@ -359,7 +375,7 @@ const NepalPaymentGateway: React.FC = () => {
         //(e)
       }
     }
-    
+
     doc.setFontSize(18);
     doc.text('Payment Bill', 105, y, { align: 'center' });
     y += 10;
@@ -405,7 +421,7 @@ const NepalPaymentGateway: React.FC = () => {
         <div className="logo-header">
           <img src={logo} alt="Company Logo" />
         </div>
-        
+
         {!statusMode ? (
           // Payment Form Section
           <div className="payment-card">
@@ -458,8 +474,8 @@ const NepalPaymentGateway: React.FC = () => {
                       disabled={paymentInstruments.length === 0}
                     >
                       <option value="" disabled hidden>
-                        {paymentInstruments.length > 0 
-                          ? "Choose your preferred payment method..." 
+                        {paymentInstruments.length > 0
+                          ? "Choose your preferred payment method..."
                           : "No banks available"}
                       </option>
                       {paymentInstruments.length > 0 ? (
@@ -519,17 +535,17 @@ const NepalPaymentGateway: React.FC = () => {
           <div className="payment-card">
             <h1 className="status-header">Payment Status</h1>
             {renderTransactionStatus()}
-            
+
             {transactionStatus && transactionStatus.code === '0' && (
-              <button 
-                onClick={handleDownloadPDF} 
+              <button
+                onClick={handleDownloadPDF}
                 className="pay-button download-bill-btn"
               >
                 <span>📄</span>
                 <span>Download Bill (PDF)</span>
               </button>
             )}
-            
+
             <button
               onClick={() => window.location.href = '/'}
               className="pay-button return-home"
