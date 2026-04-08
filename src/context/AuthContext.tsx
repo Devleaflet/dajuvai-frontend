@@ -69,8 +69,17 @@ const isTokenValid = (token: string): boolean => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     children,
 }) => {
-    const [user, setUser] = useState<UserData | null>(null);
-    const [token, setToken] = useState<string | null>(null);
+    const [user, setUser] = useState<UserData | null>(() => {
+        try {
+            const stored = localStorage.getItem("authUser");
+            return stored ? (JSON.parse(stored) as UserData) : null;
+        } catch {
+            return null;
+        }
+    });
+    const [token, setToken] = useState<string | null>(
+        () => localStorage.getItem("authToken"),
+    );
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
     const isAuthenticated = !!user;
