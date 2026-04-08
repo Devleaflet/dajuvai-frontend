@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "react-hot-toast";
-import { getAllRiders, getRiderById, createRider, resetRiderPassword } from "../../services/deliveryService";
+import {
+    getAllRiders,
+    getRiderById,
+    createRider,
+    resetRiderPassword,
+    uploadDocument,
+} from "../../services/deliveryService";
 import type { Rider } from "../../types/delivery";
+import { set } from "lodash";
 
 export default function RidersTab() {
     const [riders, setRiders] = useState<Rider[]>([]);
@@ -12,6 +19,7 @@ export default function RidersTab() {
     const [newEmail, setNewEmail] = useState("");
     const [newPhone, setNewPhone] = useState("");
     const [newPassword, setNewPassword] = useState("");
+    const [newDocument, setNewDocument] = useState<File | null>(null);
     const [creating, setCreating] = useState(false);
 
     const [changedPassword, setChangedPassword] = useState("");
@@ -45,19 +53,31 @@ export default function RidersTab() {
             toast.error("All fields are required");
             return;
         }
+
+        if (!newDocument) {
+            toast.error("Document is required");
+            return;
+        }
+
         try {
             setCreating(true);
+
+            const docUrl = await uploadDocument(newDocument);
+
             await createRider({
                 fullName: newName.trim(),
                 email: newEmail.trim(),
                 phoneNumber: newPhone.trim(),
                 password: newPassword.trim(),
+                documentUrl: docUrl,
             });
+
             toast.success("Rider created successfully!");
             setNewName("");
             setNewEmail("");
             setNewPhone("");
             setNewPassword("");
+            setNewDocument(null);
             setShowForm(false);
             load();
         } catch (e) {
@@ -277,13 +297,40 @@ export default function RidersTab() {
                             required
                         />
                     </div>
+                    <div className="admin-delivery__form-group">
+                        <label
+                            className="admin-delivery__form-label"
+                            htmlFor="document"
+                        >
+                            Document
+                        </label>
+                        <label className="admin-delivery__file-upload">
+                            <span>
+                                {newDocument
+                                    ? newDocument.name
+                                    : "Choose a file"}
+                            </span>
+                            <span className="admin-delivery__file-upload-hint">
+                                (max 5MB)
+                            </span>
+                            <input
+                                id="document"
+                                type="file"
+                                className="admin-delivery__file-input"
+                                accept="application/pdf,image/*"
+                                onChange={(e) =>
+                                    setNewDocument(e.target.files?.[0] ?? null)
+                                }
+                            />
+                        </label>
+                    </div>
                     <div className="admin-delivery__form-actions">
                         <button
                             type="submit"
                             className="admin-delivery__btn admin-delivery__btn--success"
                             disabled={creating}
                         >
-                            {creating ? "Creating..." : "✓ Create Rider"}
+                            {creating ? "Creating..." : "Create Rider"}
                         </button>
                         <button
                             type="button"
@@ -294,6 +341,7 @@ export default function RidersTab() {
                                 setNewEmail("");
                                 setNewPhone("");
                                 setNewPassword("");
+                                setNewDocument(null);
                             }}
                         >
                             Cancel
@@ -301,43 +349,48 @@ export default function RidersTab() {
                     </div>
                 </form>
             )}
-
-            {riders.length === 0 ? (
-                <div className="admin-delivery__empty">
-                    <div className="admin-delivery__empty-icon">🏍️</div>
-                    No riders yet. Create one above.
-                </div>
-            ) : (
-                <div className="admin-delivery__rider-grid">
-                    {riders.map((rider) => (
-                        <div
-                            key={rider.id}
-                            className="admin-delivery__rider-card"
-                            onClick={() => viewRider(rider.id)}
-                        >
-                            <div className="admin-delivery__rider-avatar">
-                                {(rider.name || rider.fullName || "?")
-                                    .charAt(0)
-                                    .toUpperCase()}
-                            </div>
-                            <div className="admin-delivery__rider-name">
-                                {rider.name || rider.fullName || "Unknown"}
-                            </div>
-                            <div className="admin-delivery__rider-phone">
-                                📞 {rider.phoneNumber}
-                            </div>
-                            <div
-                                style={{
-                                    marginTop: "0.5rem",
-                                    fontSize: "0.75rem",
-                                    color: "#9ca3af",
-                                }}
-                            >
-                                ID #{rider.id} · Click to view
-                            </div>
+            {!showForm && (
+                <>
+                    {riders.length === 0 ? (
+                        <div className="admin-delivery__empty">
+                            <div className="admin-delivery__empty-icon">🏍️</div>
+                            No riders yet. Create one above.
                         </div>
-                    ))}
-                </div>
+                    ) : (
+                        <div className="admin-delivery__rider-grid">
+                            {riders.map((rider) => (
+                                <div
+                                    key={rider.id}
+                                    className="admin-delivery__rider-card"
+                                    onClick={() => viewRider(rider.id)}
+                                >
+                                    <div className="admin-delivery__rider-avatar">
+                                        {(rider.name || rider.fullName || "?")
+                                            .charAt(0)
+                                            .toUpperCase()}
+                                    </div>
+                                    <div className="admin-delivery__rider-name">
+                                        {rider.name ||
+                                            rider.fullName ||
+                                            "Unknown"}
+                                    </div>
+                                    <div className="admin-delivery__rider-phone">
+                                        📞 {rider.phoneNumber}
+                                    </div>
+                                    <div
+                                        style={{
+                                            marginTop: "0.5rem",
+                                            fontSize: "0.75rem",
+                                            color: "#9ca3af",
+                                        }}
+                                    >
+                                        ID #{rider.id} · Click to view
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </>
             )}
         </>
     );

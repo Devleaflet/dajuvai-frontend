@@ -15,12 +15,8 @@ export default function AssignmentsTab() {
         try {
             setLoading(true);
             const res = await getAllAssignments(page);
-            const items = Array.isArray(res)
-                ? (res as DeliveryAssignment[])
-                : (res.assignments ?? []);
-            const tp = Array.isArray(res)
-                ? 1
-                : (res.pagination.totalPages ?? 1);
+            const items = res.data ?? [];
+            const tp = res.pagination.totalPages;
             setAssignments(items);
             setTotalPages(tp);
         } catch (e) {
