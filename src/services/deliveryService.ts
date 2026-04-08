@@ -4,6 +4,7 @@ import type {
     Order,
     DeliveryAssignment,
     ApiResponse,
+    ApiMessageResponse,
     CreateRiderPayload,
     OrderItem,
     PaginatedResponse,
@@ -61,8 +62,8 @@ export const getRiderById = async (riderId: number): Promise<Rider> => {
 export const resetRiderPassword = async (
     riderId: number,
     newPassword: string,
-) => {
-    const res = await axiosInstance.put<ApiResponse<Rider>>(
+): Promise<string> => {
+    const res = await axiosInstance.put<ApiMessageResponse>(
         `/api/admin/delivery/riders/${riderId}/reset-password`,
         { newPassword },
     );
@@ -71,7 +72,7 @@ export const resetRiderPassword = async (
         throw new Error(res.data.message || "Failed to reset rider password");
     }
 
-    return res.data.data;
+    return res.data.message;
 };
 
 // ─── Processing Orders ───────────────────────────────────────────────────────
@@ -219,7 +220,7 @@ export const markFailed = async (
 
 export const resetFailedOrder = async (orderId: number): Promise<Order> => {
     const res = await axiosInstance.patch<ApiResponse<Order>>(
-        `/api/rider/delivery/orders/${orderId}/reset`,
+        `/api/admin/delivery/orders/${orderId}/reset-to-warehouse`,
     );
     if (!res.data.success)
         throw new Error(res.data.message || "Failed to reset order");
