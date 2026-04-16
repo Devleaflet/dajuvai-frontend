@@ -68,7 +68,7 @@ export enum UserRole {
 }
 
 export enum Province {
-    PROVINCE_1 = "Province 1",
+    PROVINCE_1 = "Koshi",
     MADHESH = "Madhesh",
     BAGMATI = "Bagmati",
     GANDAKI = "Gandaki",
