@@ -24,7 +24,7 @@ GET /provinces
 {
     "provinces": [
         "bagmati",
-        "sudurpaschim",
+        "sudurpashchim",
         "lumbini",
         "koshi",
         "madhesh",

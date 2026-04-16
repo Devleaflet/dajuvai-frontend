@@ -296,6 +296,7 @@ const Checkout: React.FC = () => {
 			});
 
 			const result = await response.json();
+			console.log(result)
 			if (response.ok && result.success) {
 				setAlertMessage('Billing details saved successfully!');
 				setShowAlert(true);
