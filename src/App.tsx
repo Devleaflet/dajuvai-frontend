@@ -56,6 +56,7 @@ import ForceScrollToTop from "./Components/ScrollToTop";
 import usePageTracking from "./Hook/usePageTracking";
 import AdminDelivery from "./Pages/AdminDelivery";
 import RiderDelivery from "./Pages/RiderDelivery";
+import SiteGate from "./Components/SiteProtection/PasswordProtectedRoute";
 
 // Admin route guards
 // Allows both admin and staff to access admin area
@@ -114,6 +115,7 @@ function App() {
     <>
       <Toaster containerStyle={{ zIndex: 99999 }} />
       <ForceScrollToTop />
+      <SiteGate>
       <Routes>
         <Route
           path="/"
@@ -498,6 +500,7 @@ function App() {
         {/* Fallback Route */}
         <Route path="*" element={<PageNotFound />} />
       </Routes >
+      </SiteGate>
     </>
   );
 }

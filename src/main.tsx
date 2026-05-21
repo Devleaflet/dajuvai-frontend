@@ -12,7 +12,7 @@ import { VendorAuthProvider } from "./context/VendorAuthContext.tsx";
 import { UIProvider } from "./context/UIContext.tsx";
 import { WishlistProvider } from "./context/WishlistContext.tsx";
 import { setupAxiosInterceptors } from './api/axiosInstance';
-// import PasswordProtectedRoute from "./Components/SiteProtection/PasswordProtectedRoute.tsx";
+import { SiteProtectionProvider } from "./Components/SiteProtection/SiteProtectionContext.tsx";
 
 if ('scrollRestoration' in window.history) {
   try {
@@ -49,6 +49,7 @@ createRoot(document.getElementById("root")!).render(
   <VendorAuthProvider>
     <AuthProvider>
       <BrowserRouter>
+        <SiteProtectionProvider>
         <StrictMode>
           <QueryClientProvider client={queryClient}>
             <CartContextProvider>
@@ -62,6 +63,7 @@ createRoot(document.getElementById("root")!).render(
             </CartContextProvider>
           </QueryClientProvider>
         </StrictMode>
+        </SiteProtectionProvider>
       </BrowserRouter>
     </AuthProvider>
   </VendorAuthProvider>

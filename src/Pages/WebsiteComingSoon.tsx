@@ -16,9 +16,9 @@ const FeatureComingSoon = () => {
           animate={{ scale: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          🚀 Coming Soon
+          🔧 Under Maintenance
         </motion.h1>
-        <p>We’re working hard to launch something amazing. Stay tuned!</p>
+        <p>We’re currently performing scheduled maintenance. Please check back soon!</p>
 
         {/* Animated Dots */}
         <div className="dots">
