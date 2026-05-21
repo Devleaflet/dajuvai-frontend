@@ -50,7 +50,9 @@ const SiteGate = ({ children }: { children: React.ReactNode }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const success = tryUnlock(enteredPassword);
-    if (!success) {
+    if (success) {
+      navigate("/");
+    } else {
       setEnteredPassword("");
       navigate("/");
     }
