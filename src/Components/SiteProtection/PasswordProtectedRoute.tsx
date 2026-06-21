@@ -4,32 +4,68 @@ import { useSiteProtection } from "./SiteProtectionContext";
 import FeatureComingSoon from "../../Pages/WebsiteComingSoon";
 
 const ShieldCheckIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-    <path d="m9 12 2 2 4-4"/>
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <path d="m9 12 2 2 4-4" />
   </svg>
 );
 
 const KeyIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="7.5" cy="15.5" r="5.5"/>
-    <path d="m12 13.5 4-4a3.2 3.2 0 0 1 4.5 4.5l-4 4"/>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="7.5" cy="15.5" r="5.5" />
+    <path d="m12 13.5 4-4a3.2 3.2 0 0 1 4.5 4.5l-4 4" />
   </svg>
 );
 
 const EyeIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-    <circle cx="12" cy="12" r="3"/>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+    <circle cx="12" cy="12" r="3" />
   </svg>
 );
 
 const EyeOffIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
-    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
-    <line x1="2" y1="2" x2="22" y2="22"/>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+    <line x1="2" y1="2" x2="22" y2="22" />
   </svg>
 );
 
@@ -67,7 +103,8 @@ const SiteGate = ({ children }: { children: React.ReactNode }) => {
         minHeight: "100vh",
         backgroundColor: "#fdf9f5",
         padding: "1rem",
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        fontFamily:
+          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
       }}
     >
       <div
@@ -76,19 +113,23 @@ const SiteGate = ({ children }: { children: React.ReactNode }) => {
           maxWidth: "420px",
           backgroundColor: "white",
           borderRadius: "16px",
-          boxShadow: "0 4px 12px -3px rgba(255, 140, 0, 0.08), 0 2px 4px -2px rgba(255, 140, 0, 0.05)",
+          boxShadow:
+            "0 4px 12px -3px rgba(255, 140, 0, 0.08), 0 2px 4px -2px rgba(255, 140, 0, 0.05)",
           overflow: "hidden",
-          transition: "transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease",
+          transition:
+            "transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease",
           position: "relative",
           border: "1px solid #ffedd5",
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform = "translateY(-4px)";
-          e.currentTarget.style.boxShadow = "0 12px 20px -4px rgba(255, 140, 0, 0.12), 0 6px 8px -3px rgba(255, 140, 0, 0.08)";
+          e.currentTarget.style.boxShadow =
+            "0 12px 20px -4px rgba(255, 140, 0, 0.12), 0 6px 8px -3px rgba(255, 140, 0, 0.08)";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.transform = "translateY(0)";
-          e.currentTarget.style.boxShadow = "0 4px 12px -3px rgba(255, 140, 0, 0.08), 0 2px 4px -2px rgba(255, 140, 0, 0.05)";
+          e.currentTarget.style.boxShadow =
+            "0 4px 12px -3px rgba(255, 140, 0, 0.08), 0 2px 4px -2px rgba(255, 140, 0, 0.05)";
         }}
       >
         {/* Header */}
@@ -115,10 +156,24 @@ const SiteGate = ({ children }: { children: React.ReactNode }) => {
           >
             <ShieldCheckIcon />
           </div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: "700", color: "#1c1917", marginBottom: "0.25rem", lineHeight: "1.25" }}>
+          <h1
+            style={{
+              fontSize: "1.5rem",
+              fontWeight: "700",
+              color: "#1c1917",
+              marginBottom: "0.25rem",
+              lineHeight: "1.25",
+            }}
+          >
             Secure Access
           </h1>
-          <p style={{ color: "#78350f", fontSize: "0.875rem", lineHeight: "1.4" }}>
+          <p
+            style={{
+              color: "#78350f",
+              fontSize: "0.875rem",
+              lineHeight: "1.4",
+            }}
+          >
             Enter your password to continue
           </p>
         </div>
@@ -129,7 +184,13 @@ const SiteGate = ({ children }: { children: React.ReactNode }) => {
             <div style={{ marginBottom: "1.25rem" }}>
               <label
                 htmlFor="site-password"
-                style={{ display: "block", marginBottom: "0.5rem", fontWeight: "600", color: "#1c1917", fontSize: "0.875rem" }}
+                style={{
+                  display: "block",
+                  marginBottom: "0.5rem",
+                  fontWeight: "600",
+                  color: "#1c1917",
+                  fontSize: "0.875rem",
+                }}
               >
                 Password
               </label>
@@ -155,14 +216,23 @@ const SiteGate = ({ children }: { children: React.ReactNode }) => {
                   placeholder="••••••••"
                   onFocus={(e) => {
                     e.target.style.borderColor = "#fdba74";
-                    e.target.style.boxShadow = "0 0 0 3px rgba(251, 191, 36, 0.2)";
+                    e.target.style.boxShadow =
+                      "0 0 0 3px rgba(251, 191, 36, 0.2)";
                   }}
                   onBlur={(e) => {
                     e.target.style.borderColor = "#fde6d0";
                     e.target.style.boxShadow = "none";
                   }}
                 />
-                <div style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: "#f97316" }}>
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "1rem",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "#f97316",
+                  }}
+                >
                   <KeyIcon />
                 </div>
                 <button
@@ -184,8 +254,14 @@ const SiteGate = ({ children }: { children: React.ReactNode }) => {
                     justifyContent: "center",
                     transition: "color 0.2s ease",
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#f97316"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#9ca3af"; }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.color =
+                      "#f97316";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.color =
+                      "#9ca3af";
+                  }}
                 >
                   {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                 </button>
@@ -209,14 +285,20 @@ const SiteGate = ({ children }: { children: React.ReactNode }) => {
                 boxShadow: "0 1px 3px 0 rgba(249, 115, 22, 0.15)",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#ea580c";
-                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 4px 8px -1px rgba(249, 115, 22, 0.25)";
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                  "#ea580c";
+                (e.currentTarget as HTMLButtonElement).style.transform =
+                  "translateY(-1px)";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                  "0 4px 8px -1px rgba(249, 115, 22, 0.25)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#f97316";
-                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 1px 3px 0 rgba(249, 115, 22, 0.15)";
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                  "#f97316";
+                (e.currentTarget as HTMLButtonElement).style.transform =
+                  "translateY(0)";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                  "0 1px 3px 0 rgba(249, 115, 22, 0.15)";
               }}
             >
               Unlock Access
