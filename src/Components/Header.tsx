@@ -40,7 +40,7 @@ const Header: React.FC<HeaderProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
-    onSearch(query);
+    onSearch?.(query);
   };
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

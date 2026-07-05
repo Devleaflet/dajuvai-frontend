@@ -1,52 +1,56 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { API_BASE_URL } from '../config';
+import React, { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { API_BASE_URL } from "../config";
 
 const GoogleAuthCallback: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
-  const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
-  const [message, setMessage] = useState<string>('');
+  const [status, setStatus] = useState<"processing" | "success" | "error">(
+    "processing",
+  );
+  const [message, setMessage] = useState<string>("");
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
 
   const addDebugLog = (message: string) => {
     const timestamp = new Date().toISOString();
     const logMessage = `[${timestamp}] ${message}`;
     //(logMessage);
-    setDebugInfo(prev => [...prev, logMessage]);
+    setDebugInfo((prev) => [...prev, logMessage]);
   };
 
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        addDebugLog('Starting Google OAuth callback handling');
+        addDebugLog("Starting Google OAuth callback handling");
 
         // Check for OAuth errors first - these come from our backend redirects
-        const error = searchParams.get('error');
+        const error = searchParams.get("error");
 
         if (error) {
           addDebugLog(`OAuth error received: ${error}`);
-          setStatus('error');
+          setStatus("error");
           setMessage(getErrorMessage(error));
-          setTimeout(() => navigate('/', { replace: true }), 5000);
+          setTimeout(() => navigate("/", { replace: true }), 5000);
           return;
         }
 
         // Method 1: Check for direct token in URL params (successful auth)
-        const urlToken = searchParams.get('token');
-        const urlRefreshToken = searchParams.get('refreshToken');
+        const urlToken = searchParams.get("token");
+        const urlRefreshToken = searchParams.get("refreshToken");
         if (urlToken) {
-          addDebugLog('Found token in URL parameters');
+          addDebugLog("Found token in URL parameters");
           await handleTokenAuth(urlToken, urlRefreshToken);
           return;
         }
 
         // Method 2: Check for authorization code (fallback for direct Google callback)
-        const code = searchParams.get('code');
+        const code = searchParams.get("code");
         if (code) {
-          addDebugLog('Found authorization code, this should not happen - redirecting to backend');
+          addDebugLog(
+            "Found authorization code, this should not happen - redirecting to backend",
+          );
           // This means user was redirected directly to frontend instead of backend
           // Redirect them to backend to complete the OAuth flow
           const backendCallbackUrl = `${API_BASE_URL}/api/auth/google/callback?${window.location.search.substring(1)}`;
@@ -55,29 +59,31 @@ const GoogleAuthCallback: React.FC = () => {
         }
 
         // Method 3: Check for existing session/cookie (fallback)
-        addDebugLog('No URL params found, checking for existing session');
+        addDebugLog("No URL params found, checking for existing session");
         await handleSessionAuth();
-
       } catch (error) {
         addDebugLog(`Error in callback handler: ${error}`);
-        setStatus('error');
-        setMessage('An unexpected error occurred during authentication');
-        setTimeout(() => navigate('/', { replace: true }), 5000);
+        setStatus("error");
+        setMessage("An unexpected error occurred during authentication");
+        setTimeout(() => navigate("/", { replace: true }), 5000);
       }
     };
 
     handleCallback();
   }, [searchParams, navigate, login]);
 
-  const handleTokenAuth = async (token: string, refreshToken?: string | null) => {
+  const handleTokenAuth = async (
+    token: string,
+    refreshToken?: string | null,
+  ) => {
     try {
-      addDebugLog('Authenticating with URL token');
+      addDebugLog("Authenticating with URL token");
 
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
         },
       });
 
@@ -92,24 +98,25 @@ const GoogleAuthCallback: React.FC = () => {
         const userData = {
           id: data.data.userId || data.data.id,
           email: data.data.email,
-          role: data.data.role || 'user',
-          username: data.data.username || data.data.email.split('@')[0],
+          role: data.data.role || "user",
+          username: data.data.username || data.data.email.split("@")[0],
           isVerified: true,
         };
 
         login(token, userData, refreshToken ?? undefined);
-        addDebugLog('Login successful with URL token');
-        setStatus('success');
-        setMessage('Successfully authenticated with Google!');
+        addDebugLog("Login successful with URL token");
+        setStatus("success");
+        setMessage("Successfully authenticated with Google!");
 
         // Redirect based on role
-        const redirectPath = userData.role === 'admin' || userData.role === 'staff'
-          ? '/admin-dashboard'
-          : '/';
+        const redirectPath =
+          userData.role === "admin" || userData.role === "staff"
+            ? "/admin-dashboard"
+            : "/";
 
         setTimeout(() => navigate(redirectPath, { replace: true }), 2000);
       } else {
-        throw new Error('Invalid user data received');
+        throw new Error("Invalid user data received");
       }
     } catch (error) {
       addDebugLog(`Token auth failed: ${error}`);
@@ -119,20 +126,20 @@ const GoogleAuthCallback: React.FC = () => {
 
   const handleSessionAuth = async () => {
     try {
-      addDebugLog('Checking for existing session');
+      addDebugLog("Checking for existing session");
 
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
-        credentials: 'include',
+        credentials: "include",
         headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
+          Accept: "application/json",
+          "Content-Type": "application/json",
         },
       });
 
       addDebugLog(`Session check response: ${response.status}`);
 
       if (!response.ok) {
-        throw new Error('No valid session found');
+        throw new Error("No valid session found");
       }
 
       const data = await response.json();
@@ -142,25 +149,26 @@ const GoogleAuthCallback: React.FC = () => {
         const userData = {
           id: data.data.userId || data.data.id,
           email: data.data.email,
-          role: data.data.role || 'user',
-          username: data.data.username || data.data.email.split('@')[0],
+          role: data.data.role || "user",
+          username: data.data.username || data.data.email.split("@")[0],
           isVerified: true,
         };
 
         // For session auth, we might not have a token in the response
         const token = data.token || null;
         login(token, userData);
-        addDebugLog('Login successful with session auth');
-        setStatus('success');
-        setMessage('Successfully authenticated with Google!');
+        addDebugLog("Login successful with session auth");
+        setStatus("success");
+        setMessage("Successfully authenticated with Google!");
 
-        const redirectPath = userData.role === 'admin' || userData.role === 'staff'
-          ? '/admin-dashboard'
-          : '/';
+        const redirectPath =
+          userData.role === "admin" || userData.role === "staff"
+            ? "/admin-dashboard"
+            : "/";
 
         setTimeout(() => navigate(redirectPath, { replace: true }), 2000);
       } else {
-        throw new Error('Invalid session data');
+        throw new Error("Invalid session data");
       }
     } catch (error) {
       addDebugLog(`Session auth failed: ${error}`);
@@ -170,28 +178,30 @@ const GoogleAuthCallback: React.FC = () => {
 
   const getErrorMessage = (error: string): string => {
     switch (error) {
-      case 'authentication_failed':
-        return 'Google authentication failed. Please try again.';
-      case 'authentication_error':
-        return 'An error occurred during Google authentication. Please try again.';
-      case 'server_error':
-        return 'Server error during authentication. Please try again later.';
-      case 'token_error':
-        return 'Error processing authentication token. Please try again.';
-      case 'google_auth_failed':
-        return 'Google authentication service failed. Please try again.';
-      case 'access_denied':
-        return 'You cancelled the Google sign-in process.';
-      case 'invalid_request':
-        return 'Invalid authentication request.';
-      case 'unauthorized_client':
-        return 'Authentication service is not properly configured.';
-      case 'unsupported_response_type':
-        return 'Authentication configuration error.';
-      case 'invalid_scope':
-        return 'Authentication permission error.';
-      case 'temporarily_unavailable':
-        return 'Google authentication is temporarily unavailable. Please try again later.';
+      case "authentication_failed":
+        return "Google authentication failed. Please try again.";
+      case "email_registered_manually":
+        return "This email is registered manually. Please log in using your email and password.";
+      case "authentication_error":
+        return "An error occurred during Google authentication. Please try again.";
+      case "server_error":
+        return "Server error during authentication. Please try again later.";
+      case "token_error":
+        return "Error processing authentication token. Please try again.";
+      case "google_auth_failed":
+        return "Google authentication service failed. Please try again.";
+      case "access_denied":
+        return "You cancelled the Google sign-in process.";
+      case "invalid_request":
+        return "Invalid authentication request.";
+      case "unauthorized_client":
+        return "Authentication service is not properly configured.";
+      case "unsupported_response_type":
+        return "Authentication configuration error.";
+      case "invalid_scope":
+        return "Authentication permission error.";
+      case "temporarily_unavailable":
+        return "Google authentication is temporarily unavailable. Please try again later.";
       default:
         return `Authentication error: ${error}. Please try again.`;
     }
@@ -290,7 +300,13 @@ const GoogleAuthCallback: React.FC = () => {
               Processing Authentication…
             </h2>
 
-            <p style={{ color: "#7d7d7d", marginBottom: "25px", fontSize: "15px" }}>
+            <p
+              style={{
+                color: "#7d7d7d",
+                marginBottom: "25px",
+                fontSize: "15px",
+              }}
+            >
               Please wait while we complete your sign-in.
             </p>
           </>
@@ -321,7 +337,9 @@ const GoogleAuthCallback: React.FC = () => {
               Login Successful!
             </h2>
 
-            <p style={{ color: "#777", marginBottom: "20px", fontSize: "15px" }}>
+            <p
+              style={{ color: "#777", marginBottom: "20px", fontSize: "15px" }}
+            >
               {message}
             </p>
 
@@ -354,11 +372,19 @@ const GoogleAuthCallback: React.FC = () => {
               Authentication Failed
             </h2>
 
-            <p style={{ color: "#777", marginBottom: "25px", fontSize: "15px" }}>
+            <p
+              style={{ color: "#777", marginBottom: "25px", fontSize: "15px" }}
+            >
               {message}
             </p>
 
-            <p style={{ fontSize: "14px", color: "#b3b3b3", marginBottom: "20px" }}>
+            <p
+              style={{
+                fontSize: "14px",
+                color: "#b3b3b3",
+                marginBottom: "20px",
+              }}
+            >
               Redirecting to home page in 5 seconds…
             </p>
 
@@ -426,11 +452,9 @@ const GoogleAuthCallback: React.FC = () => {
       {/* <DebugPanel /> */}
     </div>
   );
-
 };
 
 export default GoogleAuthCallback;
-
 
 // import React, { useEffect, useState } from 'react';
 // import { useNavigate } from 'react-router-dom';
@@ -456,7 +480,6 @@ export default GoogleAuthCallback;
 //       return () => clearTimeout(timeout);
 //     }
 //   }, [status, navigate]);
-
 
 //   return (
 //     <div
