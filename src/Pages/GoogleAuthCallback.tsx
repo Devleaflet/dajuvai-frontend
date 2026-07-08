@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../config";
@@ -12,6 +12,38 @@ const GoogleAuthCallback: React.FC = () => {
   );
   const [message, setMessage] = useState<string>("");
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
+
+  // The page that triggered Google login, stashed by AuthModal before leaving the app —
+  // browser history during the OAuth round-trip is full of Google's own pages, so it can't
+  // be used for "go back". Read-once: clears itself so a later unrelated login doesn't reuse it.
+  const getPostLoginRedirect = (): string => {
+    const stored = sessionStorage.getItem("postLoginRedirect");
+    sessionStorage.removeItem("postLoginRedirect");
+    return stored || "/";
+  };
+
+  // Resolved once per error (not re-read inside the timeout callback) and shared by both the
+  // auto-redirect timer and the "Go Back" button, so whichever fires doesn't matter — they
+  // always agree. Previously each called getPostLoginRedirect() independently, so whichever
+  // fired second got the fallback "/" since the first call had already cleared storage —
+  // that's why "Go Back" briefly worked and then got yanked home a few seconds later.
+  const pendingRedirectRef = useRef<string>("/");
+  const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const scheduleErrorRedirect = (msg: string) => {
+    setStatus("error");
+    setMessage(msg);
+    pendingRedirectRef.current = getPostLoginRedirect();
+    redirectTimeoutRef.current = setTimeout(() => {
+      navigate(pendingRedirectRef.current, { replace: true });
+    }, 5000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
+    };
+  }, []);
 
   const addDebugLog = (message: string) => {
     const timestamp = new Date().toISOString();
@@ -30,9 +62,7 @@ const GoogleAuthCallback: React.FC = () => {
 
         if (error) {
           addDebugLog(`OAuth error received: ${error}`);
-          setStatus("error");
-          setMessage(getErrorMessage(error));
-          setTimeout(() => navigate("/", { replace: true }), 5000);
+          scheduleErrorRedirect(getErrorMessage(error));
           return;
         }
 
@@ -63,9 +93,7 @@ const GoogleAuthCallback: React.FC = () => {
         await handleSessionAuth();
       } catch (error) {
         addDebugLog(`Error in callback handler: ${error}`);
-        setStatus("error");
-        setMessage("An unexpected error occurred during authentication");
-        setTimeout(() => navigate("/", { replace: true }), 5000);
+        scheduleErrorRedirect("An unexpected error occurred during authentication");
       }
     };
 
@@ -112,7 +140,7 @@ const GoogleAuthCallback: React.FC = () => {
         const redirectPath =
           userData.role === "admin" || userData.role === "staff"
             ? "/admin-dashboard"
-            : "/";
+            : getPostLoginRedirect();
 
         setTimeout(() => navigate(redirectPath, { replace: true }), 2000);
       } else {
@@ -164,7 +192,7 @@ const GoogleAuthCallback: React.FC = () => {
         const redirectPath =
           userData.role === "admin" || userData.role === "staff"
             ? "/admin-dashboard"
-            : "/";
+            : getPostLoginRedirect();
 
         setTimeout(() => navigate(redirectPath, { replace: true }), 2000);
       } else {
@@ -385,11 +413,14 @@ const GoogleAuthCallback: React.FC = () => {
                 marginBottom: "20px",
               }}
             >
-              Redirecting to home page in 5 seconds…
+              Going back in 5 seconds…
             </p>
 
             <button
-              onClick={() => navigate("/", { replace: true })}
+              onClick={() => {
+                if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current);
+                navigate(pendingRedirectRef.current, { replace: true });
+              }}
               style={{
                 backgroundColor: "#e74d3c",
                 color: "#fff",
@@ -399,27 +430,10 @@ const GoogleAuthCallback: React.FC = () => {
                 cursor: "pointer",
                 fontSize: "14px",
                 fontWeight: 600,
-                marginRight: "10px",
                 boxShadow: "0 4px 10px rgba(231, 77, 60, 0.3)",
               }}
             >
-              Go to Home
-            </button>
-
-            <button
-              onClick={() => window.location.reload()}
-              style={{
-                backgroundColor: "#8b8b8b",
-                color: "#fff",
-                border: "none",
-                padding: "12px 28px",
-                borderRadius: "8px",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: 600,
-              }}
-            >
-              Try Again
+              Go Back
             </button>
           </>
         )}

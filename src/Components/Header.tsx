@@ -30,8 +30,7 @@ const Header: React.FC<HeaderProps> = ({
   filterOption = "all",
   vendors = [],
   selectedVendor = null,
-  onVendorChange = () => { },
-
+  onVendorChange = () => {},
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -59,7 +58,10 @@ const Header: React.FC<HeaderProps> = ({
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     }
@@ -82,30 +84,74 @@ const Header: React.FC<HeaderProps> = ({
         <h1 className="dashboard__title">{title || ""}</h1>
         <div className="dashboard__user" ref={dropdownRef}>
           <div className="dashboard__avatar">
-            <span className="dashboard__avatar-text">
-              {user.username ? user.username.split(' ').map(n => n[0]).join('') : user.email?.[0] || "A"}
-            </span>
+            {user.profilePicture ? (
+              <img
+                src={user.profilePicture}
+                alt={user.username || user.email || "Admin"}
+                className="dashboard__avatar-image"
+                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
+              />
+            ) : (
+              <span className="dashboard__avatar-text">
+                {user.username
+                  ? user.username
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                  : user.email?.[0] || "A"}
+              </span>
+            )}
           </div>
           <div className="dashboard__user-info">
             <p className="dashboard__username">{user.username || user.email}</p>
             <p className="dashboard__version">Admin</p>
           </div>
-          <button className="dashboard__dropdown-button" onClick={() => setDropdownOpen(v => !v)}>
+          <button
+            className="dashboard__dropdown-button"
+            onClick={() => setDropdownOpen((v) => !v)}
+          >
             <span className="dashboard__dropdown-icon"></span>
           </button>
           {dropdownOpen && (
             <div className="dashboard__dropdown-menu">
-              <button className="dashboard__dropdown-item" onClick={() => { setDropdownOpen(false); navigate("/"); }}>Home</button>
-              <button className="dashboard__dropdown-item" onClick={() => { setDropdownOpen(false); logout(); }}>Logout</button>
+              <button
+                className="dashboard__dropdown-item"
+                onClick={() => {
+                  setDropdownOpen(false);
+                  navigate("/");
+                }}
+              >
+                Home
+              </button>
+              <button
+                className="dashboard__dropdown-item"
+                onClick={() => {
+                  setDropdownOpen(false);
+                  logout();
+                }}
+              >
+                Logout
+              </button>
             </div>
           )}
         </div>
       </header>
       <div>
         {showControls && (
-          <div className="dashboard__search-container" style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <div
+            className="dashboard__search-container"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "16px",
+              flexWrap: "wrap",
+            }}
+          >
             {showSearch && (
-              <div className="dashboard__search" style={{ flex: 1, minWidth: 200 }}>
+              <div
+                className="dashboard__search"
+                style={{ flex: 1, minWidth: 200 }}
+              >
                 <input
                   type="text"
                   placeholder="Search"
@@ -120,7 +166,15 @@ const Header: React.FC<HeaderProps> = ({
                 className="vendor-product__sort-select"
                 value={sortOption}
                 onChange={handleSortChange}
-                style={{ minWidth: 180, height: 38, borderRadius: 20, border: '1px solid #e5e7eb', padding: '0 12px', background: '#fff', fontSize: 14 }}
+                style={{
+                  minWidth: 180,
+                  height: 38,
+                  borderRadius: 20,
+                  border: "1px solid #e5e7eb",
+                  padding: "0 12px",
+                  background: "#fff",
+                  fontSize: 14,
+                }}
               >
                 <option value="newest">Newest</option>
                 <option value="oldest">Oldest</option>
@@ -133,7 +187,15 @@ const Header: React.FC<HeaderProps> = ({
                 className="vendor-product__filter-select"
                 value={filterOption}
                 onChange={handleFilterChange}
-                style={{ minWidth: 180, height: 38, borderRadius: 20, border: '1px solid #e5e7eb', padding: '0 12px', background: '#fff', fontSize: 14 }}
+                style={{
+                  minWidth: 180,
+                  height: 38,
+                  borderRadius: 20,
+                  border: "1px solid #e5e7eb",
+                  padding: "0 12px",
+                  background: "#fff",
+                  fontSize: 14,
+                }}
               >
                 <option value="all">All Products</option>
                 <option value="out_of_stock">Out of Stock</option>
@@ -147,7 +209,15 @@ const Header: React.FC<HeaderProps> = ({
                   value={selectedVendor || ""}
                   onChange={(e) => onVendorChange(e.target.value)}
                   className="dashboard__vendor-select"
-                  style={{ minWidth: 180, height: 38, borderRadius: 20, border: '1px solid #e5e7eb', padding: '0 12px', background: '#fff', fontSize: 14 }}
+                  style={{
+                    minWidth: 180,
+                    height: 38,
+                    borderRadius: 20,
+                    border: "1px solid #e5e7eb",
+                    padding: "0 12px",
+                    background: "#fff",
+                    fontSize: 14,
+                  }}
                 >
                   <option value="">All vendors</option>
                   {vendors.map((vendor) => (

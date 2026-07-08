@@ -1,6 +1,6 @@
+// AdminProfile.tsx
 import axios from "axios";
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
 import Popup from "reactjs-popup";
 import "reactjs-popup/dist/index.css";
 import axiosInstance from "../api/axiosInstance";
@@ -9,6 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import "../Styles/AdminProfile.css";
 import { AdminSidebar } from "../Components/AdminSidebar";
 import Header from "../Components/Header";
+import { FaCamera } from "react-icons/fa";
 
 interface AdminDetails {
   id?: number;
@@ -18,6 +19,7 @@ interface AdminDetails {
   role?: string;
   isVerified?: boolean;
   phoneNumber: string;
+  profilePicture?: string | null;
 }
 
 interface FormState {
@@ -32,7 +34,6 @@ type Tab = "details" | "credentials";
 type CredentialsMode = "change" | "forgot" | "reset";
 
 const AdminProfile: React.FC = () => {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>("details");
   const [isEditing, setIsEditing] = useState(false);
   const [adminDetails, setAdminDetails] = useState<AdminDetails | null>({
@@ -42,16 +43,28 @@ const AdminProfile: React.FC = () => {
     phoneNumber: "",
     role: "",
   });
-  const [originalDetails, setOriginalDetails] = useState<AdminDetails | null>(null);
+  const [originalDetails, setOriginalDetails] = useState<AdminDetails | null>(
+    null,
+  );
   const [formState, setFormState] = useState<FormState>({ email: "" });
-  const [credentialsMode, setCredentialsMode] = useState<CredentialsMode>("change");
+  const [credentialsMode, setCredentialsMode] =
+    useState<CredentialsMode>("change");
   const [isLoading, setIsLoading] = useState<{ [key: string]: boolean }>({});
   const [popup, setPopup] = useState<{
     type: "success" | "error";
     content: string;
   } | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
-  const { user, isLoading: isAuthLoading, login, token } = useAuth();
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    user,
+    isLoading: isAuthLoading,
+    login,
+    token,
+    fetchUserData,
+  } = useAuth();
   const adminId = user?.id;
 
   const getAvatarColor = (username: string) => {
@@ -119,14 +132,14 @@ const AdminProfile: React.FC = () => {
           } else {
             showPopup(
               "error",
-              "Authentication details missing. Please log in again."
+              "Authentication details missing. Please log in again.",
             );
           }
         })
         .catch(() => {
           showPopup(
             "error",
-            "Authentication details missing. Please log in again."
+            "Authentication details missing. Please log in again.",
           );
         });
       return;
@@ -137,10 +150,7 @@ const AdminProfile: React.FC = () => {
       try {
         const headers: Record<string, string> = {};
         const authToken = token || localStorage.getItem("authToken");
-
-        if (authToken) {
-          headers.Authorization = `Bearer ${authToken}`;
-        }
+        if (authToken) headers.Authorization = `Bearer ${authToken}`;
 
         const response = await axiosInstance.get(`/api/auth/users/${adminId}`, {
           headers,
@@ -165,15 +175,15 @@ const AdminProfile: React.FC = () => {
         setIsLoading((prev) => ({ ...prev, fetchAdmin: false }));
       }
     };
+
     fetchAdminDetails();
-  }, [adminId, isAuthLoading, login, token]);
+  }, [adminId, isAuthLoading]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement>,
-    field: keyof FormState | keyof AdminDetails
+    field: keyof FormState | keyof AdminDetails,
   ) => {
     const value = e.target.value;
-
     if (field in (adminDetails || {})) {
       setAdminDetails((prev) => (prev ? { ...prev, [field]: value } : null));
     } else {
@@ -196,7 +206,7 @@ const AdminProfile: React.FC = () => {
     if (!validateUsername(adminDetails.username))
       return showPopup(
         "error",
-        "Username must be 3+ characters and alphanumeric."
+        "Username must be 3+ characters and alphanumeric.",
       );
     if (!validateFullName(adminDetails.fullName))
       return showPopup("error", "Full name must be at least 2 characters.");
@@ -207,38 +217,26 @@ const AdminProfile: React.FC = () => {
       return showPopup("error", "Phone number must be 10 digits.");
 
     setIsLoading((prev) => ({ ...prev, saveAdmin: true }));
-
     try {
+      const authToken = token || localStorage.getItem("authToken");
       const headers: Record<string, string> = {
         Accept: "application/json",
         "Content-Type": "application/json",
       };
-      const authToken = token || localStorage.getItem("authToken");
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`;
-      }
-
-      const requestData = {
-        fullName: adminDetails.fullName,
-        username: adminDetails.username,
-        phoneNumber: adminDetails.phoneNumber,
-      };
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
 
       const response = await axiosInstance.put(
         `/api/auth/users/${adminId}`,
-        requestData,
         {
-          withCredentials: true,
-          headers,
-        }
+          fullName: adminDetails.fullName,
+          username: adminDetails.username,
+          phoneNumber: adminDetails.phoneNumber,
+        },
+        { withCredentials: true, headers },
       );
 
       if (response.data.success) {
-        const updatedData = response.data.data;
-        const normalizedUpdatedData = {
-          ...updatedData,
-        };
-
+        const normalizedUpdatedData = { ...response.data.data };
         setAdminDetails(normalizedUpdatedData);
         setOriginalDetails(normalizedUpdatedData);
         setIsEditing(false);
@@ -250,6 +248,69 @@ const AdminProfile: React.FC = () => {
       handleError(error, "Failed to update profile");
     } finally {
       setIsLoading((prev) => ({ ...prev, saveAdmin: false }));
+    }
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !adminId) return;
+
+    const allowed = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      showPopup("error", "Please upload PNG, JPG, or WebP");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showPopup("error", "Image must be under 5 MB");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const authToken = token || localStorage.getItem("authToken");
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const uploadResponse = await fetch(
+        `${API_BASE_URL}/api/image?folder=profile-pictures`,
+        {
+          method: "POST",
+          headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+          body: formData,
+        },
+      );
+      const uploadResult = await uploadResponse.json();
+      if (!uploadResponse.ok || !uploadResult.success) {
+        throw new Error(uploadResult.message || "Failed to upload image");
+      }
+      const profilePictureUrl = uploadResult.data as string;
+
+      const updateResponse = await axiosInstance.put(
+        `/api/auth/users/${adminId}`,
+        { profilePicture: profilePictureUrl },
+        { headers: authToken ? { Authorization: `Bearer ${authToken}` } : {} },
+      );
+
+      if (updateResponse.data.success) {
+        setAdminDetails((prev) =>
+          prev ? { ...prev, profilePicture: profilePictureUrl } : prev,
+        );
+        setOriginalDetails((prev) =>
+          prev ? { ...prev, profilePicture: profilePictureUrl } : prev,
+        );
+        await fetchUserData(adminId);
+        showPopup("success", "Profile picture updated!");
+      } else {
+        showPopup(
+          "error",
+          updateResponse.data.message || "Failed to save profile picture",
+        );
+      }
+    } catch (error) {
+      handleError(error, "Failed to update profile picture");
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -328,13 +389,14 @@ const AdminProfile: React.FC = () => {
             {isEditing ? (
               <input
                 type="text"
-                name="fullName"
                 value={adminDetails.fullName ?? ""}
                 onChange={(e) => handleInputChange(e, "fullName")}
                 className="admin-profile-form__input"
               />
             ) : (
-              <div className="admin-profile-form__display">{adminDetails.fullName || "Not provided"}</div>
+              <div className="admin-profile-form__display">
+                {adminDetails.fullName || "Not provided"}
+              </div>
             )}
           </div>
           <div className="admin-profile-form__group admin-profile-form__group--half">
@@ -342,33 +404,37 @@ const AdminProfile: React.FC = () => {
             {isEditing ? (
               <input
                 type="text"
-                name="username"
                 value={adminDetails.username ?? ""}
                 onChange={(e) => handleInputChange(e, "username")}
                 className="admin-profile-form__input"
               />
             ) : (
-              <div className="admin-profile-form__display">{adminDetails.username || "Not provided"}</div>
+              <div className="admin-profile-form__display">
+                {adminDetails.username || "Not provided"}
+              </div>
             )}
           </div>
         </div>
         <div className="admin-profile-form__row">
           <div className="admin-profile-form__group admin-profile-form__group--half">
             <label>Email</label>
-              <div className="admin-profile-form__display">{adminDetails.email|| "Not provided"}</div>
+            <div className="admin-profile-form__display">
+              {adminDetails.email || "Not provided"}
+            </div>
           </div>
           <div className="admin-profile-form__group admin-profile-form__group--half">
             <label>Phone Number</label>
             {isEditing ? (
               <input
                 type="text"
-                name="phoneNumber"
                 value={adminDetails.phoneNumber ?? ""}
                 onChange={(e) => handleInputChange(e, "phoneNumber")}
                 className="admin-profile-form__input"
               />
             ) : (
-              <div className="admin-profile-form__display">{adminDetails.phoneNumber || "Not provided"}</div>
+              <div className="admin-profile-form__display">
+                {adminDetails.phoneNumber || "Not provided"}
+              </div>
             )}
           </div>
         </div>
@@ -427,15 +493,14 @@ const AdminProfile: React.FC = () => {
           </p>
           <div className="admin-credentials__actions">
             <button
-              className={`admin-profile-form__help ${
-                credentialsMode === "forgot" ? "active" : ""
-              }`}
+              className={`admin-profile-form__help ${credentialsMode === "forgot" ? "active" : ""}`}
               onClick={() => setCredentialsMode("forgot")}
             >
               Forgot Password
             </button>
           </div>
         </div>
+
         {credentialsMode === "forgot" && (
           <div className="admin-credentials__section">
             <h3>Reset Password</h3>
@@ -455,15 +520,17 @@ const AdminProfile: React.FC = () => {
             </button>
           </div>
         )}
+
         {credentialsMode === "reset" && (
           <div className="admin-credentials__section">
             <h3>Enter Reset Token</h3>
-            <p>Check your email for the reset token and enter your new password.</p>
+            <p>
+              Check your email for the reset token and enter your new password.
+            </p>
             <div className="admin-profile-form__group">
               <label className="admin-profile-form__label">Reset Token</label>
               <input
                 type="text"
-                name="token"
                 placeholder="Enter reset token"
                 value={formState.token ?? ""}
                 onChange={(e) => handleInputChange(e, "token")}
@@ -474,7 +541,6 @@ const AdminProfile: React.FC = () => {
               <label className="admin-profile-form__label">New Password</label>
               <input
                 type="password"
-                name="newPassword"
                 placeholder="Enter new password"
                 value={formState.newPassword ?? ""}
                 onChange={(e) => handleInputChange(e, "newPassword")}
@@ -482,10 +548,11 @@ const AdminProfile: React.FC = () => {
               />
             </div>
             <div className="admin-profile-form__group">
-              <label className="admin-profile-form__label">Confirm Password</label>
+              <label className="admin-profile-form__label">
+                Confirm Password
+              </label>
               <input
                 type="password"
-                name="confirmPassword"
                 placeholder="Confirm new password"
                 value={formState.confirmPassword ?? ""}
                 onChange={(e) => handleInputChange(e, "confirmPassword")}
@@ -518,10 +585,7 @@ const AdminProfile: React.FC = () => {
       <Popup
         open={!!popup}
         closeOnDocumentClick
-        onClose={() => {
-          setPopup(null);
-          window.location.reload();
-        }}
+        onClose={() => setPopup(null)}
         contentStyle={{
           borderRadius: "12px",
           maxWidth: "400px",
@@ -548,8 +612,8 @@ const AdminProfile: React.FC = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
               ) : (
                 <svg
@@ -562,9 +626,9 @@ const AdminProfile: React.FC = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
               )}
             </span>
@@ -583,36 +647,81 @@ const AdminProfile: React.FC = () => {
           </button>
         </div>
       </Popup>
+
       <div className="admin-profile">
         <AdminSidebar />
         <div className="admin-profile-main">
           <Header showSearch={false} title="Admin Profile" />
-          <div className={`admin-profile-card ${activeTab === "details" || activeTab === "credentials" ? "admin-profile-card--wide" : ""}`}>
+          <div
+            className={`admin-profile-card ${activeTab === "details" || activeTab === "credentials" ? "admin-profile-card--wide" : ""}`}
+          >
             <div className="admin-profile-sidebar">
               {isLoading.fetchAdmin ? (
                 <>
                   <div className="admin-skeleton admin-skeleton-avatar" />
-                  {[...Array(2)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="admin-skeleton admin-skeleton-button"
-                    />
-                  ))}
+                  <div className="admin-skeleton admin-skeleton-button" />
+                  <div className="admin-skeleton admin-skeleton-button" />
                 </>
               ) : (
                 <>
-                  <div
-                    className="admin-profile-sidebar__avatar"
-                    style={{
-                      backgroundColor: adminDetails?.username
-                        ? getAvatarColor(adminDetails.username)
-                        : "#f97316",
-                    }}
-                  >
-                    {adminDetails?.username?.[0]?.toUpperCase() || "?"}
+                  <div className="admin-profile-sidebar__avatar-wrapper">
+                    <div
+                      className="admin-profile-sidebar__avatar"
+                      style={{
+                        backgroundColor: adminDetails?.username
+                          ? getAvatarColor(adminDetails.username)
+                          : "#f97316",
+                      }}
+                    >
+                      {adminDetails?.profilePicture ? (
+                        <img
+                          src={adminDetails.profilePicture}
+                          alt={adminDetails.username || "Admin"}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            borderRadius: "inherit",
+                          }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display =
+                              "none";
+                          }}
+                        />
+                      ) : (
+                        adminDetails?.username?.[0]?.toUpperCase() || "?"
+                      )}
+                    </div>
+
+                    {isUploadingAvatar && (
+                      <div className="admin-avatar-overlay">
+                        <div className="admin-avatar-spinner" />
+                      </div>
+                    )}
+
+                    <button
+                      className={`admin-avatar-edit-btn ${isUploadingAvatar ? "admin-avatar-edit-btn--disabled" : ""}`}
+                      onClick={() => avatarInputRef.current?.click()}
+                      disabled={isUploadingAvatar}
+                      title="Change profile picture"
+                      type="button"
+                    >
+                      <FaCamera size={11} />
+                    </button>
+
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      onChange={handleAvatarChange}
+                      disabled={isUploadingAvatar}
+                      style={{ display: "none" }}
+                    />
                   </div>
+
                   {(["details", "credentials"] as Tab[]).map((tab) => {
-                    if (tab === "credentials" && user?.provider === "google") return null;
+                    if (tab === "credentials" && user?.provider === "google")
+                      return null;
                     return (
                       <button
                         key={tab}
@@ -623,13 +732,16 @@ const AdminProfile: React.FC = () => {
                             : "admin-profile-sidebar__button--secondary"
                         }`}
                       >
-                        {tab === "details" ? "Manage Details" : "Change Credentials"}
+                        {tab === "details"
+                          ? "Manage Details"
+                          : "Change Credentials"}
                       </button>
                     );
                   })}
                 </>
               )}
             </div>
+
             <div className="admin-profile-content">
               {activeTab === "details" && renderAdminDetails()}
               {activeTab === "credentials" && renderCredentials()}

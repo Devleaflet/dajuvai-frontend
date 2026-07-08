@@ -28,6 +28,19 @@ const AdminStaff: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState<StaffUser | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [staffToEdit, setStaffToEdit] = useState<StaffUser | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    username: '',
+    email: '',
+    fullName: '',
+    phoneNumber: '',
+    password: '',
+    confirmPassword: '',
+  });
+  type EditFieldErrors = Partial<Record<keyof typeof editFormData, string>>;
+  const [editFormErrors, setEditFormErrors] = useState<EditFieldErrors>({});
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const docketHeight = useDocketHeight();
 
   useEffect(() => {
@@ -44,8 +57,19 @@ const AdminStaff: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setFilteredStaffList(staffList);
-  }, [staffList]);
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) {
+      setFilteredStaffList(staffList);
+      return;
+    }
+    setFilteredStaffList(
+      staffList.filter(
+        (staff) =>
+          staff.username.toLowerCase().includes(term) ||
+          staff.email.toLowerCase().includes(term)
+      )
+    );
+  }, [staffList, searchTerm]);
 
   const [filteredStaffList, setFilteredStaffList] = useState<StaffUser[]>([]);
 
@@ -238,16 +262,131 @@ const AdminStaff: React.FC = () => {
     setStaffToDelete(null);
   };
 
+  const handleEditClick = (staff: StaffUser) => {
+    setStaffToEdit(staff);
+    setEditFormData({
+      username: staff.username,
+      email: staff.email,
+      fullName: staff.fullName || '',
+      phoneNumber: staff.phoneNumber || '',
+      password: '',
+      confirmPassword: '',
+    });
+    setEditFormErrors({});
+  };
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
+    if (editFormErrors[name as keyof EditFieldErrors]) {
+      setEditFormErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  const validateEditForm = (): boolean => {
+    const errors: EditFieldErrors = {};
+    if (!editFormData.username.trim()) {
+      errors.username = 'Username is required';
+    } else if (editFormData.username.length < 3) {
+      errors.username = 'Username must be at least 3 characters';
+    }
+    if (!editFormData.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editFormData.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    if (editFormData.phoneNumber && !/^[0-9]{7,15}$/.test(editFormData.phoneNumber)) {
+      errors.phoneNumber = 'Phone number must be 7-15 digits';
+    }
+    // Password is optional on edit — only validate if admin is actually changing it
+    if (editFormData.password || editFormData.confirmPassword) {
+      if (editFormData.password.length < 8) {
+        errors.password = 'Password must be at least 8 characters';
+      } else if (!/[A-Z]/.test(editFormData.password) || !/[a-z]/.test(editFormData.password) ||
+        !/[0-9]/.test(editFormData.password) || !/[^A-Za-z0-9]/.test(editFormData.password)) {
+        errors.password = 'Must include upper, lower, number, and special character';
+      }
+      if (editFormData.password !== editFormData.confirmPassword) {
+        errors.confirmPassword = 'Passwords do not match';
+      }
+    }
+    setEditFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleCancelEdit = () => {
+    setStaffToEdit(null);
+    setEditFormErrors({});
+  };
+
+  const handleSaveEdit = async () => {
+    if (!staffToEdit || !validateEditForm()) return;
+
+    setIsSavingEdit(true);
+    try {
+      const payload: Parameters<typeof staffApi.updateStaff>[1] = {
+        username: editFormData.username.trim(),
+        email: editFormData.email.trim().toLowerCase(),
+        fullName: editFormData.fullName.trim() || undefined,
+        phoneNumber: editFormData.phoneNumber.trim() || undefined,
+      };
+      // Only send password fields if the admin actually typed a new password
+      if (editFormData.password) {
+        payload.password = editFormData.password;
+        payload.confirmPassword = editFormData.confirmPassword;
+      }
+
+      const response = await staffApi.updateStaff(staffToEdit.id, payload);
+
+      if (response.success) {
+        toast.success('Staff user updated successfully');
+        // Merge the saved values straight from the response so re-opening the edit
+        // dialog immediately reflects them, rather than depending on a second
+        // unawaited fetch landing before the user clicks Edit again.
+        if (response.data) {
+          const saved = response.data;
+          setStaffList((prev) =>
+            prev.map((s) => (s.id === staffToEdit.id ? { ...s, ...saved } : s))
+          );
+        }
+        setStaffToEdit(null);
+        fetchStaffList();
+      } else if ('statusCode' in response && response.statusCode === 409) {
+        setEditFormErrors({ email: 'Email is already in use' });
+      } else if (Array.isArray(response.errors)) {
+        const newErrors: EditFieldErrors = {};
+        const allowedFields: (keyof typeof editFormData)[] = [
+          'username', 'email', 'fullName', 'phoneNumber', 'password', 'confirmPassword',
+        ];
+        response.errors.forEach((err) => {
+          if (err.field && allowedFields.includes(err.field as keyof typeof editFormData)) {
+            newErrors[err.field as keyof EditFieldErrors] = err.message;
+          }
+        });
+        setEditFormErrors(newErrors);
+      } else {
+        toast.error(response.message || 'Failed to update staff user');
+      }
+    } catch (error) {
+      console.error('Error updating staff:', error);
+      toast.error('Failed to update staff user');
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
   return (
     <div className="">
      
       <div className="admin-content" style={{display:'flex',height:'100vh'}}>
         <AdminSidebar />
         
-        <main className="admin-main" style={{ minHeight: docketHeight, overflow: 'auto', width:'100vw' }}>
+        <main className="admin-main" style={{ minHeight: docketHeight, overflow: 'auto', flex: 1, minWidth: 0 }}>
           <div className="admin-categories__content">
-             <Header 
+             <Header
           title="Staff Management"
+          showSearch
+          onSearch={setSearchTerm}
         />
             <div className="admin-staff__header">
               <div className="admin-staff__title-section">
@@ -409,7 +548,10 @@ const AdminStaff: React.FC = () => {
                             }
                           </td>
                           <td>
-                            <button className="admin-staff__action-btn admin-staff__action-btn--edit">
+                            <button
+                              className="admin-staff__action-btn admin-staff__action-btn--edit"
+                              onClick={() => handleEditClick(staff)}
+                            >
                               Edit
                             </button>
                             <button 
@@ -461,6 +603,131 @@ const AdminStaff: React.FC = () => {
                 disabled={isDeleting}
               >
                 {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Staff Dialog */}
+      {staffToEdit && (
+        <div className="admin-staff__dialog-overlay">
+          <div className="admin-staff__dialog">
+            <h3>Edit Staff User</h3>
+            <div className="admin-staff__form-group">
+              <label htmlFor="editUsername" className="admin-staff__label">
+                Username *
+              </label>
+              <input
+                type="text"
+                id="editUsername"
+                name="username"
+                value={editFormData.username}
+                onChange={handleEditInputChange}
+                className={`admin-staff__input ${editFormErrors.username ? 'admin-staff__input--error' : ''}`}
+              />
+              {editFormErrors.username && (
+                <span className="admin-staff__error">{editFormErrors.username}</span>
+              )}
+            </div>
+            <div className="admin-staff__form-group">
+              <label htmlFor="editEmail" className="admin-staff__label">
+                Email *
+              </label>
+              <input
+                type="email"
+                id="editEmail"
+                name="email"
+                value={editFormData.email}
+                onChange={handleEditInputChange}
+                className={`admin-staff__input ${editFormErrors.email ? 'admin-staff__input--error' : ''}`}
+              />
+              {editFormErrors.email && (
+                <span className="admin-staff__error">{editFormErrors.email}</span>
+              )}
+            </div>
+            <div className="admin-staff__form-group">
+              <label htmlFor="editFullName" className="admin-staff__label">
+                Full Name
+              </label>
+              <input
+                type="text"
+                id="editFullName"
+                name="fullName"
+                value={editFormData.fullName}
+                onChange={handleEditInputChange}
+                className={`admin-staff__input ${editFormErrors.fullName ? 'admin-staff__input--error' : ''}`}
+              />
+              {editFormErrors.fullName && (
+                <span className="admin-staff__error">{editFormErrors.fullName}</span>
+              )}
+            </div>
+            <div className="admin-staff__form-group">
+              <label htmlFor="editPhoneNumber" className="admin-staff__label">
+                Phone Number
+              </label>
+              <input
+                type="text"
+                id="editPhoneNumber"
+                name="phoneNumber"
+                value={editFormData.phoneNumber}
+                onChange={handleEditInputChange}
+                className={`admin-staff__input ${editFormErrors.phoneNumber ? 'admin-staff__input--error' : ''}`}
+                placeholder="Digits only"
+              />
+              {editFormErrors.phoneNumber && (
+                <span className="admin-staff__error">{editFormErrors.phoneNumber}</span>
+              )}
+            </div>
+            <div className="admin-staff__form-row">
+              <div className="admin-staff__form-group">
+                <label htmlFor="editPassword" className="admin-staff__label">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  id="editPassword"
+                  name="password"
+                  value={editFormData.password}
+                  onChange={handleEditInputChange}
+                  className={`admin-staff__input ${editFormErrors.password ? 'admin-staff__input--error' : ''}`}
+                  placeholder="Leave blank to keep current password"
+                />
+                {editFormErrors.password && (
+                  <span className="admin-staff__error">{editFormErrors.password}</span>
+                )}
+              </div>
+              <div className="admin-staff__form-group">
+                <label htmlFor="editConfirmPassword" className="admin-staff__label">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  id="editConfirmPassword"
+                  name="confirmPassword"
+                  value={editFormData.confirmPassword}
+                  onChange={handleEditInputChange}
+                  className={`admin-staff__input ${editFormErrors.confirmPassword ? 'admin-staff__input--error' : ''}`}
+                />
+                {editFormErrors.confirmPassword && (
+                  <span className="admin-staff__error">{editFormErrors.confirmPassword}</span>
+                )}
+              </div>
+            </div>
+            <div className="admin-staff__dialog-actions">
+              <button
+                className="admin-staff__btn admin-staff__btn--secondary"
+                onClick={handleCancelEdit}
+                disabled={isSavingEdit}
+              >
+                Cancel
+              </button>
+              <button
+                className="admin-staff__btn admin-staff__btn--primary"
+                onClick={handleSaveEdit}
+                disabled={isSavingEdit}
+              >
+                {isSavingEdit ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>

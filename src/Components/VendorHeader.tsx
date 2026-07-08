@@ -41,9 +41,18 @@ const VendorHeader: React.FC<VendorHeaderProps> = ({ title, onSearch, showSearch
         <h1 className="dashboard__title">{title}</h1>
         <div className="dashboard__user" ref={dropdownRef}>
           <div className="dashboard__avatar">
-            <span className="dashboard__avatar-text">
-              {authState.vendor?.businessName ? authState.vendor.businessName.charAt(0).toUpperCase() : "DV"}
-            </span>
+            {authState.vendor?.profilePicture ? (
+              <img
+                src={authState.vendor.profilePicture}
+                alt={authState.vendor.businessName || "Vendor"}
+                className="dashboard__avatar-image"
+                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
+              />
+            ) : (
+              <span className="dashboard__avatar-text">
+                {authState.vendor?.businessName ? authState.vendor.businessName.charAt(0).toUpperCase() : "DV"}
+              </span>
+            )}
           </div>
           <div className="dashboard__user-info">
             <p className="dashboard__username">{authState.vendor?.businessName || "Unknown Vendor"}</p>

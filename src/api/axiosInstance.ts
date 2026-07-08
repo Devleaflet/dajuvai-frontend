@@ -20,38 +20,44 @@ export const setupAxiosInterceptors = (
     axiosInstance.interceptors.response.eject(responseInterceptorId);
   }
 
-  requestInterceptorId = axiosInstance.interceptors.request.use((config) => {
-    const url = config.url ?? "";
-    const isVendorRequest =
-      url.startsWith("/api/vendor") || url.startsWith("/api/vendors");
+  requestInterceptorId = axiosInstance.interceptors.request.use(
+    (config) => {
+      const url = config.url ?? "";
+      const isVendorRequest =
+        url.startsWith("/api/vendor") || url.startsWith("/api/vendors");
 
-    // Use vendor token only for vendor endpoints; otherwise use user token.
-    // Fall back to vendorToken for non-vendor-prefixed endpoints when no authToken
-    // is present (e.g. vendor adding/updating a product at /api/categories/…/products).
-    const token = isVendorRequest
-      ? localStorage.getItem("vendorToken")
-      : (getTokenFn?.() ?? localStorage.getItem("authToken") ?? localStorage.getItem("vendorToken"));
-    //("Axios interceptor - Token:", token ? `exists (${token.substring(0, 20)}...)` : 'null');
-    //("Axios interceptor - URL:", config.url);
-    //("Axios interceptor - Method:", config.method);
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      //("Axios interceptor - Authorization header set:", config.headers.Authorization);
-    } else {
-      console.warn("Axios interceptor - No token available for request:", config.url);
-      if (config.headers) {
-        delete (config.headers as any).Authorization;
-        delete (config.headers as any).authorization;
+      // Use vendor token only for vendor endpoints; otherwise use user token.
+      // Fall back to vendorToken for non-vendor-prefixed endpoints when no authToken
+      // is present (e.g. vendor adding/updating a product at /api/categories/…/products).
+      const token = isVendorRequest
+        ? localStorage.getItem("vendorToken")
+        : (getTokenFn?.() ??
+          localStorage.getItem("authToken") ??
+          localStorage.getItem("vendorToken"));
+      //("Axios interceptor - Token:", token ? `exists (${token.substring(0, 20)}...)` : 'null');
+      //("Axios interceptor - URL:", config.url);
+      //("Axios interceptor - Method:", config.method);
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+        //("Axios interceptor - Authorization header set:", config.headers.Authorization);
+      } else {
+        console.warn(
+          "Axios interceptor - No token available for request:",
+          config.url,
+        );
+        if (config.headers) {
+          delete (config.headers as any).Authorization;
+          delete (config.headers as any).authorization;
+        }
       }
-    }
 
-
-
-    return config;
-  }, (error) => {
-    console.error("Axios interceptor - Request error:", error);
-    return Promise.reject(error);
-  });
+      return config;
+    },
+    (error) => {
+      console.error("Axios interceptor - Request error:", error);
+      return Promise.reject(error);
+    },
+  );
 
   // Add response interceptor to handle 401 errors
   responseInterceptorId = axiosInstance.interceptors.response.use(
@@ -63,8 +69,8 @@ export const setupAxiosInterceptors = (
         config: {
           url: error.config?.url,
           method: error.config?.method,
-          headers: error.config?.headers
-        }
+          headers: error.config?.headers,
+        },
       });
 
       // If we get a 401 and there's a stored token, it's invalid — clear it
@@ -97,7 +103,7 @@ export const setupAxiosInterceptors = (
       }
 
       return Promise.reject(error);
-    }
+    },
   );
 };
 

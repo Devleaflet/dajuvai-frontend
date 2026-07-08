@@ -7,6 +7,8 @@ export interface StaffUser {
   id: number;
   username: string;
   email: string;
+  fullName?: string;
+  phoneNumber?: string;
   role?: string;
   createdAt?: string;
 }
@@ -16,6 +18,15 @@ export interface StaffRegistrationData {
   email: string;
   password: string;
   confirmPassword: string;
+}
+
+export interface StaffUpdateData {
+  username?: string;
+  email?: string;
+  fullName?: string;
+  phoneNumber?: string;
+  password?: string;
+  confirmPassword?: string;
 }
 
 // Generic API response matching our backend style
@@ -125,6 +136,32 @@ const staffApi = {
       return {
         success: false,
         message: error.message || 'Failed to fetch staff list'
+      };
+    }
+  },
+
+  // Update a staff user's username/email
+  async updateStaff(id: number, data: StaffUpdateData): Promise<ApiResponse<StaffUser>> {
+    try {
+      const response = await axiosInstance.put(`/api/auth/staff/${id}`, data, {
+        validateStatus: (status) => status < 500,
+      });
+
+      if (response.status === 200) {
+        return { success: true, data: response.data.data };
+      }
+
+      return {
+        success: false,
+        ...(typeof response.data === 'object' ? response.data : { message: String(response.data) }),
+        statusCode: response.status,
+      };
+    } catch (error: any) {
+      console.error('Error updating staff:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to update staff member',
+        statusCode: error.response?.status,
       };
     }
   },

@@ -25,6 +25,8 @@ import AdminDistrict from "./Pages/AdminDistrict";
 import DealAdmin from "./Pages/DealAdmin";
 import AdminPromo from "./Pages/AdminPromo";
 import AdminStaff from "./Pages/AdminStaff";
+import AdminCommission from "./Pages/AdminCommission";
+import VendorCommission from "./Pages/VendorCommission";
 import Shop from "./Pages/Shop";
 import VendorStore from "./Pages/VendorStore";
 import Checkout from "./Pages/CheckOut";
@@ -366,6 +368,14 @@ function App() {
               </ProtectedVendorRoute>
             }
           />
+          <Route
+            path="/vendor-commission"
+            element={
+              <ProtectedVendorRoute>
+                <VendorCommission />
+              </ProtectedVendorRoute>
+            }
+          />
 
           {/* Admin Routes (already protected) */}
           <Route
@@ -478,6 +488,14 @@ function App() {
               <AdminOnlyRoute>
                 <AdminStaff />
               </AdminOnlyRoute>
+            }
+          />
+          <Route
+            path="/admin/commission"
+            element={
+              <AdminOrStaffRoute>
+                <AdminCommission />
+              </AdminOrStaffRoute>
             }
           />
           <Route

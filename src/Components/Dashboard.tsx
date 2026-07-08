@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
 import "../Styles/Dashboard.css";
 import { Sidebar } from "./Sidebar";
 import { Chart } from "chart.js/auto";
@@ -11,6 +12,9 @@ import axiosInstance from "../api/axiosInstance";
 import TopProducts from "./VendorDashboard/TopProducts";
 import VendorRevenueByCategory from "./VendorDashboard/RevenueByCategory";
 import VendorRevenueBySubCategory from "./VendorDashboard/RevenueBySubcategory";
+import commissionApi, { CommissionDocument } from "../api/commission";
+import { useCommissionFile } from "../Hook/useCommissionFile";
+import { API_BASE_URL } from "../config";
 
 interface DashboardProps {
   version?: string;
@@ -26,6 +30,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
   const chartRef = useRef<Chart | null>(null);
   const { authState } = useVendorAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // TanStack Query for stats
   const {
@@ -138,6 +143,47 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
   });
 
   const hasNoPaymentMethod = !vendorData?.paymentOptions?.length;
+
+  // Commission document quick-download banner
+  const { data: commissionDoc } = useQuery({
+    queryKey: ["commission-document", authState.token],
+    queryFn: async () => {
+      const response = await commissionApi.getCurrentDocument(authState.token);
+      return response.success ? response.data ?? null : null;
+    },
+    enabled: !!authState.token,
+    staleTime: 5 * 60 * 1000,
+  });
+  const { actionLoading: commissionActionLoading, handleDownload: handleDownloadCommission } =
+    useCommissionFile(commissionDoc ?? null, authState.token);
+
+  // Keep the banner in sync without polling — admin uploads/deletes push over Socket.io.
+  useEffect(() => {
+    if (!authState.token) return;
+
+    const socket = io(API_BASE_URL, {
+      transports: ["websocket"],
+      withCredentials: true,
+      auth: { token: authState.token },
+    });
+
+    const queryKey = ["commission-document", authState.token];
+    const handleCommissionUpdate = (updated: CommissionDocument) => {
+      queryClient.setQueryData(queryKey, updated);
+    };
+    const handleCommissionDelete = () => {
+      queryClient.setQueryData(queryKey, null);
+    };
+
+    socket.on("commission:update", handleCommissionUpdate);
+    socket.on("commission:delete", handleCommissionDelete);
+
+    return () => {
+      socket.off("commission:update", handleCommissionUpdate);
+      socket.off("commission:delete", handleCommissionDelete);
+      socket.disconnect();
+    };
+  }, [authState.token, queryClient]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -339,6 +385,35 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
                 aria-label="Dismiss banner"
               >
                 ×
+              </button>
+            </div>
+          )}
+
+          {/* Commission document quick-download banner */}
+          {commissionDoc && (
+            <div className="payment-warning-banner" style={{ background: "#fff7ed", borderColor: "#fed7aa" }}>
+              <span className="payment-warning-banner__icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <p className="payment-warning-banner__msg">
+                Commission document: <strong>{commissionDoc.title}</strong>
+              </p>
+              <button
+                className="payment-warning-banner__cta"
+                onClick={handleDownloadCommission}
+                disabled={commissionActionLoading !== null}
+              >
+                {commissionActionLoading === "download" ? "Downloading..." : "Download"}
+              </button>
+              <button
+                className="payment-warning-banner__cta"
+                style={{ background: "transparent", color: "#F97316", border: "1px solid #F97316" }}
+                onClick={() => navigate("/vendor-commission")}
+              >
+                View Details
               </button>
             </div>
           )}

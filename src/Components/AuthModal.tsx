@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import axios from "axios";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../config";
 import { FaInfoCircle } from "react-icons/fa";
@@ -39,6 +39,7 @@ interface VerificationResponse {
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 	const { login, fetchUserData } = useAuth();
 	const navigate = useNavigate();
+	const location = useLocation();
 	const [termsAgreed, setTermsAgreed] = useState<boolean>(false);
 	const [email, setEmail] = useState<string>("");
 	const [password, setPassword] = useState<string>("");
@@ -511,7 +512,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 				if (role === "admin" || role === "staff") {
 					navigate("/admin-dashboard");
 				} else {
-					navigate("/");
+					// Return to whatever page prompted the login modal instead of always going home.
+					navigate(`${location.pathname}${location.search}`);
 				}
 
 				onClose();
@@ -546,6 +548,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 	};
 
 	const handleGoogleLogin = () => {
+		// Browser history during the OAuth round-trip is full of Google's own pages
+		// (account chooser, consent screen), so history.back() after returning would land
+		// on those instead of the app. Stash the actual page the user came from instead.
+		sessionStorage.setItem("postLoginRedirect", `${location.pathname}${location.search}`);
+
 		const callbackUrl = `${window.location.origin}/auth/google/callback`;
 		const redirectUrl = `${API_BASE_URL}/api/auth/google?redirect_uri=${encodeURIComponent(
 			callbackUrl
