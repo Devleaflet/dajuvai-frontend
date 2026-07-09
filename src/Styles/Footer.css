@@ -273,11 +273,11 @@
 
 /* Social Icons - Enhanced Design with better spacing */
 .footer__social-icons {
-	display: flex;
+	display: grid;
+	grid-template-columns: repeat(3, auto);
 	gap: 12px;
-	flex-wrap: wrap;
-	align-items: center;
 	justify-content: center;
+	align-items: center;
 }
 
 /* Enhanced Social Links */
@@ -474,12 +474,11 @@
 
 /* Social Icons Container - Better vertical centering */
 .footer__social-icons {
-	flex: 1;
-	display: flex;
-	align-items: center;
-	justify-content: center;
+	display: grid;
+	grid-template-columns: repeat(3, auto);
 	gap: 15px;
-	flex-wrap: wrap;
+	justify-content: center;
+	align-items: center;
 	margin: 0;
 }
 

@@ -3,11 +3,13 @@ import { TbTruckDelivery } from "react-icons/tb";
 import {
 	FaPhoneVolume,
 	FaLocationDot,
-	FaFacebookF,
+	FaFacebook,
 	FaInstagram,
+	FaYoutube,
+	FaTiktok,
+	FaWhatsapp,
 } from "react-icons/fa6";
 import { MdEmail } from "react-icons/md";
-import { IoLogoWhatsapp } from "react-icons/io";
 import esewa from "../assets/esewa.png";
 import npx from "../assets/npx.png";
 import { Link } from "react-router-dom";
@@ -269,12 +271,44 @@ const Footer: React.FC = () => {
 							<h3 className="footer__section-title">Contact With Us</h3>
 							<div className="footer__social-icons">
 								<a
-									href="https://www.facebook.com/"
+									href="https://www.facebook.com/profile.php?id=61585172477778"
 									className="footer__social-link"
 									target="_blank"
 									rel="noopener noreferrer"
 								>
-									<FaFacebookF />
+									<FaFacebook />
+								</a>
+								<a
+									href="https://www.instagram.com/dajuvaionline/"
+									className="footer__social-link"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<FaInstagram />
+								</a>
+								<a
+									href="https://www.youtube.com/@dajuvaionline"
+									className="footer__social-link"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<FaYoutube />
+								</a>
+								<a
+									href="https://www.tiktok.com/@www.dajuvai.com"
+									className="footer__social-link"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<FaTiktok />
+								</a>
+								<a
+									href="https://wa.me/9779700620004"
+									className="footer__social-link"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<FaWhatsapp />
 								</a>
 								<a
 									href="mailto:Dajuvai106@gmail.com"
@@ -283,22 +317,6 @@ const Footer: React.FC = () => {
 									rel="noopener noreferrer"
 								>
 									<MdEmail />
-								</a>
-								<a
-									href="https://wa.me/+9779700620004"
-									className="footer__social-link"
-									target="_blank"
-									rel="noooopener noreferrer"
-								>
-									<IoLogoWhatsapp />
-								</a>
-								<a
-									href="https://www.instagram.com/dajuvai_/"
-									className="footer__social-link"
-									target="_blank"
-									rel="noopener noreferrer"
-								>
-									<FaInstagram />
 								</a>
 							</div>
 						</div>
