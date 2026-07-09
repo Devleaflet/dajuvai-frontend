@@ -17,7 +17,7 @@ import {
 	FaTimes,
 	FaUser,
 } from 'react-icons/fa';
-import { FaFacebook, FaInstagram, FaTiktok, FaWhatsapp } from 'react-icons/fa6';
+import { FaFacebook, FaInstagram, FaTiktok, FaWhatsapp, FaYoutube } from 'react-icons/fa6';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
 import { fetchCategory } from '../api/category';
@@ -1365,22 +1365,33 @@ const Navbar: React.FC = () => {
 						<h3 className="navbar__side-menu-subtitle">Follow Us</h3>
 						<div className="navbar__side-menu-social-icons">
 							<a
-								href="https://www.facebook.com/"
+								href="https://www.facebook.com/profile.php?id=61585172477778"
 								target="_blank"
+								rel="noopener noreferrer"
 								className="navbar__social-link navbar__social-link--facebook"
 							>
 								<FaFacebook />
 							</a>
 							<a
-								href="https://www.instagram.com/dajuvai_/"
+								href="https://www.instagram.com/dajuvaionline/"
 								target="_blank"
+								rel="noopener noreferrer"
 								className="navbar__social-link navbar__social-link--instagram"
 							>
 								<FaInstagram />
 							</a>
 							<a
+								href="https://www.youtube.com/@dajuvaionline"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="navbar__social-link navbar__social-link--youtube"
+							>
+								<FaYoutube />
+							</a>
+							<a
 								href="https://www.tiktok.com/@www.dajuvai.com"
 								target="_blank"
+								rel="noopener noreferrer"
 								className="navbar__social-link navbar__social-link--tiktok"
 							>
 								<FaTiktok />
@@ -1488,22 +1499,33 @@ const Navbar: React.FC = () => {
 
 					<div className="navbar__social navbar__social--desktop">
 						<a
-							href="https://www.facebook.com/"
+							href="https://www.facebook.com/profile.php?id=61585172477778"
 							target="_blank"
+							rel="noopener noreferrer"
 							className="navbar__social-link navbar__social-link--facebook"
 						>
 							<FaFacebook />
 						</a>
 						<a
-							href="https://www.instagram.com/dajuvai_/"
+							href="https://www.instagram.com/dajuvaionline/"
 							target="_blank"
+							rel="noopener noreferrer"
 							className="navbar__social-link navbar__social-link--instagram"
 						>
 							<FaInstagram />
 						</a>
 						<a
+							href="https://www.youtube.com/@dajuvaionline"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="navbar__social-link navbar__social-link--youtube"
+						>
+							<FaYoutube />
+						</a>
+						<a
 							href="https://www.tiktok.com/@www.dajuvai.com"
 							target="_blank"
+							rel="noopener noreferrer"
 							className="navbar__social-link navbar__social-link--tiktok"
 						>
 							<FaTiktok />

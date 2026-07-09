@@ -826,18 +826,11 @@ const ProductPage = () => {
 							{product.hasVariants &&
 								product.variants &&
 								product.variants.length > 1 && (
-									<div
-										className="product-options"
-										style={{
-											display: "flex",
-											justifyContent: "start",
-											flexDirection: "column",
-										}}
-									>
-										<h4 className="product-options__label text-lg font-semibold mb-2">
+									<div className="product-options">
+										<h4 className="product-options__label">
 											Available Options:
 										</h4>
-										<div className="product-options__variants p-2 rounded">
+										<div className="product-options__variants">
 											{(() => {
 												// Dynamically build attribute options from variants
 												const attributeOptions: Record<
@@ -886,17 +879,11 @@ const ProductPage = () => {
 													if (attrType === "color") {
 														return (
 															<div
-																className="flex gap-2 mb-2"
+																className="product-options__attribute"
 																key={attrType}
 															>
-																<span
-																	className="text-md font-medium text-black mr-2 whitespace-nowrap"
-																	style={{
-																		padding: "10px 3px",
-																		fontWeight: "600",
-																	}}
-																>
-																	{attrType.toUpperCase()}
+																<span className="product-options__attribute-label">
+																	{attrType}
 																</span>
 																<div
 																	className={`product-options__variant-row ${hasMultipleOptions
@@ -964,17 +951,11 @@ const ProductPage = () => {
 													// Default logic for other attributes
 													return (
 														<div
-															className="flex gap-2 mb-2"
+															className="product-options__attribute"
 															key={attrType}
 														>
-															<span
-																className="text-md font-medium text-black mr-2 whitespace-nowrap"
-																style={{
-																	padding: "10px 3px",
-																	fontWeight: "600",
-																}}
-															>
-																{attrType.toUpperCase()}
+															<span className="product-options__attribute-label">
+																{attrType}
 															</span>
 															<div
 																className={`product-options__variant-row ${hasMultipleOptions
