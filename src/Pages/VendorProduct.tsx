@@ -9,9 +9,11 @@ import Pagination from "../Components/Pagination";
 import ProductList from "../Components/ProductList";
 import { Sidebar } from "../Components/Sidebar";
 import { Product } from "../Components/Types/Product";
+import { ApiProduct } from "../Components/Types/ApiProduct";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import "../Styles/VendorProduct.css";
-import { Product as ApiProduct, ProductFormData } from "../types/product";
+import { ProductFormData } from "../types/product";
+import { normalizeDiscountType } from "../utils/productPricing";
 import * as XLSX from "xlsx";
 import VendorHeader from "../Components/VendorHeader";
 
@@ -220,6 +222,7 @@ const VendorProduct: React.FC = () => {
 						description: product.description,
 
 						finalPrice: product.finalPrice,
+						price: finalPrice,
 
 						deal: product.deal,
 
@@ -244,12 +247,12 @@ const VendorProduct: React.FC = () => {
 						category: product.subcategory?.name || "",
 						subcategoryId: product.subcategory?.id || 0,
 
-						vendor: product.vendor?.businessName || "",
+							vendor: product.vendor?.businessName || "",
 
-						rating: 0,
-						ratingCount: 0,
-						created_at: product.created_at,
-					};
+							rating: 0,
+							ratingCount: 0,
+							created_at: (product as any).created_at || product.createdAt,
+						};
 				}
 			);
 
@@ -402,7 +405,7 @@ const VendorProduct: React.FC = () => {
 						sku: variant.sku,
 						basePrice: variant.price || variant.basePrice,
 						discount: variant.discount || 0,
-						discountType: variant.discountType || "PERCENTAGE",
+						discountType: normalizeDiscountType(variant.discountType),
 						attributes: variant.attributes || {},
 						variantImages: variant.images || variant.variantImages || [],
 						stock: variant.stock,
@@ -514,9 +517,12 @@ const VendorProduct: React.FC = () => {
 								? product.price
 								: 0,
 			discount: discount,
-			discountType: (product.discountType === "PERCENTAGE"
-				? "PERCENTAGE"
-				: "FLAT") as "PERCENTAGE" | "FLAT",
+			discountType:
+				product.discountType === "PERCENTAGE" ||
+				product.discountType === "FLAT" ||
+				product.discountType === "NONE"
+					? product.discountType
+					: null,
 			status:
 				product.status === "OUT_OF_STOCK"
 					? "OUT_OF_STOCK"
@@ -527,6 +533,7 @@ const VendorProduct: React.FC = () => {
 				product.productImages || (product.image ? [product.image] : []),
 			inventory: [],
 			vendorId: 0,
+			createdAt: new Date().toISOString(),
 			created_at: new Date().toISOString(),
 			updated_at: new Date().toISOString(),
 			subcategory: subcategory,
@@ -545,7 +552,7 @@ const VendorProduct: React.FC = () => {
 						district: { id: 0, name: "" },
 					},
 			brand: null,
-			deal: null,
+			deal: product.deal || null,
 			hasVariants: (product as any).hasVariants || false,
 			variants: (product as any).variants || [],
 			price:

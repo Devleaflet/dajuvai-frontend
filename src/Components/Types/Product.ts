@@ -7,7 +7,8 @@ export interface Product {
   title?: string;
   description: string;
   price: string | number;
-  basePrice?:  number;
+  basePrice?: string | number;
+  originalPrice?: string | number;
   finalPrice: number;
   discount?: string;
   rating: number;
@@ -16,6 +17,7 @@ export interface Product {
   freeDelivery?: boolean;
   image: string;
   stock?: number;
+  createdAt?: string;
   created_at?:string
   brand?: string;
   name?: string;
@@ -37,10 +39,10 @@ export interface Product {
   categoryId?: number;
   subcategoryId?: number;
   brand_id?: number | null;
-  deal: Deal;
+  deal: (Deal | { id: number; title: string }) | null;
   dealId?: number | null;
   status?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
-  discountType?: "PERCENTAGE" | "FLAT";
+  discountType?: "PERCENTAGE" | "FLAT" | "NONE" | null;
   size?: string[];
   variants?: Array<{
     id?: number;

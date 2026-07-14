@@ -244,23 +244,36 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 					{description && (
 						<p className="product1__description">{description}</p>
 					)}
-					<div className="product1__price">
-						<div className="product1__price-row">
-							<span className="product1__current-price">
-								Rs {finalPrice?.toLocaleString()}
-							</span>
+					<div 
+						className="product1__price"
+						style={
+							finalPrice >= 10000
+								? { flexDirection: "column", alignItems: "flex-start", gap: "2px" }
+								: undefined
+						}
+					>
+						<span className="product1__current-price">
+							Rs {finalPrice?.toLocaleString()}
+						</span>
 
-							{savingPrice && (
+						{savingPrice && (
+							<div 
+								className="product1__price-details"
+								style={{
+									display: "flex",
+									alignItems: "center",
+									gap: "6px",
+									flexWrap: "wrap",
+									rowGap: "2px"
+								}}
+							>
+								<span className="product1__original-price" style={{ marginLeft: 0 }}>
+									Rs {basePrice?.toLocaleString()}
+								</span>
 								<span className="product1__discount">
 									Save Rs {savingPrice}
 								</span>
-							)}
-						</div>
-
-						{savingPrice && (
-							<span className="product1__original-price">
-								Rs {basePrice?.toLocaleString()}
-							</span>
+							</div>
 						)}
 					</div>
 				</div>

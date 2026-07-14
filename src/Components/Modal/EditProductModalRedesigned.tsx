@@ -9,6 +9,7 @@ import { dealApiService } from '../../services/apiDeals';
 import { Attribute, ProductFormData, ProductVariant } from "../../types/product";
 import { ApiProduct } from "../Types/ApiProduct";
 import { Deal } from '../Types/Deal';
+import { calculatePricingPreview, normalizeDiscountType } from "../../utils/productPricing";
 
 export enum InventoryStatus {
   AVAILABLE = 'AVAILABLE',
@@ -81,9 +82,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
   // Image state
   const [images, setImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
-  const isDealActive = Boolean(formData.dealId);
-
-
   // Helpers: parse and dedupe values from comma-separated text
   const parseValues = (text: string): string[] => {
     const raw = text.split(',');
@@ -623,8 +621,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
       const allImages = [...existingImages, ...newImageUrls];
 
-      const isDealActive = Boolean(formData.dealId);
-
       /* -------------------- BASE PAYLOAD -------------------- */
       const updatePayload: any = {
         name: formData.name,
@@ -638,12 +634,10 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       if (allImages.length > 0) updatePayload.productImages = allImages;
 
       /* -------------------- DISCOUNT (PRODUCT LEVEL) -------------------- */
-      if (!isDealActive) {
-        updatePayload.discount =
-          formData.discount != null ? Number(formData.discount) : 0;
-        updatePayload.discountType =
-          formData.discountType || 'NONE';
-      }
+      updatePayload.discount =
+        formData.discount != null ? Number(formData.discount) : 0;
+      updatePayload.discountType =
+        normalizeDiscountType(formData.discountType);
 
       /* -------------------- VARIANT PRODUCTS -------------------- */
       if (formData.hasVariants && variants.length > 0) {
@@ -671,10 +665,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
           status: variant.status || 'AVAILABLE',
 
           /* Deal overrides variant discount */
-          discount: isDealActive ? 0 : Number(variant.discount || 0),
-          discountType: isDealActive
-            ? 'NONE'
-            : variant.discountType || 'NONE',
+          discount: Number(variant.discount || 0),
+          discountType: normalizeDiscountType(variant.discountType),
 
           attributes: (variant.attributes || []).reduce((acc, attr) => {
             const key = attr.type?.trim().toLowerCase();
@@ -877,7 +869,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     <path d="M9 11H7V9H9V11ZM13 11H11V9H13V11ZM17 11H15V9H17V11ZM19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3Z" />
                   </svg>
                 </div>
-                <h3 className="section-title">Product Configuration</h3>
+                <h3 className="section-title">Product Details and Configuration</h3>
               </div>
 
               <div className="toggle-container" onClick={() => handleInputChange('hasVariants', !formData.hasVariants)}>
@@ -912,7 +904,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     <input
                       type="number"
                       className="form-input"
-                      value={formData.basePrice || ''}
+                      value={formData.basePrice ?? ''}
                       onChange={(e) => handleInputChange('basePrice', Number(e.target.value))}
                       placeholder="0.00"
                       min="0"
@@ -926,7 +918,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     <input
                       type="number"
                       className="form-input"
-                      value={formData.stock || ''}
+                      value={formData.stock ?? ''}
                       onChange={(e) => handleInputChange('stock', Number(e.target.value))}
                       placeholder="0"
                       min="0"
@@ -944,20 +936,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                   <h3 className="section-title">Discount</h3>
                 </div>
 
-                {isDealActive && (
-                  <div className="info-banner">
-                    Discount is controlled by the selected deal.
-                  </div>
-                )}
-
                 <div className="form-grid two-columns">
                   <div className="form-group">
                     <label className="form-label">Discount Amount</label>
                     <input
                       type="number"
                       className="form-input"
-                      value={formData.discount || ''}
-                      disabled={isDealActive}
+                      value={formData.discount ?? ''}
                       onChange={(e) =>
                         handleInputChange(
                           'discount',
@@ -972,7 +957,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     <select
                       className="form-select"
                       value={formData.discountType || 'NONE'}
-                      disabled={isDealActive}
                       onChange={(e) =>
                         handleInputChange('discountType', e.target.value)
                       }
@@ -984,6 +968,46 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                   </div>
                 </div>
               </div>
+            )}
+
+            {!formData.hasVariants && (
+              (() => {
+                const selectedDeal = formData.dealId ? deals.find(d => Number(d.id) === Number(formData.dealId)) : undefined;
+                const pricingPreview = calculatePricingPreview({
+                  basePrice: formData.basePrice,
+                  discount: formData.discount,
+                  discountType: formData.discountType,
+                  dealDiscountPercentage: selectedDeal?.discountPercentage,
+                });
+
+                return (
+                  <div className="form-section price-summary-section" style={{ backgroundColor: "#f9fafb", padding: "16px", borderRadius: "8px", border: "1px solid #e5e7eb", marginTop: "12px" }}>
+                    <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", fontWeight: "600", color: "#374151" }}>Price Preview</h4>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div>
+                        <label className="form-label" style={{ marginBottom: "4px" }}>Discount Amount (Calc)</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={`Rs ${pricingPreview.totalDiscountAmount.toFixed(2)}`}
+                          readOnly
+                          style={{ backgroundColor: "#f3f4f6", cursor: "not-allowed" }}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label" style={{ marginBottom: "4px" }}>Final Price after Discount</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={`Rs ${pricingPreview.finalPrice.toFixed(2)}`}
+                          readOnly
+                          style={{ backgroundColor: "#f3f4f6", cursor: "not-allowed", fontWeight: "600", color: "#111827" }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()
             )}
 
 
@@ -1063,9 +1087,18 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                 </div>
 
                 <div className="variants-section">
-                  {variants.map((variant, index) => (
-                    <div key={index} className="variant-card">
-                      <div className="variant-header">
+                  {variants.map((variant, index) => {
+                    const selectedDeal = formData.dealId ? deals.find(d => Number(d.id) === Number(formData.dealId)) : undefined;
+                    const variantPricingPreview = calculatePricingPreview({
+                      basePrice: variant.price,
+                      discount: variant.discount,
+                      discountType: variant.discountType,
+                      dealDiscountPercentage: selectedDeal?.discountPercentage,
+                    });
+
+                    return (
+                      <div key={index} className="variant-card">
+                        <div className="variant-header">
                         <div className="variant-title">
                           <span className="variant-number">{index + 1}</span>
                           {formatVariantAttributes(variant.attributes) || `Variant ${index + 1}`}
@@ -1124,17 +1157,10 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                         <div className="form-group">
                           <label className="form-label">Discount Amount</label>
 
-                          {isDealActive && (
-                            <div className="info-hint">
-                              Discount overridden by deal
-                            </div>
-                          )}
-
                           <input
                             type="number"
                             className="form-input"
-                            value={variant.discount || ''}
-                            disabled={isDealActive}
+                            value={variant.discount ?? ''}
                             onChange={(e) =>
                               updateVariant(
                                 index,
@@ -1150,7 +1176,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                           <select
                             className="form-select"
                             value={variant.discountType || 'NONE'}
-                            disabled={isDealActive}
                             onChange={(e) =>
                               updateVariant(index, 'discountType', e.target.value)
                             }
@@ -1159,6 +1184,29 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                             <option value="PERCENTAGE">Percentage (%)</option>
                             <option value="FLAT">Fixed Amount</option>
                           </select>
+                        </div>
+
+                        {/* Real-time calculated fields for variant */}
+                        <div className="form-group">
+                          <label className="form-label">Discount Amount (Calc)</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={`Rs ${variantPricingPreview.totalDiscountAmount.toFixed(2)}`}
+                            readOnly
+                            style={{ backgroundColor: "#f3f4f6", cursor: "not-allowed" }}
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Final Price</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={`Rs ${variantPricingPreview.finalPrice.toFixed(2)}`}
+                            readOnly
+                            style={{ backgroundColor: "#f3f4f6", cursor: "not-allowed", fontWeight: "600", color: "#111827" }}
+                          />
                         </div>
 
                       </div>
@@ -1205,7 +1253,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                         )}
                       </div>
                     </div>
-                  ))}
+                  );})}
                 </div>
 
                 <button
@@ -1239,7 +1287,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     <input
                       type="number"
                       className="form-input"
-                      value={formData.discount || ''}
+                      value={formData.discount ?? ''}
                       onChange={(e) => handleInputChange('discount', e.target.value === '' ? undefined : Number(e.target.value))}
                       placeholder="0.00"
                       min="0"

@@ -8,7 +8,7 @@ interface RawProduct {
 	description: string;
 	basePrice: string;
 	discount: string;
-	discountType: "PERCENTAGE" | "FLAT";
+	discountType: "PERCENTAGE" | "FLAT" | "NONE" | null;
 	status: "AVAILABLE" | "OUT_OF_STOCK" | "LOW_STOCK";
 	stock: number;
 	subcategoryId: number;
@@ -76,7 +76,7 @@ export interface Product {
 	basePrice?: string | number; // Maps to `basePrice` in API response
 	originalPrice?: string | number;
 	discount?: string | number; // API returns string (e.g., "15.00")
-	discountType?: "PERCENTAGE" | "FLAT";
+	discountType?: "PERCENTAGE" | "FLAT" | "NONE";
 	rating: number; // Maps to `avgRating` in API response
 	ratingCount: string | number; // Maps to `count` in API response
 	isBestSeller?: boolean; // Not in API response, default to false
@@ -217,7 +217,7 @@ export const createProduct = async (
 		description?: string;
 		basePrice?: number;
 		discount?: number;
-		discountType?: "PERCENTAGE" | "FLAT";
+		discountType?: "PERCENTAGE" | "FLAT" | "NONE";
 		status?: "AVAILABLE" | "OUT_OF_STOCK" | "LOW_STOCK";
 		stock?: number;
 		hasVariants: boolean;
@@ -376,7 +376,7 @@ export const updateProduct = async (
 		description?: string;
 		basePrice?: number;
 		discount?: number;
-		discountType?: "PERCENTAGE" | "FLAT";
+		discountType?: "PERCENTAGE" | "FLAT" | "NONE";
 		status?: "AVAILABLE" | "OUT_OF_STOCK" | "LOW_STOCK";
 		stock?: number;
 		hasVariants: boolean;

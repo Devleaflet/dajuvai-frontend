@@ -426,12 +426,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 							{title}
 						</h3>
 						<p className="product-card__description">{description}</p>
-						<div className="product-card__price">
+						<div 
+							className="product-card__price"
+							style={
+								finalPriceNum >= 10000
+									? { flexDirection: "column", alignItems: "flex-start", gap: "2px" }
+									: undefined
+							}
+						>
 							<span className="product-card__current-price">
 								Rs {finalPriceNum?.toFixed(2)}
 							</span>
 
-							<div className="product-card__price-details">
+							<div 
+								className="product-card__price-details"
+								style={finalPriceNum >= 10000 ? { flexWrap: "wrap", rowGap: "2px" } : undefined}
+							>
 								{hasDiscount && (
 									<>
 										<span className="product-card__original-price">

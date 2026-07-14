@@ -6,6 +6,7 @@ import { useVendorAuth } from "../context/VendorAuthContext";
 import { dealApiService } from '../services/apiDeals';
 import { Deal } from '../Components/Types/Deal';
 import { toast } from 'react-hot-toast';
+import { calculatePricingPreview, normalizeDiscountType } from '../utils/productPricing';
 
 import { InventoryStatus } from './Types/InventoryStatus';
 
@@ -207,9 +208,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   // Image state: support both local Files and already-uploaded URLs
   const [images, setImages] = useState<Array<File | string>>([]);
 
-  const isDealActive = Boolean(formData.dealId);
-
-
   // Load data on mount
   useEffect(() => {
     if (isOpen) {
@@ -277,7 +275,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       stock: 0,
       status: InventoryStatus.AVAILABLE,
       discount: 0,
-      discountType: 'PERCENTAGE',
+      discountType: 'NONE',
       attributes: [],
       images: [],
     };
@@ -420,7 +418,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
         stock: 0,
         status: InventoryStatus.AVAILABLE,
         discount: 0,
-        discountType: 'PERCENTAGE',
+        discountType: 'NONE',
         attributes: cleanSpecs.map((spec, i) => ({
           type: spec.type,
           values: [{ value: combo[i] }]
@@ -472,8 +470,6 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     setIsLoading(true);
 
     try {
-      const isDealActive = Boolean(formData.dealId);
-
       /* ---------------- PRODUCT IMAGES ---------------- */
       const imageFiles = images.filter(img => img instanceof File) as File[];
       const existingImageUrls = images.filter(img => typeof img === 'string') as string[];
@@ -517,12 +513,10 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       };
 
       /* ---------------- PRODUCT DISCOUNT ---------------- */
-      if (!isDealActive) {
-        productData.discount =
-          formData.discount != null ? Number(formData.discount) : 0;
-        productData.discountType =
-          formData.discountType || 'PERCENTAGE';
-      }
+      productData.discount =
+        formData.discount != null ? Number(formData.discount) : 0;
+      productData.discountType =
+        normalizeDiscountType(formData.discountType);
 
       /* ---------------- VARIANT PRODUCTS ---------------- */
       if (formData.hasVariants) {
@@ -533,10 +527,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
           status: variant.status,
 
           // 🔑 deal overrides variant discount
-          discount: isDealActive ? 0 : Number(variant.discount || 0),
-          discountType: isDealActive
-            ? 'PERCENTAGE'
-            : variant.discountType || 'PERCENTAGE',
+          discount: Number(variant.discount || 0),
+          discountType: normalizeDiscountType(variant.discountType),
 
           attributes: (variant.attributes || []).reduce((acc: any, attr) => {
             const key = attr.type?.trim().toLowerCase();
@@ -734,7 +726,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                     <path d="M9 11H7V9H9V11ZM13 11H11V9H13V11ZM17 11H15V9H17V11ZM19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3Z" />
                   </svg>
                 </div>
-                <h3 className="section-title">Product Configuration</h3>
+                <h3 className="section-title">Product Details and Configuration</h3>
               </div>
 
               <div className="toggle-container" onClick={() => handleInputChange('hasVariants', !formData.hasVariants)}>
@@ -770,7 +762,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                     <input
                       type="number"
                       className="form-input"
-                      value={formData.basePrice || ''}
+                      value={formData.basePrice ?? ''}
                       onChange={(e) => handleInputChange('basePrice', Number(e.target.value))}
                       placeholder="0.00"
                       min="0"
@@ -783,7 +775,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                     <input
                       type="number"
                       className="form-input"
-                      value={formData.stock || ''}
+                      value={formData.stock ?? ''}
                       onChange={(e) => handleInputChange('stock', Number(e.target.value))}
                       placeholder="0"
                       min="0"
@@ -793,8 +785,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
               </div>
             )}
 
-            {/* Discount Section (Non-Variant Only and No Deal) */}
-            {!formData.hasVariants && !formData.dealId && (
+            {/* Discount Section (Non-Variant Only) */}
+            {!formData.hasVariants && (
               <div className="form-section">
                 <div className="section-header">
                   <div className="section-icon">
@@ -811,7 +803,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                     <input
                       type="number"
                       className="form-input"
-                      value={formData.discount || ''}
+                      value={formData.discount ?? ''}
                       onChange={(e) => handleInputChange('discount', e.target.value === '' ? undefined : Number(e.target.value))}
                       placeholder="0.00"
                       min="0"
@@ -833,6 +825,46 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                   </div>
                 </div>
               </div>
+            )}
+
+            {!formData.hasVariants && (
+              (() => {
+                const selectedDeal = formData.dealId ? deals.find(d => Number(d.id) === Number(formData.dealId)) : undefined;
+                const pricingPreview = calculatePricingPreview({
+                  basePrice: formData.basePrice,
+                  discount: formData.discount,
+                  discountType: formData.discountType,
+                  dealDiscountPercentage: selectedDeal?.discountPercentage,
+                });
+
+                return (
+                  <div className="form-section price-summary-section" style={{ backgroundColor: "#f9fafb", padding: "16px", borderRadius: "8px", border: "1px solid #e5e7eb", marginTop: "12px" }}>
+                    <h4 style={{ margin: "0 0 8px 0", fontSize: "14px", fontWeight: "600", color: "#374151" }}>Price Preview</h4>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div>
+                        <label className="form-label" style={{ marginBottom: "4px" }}>Discount Amount (Calc)</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={`Rs ${pricingPreview.totalDiscountAmount.toFixed(2)}`}
+                          readOnly
+                          style={{ backgroundColor: "#f3f4f6", cursor: "not-allowed" }}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label" style={{ marginBottom: "4px" }}>Final Price after Discount</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={`Rs ${pricingPreview.finalPrice.toFixed(2)}`}
+                          readOnly
+                          style={{ backgroundColor: "#f3f4f6", cursor: "not-allowed", fontWeight: "600", color: "#111827" }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()
             )}
 
             {/* Variants Section */}
@@ -911,9 +943,18 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                 </div>
 
                 <div className="variants-section">
-                  {variants.map((variant, index) => (
-                    <div key={index} className="variant-card">
-                      <div className="variant-header">
+                  {variants.map((variant, index) => {
+                    const selectedDeal = formData.dealId ? deals.find(d => Number(d.id) === Number(formData.dealId)) : undefined;
+                    const variantPricingPreview = calculatePricingPreview({
+                      basePrice: variant.price,
+                      discount: variant.discount,
+                      discountType: variant.discountType,
+                      dealDiscountPercentage: selectedDeal?.discountPercentage,
+                    });
+
+                    return (
+                      <div key={index} className="variant-card">
+                        <div className="variant-header">
                         <div className="variant-title">
                           <span className="variant-number">{index + 1}</span>
                           {(variant.attributes && variant.attributes.length > 0)
@@ -968,14 +1009,13 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                           />
                         </div>
 
-                        {!formData.dealId && (
-                          <>
-                            <div className="form-group">
+                        <>
+                          <div className="form-group">
                               <label className="form-label">Discount Amount</label>
                               <input
                                 type="number"
                                 className="form-input"
-                                value={variant.discount || ''}
+                                value={variant.discount ?? ''}
                                 onChange={(e) => updateVariant(index, 'discount', e.target.value === '' ? 0 : Number(e.target.value))}
                                 placeholder="0.00"
                                 min="0"
@@ -987,15 +1027,38 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                               <label className="form-label">Discount Type</label>
                               <select
                                 className="form-select"
-                                value={variant.discountType || 'PERCENTAGE'}
+                                value={variant.discountType || 'NONE'}
                                 onChange={(e) => updateVariant(index, 'discountType', e.target.value)}
                               >
+                                <option value="NONE">No discount</option>
                                 <option value="PERCENTAGE">Percentage (%)</option>
                                 <option value="FLAT">Fixed Amount</option>
                               </select>
                             </div>
                           </>
-                        )}
+
+                        {/* Real-time calculated fields for variant */}
+                        <div className="form-group">
+                          <label className="form-label">Discount Amount (Calc)</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={`Rs ${variantPricingPreview.totalDiscountAmount.toFixed(2)}`}
+                            readOnly
+                            style={{ backgroundColor: "#f3f4f6", cursor: "not-allowed" }}
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Final Price</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={`Rs ${variantPricingPreview.finalPrice.toFixed(2)}`}
+                            readOnly
+                            style={{ backgroundColor: "#f3f4f6", cursor: "not-allowed", fontWeight: "600", color: "#111827" }}
+                          />
+                        </div>
                       </div>
 
                       {/* Attributes (read-only summary) */}
@@ -1061,7 +1124,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                         )}
                       </div>
                     </div>
-                  ))}
+                  );})}
                 </div>
 
                 <button
