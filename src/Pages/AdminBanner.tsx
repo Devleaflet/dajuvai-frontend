@@ -1274,11 +1274,11 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
               <div className="create-banner__field">
                 <label className="create-banner__label">External Link</label>
                 <input
-                  type="url"
+                  type="text"
                   className="create-banner__input"
                   value={externalLink}
                   onChange={(e) => setExternalLink(e.target.value)}
-                  placeholder="https://example.com"
+                  placeholder="example.com"
                   disabled={loading || fetching}
                 />
               </div>
@@ -1504,7 +1504,11 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
         bannerData.selectedDeal = selectedDeal;
       }
       if (productSource === "external") {
-        bannerData.externalLink = externalLink;
+        let link = externalLink.trim();
+        if (link && !/^https?:\/\//i.test(link)) {
+          link = `https://${link}`;
+        }
+        bannerData.externalLink = link;
       }
 
       // Upload images and get URLs
