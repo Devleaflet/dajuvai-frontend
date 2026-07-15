@@ -56,7 +56,12 @@ const VendorOrder: React.FC = () => {
           createdAt: order.createdAt,
           price: parseFloat(order.totalPrice) + parseFloat(order.shippingFee),
           paymentStatus: order.paymentMethod || "",
-          status: order.status,
+          status: (() => {
+            const rawStatus = (order.status || "").toUpperCase();
+            if (rawStatus === "DELIVERED") return "delivered";
+            if (rawStatus === "CANCELLED" || rawStatus === "CANCELED" || rawStatus === "RETURNED") return "canceled";
+            return "pending";
+          })(),
         };
       });
     },
@@ -163,6 +168,7 @@ const VendorOrder: React.FC = () => {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    setCurrentPage(1);
   };
 
   const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
@@ -292,7 +298,10 @@ const VendorOrder: React.FC = () => {
                 <button
                   key={tab.id}
                   className={`vendor-order__tab ${activeTab === tab.id ? "vendor-order__tab--active" : ""}`}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setCurrentPage(1);
+                  }}
                 >
                   {tab.label}
                 </button>
@@ -304,7 +313,10 @@ const VendorOrder: React.FC = () => {
                 id="sort-options"
                 className="vendor-order__sort-dropdown"
                 value={sortOption}
-                onChange={(e) => setSortOption(e.target.value)}
+                onChange={(e) => {
+                  setSortOption(e.target.value);
+                  setCurrentPage(1);
+                }}
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>

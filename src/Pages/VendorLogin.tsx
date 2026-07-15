@@ -443,63 +443,67 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
                   pattern="\d{6}"
                 />
               </div>
-              <div style={{ width: "100%", position: "relative" }}>
+              <div style={{ width: "100%" }}>
                 <label className="auth-modal__label">New Password</label>
-                <input
-                  type={showNewPassword ? "text" : "password"}
-                  className="auth-modal__input"
-                  placeholder="Min. 8 characters"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  style={{ width: "100%", boxSizing: "border-box" }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  style={{ position: "absolute", right: "10px", top: "53%", transform: "translateY(-70%)", background: "none", border: "none", cursor: "pointer", padding: "0" }}
-                  aria-label={showNewPassword ? "Hide password" : "Show password"}
-                >
-                  {showNewPassword ? (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6z" /><circle cx="12" cy="12" r="3" />
-                    </svg>
-                  ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2 12s4-6 10-6c2.5 0 4.7 1 6.5 2.5" /><path d="M22 12s-4 6-10 6c-2.5 0-4.7-1-6.5-2.5" /><circle cx="12" cy="12" r="3" /><line x1="3" y1="3" x2="21" y2="21" />
-                    </svg>
-                  )}
-                </button>
+                <div style={{ position: "relative", width: "100%" }}>
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    className="auth-modal__input"
+                    placeholder="Min. 8 characters"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    style={{ width: "100%", boxSizing: "border-box" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: "0", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    aria-label={showNewPassword ? "Hide password" : "Show password"}
+                  >
+                    {showNewPassword ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6z" /><circle cx="12" cy="12" r="3" />
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 12s4-6 10-6c2.5 0 4.7 1 6.5 2.5" /><path d="M22 12s-4 6-10 6c-2.5 0-4.7-1-6.5-2.5" /><circle cx="12" cy="12" r="3" /><line x1="3" y1="3" x2="21" y2="21" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
-              <div style={{ width: "100%", position: "relative" }}>
+              <div style={{ width: "100%" }}>
                 <label className="auth-modal__label">Confirm Password</label>
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  className="auth-modal__input"
-                  placeholder="Confirm new password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  style={{ width: "100%", boxSizing: "border-box" }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  style={{ position: "absolute", right: "10px", top: "53%", transform: "translateY(-70%)", background: "none", border: "none", cursor: "pointer", padding: "0" }}
-                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                >
-                  {showConfirmPassword ? (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6z" /><circle cx="12" cy="12" r="3" />
-                    </svg>
-                  ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2 12s4-6 10-6c2.5 0 4.7 1 6.5 2.5" /><path d="M22 12s-4 6-10 6c-2.5 0-4.7-1-6.5-2.5" /><circle cx="12" cy="12" r="3" /><line x1="3" y1="3" x2="21" y2="21" />
-                    </svg>
-                  )}
-                </button>
+                <div style={{ position: "relative", width: "100%" }}>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    className="auth-modal__input"
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    style={{ width: "100%", boxSizing: "border-box" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: "0", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6z" /><circle cx="12" cy="12" r="3" />
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 12s4-6 10-6c2.5 0 4.7 1 6.5 2.5" /><path d="M22 12s-4 6-10 6c-2.5 0-4.7-1-6.5-2.5" /><circle cx="12" cy="12" r="3" /><line x1="3" y1="3" x2="21" y2="21" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
               <button
                 type="submit"
@@ -539,71 +543,85 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
                   style={{ width: "100%", boxSizing: "border-box" }}
                 />
               </div>
-              <div style={{ width: "100%", position: "relative" }}>
+              <div style={{ width: "100%" }}>
                 <label className="auth-modal__label">Password</label>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  className="auth-modal__input"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  style={{ width: "100%", boxSizing: "border-box" }}
-                />
-                <button
-                  type="button"
-                  onClick={togglePasswordVisibility}
-                  style={{
-                    position: "absolute",
-                    right: "10px",
-                    top: "53%",
-                    transform: "translateY(-70%)",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "0",
-                    fontSize: "16px",
-                  }}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    // Eye Open
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#666"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  ) : (
-                    // Eye Closed
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#666"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M2 12s4-6 10-6c2.5 0 4.7 1 6.5 2.5" />
-                      <path d="M22 12s-4 6-10 6c-2.5 0-4.7-1-6.5-2.5" />
-                      <circle cx="12" cy="12" r="3" />
-                      <line x1="3" y1="3" x2="21" y2="21" />
-                    </svg>
-                  )}
+                <div style={{ position: "relative", width: "100%" }}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="auth-modal__input"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    style={{ width: "100%", boxSizing: "border-box" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    style={{
+                      position: "absolute",
+                      right: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "0",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      // Eye Open
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#666"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    ) : (
+                      // Eye Closed
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="#666"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M2 12s4-6 10-6c2.5 0 4.7 1 6.5 2.5" />
+                        <path d="M22 12s-4 6-10 6c-2.5 0-4.7-1-6.5-2.5" />
+                        <circle cx="12" cy="12" r="3" />
+                        <line x1="3" y1="3" x2="21" y2="21" />
+                      </svg>
+                    )}
 
-                </button>
-                <button className="vendor-login-forgot-password" type="button" onClick={() => { setShowForgotPassword(true); setError(""); setSuccess(""); }}>Forgot Password</button>
+                  </button>
+                </div>
               </div>
+              <button
+                className="vendor-login-forgot-password"
+                type="button"
+                onClick={() => {
+                  setShowForgotPassword(true);
+                  setError("");
+                  setSuccess("");
+                }}
+              >
+                Forgot Password?
+              </button>
               <button type="submit" className="auth-modal__submit" disabled={isLoading}>
                 {isLoading ? "Loading..." : "LOG IN"}
               </button>

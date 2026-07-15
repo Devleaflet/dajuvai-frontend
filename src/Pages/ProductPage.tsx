@@ -816,13 +816,6 @@ const ProductPage = () => {
 								</div>
 							</div>
 
-							{product.description && (
-								<div className="product-info__description">
-									<h3>Description</h3>
-									<p>{product.description}</p>
-								</div>
-							)}
-
 							{product.hasVariants &&
 								product.variants &&
 								product.variants.length > 1 && (
@@ -1200,6 +1193,15 @@ const ProductPage = () => {
 						</div>
 					</div>
 				</div>
+
+				{product.description && (
+					<div className="product-page__description-section">
+						<div className="product-page__description-card">
+							<h3>Description</h3>
+							<p>{product.description}</p>
+						</div>
+					</div>
+				)}
 
 				{/* -----------------Reviews section ----------------------  */}
 				<div

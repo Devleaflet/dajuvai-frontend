@@ -393,7 +393,7 @@ html {
 
 .product-info {
 	flex: 1;
-	padding: 1.5rem;
+	padding: 1rem 1.5rem 1.5rem;
 	width: 100%;
 	display: flex;
 	flex-direction: column;
@@ -411,22 +411,6 @@ html {
 	margin: 0 0 1rem 0;
 	color: #222;
 	line-height: 1.2;
-}
-
-.product-info__description {
-	font-size: 0.9rem;
-	color: #222;
-	margin-bottom: 1rem;
-	font-weight: 400;
-	line-height: 1.5;
-	width: 100%;
-}
-
-.product-info__description h3 {
-	font-size: 1.1rem;
-	font-weight: 600;
-	margin-bottom: 0.5rem;
-	color: #333;
 }
 
 .product-price {
@@ -465,7 +449,7 @@ html {
 }
 
 .product-options {
-	margin-bottom: 1.5rem;
+	margin-bottom: 1rem;
 	width: 100%;
 }
 
@@ -549,7 +533,7 @@ html {
 }
 
 .product-quantity {
-	margin-bottom: 1.5rem;
+	margin-bottom: 1rem;
 	width: 100%;
 	display: flex;
 	flex-direction: column;
@@ -634,9 +618,39 @@ html {
 .product-actions {
 	display: flex;
 	gap: 1rem;
-	margin-bottom: 2rem;
+	margin-bottom: 1rem;
 	width: 100%;
 	flex-wrap: wrap;
+}
+
+.product-page__description-section {
+	width: 100%;
+	max-width: 100%;
+	margin: 0.5rem auto 0;
+	padding: 0 1.5rem;
+	box-sizing: border-box;
+}
+
+.product-page__description-card {
+	background: #fff;
+	padding: 1.5rem;
+	border-radius: 0.5rem;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.product-page__description-card h3 {
+	font-size: 1.2rem;
+	font-weight: 700;
+	margin: 0 0 1rem;
+	color: #222;
+}
+
+.product-page__description-card p {
+	font-size: 0.9rem;
+	line-height: 1.7;
+	color: #222;
+	margin: 0;
 }
 
 .product-actions__button {
@@ -1259,6 +1273,16 @@ html {
 		margin-bottom: 2rem;
 	}
 
+	.product-page__description-section {
+		max-width: 100%;
+		padding: 0 0.5rem;
+	}
+
+	.product-page__description-card {
+		padding: 1rem;
+		border-radius: 0.75rem;
+	}
+
 	.product-actions__button {
 		width: 100%;
 		padding: 1rem;
@@ -1697,4 +1721,3 @@ html {
 		font-size: 0.7rem; /* Reduced from 0.75rem */
 	}
 }
-

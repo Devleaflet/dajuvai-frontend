@@ -1327,12 +1327,14 @@ const Shop: React.FC = () => {
 											))
 									) : pagination.total_items > 0 ? (
 										productsData.map((product) => (
-											<>
+											<div
+												key={product.id}
+												className="shop-product-card"
+											>
 												<ProductCard1
-													key={product.id}
 													product={product}
 												/>
-											</>
+											</div>
 										))
 									) : (
 										<div className="shop-no-products">

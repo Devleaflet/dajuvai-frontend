@@ -21,9 +21,22 @@
 }
 
 .vendor-login-forgot-password {
-  margin-top: 10px;
-  padding: 2px 10px;
+  display: block;
+  width: max-content;
+  margin: -8px auto -12px auto;
+  background: none;
+  border: none;
+  color: #ff5722;
+  text-decoration: underline;
+  font-size: 15px;
+  font-weight: 500;
   cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.vendor-login-forgot-password:hover {
+  color: #e64a19;
 }
 
 .auth-modal__content {
