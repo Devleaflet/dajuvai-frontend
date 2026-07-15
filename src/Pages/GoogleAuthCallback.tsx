@@ -129,6 +129,7 @@ const GoogleAuthCallback: React.FC = () => {
           role: data.data.role || "user",
           username: data.data.username || data.data.email.split("@")[0],
           isVerified: true,
+          profilePicture: data.data.profilePicture,
         };
 
         login(token, userData, refreshToken ?? undefined);
@@ -180,6 +181,7 @@ const GoogleAuthCallback: React.FC = () => {
           role: data.data.role || "user",
           username: data.data.username || data.data.email.split("@")[0],
           isVerified: true,
+          profilePicture: data.data.profilePicture,
         };
 
         // For session auth, we might not have a token in the response

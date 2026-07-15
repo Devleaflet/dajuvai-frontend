@@ -283,6 +283,7 @@ const UserProfile: React.FC = () => {
                 (data.data.email ? data.data.email.split("@")[0] : "User"),
               isVerified: true,
               provider: data.data.provider,
+              profilePicture: data.data.profilePicture,
             });
           } else {
             showPopup(

@@ -10,8 +10,9 @@ import { API_BASE_URL } from "../config";
 import { setupAxiosInterceptors } from "../api/axiosInstance";
 
 // Define types for user data
-interface UserData {
+export interface UserData {
     id: number;
+    userId?: number;
     username: string;
     email: string;
     role: string;
@@ -20,6 +21,7 @@ interface UserData {
     products?: unknown[];
     profilePicture?: string;
 }
+
 
 // Define the shape of the context
 interface AuthContextType {
@@ -34,6 +36,7 @@ interface AuthContextType {
     isAuthenticated: boolean;
     isLoading: boolean;
     fetchUserData: (userId: number) => Promise<UserData | null>;
+    updateUser: (partial: Partial<UserData>) => void;
     getUserStatus: () => string;
 }
 
@@ -46,6 +49,7 @@ const AuthContext = createContext<AuthContextType>({
     isAuthenticated: false,
     isLoading: false,
     fetchUserData: async () => null,
+    updateUser: () => {},
     getUserStatus: () => "Not logged in",
 });
 
@@ -96,6 +100,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                     setToken(storedToken);
                     setUser(parsedUser);
                     setIsLoading(false);
+                    // Background sync user profile details (like profilePicture)
+                    const userId = parsedUser.id || parsedUser.userId;
+                    if (userId) {
+                        fetch(`${API_BASE_URL}/api/auth/users/${userId}`, {
+                            headers: {
+                                Authorization: `Bearer ${storedToken}`,
+                                Accept: "application/json",
+                            },
+                        })
+                        .then((r) => r.json())
+                        .then((res) => {
+                            if (res.success && res.data) {
+                                const rawData = res.data;
+                                const normalizedUser = {
+                                    ...rawData,
+                                    id: rawData.id || rawData.userId || userId,
+                                    username:
+                                        rawData.username ||
+                                        (rawData.email
+                                            ? rawData.email.split("@")[0]
+                                            : "User"),
+                                    profilePicture: rawData.profilePicture,
+                                };
+                                setUser(normalizedUser);
+                                localStorage.setItem("authUser", JSON.stringify(normalizedUser));
+                            }
+                        })
+                        .catch((err) => console.error("Error background syncing user data:", err));
+                    }
                     return;
                 }
                 setUser(parsedUser);
@@ -112,8 +145,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                     if (response.ok) {
                         const data = await response.json();
                         if (data.success && data.data) {
+                            const userId = data.data.id || data.data.userId;
                             const updatedUser = {
-                                id: data.data.id || data.data.userId,
+                                id: userId,
                                 email: data.data.email,
                                 role: data.data.role,
                                 username:
@@ -122,12 +156,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                                         ? data.data.email.split("@")[0]
                                         : "User"),
                                 isVerified: true,
+                                profilePicture: data.data.profilePicture || parsedUser?.profilePicture,
                             };
                             setUser(updatedUser);
                             localStorage.setItem(
                                 "authUser",
                                 JSON.stringify(updatedUser),
                             );
+                            if (userId) {
+                                fetch(`${API_BASE_URL}/api/auth/users/${userId}`, {
+                                    headers: {
+                                        Accept: "application/json",
+                                        ...(storedToken ? { Authorization: `Bearer ${storedToken}` } : {}),
+                                    },
+                                })
+                                .then((r) => r.json())
+                                .then((res) => {
+                                    if (res.success && res.data) {
+                                        const rawData = res.data;
+                                        const normalizedUser = {
+                                            ...rawData,
+                                            id: rawData.id || rawData.userId || userId,
+                                            username:
+                                                rawData.username ||
+                                                (rawData.email ? rawData.email.split("@")[0] : "User"),
+                                            profilePicture: rawData.profilePicture,
+                                        };
+                                        setUser(normalizedUser);
+                                        localStorage.setItem("authUser", JSON.stringify(normalizedUser));
+                                    }
+                                })
+                                .catch((err) => console.error("Error syncing user profile:", err));
+                            }
                         } else {
                             logout();
                         }
@@ -309,6 +369,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         [],
     );
 
+    const updateUser = useCallback((partial: Partial<UserData>) => {
+        setUser((prev) => {
+            if (!prev) return prev;
+            const updated = { ...prev, ...partial };
+            localStorage.setItem("authUser", JSON.stringify(updated));
+            return updated;
+        });
+    }, []);
+
     const fetchUserData = useCallback(
         async (userId: number): Promise<UserData | null> => {
             const currentToken = token || localStorage.getItem("authToken");
@@ -322,7 +391,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             }
 
             try {
-                setIsLoading(true);
                 const response = await axios.get<{
                     success: boolean;
                     data: UserData;
@@ -333,19 +401,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                     },
                     timeout: 10000,
                 });
-                //("[Auth Debug] fetchUserData response:", response.data);
-                if (response.data.success) {
+                if (response.data.success && response.data.data) {
                     const rawData = response.data.data;
                     const normalizedUser = {
                         ...rawData,
-                        id: rawData.id || rawData.id,
+                        id: rawData.id || rawData.userId || userId,
                         username:
                             rawData.username ||
                             (rawData.email
                                 ? rawData.email.split("@")[0]
                                 : "User"),
+                        profilePicture: rawData.profilePicture,
                     } as UserData;
                     setUser(normalizedUser);
+                    localStorage.setItem("authUser", JSON.stringify(normalizedUser));
                     return normalizedUser;
                 } else {
                     console.error(
@@ -370,8 +439,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                     );
                 }
                 return null;
-            } finally {
-                setIsLoading(false);
             }
         },
         [token, logout],
@@ -396,6 +463,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 isAuthenticated,
                 isLoading,
                 fetchUserData,
+                updateUser,
                 getUserStatus,
             }}
         >

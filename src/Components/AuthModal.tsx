@@ -496,6 +496,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 					role: response.data.data.role,
 					username: response.data.data.email.split("@")[0],
 					isVerified: true,
+					profilePicture: response.data.data.profilePicture,
 				};
 
 				login(response.data.token, userData, response.data.refreshToken);

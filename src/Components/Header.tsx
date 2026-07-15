@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { VendorAuthService } from "../services/vendorAuthService";
+import { API_BASE_URL } from "../config";
 
 interface HeaderProps {
   onSearch?: (query: string) => void;
@@ -36,6 +37,20 @@ const Header: React.FC<HeaderProps> = ({
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const resolveProfilePicture = (value?: string | null) => {
+
+
+    if (!value) return "";
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("data:")) {
+      return trimmed;
+    }
+    if (trimmed.startsWith("//")) return `https:${trimmed}`;
+    const base = API_BASE_URL.replace(/\/api\/?$/, "");
+    return `${base}${trimmed.startsWith("/") ? "" : "/"}${trimmed}`;
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
@@ -84,23 +99,26 @@ const Header: React.FC<HeaderProps> = ({
         <h1 className="dashboard__title">{title || ""}</h1>
         <div className="dashboard__user" ref={dropdownRef}>
           <div className="dashboard__avatar">
-            {user.profilePicture ? (
-              <img
-                src={user.profilePicture}
-                alt={user.username || user.email || "Admin"}
-                className="dashboard__avatar-image"
-                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
-              />
-            ) : (
-              <span className="dashboard__avatar-text">
-                {user.username
-                  ? user.username
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                  : user.email?.[0] || "A"}
-              </span>
-            )}
+            {(() => {
+              const resolved = resolveProfilePicture(user.profilePicture);
+              return resolved ? (
+                <img
+                  src={resolved}
+                  alt={user.username || user.email || "Admin"}
+                  className="dashboard__avatar-image"
+                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
+                />
+              ) : (
+                <span className="dashboard__avatar-text">
+                  {user.username
+                    ? user.username
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                    : user.email?.[0] || "A"}
+                </span>
+              );
+            })()}
           </div>
           <div className="dashboard__user-info">
             <p className="dashboard__username">{user.username || user.email}</p>

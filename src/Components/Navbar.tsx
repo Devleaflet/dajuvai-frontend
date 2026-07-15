@@ -150,11 +150,34 @@ const Navbar: React.FC = () => {
 		categoryContext?.updateCategoriesWithSubcategories;
 	const categories = categoryContext?.categories || [];
 
+	const resolveProfilePicture = (value?: string | null) => {
+		if (!value) return '';
+		const trimmed = value.trim();
+		if (!trimmed) return '';
+		if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('data:')) {
+			return trimmed;
+		}
+		if (trimmed.startsWith('//')) return `https:${trimmed}`;
+		const base = API_BASE_URL.replace(/\/api\/?$/, '');
+		return `${base}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
+	};
+
 	useEffect(() => {
-		if (isAuthenticated && user?.id && !user.username) {
+		if (
+			isAuthenticated &&
+			user?.id &&
+			(user.role === 'admin' || !user.username || !user.profilePicture)
+		) {
 			fetchUserData(user.id);
 		}
-	}, [isAuthenticated, user?.id, user?.username, fetchUserData]);
+	}, [
+		isAuthenticated,
+		user?.id,
+		user?.role,
+		user?.username,
+		user?.profilePicture,
+		fetchUserData,
+	]);
 
 	useEffect(() => {
 		const handleStorageChange = (e: StorageEvent) => {
@@ -214,10 +237,11 @@ const Navbar: React.FC = () => {
 
 		// Prefer user avatar when a user is logged in.
 		if (isAuthenticated && user) {
-			if (user.profilePicture) {
+			const resolvedProfilePicture = resolveProfilePicture(user.profilePicture);
+			if (resolvedProfilePicture) {
 				return (
 					<img
-						src={user.profilePicture}
+						src={resolvedProfilePicture}
 						alt={user.username || user.email || 'User'}
 						className="navbar__avatar-image"
 					/>

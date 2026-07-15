@@ -55,8 +55,10 @@ const AdminProfile: React.FC = () => {
     content: string;
   } | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const hasFetchedAdminRef = useRef<number | undefined>(undefined);
 
   const {
     user,
@@ -64,6 +66,7 @@ const AdminProfile: React.FC = () => {
     login,
     token,
     fetchUserData,
+    updateUser,
   } = useAuth();
   const adminId = user?.id;
 
@@ -80,6 +83,18 @@ const AdminProfile: React.FC = () => {
       .split("")
       .reduce((sum, char) => sum + char.charCodeAt(0), 0);
     return colors[charCodeSum % colors.length];
+  };
+
+  const resolveProfilePicture = (value?: string | null) => {
+    if (!value) return "";
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("data:")) {
+      return trimmed;
+    }
+    if (trimmed.startsWith("//")) return `https:${trimmed}`;
+    const base = API_BASE_URL.replace(/\/api\/?$/, "");
+    return `${base}${trimmed.startsWith("/") ? "" : "/"}${trimmed}`;
   };
 
   const showPopup = (type: "success" | "error", content: string) => {
@@ -112,7 +127,9 @@ const AdminProfile: React.FC = () => {
   };
 
   useEffect(() => {
-    if (isAuthLoading) return;
+    if (isAuthLoading) {
+      return;
+    }
     if (!adminId) {
       fetch(`${API_BASE_URL}/api/auth/me`, {
         credentials: "include",
@@ -128,6 +145,7 @@ const AdminProfile: React.FC = () => {
               username: data.data.email.split("@")[0],
               isVerified: true,
               provider: data.data.provider,
+              profilePicture: data.data.profilePicture,
             });
           } else {
             showPopup(
@@ -144,6 +162,11 @@ const AdminProfile: React.FC = () => {
         });
       return;
     }
+
+    if (hasFetchedAdminRef.current === adminId) {
+      return;
+    }
+    hasFetchedAdminRef.current = adminId;
 
     const fetchAdminDetails = async () => {
       setIsLoading((prev) => ({ ...prev, fetchAdmin: true }));
@@ -168,6 +191,7 @@ const AdminProfile: React.FC = () => {
         setAdminDetails(normalizedAdminData);
         setOriginalDetails(normalizedAdminData);
         setFormState((prev) => ({ ...prev, email: adminData.email }));
+        updateUser({ profilePicture: normalizedAdminData.profilePicture });
       } catch (error) {
         handleError(error, "Failed to load admin details");
         setAdminDetails(null);
@@ -178,6 +202,10 @@ const AdminProfile: React.FC = () => {
 
     fetchAdminDetails();
   }, [adminId, isAuthLoading]);
+
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [adminDetails?.profilePicture]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -239,6 +267,9 @@ const AdminProfile: React.FC = () => {
         const normalizedUpdatedData = { ...response.data.data };
         setAdminDetails(normalizedUpdatedData);
         setOriginalDetails(normalizedUpdatedData);
+        if (adminId) {
+          await fetchUserData(adminId);
+        }
         setIsEditing(false);
         showPopup("success", "Profile updated successfully!");
       } else {
@@ -294,12 +325,13 @@ const AdminProfile: React.FC = () => {
 
       if (updateResponse.data.success) {
         setAdminDetails((prev) =>
+
           prev ? { ...prev, profilePicture: profilePictureUrl } : prev,
         );
         setOriginalDetails((prev) =>
           prev ? { ...prev, profilePicture: profilePictureUrl } : prev,
         );
-        await fetchUserData(adminId);
+        updateUser({ profilePicture: profilePictureUrl });
         showPopup("success", "Profile picture updated!");
       } else {
         showPopup(
@@ -665,33 +697,42 @@ const AdminProfile: React.FC = () => {
               ) : (
                 <>
                   <div className="admin-profile-sidebar__avatar-wrapper">
-                    <div
-                      className="admin-profile-sidebar__avatar"
-                      style={{
-                        backgroundColor: adminDetails?.username
-                          ? getAvatarColor(adminDetails.username)
-                          : "#f97316",
-                      }}
-                    >
-                      {adminDetails?.profilePicture ? (
-                        <img
-                          src={adminDetails.profilePicture}
-                          alt={adminDetails.username || "Admin"}
+                    {(() => {
+                      const resolvedProfilePicture = resolveProfilePicture(
+                        adminDetails?.profilePicture,
+                      );
+                      const showProfilePicture =
+                        !!resolvedProfilePicture && !avatarLoadError;
+
+                      return (
+                        <div
+                          className="admin-profile-sidebar__avatar"
                           style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            borderRadius: "inherit",
+                            backgroundColor: showProfilePicture
+                              ? "#ffffff"
+                              : adminDetails?.username
+                                ? getAvatarColor(adminDetails.username)
+                                : "#f97316",
                           }}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display =
-                              "none";
-                          }}
-                        />
-                      ) : (
-                        adminDetails?.username?.[0]?.toUpperCase() || "?"
-                      )}
-                    </div>
+                        >
+                          {showProfilePicture ? (
+                            <img
+                              src={resolvedProfilePicture}
+                              alt={adminDetails.username || "Admin"}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                borderRadius: "inherit",
+                              }}
+                              onError={() => setAvatarLoadError(true)}
+                            />
+                          ) : (
+                            adminDetails?.username?.[0]?.toUpperCase() || "?"
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {isUploadingAvatar && (
                       <div className="admin-avatar-overlay">

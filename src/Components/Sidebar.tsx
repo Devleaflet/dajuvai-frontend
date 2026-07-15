@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom"; // Import useLocation
 import "../Styles/Sidebar.css";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import axiosInstance from "../api/axiosInstance";
+import logo from "../assets/logo.webp";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -58,26 +59,7 @@ export function Sidebar({ ...props }: SidebarProps) {
       {!isMobile && (
         <div className="sidebar__header">
           <Link to="/" className="sidebar__logo">
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 32 32"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M8 8C12 2 20 2 24 8C28 14 24 22 16 22"
-                stroke="#FF6B00"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-              <path
-                d="M16 22C8 22 4 14 8 8"
-                stroke="#FFB800"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
+            <img src={logo} alt="Dajuvai Logo" style={{ width: "32px", height: "32px", objectFit: "contain" }} />
             <span className="sidebar__logo-text">Daju Vai</span>
           </Link>
         </div>
