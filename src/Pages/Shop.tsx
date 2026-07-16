@@ -359,6 +359,16 @@ const processProductWithReview = async (
 	);
 
 
+	let discountPctNum = 0;
+	if (item.discountType === 'PERCENTAGE' && item.discount) {
+		discountPctNum = Math.round(parseFloat(`${item.discount}`));
+	} else if (basePrice > 0 && item.finalPrice < basePrice) {
+		discountPctNum = Math.max(1, Math.round(((basePrice - item.finalPrice) / basePrice) * 100));
+	} else if (item.discountType === 'FLAT' && item.discount && basePrice > 0) {
+		discountPctNum = Math.max(1, Math.round((parseFloat(`${item.discount}`) / basePrice) * 100));
+	}
+	const discountPctStr = discountPctNum > 0 ? `${discountPctNum}%` : '0%';
+
 	// finalized items to be sent to other product card components 
 	return {
 		id: item.id,
@@ -371,7 +381,8 @@ const processProductWithReview = async (
 		dealId: item.dealId,
 		price: Math.max(finalPrice, 0).toString(),
 		discount: item.discount ? `${item.discount}` : undefined,
-		discountPercentage: item.discount ? `${item.discount}%` : '0%',
+		discountPercentage: discountPctStr,
+		discountType: item.discountType,
 		rating: Number(averageRating) || 0,
 		ratingCount: reviews?.length?.toString() || '0',
 		image: displayImage,

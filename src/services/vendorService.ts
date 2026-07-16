@@ -107,13 +107,13 @@ class VendorService {
 
   // Request password reset
   async forgotPassword(email: string) {
-    const response = await axios.post(`${this.baseURL}/forgot-password`, { email });
+    const response = await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email });
     return response.data;
   }
 
   // Reset password
   async resetPassword(newPass: string, confirmPass: string, token: string) {
-    const response = await axios.post(`${this.baseURL}/reset-password`, {
+    const response = await axios.post(`${API_BASE_URL}/api/auth/reset-password`, {
       newPass,
       confirmPass,
       token

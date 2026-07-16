@@ -437,7 +437,7 @@ const ProfilePage: React.FC = () => {
     if (!email) return showPopup("error", "No email address found");
     setLoading("forgot", true);
     try {
-      await axiosInstance.post("/api/vendors/forgot-password", { email });
+      await axiosInstance.post("/api/auth/forgot-password", { email });
       showPopup("success", "Reset email sent! Check your inbox.");
       setCredentialsMode("reset");
     } catch (err) {
@@ -457,7 +457,7 @@ const ProfilePage: React.FC = () => {
 
     setLoading("reset", true);
     try {
-      await axiosInstance.post("/api/vendors/reset-password", {
+      await axiosInstance.post("/api/auth/reset-password", {
         newPass: formState.newPassword,
         confirmPass: formState.confirmPassword,
         token: formState.token,

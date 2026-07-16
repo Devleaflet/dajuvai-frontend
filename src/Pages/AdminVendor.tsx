@@ -13,6 +13,8 @@ import {
 	VendorUpdateRequest,
 } from "../Components/Types/vendor";
 import "../Styles/AdminVendor.css";
+import "../Styles/AdminDashboard.css";
+import { useDocketHeight } from "../Hook/UseDockerHeight";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
@@ -820,6 +822,20 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 const AdminVendor: React.FC = () => {
 	const { token, isAuthenticated } = useAuth();
 	const navigate = useNavigate();
+	const [isMobile, setIsMobile] = useState(() =>
+		typeof window !== "undefined" ? window.innerWidth < 768 : false
+	);
+	const docketHeight = useDocketHeight();
+
+	useEffect(() => {
+		const handleResize = () => {
+			setIsMobile(window.innerWidth < 768);
+		};
+
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
+
 	const [vendors, setVendors] = useState<Vendor[]>([]);
 	const [filteredVendors, setFilteredVendors] = useState<Vendor[]>([]);
 	const [districts, setDistricts] = useState<District[]>([]);
@@ -1240,15 +1256,22 @@ const AdminVendor: React.FC = () => {
 	);
 
 	return (
-		<div className="admin-vendors">
+		<div className="vendor-dash-container">
 			<AdminSidebar />
-			<div style={{ display: "flex", flexDirection: "column", flex: "1" }}>
+			<div className={`dashboard ${isMobile ? "dashboard--mobile" : ""}`}>
 				<Header
 					onSearch={handleSearch}
 					showSearch={true}
 					title="Vendor Management"
 				/>
-				<div className="admin-vendors__content">
+				<main
+					className="dashboard__main"
+					style={{
+						paddingBottom: isMobile ? `${docketHeight + 24}px` : "24px",
+					}}
+				>
+					<div className="admin-vendors">
+						<div className="admin-vendors__content">
 					<div className="admin-vendors__stats-grid">
 						<div className="admin-vendors__stat-card">
 							<div className="stat-icon total-icon">
@@ -1625,7 +1648,9 @@ const AdminVendor: React.FC = () => {
 						loading={changePwdLoading}
 						error={changePwdError}
 					/>
-				</div>
+						</div>
+					</div>
+				</main>
 			</div>
 		</div>
 	);

@@ -67,20 +67,39 @@ export function Sidebar({ ...props }: SidebarProps) {
 
       <nav className="sidebar__nav">
         {/* Pass the current location to NavItem */}
-        <NavItem to="/dashboard" icon="dashboard" active={location.pathname === "/dashboard"}>
+        <NavItem
+          to="/dashboard"
+          active={location.pathname === "/dashboard"}
+          icon={
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="3" width="7" height="9" rx="2" stroke="currentColor" strokeWidth="2"/>
+              <rect x="14" y="3" width="7" height="5" rx="2" stroke="currentColor" strokeWidth="2"/>
+              <rect x="14" y="12" width="7" height="9" rx="2" stroke="currentColor" strokeWidth="2"/>
+              <rect x="3" y="16" width="7" height="5" rx="2" stroke="currentColor" strokeWidth="2"/>
+            </svg>
+          }
+        >
           Dashboard
         </NavItem>
         <NavItem
           to="/vendor-product"
-          icon="products"
           active={location.pathname === "/vendor-product"}
+          icon={
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 7L12 3L4 7M20 7V17L12 21M20 7L12 11M12 21L4 17V7M12 21V11M4 7L12 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          }
         >
           Products
         </NavItem>
         <NavItem
           to="/vendor-orders"
-          icon="orders"
           active={location.pathname === "/vendor-orders"}
+          icon={
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5M12 12H15M12 16H15M9 12H9.01M9 16H9.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          }
         >
           Orders
         </NavItem>
@@ -99,8 +118,13 @@ export function Sidebar({ ...props }: SidebarProps) {
         </NavItem>
         <NavItem
           to="/vendor-profile"
-          icon="profile"
           active={location.pathname === "/vendor-profile"}
+          icon={
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 21V19C20 17.8954 19.1046 17 18 17H6C4.89543 17 4 17.8954 4 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          }
         >
           Profile
         </NavItem>

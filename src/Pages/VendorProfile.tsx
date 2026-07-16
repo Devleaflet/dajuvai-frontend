@@ -43,13 +43,24 @@ const VendorProfile: React.FC = () => {
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!forgotEmail) {
+      toast.error("Please enter your registered email");
+      return;
+    }
     setForgotLoading(true);
     setForgotMsg(null);
     try {
       const res = await VendorAuthService.forgotPassword(forgotEmail);
       setForgotMsg(res.message);
+      if (res.success) {
+        toast.success(res.message);
+      } else {
+        toast.error(res.message);
+      }
     } catch {
-      setForgotMsg("Failed to send reset email. Please try again.");
+      const msg = "Failed to send reset email. Please try again.";
+      setForgotMsg(msg);
+      toast.error(msg);
     } finally {
       setForgotLoading(false);
     }
@@ -59,6 +70,7 @@ const VendorProfile: React.FC = () => {
     e.preventDefault();
     if (newPass !== confirmPass) {
       setResetMsg("Passwords do not match.");
+      toast.error("Passwords do not match.");
       return;
     }
     setResetLoading(true);
@@ -70,8 +82,18 @@ const VendorProfile: React.FC = () => {
         resetToken,
       );
       setResetMsg(res.message);
+      if (res.success) {
+        toast.success(res.message);
+        setResetToken("");
+        setNewPass("");
+        setConfirmPass("");
+      } else {
+        toast.error(res.message);
+      }
     } catch {
-      setResetMsg("Failed to reset password. Please try again.");
+      const msg = "Failed to reset password. Please try again.";
+      setResetMsg(msg);
+      toast.error(msg);
     } finally {
       setResetLoading(false);
     }

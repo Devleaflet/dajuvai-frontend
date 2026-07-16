@@ -316,6 +316,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 	const savedAmount = hasDiscount ? basePriceNum - finalPriceNum : 0;
 	const discountLabel = hasDiscount ? `Save Rs ${savedAmount.toFixed(2)}` : null;
 
+	let discountPercentageNumber = 0;
+	if (product.discountType === "PERCENTAGE" && product.discount && `${product.discount}` !== "0" && `${product.discount}` !== "0.00") {
+		discountPercentageNumber = Math.round(parseFloat(`${product.discount}`));
+	} else if (basePriceNum > 0 && finalPriceNum < basePriceNum) {
+		discountPercentageNumber = Math.max(1, Math.round(((basePriceNum - finalPriceNum) / basePriceNum) * 100));
+	} else if (product.discountType === "FLAT" && product.discount && basePriceNum > 0 && `${product.discount}` !== "0" && `${product.discount}` !== "0.00") {
+		discountPercentageNumber = Math.max(1, Math.round((parseFloat(`${product.discount}`) / basePriceNum) * 100));
+	} else if (product.discountPercentage && product.discountPercentage !== "0%") {
+		const parsed = Math.round(parseFloat(product.discountPercentage));
+		if (parsed > 0) discountPercentageNumber = parsed;
+	}
+
 
 
 
@@ -351,6 +363,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 							<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
 						</svg>
 					</button>
+				)}
+
+				{discountPercentageNumber > 0 && (
+					<span className="product1__discount-badge">
+						-{discountPercentageNumber}%
+					</span>
 				)}
 
 

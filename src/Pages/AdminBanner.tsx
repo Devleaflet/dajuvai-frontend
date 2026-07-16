@@ -33,7 +33,8 @@ interface Banner {
   selectedProducts?: Array<number | { id: number; subcategory: { id: number; category: { id: number } } }>;
   selectedCategory?: number | { id: number; name: string } | null;
   selectedSubcategory?: number | { id: number; name: string } | null;
-  selectedDeal?: number | { id: number; title: string } | null;
+  selectedDeal?: number | { id: number; title?: string; name?: string } | null;
+  selectedDealId?: number | { id: number; title?: string; name?: string } | null;
   externalLink?: string;
 }
 
@@ -89,13 +90,16 @@ interface Product {
   updated_at: string;
   brand: { id: number; name: string };
   vendor: { id: number; name: string };
-  deal: { id: number; title: string };
+  deal?: { id: number; title?: string; name?: string };
   subcategory: { id: number; name: string; category: { id: number; name: string } };
 }
 
 interface Deal {
   id: number;
-  title: string;
+  name?: string;
+  title?: string;
+  discountPercentage?: number;
+  status?: string;
 }
 
 // API service functions with auth headers
@@ -301,11 +305,27 @@ const createDealAPI = (token: string | null) => ({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result: ApiResponse<Deal[]> = await response.json();
-      return result.data || [];
+      const result = await response.json();
+      if (result && typeof result === "object") {
+        if (result.success && result.data) {
+          if (Array.isArray(result.data.deals)) {
+            return result.data.deals;
+          }
+          if (Array.isArray(result.data)) {
+            return result.data;
+          }
+        }
+        if (Array.isArray(result.deals)) {
+          return result.deals;
+        }
+      }
+      if (Array.isArray(result)) {
+        return result;
+      }
+      return [];
     } catch (error) {
       console.error("Error fetching deals:", error);
-      throw error;
+      return [];
     }
   },
 });
@@ -423,8 +443,8 @@ const AdminBannerWithTabs = () => {
     if (typeof selectedSubcategory === 'object' && selectedSubcategory !== null) {
       selectedSubcategory = selectedSubcategory.id;
     }
-    let selectedDeal: number | null = banner.selectedDeal || null;
-    if (typeof selectedDeal === 'object' && selectedDeal !== null) {
+    let selectedDeal: number | null = banner.selectedDeal || banner.selectedDealId || null;
+    if (typeof selectedDeal === "object" && selectedDeal !== null) {
       selectedDeal = selectedDeal.id;
     }
 
@@ -997,6 +1017,8 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
         let fetchedProducts: Product[] = [];
         if (productSource === "manual" && selectedCategory && selectedSubcategory) {
           fetchedProducts = await categoryAPI.getProducts(selectedCategory, selectedSubcategory);
+        } else if (productSource === "deal" && selectedDeal) {
+          fetchedProducts = await categoryAPI.getProducts(undefined, undefined, selectedDeal);
         }
         setProducts(fetchedProducts);
       } catch (error) {
@@ -1262,9 +1284,9 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
                   disabled={loading || fetching}
                 >
                   <option value="">--Select Deal--</option>
-                  {deals.map((deal) => (
+                  {(Array.isArray(deals) ? deals : []).map((deal) => (
                     <option key={deal.id} value={deal.id}>
-                      {deal.title}
+                      {deal.name || deal.title || `Deal #${deal.id}`}
                     </option>
                   ))}
                 </select>
@@ -1501,6 +1523,7 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
         bannerData.selectedSubcategoryId = selectedSubcategory;
       }
       if (productSource === "deal") {
+        bannerData.selectedDealId = selectedDeal;
         bannerData.selectedDeal = selectedDeal;
       }
       if (productSource === "external") {

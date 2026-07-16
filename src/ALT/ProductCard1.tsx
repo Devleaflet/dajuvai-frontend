@@ -143,25 +143,41 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 				.filter(v => v.status !== "OUT_OF_STOCK")
 				.map(v => ({
 					base: Number(v.basePrice) || 0,
-					final: Number(v.finalPrice) || (Number(v.basePrice) || 0)
+					final: Number(v.finalPrice) || (Number(v.basePrice) || 0),
+					discount: v.discount !== undefined ? v.discount : product.discount,
+					discountType: v.discountType !== undefined ? v.discountType : product.discountType
 				}));
 
 			if (validVariants.length > 0) {
 				const lowest = validVariants.reduce((prev, curr) =>
 					curr.final < prev.final ? curr : prev
 				);
-				return { base: lowest.base, final: lowest.final };
+				return { base: lowest.base, final: lowest.final, discount: lowest.discount, discountType: lowest.discountType };
 			}
 		}
 
 		return {
 			base: Number(product.basePrice) || 0,
-			final: Number(product.finalPrice) || (Number(product.basePrice) || 0)
+			final: Number(product.finalPrice) || (Number(product.basePrice) || 0),
+			discount: product.discount,
+			discountType: product.discountType
 		};
 	};
 
-	const { base: basePrice, final: finalPrice } = getDisplayPrices();
+	const { base: basePrice, final: finalPrice, discount, discountType } = getDisplayPrices();
 	const savingPrice = (basePrice > finalPrice) ? (basePrice - finalPrice).toFixed(2) : null;
+
+	let discountPercentageNumber = 0;
+	if (discountType === "PERCENTAGE" && discount !== undefined && discount !== null && `${discount}` !== "0" && `${discount}` !== "0.00") {
+		discountPercentageNumber = Math.round(parseFloat(`${discount}`));
+	} else if (basePrice > 0 && finalPrice < basePrice) {
+		discountPercentageNumber = Math.max(1, Math.round(((basePrice - finalPrice) / basePrice) * 100));
+	} else if (discountType === "FLAT" && discount !== undefined && discount !== null && basePrice > 0 && `${discount}` !== "0" && `${discount}` !== "0.00") {
+		discountPercentageNumber = Math.max(1, Math.round((parseFloat(`${discount}`) / basePrice) * 100));
+	} else if (product.discountPercentage && product.discountPercentage !== "0%") {
+		const parsed = Math.round(parseFloat(product.discountPercentage));
+		if (parsed > 0) discountPercentageNumber = parsed;
+	}
 
 
 	return (
@@ -194,6 +210,11 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 						</svg>
 					</button>
 					{isBestSeller && <span className="product1__tag">Best seller</span>}
+					{discountPercentageNumber > 0 && (
+						<span className="product1__discount-badge">
+							-{discountPercentageNumber}%
+						</span>
+					)}
 				</div>
 
 				<div className="product1__image">
