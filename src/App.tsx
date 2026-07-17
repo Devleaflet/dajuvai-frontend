@@ -9,6 +9,7 @@ import { AdminDashboard } from "./Pages/AdminDashboard";
 import AdminProduct from "./Pages/AdminProduct";
 import AdminCustomers from "./Pages/AdminCustomers";
 import AdminCategories from "./Pages/AdminCategories";
+import AdminMerchandising from "./Pages/AdminMerchandising";
 import AdminVendors from "./Pages/AdminVendor";
 import About from "./Pages/About";
 import Wishlist from "./Pages/Wishlist";
@@ -423,6 +424,14 @@ function App() {
             element={
               <AdminOrStaffRoute>
                 <AdminCategories />
+              </AdminOrStaffRoute>
+            }
+          />
+          <Route
+            path="/admin-merchandising"
+            element={
+              <AdminOrStaffRoute>
+                <AdminMerchandising />
               </AdminOrStaffRoute>
             }
           />
