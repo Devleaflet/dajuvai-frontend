@@ -200,7 +200,6 @@ const Header: React.FC<HeaderProps> = ({
                 <option value="price-desc">Price: High to Low</option>
               </select>
             )}
-            {onFilter && (
               <select
                 className="vendor-product__filter-select"
                 value={filterOption}
@@ -216,9 +215,10 @@ const Header: React.FC<HeaderProps> = ({
                 }}
               >
                 <option value="all">All Products</option>
+                <option value="available">Available</option>
+                <option value="low_stock">Low Stock</option>
                 <option value="out_of_stock">Out of Stock</option>
               </select>
-            )}
 
             {/* Vendor Dropdown */}
             {vendors && vendors.length > 0 && (

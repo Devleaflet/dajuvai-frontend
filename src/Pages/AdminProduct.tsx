@@ -13,9 +13,41 @@ import defaultProductImage from "../assets/logo.webp";
 import { API_BASE_URL } from "../config";
 import { formatTimeAgo } from "../utils/formattime";
 
+const getEffectiveStatus = (
+  product: ApiProduct,
+  displayStock: number
+): "AVAILABLE" | "LOW_STOCK" | "OUT_OF_STOCK" => {
+  if (product.status === "OUT_OF_STOCK") return "OUT_OF_STOCK";
+  if (product.status === "LOW_STOCK") return "LOW_STOCK";
+  if (displayStock <= 0) return "OUT_OF_STOCK";
+
+  if (
+    product.hasVariants &&
+    Array.isArray(product.variants) &&
+    product.variants.length > 0
+  ) {
+    const allOutOfStock = product.variants.every(
+      (v) => v.status === "OUT_OF_STOCK" || Number(v.stock) <= 0
+    );
+    if (allOutOfStock) return "OUT_OF_STOCK";
+    const anyLowOrOut = product.variants.some(
+      (v) =>
+        v.status === "LOW_STOCK" ||
+        v.status === "OUT_OF_STOCK" ||
+        (Number(v.stock) > 0 && Number(v.stock) <= 5)
+    );
+    if (anyLowOrOut) return "LOW_STOCK";
+  } else {
+    if (displayStock > 0 && displayStock <= 5 && product.status !== "AVAILABLE") {
+      return "LOW_STOCK";
+    }
+  }
+  return product.status || "AVAILABLE";
+};
+
 const SkeletonRow: React.FC = () => (
   <tr>
-    {[...Array(6)].map((_, i) => (
+    {[...Array(11)].map((_, i) => (
       <td key={i}>
         <div className="skeleton skeleton-text" />
       </td>
@@ -249,6 +281,56 @@ const AdminProduct: React.FC = () => {
     }
   }, [productToDelete, deleteProduct]);
 
+  const displayedProducts = React.useMemo(() => {
+    if (filterOption === "all") return products;
+    return products.filter((product) => {
+      const getDisplayStockHelper = (): number => {
+        if (
+          product.stock !== undefined &&
+          typeof product.stock === "number" &&
+          product.stock >= 0
+        ) {
+          return product.stock;
+        }
+        if (typeof product.stock === "string") {
+          const parsed = parseInt(product.stock, 10);
+          if (!isNaN(parsed) && parsed >= 0) {
+            return parsed;
+          }
+        }
+        if (product.variants && product.variants.length > 0) {
+          for (const variant of product.variants) {
+            if (
+              variant.stock !== undefined &&
+              typeof variant.stock === "number" &&
+              variant.stock >= 0
+            ) {
+              return variant.stock;
+            }
+            if (typeof variant.stock === "string") {
+              const parsed = parseInt(variant.stock, 10);
+              if (!isNaN(parsed) && parsed >= 0) {
+                return parsed;
+              }
+            }
+          }
+        }
+        return 0;
+      };
+      const st = getEffectiveStatus(product, getDisplayStockHelper());
+      if (filterOption === "out_of_stock" || filterOption === "OUT_OF_STOCK") {
+        return st === "OUT_OF_STOCK";
+      }
+      if (filterOption === "low_stock" || filterOption === "LOW_STOCK") {
+        return st === "LOW_STOCK";
+      }
+      if (filterOption === "available" || filterOption === "AVAILABLE") {
+        return st === "AVAILABLE";
+      }
+      return true;
+    });
+  }, [products, filterOption]);
+
   if (!isAuthenticated || !token) {
     return (
       <div className="admin-products">
@@ -345,6 +427,7 @@ const AdminProduct: React.FC = () => {
                   <th>Variants</th>
                   <th>Discount</th>
                   <th>Status</th>
+                  <th>Count</th>
                   <th>Created</th>
                   <th>Action</th>
                 </tr>
@@ -354,8 +437,8 @@ const AdminProduct: React.FC = () => {
                   [...Array(productsPerPage)].map((_, i) => (
                     <SkeletonRow key={i} />
                   ))
-                ) : products.length > 0 ? (
-                  products.map((product) => {
+                ) : displayedProducts.length > 0 ? (
+                  displayedProducts.map((product) => {
                     const productDiscountLabel =
                       !product.hasVariants &&
                       !product.deal &&
@@ -444,10 +527,11 @@ const AdminProduct: React.FC = () => {
                       product.productImages?.[0] ||
                       variantImgStr ||
                       (defaultProductImage as string);
+                    const effectiveStatus = getEffectiveStatus(product, displayStock);
                     return (
                       <tr
                         key={product.id}
-                        className={`admin-products__table-row ${displayStock === 0 ? "out-of-stock" : ""}`}
+                        className={`admin-products__table-row ${effectiveStatus === "OUT_OF_STOCK" ? "out-of-stock" : effectiveStatus === "LOW_STOCK" ? "low-stock" : ""}`}
                       >
                         {/* Product Image  */}
                         <td className="admin-products__image-cell">
@@ -548,30 +632,61 @@ const AdminProduct: React.FC = () => {
 
                         {/* Product Status */}
                         <td style={{ textAlign: "center" }}>
+                          {(() => {
+                            let color = "#1b5e20";
+                            let backgroundColor = "#e8f5e9";
+                            let border = "1px solid #a5d6a7";
+                            let label = "AVAILABLE";
+
+                            if (effectiveStatus === "OUT_OF_STOCK") {
+                              color = "#b71c1c";
+                              backgroundColor = "#fdecea";
+                              border = "1px solid #f5c6cb";
+                              label = "OUT_OF_STOCK";
+                            } else if (effectiveStatus === "LOW_STOCK") {
+                              color = "#d32f2f";
+                              backgroundColor = "#ffebee";
+                              border = "1px solid #ffcdd2";
+                              label = "LOW_STOCK";
+                            }
+
+                            return (
+                              <span
+                                style={{
+                                  padding: "4px 12px",
+                                  borderRadius: "999px",
+                                  fontSize: "12px",
+                                  fontWeight: 600,
+                                  textTransform: "uppercase",
+                                  display: "inline-block",
+                                  minWidth: "110px",
+                                  textAlign: "center",
+                                  color,
+                                  backgroundColor,
+                                  border,
+                                }}
+                              >
+                                {label}
+                              </span>
+                            );
+                          })()}
+                        </td>
+
+                        {/* Product Count (Stock) */}
+                        <td style={{ textAlign: "center" }}>
                           <span
                             style={{
-                              padding: "4px 12px",
-                              borderRadius: "999px",
-                              fontSize: "12px",
+                              padding: "4px 10px",
+                              borderRadius: "6px",
+                              backgroundColor: "#f3f4f6",
+                              color: "#1f2937",
+                              fontSize: "13px",
                               fontWeight: 600,
-                              textTransform: "uppercase",
                               display: "inline-block",
-                              minWidth: "100px",
-                              color:
-                                product.status === "AVAILABLE"
-                                  ? "#1b5e20"
-                                  : "#b71c1c",
-                              backgroundColor:
-                                product.status === "AVAILABLE"
-                                  ? "#e8f5e9"
-                                  : "#fdecea",
-                              border:
-                                product.status === "AVAILABLE"
-                                  ? "1px solid #a5d6a7"
-                                  : "1px solid #f5c6cb",
+                              minWidth: "36px",
                             }}
                           >
-                            {product.status || ""}
+                            {displayStock}
                           </span>
                         </td>
 

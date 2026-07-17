@@ -53,8 +53,24 @@ export function Sidebar({ ...props }: SidebarProps) {
     return () => clearInterval(interval);
   }, [authState.token, location.pathname]);
 
+  const { style: propsStyle, className: propsClassName, ...restProps } = props;
+
   return (
-    <div className={`sidebar ${isMobile ? "sidebar--dock" : ""}`} {...props}>
+    <div
+      className={`sidebar ${isMobile ? "sidebar--dock" : ""} ${propsClassName || ""}`.trim()}
+      style={{
+        ...(!isMobile && {
+          position: "sticky",
+          top: 0,
+          height: "100vh",
+          overflowY: "auto",
+          flexShrink: 0,
+          zIndex: 100,
+        }),
+        ...propsStyle,
+      }}
+      {...restProps}
+    >
       {/* Only show header in desktop view */}
       {!isMobile && (
         <div className="sidebar__header">

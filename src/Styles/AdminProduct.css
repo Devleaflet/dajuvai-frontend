@@ -91,6 +91,14 @@
   color: #333;
 }
 
+.admin-products__table-row.out-of-stock td {
+  background-color: rgba(254, 226, 226, 0.35);
+}
+
+.admin-products__table-row.low-stock td {
+  background-color: rgba(254, 243, 199, 0.35);
+}
+
 .admin-products__no-data {
   text-align: center;
   padding: 20px;

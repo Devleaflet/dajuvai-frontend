@@ -156,7 +156,7 @@ const VendorCommission: React.FC = () => {
           >
             <div
               className="section-card"
-              style={{ maxWidth: "100%", margin: "24px auto", padding: 24 }}
+              style={{ maxWidth: "100%", margin: "0 auto", padding: 24 }}
             >
               <h2 style={{ marginTop: 0, marginBottom: 20 }}>
                 Commission Document

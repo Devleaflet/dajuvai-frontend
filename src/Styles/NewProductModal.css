@@ -319,7 +319,7 @@
 }
 
 .form-label {
-  font-weight: 500;
+  font-weight: 400;
   color: #000000 !important;
   font-size: 0.875rem;
   display: flex;
@@ -330,7 +330,7 @@
 .form-label.required::after {
   content: '*';
   color: var(--danger-color);
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .label-hint {
@@ -366,6 +366,40 @@
   color: #000000 !important;
 }
 
+/* Ensure all text/number inputs and select dropdowns have uniform identical height across modals */
+.new-product-modal input.form-input[type="text"],
+.new-product-modal input.form-input[type="number"],
+.new-product-modal input.form-input[type="email"],
+.new-product-modal input.form-input:not([type]),
+.new-product-modal input[type="text"],
+.new-product-modal input[type="number"],
+.new-product-modal input[type="email"],
+.new-product-modal select.form-select,
+.new-product-modal select,
+.new-product-modal .form-group input[type="text"],
+.new-product-modal .form-group input[type="number"],
+.new-product-modal .form-group select,
+.edit-product-modal input.form-input[type="text"],
+.edit-product-modal input.form-input[type="number"],
+.edit-product-modal input.form-input[type="email"],
+.edit-product-modal input.form-input:not([type]),
+.edit-product-modal input[type="text"],
+.edit-product-modal input[type="number"],
+.edit-product-modal input[type="email"],
+.edit-product-modal select.form-select,
+.edit-product-modal select,
+.edit-product-modal .form-group input[type="text"],
+.edit-product-modal .form-group input[type="number"],
+.edit-product-modal .form-group select {
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  box-sizing: border-box !important;
+  padding: 0.625rem 1rem !important;
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
+
 /* Dropdown option styling */
 .new-product-modal select option {
   background: #ffffff !important;
@@ -377,6 +411,52 @@
   background: #ffffff !important;
   background-color: #ffffff !important;
   color: #000000 !important;
+}
+
+/* Placeholder styling to ensure placeholders are light gray and normal font-weight */
+.new-product-modal input[type="text"]::placeholder,
+.new-product-modal input[type="number"]::placeholder,
+.new-product-modal input[type="email"]::placeholder,
+.new-product-modal input::placeholder,
+.new-product-modal textarea::placeholder,
+.edit-product-modal input[type="text"]::placeholder,
+.edit-product-modal input::placeholder,
+.edit-product-modal textarea::placeholder,
+.form-input::placeholder,
+.form-textarea::placeholder,
+.form-select::placeholder {
+  color: #9ca3af !important;
+  -webkit-text-fill-color: #9ca3af !important;
+  font-weight: 400 !important;
+  opacity: 1 !important;
+}
+
+.new-product-modal input[type="text"]::-webkit-input-placeholder,
+.new-product-modal input[type="number"]::-webkit-input-placeholder,
+.new-product-modal input[type="email"]::-webkit-input-placeholder,
+.new-product-modal input::-webkit-input-placeholder,
+.new-product-modal textarea::-webkit-input-placeholder,
+.edit-product-modal input[type="text"]::-webkit-input-placeholder,
+.edit-product-modal input::-webkit-input-placeholder,
+.edit-product-modal textarea::-webkit-input-placeholder,
+.form-input::-webkit-input-placeholder,
+.form-textarea::-webkit-input-placeholder,
+.form-select::-webkit-input-placeholder {
+  color: #9ca3af !important;
+  -webkit-text-fill-color: #9ca3af !important;
+  font-weight: 400 !important;
+  opacity: 1 !important;
+}
+
+.new-product-modal input[type="text"]::-moz-placeholder,
+.new-product-modal input::-moz-placeholder,
+.new-product-modal textarea::-moz-placeholder,
+.edit-product-modal input::-moz-placeholder,
+.form-input::-moz-placeholder,
+.form-textarea::-moz-placeholder {
+  color: #9ca3af !important;
+  font-weight: 400 !important;
+  opacity: 1 !important;
 }
 
 .form-input:focus,

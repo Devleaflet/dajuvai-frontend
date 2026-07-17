@@ -443,16 +443,38 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
         if (!variant.sku.trim()) return 'All variants must have a SKU';
         if (!variant.price || variant.price <= 0) return 'All variants must have a valid price';
         if (variant.stock === undefined || variant.stock < 0) return 'All variants must have stock quantity';
+        if (variant.discount !== undefined && variant.discount !== null && Number(variant.discount) > 0) {
+          const discType = normalizeDiscountType(variant.discountType);
+          if (discType === 'PERCENTAGE' && Number(variant.discount) > 100) {
+            return `Variant (${variant.sku || 'discount'}): Percentage discount cannot exceed 100%`;
+          }
+          if (discType === 'FLAT' && Number(variant.discount) > Number(variant.price || 0)) {
+            return `Variant (${variant.sku || 'discount'}): Discount amount cannot be greater than the base price`;
+          }
+        }
       }
     }
 
     // Validate discount if provided
-    if (formData.discountType && (!formData.discount || formData.discount <= 0)) {
+    if (formData.discountType && formData.discountType !== 'NONE' && (!formData.discount || formData.discount <= 0)) {
       return 'Please enter a discount amount when a discount type is selected';
     }
     if (formData.discount !== undefined && formData.discount !== null && formData.discount > 0) {
       if (formData.discount < 0) return 'Discount cannot be negative';
-      if (!formData.discountType) return 'Please select a discount type (Percentage or Flat)';
+      if (!formData.discountType || formData.discountType === 'NONE') return 'Please select a discount type (Percentage or Flat)';
+
+      const discType = normalizeDiscountType(formData.discountType);
+      if (discType === 'PERCENTAGE' && Number(formData.discount) > 100) {
+        return 'Percentage discount cannot exceed 100%';
+      }
+      if (discType === 'FLAT') {
+        const checkPrice = !formData.hasVariants
+          ? Number(formData.basePrice || 0)
+          : variants.length > 0 ? Math.min(...variants.map(v => Number(v.price || 0))) : 0;
+        if (Number(formData.discount) > checkPrice && checkPrice > 0) {
+          return 'Discount amount cannot be greater than the base price';
+        }
+      }
     }
 
     return null;
@@ -620,6 +642,41 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
 
   return (
     <div className="new-product-modal-overlay">
+      <style>{`
+        .new-product-modal input[type="text"]::placeholder,
+        .new-product-modal input[type="number"]::placeholder,
+        .new-product-modal input::placeholder,
+        .new-product-modal textarea::placeholder,
+        .form-input::placeholder,
+        .form-textarea::placeholder {
+          color: #9ca3af !important;
+          -webkit-text-fill-color: #9ca3af !important;
+          font-weight: 400 !important;
+          opacity: 1 !important;
+        }
+
+        .new-product-modal input[type="text"]::-webkit-input-placeholder,
+        .new-product-modal input[type="number"]::-webkit-input-placeholder,
+        .new-product-modal input::-webkit-input-placeholder,
+        .new-product-modal textarea::-webkit-input-placeholder,
+        .form-input::-webkit-input-placeholder,
+        .form-textarea::-webkit-input-placeholder {
+          color: #9ca3af !important;
+          -webkit-text-fill-color: #9ca3af !important;
+          font-weight: 400 !important;
+          opacity: 1 !important;
+        }
+
+        .new-product-modal input[type="text"]::-moz-placeholder,
+        .new-product-modal input::-moz-placeholder,
+        .new-product-modal textarea::-moz-placeholder,
+        .form-input::-moz-placeholder,
+        .form-textarea::-moz-placeholder {
+          color: #9ca3af !important;
+          font-weight: 400 !important;
+          opacity: 1 !important;
+        }
+      `}</style>
       <div className="new-product-modal" onClick={(e) => e.stopPropagation()}>
         <div className="new-product-modal-header">
           <h2 className="new-product-modal-title">Create New Product</h2>

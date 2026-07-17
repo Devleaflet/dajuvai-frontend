@@ -20,7 +20,7 @@ import {
 
 interface PaymentOption {
   id?: number;
-  paymentType: "KHALTI" | "ESEWA" | "BANK" | "NPS";
+  paymentType: "KHALTI" | "ESEWA" | "BANK";
   details: Record<string, any>;
   qrCodeImage?: string | null;
   isActive: boolean;
@@ -94,7 +94,7 @@ const ProfilePage: React.FC = () => {
   } | null>(null);
 
   const [currentPaymentType, setCurrentPaymentType] = useState<
-    "ESEWA" | "KHALTI" | "BANK" | "NPS" | ""
+    "ESEWA" | "KHALTI" | "BANK" | ""
   >("");
   const [walletNumber, setWalletNumber] = useState("");
   const [accountName, setAccountName] = useState("");
@@ -762,15 +762,19 @@ const ProfilePage: React.FC = () => {
                     className="vendor-profile-form__input"
                     value={currentPaymentType}
                     onChange={(e) => {
-                      setCurrentPaymentType(e.target.value as any);
-                      resetPaymentForm();
+                      const newType = e.target.value as any;
+                      setWalletNumber("");
+                      setAccountName("");
+                      setBankName("");
+                      setAccountNumber("");
+                      setBankBranch("");
+                      setCurrentPaymentType(newType);
                     }}
                   >
                     <option value="">Select method…</option>
                     <option value="ESEWA">eSewa</option>
                     <option value="KHALTI">Khalti</option>
                     <option value="BANK">Bank Transfer</option>
-                    <option value="NPS">NPS</option>
                   </select>
                 </div>
 
@@ -780,7 +784,7 @@ const ProfilePage: React.FC = () => {
                       <strong>
                         {["ESEWA", "KHALTI"].includes(currentPaymentType)
                           ? "Digital Wallet"
-                          : "Bank / NPS Transfer"}
+                          : "Bank Transfer"}
                       </strong>
                       <p>
                         {["ESEWA", "KHALTI"].includes(currentPaymentType)
