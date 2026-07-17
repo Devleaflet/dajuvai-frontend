@@ -20,14 +20,14 @@ import {
 import { FaFacebook, FaInstagram, FaTiktok, FaWhatsapp, FaYoutube } from 'react-icons/fa6';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
-import { fetchCategory } from '../api/category';
+import { fetchPlacementCategories, PLACEMENTS } from '../api/placements';
 import { fetchSubCategory } from '../api/subcategory';
 import logo from '../assets/logo.webp';
 import nepal from '../assets/nepal.gif';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { useCategory } from '../context/Category';
+import { mapToNavCategories } from '../context/Category';
 import { useUI } from '../context/UIContext';
 import { useVendorAuth } from '../context/VendorAuthContext';
 import VendorLogin from '../Pages/VendorLogin';
@@ -145,10 +145,10 @@ const Navbar: React.FC = () => {
 		});
 	}, [cartItems]);
 
-	const categoryContext = useCategory();
-	const updateCategoriesWithSubcategories =
-		categoryContext?.updateCategoriesWithSubcategories;
-	const categories = categoryContext?.categories || [];
+	// Mega-menu categories are local to the navbar: rendered straight from the
+	// MEGA_MENU placement, not the shared category context (which other surfaces
+	// write with their own placements and would clobber).
+	const [categories, setCategories] = useState<Category[]>([]);
 
 	const resolveProfilePicture = (value?: string | null) => {
 		if (!value) return '';
@@ -372,46 +372,21 @@ const Navbar: React.FC = () => {
 		};
 	}, []);
 
-	const { data: categoriesData, isLoading: isCategoriesLoading } = useQuery<
-		Category[]
-	>({
-		queryKey: ['categories'],
-		queryFn: async () => {
-			try {
-				const response = await axiosInstance.get('/api/categories');
-				if (!response.data.success) {
-					throw new Error('Failed to fetch categories');
-				}
-				return response.data.data;
-			} catch (error) {
-				console.error('Error fetching categories:', error);
-				throw error;
-			}
-		},
+	const { data: categoriesData, isLoading: isCategoriesLoading } = useQuery({
+		queryKey: ['placement', PLACEMENTS.MEGA_MENU],
+		queryFn: () => fetchPlacementCategories(PLACEMENTS.MEGA_MENU),
 		staleTime: 5 * 60 * 1000,
 		gcTime: 10 * 60 * 1000,
 	});
 
 	useEffect(() => {
-		if (categoriesData && updateCategoriesWithSubcategories) {
-			updateCategoriesWithSubcategories(categoriesData).then(() => {
-				setIsCategoriesReady(true);
-			});
+		if (categoriesData) {
+			setCategories(mapToNavCategories(categoriesData));
+			setIsCategoriesReady(true);
 		}
-	}, [categoriesData, updateCategoriesWithSubcategories]);
+	}, [categoriesData]);
 
 	const showLoading = isCategoriesLoading || !isCategoriesReady;
-
-	useEffect(() => {
-		const prefetchCategories = async () => {
-			try {
-				await fetchCategory();
-			} catch (error) {
-				console.error('Error prefetching categories:', error);
-			}
-		};
-		prefetchCategories();
-	}, []);
 
 	const navigate = useNavigate();
 	const location = useLocation();

@@ -4,8 +4,8 @@ import React, { useRef, useState, useEffect } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../Styles/CategorySlider.css";
-import { useCategory } from "../context/Category";
-import { fetchCategory } from "../api/category";
+import { mapToNavCategories } from "../context/Category";
+import { fetchPlacementCategories, PLACEMENTS } from "../api/placements";
 import { useQuery } from "@tanstack/react-query";
 import type { Category } from "../context/Category";
 
@@ -20,16 +20,16 @@ const CategorySlider: React.FC = () => {
   const [scrollLeft, setScrollLeft] = useState(0);
   const [dragDistance, setDragDistance] = useState(0);
 
-  const categoryContext = useCategory();
-  const updateCategoriesWithSubcategories =
-    categoryContext?.updateCategoriesWithSubcategories;
-  const categories = categoryContext?.categories || [];
+  // Slider categories are local to this component: rendered from the
+  // CATEGORY_GRID placement, not the shared context (which other surfaces write
+  // with different placements and would clobber).
+  const [categories, setCategories] = useState<Category[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
 
   const { data: categoryData, isLoading: isCategoryLoading } = useQuery({
-    queryKey: ["cat"],
-    queryFn: fetchCategory,
+    queryKey: ["placement", PLACEMENTS.CATEGORY_GRID],
+    queryFn: () => fetchPlacementCategories(PLACEMENTS.CATEGORY_GRID),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -38,12 +38,11 @@ const CategorySlider: React.FC = () => {
   });
 
   useEffect(() => {
-    if (updateCategoriesWithSubcategories && categoryData) {
-      updateCategoriesWithSubcategories(categoryData).then(() => {
-        setIsCategoriesReady(true);
-      });
+    if (categoryData) {
+      setCategories(mapToNavCategories(categoryData));
+      setIsCategoriesReady(true);
     }
-  }, [categoryData, updateCategoriesWithSubcategories]);
+  }, [categoryData]);
 
   const showLoading = isCategoryLoading || !isCategoriesReady;
 
