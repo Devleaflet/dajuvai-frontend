@@ -337,9 +337,9 @@ const AdminMerchandising = () => {
   );
 
   return (
-    <div className="admin-layout">
+    <div className="merch-page">
       <AdminSidebar />
-      <div className="admin-main">
+      <div className="merch-page__content">
         <Header />
         <div className="merch">
           <div className="merch__head">

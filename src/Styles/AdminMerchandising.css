@@ -1,4 +1,18 @@
 /* AdminMerchandising.css — matches the Category Management design system */
+.merch-page {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.merch-page__content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  max-width: 100%;
+}
+
 .merch {
   padding: 16px 2rem 32px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
