@@ -47,7 +47,7 @@ const getEffectiveStatus = (
 
 const SkeletonRow: React.FC = () => (
   <tr>
-    {[...Array(11)].map((_, i) => (
+    {[...Array(12)].map((_, i) => (
       <td key={i}>
         <div className="skeleton skeleton-text" />
       </td>
@@ -422,6 +422,7 @@ const AdminProduct: React.FC = () => {
                   <th>Image</th>
                   <th>ID</th>
                   <th>Name</th>
+                  <th>Keywords</th>
                   <th>Vendor</th>
                   <th>Price</th>
                   <th>Variants</th>
@@ -547,6 +548,9 @@ const AdminProduct: React.FC = () => {
 
                         {/* Product Name  */}
                         <td>{product.name}</td>
+
+                        {/* Product Keywords */}
+                        <td>{product.keywords || "—"}</td>
 
                         {/* Vendor Name  */}
                         <td>{product.vendor?.businessName || "Unknown"}</td>

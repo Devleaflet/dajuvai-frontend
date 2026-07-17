@@ -12,6 +12,8 @@ export interface ProductVariant {
 export interface Product {
   id: string;
   name: string;
+  brand?: string;
+  keywords?: string;
   description: string;
   categoryId: number;
   subcategoryId: number;
@@ -40,6 +42,8 @@ export interface Subcategory {
 
 export interface EditProductFormData {
   name: string;
+  brand?: string;
+  keywords?: string;
   description: string;
   categoryId: string;
   subcategoryId: string;

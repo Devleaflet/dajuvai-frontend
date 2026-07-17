@@ -1,6 +1,8 @@
 export interface Product {
   id: number;
   name: string;
+  brand?: string;
+  keywords?: string;
   description: string;
   price: string | number;
   basePrice?: number | null;
@@ -87,6 +89,8 @@ export interface ListProduct {
 
 export interface ProductFormData {
   name: string;
+  brand?: string;
+  keywords?: string;
   description: string;
   basePrice: string | number | null;
   stock: number;
@@ -147,6 +151,8 @@ export interface ProductVariant {
 
 export interface NewProductFormData {
   name: string;
+  brand?: string;
+  keywords?: string;
   description?: string;
   basePrice?: number;
   discount?: number;
@@ -164,6 +170,7 @@ export interface NewProductFormData {
 export interface ApiProduct {
   id: number;
   name: string;
+  keywords?: string | null;
   description: string;
   basePrice: number | null;
   finalPrice: number;
@@ -209,7 +216,7 @@ export interface ApiProduct {
   brand: {
     id: number;
     name: string;
-  } | null;
+  } | string | null;
   deal: {
     id: number;
     title: string;

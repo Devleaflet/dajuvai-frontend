@@ -220,6 +220,8 @@ const VendorProduct: React.FC = () => {
 						name: product.name,
 						title: product.name,
 						description: product.description,
+						brand: product.brand,
+						keywords: product.keywords,
 
 						finalPrice: product.finalPrice,
 						price: finalPrice,
@@ -551,7 +553,8 @@ const VendorProduct: React.FC = () => {
 						updatedAt: new Date().toISOString(),
 						district: { id: 0, name: "" },
 					},
-			brand: null,
+			brand: typeof product.brand === "object" && product.brand ? product.brand : (typeof product.brand === "string" ? product.brand : null),
+			keywords: product.keywords || null,
 			deal: product.deal || null,
 			hasVariants: (product as any).hasVariants || false,
 			variants: (product as any).variants || [],
