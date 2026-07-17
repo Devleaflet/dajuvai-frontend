@@ -117,6 +117,20 @@ const AdminMerchandising = () => {
     (row) => matchesSearch(row) && (filter === "all" || filter === "unassigned"),
   );
 
+  // Subcategories span many parents; a flat "add" list is unusable at scale, so
+  // group the unassigned ones under their parent category. Categories have no
+  // parent, so they stay a single flat list.
+  const groupedUnassigned =
+    target === "subcategories"
+      ? [...visibleUnassigned
+          .reduce((groups, row) => {
+            const key = row.parentName ?? "Uncategorized";
+            (groups.get(key) ?? groups.set(key, []).get(key)!).push(row);
+            return groups;
+          }, new Map<string, MerchRow[]>())
+          .entries()].sort((a, b) => a[0].localeCompare(b[0]))
+      : null;
+
   const invalidate = () => queryClient.invalidateQueries({ queryKey: rowsKey });
 
   const configMutation = useMutation({
@@ -251,7 +265,7 @@ const AdminMerchandising = () => {
       <div className="merch-row__flags">
         <button
           type="button"
-          className={`merch-flag ${row.visible ? "merch-flag--on" : ""}`}
+          className={`merch-flag merch-flag--visible ${row.visible ? "merch-flag--on" : ""}`}
           title={row.visible ? "Visible - click to hide" : "Hidden - click to show"}
           onClick={() =>
             configMutation.mutate({ targetId: row.targetId, patch: { visible: !row.visible } })
@@ -262,7 +276,7 @@ const AdminMerchandising = () => {
         </button>
         <button
           type="button"
-          className={`merch-flag ${row.featured ? "merch-flag--on" : ""}`}
+          className={`merch-flag merch-flag--featured ${row.featured ? "merch-flag--on" : ""}`}
           title="Featured changes the design, not the order"
           onClick={() =>
             configMutation.mutate({ targetId: row.targetId, patch: { featured: !row.featured } })
@@ -273,7 +287,7 @@ const AdminMerchandising = () => {
         </button>
         <button
           type="button"
-          className={`merch-flag ${row.pinned ? "merch-flag--on" : ""}`}
+          className={`merch-flag merch-flag--pinned ${row.pinned ? "merch-flag--on" : ""}`}
           title="Pinned keeps the item above unpinned items"
           onClick={() => {
             setDraftOrder(null);
@@ -299,6 +313,28 @@ const AdminMerchandising = () => {
 
   const pinnedRows = visibleAssigned.filter((row) => row.pinned);
   const unpinnedRows = visibleAssigned.filter((row) => !row.pinned);
+
+  const renderUnassignedRow = (row: MerchRow, showParent: boolean) => (
+    <li key={row.targetId} className="merch-row merch-row--muted">
+      <div className="merch-row__label">
+        <span className="merch-row__name">{row.name}</span>
+        {showParent && row.parentName && (
+          <span className="merch-row__parent">{row.parentName}</span>
+        )}
+      </div>
+      {isAdmin ? (
+        <button
+          type="button"
+          className="merch-row__add"
+          onClick={() => addMutation.mutate(row.targetId)}
+        >
+          <Plus size={16} /> Add
+        </button>
+      ) : (
+        <span className="merch-row__note">Admin only</span>
+      )}
+    </li>
+  );
 
   return (
     <div className="admin-layout">
@@ -381,9 +417,11 @@ const AdminMerchandising = () => {
           )}
 
           {isLoading ? (
-            <p className="merch__empty">Loading…</p>
+            <div className="merch__panel">
+              <p className="merch__empty">Loading…</p>
+            </div>
           ) : (
-            <>
+            <div className="merch__panel">
               {pinnedRows.length > 0 && (
                 <>
                   <h2 className="merch__group">Pinned</h2>
@@ -411,32 +449,23 @@ const AdminMerchandising = () => {
               {visibleUnassigned.length > 0 && (
                 <>
                   <h2 className="merch__group">Not in this placement</h2>
-                  <ul className="merch__list merch__list--muted">
-                    {visibleUnassigned.map((row) => (
-                      <li key={row.targetId} className="merch-row merch-row--muted">
-                        <div className="merch-row__label">
-                          <span className="merch-row__name">{row.name}</span>
-                          {row.parentName && (
-                            <span className="merch-row__parent">{row.parentName}</span>
-                          )}
-                        </div>
-                        {isAdmin ? (
-                          <button
-                            type="button"
-                            className="merch-row__add"
-                            onClick={() => addMutation.mutate(row.targetId)}
-                          >
-                            <Plus size={16} /> Add
-                          </button>
-                        ) : (
-                          <span className="merch-row__note">Admin only</span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+                  {groupedUnassigned ? (
+                    groupedUnassigned.map(([parent, rows]) => (
+                      <div className="merch__subgroup" key={parent}>
+                        <p className="merch__subgroup-label">{parent}</p>
+                        <ul className="merch__list merch__list--muted">
+                          {rows.map((row) => renderUnassignedRow(row, false))}
+                        </ul>
+                      </div>
+                    ))
+                  ) : (
+                    <ul className="merch__list merch__list--muted">
+                      {visibleUnassigned.map((row) => renderUnassignedRow(row, true))}
+                    </ul>
+                  )}
                 </>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
