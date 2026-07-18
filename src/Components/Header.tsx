@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { VendorAuthService } from "../services/vendorAuthService";
+// import { VendorAuthService } from "../services/vendorAuthService";
 import { API_BASE_URL } from "../config";
 
 interface HeaderProps {

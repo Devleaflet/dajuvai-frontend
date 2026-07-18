@@ -209,24 +209,32 @@ const CategorySlider: React.FC = () => {
   // ── Navigation ────────────────────────────────────────────────────────────
   const goToCategory = useCallback(
     (mainCategoryId: string, itemId: string) => {
+      const categoryId = Number(mainCategoryId);
+      const subcategoryId = Number(itemId);
+
+      if (!Number.isFinite(categoryId) || !Number.isFinite(subcategoryId)) {
+        return;
+      }
+
       const params = new URLSearchParams({
-        categoryId: mainCategoryId,
-        subcategoryId: itemId,
+        categoryId: String(categoryId),
+        subcategoryId: String(subcategoryId),
       });
-      const url = `/shop?${params}`;
+      const url = `/shop?${params.toString()}`;
+
       if (location.pathname === "/shop") {
-        navigate(url, { replace: true });
+        // Update React Router's location and notify the already-mounted shop
+        // page immediately, matching the mega-menu filtering behaviour.
+        navigate(url);
         window.dispatchEvent(
           new CustomEvent("shopFiltersChanged", {
-            detail: {
-              categoryId: Number(mainCategoryId),
-              subcategoryId: Number(itemId),
-            },
+            detail: { categoryId, subcategoryId },
           }),
         );
-      } else {
-        navigate(url);
+        return;
       }
+
+      navigate(url);
     },
     [location.pathname, navigate],
   );
@@ -265,8 +273,9 @@ const CategorySlider: React.FC = () => {
       suppressClick: false,
     };
 
-    el.setPointerCapture(e.pointerId);
-    el.classList.add("cs-slider--dragging");
+    // Do not capture yet. Capturing on pointerdown redirects pointerup away
+    // from the card button and can prevent an ordinary click from firing.
+    // Capture only after movement proves this is a drag.
   }, []);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
@@ -281,6 +290,16 @@ const CategorySlider: React.FC = () => {
 
     if (!d.moved && Math.abs(dx) > CLICK_THRESHOLD) {
       d.moved = true;
+      d.suppressClick = true;
+
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {
+        /* Pointer may already have been released. */
+      }
+
+      el.classList.add("cs-slider--dragging");
+      e.preventDefault();
     }
 
     if (d.moved) {
@@ -304,10 +323,12 @@ const CategorySlider: React.FC = () => {
     d.suppressClick = d.moved;
     el.classList.remove("cs-slider--dragging");
 
-    try {
-      el.releasePointerCapture(e.pointerId);
-    } catch {
-      /* ok */
+    if (el.hasPointerCapture(e.pointerId)) {
+      try {
+        el.releasePointerCapture(e.pointerId);
+      } catch {
+        /* Pointer capture may already be gone. */
+      }
     }
 
     if (d.moved) {
