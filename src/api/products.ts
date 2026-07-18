@@ -214,7 +214,9 @@ export const createProduct = async (
 	subcategoryId: number,
 	productData: {
 		name: string;
+		brand?: string;
 		description?: string;
+		keywords?: string;
 		basePrice?: number;
 		discount?: number;
 		discountType?: "PERCENTAGE" | "FLAT" | "NONE";
@@ -275,7 +277,9 @@ export const createProduct = async (
 		};
 
 		// Add optional fields
+		if (productData.brand !== undefined && productData.brand !== null) payload.brand = productData.brand;
 		if (productData.description) payload.description = productData.description;
+		if (productData.keywords !== undefined && productData.keywords !== null) payload.keywords = productData.keywords;
 		if (productData.discount !== undefined)
 			payload.discount = productData.discount;
 		if (productData.discountType)
@@ -373,7 +377,9 @@ export const updateProduct = async (
 	subcategoryId: number,
 	productData: {
 		name: string;
+		brand?: string;
 		description?: string;
+		keywords?: string;
 		basePrice?: number;
 		discount?: number;
 		discountType?: "PERCENTAGE" | "FLAT" | "NONE";
@@ -394,8 +400,14 @@ export const updateProduct = async (
 		};
 
 		// Optional fields
+		if (productData.brand !== undefined && productData.brand !== null)
+			payload.brand = productData.brand;
+
 		if (productData.description !== undefined)
 			payload.description = productData.description;
+
+		if (productData.keywords !== undefined && productData.keywords !== null)
+			payload.keywords = productData.keywords;
 
 		if (productData.discount !== undefined)
 			payload.discount = productData.discount;

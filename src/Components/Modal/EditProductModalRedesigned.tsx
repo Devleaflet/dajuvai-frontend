@@ -399,6 +399,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     // Set form data with all required fields
     setFormData({
       name: fullProduct.name || "",
+      brand: fullProduct.brand || "",
+      keywords: fullProduct.keywords || "",
       description: fullProduct.description || "",
       basePrice: fullProduct.basePrice ?? null,
       stock: Number(fullProduct.stock ?? 0),
@@ -646,6 +648,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       /* -------------------- BASE PAYLOAD -------------------- */
       const updatePayload: any = {
         name: formData.name,
+        brand: formData.brand || '',
+        keywords: formData.keywords || '',
         subcategoryId: formData.subcategoryId,
         hasVariants: formData.hasVariants,
         dealId: formData.dealId ?? null,
@@ -828,6 +832,28 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     placeholder="Enter a compelling product name"
                     required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Brand <span className="label-hint">(Optional)</span></label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formData.brand || ''}
+                    onChange={(e) => handleInputChange('brand', e.target.value)}
+                    placeholder="e.g. Nike, Apple"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Keywords <span className="label-hint">(Optional)</span></label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formData.keywords || ''}
+                    onChange={(e) => handleInputChange('keywords', e.target.value)}
+                    placeholder="e.g. cotton, summer, t-shirt"
                   />
                 </div>
 
