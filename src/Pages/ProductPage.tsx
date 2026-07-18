@@ -161,12 +161,20 @@ const ProductPage = () => {
 						status: variant.status || "AVAILABLE",
 					};
 
-					if (!defaultVariant) {
+					if (
+						!defaultVariant &&
+						Number(variantData.stock || 0) > 0 &&
+						variantData.status !== "OUT_OF_STOCK"
+					) {
 						defaultVariant = variantData;
 					}
 
 					return variantData;
 				});
+
+				if (!defaultVariant && allVariants.length > 0) {
+					defaultVariant = allVariants[0];
+				}
 			}
 
 			const productImages = Array.isArray(apiProduct.productImages)
@@ -266,7 +274,10 @@ const ProductPage = () => {
 						businessName: "Unknown Vendor",
 					},
 					productImages: allImages,
-					colors: Array.from(colorOptions),
+					colors: Array.from(colorOptions).map((name) => ({
+						name,
+						img: "",
+					})),
 					sizeOptions: Array.from(sizeOptions),
 					stock: apiProduct.stock || defaultVariant?.stock || 0,
 					variants: allVariants,
@@ -470,14 +481,14 @@ const ProductPage = () => {
 		if (selectedVariant) {
 			return selectedVariant.finalPrice || 0;
 		}
-		return parseFloat(product?.finalPrice || "0");
+		return Number(product?.finalPrice || 0);
 	};
 
 	const getOriginalPrice = () => {
 		if (selectedVariant) {
 			return selectedVariant.basePrice || 0;
 		}
-		return parseFloat(product?.basePrice || "0");
+		return Number(product?.basePrice || 0);
 	};
 
 	const handleVariantSelect = (variant: any) => {

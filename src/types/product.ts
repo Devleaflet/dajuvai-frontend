@@ -1,7 +1,7 @@
 export interface Product {
   id: number;
   name: string;
-  brand?: string;
+  brand?: string | { id: number; name: string } | null;
   keywords?: string;
   description: string;
   price: string | number;
@@ -43,7 +43,6 @@ export interface Product {
   bannerId?: number | null;
   // Computed fields for display
   image: string;
-  brand?: { id: number; name: string } | null;
   category?: string;
   piece?: number;
   availableColor?: string;
@@ -123,8 +122,10 @@ export interface Image {
 
 // Unified complex attribute structure used by both New and Edit modals
 export interface Attribute {
-  type: string;
-  values: Array<{
+  attributeType?: string;
+  attributeValues?: string[];
+  type?: string;
+  values?: Array<{
     value: string;
     nestedAttributes?: Array<{
       type: string;
@@ -134,16 +135,18 @@ export interface Attribute {
 }
 
 export interface ProductVariant {
+  id?: number;
   sku: string;
+  basePrice?: number | string;
   price: number;
   stock: number;
-  finalPrice: number;
+  finalPrice?: number;
   status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
   // Use unified complex attributes shape
   attributes: Attribute[];
   // Keep both images fields to support UI and API payload compatibility
   images: (File | string)[];
-  variantImages: (File | string)[];
+  variantImages?: (File | string)[];
   discount?: number | string | null;
   discountType?: 'PERCENTAGE' | 'FLAT' | 'NONE' | null;
   imagePreviews?: string[]; // For client-side preview URLs

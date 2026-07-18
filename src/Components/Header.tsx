@@ -1,13 +1,14 @@
-import React, { useState, useRef, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-// import { VendorAuthService } from "../services/vendorAuthService";
+import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../config";
+import "../Styles/Header.css";
 
 interface HeaderProps {
   onSearch?: (query: string) => void;
   showSearch?: boolean;
   title?: string;
+  subtitle?: string;
   onSort?: (sortOption: string) => void;
   sortOption?: string;
   onFilter?: (filterOption: string) => void;
@@ -24,225 +25,382 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({
   onSearch,
   showSearch = true,
-  title,
+  title = "Dashboard",
+  subtitle,
   onSort,
   sortOption = "newest",
   onFilter,
   filterOption = "all",
   vendors = [],
   selectedVendor = null,
-  onVendorChange = () => {},
+  onVendorChange,
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const resolveProfilePicture = (value?: string | null) => {
+  const profilePicture = useMemo(() => {
+    const value = user?.profilePicture;
+
     if (!value) return "";
+
     const trimmed = value.trim();
+
     if (!trimmed) return "";
+
     if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("data:")) {
       return trimmed;
     }
-    if (trimmed.startsWith("//")) return `https:${trimmed}`;
-    const base = API_BASE_URL.replace(/\/api\/?$/, "");
-    return `${base}${trimmed.startsWith("/") ? "" : "/"}${trimmed}`;
-  };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    onSearch?.(query);
-  };
-
-  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newSortOption = e.target.value;
-    if (onSort) {
-      onSort(newSortOption);
+    if (trimmed.startsWith("//")) {
+      return `https:${trimmed}`;
     }
-  };
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newFilterOption = e.target.value;
-    if (onFilter) {
-      onFilter(newFilterOption);
+    const baseUrl = API_BASE_URL.replace(/\/api\/?$/, "");
+
+    return `${baseUrl}${trimmed.startsWith("/") ? "" : "/"}${trimmed}`;
+  }, [user?.profilePicture]);
+
+  const initials = useMemo(() => {
+    if (user?.username) {
+      return user.username
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((name) => name.charAt(0).toUpperCase())
+        .join("");
     }
-  };
+
+    return user?.email?.charAt(0).toUpperCase() || "A";
+  }, [user?.username, user?.email]);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    if (!dropdownOpen) return;
+
+    const handleOutsideClick = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setDropdownOpen(false);
       }
-    }
-    if (dropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("keydown", handleEscape);
+
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleEscape);
     };
   }, [dropdownOpen]);
 
   if (!user) return null;
 
-  // Show controls if we have sort or filter functionality, regardless of showSearch
-  const showControls = showSearch || onSort || onFilter;
+  const displayName = user.username || user.email || "Admin";
+
+  const showToolbar =
+    showSearch ||
+    Boolean(onSort) ||
+    Boolean(onFilter) ||
+    (vendors.length > 0 && Boolean(onVendorChange));
 
   return (
-    <>
-      <header className="dashboard__header">
-        <h1 className="dashboard__title">{title || ""}</h1>
-        <div className="dashboard__user" ref={dropdownRef}>
-          <div className="dashboard__avatar">
-            {(() => {
-              const resolved = resolveProfilePicture(user.profilePicture);
-              return resolved ? (
+    <header className="admin-page-header">
+      <div className="admin-page-header__topbar">
+        <div className="admin-page-header__heading">
+          <h1 className="admin-page-header__title">{title}</h1>
+
+          {subtitle && (
+            <p className="admin-page-header__subtitle">{subtitle}</p>
+          )}
+        </div>
+
+        <div className="admin-page-header__account" ref={dropdownRef}>
+          <button
+            type="button"
+            className="admin-page-header__account-button"
+            aria-label="Open administrator menu"
+            aria-haspopup="menu"
+            aria-expanded={dropdownOpen}
+            onClick={() => setDropdownOpen((open) => !open)}
+          >
+            <span className="admin-page-header__avatar">
+              {profilePicture ? (
                 <img
-                  src={resolved}
-                  alt={user.username || user.email || "Admin"}
-                  className="dashboard__avatar-image"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    borderRadius: "inherit",
-                  }}
+                  src={profilePicture}
+                  alt={displayName}
+                  className="admin-page-header__avatar-image"
                 />
               ) : (
-                <span className="dashboard__avatar-text">
-                  {user.username
-                    ? user.username
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                    : user.email?.[0] || "A"}
+                <span className="admin-page-header__avatar-text">
+                  {initials}
                 </span>
-              );
-            })()}
-          </div>
-          <div className="dashboard__user-info">
-            <p className="dashboard__username">{user.username || user.email}</p>
-            <p className="dashboard__version">Admin</p>
-          </div>
-          <button
-            className="dashboard__dropdown-button"
-            onClick={() => setDropdownOpen((v) => !v)}
-          >
-            <span className="dashboard__dropdown-icon"></span>
+              )}
+            </span>
+
+            <span className="admin-page-header__account-copy">
+              <span className="admin-page-header__username">{displayName}</span>
+
+              <span className="admin-page-header__role">Administrator</span>
+            </span>
+
+            <ChevronIcon open={dropdownOpen} />
           </button>
+
           {dropdownOpen && (
-            <div className="dashboard__dropdown-menu">
+            <div className="admin-page-header__menu" role="menu">
+              <div className="admin-page-header__menu-profile">
+                <span className="admin-page-header__menu-name">
+                  {displayName}
+                </span>
+
+                {user.email && (
+                  <span className="admin-page-header__menu-email">
+                    {user.email}
+                  </span>
+                )}
+              </div>
+
+              <div className="admin-page-header__menu-divider" />
+
               <button
-                className="dashboard__dropdown-item"
+                type="button"
+                className="admin-page-header__menu-item"
+                role="menuitem"
                 onClick={() => {
                   setDropdownOpen(false);
                   navigate("/");
                 }}
               >
-                Home
+                <HomeIcon />
+                <span>View storefront</span>
               </button>
+
               <button
-                className="dashboard__dropdown-item"
+                type="button"
+                className="admin-page-header__menu-item admin-page-header__menu-item--danger"
+                role="menuitem"
                 onClick={() => {
                   setDropdownOpen(false);
                   logout();
                 }}
               >
-                Logout
+                <LogoutIcon />
+                <span>Log out</span>
               </button>
             </div>
           )}
         </div>
-      </header>
-      <div>
-        {showControls && (
-          <div
-            className="dashboard__search-container"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "16px",
-              flexWrap: "wrap",
-            }}
-          >
-            {showSearch && (
-              <div
-                className="dashboard__search"
-                style={{ flex: 1, minWidth: 200 }}
-              >
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className="dashboard__search-input"
-                  onChange={handleInputChange}
-                />
-                <span className="dashboard__search-icon"></span>
-              </div>
-            )}
-            {onSort && (
-              <select
-                className="vendor-product__sort-select"
-                value={sortOption}
-                onChange={handleSortChange}
-                style={{
-                  minWidth: 180,
-                  height: 44,
-                  fontSize: 14,
-                }}
-              >
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-              </select>
-            )}
-            <select
-              className="vendor-product__filter-select"
-              value={filterOption}
-              onChange={handleFilterChange}
-              style={{
-                minWidth: 180,
-                height: 44,
-                fontSize: 14,
-              }}
-            >
-              <option value="all">All Products</option>
-              <option value="available">Available</option>
-              <option value="low_stock">Low Stock</option>
-              <option value="out_of_stock">Out of Stock</option>
-            </select>
-
-            {/* Vendor Dropdown */}
-            {vendors && vendors.length > 0 && (
-              <div>
-                <select
-                  value={selectedVendor || ""}
-                  onChange={(e) => onVendorChange(e.target.value)}
-                  className="dashboard__vendor-select"
-                  style={{
-                    minWidth: 180,
-                    width: 100,
-                    height: 44,
-                    fontSize: 14,
-                  }}
-                >
-                  <option value="">All vendors</option>
-                  {vendors.map((vendor) => (
-                    <option key={vendor.id} value={vendor.id}>
-                      {vendor.businessName || vendor.name || "Unknown Vendor"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-        )}
       </div>
-    </>
+
+      {showToolbar && (
+        <section
+          className="admin-page-header__toolbar"
+          aria-label="Page search and filters"
+        >
+          <div className="admin-page-header__toolbar-inner">
+            {showSearch && (
+              <label className="admin-page-header__search">
+                <SearchIcon />
+
+                <input
+                  type="search"
+                  className="admin-page-header__search-input"
+                  placeholder="Search..."
+                  aria-label="Search"
+                  onChange={(event) => onSearch?.(event.target.value)}
+                />
+              </label>
+            )}
+
+            <div className="admin-page-header__filters">
+              {onSort && (
+                <label className="admin-page-header__field">
+                  <span className="admin-page-header__field-label">Sort</span>
+
+                  <span className="admin-page-header__select-shell">
+                    <select
+                      className="admin-page-header__select"
+                      value={sortOption}
+                      onChange={(event) => onSort(event.target.value)}
+                    >
+                      <option value="newest">Newest</option>
+                      <option value="oldest">Oldest</option>
+                      <option value="price-asc">Price: Low to High</option>
+                      <option value="price-desc">Price: High to Low</option>
+                    </select>
+
+                    <SelectChevronIcon />
+                  </span>
+                </label>
+              )}
+
+              {onFilter && (
+                <label className="admin-page-header__field">
+                  <span className="admin-page-header__field-label">Status</span>
+
+                  <span className="admin-page-header__select-shell">
+                    <select
+                      className="admin-page-header__select"
+                      value={filterOption}
+                      onChange={(event) => onFilter(event.target.value)}
+                    >
+                      <option value="all">All Products</option>
+                      <option value="available">Available</option>
+                      <option value="low_stock">Low Stock</option>
+                      <option value="out_of_stock">Out of Stock</option>
+                    </select>
+
+                    <SelectChevronIcon />
+                  </span>
+                </label>
+              )}
+
+              {vendors.length > 0 && onVendorChange && (
+                <label className="admin-page-header__field">
+                  <span className="admin-page-header__field-label">Vendor</span>
+
+                  <span className="admin-page-header__select-shell">
+                    <select
+                      className="admin-page-header__select"
+                      value={selectedVendor || ""}
+                      onChange={(event) => onVendorChange(event.target.value)}
+                    >
+                      <option value="">All vendors</option>
+
+                      {vendors.map((vendor) => (
+                        <option key={vendor.id} value={vendor.id}>
+                          {vendor.businessName ||
+                            vendor.name ||
+                            "Unknown Vendor"}
+                        </option>
+                      ))}
+                    </select>
+
+                    <SelectChevronIcon />
+                  </span>
+                </label>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+    </header>
   );
 };
+
+function SearchIcon() {
+  return (
+    <svg
+      className="admin-page-header__search-icon"
+      width="19"
+      height="19"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="m20 20-3.5-3.5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function SelectChevronIcon() {
+  return (
+    <svg
+      className="admin-page-header__select-icon"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="m7 10 5 5 5-5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      className={`admin-page-header__chevron${
+        open ? " admin-page-header__chevron--open" : ""
+      }`}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="m7 10 5 5 5-5"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function HomeIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function LogoutIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M10 17l5-5-5-5M15 12H3M21 19V5a2 2 0 0 0-2-2h-6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 export default Header;

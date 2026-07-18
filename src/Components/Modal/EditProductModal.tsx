@@ -446,7 +446,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
             newErrors.variants = `Variant ${i + 1} must have a valid positive price`;
             break;
           }
-          if (!variant.stock || variant.stock < 0) {
+          if (variant.stock === undefined || variant.stock < 0) {
             newErrors.variants = `Variant ${i + 1} must have a valid non-negative stock`;
             break;
           }
@@ -508,16 +508,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         ...formData,
         variants: variantsForSubmit,
       };
-
-      //('EditProductModal: Submitting form data:', {
-        productId: product.id,
-        formData: finalFormData,
-        categoryId: categoryId,
-        subcategoryId: subcategoryId,
-        status: formData.status,
-        hasVariants: formData.hasVariants,
-        variantsCount: variants.length
-      });
 
       await onSave(product.id, finalFormData, categoryId, subcategoryId);
       onClose();
@@ -610,7 +600,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       toast.error("Valid price is required for variant");
       return;
     }
-    if (!currentVariant.stock || currentVariant.stock < 0) {
+    if (currentVariant.stock === undefined || currentVariant.stock < 0) {
       toast.error("Valid stock is required for variant");
       return;
     }
@@ -1326,7 +1316,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                       <button
                         type="button"
                         onClick={handleVariantAddOrUpdate}
-                        disabled={!currentVariant.sku || !currentVariant.price || currentVariant.price <= 0 || !currentVariant.stock || currentVariant.stock < 0}
+                        disabled={!currentVariant.sku || !currentVariant.price || currentVariant.price <= 0 || currentVariant.stock === undefined || currentVariant.stock < 0}
                         style={{
                           padding: '10px',
                           backgroundColor: editingVariantIndex !== null ? '#ff9800' : '#28a745',
@@ -1335,7 +1325,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                           borderRadius: '4px',
                           cursor: 'pointer',
                           marginTop: '10px',
-                          opacity: (!currentVariant.sku || !currentVariant.price || currentVariant.price <= 0 || !currentVariant.stock || currentVariant.stock < 0) ? 0.5 : 1
+                          opacity: (!currentVariant.sku || !currentVariant.price || currentVariant.price <= 0 || currentVariant.stock === undefined || currentVariant.stock < 0) ? 0.5 : 1
                         }}
                       >
                         {editingVariantIndex !== null ? 'Update Variant' : 'Add Variant'}

@@ -55,10 +55,34 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 		? defaultProductImage
 		: getProductPrimaryImage(product, defaultProductImage);
 
+	const availableVariants = (product.variants || []).filter(
+		(variant) =>
+			Number(variant.stock || 0) > 0 && variant.status !== "OUT_OF_STOCK"
+	);
+	const selectedCardVariant =
+		product.hasVariants && availableVariants.length > 0
+			? availableVariants[0]
+			: product.variants?.[0];
+	const displayStock = product.hasVariants
+		? (product.variants || []).reduce(
+				(total, variant) => total + Number(variant.stock || 0),
+				0
+			)
+		: Number(product.stock || product.piece || 0);
+	const isOutOfStock =
+		product.status === "OUT_OF_STOCK" ||
+		(product.hasVariants
+			? availableVariants.length === 0
+			: displayStock <= 0);
+	const stockLabel = isOutOfStock
+		? "Out of stock"
+		: displayStock < 5
+			? `${displayStock} left`
+			: "In stock";
+
 	useEffect(() => {
 		if (isAuthenticated && token) {
-			const variantCount = product.variants?.length || 0;
-			const variantId = variantCount > 0 ? product.variants![0].id : undefined;
+			const variantId = product.hasVariants ? selectedCardVariant?.id : undefined;
 			const wishlistItem = wishlist.find((item: any) => {
 				const productMatch = item.productId === id || item.product?.id === id;
 				const variantMatch = variantId
@@ -77,7 +101,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 			setIsWishlisted(false);
 			setWishlistItemId(null);
 		}
-	}, [wishlist, id, product.variants, isAuthenticated, token]);
+	}, [wishlist, id, product.hasVariants, selectedCardVariant?.id, isAuthenticated, token]);
 
 	const handleImageError = () => {
 		setImageError(true);
@@ -92,8 +116,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 
 		setWishlistLoading(true);
 		try {
-			const variantCount = product.variants?.length || 0;
-			const variantId = variantCount > 0 ? product.variants![0].id : undefined;
+			const variantId = product.hasVariants ? selectedCardVariant?.id : undefined;
 
 			if (isWishlisted && wishlistItemId) {
 				await removeFromWishlist(wishlistItemId, token);
@@ -140,10 +163,10 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 	const getDisplayPrices = () => {
 		if (product.hasVariants && product.variants?.length) {
 			const validVariants = product.variants
-				.filter(v => v.status !== "OUT_OF_STOCK")
+				.filter(v => Number(v.stock || 0) > 0 && v.status !== "OUT_OF_STOCK")
 				.map(v => ({
-					base: Number(v.basePrice) || 0,
-					final: Number(v.finalPrice) || (Number(v.basePrice) || 0),
+					base: Number((v as any).basePrice ?? v.price) || 0,
+					final: Number(v.finalPrice) || (Number((v as any).basePrice ?? v.price) || 0),
 					discount: v.discount !== undefined ? v.discount : product.discount,
 					discountType: v.discountType !== undefined ? v.discountType : product.discountType
 				}));
@@ -186,6 +209,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 			className="product1__link-wrapper"
 		>
 			<div className="product1">
+				{isOutOfStock && <span className="product1__stock-badge">Out of stock</span>}
 				<div className="product1__header">
 					<button
 						className="product1__wishlist-button"
@@ -224,22 +248,30 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 						onError={handleImageError}
 						loading="lazy"
 					/>
-					<div className="product1__cart-button">
+					<button
+						type="button"
+						className="product1__cart-button"
+						disabled={isOutOfStock}
+						aria-label={isOutOfStock ? "Out of stock" : "Add to cart"}
+						title={isOutOfStock ? "Out of stock" : "Add to cart"}
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							if (isOutOfStock) return;
+							if (!token) {
+								setAuthModalOpen(true);
+								return;
+							}
+							handleCartOnAdd(
+								product,
+								1,
+								product.hasVariants ? selectedCardVariant?.id : undefined
+							);
+						}}
+					>
 						<FaCartPlus
-							onClick={(e) => {
-								e.preventDefault();
-								e.stopPropagation();
-								if (!token) {
-									setAuthModalOpen(true);
-									return;
-								}
-								const variantCount = product.variants?.length || 0;
-								const variantId =
-									variantCount > 0 ? product.variants![0].id : undefined;
-								handleCartOnAdd(product, 1, variantId);
-							}}
 						/>
-					</div>
+					</button>
 				</div>
 
 				<div className="product1__rating">
@@ -265,6 +297,11 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 					{description && (
 						<p className="product1__description">{description}</p>
 					)}
+					<div
+						className={`product1__stock ${isOutOfStock ? "product1__stock--out" : displayStock < 5 ? "product1__stock--low" : ""}`}
+					>
+						{stockLabel}
+					</div>
 					<div 
 						className="product1__price"
 						style={

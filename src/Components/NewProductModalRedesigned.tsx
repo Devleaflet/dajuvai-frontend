@@ -440,7 +440,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     if (!formData.subcategoryId) return 'Please select a subcategory';
     if (!formData.hasVariants) {
       if (!formData.basePrice || formData.basePrice <= 0) return 'Base price is required';
-      if (!formData.stock) return 'Stock quantity is required';
+      if (formData.stock === undefined || formData.stock < 0) return 'Stock quantity is required';
     } else {
       if (variants.length === 0) return 'At least one variant is required';
       for (const variant of variants) {

@@ -1,25 +1,39 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "../Styles/Sidebar.css";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../config";
 import logo from "../assets/logo.webp";
 
-export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1000);
+export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
   const [unapprovedCount, setUnapprovedCount] = useState(0);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { user, token } = useAuth();
+  const location = useLocation();
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 1000);
+    setIsMobileOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isMobileOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMobileOpen(false);
+      }
     };
 
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    document.addEventListener("keydown", handleKeyDown);
 
-  const location = useLocation();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMobileOpen]);
 
   useEffect(() => {
     if (location.pathname === "/admin-vendors") {
@@ -28,253 +42,250 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLDivElement>)
   }, [location.pathname]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setUnapprovedCount(0);
+      return;
+    }
+
+    const controller = new AbortController();
 
     const fetchUnapprovedCount = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/vendors/unapproved/count`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
+        const response = await fetch(
+          `${API_BASE_URL}/api/vendors/unapproved/count`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            signal: controller.signal,
           },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setUnapprovedCount(data.count);
-          }
+        );
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        if (data.success) {
+          setUnapprovedCount(Number(data.count) || 0);
         }
       } catch (error) {
-        console.error("Failed to fetch unapproved count:", error);
+        if ((error as Error).name !== "AbortError") {
+          console.error("Failed to fetch unapproved count:", error);
+        }
       }
     };
 
     fetchUnapprovedCount();
-    const interval = setInterval(fetchUnapprovedCount, 60_000);
-    return () => clearInterval(interval);
-  }, [token, location.pathname]);
+
+    const intervalId = window.setInterval(fetchUnapprovedCount, 60_000);
+
+    return () => {
+      controller.abort();
+      window.clearInterval(intervalId);
+    };
+  }, [token]);
 
   return (
-    <div className={`sidebar ${isMobile ? "sidebar--dock" : ""}`} {...props}>
-      {!isMobile && (
-        <div className="sidebar__header">
-          <Link to="/admin-dashboard" className="sidebar__logo">
-            <img src={logo} alt="Dajuvai Logo" style={{ width: "32px", height: "32px", objectFit: "contain" }} />
-            <span className="sidebar__logo-text">Admin Panel</span>
-          </Link>
+    <aside
+      className={`sidebar${isMobileOpen ? " sidebar--open" : ""}`}
+      aria-label="Admin navigation"
+      {...props}
+    >
+      <div className="sidebar__mobile-bar">
+        <div className="sidebar__mobile-brand">
+          <img src={logo} alt="" aria-hidden="true" />
+          <span className="sidebar__mobile-brand-text">Admin Panel</span>
         </div>
-      )}
 
-      <nav className="sidebar__nav">
-        <NavItem 
-          to="/admin-dashboard" 
-          active={location.pathname === "/admin-dashboard"}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="3" width="7" height="9" rx="2" stroke="currentColor" strokeWidth="2"/>
-              <rect x="14" y="3" width="7" height="5" rx="2" stroke="currentColor" strokeWidth="2"/>
-              <rect x="14" y="12" width="7" height="9" rx="2" stroke="currentColor" strokeWidth="2"/>
-              <rect x="3" y="16" width="7" height="5" rx="2" stroke="currentColor" strokeWidth="2"/>
-            </svg>
-          }
+        <button
+          type="button"
+          className="sidebar__menu-button"
+          aria-label="Open admin navigation"
+          aria-expanded={isMobileOpen}
+          aria-controls="admin-sidebar-panel"
+          onClick={() => setIsMobileOpen(true)}
         >
-          Dashboard
-        </NavItem>
-        <NavItem 
-          to="/admin-catalog" 
-          active={location.pathname === "/admin-catalog"}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 11H5M19 11C20.1046 11 21 11.8954 21 13V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V13C3 11.8954 3.89543 11 5 11M19 11V9C19 7.89543 18.1046 7 17 7M5 11V9C5 7.89543 5.89543 7 7 7M7 7V5C7 3.89543 7.89543 3 9 3H15C16.1046 3 17 3.89543 17 5V7M7 7H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          }
-        >
-          Catalog
-        </NavItem>
-        <NavItem 
-          to="/admin-products" 
-          active={location.pathname === "/admin-products"}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 7L12 3L4 7M20 7V17L12 21M20 7L12 11M12 21L4 17V7M12 21V11M4 7L12 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          }
-        >
-          Products
-        </NavItem>
-        <NavItem 
-          to="/admin-categories" 
-          active={location.pathname === "/admin-categories"}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 9H20M4 15H20M10 3V21M14 3V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          }
-        >
-          Categories
-        </NavItem>
-        <NavItem
-          to="/admin-merchandising"
-          active={location.pathname === "/admin-merchandising"}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 6H20M4 12H20M4 18H14M17 15L20 18L17 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          }
-        >
-          Arrangements
-        </NavItem>
-        <NavItem 
-          to="/admin-deals" 
-          active={location.pathname === "/admin-deals"}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          }
-        >
-          Deals
-        </NavItem>
-        <NavItem 
-          to="/admin-promo" 
-          active={location.pathname === "/admin-promo"}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          }
-        >
-          Promo Codes
-        </NavItem>
-        <NavItem 
-          to="/admin-banner" 
-          active={location.pathname === "/admin-banner"}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 12C3 4.5885 4.5885 3 12 3C19.4115 3 21 4.5885 21 12C21 19.4115 19.4115 21 12 21C4.5885 21 3 19.4115 3 12Z" stroke="currentColor" strokeWidth="2"/>
-              <path d="M3 12H21" stroke="currentColor" strokeWidth="2"/>
-              <path d="M12 3V21" stroke="currentColor" strokeWidth="2"/>
-            </svg>
-          }
-        >
-          Banners
-        </NavItem>
-        <NavItem 
-          to="/admin-orders" 
-          active={location.pathname === "/admin-orders"}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5M12 12H15M12 16H15M9 12H9.01M9 16H9.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          }
-        >
-          Orders
-        </NavItem>
-        <NavItem 
-          to="/admin-delivery" 
-          active={location.pathname === "/admin-delivery"}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5 17C5 18.1046 5.89543 19 7 19C8.10457 19 9 18.1046 9 17C9 15.8954 8.10457 15 7 15C5.89543 15 5 15.8954 5 17Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M15 17C15 18.1046 15.8954 19 17 19C18.1046 19 19 18.1046 19 17C19 15.8954 18.1046 15 17 15C15.8954 15 15 15.8954 15 17Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M5 15H3V5C3 3.89543 3.89543 3 5 3H16V13L15.3 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M16 10H19.5L21 13V15H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          }
-        >
-          Delivery
-        </NavItem>
-        <NavItem 
-          to="/admin-notifications" 
-          active={location.pathname === "/admin-notifications"}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          }
-        >
-          Notifications
-        </NavItem>
-        <NavItem 
-          to="/admin-customers" 
-          active={location.pathname === "/admin-customers"}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          }
-        >
-          Customers
-        </NavItem>
-        <NavItem
-          to="/admin-vendors"
-          active={location.pathname === "/admin-vendors"}
-          badge={unapprovedCount}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 21V5C19 3.89543 18.1046 3 17 3H7C5.89543 3 5 3.89543 5 5V21M19 21H5M19 21H21M5 21H3M9 7H15M9 11H15M9 15H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          }
-        >
-          Vendors
-        </NavItem>
-        <NavItem 
-          to="/admin/district" 
-          active={location.pathname === "/admin/district"}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M12 2V22" stroke="currentColor" strokeWidth="2"/>
-            </svg>
-          }
-        >
-          Districts
-        </NavItem>
-        
-        <div>
-          {user?.role === 'admin' && (
+          <MenuIcon />
+        </button>
+      </div>
+
+      <button
+        type="button"
+        className="sidebar__backdrop"
+        aria-label="Close admin navigation"
+        tabIndex={isMobileOpen ? 0 : -1}
+        onClick={() => setIsMobileOpen(false)}
+      />
+
+      <div
+        id="admin-sidebar-panel"
+        className="sidebar__panel"
+        aria-hidden={!isMobileOpen}
+      >
+        <div className="sidebar__header">
+          <div className="sidebar__header-inner">
+            <Link to="/admin-dashboard" className="sidebar__logo">
+              <img
+                src={logo}
+                alt="Dajuvai Logo"
+                className="sidebar__logo-image"
+              />
+              <span className="sidebar__logo-text">Admin Panel</span>
+            </Link>
+
+            <button
+              type="button"
+              className="sidebar__close-button"
+              aria-label="Close admin navigation"
+              onClick={() => setIsMobileOpen(false)}
+            >
+              <CloseIcon />
+            </button>
+          </div>
+        </div>
+
+        <nav className="sidebar__nav">
+          <NavItem
+            to="/admin-dashboard"
+            active={location.pathname === "/admin-dashboard"}
+            icon={<DashboardIcon />}
+          >
+            Dashboard
+          </NavItem>
+
+          <NavItem
+            to="/admin-catalog"
+            active={location.pathname === "/admin-catalog"}
+            icon={<CatalogIcon />}
+          >
+            Catalog
+          </NavItem>
+
+          <NavItem
+            to="/admin-products"
+            active={location.pathname === "/admin-products"}
+            icon={<ProductsIcon />}
+          >
+            Products
+          </NavItem>
+
+          <NavItem
+            to="/admin-categories"
+            active={location.pathname === "/admin-categories"}
+            icon={<CategoriesIcon />}
+          >
+            Categories
+          </NavItem>
+
+          <NavItem
+            to="/admin-merchandising"
+            active={location.pathname === "/admin-merchandising"}
+            icon={<ArrangementIcon />}
+          >
+            Arrangements
+          </NavItem>
+
+          <NavItem
+            to="/admin-deals"
+            active={location.pathname === "/admin-deals"}
+            icon={<DealsIcon />}
+          >
+            Deals
+          </NavItem>
+
+          <NavItem
+            to="/admin-promo"
+            active={location.pathname === "/admin-promo"}
+            icon={<PromoIcon />}
+          >
+            Promo Codes
+          </NavItem>
+
+          <NavItem
+            to="/admin-banner"
+            active={location.pathname === "/admin-banner"}
+            icon={<BannerIcon />}
+          >
+            Banners
+          </NavItem>
+
+          <NavItem
+            to="/admin-orders"
+            active={location.pathname === "/admin-orders"}
+            icon={<OrdersIcon />}
+          >
+            Orders
+          </NavItem>
+
+          <NavItem
+            to="/admin-delivery"
+            active={location.pathname === "/admin-delivery"}
+            icon={<DeliveryIcon />}
+          >
+            Delivery
+          </NavItem>
+
+          <NavItem
+            to="/admin-notifications"
+            active={location.pathname === "/admin-notifications"}
+            icon={<NotificationIcon />}
+          >
+            Notifications
+          </NavItem>
+
+          <NavItem
+            to="/admin-customers"
+            active={location.pathname === "/admin-customers"}
+            icon={<CustomersIcon />}
+          >
+            Customers
+          </NavItem>
+
+          <NavItem
+            to="/admin-vendors"
+            active={location.pathname === "/admin-vendors"}
+            badge={unapprovedCount}
+            icon={<VendorsIcon />}
+          >
+            Vendors
+          </NavItem>
+
+          <NavItem
+            to="/admin/district"
+            active={location.pathname === "/admin/district"}
+            icon={<DistrictIcon />}
+          >
+            Districts
+          </NavItem>
+
+          {user?.role === "admin" && (
             <NavItem
               to="/admin/staff"
               active={location.pathname === "/admin/staff"}
-              icon={
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M17 20H22V18C22 16.1362 19.5 15 18 15C16.5 15 16 16 15 16C14 16 13.5 15 12 15C10.5 15 9.5 16 9 16M1 20H14M12 15C12 15 13 14 13 12C13 10 12 7 9 7C6 7 5 10 5 12C5 14 6 15 6 15M18 15C18 15 19 14 19 12C19 10 18 7 15 7C15.5 8 15.5 10 15 11.5M9 7C9 4.79086 10.3431 3 12 3C13.6569 3 15 4.79086 15 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              }
+              icon={<StaffIcon />}
             >
               Staff
             </NavItem>
           )}
-        </div>
-        <NavItem
-          to="/admin/commission"
-          active={location.pathname === "/admin/commission"}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M14 2H6C4.89543 2 4 2.89543 4 4V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M9 13H15M9 17H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          }
-        >
-          Commission Doc
-        </NavItem>
-        <NavItem 
-          to="/admin-profile" 
-          active={location.pathname === "/admin-profile"}
-          icon={
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 21V19C20 17.8954 19.1046 17 18 17H6C4.89543 17 4 17.8954 4 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          }
-        >
-          Profile
-        </NavItem>
-        
-      </nav>
-    </div>
+
+          <NavItem
+            to="/admin/commission"
+            active={location.pathname === "/admin/commission"}
+            icon={<CommissionIcon />}
+          >
+            Commission Doc
+          </NavItem>
+
+          <NavItem
+            to="/admin-profile"
+            active={location.pathname === "/admin-profile"}
+            icon={<ProfileIcon />}
+          >
+            Profile
+          </NavItem>
+        </nav>
+      </div>
+    </aside>
   );
 }
 
@@ -287,23 +298,323 @@ interface NavItemProps {
 }
 
 function NavItem({ to, icon, children, active, badge }: NavItemProps) {
-  const badgeLabel = badge && badge > 0
-    ? (badge > 99 ? "99+" : String(badge))
-    : null;
+  const badgeLabel =
+    badge && badge > 0 ? (badge > 99 ? "99+" : String(badge)) : null;
 
   return (
     <Link
       to={to}
-      className={`sidebar__item ${active ? "sidebar__item--active" : ""}`}
+      className={`sidebar__item${active ? " sidebar__item--active" : ""}`}
       title={String(children)}
     >
       <span className="sidebar__icon-wrap">
         {icon}
-        {badgeLabel && (
-          <span className="sidebar__badge">{badgeLabel}</span>
-        )}
+        {badgeLabel && <span className="sidebar__badge">{badgeLabel}</span>}
       </span>
       <span className="sidebar__text">{children}</span>
     </Link>
+  );
+}
+
+const svgProps = {
+  width: 20,
+  height: 20,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  xmlns: "http://www.w3.org/2000/svg",
+};
+
+function MenuIcon() {
+  return (
+    <svg {...svgProps} aria-hidden="true">
+      <path
+        d="M4 7h16M4 12h16M4 17h16"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg {...svgProps} aria-hidden="true">
+      <path
+        d="m6 6 12 12M18 6 6 18"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function DashboardIcon() {
+  return (
+    <svg {...svgProps}>
+      <rect
+        x="3"
+        y="3"
+        width="7"
+        height="9"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <rect
+        x="14"
+        y="3"
+        width="7"
+        height="5"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <rect
+        x="14"
+        y="12"
+        width="7"
+        height="9"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <rect
+        x="3"
+        y="16"
+        width="7"
+        height="5"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
+function CatalogIcon() {
+  return (
+    <svg {...svgProps}>
+      <path
+        d="M19 11H5M19 11C20.1 11 21 11.9 21 13V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V13C3 11.9 3.9 11 5 11M19 11V9C19 7.9 18.1 7 17 7M5 11V9C5 7.9 5.9 7 7 7M7 7V5C7 3.9 7.9 3 9 3H15C16.1 3 17 3.9 17 5V7M7 7H17"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ProductsIcon() {
+  return (
+    <svg {...svgProps}>
+      <path
+        d="M20 7 12 3 4 7m16 0v10l-8 4m8-14-8 4m0 10-8-4V7m8 14V11M4 7l8 4"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CategoriesIcon() {
+  return (
+    <svg {...svgProps}>
+      <path
+        d="M4 9h16M4 15h16M10 3v18M14 3v18"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function ArrangementIcon() {
+  return (
+    <svg {...svgProps}>
+      <path
+        d="M4 6h16M4 12h16M4 18h10m3-3 3 3-3 3"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function DealsIcon() {
+  return (
+    <svg {...svgProps}>
+      <path
+        d="m12 2 3.1 6.3 6.9 1-5 4.8 1.2 6.9-6.2-3.2L5.8 21 7 14.1 2 9.3l6.9-1L12 2Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function PromoIcon() {
+  return (
+    <svg {...svgProps}>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="m9 12 2 2 4-4"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function BannerIcon() {
+  return (
+    <svg {...svgProps}>
+      <rect
+        x="3"
+        y="3"
+        width="18"
+        height="18"
+        rx="5"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <path d="M3 12h18M12 3v18" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function OrdersIcon() {
+  return (
+    <svg {...svgProps}>
+      <path
+        d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-3 7h3m-3 4h3M9 12h.01M9 16h.01"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function DeliveryIcon() {
+  return (
+    <svg {...svgProps}>
+      <circle cx="7" cy="17" r="2" stroke="currentColor" strokeWidth="2" />
+      <circle cx="17" cy="17" r="2" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="M5 15H3V5a2 2 0 0 1 2-2h11v12m0-5h3.5l1.5 3v2h-2"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function NotificationIcon() {
+  return (
+    <svg {...svgProps}>
+      <path
+        d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CustomersIcon() {
+  return (
+    <svg {...svgProps}>
+      <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="M5 21a7 7 0 0 1 14 0"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function VendorsIcon() {
+  return (
+    <svg {...svgProps}>
+      <path
+        d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0H5m14 0h2M5 21H3M9 7h6M9 11h6M9 15h4"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function DistrictIcon() {
+  return (
+    <svg {...svgProps}>
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+      <path d="M12 2v20M2 12h20" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function StaffIcon() {
+  return (
+    <svg {...svgProps}>
+      <path
+        d="M1 20h13m3 0h5v-2c0-1.9-2.5-3-4-3s-2 1-3 1-1.5-1-3-1-2.5 1-3 1m9-1s1-1 1-3-1-5-4-5m-6 8s1-1 1-3-1-5-4-5-4 3-4 5 1 3 1 3M9 7c0-2.2 1.3-4 3-4s3 1.8 3 4"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CommissionIcon() {
+  return (
+    <svg {...svgProps}>
+      <path
+        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14 2v6h6M9 13h6M9 17h6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function ProfileIcon() {
+  return (
+    <svg {...svgProps}>
+      <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="M4 21v-2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

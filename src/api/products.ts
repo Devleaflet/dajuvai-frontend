@@ -209,6 +209,95 @@ export const uploadProductImages = async (
 	}
 };
 
+const deriveInventoryStatus = (
+	stock: number
+): "AVAILABLE" | "OUT_OF_STOCK" | "LOW_STOCK" => {
+	if (stock <= 0) return "OUT_OF_STOCK";
+	if (stock < 5) return "LOW_STOCK";
+	return "AVAILABLE";
+};
+
+const normalizeDiscountType = (
+	value?: "PERCENTAGE" | "FLAT" | "NONE" | string | null
+): "PERCENTAGE" | "FLAT" | "NONE" => {
+	return value === "PERCENTAGE" || value === "FLAT" || value === "NONE"
+		? value
+		: "NONE";
+};
+
+const normalizeVariantAttributes = (attributes: any): Record<string, string> => {
+	if (!attributes) return {};
+	if (!Array.isArray(attributes) && typeof attributes === "object") {
+		return Object.entries(attributes).reduce((acc, [key, value]) => {
+			if (key.trim() && value !== undefined && value !== null) {
+				acc[key.trim().toLowerCase()] = String(value).trim();
+			}
+			return acc;
+		}, {} as Record<string, string>);
+	}
+	if (!Array.isArray(attributes)) return {};
+
+	return attributes.reduce((acc, attribute) => {
+		const key = String(
+			attribute?.type || attribute?.attributeType || attribute?.name || ""
+		)
+			.trim()
+			.toLowerCase();
+		const rawValue = Array.isArray(attribute?.values)
+			? attribute.values[0]?.value
+			: Array.isArray(attribute?.attributeValues)
+				? attribute.attributeValues[0]
+				: attribute?.value;
+
+		if (key && rawValue !== undefined && rawValue !== null) {
+			acc[key] = String(rawValue).trim();
+		}
+		return acc;
+	}, {} as Record<string, string>);
+};
+
+const normalizeImageUrls = (images: any): string[] => {
+	if (!Array.isArray(images)) return [];
+	return images
+		.map((image) =>
+			typeof image === "string" ? image : image?.url || image?.imageUrl || ""
+		)
+		.filter(
+			(url): url is string =>
+				typeof url === "string" && url.trim().length > 0
+		)
+		.map((url) => url.trim());
+};
+
+const normalizeVariantPayload = (variant: any, index: number) => {
+	const basePrice = Number(variant?.basePrice ?? variant?.price);
+	const stock = Number(variant?.stock);
+
+	if (!variant?.sku?.trim()) {
+		throw new Error(`Variant ${index + 1} SKU is required`);
+	}
+	if (!Number.isFinite(basePrice) || basePrice <= 0) {
+		throw new Error(`Variant ${index + 1} price must be greater than zero`);
+	}
+	if (!Number.isInteger(stock) || stock < 0) {
+		throw new Error(
+			`Variant ${index + 1} stock must be a non-negative whole number`
+		);
+	}
+
+	return {
+		...(variant.id ? { id: Number(variant.id) } : {}),
+		sku: String(variant.sku).trim(),
+		basePrice,
+		stock,
+		status: deriveInventoryStatus(stock),
+		discount: Number(variant.discount || 0),
+		discountType: normalizeDiscountType(variant.discountType),
+		attributes: normalizeVariantAttributes(variant.attributes),
+		variantImages: normalizeImageUrls(variant.variantImages || variant.images),
+	};
+};
+
 export const createProduct = async (
 	categoryId: number,
 	subcategoryId: number,
@@ -259,9 +348,6 @@ export const createProduct = async (
 			if (productData.stock === undefined || productData.stock < 0) {
 				throw new Error("Stock is required for non-variant products");
 			}
-			if (!productData.status) {
-				throw new Error("Status is required for non-variant products");
-			}
 		} else {
 			// Variant product validation
 			if (!productData.variants || productData.variants.length === 0) {
@@ -283,7 +369,7 @@ export const createProduct = async (
 		if (productData.discount !== undefined)
 			payload.discount = productData.discount;
 		if (productData.discountType)
-			payload.discountType = productData.discountType;
+			payload.discountType = normalizeDiscountType(productData.discountType);
 		if (productData.dealId) payload.dealId = productData.dealId;
 		if (productData.bannerId) payload.bannerId = productData.bannerId;
 		if (productData.productImages && productData.productImages.length > 0) {
@@ -293,13 +379,13 @@ export const createProduct = async (
 		// Add fields based on whether product has variants
 		if (productData.hasVariants) {
 			if (productData.variants && productData.variants.length > 0) {
-				payload.variants = productData.variants;
+				payload.variants = productData.variants.map(normalizeVariantPayload);
 			}
 		} else {
 			// For non-variant products, these fields are required
 			payload.basePrice = productData.basePrice;
 			payload.stock = productData.stock;
-			payload.status = productData.status;
+			payload.status = deriveInventoryStatus(Number(productData.stock));
 		}
 
 		const apiUrl = `/api/categories/${categoryId}/subcategories/${subcategoryId}/products`;
@@ -413,7 +499,7 @@ export const updateProduct = async (
 			payload.discount = productData.discount;
 
 		if (productData.discountType !== undefined)
-			payload.discountType = productData.discountType;
+			payload.discountType = normalizeDiscountType(productData.discountType);
 
 		if (productData.dealId === null) {
 			payload.dealId = null;              // REMOVE deal
@@ -433,7 +519,7 @@ export const updateProduct = async (
 		// Variants / non-variants
 		if (productData.hasVariants) {
 			if (productData.variants?.length) {
-				payload.variants = productData.variants;
+				payload.variants = productData.variants.map(normalizeVariantPayload);
 			}
 		} else {
 			if (productData.basePrice !== undefined)
@@ -442,8 +528,8 @@ export const updateProduct = async (
 			if (productData.stock !== undefined)
 				payload.stock = productData.stock;
 
-			if (productData.status !== undefined)
-				payload.status = productData.status;
+			if (productData.stock !== undefined)
+				payload.status = deriveInventoryStatus(Number(productData.stock));
 		}
 
 		console.log(" FINAL UPDATE PAYLOAD:", payload);

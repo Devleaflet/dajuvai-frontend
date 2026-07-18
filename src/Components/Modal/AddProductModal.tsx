@@ -222,7 +222,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       toast.error("Valid price is required for variant");
       return;
     }
-    if (!currentVariant.stock || currentVariant.stock < 0) {
+    if (currentVariant.stock === undefined || currentVariant.stock < 0) {
       toast.error("Valid stock is required for variant");
       return;
     }
@@ -269,7 +269,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       if (!formData.basePrice || !/^\d+(\.\d{1,2})?$/.test(String(formData.basePrice))) {
         return "Valid base price is required for non-variant products (e.g., 29.99)";
       }
-      if (!formData.stock || !/^\d+$/.test(String(formData.stock))) {
+      if (formData.stock === undefined || !/^\d+$/.test(String(formData.stock))) {
         return "Valid stock is required for non-variant products (integer)";
       }
       if (!formData.status) {
@@ -290,7 +290,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
         if (!variant.price || variant.price <= 0) {
           return `Variant ${i + 1} must have a valid positive price`;
         }
-        if (!variant.stock || variant.stock < 0) {
+        if (variant.stock === undefined || variant.stock < 0) {
           return `Variant ${i + 1} must have a valid non-negative stock`;
         }
         if (!variant.status) {
@@ -916,7 +916,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                     <button
                       type="button"
                       onClick={handleVariantAdd}
-                      disabled={!currentVariant.sku || !currentVariant.price || currentVariant.price <= 0 || !currentVariant.stock || currentVariant.stock < 0}
+                      disabled={!currentVariant.sku || !currentVariant.price || currentVariant.price <= 0 || currentVariant.stock === undefined || currentVariant.stock < 0}
                       style={{
                         padding: '10px',
                         backgroundColor: '#28a745',
@@ -925,7 +925,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                         borderRadius: '4px',
                         cursor: 'pointer',
                         marginTop: '10px',
-                        opacity: (!currentVariant.sku || !currentVariant.price || currentVariant.price <= 0 || !currentVariant.stock || currentVariant.stock < 0) ? 0.5 : 1
+                        opacity: (!currentVariant.sku || !currentVariant.price || currentVariant.price <= 0 || currentVariant.stock === undefined || currentVariant.stock < 0) ? 0.5 : 1
                       }}
                     >
                       Add Variant
