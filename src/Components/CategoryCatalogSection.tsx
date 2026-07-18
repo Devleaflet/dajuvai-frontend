@@ -21,6 +21,11 @@ interface Category {
 	};
 }
 
+// A plain click must never be mistaken for a drag: only cross into "dragging"
+// (which suppresses the subcategory links via CSS) once the pointer has
+// actually moved past this many pixels from where it went down.
+const DRAG_THRESHOLD = 5;
+
 const CategoryCatalogSection: React.FC = () => {
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -33,6 +38,8 @@ const CategoryCatalogSection: React.FC = () => {
 	const [startX, setStartX] = useState<{ [key: number]: number }>({});
 	const [scrollLeft, setScrollLeft] = useState<{ [key: number]: number }>({});
 	const [showScrollButtons, setShowScrollButtons] = useState<boolean>(true);
+	// Raw pointer-down position per row, used only to detect real drag distance.
+	const downXRef = useRef<{ [key: number]: number }>({});
 
 	useEffect(() => {
 		const loadCategories = async () => {
@@ -124,10 +131,9 @@ const CategoryCatalogSection: React.FC = () => {
 	): void => {
 		const el = subcatRefs.current[catId];
 		if (el) {
-			setIsDragging((prev) => ({ ...prev, [catId]: true }));
+			downXRef.current[catId] = e.touches[0].clientX;
 			setStartX((prev) => ({ ...prev, [catId]: e.touches[0].clientX }));
 			setScrollLeft((prev) => ({ ...prev, [catId]: el.scrollLeft }));
-			el.style.pointerEvents = "auto";
 		}
 	};
 
@@ -135,18 +141,20 @@ const CategoryCatalogSection: React.FC = () => {
 		catId: number,
 		e: React.TouchEvent<HTMLDivElement>
 	): void => {
-		if (!isDragging[catId] || !subcatRefs.current[catId]) return;
-		e.preventDefault();
+		if (downXRef.current[catId] === undefined || !subcatRefs.current[catId]) return;
 		const x = e.touches[0].clientX;
+		if (!isDragging[catId]) {
+			if (Math.abs(x - downXRef.current[catId]) < DRAG_THRESHOLD) return;
+			setIsDragging((prev) => ({ ...prev, [catId]: true }));
+		}
+		e.preventDefault();
 		const walk = (startX[catId] - x) * 2;
 		subcatRefs.current[catId]!.scrollLeft = scrollLeft[catId] + walk;
 	};
 
 	const handleTouchEnd = (catId: number): void => {
+		delete downXRef.current[catId];
 		setIsDragging((prev) => ({ ...prev, [catId]: false }));
-		if (subcatRefs.current[catId]) {
-			subcatRefs.current[catId]!.style.pointerEvents = "auto";
-		}
 	};
 
 	const handleMouseDown = (
@@ -156,11 +164,9 @@ const CategoryCatalogSection: React.FC = () => {
 		if (e.button !== 0) return;
 		const el = subcatRefs.current[catId];
 		if (el) {
-			setIsDragging((prev) => ({ ...prev, [catId]: true }));
+			downXRef.current[catId] = e.pageX;
 			setStartX((prev) => ({ ...prev, [catId]: e.pageX - el.offsetLeft }));
 			setScrollLeft((prev) => ({ ...prev, [catId]: el.scrollLeft }));
-			el.style.cursor = "grabbing";
-			e.preventDefault();
 		}
 	};
 
@@ -168,27 +174,35 @@ const CategoryCatalogSection: React.FC = () => {
 		catId: number,
 		e: React.MouseEvent<HTMLDivElement>
 	): void => {
-		if (!isDragging[catId] || !subcatRefs.current[catId]) return;
+		const el = subcatRefs.current[catId];
+		if (downXRef.current[catId] === undefined || !el) return;
+
+		if (!isDragging[catId]) {
+			if (Math.abs(e.pageX - downXRef.current[catId]) < DRAG_THRESHOLD) return;
+			setIsDragging((prev) => ({ ...prev, [catId]: true }));
+			el.style.cursor = "grabbing";
+		}
+
 		e.preventDefault();
-		const x = e.pageX - subcatRefs.current[catId]!.offsetLeft;
+		const x = e.pageX - el.offsetLeft;
 		const walk = (x - startX[catId]) * 2;
-		subcatRefs.current[catId]!.scrollLeft = scrollLeft[catId] - walk;
+		el.scrollLeft = scrollLeft[catId] - walk;
 	};
 
 	const handleMouseUp = (catId: number): void => {
+		delete downXRef.current[catId];
 		setIsDragging((prev) => ({ ...prev, [catId]: false }));
 		if (subcatRefs.current[catId]) {
 			subcatRefs.current[catId]!.style.cursor = "grab";
-			subcatRefs.current[catId]!.style.pointerEvents = "auto";
 		}
 	};
 
 	const handleMouseLeave = (catId: number): void => {
+		delete downXRef.current[catId];
 		if (isDragging[catId]) {
 			setIsDragging((prev) => ({ ...prev, [catId]: false }));
 			if (subcatRefs.current[catId]) {
 				subcatRefs.current[catId]!.style.cursor = "grab";
-				subcatRefs.current[catId]!.style.pointerEvents = "auto";
 			}
 		}
 	};

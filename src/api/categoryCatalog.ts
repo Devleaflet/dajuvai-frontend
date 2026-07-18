@@ -12,7 +12,6 @@ export const fetchCategoryCatalog = async () => {
 
 	return rows.map((row) => ({
 		id: row.id,
-		featured: row.featured,
 		category: {
 			id: row.id,
 			name: row.name,

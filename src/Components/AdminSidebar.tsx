@@ -121,7 +121,7 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLDivElement>)
             </svg>
           }
         >
-          Merchandising
+          Arrangements
         </NavItem>
         <NavItem 
           to="/admin-deals" 
