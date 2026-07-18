@@ -38,6 +38,8 @@ type ProductVariant = {
 
 type NewProductFormData = {
   name: string;
+  brand?: string;
+  keywords?: string;
   description: string;
   basePrice?: number;
   stock?: number;
@@ -165,6 +167,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
   // Form state
   const [formData, setFormData] = useState<NewProductFormData>({
     name: "",
+    brand: "",
+    keywords: "",
     description: "",
     basePrice: undefined,
     stock: undefined,
@@ -527,6 +531,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
       /* ---------------- BASE PAYLOAD ---------------- */
       const productData: any = {
         name: formData.name,
+        brand: formData.brand || '',
+        keywords: formData.keywords || '',
         description: formData.description || '',
         hasVariants: formData.hasVariants,
         productImages: productImageUrls,
@@ -599,6 +605,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
     // Reset form
     setFormData({
       name: "",
+      brand: "",
+      keywords: "",
       description: "",
       basePrice: undefined,
       stock: undefined,
@@ -710,6 +718,28 @@ const NewProductModal: React.FC<NewProductModalProps> = ({ isOpen, onClose, onSu
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     placeholder="Enter a compelling product name"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Brand <span className="label-hint">(Optional)</span></label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formData.brand || ''}
+                    onChange={(e) => handleInputChange('brand', e.target.value)}
+                    placeholder="e.g. Nike, Apple"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Keywords <span className="label-hint">(Optional)</span></label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formData.keywords || ''}
+                    onChange={(e) => handleInputChange('keywords', e.target.value)}
+                    placeholder="e.g. cotton, summer, t-shirt"
                   />
                 </div>
 

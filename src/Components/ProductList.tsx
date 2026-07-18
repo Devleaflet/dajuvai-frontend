@@ -116,6 +116,7 @@ const ProductList: React.FC<ProductListProps> = ({
 						<th>Image</th>
 						<th>Product Name</th>
 						<th>Category</th>
+						<th>Keywords</th>
 						{showVendor && <th>Vendor</th>}
 						<th>Price</th>
 						<th>Stock</th>
@@ -129,7 +130,7 @@ const ProductList: React.FC<ProductListProps> = ({
 					{products.length === 0 ? (
 						<tr>
 							<td
-								colSpan={isMobile ? (showVendor ? 8 : 7) : showVendor ? 9 : 8}
+								colSpan={isMobile ? (showVendor ? 9 : 8) : showVendor ? 10 : 9}
 								className="empty-state"
 							>
 								No products found matching your criteria
@@ -200,6 +201,7 @@ const ProductList: React.FC<ProductListProps> = ({
 									<td>
 										{product.subcategory?.name || product.category || "Unknown"}
 									</td>
+									<td>{product.keywords || "—"}</td>
 									{showVendor && <td>{product.vendor || "Unknown"}</td>}
 									<td>
 										{displayPrice !== null ? (

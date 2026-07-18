@@ -70,7 +70,8 @@ export const convertApiProductToDisplayProduct = (apiProduct: ApiProduct) => {
       ?? 0
     ),
     image: (apiProduct.productImages && apiProduct.productImages[0]) || '',
-    brand: apiProduct.brand?.name,
+    brand: typeof apiProduct.brand === 'object' && apiProduct.brand ? apiProduct.brand.name : (typeof apiProduct.brand === 'string' ? apiProduct.brand : undefined),
+    keywords: apiProduct.keywords || undefined,
     name: apiProduct.name,
     // Map correctly
     category: (apiProduct as any).category ?? undefined,

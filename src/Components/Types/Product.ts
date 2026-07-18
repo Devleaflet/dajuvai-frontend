@@ -19,7 +19,8 @@ export interface Product {
   stock?: number;
   createdAt?: string;
   created_at?:string
-  brand?: string;
+  brand?: any;
+  keywords?: string | null;
   name?: string;
   hasVariants: boolean;
   category?: any;
