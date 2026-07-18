@@ -26,6 +26,27 @@ interface CategoryContextType {
   updateCategoriesWithSubcategories: (categoryData: any) => Promise<void>;
 }
 
+/**
+ * Pure transform: placement/category API rows -> nav Category[] with embedded
+ * subcategory items. Each surface (mega menu, slider) maps its OWN placement
+ * data locally with this, instead of writing into the one shared context list
+ * — otherwise two surfaces with different placements clobber each other.
+ */
+export const mapToNavCategories = (categoryData: any): Category[] =>
+  (Array.isArray(categoryData) ? categoryData : []).map((category: any) => ({
+    id: category.id,
+    name: category.name,
+    icon: category.image || "",
+    link: `/shop?categoryId=${category.id}`,
+    items:
+      category.subcategories?.map((sub: any) => ({
+        id: sub.id,
+        name: sub.name,
+        link: `/shop?categoryId=${category.id}&subcategoryId=${sub.id}`,
+        image: sub.image || "",
+      })) || [],
+  }));
+
 // Context
 const categoryContext = createContext<CategoryContextType | undefined>(undefined);
 

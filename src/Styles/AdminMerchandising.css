@@ -1,0 +1,430 @@
+/* AdminMerchandising.css — matches the Category Management design system */
+.merch-page {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.merch-page__content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  max-width: 100%;
+}
+
+.merch {
+  padding: 16px 2rem 32px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  color: #374151;
+}
+
+/* Header */
+.merch__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.merch__title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0;
+}
+
+.merch__subtitle {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* Placement tabs */
+.merch__tabs {
+  display: flex;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+  width: fit-content;
+  margin-bottom: 20px;
+}
+
+.merch__tab {
+  padding: 9px 18px;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.merch__tab:hover {
+  background: #f9fafb;
+}
+
+.merch__tab--active {
+  background: #ff6b35;
+  color: #fff;
+}
+
+.merch__tab--active:hover {
+  background: #ff6b35;
+}
+
+/* Unsaved-changes banner */
+.merch__banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #fed7aa;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.merch__banner-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff6b35;
+  flex-shrink: 0;
+  animation: merch-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes merch-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.merch__banner .merch__save {
+  margin-left: auto;
+}
+
+.merch__save {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 6px;
+  background: #ff6b35;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.merch__save:hover:not(:disabled) {
+  background: #e05a2b;
+}
+
+.merch__save:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Section head (per arrangement) */
+.merch__section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.merch__section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0;
+}
+
+.merch__section-subtitle {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.merch__add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid #ff6b35;
+  border-radius: 6px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.merch__add:hover {
+  background: #ffedd5;
+}
+
+/* Card panel holding the lists */
+.merch__panel {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 8px 20px 20px;
+}
+
+.merch__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.merch__empty {
+  color: #6b7280;
+  font-size: 14px;
+  padding: 28px 0;
+  text-align: center;
+}
+
+/* Row */
+.merch-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+  background: #fff;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.merch-row:hover {
+  background: #f9fafb;
+  border-color: #e5e7eb;
+}
+
+.merch-row--nested {
+  padding: 8px 10px;
+  background: #fafafa;
+}
+
+.merch-row__order {
+  display: flex;
+  gap: 2px;
+}
+
+.merch-row__thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #f3f4f6;
+  flex-shrink: 0;
+}
+
+.merch-row__thumb--empty {
+  display: inline-block;
+}
+
+.merch-row__label {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.merch-row__name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.merch-row__parent {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.merch-row__flags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Visibility toggle */
+.merch-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #fff;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.merch-flag:hover {
+  background: #f9fafb;
+}
+
+.merch-flag--visible.merch-flag--on {
+  background: #e9f7ef;
+  border-color: #a7f3d0;
+  color: #10b981;
+}
+
+.merch-flag--visible:not(.merch-flag--on) {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #ef4444;
+}
+
+/* Square icon buttons (move + remove) */
+.merch-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  color: #4b5563;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.merch-icon-btn:hover:not(:disabled) {
+  background: #f9fafb;
+  color: #111827;
+}
+
+.merch-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.merch-icon-btn--danger {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #ef4444;
+}
+
+.merch-icon-btn--danger:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Add button (mega-menu "Add Subcategory" link) */
+.merch-row__add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #a7f3d0;
+  border-radius: 6px;
+  background: #e9f7ef;
+  color: #10b981;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.merch-row__add:hover {
+  background: #d1fae5;
+}
+
+/* Mega Menu nesting */
+.mm-category {
+  display: flex;
+  flex-direction: column;
+}
+
+.mm-expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.mm-expand-icon {
+  transition: transform 0.15s ease;
+}
+
+.mm-expand-icon--open {
+  transform: rotate(90deg);
+}
+
+.mm-subpanel {
+  margin: 8px 0 4px 32px;
+  padding: 12px;
+  border: 1px dashed #e5e7eb;
+  border-radius: 8px;
+  background: #fcfcfd;
+}
+
+.mm-subpanel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .merch {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .merch-row {
+    flex-wrap: wrap;
+  }
+
+  .merch-row__flags {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .mm-subpanel {
+    margin-left: 12px;
+  }
+}

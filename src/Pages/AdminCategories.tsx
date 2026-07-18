@@ -1103,24 +1103,19 @@ const AdminCategories: React.FC = () => {
         />
         <div className="admin-categories__list-container">
           <div className="admin-categories__header">
-            <h2>Category Management</h2>
-            <div>
+            <h2 className="admin-categories__title">Category Management</h2>
+            <div className="admin-categories__header-actions">
               <button
-                className="admin-categories__add-btn"
-                onClick={handleAddCategory}
-              >
-                <Plus size={16} style={{ marginRight: 8 }} /> Add Category
-              </button>
-              <button
-                className="admin-categories__add-btn"
+                className="admin-categories__btn admin-categories__btn--ghost"
                 onClick={() => setShowHomepageModal(true)}
-                style={{
-                  marginLeft: "10px",
-                  backgroundColor: "#f56a2c",
-                  color: "white",
-                }}
               >
                 Manage Homepage Categories
+              </button>
+              <button
+                className="admin-categories__btn admin-categories__btn--primary"
+                onClick={handleAddCategory}
+              >
+                <Plus size={16} /> Add Category
               </button>
             </div>
           </div>
@@ -1342,10 +1337,6 @@ const AdminCategories: React.FC = () => {
                       className="admin-categories__checkbox-label"
                     >
                       <input
-                        style={{
-                          height: "fit-content",
-                          width: "fit-content",
-                        }}
                         type="checkbox"
                         checked={homepageCategories.includes(category.id)}
                         onChange={() =>

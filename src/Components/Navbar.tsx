@@ -20,14 +20,13 @@ import {
 import { FaFacebook, FaInstagram, FaTiktok, FaWhatsapp, FaYoutube } from 'react-icons/fa6';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axiosInstance';
-import { fetchCategory } from '../api/category';
-import { fetchSubCategory } from '../api/subcategory';
+import { fetchPlacementCategories, PLACEMENTS } from '../api/placements';
 import logo from '../assets/logo.webp';
 import nepal from '../assets/nepal.gif';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { useCategory } from '../context/Category';
+import { mapToNavCategories, type CategoryItem } from '../context/Category';
 import { useUI } from '../context/UIContext';
 import { useVendorAuth } from '../context/VendorAuthContext';
 import VendorLogin from '../Pages/VendorLogin';
@@ -43,12 +42,6 @@ interface Category {
 		name: string;
 		image?: string;
 	}>;
-}
-
-interface Subcategory {
-	id: number;
-	name: string;
-	category_id?: number;
 }
 
 const Navbar: React.FC = () => {
@@ -75,14 +68,6 @@ const Navbar: React.FC = () => {
 	const [sideMoreOpen, setSideMoreOpen] = useState<boolean>(false);
 	const [isCategoriesReady, setIsCategoriesReady] = useState(false);
 	const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-	const [dropdownSubcategories, setDropdownSubcategories] = useState([]);
-	const [dropdownLoading, setDropdownLoading] = useState(false);
-	const [sideMenuSubcategories, setSideMenuSubcategories] = useState<
-		Record<number, Subcategory[]>
-	>({});
-	const [sideMenuLoading, setSideMenuLoading] = useState<
-		Record<number, boolean>
-	>({});
 	const [dropdownPosition, setDropdownPosition] = useState<{
 		top: number;
 		left: number;
@@ -145,10 +130,10 @@ const Navbar: React.FC = () => {
 		});
 	}, [cartItems]);
 
-	const categoryContext = useCategory();
-	const updateCategoriesWithSubcategories =
-		categoryContext?.updateCategoriesWithSubcategories;
-	const categories = categoryContext?.categories || [];
+	// Mega-menu categories are local to the navbar: rendered straight from the
+	// MEGA_MENU placement, not the shared category context (which other surfaces
+	// write with their own placements and would clobber).
+	const [categories, setCategories] = useState<Category[]>([]);
 
 	const resolveProfilePicture = (value?: string | null) => {
 		if (!value) return '';
@@ -372,46 +357,26 @@ const Navbar: React.FC = () => {
 		};
 	}, []);
 
-	const { data: categoriesData, isLoading: isCategoriesLoading } = useQuery<
-		Category[]
-	>({
-		queryKey: ['categories'],
-		queryFn: async () => {
-			try {
-				const response = await axiosInstance.get('/api/categories');
-				if (!response.data.success) {
-					throw new Error('Failed to fetch categories');
-				}
-				return response.data.data;
-			} catch (error) {
-				console.error('Error fetching categories:', error);
-				throw error;
-			}
-		},
-		staleTime: 5 * 60 * 1000,
+	const { data: categoriesData, isLoading: isCategoriesLoading } = useQuery({
+		queryKey: ['placement', PLACEMENTS.MEGA_MENU],
+		queryFn: () => fetchPlacementCategories(PLACEMENTS.MEGA_MENU),
+		// Always revalidate (the backend has its own 5-minute cache, so this
+		// doesn't add real load), plus a bounded poll so an admin arrangement
+		// change reaches an already-open tab even if the user never refocuses
+		// or remounts it.
+		staleTime: 0,
 		gcTime: 10 * 60 * 1000,
+		refetchInterval: 60 * 1000,
 	});
 
 	useEffect(() => {
-		if (categoriesData && updateCategoriesWithSubcategories) {
-			updateCategoriesWithSubcategories(categoriesData).then(() => {
-				setIsCategoriesReady(true);
-			});
+		if (categoriesData) {
+			setCategories(mapToNavCategories(categoriesData));
+			setIsCategoriesReady(true);
 		}
-	}, [categoriesData, updateCategoriesWithSubcategories]);
+	}, [categoriesData]);
 
 	const showLoading = isCategoriesLoading || !isCategoriesReady;
-
-	useEffect(() => {
-		const prefetchCategories = async () => {
-			try {
-				await fetchCategory();
-			} catch (error) {
-				console.error('Error prefetching categories:', error);
-			}
-		};
-		prefetchCategories();
-	}, []);
 
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -549,17 +514,15 @@ const Navbar: React.FC = () => {
 	const renderCategoryDropdown = (category: any) => {
 		if (activeDropdown !== category.id) return null;
 
+		// Subcategories come straight from the MEGA_MENU placement data already
+		// loaded into `categories` - not a separate fetch - so the order here is
+		// always exactly what's arranged in the admin panel.
+		const subcategories: CategoryItem[] = category.items ?? [];
+
 		return (
 			<div className="navbar__dropdown-content">
-				{dropdownLoading ? (
-					<div
-						className="navbar__dropdown-link"
-						style={{ color: '#666', fontStyle: 'italic' }}
-					>
-						Loading subcategories...
-					</div>
-				) : dropdownSubcategories.length > 0 ? (
-					dropdownSubcategories.map((subcategory: any) => (
+				{subcategories.length > 0 ? (
+					subcategories.map((subcategory) => (
 						<Link
 							key={subcategory.id}
 							to={`/shop?categoryId=${category.id}&subcategoryId=${subcategory.id}`}
@@ -583,17 +546,8 @@ const Navbar: React.FC = () => {
 		);
 	};
 
-	const handleExpandSideMenuCategory = async (categoryId: number) => {
+	const handleExpandSideMenuCategory = (categoryId: number) => {
 		setSelectedCategory(selectedCategory === categoryId ? null : categoryId);
-		if (selectedCategory !== categoryId) {
-			setSideMenuLoading((prev) => ({ ...prev, [categoryId]: true }));
-			const subs = (await fetchSubCategory(categoryId)) as Subcategory[];
-			setSideMenuSubcategories((prev) => ({
-				...prev,
-				[categoryId]: subs || [],
-			}));
-			setSideMenuLoading((prev) => ({ ...prev, [categoryId]: false }));
-		}
 	};
 
 	const renderSideMenuCategories = () => {
@@ -643,31 +597,23 @@ const Navbar: React.FC = () => {
 							</button>
 							{selectedCategory === category.id && (
 								<div className="navbar__side-menu-subcategories">
-									{sideMenuLoading[category.id] ? (
-										<div style={{ padding: 12, color: '#888' }}>
-											Loading...
-										</div>
-									) : (
-										(sideMenuSubcategories[category.id] || []).map(
-											(subcategory: Subcategory) => (
-												<Link
-													key={subcategory.id}
-													to={`/shop?categoryId=${category.id}&subcategoryId=${subcategory.id}`}
-													className="navbar__side-menu-subcategory"
-													onClick={(e) => {
-														e.preventDefault();
-														handleSubcategoryClick(
-															category.id,
-															subcategory.id
-														);
-														setSideMenuOpen(false);
-													}}
-												>
-													{subcategory.name}
-												</Link>
-											)
-										)
-									)}
+									{category.items.map((subcategory) => (
+										<Link
+											key={subcategory.id}
+											to={`/shop?categoryId=${category.id}&subcategoryId=${subcategory.id}`}
+											className="navbar__side-menu-subcategory"
+											onClick={(e) => {
+												e.preventDefault();
+												handleSubcategoryClick(
+													category.id,
+													subcategory.id
+												);
+												setSideMenuOpen(false);
+											}}
+										>
+											{subcategory.name}
+										</Link>
+									))}
 								</div>
 							)}
 						</div>
@@ -683,29 +629,6 @@ const Navbar: React.FC = () => {
 			setActiveDropdown(Number(categoryId));
 		}
 	}, [location.search]);
-
-	useEffect(() => {
-		async function fetchSubs() {
-			if (activeDropdown) {
-				setDropdownLoading(true);
-				try {
-
-					const subs = await fetchSubCategory(activeDropdown);
-					//('📦 Received subcategories:', subs);
-					setDropdownSubcategories(subs || []);
-				} catch (error) {
-					console.error('❌ Error fetching subcategories:', error);
-					setDropdownSubcategories([]);
-				} finally {
-					setDropdownLoading(false);
-				}
-			} else {
-				setDropdownSubcategories([]);
-				setDropdownLoading(false);
-			}
-		}
-		fetchSubs();
-	}, [activeDropdown]);
 
 	const handleFullLogout = async () => {
 		// Do not clear all browser storage here.

@@ -18,60 +18,56 @@ import * as XLSX from "xlsx";
 import VendorHeader from "../Components/VendorHeader";
 
 const ProductListSkeleton: React.FC = () => {
-	return (
-		<div className="vendor-product__skeleton">
-			<div className="vendor-product__skeleton-header">
-				<div className="vendor-product__skeleton-search shimmer"></div>
-			</div>
-			<div className="vendor-product__skeleton-tabs">
-				{[1, 2, 3, 4].map((i) => (
-					<div
-						key={`tab-${i}`}
-						className="vendor-product__skeleton-tab shimmer"
-					></div>
-				))}
-			</div>
-			<div className="vendor-product__skeleton-table">
-				{[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-					<div
-						key={`row-${i}`}
-						className="vendor-product__skeleton-row"
-					>
-						<div
-							className="vendor-product__skeleton-cell shimmer"
-							style={{
-								width: "2.5rem",
-								height: "2.5rem",
-								borderRadius: "0.5rem",
-							}}
-						></div>
-						<div
-							className="vendor-product__skeleton-cell shimmer"
-							style={{ width: "8rem", height: "1.1rem" }}
-						></div>
-						<div
-							className="vendor-product__skeleton-cell shimmer"
-							style={{ width: "5rem", height: "1.1rem" }}
-						></div>
-						<div
-							className="vendor-product__skeleton-cell shimmer"
-							style={{ width: "4rem", height: "1.1rem" }}
-						></div>
-						<div
-							className="vendor-product__skeleton-cell shimmer"
-							style={{ width: "3rem", height: "1.1rem" }}
-						></div>
-						<div
-							className="vendor-product__skeleton-cell shimmer"
-							style={{ width: "2.5rem", height: "1.1rem" }}
-						></div>
-					</div>
-				))}
-			</div>
-		</div>
-	);
+  return (
+    <div className="vendor-product__skeleton">
+      <div className="vendor-product__skeleton-header">
+        <div className="vendor-product__skeleton-search shimmer"></div>
+      </div>
+      <div className="vendor-product__skeleton-tabs">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={`tab-${i}`}
+            className="vendor-product__skeleton-tab shimmer"
+          ></div>
+        ))}
+      </div>
+      <div className="vendor-product__skeleton-table">
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          <div key={`row-${i}`} className="vendor-product__skeleton-row">
+            <div
+              className="vendor-product__skeleton-cell shimmer"
+              style={{
+                width: "2.5rem",
+                height: "2.5rem",
+                borderRadius: "0.5rem",
+              }}
+            ></div>
+            <div
+              className="vendor-product__skeleton-cell shimmer"
+              style={{ width: "8rem", height: "1.1rem" }}
+            ></div>
+            <div
+              className="vendor-product__skeleton-cell shimmer"
+              style={{ width: "5rem", height: "1.1rem" }}
+            ></div>
+            <div
+              className="vendor-product__skeleton-cell shimmer"
+              style={{ width: "4rem", height: "1.1rem" }}
+            ></div>
+            <div
+              className="vendor-product__skeleton-cell shimmer"
+              style={{ width: "3rem", height: "1.1rem" }}
+            ></div>
+            <div
+              className="vendor-product__skeleton-cell shimmer"
+              style={{ width: "2.5rem", height: "1.1rem" }}
+            ></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 };
-
 
 const VendorProduct: React.FC = () => {
 	const { authState } = useVendorAuth();

@@ -39,8 +39,6 @@ const Header: React.FC<HeaderProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const resolveProfilePicture = (value?: string | null) => {
-
-
     if (!value) return "";
     const trimmed = value.trim();
     if (!trimmed) return "";
@@ -106,7 +104,12 @@ const Header: React.FC<HeaderProps> = ({
                   src={resolved}
                   alt={user.username || user.email || "Admin"}
                   className="dashboard__avatar-image"
-                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    borderRadius: "inherit",
+                  }}
                 />
               ) : (
                 <span className="dashboard__avatar-text">
@@ -186,11 +189,7 @@ const Header: React.FC<HeaderProps> = ({
                 onChange={handleSortChange}
                 style={{
                   minWidth: 180,
-                  height: 38,
-                  borderRadius: 20,
-                  border: "1px solid #e5e7eb",
-                  padding: "0 12px",
-                  background: "#fff",
+                  height: 44,
                   fontSize: 14,
                 }}
               >
@@ -200,25 +199,21 @@ const Header: React.FC<HeaderProps> = ({
                 <option value="price-desc">Price: High to Low</option>
               </select>
             )}
-              <select
-                className="vendor-product__filter-select"
-                value={filterOption}
-                onChange={handleFilterChange}
-                style={{
-                  minWidth: 180,
-                  height: 38,
-                  borderRadius: 20,
-                  border: "1px solid #e5e7eb",
-                  padding: "0 12px",
-                  background: "#fff",
-                  fontSize: 14,
-                }}
-              >
-                <option value="all">All Products</option>
-                <option value="available">Available</option>
-                <option value="low_stock">Low Stock</option>
-                <option value="out_of_stock">Out of Stock</option>
-              </select>
+            <select
+              className="vendor-product__filter-select"
+              value={filterOption}
+              onChange={handleFilterChange}
+              style={{
+                minWidth: 180,
+                height: 44,
+                fontSize: 14,
+              }}
+            >
+              <option value="all">All Products</option>
+              <option value="available">Available</option>
+              <option value="low_stock">Low Stock</option>
+              <option value="out_of_stock">Out of Stock</option>
+            </select>
 
             {/* Vendor Dropdown */}
             {vendors && vendors.length > 0 && (
@@ -229,11 +224,8 @@ const Header: React.FC<HeaderProps> = ({
                   className="dashboard__vendor-select"
                   style={{
                     minWidth: 180,
-                    height: 38,
-                    borderRadius: 20,
-                    border: "1px solid #e5e7eb",
-                    padding: "0 12px",
-                    background: "#fff",
+                    width: 100,
+                    height: 44,
                     fontSize: 14,
                   }}
                 >
