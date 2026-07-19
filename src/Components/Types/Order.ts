@@ -20,6 +20,10 @@ export interface OrderDetail {
     price: string;
     product: { name: string };
     vendor: { id: number; businessName: string };
+    variant?: {
+      sku: string;
+      attributes: Record<string, string>;
+    } | null;
   }>;
   totalPrice: string;
   shippingFee: string;

@@ -141,9 +141,11 @@ export interface Product {
 }
 
 export interface Variant {
-    id: string;
-    name: string;
-    price?: number;
+    id: string | number;
+    name?: string;
+    price?: number | string;
+    sku?: string;
+    attributes?: Record<string, string>;
 }
 
 export interface Vendor {

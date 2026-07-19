@@ -176,12 +176,24 @@ export default function ProcessingTab() {
                     </div>
                     <div>
                         <div className="admin-delivery__detail-label">
-                            Total
+                            Shipping Fee
                         </div>
                         <div className="admin-delivery__detail-value">
                             Rs.{" "}
                             {parseFloat(
-                                String(selectedOrder.totalPrice),
+                                String(selectedOrder.shippingFee || 0),
+                            ).toFixed(2)}
+                        </div>
+                    </div>
+                    <div>
+                        <div className="admin-delivery__detail-label">
+                            Total
+                        </div>
+                        <div className="admin-delivery__detail-value">
+                            Rs.{" "}
+                            {(
+                                parseFloat(String(selectedOrder.totalPrice || 0)) +
+                                parseFloat(String(selectedOrder.shippingFee || 0))
                             ).toFixed(2)}
                         </div>
                     </div>
@@ -212,34 +224,44 @@ export default function ProcessingTab() {
                             <div
                                 key={item.id}
                                 className="admin-delivery__item-row"
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', marginBottom: '12px' }}
                             >
-                                <div className="admin-delivery__item-info">
-                                    <div className="admin-delivery__item-name">
-                                        {item.product?.name ??
-                                            `Product #${item.productId}`}
+                                <div className="admin-delivery__item-info" style={{ flex: 1, minWidth: 0, paddingRight: '16px' }}>
+                                    <div className="admin-delivery__item-name" style={{ fontWeight: 600, color: '#111827', fontSize: '15px', marginBottom: '6px' }}>
+                                        {item.product?.name ?? `Product #${item.productId}`}
                                     </div>
-                                    <div className="admin-delivery__item-meta">
-                                        Qty: {item.quantity} &nbsp;·&nbsp; Rs.{" "}
-                                        {parseFloat(String(item.price)).toFixed(
-                                            2,
-                                        )}
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '13px', color: '#6b7280' }}>
+                                        {item.vendor && <div><strong>Vendor:</strong> {item.vendor.name || (item.vendor as any).businessName}</div>}
+                                        {item.variant?.sku && <div><strong>SKU:</strong> {item.variant.sku}</div>}
+                                        {item.variant?.attributes && Object.entries(item.variant.attributes).map(([key, value]) => (
+                                            <div key={key}><strong>{key.charAt(0).toUpperCase() + key.slice(1)}:</strong> {value as string}</div>
+                                        ))}
                                     </div>
                                 </div>
-                                {item.collectedAtWarehouse ? (
-                                    <span className="admin-delivery__item-collected">
-                                        ✓ Collected
-                                    </span>
-                                ) : (
-                                    <button
-                                        className="admin-delivery__btn admin-delivery__btn--success admin-delivery__btn--sm"
-                                        onClick={() => handleCollect(item.id)}
-                                        disabled={collectingItem === item.id}
-                                    >
-                                        {collectingItem === item.id
-                                            ? "Collecting..."
-                                            : "✓ Collect"}
-                                    </button>
-                                )}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexShrink: 0 }}>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '2px' }}>Qty: {item.quantity}</div>
+                                        <div style={{ fontWeight: 600, color: '#111827', fontSize: '15px' }}>
+                                            Rs. {(parseFloat(String(item.price)) * item.quantity).toFixed(2)}
+                                        </div>
+                                    </div>
+                                    {item.collectedAtWarehouse ? (
+                                        <span className="admin-delivery__item-collected" style={{ minWidth: '95px', justifyContent: 'flex-end' }}>
+                                            ✓ Collected
+                                        </span>
+                                    ) : (
+                                        <button
+                                            className="admin-delivery__btn admin-delivery__btn--success admin-delivery__btn--sm"
+                                            onClick={() => handleCollect(item.id)}
+                                            disabled={collectingItem === item.id}
+                                            style={{ minWidth: '95px' }}
+                                        >
+                                            {collectingItem === item.id
+                                                ? "Collecting..."
+                                                : "✓ Collect"}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ))}
                         {items.length === 0 && (
@@ -251,6 +273,19 @@ export default function ProcessingTab() {
                             >
                                 No items found.
                             </p>
+                        )}
+                        {items.length > 0 && (
+                            <div style={{ marginTop: '1.25rem', padding: '1rem', background: '#f9fafb', borderRadius: '0.5rem', border: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
+                                <div style={{ fontSize: '0.875rem', color: '#4b5563' }}>
+                                    Item Fee: <span style={{ color: '#111827', fontWeight: 500, marginLeft: '0.75rem' }}>Rs. {items.reduce((sum, item) => sum + (parseFloat(String(item.price)) * item.quantity), 0).toFixed(2)}</span>
+                                </div>
+                                <div style={{ fontSize: '0.875rem', color: '#4b5563' }}>
+                                    Shipping Fee: <span style={{ color: '#111827', fontWeight: 500, marginLeft: '0.75rem' }}>Rs. {parseFloat(String(selectedOrder.shippingFee || 0)).toFixed(2)}</span>
+                                </div>
+                                <div style={{ fontSize: '1rem', color: '#111827', fontWeight: 600, borderTop: '1px solid #e5e7eb', paddingTop: '0.5rem', marginTop: '0.25rem' }}>
+                                    Total Final Price: <span style={{ marginLeft: '0.75rem' }}>Rs. {(items.reduce((sum, item) => sum + (parseFloat(String(item.price)) * item.quantity), 0) + parseFloat(String(selectedOrder.shippingFee || 0))).toFixed(2)}</span>
+                                </div>
+                            </div>
                         )}
                     </div>
                 )}
@@ -302,8 +337,9 @@ export default function ProcessingTab() {
                                     </td>
                                     <td>
                                         Rs.{" "}
-                                        {parseFloat(
-                                            String(order.totalPrice),
+                                        {(
+                                            parseFloat(String(order.totalPrice || 0)) +
+                                            parseFloat(String(order.shippingFee || 0))
                                         ).toFixed(2)}
                                     </td>
                                     <td>

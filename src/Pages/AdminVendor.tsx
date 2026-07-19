@@ -457,8 +457,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 				};
 			case "delete":
 				return {
-					icon: "🗑",
-					color: "#ff5722",
+				
+					color: "#dc2626",
 					title: "Delete Vendor",
 					message: "Are you sure you want to delete this vendor? This action cannot be undone and all vendor data will be permanently removed.",
 					confirmText: "Yes, Delete",
@@ -686,10 +686,10 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 			>
 				{/* Header */}
 				<div style={{
-					background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
+					background: "linear-gradient(135deg, #f97316 0%, #ea5f0a 100%)",
 					padding: "24px", color: "white", textAlign: "center",
 				}}>
-					<div style={{ fontSize: "40px", marginBottom: "10px", lineHeight: 1 }}>🔑</div>
+					
 					<h2 style={{ margin: 0, fontSize: "22px", fontWeight: 600 }}>Change Vendor Password</h2>
 					<p style={{ margin: "6px 0 0", fontSize: "13px", opacity: 0.85 }}>
 						Set a new password for this vendor account
@@ -727,7 +727,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 									border: "1px solid #d1d5db", borderRadius: "8px",
 									fontSize: "14px", outline: "none",
 								}}
-								onFocus={(e) => { e.currentTarget.style.borderColor = "#6366f1"; }}
+								onFocus={(e) => { e.currentTarget.style.borderColor = "#ea5f0a"; }}
 								onBlur={(e) => { e.currentTarget.style.borderColor = "#d1d5db"; }}
 							/>
 							<button
@@ -764,7 +764,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 									border: "1px solid #d1d5db", borderRadius: "8px",
 									fontSize: "14px", outline: "none",
 								}}
-								onFocus={(e) => { e.currentTarget.style.borderColor = "#6366f1"; }}
+								onFocus={(e) => { e.currentTarget.style.borderColor = "#ea5f0a"; }}
 								onBlur={(e) => { e.currentTarget.style.borderColor = "#d1d5db"; }}
 							/>
 							<button
@@ -804,10 +804,10 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 							style={{
 								flex: 1, padding: "11px 0", fontSize: "14px", fontWeight: 600,
 								border: "none", borderRadius: "8px",
-								backgroundColor: (loading || newPass.length < 8 || newPass !== confirmPass) ? "#a5b4fc" : "#6366f1",
+								backgroundColor: (loading || newPass.length < 8 || newPass !== confirmPass) ? "#fdba74" : "#ea5f0a",
 								color: "white",
 								cursor: (loading || newPass.length < 8 || newPass !== confirmPass) ? "not-allowed" : "pointer",
-								boxShadow: "0 4px 12px rgba(99,102,241,0.3)",
+								boxShadow: "0 4px 12px rgba(234,95,10,0.3)",
 							}}
 						>
 							{loading ? "Updating..." : "Update Password"}

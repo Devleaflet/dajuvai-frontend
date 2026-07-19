@@ -276,6 +276,17 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                       </div>
                     ))}
                   </div>
+                  <div style={{ marginTop: '20px', padding: '15px', background: '#fafafa', borderRadius: '8px', border: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+                    <div style={{ fontSize: '14px', color: '#666' }}>
+                      Item Fee: <span style={{ color: '#222', fontWeight: 500, marginLeft: '10px' }}>Rs. {detailedOrder.orderItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0).toFixed(2)}</span>
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#666' }}>
+                      Shipping Fee: <span style={{ color: '#222', fontWeight: 500, marginLeft: '10px' }}>Rs. {Number(detailedOrder.shippingFee || 0).toFixed(2)}</span>
+                    </div>
+                    <div style={{ fontSize: '16px', color: '#222', fontWeight: 600, borderTop: '1px solid #ddd', paddingTop: '8px', marginTop: '4px' }}>
+                      Total Final Price: <span style={{ marginLeft: '10px' }}>Rs. {(detailedOrder.orderItems.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0) + Number(detailedOrder.shippingFee || 0)).toFixed(2)}</span>
+                    </div>
+                  </div>
                 </div>
               )}
             </>
