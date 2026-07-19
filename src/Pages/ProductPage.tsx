@@ -8,7 +8,6 @@ import { Truck, Undo2, ShieldCheck, Phone } from "lucide-react";
 
 import React from "react";
 import axiosInstance from "../api/axiosInstance";
-import { addToWishlist } from "../api/wishlist";
 import AuthModal from "../Components/AuthModal";
 import Footer from "../Components/Footer";
 import Navbar from "../Components/Navbar";
@@ -17,6 +16,7 @@ import RecommendedProducts from "../Components/Product/RecommendedProducts";
 import Reviews from "../Components/Reviews";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { makeWishlistKey, useWishlist } from "../context/WishlistContext";
 import "../Styles/ProductPage.css";
 import ScrollToTop from "../Components/ScrollToTop";
 
@@ -97,7 +97,12 @@ const ProductPage = () => {
 	const ZOOM_LEVEL = 3;
 
 	const { handleCartOnAdd } = useCart();
-	const { token, isAuthenticated } = useAuth();
+	const { isAuthenticated } = useAuth();
+	const {
+		addWishlistItem,
+		isWishlisted: hasWishlistItem,
+		pendingKeys,
+	} = useWishlist();
 	const navigate = useNavigate();
 
 	const { data: productData, isLoading: isProductLoading } = useQuery({
@@ -315,6 +320,13 @@ const ProductPage = () => {
 
 	const product = productData?.product;
 	const vendorId = productData?.vendorId;
+	const wishlistVariantId = selectedVariant?.id;
+	const wishlistPending = product
+		? pendingKeys.has(makeWishlistKey(product.id, wishlistVariantId))
+		: false;
+	const productIsWishlisted = product
+		? hasWishlistItem(product.id, wishlistVariantId)
+		: false;
 
 	const effectiveCategoryId =
 		categoryId ??
@@ -544,10 +556,17 @@ const ProductPage = () => {
 			setAuthModalOpen(true);
 			return;
 		}
+		if (wishlistPending) return;
+		if (productIsWishlisted) {
+			toast("Already present in the wishlist");
+			return;
+		}
+
 		try {
-			const variantId = selectedVariant?.id;
-			await addToWishlist(product.id, variantId, token);
-			toast.success("Added to wishlist");
+			const addedItem = await addWishlistItem(product.id, wishlistVariantId);
+			if (addedItem !== null) {
+				toast.success("Added to wishlist");
+			}
 		} catch (e: any) {
 			const status = e?.response?.status;
 			const msg: string =
@@ -1092,8 +1111,9 @@ const ProductPage = () => {
 									<button
 										className="product-actions__button product-actions__button--secondary"
 										onClick={handleAddToWishlist}
+										disabled={wishlistPending}
 									>
-										Add to Wishlist
+										{productIsWishlisted ? "In Wishlist" : "Add to Wishlist"}
 									</button>
 								)}
 
@@ -1101,8 +1121,9 @@ const ProductPage = () => {
 									<button
 										className="product-actions__button product-actions__button--secondary"
 										onClick={handleAddToWishlist}
+										disabled={wishlistPending}
 									>
-										Add to Wishlist
+										{productIsWishlisted ? "In Wishlist" : "Add to Wishlist"}
 									</button>
 								)}
 							</div>

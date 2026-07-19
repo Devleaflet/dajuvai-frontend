@@ -156,14 +156,14 @@ const ViewModal: React.FC<ViewModalProps> = ({
                         <span style={{ width: 100, fontWeight: 600 }}>
                             Customer:
                         </span>
-                        <span>{orderDetail.orderedBy.username}</span>
+                        <span>{orderDetail.orderedBy.name || orderDetail.orderedBy.fullName || orderDetail.orderedBy.username || "Unknown Customer"}</span>
                     </div>
 
                     <div style={{ display: "flex" }}>
                         <span style={{ width: 100, fontWeight: 600 }}>
                             Phone:
                         </span>
-                        <span>{orderDetail.orderedBy.phoneNumber}</span>
+                        <span>{orderDetail.orderedBy.phoneNumber || orderDetail.orderedBy.phone}</span>
                     </div>
 
                     <div style={{ display: "flex", alignItems: "flex-start" }}>

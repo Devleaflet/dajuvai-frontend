@@ -13,9 +13,12 @@ export interface OrderDetail {
     id: number;
     orderedBy: {
         id: number;
-        username: string;
+        name: string;
+        fullName?: string;
+        username?: string;
         email: string;
-        phoneNumber: string;
+        phoneNumber?: string;
+        phone?: string;
     };
     shippingAddress: {
         province: string;
@@ -29,10 +32,26 @@ export interface OrderDetail {
         quantity: number;
         price: string;
         product: { name: string; productImages: string[] };
-        vendor: { id: number; businessName: string };
+        vendor: {
+            id: number;
+            businessName: string;
+            district?: { id: number; name: string };
+        };
+        vendorId?: number;
     }>;
     totalPrice: string;
     shippingFee: string;
+    shippingBreakdown?: {
+        total: number;
+        vendors: Array<{
+            vendorId: number;
+            vendorName: string;
+            vendorDistrict: string;
+            itemCount: number;
+            itemSubtotal: number;
+            shippingFee: number;
+        }>;
+    };
     paymentMethod: string;
     status: string;
     createdAt: string;

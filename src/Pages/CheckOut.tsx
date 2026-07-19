@@ -8,7 +8,7 @@ import AlertModal from '../Components/Modal/AlertModal';
 import Navbar from '../Components/Navbar';
 import '../Styles/CheckOut.css';
 import logo from '../assets/logo.webp';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL, FRONTEND_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
@@ -62,6 +62,9 @@ interface ShippingGroup {
 	subtotal: number;
 	lineTotal: number;
 }
+
+const getPaymentReturnBaseUrl = () =>
+	(FRONTEND_URL || window.location.origin).replace(/\/+$/, '');
 
 const OrderSuccessModal: React.FC<{
 	open: boolean;
@@ -346,8 +349,8 @@ const Checkout: React.FC = () => {
 		product_service_charge: '0',
 		product_delivery_charge: '0',
 		product_code: 'EPAYTEST',
-		success_url: `https://dajuvai.com/order/esewa-payment-success`,
-		failure_url: `https://dajuvai.com/esewa-payment-failure`,
+		success_url: `${getPaymentReturnBaseUrl()}/order/esewa-payment-success`,
+		failure_url: `${getPaymentReturnBaseUrl()}/order/esewa-payment-failure`,
 		signed_field_names: 'total_amount,transaction_uuid,product_code',
 		signature: '',
 		secret: '8gBm/:&EnhH.1/q',

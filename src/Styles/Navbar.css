@@ -60,7 +60,7 @@
   width: 100%;
   position: static;
   background-color: #ffffff;
-  z-index: 1000;
+  /* z-index: 1000; */
   padding-bottom: 0;
 }
 

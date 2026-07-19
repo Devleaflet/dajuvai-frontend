@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "../Components/Navbar";
 import CategorySlider from "../Components/CategorySlider";
@@ -12,8 +12,6 @@ import SpecialOffers from "../Components/SpecialOffers";
 import CategoryCatalogSection from "../Components/CategoryCatalogSection";
 
 const Home = () => {
-	const [isLoading, setIsLoading] = useState(true);
-	const [imagesLoaded, setImagesLoaded] = useState(false);
 	const [searchParams] = useSearchParams();
 
 	// Handle search parameter from URL (e.g., from banner clicks)
@@ -43,55 +41,7 @@ const Home = () => {
 		refetchOnReconnect: false,
 	});
 
-	// Memoized function to check if all images are loaded
-	const checkImagesLoaded = useCallback(() => {
-		const images = document.querySelectorAll("img");
-		const allLoaded = Array.from(images).every((img) => img.complete);
-		if (allLoaded) {
-			setImagesLoaded(true);
-		}
-	}, []);
-
-	// Track when all content is loaded
-	useEffect(() => {
-		// Initial check
-		checkImagesLoaded();
-
-		// Set up image load listeners
-		const images = document.querySelectorAll("img");
-		const imageLoadPromises = Array.from(images).map((img) => {
-			if (img.complete) return Promise.resolve();
-			return new Promise((resolve) => {
-				img.onload = resolve;
-				img.onerror = resolve; // Resolve even on error to not block loading
-			});
-		});
-
-		// Wait for all images to load
-		Promise.all(imageLoadPromises).then(() => {
-			setImagesLoaded(true);
-		});
-
-		// Cleanup function
-		return () => {
-			images.forEach((img) => {
-				img.onload = null;
-				img.onerror = null;
-			});
-		};
-	}, [checkImagesLoaded]);
-
-	// Handle final loading state
-	useEffect(() => {
-		if (imagesLoaded && !isCategoryLoading) {
-			// Use requestAnimationFrame for smooth transition
-			requestAnimationFrame(() => {
-				setIsLoading(false);
-			});
-		}
-	}, [imagesLoaded, isCategoryLoading]);
-
-	if (isLoading) {
+	if (isCategoryLoading) {
 		return <PageLoader />;
 	}
 

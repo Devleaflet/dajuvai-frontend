@@ -3,7 +3,7 @@ import { toInteger } from 'lodash';
 import { ChevronDown, ChevronUp, Search, Settings2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import ProductCard1 from '../ALT/ProductCard1';
+import ProductCard from '../Components/ProductCard';
 import { fetchReviewOf } from '../api/products';
 import CategorySlider from '../Components/CategorySlider';
 import Footer from '../Components/Footer';
@@ -1338,7 +1338,7 @@ const Shop: React.FC = () => {
 												key={product.id}
 												className="shop-product-card"
 											>
-												<ProductCard1
+												<ProductCard
 													product={product}
 												/>
 											</div>

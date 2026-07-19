@@ -91,7 +91,7 @@ const AdminOrders: React.FC = () => {
 
         const transformedOrders: DisplayOrder[] = response.map((order: any) => ({
           id: order.id.toString(),
-          customer: order.orderedBy?.username || "Unknown",
+          customer: order.orderedBy?.name || order.orderedBy?.fullName || order.orderedBy?.username || "Unknown",
           email: order.orderedBy?.email || "N/A",
           orderDate: new Date(order.createdAt).toLocaleDateString("en-US", {
             year: "numeric",
@@ -253,7 +253,7 @@ const AdminOrders: React.FC = () => {
         : [];
 
     const username =
-      orderedBy.username || displayOrder.customer || "Unknown User";
+      orderedBy.name || orderedBy.fullName || orderedBy.username || displayOrder.customer || "Unknown User";
     const nameParts = username.split(" ");
     const firstName = nameParts[0] || "Unknown";
     const lastName =

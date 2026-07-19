@@ -55,7 +55,7 @@ const VendorOrder: React.FC = () => {
                 return {
                     id: order.id,
                     orderId: `#ORD${String(order.id).padStart(4, "0")}`,
-                    orderedBy: order.orderedBy.username || "Unknown Customer",
+                    orderedBy: order.orderedBy.name || order.orderedBy.fullName || order.orderedBy.username || "Unknown Customer",
                     product: firstItem.product.name,
                     createdAt: order.createdAt,
                     price: parseFloat(order.totalPrice),

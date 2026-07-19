@@ -15,6 +15,7 @@ import AuthModal from '../Components/AuthModal';
 import { useAuth } from '../context/AuthContext';
 import defaultProductImage from "../assets/logo.webp";
 import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 // ================================
 // TYPES & INTERFACES
 // ================================
@@ -23,14 +24,19 @@ interface Product {
   name: string;
   description: string;
   basePrice: number;
+  finalPrice?: number | string;
+  stock?: number | string;
   productImages?: string[];
   image?: string;
 }
 interface Variant {
   id: number;
   basePrice?: number | string;
+  finalPrice?: number | string;
   discount?: number | string;
   discountType?: 'PERCENTAGE' | 'FLAT' | string;
+  stock?: number | string;
+  status?: string;
   attributes?: Record<string, any> | Array<any>;
   variantImages?: Array<any>;
 }
@@ -41,9 +47,6 @@ interface WishlistItem {
   variantId?: number;
   variant?: Variant;
   quantity?: number;
-}
-interface WishlistData {
-  items: WishlistItem[];
 }
 interface ApiResponse<T> {
   success: boolean;
@@ -109,13 +112,19 @@ const EmptyWishlist: React.FC = () => {
 // MAIN WISHLIST COMPONENT
 // ================================
 const Wishlist: React.FC = () => {
-  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // The wishlist context is the single source of truth for contents; this
+  // page no longer keeps its own fetched copy, so removing/adding elsewhere
+  // (product card, product page) is reflected here without a refresh.
+  const { wishlist, loading, refreshWishlist, removeWishlistItem } = useWishlist();
+  const wishlistItems = wishlist as WishlistItem[];
+  // Per-item "how many to move to cart" selector — not part of the wishlist
+  // record itself, so it stays local UI state keyed by wishlist item id.
+  const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { token, isAuthenticated } = useAuth();
   const { refreshCart } = useCart();
+  const getItemQuantity = (id: number) => quantities[id] || 1;
   // ================================
   // HELPER FUNCTIONS
   // ================================
@@ -202,6 +211,9 @@ const Wishlist: React.FC = () => {
   };
   const getItemPrice = (item: WishlistItem): number => {
     if (item.variant) {
+      const variantFinal = Number(item.variant.finalPrice);
+      if (Number.isFinite(variantFinal) && variantFinal > 0) return variantFinal;
+
       const base = Number(item.variant.basePrice) || 0;
       const disc = Number(item.variant.discount) || 0;
       if (item.variant.discountType === 'PERCENTAGE') {
@@ -212,83 +224,28 @@ const Wishlist: React.FC = () => {
       }
       return base;
     }
-    return Number(item.product.basePrice) || 0;
+    return Number(item.product.finalPrice) || Number(item.product.basePrice) || 0;
+  };
+  const getItemStock = (item: WishlistItem): number => {
+    if (item.variant) {
+      return Math.max(0, Number(item.variant.stock) || 0);
+    }
+    return Math.max(0, Number(item.product.stock) || 0);
+  };
+  const isItemOutOfStock = (item: WishlistItem): boolean => {
+    if (item.variant?.status === 'OUT_OF_STOCK') return true;
+    return getItemStock(item) <= 0;
   };
   // ================================
   // API CALLS
   // ================================
-  const fetchWishlist = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await fetch(`${API_BASE_URL}/api/wishlist`, {
-        method: 'GET',
-        headers: getHeaders(),
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.removeItem('authToken');
-          setShowAuthModal(true);
-          throw new Error('Please log in to view your wishlist');
-        }
-        if (response.status === 404) {
-          throw new Error('Wishlist not found');
-        }
-        throw new Error(`Failed to fetch wishlist: ${response.statusText}`);
-      }
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response:', text);
-        throw new Error('Server returned unexpected response format');
-      }
-      const data: ApiResponse<WishlistData> = await response.json();
-      if (data.success) {
-        const itemsWithQuantity = data.data.items.map(item => ({
-          ...item,
-          quantity: 1
-        }));
-        setWishlistItems(itemsWithQuantity);
-      } else {
-        throw new Error(data.message || 'Failed to load wishlist');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      setError(errorMessage);
-      console.error('Error fetching wishlist:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
   const handleRemoveItem = async (wishlistItemId: number) => {
     try {
       setActionLoading(prev => ({ ...prev, [`remove_${wishlistItemId}`]: true }));
-      const response = await fetch(`${API_BASE_URL}/api/wishlist`, {
-        method: 'DELETE',
-        headers: getHeaders(),
-        body: JSON.stringify({ wishlistItemId }),
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Please log in to remove items');
-        }
-        if (response.status === 404) {
-          throw new Error('Item not found in wishlist');
-        }
-        throw new Error('Failed to remove item');
-      }
-      const data: ApiResponse<unknown> = await response.json();
-      if (data.success) {
-        setWishlistItems(prev => prev.filter(item => item.id !== wishlistItemId));
-        toast.success('Item removed from wishlist!');
-      } else {
-        throw new Error('Failed to remove item');
-      }
+      await removeWishlistItem(wishlistItemId);
+      toast.success('Item removed from wishlist!');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to remove item';
-      setError(errorMessage);
       toast.error(errorMessage);
       console.error('Error removing item:', err);
     } finally {
@@ -297,6 +254,11 @@ const Wishlist: React.FC = () => {
   };
   const handleMoveToCart = async (wishlistItemId: number, quantity: number, showToast: boolean = true) => {
     try {
+      const item = wishlistItems.find(wishlistItem => wishlistItem.id === wishlistItemId);
+      if (item && isItemOutOfStock(item)) {
+        throw new Error('This item is currently out of stock');
+      }
+
       setActionLoading(prev => ({ ...prev, [`cart_${wishlistItemId}`]: true }));
       const response = await fetch(`${API_BASE_URL}/api/wishlist/move-to-cart`, {
         method: 'POST',
@@ -315,8 +277,8 @@ const Wishlist: React.FC = () => {
       }
       const data: ApiResponse<unknown> = await response.json();
       if (data.success) {
-        setWishlistItems(prev => prev.filter(item => item.id !== wishlistItemId));
         await refreshCart();
+        await refreshWishlist();
         if (showToast) {
           toast.success('Item moved to cart successfully!');
         }
@@ -325,7 +287,6 @@ const Wishlist: React.FC = () => {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to move item to cart';
-      setError(errorMessage);
       toast.error(errorMessage);
       console.error('Error moving to cart:', err);
     } finally {
@@ -337,19 +298,25 @@ const Wishlist: React.FC = () => {
   // ================================
   const handleQuantityChange = (id: number, newQuantity: number) => {
     if (newQuantity < 1) return;
-    setWishlistItems(prev => prev.map(item => 
-      item.id === id ? { ...item, quantity: newQuantity } : item
-    ));
+    setQuantities(prev => ({ ...prev, [id]: newQuantity }));
   };
   const handleAddAllToCart = async () => {
     try {
       setActionLoading(prev => ({ ...prev, 'add_all': true }));
-      for (const item of wishlistItems) {
-        await handleMoveToCart(item.id, item.quantity || 1, false);
+      const availableItems = wishlistItems.filter(item => !isItemOutOfStock(item));
+      if (availableItems.length === 0) {
+        toast.error('No wishlist items are currently in stock');
+        return;
       }
-      await refreshCart();
-      toast.success('All items moved to cart successfully!');
-      await fetchWishlist();
+
+      for (const item of availableItems) {
+        await handleMoveToCart(item.id, getItemQuantity(item.id), false);
+      }
+      toast.success(
+        availableItems.length === wishlistItems.length
+          ? 'All items moved to cart successfully!'
+          : 'Available items moved to cart successfully!'
+      );
     } catch (err) {
       console.error('Error adding all to cart:', err);
       toast.error('Failed to move all items to cart');
@@ -361,15 +328,14 @@ const Wishlist: React.FC = () => {
   // LIFECYCLE & CALCULATIONS
   // ================================
   useEffect(() => {
-    fetchWishlist();
+    refreshWishlist();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const totalPrice = wishlistItems.reduce((sum, item) => {
     const price = getItemPrice(item);
-    return sum + price * (item.quantity || 1);
+    return sum + price * getItemQuantity(item.id);
   }, 0);
-  const handleRetry = () => {
-    fetchWishlist();
-  };
+  const hasCartableItems = wishlistItems.some(item => !isItemOutOfStock(item));
   // ================================
   // RENDER
   // ================================
@@ -387,53 +353,55 @@ const Wishlist: React.FC = () => {
                   <WishlistItemSkeleton key={index} />
                 ))}
               </div>
-            ) : error ? (
+            ) : !isAuthenticated ? (
               <div className="wishlist__error" role="alert">
-                {error.includes('Please log in') ? (
-                  <div className="wishlist__login-container">
-                    <p className="wishlist__login-message">Please log in to view and manage your wishlist items</p>
-                    <button 
-                      className="wishlist__login-button"
-                      onClick={() => setShowAuthModal(true)}
-                      aria-label="Log in to continue"
-                    >
-                      <FaUser className="wishlist__login-icon" />
-                      Log In to Continue
-                    </button>
-                  </div>
-                ) : (
-                  <button 
-                    className="wishlist__retry-button"
-                    onClick={handleRetry}
-                    aria-label="Retry loading wishlist"
+                <div className="wishlist__login-container">
+                  <p className="wishlist__login-message">Please log in to view and manage your wishlist items</p>
+                  <button
+                    className="wishlist__login-button"
+                    onClick={() => setShowAuthModal(true)}
+                    aria-label="Log in to continue"
                   >
-                    Try Again
+                    <FaUser className="wishlist__login-icon" />
+                    Log In to Continue
                   </button>
-                )}
+                </div>
               </div>
             ) : wishlistItems.length === 0 ? (
               <EmptyWishlist />
             ) : (
               <>
                 <div className="wishlist__items">
-                  {wishlistItems.map((item) => (
+                  {wishlistItems.map((item) => {
+                    const itemStock = getItemStock(item);
+                    const itemOutOfStock = isItemOutOfStock(item);
+                    const productLink = `/product-page/${item.productId || item.product.id}`;
+
+                    return (
                     <div key={item.id} className="wishlist__item" data-testid={`wishlist-item-${item.id}`}>
                       <div className="wishlist__item-image">
-                        <img 
-                          src={getItemImage(item)}
-                          alt={item.product.name}
-                          onError={e => { e.currentTarget.src = defaultProductImage; }}
-                          loading="lazy"
-                          className="wishlist__product-image"
-                        />
+                        <Link to={productLink} aria-label={`View ${item.product.name}`}>
+                          <img 
+                            src={getItemImage(item)}
+                            alt={item.product.name}
+                            onError={e => { e.currentTarget.src = defaultProductImage; }}
+                            loading="lazy"
+                            className="wishlist__product-image"
+                          />
+                        </Link>
                       </div>
                       <div className="wishlist__item-details">
-                        <h3 className="wishlist__item-name">{item.product.name}</h3>
+                        <h3 className="wishlist__item-name">
+                          <Link to={productLink}>{item.product.name}</Link>
+                        </h3>
                         {item.variant && (
                           <div className="wishlist__item-variant">
                             Variant: {formatVariantAttributes(item.variant.attributes)}
                           </div>
                         )}
+                        <div className={`wishlist__item-stock${itemOutOfStock ? ' wishlist__item-stock--out' : ''}`}>
+                          {itemOutOfStock ? 'Out of stock' : `${itemStock} in stock`}
+                        </div>
                         <p className="wishlist__item-specs">{item.product.description}</p>
                       </div>
                       <div className="wishlist__item-price">
@@ -442,20 +410,20 @@ const Wishlist: React.FC = () => {
                       <div className="wishlist__item-quantity">
                         <button 
                           className="wishlist__qty-btn wishlist__qty-btn--touch"
-                          onClick={() => handleQuantityChange(item.id, (item.quantity || 1) - 1)}
+                          onClick={() => handleQuantityChange(item.id, getItemQuantity(item.id) - 1)}
                           aria-label="Decrease quantity"
                           aria-controls={`qty-value-${item.id}`}
-                          disabled={actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`]}
+                          disabled={actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`] || itemOutOfStock}
                         >
                           <FaMinus />
                         </button>
-                        <span id={`qty-value-${item.id}`} className="wishlist__qty-value" aria-live="polite">{item.quantity || 1}</span>
-                        <button 
+                        <span id={`qty-value-${item.id}`} className="wishlist__qty-value" aria-live="polite">{getItemQuantity(item.id)}</span>
+                        <button
                           className="wishlist__qty-btn wishlist__qty-btn--touch"
-                          onClick={() => handleQuantityChange(item.id, (item.quantity || 1) + 1)}
+                          onClick={() => handleQuantityChange(item.id, getItemQuantity(item.id) + 1)}
                           aria-label="Increase quantity"
                           aria-controls={`qty-value-${item.id}`}
-                          disabled={actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`]}
+                          disabled={actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`] || itemOutOfStock || getItemQuantity(item.id) >= itemStock}
                         >
                           <FaPlus />
                         </button>
@@ -475,9 +443,10 @@ const Wishlist: React.FC = () => {
                         </button>
                         <button 
                           className="wishlist__action-btn wishlist__action-btn--cart"
-                          onClick={() => handleMoveToCart(item.id, item.quantity || 1)}
-                          aria-label="Move to cart"
-                          disabled={actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`]}
+                          onClick={() => handleMoveToCart(item.id, getItemQuantity(item.id))}
+                          aria-label={itemOutOfStock ? 'Out of stock' : 'Move to cart'}
+                          title={itemOutOfStock ? 'Out of stock' : 'Move to cart'}
+                          disabled={actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`] || itemOutOfStock}
                         >
                           {actionLoading[`cart_${item.id}`] ? (
                             <div className="spinner" aria-label="Adding to cart"></div>
@@ -487,7 +456,8 @@ const Wishlist: React.FC = () => {
                         </button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 <div className="wishlist__footer">
                   <div className="wishlist__summary">
@@ -499,7 +469,7 @@ const Wishlist: React.FC = () => {
                   <button 
                     className="wishlist__add-all-btn"
                     onClick={handleAddAllToCart}
-                    disabled={actionLoading['add_all'] || wishlistItems.length === 0}
+                    disabled={actionLoading['add_all'] || wishlistItems.length === 0 || !hasCartableItems}
                     aria-label="Add all items to cart"
                   >
                     {actionLoading['add_all'] ? (
@@ -538,4 +508,3 @@ const Wishlist: React.FC = () => {
   );
 };
 export default Wishlist;
-
