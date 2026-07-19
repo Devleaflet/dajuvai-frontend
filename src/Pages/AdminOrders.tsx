@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { AdminSidebar } from "../Components/AdminSidebar";
 import Header from "../Components/Header";
 import Pagination from "../Components/Pagination";
@@ -10,21 +10,16 @@ import { OrderService } from "../services/orderService";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import { ORDER_STATUS_OPTIONS as ALL_ORDER_STATUSES } from "../Components/orderStatus";
 
 const ORDER_STATUS_OPTIONS = [
   { value: "all", label: "All Statuses" },
-  { value: "PENDING", label: "Pending" },
-  { value: "CONFIRMED", label: "Confirmed" },
-  { value: "DELIVERED", label: "Delivered" },
-  { value: "CANCELLED", label: "Cancelled" },
-  { value: "SHIPPED", label: "Shipped" },
-  { value: "RETURNED", label: "Returned" },
-  { value: "DELAYED", label: "Delayed" },
-
+  ...ALL_ORDER_STATUSES.map((s) => ({ value: s.value, label: s.label })),
 ];
 
 interface DisplayOrder {
   id: string;
+  orderNumber?: string;
   customer: string;
   email: string;
   orderDate: string;
@@ -56,22 +51,147 @@ const AdminOrders: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [orders, setOrders] = useState<DisplayOrder[]>([]);
   const [rawOrders, setRawOrders] = useState<any[]>([]);
-  const [filteredOrders, setFilteredOrders] = useState<DisplayOrder[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [ordersPerPage] = useState(7);
+  const [ordersPerPage, setOrdersPerPage] = useState(20);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<ModalOrder | null>(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [sortOption, setSortOption] = useState<string>("newest");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("all");
   const [dateRangeFilter, setDateRangeFilter] = useState<string>("all");
   const [priceRangeFilter, setPriceRangeFilter] = useState<string>("all");
+  const orderRequestRef = useRef<AbortController | null>(null);
 
   const orderIdFromParams = searchParams.get('orderId');
+
+  // Debounce search input — reset to page 1 only once the debounced value changes.
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setSearchQuery(searchInput.trim());
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
+
+  // Backend-supported sort keys only; the shared Header component still
+  // offers name-asc/name-desc (client-only concept — no server-side
+  // customer-name sort), which falls back to newest.
+  const backendSort = (option: string) => {
+    switch (option) {
+      case "oldest": return "oldest";
+      case "price-asc": return "lowest_total";
+      case "price-desc": return "highest_total";
+      default: return "newest";
+    }
+  };
+
+  const dateRangeToDates = (range: string): { startDate?: string; endDate?: string } => {
+    if (range === "all") return {};
+    const now = new Date();
+    const start = new Date();
+    if (range === "today") start.setHours(0, 0, 0, 0);
+    else if (range === "week") start.setDate(now.getDate() - 7);
+    else if (range === "month") start.setMonth(now.getMonth() - 1);
+    return { startDate: start.toISOString(), endDate: now.toISOString() };
+  };
+
+  const priceRangeToBounds = (range: string): { minPrice?: number; maxPrice?: number } => {
+    switch (range) {
+      case "0-1000": return { minPrice: 0, maxPrice: 1000 };
+      case "1000-5000": return { minPrice: 1000, maxPrice: 5000 };
+      case "5000-10000": return { minPrice: 5000, maxPrice: 10000 };
+      case "10000+": return { minPrice: 10000 };
+      default: return {};
+    }
+  };
+
+  const getOrderVendorNames = (order: any): string[] =>
+    Array.isArray(order.orderItems)
+      ? Array.from(
+          new Set<string>(
+            order.orderItems
+              .map((item: any) => item?.vendor?.businessName)
+              .filter(
+                (name: unknown): name is string =>
+                  typeof name === "string" && name.length > 0,
+              ),
+          ),
+        )
+      : [];
+
+  const getOrderSearchText = (order: any): string =>
+    [
+      order.id,
+      order.orderNumber,
+      order.transactionId,
+      order.mTransactionId,
+      order.status,
+      order.paymentStatus,
+      order.paymentMethod,
+      order.orderedBy?.name,
+      order.orderedBy?.fullName,
+      order.orderedBy?.username,
+      order.orderedBy?.email,
+      order.orderedBy?.phoneNumber,
+      ...getOrderVendorNames(order),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+  const applyLegacyOrderFallback = (items: any[]) => {
+    const search = searchQuery.trim().toLowerCase();
+    const { startDate, endDate } = dateRangeToDates(dateRangeFilter);
+    const { minPrice, maxPrice } = priceRangeToBounds(priceRangeFilter);
+
+    const filtered = items.filter((order) => {
+      const orderDate = new Date(order.createdAt).getTime();
+      const totalPrice = Number(order.totalPrice || 0);
+
+      return (
+        (!search || getOrderSearchText(order).includes(search)) &&
+        (statusFilter === "all" || order.status === statusFilter) &&
+        (paymentStatusFilter === "all" ||
+          order.paymentStatus === paymentStatusFilter) &&
+        (!startDate || orderDate >= new Date(startDate).getTime()) &&
+        (!endDate || orderDate <= new Date(endDate).getTime()) &&
+        (minPrice == null || totalPrice >= minPrice) &&
+        (maxPrice == null || totalPrice <= maxPrice)
+      );
+    });
+
+    filtered.sort((a, b) => {
+      switch (backendSort(sortOption)) {
+        case "oldest":
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case "lowest_total":
+          return Number(a.totalPrice || 0) - Number(b.totalPrice || 0);
+        case "highest_total":
+          return Number(b.totalPrice || 0) - Number(a.totalPrice || 0);
+        default:
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+    });
+
+    const fallbackTotalPages = Math.max(1, Math.ceil(filtered.length / ordersPerPage));
+    const fallbackPage = Math.min(currentPage, fallbackTotalPages);
+    const pageStart = (fallbackPage - 1) * ordersPerPage;
+
+    return {
+      pageItems: filtered.slice(pageStart, pageStart + ordersPerPage),
+      totalItems: filtered.length,
+      totalPages: fallbackTotalPages,
+      page: fallbackPage,
+    };
+  };
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -84,13 +204,56 @@ const AdminOrders: React.FC = () => {
         return;
       }
 
+      const controller = new AbortController();
+      orderRequestRef.current?.abort();
+      orderRequestRef.current = controller;
+
       try {
         setIsLoading(true);
-        const response = await OrderService.getAllOrders(token);
-        setRawOrders(response);
+        setError(null);
+        const { startDate, endDate } = dateRangeToDates(dateRangeFilter);
+        const { minPrice, maxPrice } = priceRangeToBounds(priceRangeFilter);
 
-        const transformedOrders: DisplayOrder[] = response.map((order: any) => ({
+        const { orders: response, pagination, isPaginated } = await OrderService.getAllOrders(
+          token,
+          {
+            page: currentPage,
+            limit: ordersPerPage,
+            search: searchQuery || undefined,
+            status: statusFilter !== "all" ? statusFilter : undefined,
+            paymentStatus: paymentStatusFilter !== "all" ? paymentStatusFilter : undefined,
+            startDate,
+            endDate,
+            minPrice,
+            maxPrice,
+            sort: backendSort(sortOption) as any,
+          },
+          controller.signal,
+        );
+
+        if (controller.signal.aborted) return;
+
+        const legacyFallback =
+          !isPaginated || response.length > ordersPerPage
+            ? applyLegacyOrderFallback(response)
+            : null;
+        const pageOrders = legacyFallback?.pageItems ?? response;
+
+        setRawOrders(pageOrders);
+        setTotalItems(legacyFallback?.totalItems ?? pagination.totalItems);
+        setTotalPages(legacyFallback?.totalPages ?? pagination.totalPages);
+        // A filter/search change can leave currentPage past the new last
+        // page (e.g. after narrowing results) — snap back instead of
+        // showing an empty page.
+        if (legacyFallback && currentPage !== legacyFallback.page) {
+          setCurrentPage(legacyFallback.page);
+        } else if (pagination.totalPages > 0 && currentPage > pagination.totalPages) {
+          setCurrentPage(pagination.totalPages);
+        }
+
+        const transformedOrders: DisplayOrder[] = pageOrders.map((order: any) => ({
           id: order.id.toString(),
+          orderNumber: order.orderNumber,
           customer: order.orderedBy?.name || order.orderedBy?.fullName || order.orderedBy?.username || "Unknown",
           email: order.orderedBy?.email || "N/A",
           orderDate: new Date(order.createdAt).toLocaleDateString("en-US", {
@@ -104,8 +267,9 @@ const AdminOrders: React.FC = () => {
         }));
 
         setOrders(transformedOrders);
-        setFilteredOrders(transformedOrders);
       } catch (err) {
+        if (err instanceof Error && err.name === "CanceledError") return;
+
         const errorMessage =
           err instanceof Error ? err.message : "Failed to load orders";
         setError(errorMessage);
@@ -118,12 +282,38 @@ const AdminOrders: React.FC = () => {
           navigate("/login");
         }
       } finally {
-        setIsLoading(false);
+        if (orderRequestRef.current === controller) {
+          setIsLoading(false);
+          setHasLoadedOnce(true);
+          orderRequestRef.current = null;
+        }
       }
     };
 
     fetchOrders();
-  }, [authLoading, isAuthenticated, token, logout, navigate]);
+
+    return () => {
+      const activeRequest = orderRequestRef.current;
+      activeRequest?.abort();
+      if (orderRequestRef.current === activeRequest) {
+        orderRequestRef.current = null;
+      }
+    };
+  }, [
+    authLoading,
+    isAuthenticated,
+    token,
+    logout,
+    navigate,
+    currentPage,
+    ordersPerPage,
+    searchQuery,
+    statusFilter,
+    paymentStatusFilter,
+    dateRangeFilter,
+    priceRangeFilter,
+    sortOption,
+  ]);
 
   useEffect(() => {
     if (orderIdFromParams && orders.length > 0) {
@@ -134,107 +324,46 @@ const AdminOrders: React.FC = () => {
     }
   }, [orderIdFromParams, orders]);
 
-  useEffect(() => {
-    let results = orders.filter(
-      (order) =>
-        (order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.status.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.paymentStatus.toLowerCase().includes(searchQuery.toLowerCase())) &&
-        (statusFilter === "all" || order.status === statusFilter) &&
-        (paymentStatusFilter === "all" || order.paymentStatus === paymentStatusFilter)
-    );
-
-    // Apply date range filter
-    if (dateRangeFilter !== "all") {
-      const now = new Date();
-      const filterDate = new Date();
-      
-      switch (dateRangeFilter) {
-        case "today":
-          filterDate.setHours(0, 0, 0, 0);
-          results = results.filter(order => new Date(order.orderDate) >= filterDate);
-          break;
-        case "week":
-          filterDate.setDate(now.getDate() - 7);
-          results = results.filter(order => new Date(order.orderDate) >= filterDate);
-          break;
-        case "month":
-          filterDate.setMonth(now.getMonth() - 1);
-          results = results.filter(order => new Date(order.orderDate) >= filterDate);
-          break;
-      }
-    }
-
-    // Apply price range filter
-    if (priceRangeFilter !== "all") {
-      results = results.filter(order => {
-        const price = parseFloat(order.totalPrice.replace("Rs. ", ""));
-        switch (priceRangeFilter) {
-          case "0-1000":
-            return price >= 0 && price <= 1000;
-          case "1000-5000":
-            return price > 1000 && price <= 5000;
-          case "5000-10000":
-            return price > 5000 && price <= 10000;
-          case "10000+":
-            return price > 10000;
-          default:
-            return true;
-        }
-      });
-    }
-
-    results = [...results].sort((a, b) => {
-      switch (sortOption) {
-        case "newest":
-          return (
-            new Date(b.orderDate).getTime() -
-            new Date(a.orderDate).getTime()
-          );
-        case "oldest":
-          return (
-            new Date(a.orderDate).getTime() -
-            new Date(b.orderDate).getTime()
-          );
-        case "price-asc":
-          return (
-            parseFloat(a.totalPrice.replace("Rs. ", "")) -
-            parseFloat(b.totalPrice.replace("Rs. ", ""))
-          );
-        case "price-desc":
-          return (
-            parseFloat(b.totalPrice.replace("Rs. ", "")) -
-            parseFloat(a.totalPrice.replace("Rs. ", ""))
-          );
-        case "name-asc":
-          return a.customer.localeCompare(b.customer);
-        case "name-desc":
-          return b.customer.localeCompare(a.customer);
-        default:
-          return 0;
-      }
-    });
-
-    setFilteredOrders(results);
-    setCurrentPage(1);
-  }, [searchQuery, orders, sortOption, statusFilter, paymentStatusFilter, dateRangeFilter, priceRangeFilter]);
-
-  const handleSearch = (query: string) => setSearchQuery(query);
+  const handleSearch = (query: string) => setSearchInput(query);
 
   const handleSort = useCallback((newSortOption: string) => {
     setSortOption(newSortOption);
+    setCurrentPage(1);
   }, []);
 
-  const indexOfLastOrder = currentPage * ordersPerPage;
-  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = filteredOrders.slice(
-    indexOfFirstOrder,
-    indexOfLastOrder
-  );
+  // The server already returns exactly this page's rows.
+  const currentOrders = orders.slice(0, ordersPerPage);
+  const isSearchPending = searchInput.trim() !== searchQuery;
+  const isSearching = isSearchPending || (isLoading && Boolean(searchQuery));
+  const ordersRangeStart =
+    totalItems === 0 ? 0 : (currentPage - 1) * ordersPerPage + 1;
+  const ordersRangeEnd = Math.min(currentPage * ordersPerPage, totalItems);
+  const searchResultsLabel = useMemo(() => {
+    if (isSearchPending) return `Searching "${searchInput.trim()}"...`;
+    if (searchQuery) {
+      return `Showing ${ordersRangeStart}-${ordersRangeEnd} of ${totalItems} orders for "${searchQuery}"`;
+    }
+    return `Showing ${ordersRangeStart}-${ordersRangeEnd} of ${totalItems} orders`;
+  }, [
+    isSearchPending,
+    searchInput,
+    searchQuery,
+    ordersRangeStart,
+    ordersRangeEnd,
+    totalItems,
+  ]);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  const resetFilters = () => {
+    setStatusFilter("all");
+    setPaymentStatusFilter("all");
+    setDateRangeFilter("all");
+    setPriceRangeFilter("all");
+    setSearchInput("");
+    setSearchQuery("");
+    setCurrentPage(1);
+  };
 
   const toModalOrder = (displayOrder: DisplayOrder): ModalOrder => {
     const rawOrder =
@@ -301,7 +430,6 @@ const AdminOrders: React.FC = () => {
         order.id === orderId ? { ...order, status: newStatus } : order
       );
       setOrders(updatedOrders);
-      setFilteredOrders(updatedOrders);
       setRawOrders(
         rawOrders.map((o) =>
           o.id.toString() === orderId ? { ...o, status: newStatus } : o
@@ -321,7 +449,7 @@ const AdminOrders: React.FC = () => {
     setSelectedOrder(null);
   };
 
-  if (authLoading || isLoading) return <AdminOrdersSkeleton />;
+  if (authLoading || (isLoading && !hasLoadedOnce)) return <AdminOrdersSkeleton />;
 
   if (error) {
     return (
@@ -347,6 +475,15 @@ const AdminOrders: React.FC = () => {
       <div className="admin-orders__content">
         <Header
           onSearch={handleSearch}
+          searchValue={searchInput}
+          searchPlaceholder="Search orders by ID, customer, vendor, payment..."
+          isSearching={isSearching}
+          searchResultsLabel={searchResultsLabel}
+          onClearSearch={() => {
+            setSearchInput("");
+            setSearchQuery("");
+            setCurrentPage(1);
+          }}
           onSort={handleSort}
           sortOption={sortOption}
           showSearch={true}
@@ -360,7 +497,7 @@ const AdminOrders: React.FC = () => {
             <select
               id="status-filter"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
               className="admin-orders__filter-select"
             >
               {ORDER_STATUS_OPTIONS.map(option => (
@@ -376,7 +513,7 @@ const AdminOrders: React.FC = () => {
             <select
               id="payment-filter"
               value={paymentStatusFilter}
-              onChange={(e) => setPaymentStatusFilter(e.target.value)}
+              onChange={(e) => { setPaymentStatusFilter(e.target.value); setCurrentPage(1); }}
               className="admin-orders__filter-select"
             >
               <option value="all">All Payments</option>
@@ -390,7 +527,7 @@ const AdminOrders: React.FC = () => {
             <select
               id="date-filter"
               value={dateRangeFilter}
-              onChange={(e) => setDateRangeFilter(e.target.value)}
+              onChange={(e) => { setDateRangeFilter(e.target.value); setCurrentPage(1); }}
               className="admin-orders__filter-select"
             >
               <option value="all">All Time</option>
@@ -405,7 +542,7 @@ const AdminOrders: React.FC = () => {
             <select
               id="price-filter"
               value={priceRangeFilter}
-              onChange={(e) => setPriceRangeFilter(e.target.value)}
+              onChange={(e) => { setPriceRangeFilter(e.target.value); setCurrentPage(1); }}
               className="admin-orders__filter-select"
             >
               <option value="all">All Prices</option>
@@ -417,12 +554,7 @@ const AdminOrders: React.FC = () => {
           </div>
 
           <button
-            onClick={() => {
-              setStatusFilter("all");
-              setPaymentStatusFilter("all");
-              setDateRangeFilter("all");
-              setPriceRangeFilter("all");
-            }}
+            onClick={resetFilters}
             className="admin-orders__clear-filters"
           >
             Clear All Filters
@@ -449,9 +581,19 @@ const AdminOrders: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentOrders.map((order) => (
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={8}>
+                        <div className="admin-orders__table-state">
+                          <span className="admin-orders__table-spinner" />
+                          Loading orders...
+                        </div>
+                      </td>
+                    </tr>
+                  ) : currentOrders.length > 0 ? (
+                    currentOrders.map((order) => (
                     <tr key={order.id} className="admin-orders__table-row">
-                      <td>{order.id}</td>
+                      <td>{order.orderNumber || order.id}</td>
                       <td className="admin-orders__name-cell">
                         {order.customer}
                       </td>
@@ -477,20 +619,30 @@ const AdminOrders: React.FC = () => {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={8}>
+                        <div className="admin-orders__table-state">
+                          No orders found.
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
             <div className="admin-orders__pagination-container">
-              <div className="admin-orders__pagination-info">
-                Showing {indexOfFirstOrder + 1}-
-                {Math.min(indexOfLastOrder, filteredOrders.length)} out of{" "}
-                {filteredOrders.length}
-              </div>
               <Pagination
                 currentPage={currentPage}
-                totalPages={Math.ceil(filteredOrders.length / ordersPerPage)}
+                totalPages={totalPages}
                 onPageChange={paginate}
+                pageSize={ordersPerPage}
+                totalItems={totalItems}
+                onPageSizeChange={(size) => {
+                  setOrdersPerPage(size);
+                  setCurrentPage(1);
+                }}
               />
             </div>
           </div>
@@ -501,6 +653,7 @@ const AdminOrders: React.FC = () => {
         show={showOrderDetails}
         onClose={closeOrderDetails}
         order={selectedOrder}
+        onStatusUpdate={handleSaveOrder}
       />
 
       <OrderEditModal

@@ -408,7 +408,7 @@ const AdminBannerWithTabs = () => {
   const [error, setError] = useState<string | null>(null);
   const [editingBanner, setEditingBanner] = useState<TransformedBanner | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: keyof Banner | "createdBy"; direction: "asc" | "desc" } | null>(null);
-  const PAGE_SIZE = 7;
+  const PAGE_SIZE = 20;
 
   const tabs = ["All Banners", "Active", "Scheduled", "Expired", "Drafts"];
 

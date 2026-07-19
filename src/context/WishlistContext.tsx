@@ -21,6 +21,7 @@ interface WishlistContextType {
   getWishlistItem: (productId: number, variantId?: WishlistVariantId) => any | undefined;
   addWishlistItem: (productId: number, variantId?: WishlistVariantId) => Promise<any | null>;
   removeWishlistItem: (wishlistItemId: number) => Promise<void>;
+  removeWishlistItemsLocally: (wishlistItemIds: number[]) => void;
 }
 
 const WishlistContext = createContext<WishlistContextType | null>(null);
@@ -47,7 +48,12 @@ const itemKey = (item: any) => {
 };
 
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, token } = useAuth();
+  const { isAuthenticated, token, user } = useAuth();
+  // Wishlist is a customer-only concept — the backend rejects any other
+  // role with 409 CONFLICT. Admin/vendor/staff/rider tokens are also
+  // `isAuthenticated`, so gate on role too or every non-customer session
+  // spams the storefront with 409s.
+  const isCustomer = isAuthenticated && user?.role === 'user';
   const [wishlist, setWishlist] = useState<any[]>([]);
   const [pendingKeys, setPendingKeys] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
@@ -65,7 +71,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const refreshWishlist = useCallback(async () => {
-    if (!isAuthenticated || !token) {
+    if (!isCustomer || !token) {
       setWishlist([]);
       setPendingKeys(new Set());
       return;
@@ -81,14 +87,14 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, token]);
+  }, [isCustomer, token]);
 
   useEffect(() => {
     refreshWishlist();
   }, [refreshWishlist]);
 
   useEffect(() => {
-    if (!isAuthenticated || !token) return;
+    if (!isCustomer || !token) return;
 
     const interval = window.setInterval(refreshWishlist, 30_000);
     const onFocus = () => refreshWishlist();
@@ -98,7 +104,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       window.clearInterval(interval);
       window.removeEventListener('focus', onFocus);
     };
-  }, [isAuthenticated, refreshWishlist, token]);
+  }, [isCustomer, refreshWishlist, token]);
 
   const wishlistMap = useMemo(() => {
     const map = new Map<string, any>();
@@ -122,7 +128,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const addWishlistItem = useCallback(
     async (productId: number, variantId?: WishlistVariantId) => {
-      if (!isAuthenticated || !token) {
+      if (!isCustomer || !token) {
         throw new Error('Please login to use wishlist');
       }
 
@@ -162,12 +168,12 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setPending(key, false);
       }
     },
-    [isAuthenticated, pendingKeys, refreshWishlist, setPending, token, wishlistMap],
+    [isCustomer, pendingKeys, refreshWishlist, setPending, token, wishlistMap],
   );
 
   const removeWishlistItem = useCallback(
     async (wishlistItemId: number) => {
-      if (!isAuthenticated || !token) {
+      if (!isCustomer || !token) {
         throw new Error('Please login to use wishlist');
       }
 
@@ -197,8 +203,15 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setPending(removeKey, false);
       }
     },
-    [isAuthenticated, pendingKeys, refreshWishlist, setPending, token, wishlist],
+    [isCustomer, pendingKeys, refreshWishlist, setPending, token, wishlist],
   );
+
+  const removeWishlistItemsLocally = useCallback((wishlistItemIds: number[]) => {
+    const ids = new Set(wishlistItemIds.map((id) => Number(id)));
+    setWishlist((current) =>
+      current.filter((item) => !ids.has(Number(item.id))),
+    );
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -211,6 +224,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       getWishlistItem,
       addWishlistItem,
       removeWishlistItem,
+      removeWishlistItemsLocally,
     }),
     [
       addWishlistItem,
@@ -220,6 +234,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       pendingKeys,
       refreshWishlist,
       removeWishlistItem,
+      removeWishlistItemsLocally,
       wishlist,
       wishlistMap,
     ],

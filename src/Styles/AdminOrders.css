@@ -1,17 +1,26 @@
 /* AdminOrders.css */
 .admin-orders {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   background-color: #f9fafb;
 }
 
 .admin-orders__content {
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  min-width: 0;
+  height: 100vh;
   padding: 0;
   overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 .admin-orders__list-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   padding: 1.5rem 2rem;
 }
 
@@ -26,8 +35,17 @@
   background-color: #fff;
   border-radius: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  /* Only the table body scrolls — header, filters, and pagination stay put. */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   margin-bottom: 1.5rem;
+}
+
+.admin-orders__table-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .admin-orders__table {
@@ -58,6 +76,32 @@
 .admin-orders__table td {
   padding: 1rem;
   color: #1f2937;
+}
+
+.admin-orders__table-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 180px;
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.admin-orders__table-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fed7aa;
+  border-top-color: #f97316;
+  border-radius: 999px;
+  animation: admin-orders-spin 700ms linear infinite;
+}
+
+@keyframes admin-orders-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .admin-orders__name-cell {

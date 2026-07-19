@@ -1,15 +1,26 @@
 import React from "react";
 
+export const PAGE_SIZE_OPTIONS = [10, 20, 25, 50, 100];
+export const DEFAULT_PAGE_SIZE = 20;
+
 interface PaginationProps {
 	currentPage: number;
 	totalPages: number;
 	onPageChange: (page: number) => void;
+	/** Optional — when provided (with onPageSizeChange), renders a "Rows per
+	 * page" selector and a "Showing X-Y of Z" summary next to the controls. */
+	pageSize?: number;
+	onPageSizeChange?: (size: number) => void;
+	totalItems?: number;
 }
 
 const Pagination: React.FC<PaginationProps> = ({
 	currentPage,
 	totalPages,
 	onPageChange,
+	pageSize,
+	onPageSizeChange,
+	totalItems,
 }) => {
 	if (totalPages <= 0) return null;
 
@@ -51,11 +62,31 @@ const Pagination: React.FC<PaginationProps> = ({
 		return pageNumbers;
 	};
 
+	const rangeStart = pageSize && totalItems ? (currentPage - 1) * pageSize + 1 : null;
+	const rangeEnd = pageSize && totalItems ? Math.min(currentPage * pageSize, totalItems) : null;
+
 	return (
-		<div className="vendor-product__pagination">
+		<div className="vendor-product__pagination" style={{ flexWrap: "wrap", gap: 12 }}>
 			<div className="vendor-product__pagination-info">
-				Page {currentPage} of {totalPages}
+				{rangeStart != null && rangeEnd != null && totalItems != null
+					? `Showing ${rangeStart}–${rangeEnd} of ${totalItems}`
+					: `Page ${currentPage} of ${totalPages}`}
 			</div>
+
+			{pageSize != null && onPageSizeChange && (
+				<label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14 }}>
+					Rows per page:
+					<select
+						value={pageSize}
+						onChange={(e) => onPageSizeChange(Number(e.target.value))}
+						style={{ padding: "4px 8px" }}
+					>
+						{PAGE_SIZE_OPTIONS.map((size) => (
+							<option key={size} value={size}>{size}</option>
+						))}
+					</select>
+				</label>
+			)}
 
 			<div style={{ display: "flex", gap: "8px" }}>
 				<button

@@ -2,13 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Sidebar } from "../Components/Sidebar";
 import Pagination from "../Components/Pagination";
 import OrderList from "../Components/OrderList";
-import ViewModal from "../Components/Modal/ViewModal";
+import ViewModal, { VendorOrderDetail } from "../Components/Modal/ViewModal";
 import { useDocketHeight } from "../Hook/UseDockerHeight";
 import "../Styles/VendorOrder.css";
 import * as XLSX from "xlsx";
 import VendorDashboardService from "../services/vendorDashboardService";
 import { useVendorAuth } from "../context/VendorAuthContext";
-import { Order, OrderDetail } from "../Components/Types/Order";
+import { Order } from "../Components/Types/Order";
 import { useQuery } from "@tanstack/react-query";
 import VendorHeader from "../Components/VendorHeader";
 import { useSearchParams } from "react-router-dom";
@@ -33,13 +33,14 @@ const VendorOrder: React.FC = () => {
     const [isViewModalOpen, setIsViewModalOpen] = useState<boolean>(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [selectedOrderDetail, setSelectedOrderDetail] =
-        useState<OrderDetail | null>(null);
+        useState<VendorOrderDetail | null>(null);
 
     // TanStack Query for orders
     const {
         data: allOrders = [] as Order[],
         isLoading: loading,
         error,
+        refetch,
     } = useQuery({
         queryKey: ["vendor-orders", authState.token],
         queryFn: async () => {
@@ -50,16 +51,19 @@ const VendorOrder: React.FC = () => {
                 authState.token,
             );
             const apiOrders = response.data;
-            return apiOrders.map((order: OrderDetail) => {
+            return apiOrders.map((order: VendorOrderDetail) => {
                 const firstItem = order.orderItems[0];
                 return {
                     id: order.id,
-                    orderId: `#ORD${String(order.id).padStart(4, "0")}`,
-                    orderedBy: order.orderedBy.name || order.orderedBy.fullName || order.orderedBy.username || "Unknown Customer",
-                    product: firstItem.product.name,
+                    orderId: order.orderNumber || `#ORD${String(order.id).padStart(4, "0")}`,
+                    orderNumber: order.orderNumber,
+                    orderedBy: order.orderedBy?.name || order.orderedBy?.fullName || order.orderedBy?.username || "Unknown Customer",
+                    product: firstItem?.product?.name || "Unknown Product",
                     createdAt: order.createdAt,
-                    price: parseFloat(order.totalPrice),
-                    paymentStatus: order.paymentMethod || "",
+                    // This vendor's own payable amount only — never the
+                    // order's full multi-vendor total.
+                    price: order.vendorPayable,
+                    paymentStatus: order.paymentStatus || "",
                     status: (() => {
                         const rawStatus = (order.status || "").toUpperCase();
                         if (rawStatus === "DELIVERED") return "delivered";
@@ -443,6 +447,10 @@ const VendorOrder: React.FC = () => {
                     onClose={() => setIsViewModalOpen(false)}
                     order={selectedOrder}
                     orderDetail={selectedOrderDetail}
+                    onStatusChanged={() => {
+                        if (selectedOrder) fetchOrderDetails(selectedOrder.id);
+                        refetch();
+                    }}
                 />
             </div>
         </div>

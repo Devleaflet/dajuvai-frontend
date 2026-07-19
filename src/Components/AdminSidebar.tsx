@@ -51,8 +51,11 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
 
     const fetchUnapprovedCount = async () => {
       try {
+        // No dedicated /count endpoint exists on the backend — this used to
+        // 404 against a URL that was never registered. Reuse the real
+        // "list unapproved vendors" endpoint and count the array.
         const response = await fetch(
-          `${API_BASE_URL}/api/vendors/unapproved/count`,
+          `${API_BASE_URL}/api/vendors/unapprove/list`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -66,7 +69,7 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
         const data = await response.json();
 
         if (data.success) {
-          setUnapprovedCount(Number(data.count) || 0);
+          setUnapprovedCount(Array.isArray(data.data) ? data.data.length : 0);
         }
       } catch (error) {
         if ((error as Error).name !== "AbortError") {

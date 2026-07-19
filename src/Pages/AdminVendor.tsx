@@ -840,7 +840,7 @@ const AdminVendor: React.FC = () => {
 	const [filteredVendors, setFilteredVendors] = useState<Vendor[]>([]);
 	const [districts, setDistricts] = useState<District[]>([]);
 	const [currentPage, setCurrentPage] = useState(1);
-	const [vendorsPerPage] = useState(7);
+	const [vendorsPerPage, setVendorsPerPage] = useState(20);
 	const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
 	const [showEditModal, setShowEditModal] = useState(false);
 	const [showViewModal, setShowViewModal] = useState(false);
@@ -1587,15 +1587,13 @@ const AdminVendor: React.FC = () => {
 								</table>
 							</div>
 							<div className="admin-vendors__pagination-container">
-								<div className="admin-vendors__pagination-info">
-									Showing {(currentPage - 1) * vendorsPerPage + 1}-
-									{Math.min(currentPage * vendorsPerPage, filteredVendors.length)}{" "}
-									out of {filteredVendors.length}
-								</div>
 								<Pagination
 									currentPage={currentPage}
 									totalPages={Math.ceil(filteredVendors.length / vendorsPerPage)}
 									onPageChange={setCurrentPage}
+									pageSize={vendorsPerPage}
+									totalItems={filteredVendors.length}
+									onPageSizeChange={(size) => { setVendorsPerPage(size); setCurrentPage(1); }}
 								/>
 							</div>
 						</div>

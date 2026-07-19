@@ -170,12 +170,17 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const location = useLocation();
   const auth = useAuth();
+  // Cart is a customer-only concept — the backend rejects any other role
+  // with 409 CONFLICT ("Only customer accounts can perform this action").
+  // Admin/vendor/staff/rider tokens are also `isAuthenticated`, so gate on
+  // role too or every non-customer session spams the storefront with 409s.
+  const isCustomer = auth.isAuthenticated && auth.user?.role === 'user';
 
   // Fetch cart items on mount and set them
   useEffect(() => {
     const loadCart = async () => {
-      // Don't fetch cart if user is not authenticated
-      if (!auth.isAuthenticated) {
+      // Don't fetch cart if user is not authenticated as a customer
+      if (!isCustomer) {
         //("User not authenticated, clearing cart");
         setCartItems([]);
         return;
@@ -195,14 +200,14 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     };
     loadCart();
-  }, [auth.isAuthenticated]);
+  }, [isCustomer]);
 
   // Refresh cart when navigating to cart-related pages
   useEffect(() => {
     const cartRelatedPages = ['/checkout', '/cart'];
     const isCartPage = cartRelatedPages.some(page => location.pathname.includes(page));
 
-    if (isCartPage && auth.isAuthenticated) {
+    if (isCartPage && isCustomer) {
       const refreshCart = async () => {
         try {
           const items = await fetchCart();
@@ -217,16 +222,16 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       };
       refreshCart();
-    } else if (isCartPage && !auth.isAuthenticated) {
-      // Clear cart if user is not authenticated on cart pages
+    } else if (isCartPage && !isCustomer) {
+      // Clear cart if user is not an authenticated customer on cart pages
       setCartItems([]);
     }
-  }, [location.pathname, auth.isAuthenticated]);
+  }, [location.pathname, isCustomer]);
 
   // Refresh cart when authentication state changes
   useEffect(() => {
     const refreshCart = async () => {
-      if (!auth.isAuthenticated) {
+      if (!isCustomer) {
         //("User not authenticated, clearing cart");
         setCartItems([]);
         return;
@@ -245,7 +250,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     };
     refreshCart();
-  }, [auth.isAuthenticated]);
+  }, [isCustomer]);
 
   // Listen for logout event and clear cart
   useEffect(() => {
@@ -271,7 +276,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     //("Current cart items:", cartItems);
     //("Is authenticated:", auth.isAuthenticated);
 
-    if (!auth.isAuthenticated) {
+    if (!isCustomer) {
       //("User not authenticated, cannot add to cart");
       return;
     }
@@ -346,7 +351,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     //("Current cart items:", cartItems);
     //("Is authenticated:", auth.isAuthenticated);
 
-    if (!auth.isAuthenticated) {
+    if (!isCustomer) {
       //("User not authenticated, cannot delete from cart");
       return;
     }
@@ -407,7 +412,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     const normalizedCartItemId = normalizeCartItemId(cartItemId);
     const quantityDelta = Number(amount);
 
-    if (!auth.isAuthenticated) {
+    if (!isCustomer) {
       //("User not authenticated, cannot modify cart");
       return;
     }
@@ -493,7 +498,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     const normalizedCartItemId = normalizeCartItemId(cartItemId);
     const quantityDelta = Number(amount);
 
-    if (!auth.isAuthenticated) {
+    if (!isCustomer) {
       //("User not authenticated, cannot modify cart");
       return;
     }
@@ -551,7 +556,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     //("=== refreshCart START ===");
     //("Is authenticated:", auth.isAuthenticated);
 
-    if (!auth.isAuthenticated) {
+    if (!isCustomer) {
       //("User not authenticated, clearing cart");
       setCartItems([]);
       return;
@@ -584,7 +589,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Connect to Socket.IO for cart count updates
   useEffect(() => {
-    if (!auth.isAuthenticated || !auth.token) {
+    if (!isCustomer || !auth.token) {
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -642,7 +647,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [auth.isAuthenticated, auth.token, location.pathname]);
+  }, [isCustomer, auth.token, location.pathname]);
 
   return (
     <CartContext.Provider

@@ -6,7 +6,6 @@ import '../Styles/Wishlist.css';
 import { FaTrash, FaShoppingCart, FaMinus, FaPlus, FaUser, FaHeart } from 'react-icons/fa';
 import Footer from '../Components/Footer';
 import Navbar from '../Components/Navbar';
-import { API_BASE_URL } from '../config';
 import { Link } from "react-router-dom";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -16,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import defaultProductImage from "../assets/logo.webp";
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import { moveToCart as moveWishlistItemToCart } from '../api/wishlist';
 // ================================
 // TYPES & INTERFACES
 // ================================
@@ -47,11 +47,6 @@ interface WishlistItem {
   variantId?: number;
   variant?: Variant;
   quantity?: number;
-}
-interface ApiResponse<T> {
-  success: boolean;
-  data: T;
-  message?: string;
 }
 // ================================
 // SKELETON LOADER COMPONENT
@@ -115,25 +110,26 @@ const Wishlist: React.FC = () => {
   // The wishlist context is the single source of truth for contents; this
   // page no longer keeps its own fetched copy, so removing/adding elsewhere
   // (product card, product page) is reflected here without a refresh.
-  const { wishlist, loading, refreshWishlist, removeWishlistItem } = useWishlist();
+  const {
+    wishlist,
+    loading,
+    refreshWishlist,
+    removeWishlistItem,
+    removeWishlistItemsLocally,
+  } = useWishlist();
   const wishlistItems = wishlist as WishlistItem[];
   // Per-item "how many to move to cart" selector — not part of the wishlist
   // record itself, so it stays local UI state keyed by wishlist item id.
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, user } = useAuth();
+  const isCustomer = isAuthenticated && user?.role === 'user';
   const { refreshCart } = useCart();
   const getItemQuantity = (id: number) => quantities[id] || 1;
   // ================================
   // HELPER FUNCTIONS
   // ================================
-  const getHeaders = () => {
-    return {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-    };
-  };
   const toFullUrl = (imgUrl: string): string => {
     if (!imgUrl) return '';
     return imgUrl.startsWith('http')
@@ -252,45 +248,76 @@ const Wishlist: React.FC = () => {
       setActionLoading(prev => ({ ...prev, [`remove_${wishlistItemId}`]: false }));
     }
   };
-  const handleMoveToCart = async (wishlistItemId: number, quantity: number, showToast: boolean = true) => {
+  const handleMoveToCart = async (
+    wishlistItemId: number,
+    quantity: number,
+    showToast: boolean = true,
+    syncAfterMove: boolean = true,
+    optimisticItem?: WishlistItem,
+  ): Promise<boolean> => {
+    const normalizedWishlistItemId = Number(wishlistItemId);
+    const normalizedQuantity = Number(quantity);
+    const item =
+      optimisticItem ||
+      wishlistItems.find(
+        wishlistItem => Number(wishlistItem.id) === normalizedWishlistItemId
+      );
+
     try {
-      const item = wishlistItems.find(wishlistItem => wishlistItem.id === wishlistItemId);
-      if (item && isItemOutOfStock(item)) {
+      if (!isCustomer) {
+        throw new Error('Please log in with a customer account to add items to cart');
+      }
+
+      if (
+        !item ||
+        !Number.isInteger(normalizedWishlistItemId) ||
+        normalizedWishlistItemId <= 0 ||
+        !Number.isInteger(normalizedQuantity) ||
+        normalizedQuantity <= 0
+      ) {
+        throw new Error('Wishlist item is still syncing. Please try again.');
+      }
+
+      if (isItemOutOfStock(item)) {
         throw new Error('This item is currently out of stock');
       }
 
-      setActionLoading(prev => ({ ...prev, [`cart_${wishlistItemId}`]: true }));
-      const response = await fetch(`${API_BASE_URL}/api/wishlist/move-to-cart`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ wishlistItemId, quantity }),
-        credentials: 'include',
+      setActionLoading(prev => ({ ...prev, [`cart_${normalizedWishlistItemId}`]: true }));
+
+      removeWishlistItemsLocally([normalizedWishlistItemId]);
+      setQuantities(prev => {
+        const next = { ...prev };
+        delete next[normalizedWishlistItemId];
+        return next;
       });
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Please log in to add items to cart');
-        }
-        if (response.status === 404) {
-          throw new Error('Item not found in wishlist');
-        }
-        throw new Error('Failed to move item to cart');
+
+      await moveWishlistItemToCart(
+        normalizedWishlistItemId,
+        normalizedQuantity,
+        token,
+      );
+
+      if (syncAfterMove) {
+        await Promise.all([refreshCart(), refreshWishlist()]);
       }
-      const data: ApiResponse<unknown> = await response.json();
-      if (data.success) {
-        await refreshCart();
-        await refreshWishlist();
-        if (showToast) {
-          toast.success('Item moved to cart successfully!');
-        }
-      } else {
-        throw new Error('Failed to move item to cart');
+      if (showToast) {
+        toast.success('Item moved to cart successfully!');
       }
+      return true;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to move item to cart';
-      toast.error(errorMessage);
+      if (item) {
+        await refreshWishlist();
+      }
+      const errorMessage =
+        (err as any)?.response?.data?.message ||
+        (err as any)?.response?.data?.error ||
+        (err as any)?.response?.data?.errors?.[0]?.message ||
+        (err instanceof Error ? err.message : 'Failed to move item to cart');
+      if (showToast) toast.error(errorMessage);
       console.error('Error moving to cart:', err);
+      return false;
     } finally {
-      setActionLoading(prev => ({ ...prev, [`cart_${wishlistItemId}`]: false }));
+      setActionLoading(prev => ({ ...prev, [`cart_${normalizedWishlistItemId}`]: false }));
     }
   };
   // ================================
@@ -309,13 +336,35 @@ const Wishlist: React.FC = () => {
         return;
       }
 
-      for (const item of availableItems) {
-        await handleMoveToCart(item.id, getItemQuantity(item.id), false);
+      removeWishlistItemsLocally(availableItems.map(item => item.id));
+      setQuantities(prev => {
+        const next = { ...prev };
+        availableItems.forEach(item => delete next[item.id]);
+        return next;
+      });
+
+      const results = await Promise.all(
+        availableItems.map((item) =>
+          handleMoveToCart(item.id, getItemQuantity(item.id), false, false, item)
+        )
+      );
+      const movedCount = results.filter(Boolean).length;
+      const failedCount = results.length - movedCount;
+
+      if (movedCount > 0) {
+        await Promise.all([refreshCart(), refreshWishlist()]);
       }
+
+      if (movedCount === 0) {
+        await refreshWishlist();
+        toast.error('Could not move wishlist items to cart. Please check stock or try again.');
+        return;
+      }
+
       toast.success(
-        availableItems.length === wishlistItems.length
+        failedCount === 0 && availableItems.length === wishlistItems.length
           ? 'All items moved to cart successfully!'
-          : 'Available items moved to cart successfully!'
+          : `${movedCount} item${movedCount === 1 ? '' : 's'} moved to cart${failedCount ? `, ${failedCount} failed` : ''}.`
       );
     } catch (err) {
       console.error('Error adding all to cart:', err);
@@ -353,10 +402,10 @@ const Wishlist: React.FC = () => {
                   <WishlistItemSkeleton key={index} />
                 ))}
               </div>
-            ) : !isAuthenticated ? (
+            ) : !isCustomer ? (
               <div className="wishlist__error" role="alert">
                 <div className="wishlist__login-container">
-                  <p className="wishlist__login-message">Please log in to view and manage your wishlist items</p>
+                  <p className="wishlist__login-message">Please log in with a customer account to view and manage your wishlist items</p>
                   <button
                     className="wishlist__login-button"
                     onClick={() => setShowAuthModal(true)}

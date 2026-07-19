@@ -6,6 +6,11 @@ import "../Styles/Header.css";
 
 interface HeaderProps {
   onSearch?: (query: string) => void;
+  searchValue?: string;
+  searchPlaceholder?: string;
+  isSearching?: boolean;
+  searchResultsLabel?: string;
+  onClearSearch?: () => void;
   showSearch?: boolean;
   title?: string;
   subtitle?: string;
@@ -24,6 +29,11 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({
   onSearch,
+  searchValue,
+  searchPlaceholder = "Search...",
+  isSearching = false,
+  searchResultsLabel,
+  onClearSearch,
   showSearch = true,
   title = "Dashboard",
   subtitle,
@@ -215,10 +225,29 @@ const Header: React.FC<HeaderProps> = ({
                 <input
                   type="search"
                   className="admin-page-header__search-input"
-                  placeholder="Search..."
+                  placeholder={searchPlaceholder}
                   aria-label="Search"
+                  value={searchValue}
                   onChange={(event) => onSearch?.(event.target.value)}
                 />
+                {isSearching && (
+                  <span
+                    className={`admin-page-header__search-spinner${
+                      searchValue ? " admin-page-header__search-spinner--with-clear" : ""
+                    }`}
+                    aria-label="Searching"
+                  />
+                )}
+                {searchValue && onClearSearch && (
+                  <button
+                    type="button"
+                    className="admin-page-header__search-clear"
+                    aria-label="Clear search"
+                    onClick={onClearSearch}
+                  >
+                    x
+                  </button>
+                )}
               </label>
             )}
 
@@ -292,6 +321,11 @@ const Header: React.FC<HeaderProps> = ({
               )}
             </div>
           </div>
+          {searchResultsLabel && (
+            <div className="admin-page-header__search-results">
+              {searchResultsLabel}
+            </div>
+          )}
         </section>
       )}
     </header>

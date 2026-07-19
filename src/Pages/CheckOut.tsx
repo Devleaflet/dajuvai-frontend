@@ -19,10 +19,46 @@ interface PromoCode {
 	applyOn: 'LINE_TOTAL' | 'SHIPPING';
 }
 
+interface VendorShippingLine {
+	vendorId: number;
+	vendorName: string;
+	vendorDistrict: string;
+	customerDistrict: string;
+	shippingZone: 'SAME_DISTRICT' | 'CROSS_DISTRICT';
+	shippingFee: number;
+	merchandiseSubtotal: number;
+}
+
+// Authoritative checkout totals from the backend (ShippingCalculationService)
+// — the frontend renders these, it never recomputes shipping or the grand
+// total itself.
+interface CheckoutEstimate {
+	merchandiseSubtotal: number;
+	vendorShippingBreakdown: VendorShippingLine[];
+	shippingTotal: number;
+	discountTotal: number;
+	appliedPromoCode: string | null;
+	taxTotal: number;
+	grandTotal: number;
+}
+
+interface ConfirmedOrderSummary {
+	orderId: number | null;
+	orderNumber: string | null;
+	paymentMethod: string;
+	paymentStatus: string;
+	subtotal: number;
+	shippingTotal: number;
+	discountTotal: number;
+	taxTotal: number;
+	grandTotal: number;
+	itemCount: number;
+}
+
 interface CartItem {
 	id: number;
 	quantity: number;
-	price: string;
+	price: string | number;
 	name: string;
 	description?: string;
 	image: string | null;
@@ -40,13 +76,14 @@ interface CartItem {
 		originalPrice?: number;
 		variantImgUrls?: string[];
 	};
+	selectedVariant?: CartItem['variant'];
 	attributes?: Record<string, unknown>;
 	variantAttributes?: Record<string, unknown>;
 	product?: {
 		id: number;
-		name: string;
+		name?: string;
 		vendorId?: number;
-		vendor?: {
+		vendor?: string | {
 			id?: number;
 			businessName?: string;
 			district?: { name: string };
@@ -54,13 +91,11 @@ interface CartItem {
 	};
 }
 
-interface ShippingGroup {
-	vendorDistrict: string;
-	vendorName: string;
-	items: CartItem[];
-	shippingCost: number;
-	subtotal: number;
-	lineTotal: number;
+interface PaymentMethodOption {
+	id: string;
+	name: string;
+	disabled?: boolean;
+	message?: string;
 }
 
 const getPaymentReturnBaseUrl = () =>
@@ -73,12 +108,18 @@ const OrderSuccessModal: React.FC<{
 	onContinueShopping: () => void;
 	totalAmount: number;
 	paymentMethod: string;
+	orderNumber?: string | null;
+	itemCount?: number;
+	paymentStatus?: string;
 }> = ({
 	open,
 	onViewOrder,
 	onContinueShopping,
 	totalAmount,
 	paymentMethod,
+	orderNumber,
+	itemCount,
+	paymentStatus,
 }) => {
 		if (!open) return null;
 
@@ -104,14 +145,32 @@ const OrderSuccessModal: React.FC<{
 							your order details shortly.
 						</p>
 						<div className="checkout-success-modal__order-info">
+							{orderNumber && (
+								<div className="checkout-success-modal__info-item">
+									<span>Order Number:</span>
+									<span>{orderNumber}</span>
+								</div>
+							)}
 							<div className="checkout-success-modal__info-item">
 								<span>Order Total:</span>
 								<span>Rs {totalAmount.toLocaleString()}</span>
 							</div>
+							{typeof itemCount === 'number' && itemCount > 0 && (
+								<div className="checkout-success-modal__info-item">
+									<span>Items:</span>
+									<span>{itemCount}</span>
+								</div>
+							)}
 							<div className="checkout-success-modal__info-item">
 								<span>Payment Method:</span>
 								<span>{paymentMethod.replace(/_/g, ' ')}</span>
 							</div>
+							{paymentStatus && (
+								<div className="checkout-success-modal__info-item">
+									<span>Payment Status:</span>
+									<span>{paymentStatus}</span>
+								</div>
+							)}
 						</div>
 						<div className="checkout-success-modal__actions">
 							<button
@@ -150,6 +209,7 @@ const Checkout: React.FC = () => {
 		cartItems: contextCartItems,
 		handleIncreaseQuantity,
 		handleDecreaseQuantity,
+		setCartItems,
 	} = useCart();
 	let cartItems: CartItem[] = contextCartItems;
 
@@ -218,7 +278,7 @@ const Checkout: React.FC = () => {
 	const [selectedPaymentMethod, setSelectedPaymentMethod] =
 		useState('CASH_ON_DELIVERY');
 
-	const availablePaymentMethods = [
+	const availablePaymentMethods: PaymentMethodOption[] = [
 		{ id: 'CASH_ON_DELIVERY', name: 'Cash on Delivery' },
 		{ id: "ESEWA", name: "eSewa" },
 		{ id: 'NPX', name: 'Nepal Payment System' },
@@ -229,6 +289,8 @@ const Checkout: React.FC = () => {
 	const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 	const [showAlert, setShowAlert] = useState(false);
 	const [alertMessage, setAlertMessage] = useState('');
+	const [confirmedOrderSummary, setConfirmedOrderSummary] =
+		useState<ConfirmedOrderSummary | null>(null);
 	const [showPromoField, setShowPromoField] = useState(false);
 	const [enteredPromoCode, setEnteredPromoCode] = useState('');
 	const [appliedPromoCode, setAppliedPromoCode] = useState<PromoCode | null>(
@@ -566,6 +628,8 @@ const Checkout: React.FC = () => {
 	}, [user?.id, token]);
 
 	const handlePlaceOrder = async () => {
+		if (isPlacingOrder) return;
+
 		// Validate all fields
 		const newErrors: Record<string, string> = {};
 		const newTouched: Record<string, boolean> = {};
@@ -609,6 +673,9 @@ const Checkout: React.FC = () => {
 
 		setIsPlacingOrder(true);
 
+		const idempotencyKey = uuidv4();
+		const submittedSummary = buildSubmittedOrderSummary();
+
 		try {
 			let orderData;
 			if (location.state?.buyNow && cartItems.length === 1) {
@@ -631,6 +698,7 @@ const Checkout: React.FC = () => {
 					paymentMethod: selectedPaymentMethod,
 					phoneNumber: billingDetails.phoneNumber,
 					fullName: billingDetails.fullName,
+					idempotencyKey,
 				};
 
 				if (!orderData.variantId) {
@@ -656,6 +724,7 @@ const Checkout: React.FC = () => {
 					phoneNumber: billingDetails.phoneNumber,
 					items: orderItems,
 					promoCode: enteredPromoCode || undefined,
+					idempotencyKey,
 				};
 			}
 
@@ -678,38 +747,19 @@ const Checkout: React.FC = () => {
 
 			if (result.success) {
 				if (selectedPaymentMethod === 'CASH_ON_DELIVERY') {
-					// Show custom popup with navigation options
+					const summary = normalizeConfirmedOrderSummary(
+						result,
+						submittedSummary
+					);
+					setConfirmedOrderSummary(summary);
+					if (!location.state?.buyNow) {
+						setCartItems([]);
+					}
+
 					const deliveryTime = getOverallDeliveryTime();
 					setAlertMessage(
 						`Your order has been placed successfully! Expected delivery: ${deliveryTime}. Do you want to see full details?`
 					);
-					setShowAlert(true);
-					// Store order details for navigation
-					const orderDetails = {
-						orderId: result.data?.id || null,
-						totalAmount: finalTotal,
-					};
-					// Define buttons for the modal
-					const buttons = [
-						{
-							label: 'Go to Order Details',
-							action: () => {
-								navigate('/user-profile', {
-									state: { activeTab: 'orders', orderDetails },
-								});
-								setShowAlert(false);
-							},
-							style: { backgroundColor: '#ff6b35', color: 'white' },
-						},
-						{
-							label: 'Shop More',
-							action: () => {
-								navigate('/shop');
-								setShowAlert(false);
-							},
-							style: { backgroundColor: '#22c55e', color: 'white' },
-						},
-					];
 					setShowAlert(true);
 				} else if (selectedPaymentMethod === 'ESEWA') {
 					if (result.esewaRedirectUrl) {
@@ -763,42 +813,19 @@ const Checkout: React.FC = () => {
 		}
 	};
 
-	const normalizeDistrict = (district: string): string => {
-		const kathmandu_valley = ['kathmandu', 'lalitpur', 'bhaktapur'];
-		if (kathmandu_valley.includes(district.toLowerCase())) {
-			return 'Kathmandu Valley';
-		}
-		return district;
-	};
-
-	const calculateDeliveryTime = (
-		customerDistrict: string,
-		vendorDistrict: string
-	): string => {
-		const normalizedCustomerDistrict = normalizeDistrict(customerDistrict);
-		const normalizedVendorDistrict = normalizeDistrict(vendorDistrict);
-
-		if (normalizedCustomerDistrict === normalizedVendorDistrict) {
-			return '1-2 days';
-		} else {
-			return '3-5 days';
-		}
-	};
+	// Delivery estimate only — actual shipping fee/zone always comes from
+	// checkoutEstimate.vendorShippingBreakdown (backend ShippingCalculationService).
+	const deliveryTimeForZone = (zone?: 'SAME_DISTRICT' | 'CROSS_DISTRICT'): string =>
+		zone === 'SAME_DISTRICT' ? '1-2 days' : '3-5 days';
 
 	const getOverallDeliveryTime = (): string => {
-		if (!billingDetails.district || vendorGroups.length === 0) {
+		if (!checkoutEstimate || checkoutEstimate.vendorShippingBreakdown.length === 0) {
 			return '3-5 days';
 		}
-
-		const deliveryTimes = vendorGroups.map((group) =>
-			calculateDeliveryTime(billingDetails.district, group.vendorDistrict)
+		const anyCrossDistrict = checkoutEstimate.vendorShippingBreakdown.some(
+			(vb) => vb.shippingZone !== 'SAME_DISTRICT'
 		);
-
-		// If any vendor requires 3-5 days, the overall delivery is 3-5 days
-		if (deliveryTimes.some((time) => time === '3-5 days')) {
-			return '3-5 days';
-		}
-		return '1-2 days';
+		return anyCrossDistrict ? '3-5 days' : '1-2 days';
 	};
 
 	const [vendorCache, setVendorCache] = useState<{
@@ -845,9 +872,13 @@ const Checkout: React.FC = () => {
 				district: vendorCache[item.product.vendorId].district.name,
 			};
 		}
+		const vendor =
+			item.product?.vendor && typeof item.product.vendor === 'object'
+				? item.product.vendor
+				: null;
 		return {
-			businessName: item.product?.vendor?.businessName || 'Unknown Vendor',
-			district: item.product?.vendor?.district?.name || 'Unknown District',
+			businessName: vendor?.businessName || 'Unknown Vendor',
+			district: vendor?.district?.name || 'Unknown District',
 		};
 	};
 
@@ -858,74 +889,161 @@ const Checkout: React.FC = () => {
 		return item.quantity;
 	};
 
-	const groupItemsByVendor = (): ShippingGroup[] => {
-		if (cartItems.length === 0) {
-			return [];
-		}
+	// Groups items by vendor purely for display (product list/images) — money
+	// figures (subtotal, shipping fee, zone) always come from
+	// checkoutEstimate.vendorShippingBreakdown, never recomputed here.
+	const groupItemsForDisplay = (): { vendorId: number; vendorName: string; vendorDistrict: string; items: CartItem[] }[] => {
+		if (cartItems.length === 0) return [];
 
-		const vendorGroups: { [key: string]: CartItem[] } = {};
-
+		const groups: { [vendorId: number]: CartItem[] } = {};
 		cartItems.forEach((item) => {
-			const vendorInfo = getVendorInfo(item);
-			const key = `${vendorInfo.businessName}-${vendorInfo.district}`;
-
-			if (!vendorGroups[key]) {
-				vendorGroups[key] = [];
-			}
-
-			vendorGroups[key].push(item);
+			const vendorId = item.product?.vendorId;
+			if (vendorId == null) return;
+			if (!groups[vendorId]) groups[vendorId] = [];
+			groups[vendorId].push(item);
 		});
 
-		return Object.entries(vendorGroups).map(([key, items]) => {
-			const subtotal = items.reduce((sum, item) => {
-				const quantity = getCurrentQuantity(item);
-				return sum + Number(item.price) * quantity;
-			}, 0);
-
+		return Object.entries(groups).map(([vendorId, items]) => {
 			const vendorInfo = getVendorInfo(items[0]);
-			let shippingCost = 0;
-
-			if (billingDetails.district) {
-				const customerDistrict = normalizeDistrict(billingDetails.district);
-				const normalizedVendorDistrict = normalizeDistrict(vendorInfo.district);
-				shippingCost =
-					customerDistrict === normalizedVendorDistrict ? 100 : 200;
-			}
-
-			const lineTotal = subtotal + shippingCost;
-
 			return {
-				vendorDistrict: vendorInfo.district,
+				vendorId: Number(vendorId),
 				vendorName: vendorInfo.businessName,
+				vendorDistrict: vendorInfo.district,
 				items,
-				shippingCost,
-				subtotal,
-				lineTotal,
 			};
 		});
 	};
 
-	const vendorGroups = groupItemsByVendor();
+	const displayGroups = groupItemsForDisplay();
 
-	const subtotal = cartItems.reduce((sum, item) => {
-		const quantity = getCurrentQuantity(item);
-		return sum + Number(item.price) * quantity;
-	}, 0);
+	const [checkoutEstimate, setCheckoutEstimate] = useState<CheckoutEstimate | null>(null);
+	const [estimateLoading, setEstimateLoading] = useState(false);
+	const [estimateError, setEstimateError] = useState('');
 
-	const totalShipping = vendorGroups.reduce(
-		(sum, group) => sum + group.shippingCost,
-		0
-	);
+	useEffect(() => {
+		const fetchEstimate = async () => {
+			if (!token || cartItems.length === 0 || !billingDetails.district) {
+				setCheckoutEstimate(null);
+				return;
+			}
 
-	const total = subtotal + totalShipping;
+			setEstimateLoading(true);
+			setEstimateError('');
+			try {
+				const isBuyNow = Boolean(location.state?.buyNow) && cartItems.length === 1;
+				const shippingAddress = {
+					province: billingDetails.province,
+					city: billingDetails.city,
+					district: billingDetails.district,
+					streetAddress: billingDetails.streetAddress,
+					landmark: billingDetails.landmark || undefined,
+				};
 
+				const body = isBuyNow
+					? {
+						isBuyNow: true,
+						productId: cartItems[0].id,
+						variantId: cartItems[0].variantId || undefined,
+						quantity: buyNowQuantities[cartItems[0].id] || cartItems[0].quantity,
+						shippingAddress,
+						promoCode: appliedPromoCode?.promoCode || undefined,
+					}
+					: {
+						shippingAddress,
+						promoCode: appliedPromoCode?.promoCode || undefined,
+					};
+
+				const response = await fetch(`${API_BASE_URL}/api/order/estimate`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${token}`,
+					},
+					body: JSON.stringify(body),
+				});
+				const result = await response.json();
+
+				if (response.ok && result.success) {
+					setCheckoutEstimate(result.data);
+				} else {
+					setCheckoutEstimate(null);
+					setEstimateError(result.message || 'Could not calculate shipping for this address');
+				}
+			} catch (error) {
+				console.error('Error estimating checkout totals:', error);
+				setCheckoutEstimate(null);
+				setEstimateError('Could not calculate shipping for this address');
+			} finally {
+				setEstimateLoading(false);
+			}
+		};
+
+		fetchEstimate();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [
+		token,
+		cartItems,
+		billingDetails.district,
+		billingDetails.province,
+		billingDetails.city,
+		appliedPromoCode,
+	]);
+
+	const merchandiseSubtotal = checkoutEstimate?.merchandiseSubtotal ?? 0;
+	const totalShipping = checkoutEstimate?.shippingTotal ?? 0;
+	const discountAmount = checkoutEstimate?.discountTotal ?? 0;
+	const finalTotal = checkoutEstimate?.grandTotal ?? merchandiseSubtotal;
 	const discountPercentage = appliedPromoCode?.discountPercentage ?? 0;
-	const discountBase =
-		appliedPromoCode?.applyOn === 'SHIPPING' ? totalShipping : subtotal;
-	const discountAmount = appliedPromoCode
-		? Math.round((discountBase * discountPercentage) / 100)
-		: 0;
-	const finalTotal = total - discountAmount;
+
+	const toFiniteNumber = (value: unknown, fallback = 0): number => {
+		const numeric = Number(value);
+		return Number.isFinite(numeric) ? numeric : fallback;
+	};
+
+	const buildSubmittedOrderSummary = (): ConfirmedOrderSummary => ({
+		orderId: null,
+		orderNumber: null,
+		paymentMethod: selectedPaymentMethod,
+		paymentStatus:
+			selectedPaymentMethod === 'CASH_ON_DELIVERY' ? 'UNPAID' : 'PENDING',
+		subtotal: merchandiseSubtotal,
+		shippingTotal: totalShipping,
+		discountTotal: discountAmount,
+		taxTotal: checkoutEstimate?.taxTotal ?? 0,
+		grandTotal: finalTotal,
+		itemCount: cartItems.reduce(
+			(sum, item) => sum + getCurrentQuantity(item),
+			0
+		),
+	});
+
+	const normalizeConfirmedOrderSummary = (
+		result: any,
+		fallback: ConfirmedOrderSummary
+	): ConfirmedOrderSummary => {
+		const data = result?.orderSummary || result?.data || result || {};
+		return {
+			orderId: toFiniteNumber(data.orderId ?? data.id, fallback.orderId ?? 0) || fallback.orderId,
+			orderNumber: data.orderNumber ?? fallback.orderNumber,
+			paymentMethod: data.paymentMethod ?? fallback.paymentMethod,
+			paymentStatus: data.paymentStatus ?? fallback.paymentStatus,
+			subtotal: toFiniteNumber(
+				data.subtotal ?? data.merchandiseSubtotal,
+				fallback.subtotal
+			),
+			shippingTotal: toFiniteNumber(
+				data.shippingTotal ?? data.shippingFee,
+				fallback.shippingTotal
+			),
+			discountTotal: toFiniteNumber(data.discountTotal, fallback.discountTotal),
+			taxTotal: toFiniteNumber(data.taxTotal, fallback.taxTotal),
+			grandTotal: toFiniteNumber(
+				data.grandTotal ?? data.totalPrice,
+				fallback.grandTotal
+			),
+			itemCount: toFiniteNumber(data.itemCount, fallback.itemCount),
+		};
+	};
 
 	const getVariantLabel = (item: CartItem): string => {
 		const v = item?.variant || item?.selectedVariant || null;
@@ -1050,8 +1168,13 @@ const Checkout: React.FC = () => {
 						navigate('/shop');
 						setShowAlert(false);
 					}}
-					totalAmount={finalTotal}
-					paymentMethod={selectedPaymentMethod}
+					totalAmount={confirmedOrderSummary?.grandTotal ?? finalTotal}
+					paymentMethod={
+						confirmedOrderSummary?.paymentMethod ?? selectedPaymentMethod
+					}
+					orderNumber={confirmedOrderSummary?.orderNumber}
+					itemCount={confirmedOrderSummary?.itemCount}
+					paymentStatus={confirmedOrderSummary?.paymentStatus}
 				/>
 			) : (
 				<AlertModal
@@ -1462,9 +1585,18 @@ const Checkout: React.FC = () => {
 								Product details
 							</h4>
 							{cartItems.length > 0 ? (
-								vendorGroups.map((group, groupIndex) => (
+								displayGroups.map((group) => {
+									const vendorShipping = checkoutEstimate?.vendorShippingBreakdown.find(
+										(vb) => vb.vendorId === group.vendorId
+									);
+									const itemsSubtotal = group.items.reduce(
+										(sum, item) => sum + Number(item.price) * getCurrentQuantity(item),
+										0
+									);
+
+									return (
 									<div
-										key={groupIndex}
+										key={group.vendorId}
 										className="checkout-container__vendor-group"
 									>
 										<div className="checkout-container__vendor-info">
@@ -1529,54 +1661,61 @@ const Checkout: React.FC = () => {
 										))}
 										<div className="checkout-container__group-summary">
 											<div className="checkout-container__group-subtotal">
-												<span>Linetotal ({group.vendorName}):</span>
-												<span>Rs {group.subtotal.toLocaleString()}</span>
+												<span>Items subtotal ({group.vendorName}):</span>
+												<span>Rs {itemsSubtotal.toLocaleString()}</span>
 											</div>
-											{billingDetails.district && (
+											{billingDetails.district && vendorShipping && (
 												<div className="checkout-container__group-shipping">
-													<span>Shipping from {group.vendorDistrict}:</span>
+													<span>Shipping — {group.vendorName}:</span>
 													<span className="checkout-container__shipping-cost">
-														Rs {group.shippingCost.toLocaleString()}
-														{normalizeDistrict(billingDetails.district) ===
-															normalizeDistrict(group.vendorDistrict) && (
-																<small> (Same district)</small>
-															)}
+														Rs {vendorShipping.shippingFee.toLocaleString()}
+														{vendorShipping.shippingZone === 'SAME_DISTRICT' && (
+															<small> (Same district)</small>
+														)}
 													</span>
 													<div className="checkout-container__delivery-time">
 														<small>
-															Delivery:{' '}
-															{calculateDeliveryTime(
-																billingDetails.district,
-																group.vendorDistrict
-															)}
+															Estimated delivery: {deliveryTimeForZone(vendorShipping.shippingZone)}
 														</small>
 													</div>
 												</div>
 											)}
+											{billingDetails.district && !vendorShipping && !estimateLoading && (
+												<div className="checkout-container__group-shipping">
+													<small>Shipping unavailable for this address</small>
+												</div>
+											)}
 											<div className="checkout-container__group-line-total">
 												<span>
-													<strong>Sub Total ({group.vendorName}):</strong>
+													<strong>Vendor total ({group.vendorName}):</strong>
 												</span>
 												<span>
-													<strong>Rs {group.lineTotal.toLocaleString()}</strong>
+													<strong>
+														Rs {(itemsSubtotal + (vendorShipping?.shippingFee ?? 0)).toLocaleString()}
+													</strong>
 												</span>
 											</div>
 										</div>
 									</div>
-								))
+									);
+								})
 							) : (
 								<p>No items in cart.</p>
 							)}
 
+							{estimateError && (
+								<p style={{ color: '#b91c1c' }}>{estimateError}</p>
+							)}
+
 							<div className="checkout-container__order-total">
-								<span>Sub Total:</span>
-								<span>Rs {subtotal.toLocaleString()}</span>
+								<span>Subtotal (all items):</span>
+								<span>Rs {merchandiseSubtotal.toLocaleString()}</span>
 							</div>
 
 							{billingDetails.district && (
 								<div className="checkout-container__order-total">
-									<span>Total Shipping:</span>
-									<span>Rs {totalShipping.toLocaleString()}</span>
+									<span>Total shipping:</span>
+									<span>{estimateLoading ? 'Calculating…' : `Rs ${totalShipping.toLocaleString()}`}</span>
 								</div>
 							)}
 

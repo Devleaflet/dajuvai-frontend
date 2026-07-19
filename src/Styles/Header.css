@@ -31,6 +31,12 @@
   background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  /* backdrop-filter creates its own stacking context. Without an explicit
+     z-index here, this whole box (including the account dropdown menu
+     absolutely-positioned inside it) paints BELOW the toolbar section that
+     follows it in the DOM, regardless of the menu's own z-index. */
+  position: relative;
+  z-index: 2;
 }
 
 .admin-page-header__heading {
@@ -255,6 +261,8 @@
    ========================= */
 
 .admin-page-header__toolbar {
+  position: relative;
+  z-index: 1;
   padding: 16px var(--admin-page-padding);
   border-bottom: 1px solid var(--admin-border);
   background: #f8fafc;
@@ -285,7 +293,7 @@
 .admin-page-header__search-input {
   width: 100%;
   height: 48px;
-  padding: 0 16px 0 46px;
+  padding: 0 48px 0 46px;
   border: 1px solid #d8e0ea;
   border-radius: 12px;
   background: #fff;
@@ -298,6 +306,55 @@
     border-color 180ms ease,
     box-shadow 180ms ease,
     background-color 180ms ease;
+}
+
+.admin-page-header__search-clear {
+  position: absolute;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.admin-page-header__search-clear:hover {
+  background: #e2e8f0;
+  color: #111827;
+}
+
+.admin-page-header__search-spinner {
+  position: absolute;
+  right: 16px;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fed7aa;
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: admin-search-spin 700ms linear infinite;
+}
+
+.admin-page-header__search-spinner--with-clear {
+  right: 44px;
+}
+
+@keyframes admin-search-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.admin-page-header__search-results {
+  margin-top: 10px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .admin-page-header__search-input::placeholder {
@@ -509,6 +566,7 @@
   .admin-page-header__chevron,
   .admin-page-header__search-input,
   .admin-page-header__select,
+  .admin-page-header__search-spinner,
   .admin-page-header__menu {
     animation: none;
     transition: none;

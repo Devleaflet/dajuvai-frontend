@@ -30,7 +30,6 @@ const fetchHeroBanners = async (): Promise<Slide[]> => {
     throw new Error(`Failed to fetch banners: ${response.statusText}`);
   }
   const data = await response.json();
-  console.table(data)
   //('Fetched banners:', data);
 
   return data.data
@@ -63,9 +62,12 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
   const [translateX, setTranslateX] = useState<number>(0);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const autoSlideRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isPausedRef = useRef(false);
 
   const clickThreshold = 5; // Pixels to consider as a click vs. drag
   const swipeThreshold = sliderRef.current ? sliderRef.current.offsetWidth / 4 : 100;
+  const AUTO_SLIDE_DELAY = 2500;
 
   const { data: slides = [], isLoading, error } = useQuery<Slide[], Error>({
     queryKey: ['heroBanners'],
@@ -82,14 +84,12 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   });
 
   useEffect(() => {
-    if (slides.length > 1) {
-      startAutoSlide();
-    }
+    startAutoSlide();
 
     return () => {
       clearAutoSlide();
     };
-  }, [slides]);
+  }, [slides.length]);
 
 
   useEffect(() => {
@@ -98,24 +98,31 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   }, [onLoad, slides]);
 
   const goToSlide = (index: number): void => {
+    clearAutoSlide();
     setActiveSlide(index);
     setTranslateX(0);
+    startAutoSlide();
     //('Go to slide:', index);
   };
 
   const goToPrevSlide = (): void => {
+    clearAutoSlide();
     setActiveSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
     setTranslateX(0);
+    startAutoSlide();
     //('Previous slide');
   };
 
   const goToNextSlide = (): void => {
+    clearAutoSlide();
     setActiveSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
     setTranslateX(0);
+    startAutoSlide();
     //('Next slide');
   };
 
   const handleDragStart = (clientX: number, clientY: number): void => {
+    pauseAutoSlide();
     setIsDragging(true);
     setStartPos({ x: clientX, y: clientY });
     setTranslateX(0);
@@ -130,7 +137,11 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
     //('Dragging, translateX:', currentDrag);
   };
 
-  const handleDragEnd = (clientX: number, clientY: number): void => {
+  const handleDragEnd = (
+    clientX: number,
+    clientY: number,
+    resumeWhenDone = true,
+  ): void => {
     if (!isDragging) return;
     setIsDragging(false);
 
@@ -156,6 +167,9 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
       }
     }
     setStartPos(null);
+    if (resumeWhenDone) {
+      resumeAutoSlide();
+    }
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
@@ -168,12 +182,14 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   };
 
   const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>): void => {
-    handleDragEnd(e.clientX, e.clientY);
+    handleDragEnd(e.clientX, e.clientY, false);
   };
 
   const handleMouseLeave = (): void => {
     if (isDragging) {
-      handleDragEnd(startPos?.x || 0, startPos?.y || 0);
+      handleDragEnd(startPos?.x || 0, startPos?.y || 0, true);
+    } else {
+      resumeAutoSlide();
     }
   };
 
@@ -188,7 +204,7 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>): void => {
     const clientX = e.changedTouches[0]?.clientX || startPos?.x || 0;
     const clientY = e.changedTouches[0]?.clientY || startPos?.y || 0;
-    handleDragEnd(clientX, clientY);
+    handleDragEnd(clientX, clientY, true);
   };
 
   const handleImageClick = (slide: Slide): void => {
@@ -261,10 +277,6 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
     }
   };
 
-  const AUTO_SLIDE_DELAY = 3000; 
-
-  const autoSlideRef = useRef<NodeJS.Timeout | null>(null)
-
   const clearAutoSlide = () => {
     if (autoSlideRef.current) {
       clearInterval(autoSlideRef.current);
@@ -275,12 +287,24 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   const startAutoSlide = () => {
     clearAutoSlide();
 
+    if (slides.length <= 1 || isPausedRef.current) return;
+
     autoSlideRef.current = setInterval(() => {
       setActiveSlide((prev) =>
         prev === slides.length - 1 ? 0 : prev + 1
       );
       setTranslateX(0);
     }, AUTO_SLIDE_DELAY);
+  };
+
+  const pauseAutoSlide = () => {
+    isPausedRef.current = true;
+    clearAutoSlide();
+  };
+
+  const resumeAutoSlide = () => {
+    isPausedRef.current = false;
+    startAutoSlide();
   };
 
 
@@ -293,6 +317,7 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
     <div
       className="hero-slider"
       ref={sliderRef}
+      onMouseEnter={pauseAutoSlide}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}

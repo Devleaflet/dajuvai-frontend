@@ -14,6 +14,7 @@ import { useAuth } from "../context/AuthContext";
 import VendorService from "../services/vendorService";
 import { FaCamera } from "react-icons/fa";
 import { Vendor } from "../Components/Types/vendor";
+import UserOrderDetailModal from "../Components/Modal/UserOrderDetailModal";
 
 interface UserDetails {
   id?: number;
@@ -103,6 +104,7 @@ const UserProfile: React.FC = () => {
     Record<number, string>
   >({});
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [selectedOrderDetailId, setSelectedOrderDetailId] = useState<number | string | null>(null);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -925,11 +927,13 @@ const UserProfile: React.FC = () => {
             <div
               key={order.id}
               className={`order-item ${isMobile ? "order-item--mobile" : ""}`}
+              onClick={() => setSelectedOrderDetailId(order.id)}
+              style={{ cursor: "pointer" }}
             >
               {isMobile ? (
                 <>
                   <div className="order-item__mobile-header">
-                    <div className="order-item__id">#{order.id}</div>
+                  <div className="order-item__id">#{order.orderNumber || order.id}</div>
                     <div className="order-item__mobile-products">
                       {order.orderItems && order.orderItems.length > 0 ? (
                         (() => {
@@ -1059,7 +1063,7 @@ const UserProfile: React.FC = () => {
               ) : (
                 <>
                   <div className="order-item__id" data-label="Order ID">
-                    #{order.id}
+                    #{order.orderNumber || order.id}
                   </div>
                   <div className="order-item__date" data-label="Date">
                     {new Date(order.createdAt).toLocaleDateString()}
@@ -1310,6 +1314,12 @@ const UserProfile: React.FC = () => {
       </div>
 
       {!popup && <Footer />}
+
+      <UserOrderDetailModal
+        show={selectedOrderDetailId !== null}
+        onClose={() => setSelectedOrderDetailId(null)}
+        orderId={selectedOrderDetailId}
+      />
     </>
   );
 };
