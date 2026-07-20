@@ -8,21 +8,36 @@ import logo from "../assets/logo.webp";
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function Sidebar({ ...props }: SidebarProps) {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1000);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const { authState } = useVendorAuth();
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 1000);
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
   // Get the current location using React Router's useLocation hook
   const location = useLocation();
+
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isMobileOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMobileOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMobileOpen]);
 
   // Fetch unread count — reset to 0 when on the notifications page, poll otherwise
   useEffect(() => {
@@ -53,35 +68,64 @@ export function Sidebar({ ...props }: SidebarProps) {
     return () => clearInterval(interval);
   }, [authState.token, location.pathname]);
 
-  const { style: propsStyle, className: propsClassName, ...restProps } = props;
+  const { className: propsClassName, ...restProps } = props;
 
   return (
-    <div
-      className={`sidebar ${isMobile ? "sidebar--dock" : ""} ${propsClassName || ""}`.trim()}
-      style={{
-        ...(!isMobile && {
-          position: "sticky",
-          top: 0,
-          height: "100vh",
-          overflowY: "auto",
-          flexShrink: 0,
-          zIndex: 100,
-        }),
-        ...propsStyle,
-      }}
+    <aside
+      className={`sidebar${isMobileOpen ? " sidebar--open" : ""} ${propsClassName || ""}`.trim()}
+      aria-label="Vendor navigation"
       {...restProps}
     >
-      {/* Only show header in desktop view */}
-      {!isMobile && (
-        <div className="sidebar__header">
-          <Link to="/" className="sidebar__logo">
-            <img src={logo} alt="Dajuvai Logo" style={{ width: "32px", height: "32px", objectFit: "contain" }} />
-            <span className="sidebar__logo-text">Daju Vai</span>
-          </Link>
+      <div className="sidebar__mobile-bar">
+        <div className="sidebar__mobile-brand">
+          <img src={logo} alt="" aria-hidden="true" />
+          <span className="sidebar__mobile-brand-text">Vendor Panel</span>
         </div>
-      )}
 
-      <nav className="sidebar__nav">
+        <button
+          type="button"
+          className="sidebar__menu-button"
+          aria-label="Open vendor navigation"
+          aria-expanded={isMobileOpen}
+          aria-controls="vendor-sidebar-panel"
+          onClick={() => setIsMobileOpen(true)}
+        >
+          <MenuIcon />
+        </button>
+      </div>
+
+      <button
+        type="button"
+        className="sidebar__backdrop"
+        aria-label="Close vendor navigation"
+        tabIndex={isMobileOpen ? 0 : -1}
+        onClick={() => setIsMobileOpen(false)}
+      />
+
+      <div
+        id="vendor-sidebar-panel"
+        className="sidebar__panel"
+        aria-hidden={!isMobileOpen}
+      >
+        <div className="sidebar__header">
+          <div className="sidebar__header-inner">
+            <Link to="/" className="sidebar__logo">
+              <img src={logo} alt="Dajuvai Logo" className="sidebar__logo-image" />
+              <span className="sidebar__logo-text">Vendor Panel</span>
+            </Link>
+
+            <button
+              type="button"
+              className="sidebar__close-button"
+              aria-label="Close vendor navigation"
+              onClick={() => setIsMobileOpen(false)}
+            >
+              <CloseIcon />
+            </button>
+          </div>
+        </div>
+
+        <nav className="sidebar__nav">
         {/* Pass the current location to NavItem */}
         <NavItem
           to="/dashboard"
@@ -157,8 +201,9 @@ export function Sidebar({ ...props }: SidebarProps) {
         >
           Commission
         </NavItem>
-      </nav>
-    </div>
+        </nav>
+      </div>
+    </aside>
   );
 }
 
@@ -168,6 +213,40 @@ interface NavItemProps {
   children: React.ReactNode;
   active?: boolean;
   badge?: number;
+}
+
+const svgProps = {
+  width: 20,
+  height: 20,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  xmlns: "http://www.w3.org/2000/svg",
+};
+
+function MenuIcon() {
+  return (
+    <svg {...svgProps} aria-hidden="true">
+      <path
+        d="M4 7h16M4 12h16M4 17h16"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg {...svgProps} aria-hidden="true">
+      <path
+        d="m6 6 12 12M18 6 6 18"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
 }
 
 function NavItem({ to, icon, children, active, badge }: NavItemProps) {

@@ -38,6 +38,13 @@
   display: none;
 }
 
+.sidebar__panel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+
 .sidebar__header {
   display: flex;
   align-items: center;
@@ -409,6 +416,16 @@
     padding-top: calc(
       var(--mobile-admin-header-height) + env(safe-area-inset-top)
     );
+  }
+
+  .vendor-dash-container {
+    padding-top: calc(
+      var(--mobile-admin-header-height) + env(safe-area-inset-top)
+    );
+  }
+
+  .vendor-dash-container .dashboard {
+    min-height: calc(100dvh - var(--mobile-admin-header-height));
   }
 }
 

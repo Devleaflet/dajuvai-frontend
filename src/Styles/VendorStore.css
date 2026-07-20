@@ -293,11 +293,14 @@
 /* Product Grid */
 .vendor-store__product-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-	gap: 1rem;
-	justify-items: start;
-	/* bigger gap */
-	/* margin: 2.2rem !important; */
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 1.25rem;
+	align-items: stretch;
+}
+
+.vendor-store__product-grid .product-card__link-wrapper {
+	width: 100%;
+	min-width: 0;
 }
 
 /* No products */
@@ -417,7 +420,7 @@
 	}
 
 	.vendor-store__product-grid {
-		grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 	}
 }
 
@@ -438,7 +441,7 @@
 	}
 
 	.vendor-store__product-grid {
-		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 	}
 
 	.products-title {
@@ -460,13 +463,13 @@
 	}
 
 	.vendor-store__product-grid {
-		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 	}
 }
 
 @media (min-width: 1200px) {
 	.vendor-store__product-grid {
-		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
 		margin-bottom: 0.5rem;
 	}
 }
@@ -582,7 +585,7 @@
 
 @media (max-width: 768px) {
 	.vendor-store__product-grid {
-		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 1rem;
 	}
 
@@ -594,7 +597,7 @@
 /* Mobile (≤480px → 2 cards per row) */
 @media (max-width: 480px) {
 	.vendor-store__product-grid {
-		grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 0.7rem;
 	}
 
@@ -622,7 +625,7 @@
 /* Extra Small Mobile (≤360px → still 2 cards, tighter gap) */
 @media (max-width: 360px) {
 	.vendor-store__product-grid {
-		grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 0.5rem;
 	}
 
