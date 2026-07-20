@@ -8,12 +8,11 @@
    - Recommend product 
    ========================================================================== */
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { toast } from "react-hot-toast";
 import { FaCartPlus } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { addToWishlist, removeFromWishlist } from "../api/wishlist";
-import { useWishlist } from "../context/WishlistContext";
+import { makeWishlistKey, useWishlist } from "../context/WishlistContext";
 import defaultProductImage from "../assets/logo.webp";
 import star from "../assets/star.png";
 import AuthModal from "../Components/AuthModal";
@@ -22,6 +21,7 @@ import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useUI } from "../context/UIContext";
 import { getProductPrimaryImage } from '../utils/getProductPrimaryImage';
+import { getDiscountDisplay } from "../utils/priceDisplay";
 import "../ALT/ProductCartd1.css";
 
 interface ProductCardProps {
@@ -31,13 +31,16 @@ interface ProductCardProps {
 const Product1: React.FC<ProductCardProps> = ({ product }) => {
 	const { handleCartOnAdd } = useCart();
 	const { token, isAuthenticated } = useAuth();
-	const { wishlist, refreshWishlist } = useWishlist();
+	const {
+		isWishlisted: hasWishlistItem,
+		getWishlistItem,
+		addWishlistItem,
+		removeWishlistItem,
+		pendingKeys,
+	} = useWishlist();
 	const { cartOpen } = useUI();
-	const [wishlistLoading, setWishlistLoading] = useState(false);
 	const [authModalOpen, setAuthModalOpen] = useState(false);
 	const [imageError, setImageError] = useState(false);
-	const [isWishlisted, setIsWishlisted] = useState(false);
-	const [wishlistItemId, setWishlistItemId] = useState<number | null>(null);
 
 
 	const {
@@ -55,29 +58,30 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 		? defaultProductImage
 		: getProductPrimaryImage(product, defaultProductImage);
 
-	useEffect(() => {
-		if (isAuthenticated && token) {
-			const variantCount = product.variants?.length || 0;
-			const variantId = variantCount > 0 ? product.variants![0].id : undefined;
-			const wishlistItem = wishlist.find((item: any) => {
-				const productMatch = item.productId === id || item.product?.id === id;
-				const variantMatch = variantId
-					? item.variantId === variantId || item.variant?.id === variantId
-					: !item.variantId && !item.variant?.id;
-				return productMatch && variantMatch;
-			});
-			if (wishlistItem) {
-				setIsWishlisted(true);
-				setWishlistItemId(wishlistItem.id);
-			} else {
-				setIsWishlisted(false);
-				setWishlistItemId(null);
-			}
-		} else {
-			setIsWishlisted(false);
-			setWishlistItemId(null);
-		}
-	}, [wishlist, id, product.variants, isAuthenticated, token]);
+	const availableVariants = (product.variants || []).filter(
+		(variant) =>
+			Number(variant.stock || 0) > 0 && variant.status !== "OUT_OF_STOCK"
+	);
+	const selectedCardVariant =
+		product.hasVariants && availableVariants.length > 0
+			? availableVariants[0]
+			: product.variants?.[0];
+	const displayStock = product.hasVariants
+		? (product.variants || []).reduce(
+				(total, variant) => total + Number(variant.stock || 0),
+				0
+			)
+		: Number(product.stock || product.piece || 0);
+	const isOutOfStock =
+		product.status === "OUT_OF_STOCK" ||
+		(product.hasVariants
+			? availableVariants.length === 0
+			: displayStock <= 0);
+	const wishlistVariantId = product.hasVariants ? selectedCardVariant?.id : undefined;
+	// Single source of truth: WishlistContext, so every card/page reflects the
+	// same state instantly instead of each component tracking its own copy.
+	const isWishlisted = hasWishlistItem(id, wishlistVariantId);
+	const wishlistPending = pendingKeys.has(makeWishlistKey(id, wishlistVariantId));
 
 	const handleImageError = () => {
 		setImageError(true);
@@ -89,24 +93,20 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 			setAuthModalOpen(true);
 			return;
 		}
+		if (wishlistPending) return;
 
-		setWishlistLoading(true);
 		try {
-			const variantCount = product.variants?.length || 0;
-			const variantId = variantCount > 0 ? product.variants![0].id : undefined;
-
-			if (isWishlisted && wishlistItemId) {
-				await removeFromWishlist(wishlistItemId, token);
-				toast.success("Removed from wishlist");
-				setIsWishlisted(false);
-				setWishlistItemId(null);
-				await refreshWishlist();
+			if (isWishlisted) {
+				const item = getWishlistItem(id, wishlistVariantId);
+				if (item?.id) {
+					await removeWishlistItem(item.id);
+					toast.success("Removed from wishlist");
+				}
 			} else {
-				const addedItem = await addToWishlist(id, variantId, token);
-				toast.success("Added to wishlist");
-				setIsWishlisted(true);
-				setWishlistItemId(addedItem?.id || null);
-				await refreshWishlist();
+				const addedItem = await addWishlistItem(id, wishlistVariantId);
+				if (addedItem !== null) {
+					toast.success("Added to wishlist");
+				}
 			}
 		} catch (e: any) {
 			const status = e?.response?.status;
@@ -118,10 +118,6 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 
 			if (status === 409 || /already/i.test(msg)) {
 				toast("Already present in the wishlist");
-				setIsWishlisted(true);
-				if (!wishlistItemId) {
-					await refreshWishlist();
-				}
 			} else {
 				toast.error(
 					isWishlisted
@@ -130,8 +126,6 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 				);
 				console.error("Wishlist operation failed:", e);
 			}
-		} finally {
-			setWishlistLoading(false);
 		}
 	};
 
@@ -140,10 +134,10 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 	const getDisplayPrices = () => {
 		if (product.hasVariants && product.variants?.length) {
 			const validVariants = product.variants
-				.filter(v => v.status !== "OUT_OF_STOCK")
+				.filter(v => Number(v.stock || 0) > 0 && v.status !== "OUT_OF_STOCK")
 				.map(v => ({
-					base: Number(v.basePrice) || 0,
-					final: Number(v.finalPrice) || (Number(v.basePrice) || 0),
+					base: Number((v as any).basePrice ?? v.price) || 0,
+					final: Number(v.finalPrice) || (Number((v as any).basePrice ?? v.price) || 0),
 					discount: v.discount !== undefined ? v.discount : product.discount,
 					discountType: v.discountType !== undefined ? v.discountType : product.discountType
 				}));
@@ -165,19 +159,18 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 	};
 
 	const { base: basePrice, final: finalPrice, discount, discountType } = getDisplayPrices();
-	const savingPrice = (basePrice > finalPrice) ? (basePrice - finalPrice).toFixed(2) : null;
 
-	let discountPercentageNumber = 0;
-	if (discountType === "PERCENTAGE" && discount !== undefined && discount !== null && `${discount}` !== "0" && `${discount}` !== "0.00") {
-		discountPercentageNumber = Math.round(parseFloat(`${discount}`));
-	} else if (basePrice > 0 && finalPrice < basePrice) {
-		discountPercentageNumber = Math.max(1, Math.round(((basePrice - finalPrice) / basePrice) * 100));
-	} else if (discountType === "FLAT" && discount !== undefined && discount !== null && basePrice > 0 && `${discount}` !== "0" && `${discount}` !== "0.00") {
-		discountPercentageNumber = Math.max(1, Math.round((parseFloat(`${discount}`) / basePrice) * 100));
-	} else if (product.discountPercentage && product.discountPercentage !== "0%") {
-		const parsed = Math.round(parseFloat(product.discountPercentage));
-		if (parsed > 0) discountPercentageNumber = parsed;
-	}
+	// Same shared utility used on product details/cart/checkout, so the
+	// badge/savings shown here never disagrees with those pages.
+	const discountDisplay = getDiscountDisplay({
+		basePrice,
+		finalPrice,
+		discount,
+		discountType,
+	});
+	const savingPrice = discountDisplay.hasDiscount
+		? discountDisplay.savingsAmount.toFixed(2)
+		: null;
 
 
 	return (
@@ -186,6 +179,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 			className="product1__link-wrapper"
 		>
 			<div className="product1">
+				{isOutOfStock && <span className="product1__stock-badge">Out of stock</span>}
 				<div className="product1__header">
 					<button
 						className="product1__wishlist-button"
@@ -197,7 +191,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 							e.stopPropagation();
 							handleWishlist();
 						}}
-						disabled={wishlistLoading}
+						disabled={wishlistPending}
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -210,9 +204,9 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 						</svg>
 					</button>
 					{isBestSeller && <span className="product1__tag">Best seller</span>}
-					{discountPercentageNumber > 0 && (
+					{discountDisplay.badgeLabel && (
 						<span className="product1__discount-badge">
-							-{discountPercentageNumber}%
+							{discountDisplay.badgeLabel}
 						</span>
 					)}
 				</div>
@@ -224,22 +218,30 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 						onError={handleImageError}
 						loading="lazy"
 					/>
-					<div className="product1__cart-button">
+					<button
+						type="button"
+						className="product1__cart-button"
+						disabled={isOutOfStock}
+						aria-label={isOutOfStock ? "Out of stock" : "Add to cart"}
+						title={isOutOfStock ? "Out of stock" : "Add to cart"}
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							if (isOutOfStock) return;
+							if (!token) {
+								setAuthModalOpen(true);
+								return;
+							}
+							handleCartOnAdd(
+								product,
+								1,
+								product.hasVariants ? selectedCardVariant?.id : undefined
+							);
+						}}
+					>
 						<FaCartPlus
-							onClick={(e) => {
-								e.preventDefault();
-								e.stopPropagation();
-								if (!token) {
-									setAuthModalOpen(true);
-									return;
-								}
-								const variantCount = product.variants?.length || 0;
-								const variantId =
-									variantCount > 0 ? product.variants![0].id : undefined;
-								handleCartOnAdd(product, 1, variantId);
-							}}
 						/>
-					</div>
+					</button>
 				</div>
 
 				<div className="product1__rating">

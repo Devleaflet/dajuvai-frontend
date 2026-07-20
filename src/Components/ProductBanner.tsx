@@ -58,9 +58,12 @@ const ProductBanner: React.FC = () => {
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
   const [translateX, setTranslateX] = useState<number>(0);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const autoSlideRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isPausedRef = useRef(false);
 
   const clickThreshold = 5; // Pixels to consider as a click vs. drag
   const swipeThreshold = sliderRef.current ? sliderRef.current.offsetWidth / 4 : 100;
+  const AUTO_SLIDE_DELAY = 4000;
 
   const { data: slides = [], isLoading, error } = useQuery<Slide[], Error>({
     queryKey: ['productBanners'],
@@ -77,32 +80,62 @@ const ProductBanner: React.FC = () => {
   });
 
   useEffect(() => {
-    if (slides.length === 0) return;
-    const interval = setInterval(() => {
+    startAutoSlide();
+    return clearAutoSlide;
+  }, [slides.length]);
+
+  const clearAutoSlide = (): void => {
+    if (autoSlideRef.current) {
+      clearInterval(autoSlideRef.current);
+      autoSlideRef.current = null;
+    }
+  };
+
+  const startAutoSlide = (): void => {
+    clearAutoSlide();
+    if (slides.length <= 1 || isPausedRef.current) return;
+    autoSlideRef.current = setInterval(() => {
       setActiveSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [slides]);
+      setTranslateX(0);
+    }, AUTO_SLIDE_DELAY);
+  };
+
+  const pauseAutoSlide = (): void => {
+    isPausedRef.current = true;
+    clearAutoSlide();
+  };
+
+  const resumeAutoSlide = (): void => {
+    isPausedRef.current = false;
+    startAutoSlide();
+  };
 
   const goToSlide = (index: number): void => {
+    clearAutoSlide();
     setActiveSlide(index);
     setTranslateX(0);
+    startAutoSlide();
     //('Go to slide:', index);
   };
 
   const goToPrevSlide = (): void => {
+    clearAutoSlide();
     setActiveSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
     setTranslateX(0);
+    startAutoSlide();
     //('Previous slide');
   };
 
   const goToNextSlide = (): void => {
+    clearAutoSlide();
     setActiveSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
     setTranslateX(0);
+    startAutoSlide();
     //('Next slide');
   };
 
   const handleDragStart = (clientX: number, clientY: number): void => {
+    pauseAutoSlide();
     setIsDragging(true);
     setStartPos({ x: clientX, y: clientY });
     setTranslateX(0);
@@ -117,7 +150,11 @@ const ProductBanner: React.FC = () => {
     //('Dragging, translateX:', currentDrag);
   };
 
-  const handleDragEnd = (clientX: number, clientY: number): void => {
+  const handleDragEnd = (
+    clientX: number,
+    clientY: number,
+    resumeWhenDone = true,
+  ): void => {
     if (!isDragging) return;
     setIsDragging(false);
 
@@ -143,6 +180,9 @@ const ProductBanner: React.FC = () => {
       }
     }
     setStartPos(null);
+    if (resumeWhenDone) {
+      resumeAutoSlide();
+    }
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
@@ -155,12 +195,14 @@ const ProductBanner: React.FC = () => {
   };
 
   const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>): void => {
-    handleDragEnd(e.clientX, e.clientY);
+    handleDragEnd(e.clientX, e.clientY, false);
   };
 
   const handleMouseLeave = (): void => {
     if (isDragging) {
-      handleDragEnd(startPos?.x || 0, startPos?.y || 0);
+      handleDragEnd(startPos?.x || 0, startPos?.y || 0, true);
+    } else {
+      resumeAutoSlide();
     }
   };
 
@@ -175,7 +217,7 @@ const ProductBanner: React.FC = () => {
   const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>): void => {
     const clientX = e.changedTouches[0]?.clientX || startPos?.x || 0;
     const clientY = e.changedTouches[0]?.clientY || startPos?.y || 0;
-    handleDragEnd(clientX, clientY);
+    handleDragEnd(clientX, clientY, true);
   };
 
   const handleBannerClick = (slide: Slide) => {
@@ -255,6 +297,7 @@ const ProductBanner: React.FC = () => {
     <div
       className="hero-slider"
       ref={sliderRef}
+      onMouseEnter={pauseAutoSlide}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}

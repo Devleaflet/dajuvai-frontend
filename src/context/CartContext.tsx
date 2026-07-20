@@ -14,6 +14,8 @@ import { API_BASE_URL } from "../config";
 interface CartItem {
   id: number; // cart item ID from backend
   productId?: number; // product ID
+  lineItemId?: number;
+  itemId?: number;
   variantId?: number; // optional variant ID
   name: string;
   price: number;
@@ -21,6 +23,8 @@ interface CartItem {
   image: string;
   product?: Product & { id: number };
   variant?: any;
+  selectedVariant?: any;
+  stock?: number;
 }
 
 // Reducer action types
@@ -114,8 +118,8 @@ interface CartContextType {
   cartCount: number;
   handleCartOnAdd: (product: Product, quantity?: number, variantId?: number) => void;
   handleCartItemOnDelete: (cartItem: CartItem) => void;
-  handleIncreaseQuantity: (cartItemId: number, quantity?: number) => void;
-  handleDecreaseQuantity: (cartItemId: number, quantity?: number) => void;
+  handleIncreaseQuantity: (cartItemId: number, quantity?: number) => Promise<void>;
+  handleDecreaseQuantity: (cartItemId: number, quantity?: number) => Promise<void>;
   setCartItems: (items: CartItem[]) => void;
   refreshCart: () => Promise<void>;
   deletingItems: Set<number>; // cart item IDs being deleted
@@ -124,6 +128,33 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+const normalizeCartItemId = (cartItemId: number | string): number | null => {
+  const parsedId = Number(cartItemId);
+  return Number.isInteger(parsedId) && parsedId > 0 ? parsedId : null;
+};
+
+const getCartItemStockLimit = (item: CartItem): number | null => {
+  const rawStock =
+    item.variant?.stock ??
+    item.selectedVariant?.stock ??
+    item.product?.stock ??
+    item.stock;
+  const parsedStock = Number(rawStock);
+  return Number.isFinite(parsedStock) && parsedStock >= 0 ? parsedStock : null;
+};
+
+const getCartErrorMessage = (
+  error: any,
+  fallback = "Failed to update quantity. Please try again.",
+) => {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    fallback
+  );
+};
 
 // Provider component
 const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -139,12 +170,17 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const location = useLocation();
   const auth = useAuth();
+  // Cart is a customer-only concept — the backend rejects any other role
+  // with 409 CONFLICT ("Only customer accounts can perform this action").
+  // Admin/vendor/staff/rider tokens are also `isAuthenticated`, so gate on
+  // role too or every non-customer session spams the storefront with 409s.
+  const isCustomer = auth.isAuthenticated && auth.user?.role === 'user';
 
   // Fetch cart items on mount and set them
   useEffect(() => {
     const loadCart = async () => {
-      // Don't fetch cart if user is not authenticated
-      if (!auth.isAuthenticated) {
+      // Don't fetch cart if user is not authenticated as a customer
+      if (!isCustomer) {
         //("User not authenticated, clearing cart");
         setCartItems([]);
         return;
@@ -164,14 +200,14 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     };
     loadCart();
-  }, [auth.isAuthenticated]);
+  }, [isCustomer]);
 
   // Refresh cart when navigating to cart-related pages
   useEffect(() => {
     const cartRelatedPages = ['/checkout', '/cart'];
     const isCartPage = cartRelatedPages.some(page => location.pathname.includes(page));
 
-    if (isCartPage && auth.isAuthenticated) {
+    if (isCartPage && isCustomer) {
       const refreshCart = async () => {
         try {
           const items = await fetchCart();
@@ -186,16 +222,16 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       };
       refreshCart();
-    } else if (isCartPage && !auth.isAuthenticated) {
-      // Clear cart if user is not authenticated on cart pages
+    } else if (isCartPage && !isCustomer) {
+      // Clear cart if user is not an authenticated customer on cart pages
       setCartItems([]);
     }
-  }, [location.pathname, auth.isAuthenticated]);
+  }, [location.pathname, isCustomer]);
 
   // Refresh cart when authentication state changes
   useEffect(() => {
     const refreshCart = async () => {
-      if (!auth.isAuthenticated) {
+      if (!isCustomer) {
         //("User not authenticated, clearing cart");
         setCartItems([]);
         return;
@@ -214,7 +250,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     };
     refreshCart();
-  }, [auth.isAuthenticated]);
+  }, [isCustomer]);
 
   // Listen for logout event and clear cart
   useEffect(() => {
@@ -240,7 +276,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     //("Current cart items:", cartItems);
     //("Is authenticated:", auth.isAuthenticated);
 
-    if (!auth.isAuthenticated) {
+    if (!isCustomer) {
       //("User not authenticated, cannot add to cart");
       return;
     }
@@ -315,7 +351,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     //("Current cart items:", cartItems);
     //("Is authenticated:", auth.isAuthenticated);
 
-    if (!auth.isAuthenticated) {
+    if (!isCustomer) {
       //("User not authenticated, cannot delete from cart");
       return;
     }
@@ -373,51 +409,83 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     cartItemId: number,
     amount: number = 1
   ) => {
-    if (!auth.isAuthenticated) {
+    const normalizedCartItemId = normalizeCartItemId(cartItemId);
+    const quantityDelta = Number(amount);
+
+    if (!isCustomer) {
       //("User not authenticated, cannot modify cart");
       return;
     }
 
-    if (updatingItems.has(cartItemId)) {
+    if (!normalizedCartItemId || !Number.isInteger(quantityDelta) || quantityDelta <= 0) {
+      toast.error("Unable to update quantity. Please refresh your cart.");
+      return;
+    }
+
+    if (updatingItems.has(normalizedCartItemId)) {
       //("Item is already being updated");
       return;
     }
 
-    // Add cartItem to updating set
-    setUpdatingItems(prev => new Set(prev).add(cartItemId));
+    // Find the cart item to derive productId and variantId
+    const item = cartItems.find(ci => normalizeCartItemId(ci.id) === normalizedCartItemId);
+    if (!item) {
+      console.warn("Cart item not found for increase:", normalizedCartItemId);
+      return;
+    }
+
+    const stockLimit = getCartItemStockLimit(item);
+    if (stockLimit !== null && item.quantity + quantityDelta > stockLimit) {
+      toast.error(
+        stockLimit === 0
+          ? "This item is out of stock."
+          : `Only ${stockLimit} available in stock.`,
+      );
+      return;
+    }
+
+    const productId = Number(item.productId ?? item.product?.id);
+    if (!Number.isInteger(productId) || productId <= 0) {
+      toast.error("Unable to update quantity. Product information is missing.");
+      return;
+    }
+
+    setUpdatingItems(prev => new Set(prev).add(normalizedCartItemId));
+
+    // Optimistic: reflect the new quantity immediately via the existing
+    // reducer action instead of waiting on a full refetch — this is what was
+    // causing every +/- click to visibly reload the whole cart list.
+    dispatch({ type: "INC_QUANTITY", payload: { cartItemId: normalizedCartItemId, quantity: quantityDelta } });
+    setCartCount(prev => prev + quantityDelta);
 
     try {
-      // Find the cart item to derive productId and variantId
-      const item = cartItems.find(ci => ci.id === cartItemId);
-      if (!item) {
-        console.warn("Cart item not found for increase:", cartItemId);
-        return;
-      }
-
       const payload: any = {
-        productId: item.product?.id || item.productId,
-        quantity: amount,
+        productId,
+        quantity: quantityDelta,
       };
       if (item.variant?.id || item.variantId) {
         payload.variantId = item.variant?.id || item.variantId;
       }
 
       await axiosInstance.post("/api/cart", payload, { withCredentials: true });
-
-      // Refresh cart from backend to get the correct state
-      await refreshCart();
-      //("Quantity increased for cart item:", cartItemId);
     } catch (error: any) {
+      // Roll back the optimistic bump and resync with the server's real state.
+      dispatch({ type: "DEC_QUANTITY", payload: { cartItemId: normalizedCartItemId, quantity: quantityDelta } });
+      setCartCount(prev => Math.max(0, prev - quantityDelta));
+      await refreshCart();
+
+      const message = getCartErrorMessage(error);
       console.error(
         "Failed to increase quantity:",
         error?.response?.data || error.message
       );
-      toast.error("Failed to update quantity. Please try again.");
+      toast.error(message);
+      throw error;
     } finally {
       // Remove item from updating set
       setUpdatingItems(prev => {
         const newSet = new Set(prev);
-        newSet.delete(cartItemId);
+        newSet.delete(normalizedCartItemId);
         return newSet;
       });
     }
@@ -427,42 +495,58 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     cartItemId: number,
     amount: number = 1
   ) => {
-    if (!auth.isAuthenticated) {
+    const normalizedCartItemId = normalizeCartItemId(cartItemId);
+    const quantityDelta = Number(amount);
+
+    if (!isCustomer) {
       //("User not authenticated, cannot modify cart");
       return;
     }
 
-    if (updatingItems.has(cartItemId)) {
+    if (!normalizedCartItemId || !Number.isInteger(quantityDelta) || quantityDelta <= 0) {
+      toast.error("Unable to update quantity. Please refresh your cart.");
+      return;
+    }
+
+    if (updatingItems.has(normalizedCartItemId)) {
       //("Item is already being updated");
       return;
     }
 
-    // Add cartItem to updating set
-    setUpdatingItems(prev => new Set(prev).add(cartItemId));
+    setUpdatingItems(prev => new Set(prev).add(normalizedCartItemId));
+
+    // Optimistic: matches handleIncreaseQuantity — reflect the decrement (or
+    // removal, if quantity hits 0) immediately instead of waiting on a full
+    // refetch.
+    dispatch({ type: "DEC_QUANTITY", payload: { cartItemId: normalizedCartItemId, quantity: quantityDelta } });
+    setCartCount(prev => Math.max(0, prev - quantityDelta));
 
     try {
       // The DELETE endpoint supports decreaseOnly; loop for amount times
-      for (let i = 0; i < amount; i++) {
+      for (let i = 0; i < quantityDelta; i++) {
         await axiosInstance.delete("/api/cart", {
-          data: { cartItemId, decreaseOnly: true },
+          data: { cartItemId: normalizedCartItemId, decreaseOnly: true },
           withCredentials: true
         });
       }
-
-      // Refresh cart from backend to get the correct state
-      await refreshCart();
-      //("Quantity decreased for cart item:", cartItemId);
     } catch (error: any) {
+      // Roll back and resync with the server's real state.
+      dispatch({ type: "INC_QUANTITY", payload: { cartItemId: normalizedCartItemId, quantity: quantityDelta } });
+      setCartCount(prev => prev + quantityDelta);
+      await refreshCart();
+
+      const message = getCartErrorMessage(error);
       console.error(
         "Failed to decrease quantity:",
         error?.response?.data || error.message
       );
-      toast.error("Failed to update quantity. Please try again.");
+      toast.error(message);
+      throw error;
     } finally {
       // Remove item from updating set
       setUpdatingItems(prev => {
         const newSet = new Set(prev);
-        newSet.delete(cartItemId);
+        newSet.delete(normalizedCartItemId);
         return newSet;
       });
     }
@@ -472,7 +556,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     //("=== refreshCart START ===");
     //("Is authenticated:", auth.isAuthenticated);
 
-    if (!auth.isAuthenticated) {
+    if (!isCustomer) {
       //("User not authenticated, clearing cart");
       setCartItems([]);
       return;
@@ -505,7 +589,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Connect to Socket.IO for cart count updates
   useEffect(() => {
-    if (!auth.isAuthenticated || !auth.token) {
+    if (!isCustomer || !auth.token) {
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -538,7 +622,6 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     const handleCartUpdate = (payload?: { count?: number }) => {
-      console.log("Socket cart update:", payload);
       if (typeof payload?.count === "number") {
         setCartCount(payload.count);
       }
@@ -564,7 +647,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [auth.isAuthenticated, auth.token, location.pathname]);
+  }, [isCustomer, auth.token, location.pathname]);
 
   return (
     <CartContext.Provider

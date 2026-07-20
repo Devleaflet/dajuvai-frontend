@@ -16,7 +16,7 @@ interface District {
 
 const CACHE_KEY = "admin_districts";
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-const PAGE_SIZE = 7;
+const PAGE_SIZE = 20;
 
 const AdminDistrict: React.FC = () => {
 	const { token, isAuthenticated } = useAuth();

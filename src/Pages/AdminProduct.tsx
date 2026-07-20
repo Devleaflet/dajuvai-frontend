@@ -59,8 +59,9 @@ const AdminProduct: React.FC = () => {
   const { token, isAuthenticated } = useAuth();
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
-  const [productsPerPage] = useState(7);
+  const [productsPerPage, setProductsPerPage] = useState(20);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState<ApiProduct | null>(
@@ -70,19 +71,26 @@ const AdminProduct: React.FC = () => {
   const [sortOption, setSortOption] = useState<string>("newest");
   const [filterOption, setFilterOption] = useState<string>("all");
   const [loading, setLoading] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [vendor, setVendor] = useState([]);
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const productRequestRef = useRef<AbortController | null>(null);
 
   const productService = ProductService;
 
   // Fetch products from backend with pagination, sorting, and filtering
   const fetchProducts = useCallback(async () => {
     if (!token || !isAuthenticated) return;
+
+    const controller = new AbortController();
+    productRequestRef.current?.abort();
+    productRequestRef.current = controller;
 
     setLoading(true);
     setError(null);
@@ -103,6 +111,7 @@ const AdminProduct: React.FC = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          signal: controller.signal,
         },
       );
 
@@ -113,19 +122,38 @@ const AdminProduct: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
+        if (controller.signal.aborted) return;
+
         setProducts(data.data.products);
         setTotalProducts(data.data.total);
+        const pagination = data.data.pagination;
+        setTotalPages(
+          Number(pagination?.totalPages) ||
+            Math.max(1, Math.ceil(Number(data.data.total || 0) / productsPerPage)),
+        );
+        if (
+          pagination?.totalPages &&
+          currentPage > Number(pagination.totalPages)
+        ) {
+          setCurrentPage(Number(pagination.totalPages));
+        }
       } else {
         throw new Error(data.message || "Failed to fetch products");
       }
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
+
       const errorMessage =
         err instanceof Error ? err.message : "Failed to load products";
       console.error("Fetch products error:", err);
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
-      setLoading(false);
+      if (productRequestRef.current === controller) {
+        setLoading(false);
+        setHasLoadedOnce(true);
+        productRequestRef.current = null;
+      }
     }
   }, [
     token,
@@ -141,8 +169,6 @@ const AdminProduct: React.FC = () => {
   const fetchVendors = useCallback(async () => {
     if (!token || !isAuthenticated) return;
 
-    setLoading(true);
-    setError(null);
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/vendors/partial/vendors`,
@@ -170,30 +196,36 @@ const AdminProduct: React.FC = () => {
       console.error("Fetch products error:", err);
       setError(errorMessage);
       toast.error(errorMessage);
-    } finally {
-      setLoading(false);
     }
   }, [token, isAuthenticated]);
 
   const handleVendorChange = (vendorId: string) => {
     setSelectedVendor(vendorId);
+    setCurrentPage(1);
   };
 
   // Load products on mount and when dependencies change
   useEffect(() => {
-    console.log("Fetching products for vendor:", selectedVendor);
-
     fetchProducts();
-  }, [selectedVendor, fetchProducts]);
+    return () => {
+      const activeRequest = productRequestRef.current;
+      activeRequest?.abort();
+      if (productRequestRef.current === activeRequest) {
+        productRequestRef.current = null;
+      }
+    };
+  }, [fetchProducts]);
 
-  // Debounce search so we don't hit the API on every keystroke
-  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const handleSearch = useCallback((query: string) => {
-    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    searchDebounceRef.current = setTimeout(() => {
-      setSearchQuery(query);
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setSearchQuery(searchInput.trim());
       setCurrentPage(1);
     }, 400);
+    return () => clearTimeout(timeout);
+  }, [searchInput]);
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchInput(query);
   }, []);
 
   useEffect(() => {
@@ -281,55 +313,7 @@ const AdminProduct: React.FC = () => {
     }
   }, [productToDelete, deleteProduct]);
 
-  const displayedProducts = React.useMemo(() => {
-    if (filterOption === "all") return products;
-    return products.filter((product) => {
-      const getDisplayStockHelper = (): number => {
-        if (
-          product.stock !== undefined &&
-          typeof product.stock === "number" &&
-          product.stock >= 0
-        ) {
-          return product.stock;
-        }
-        if (typeof product.stock === "string") {
-          const parsed = parseInt(product.stock, 10);
-          if (!isNaN(parsed) && parsed >= 0) {
-            return parsed;
-          }
-        }
-        if (product.variants && product.variants.length > 0) {
-          for (const variant of product.variants) {
-            if (
-              variant.stock !== undefined &&
-              typeof variant.stock === "number" &&
-              variant.stock >= 0
-            ) {
-              return variant.stock;
-            }
-            if (typeof variant.stock === "string") {
-              const parsed = parseInt(variant.stock, 10);
-              if (!isNaN(parsed) && parsed >= 0) {
-                return parsed;
-              }
-            }
-          }
-        }
-        return 0;
-      };
-      const st = getEffectiveStatus(product, getDisplayStockHelper());
-      if (filterOption === "out_of_stock" || filterOption === "OUT_OF_STOCK") {
-        return st === "OUT_OF_STOCK";
-      }
-      if (filterOption === "low_stock" || filterOption === "LOW_STOCK") {
-        return st === "LOW_STOCK";
-      }
-      if (filterOption === "available" || filterOption === "AVAILABLE") {
-        return st === "AVAILABLE";
-      }
-      return true;
-    });
-  }, [products, filterOption]);
+  const displayedProducts = products;
 
   if (!isAuthenticated || !token) {
     return (
@@ -368,6 +352,18 @@ const AdminProduct: React.FC = () => {
     return isNaN(val) ? null : val;
   };
 
+  const isSearchPending = searchInput.trim() !== searchQuery;
+  const isSearching =
+    isSearchPending || (loading && hasLoadedOnce && Boolean(searchQuery));
+  const productRangeStart =
+    totalProducts === 0 ? 0 : (currentPage - 1) * productsPerPage + 1;
+  const productRangeEnd = Math.min(currentPage * productsPerPage, totalProducts);
+  const searchResultsLabel = isSearchPending
+    ? `Searching "${searchInput.trim()}"...`
+    : searchQuery
+      ? `Showing ${productRangeStart}-${productRangeEnd} of ${totalProducts} products for "${searchQuery}"`
+      : `Showing ${productRangeStart}-${productRangeEnd} of ${totalProducts} products`;
+
   return (
     <div className="admin-products">
       <AdminSidebar />
@@ -380,6 +376,15 @@ const AdminProduct: React.FC = () => {
         )}
         <Header
           onSearch={handleSearch}
+          searchValue={searchInput}
+          searchPlaceholder="Search products by name, SKU, vendor, brand..."
+          isSearching={isSearching}
+          searchResultsLabel={searchResultsLabel}
+          onClearSearch={() => {
+            setSearchInput("");
+            setSearchQuery("");
+            setCurrentPage(1);
+          }}
           showSearch={true} // Changed to true so filter dropdown shows
           onSort={handleSort}
           sortOption={(() => {
@@ -422,7 +427,6 @@ const AdminProduct: React.FC = () => {
                   <th>Image</th>
                   <th>ID</th>
                   <th>Name</th>
-                  <th>Keywords</th>
                   <th>Vendor</th>
                   <th>Price</th>
                   <th>Variants</th>
@@ -450,9 +454,10 @@ const AdminProduct: React.FC = () => {
                           : `Rs ${product.discount}`
                         : null;
 
+                    const dealDiscountPercentage = (product.deal as any)?.discountPercentage;
                     const dealDiscountLabel =
-                      product.deal && product.deal.discountPercentage
-                        ? `Deal ${product.deal.discountPercentage}%`
+                      dealDiscountPercentage
+                        ? `Deal ${dealDiscountPercentage}%`
                         : null;
 
                     const getDisplayStock = (): number => {
@@ -548,9 +553,6 @@ const AdminProduct: React.FC = () => {
 
                         {/* Product Name  */}
                         <td>{product.name}</td>
-
-                        {/* Product Keywords */}
-                        <td>{product.keywords || "—"}</td>
 
                         {/* Vendor Name  */}
                         <td>{product.vendor?.businessName || "Unknown"}</td>
@@ -791,7 +793,7 @@ const AdminProduct: React.FC = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={6} className="admin-products__no-data">
+                    <td colSpan={11} className="admin-products__no-data">
                       {filterOption !== "all"
                         ? `No products found with filter: ${filterOption}`
                         : "No products found"}
@@ -802,15 +804,16 @@ const AdminProduct: React.FC = () => {
             </table>
           </div>
           <div className="admin-products__pagination-container">
-            <div className="admin-products__pagination-info">
-              Showing {(currentPage - 1) * productsPerPage + 1}-
-              {Math.min(currentPage * productsPerPage, totalProducts)} out of{" "}
-              {totalProducts}
-            </div>
             <Pagination
               currentPage={currentPage}
-              totalPages={Math.ceil(totalProducts / productsPerPage)}
+              totalPages={totalPages}
               onPageChange={setCurrentPage}
+              pageSize={productsPerPage}
+              totalItems={totalProducts}
+              onPageSizeChange={(size) => {
+                setProductsPerPage(size);
+                setCurrentPage(1);
+              }}
             />
           </div>
         </div>

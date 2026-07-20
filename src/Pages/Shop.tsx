@@ -3,7 +3,7 @@ import { toInteger } from 'lodash';
 import { ChevronDown, ChevronUp, Search, Settings2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import ProductCard1 from '../ALT/ProductCard1';
+import ProductCard from '../Components/ProductCard';
 import { fetchReviewOf } from '../api/products';
 import CategorySlider from '../Components/CategorySlider';
 import Footer from '../Components/Footer';
@@ -17,7 +17,8 @@ import ProductCardSkeleton from '../skeleton/ProductCardSkeleton';
 import '../Styles/Shop.css';
 import ProductBannerSlider from '../Components/ProductBannerSlider';
 import { Deal } from '../services/dealService';
-import { Product } from '../Components/Types/EditProductTypes';
+import { Product } from '../Components/Types/Product';
+import defaultProductImage from '../assets/logo.webp';
 
 interface Category {
 	id: number;
@@ -48,9 +49,9 @@ interface ApiProduct {
 	stock: number;
 	hasVariants: boolean;
 	discount: number | null;
-	discountType: 'PERCENTAGE' | 'FLAT' | null;
+	discountType: 'PERCENTAGE' | 'FLAT' | 'NONE' | null;
 	size: string[];
-	status: 'AVAILABLE' | 'UNAVAILABLE';
+	status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK' | 'UNAVAILABLE';
 	productImages: string[];
 	inventory: {
 		sku: string;
@@ -74,7 +75,7 @@ interface ApiProduct {
 		images?: string[];
 		attributes?: Record<string, any>;
 		discount?: number | string;
-		discountType?: 'PERCENTAGE' | 'FLAT';
+		discountType?: 'PERCENTAGE' | 'FLAT' | 'NONE';
 		calculatedPrice?: number;
 		[key: string]: any;
 	}>;
@@ -331,6 +332,10 @@ const processProductWithReview = async (
 
 		return {
 			...variant,
+			basePrice: toNumber(variant.basePrice ?? variant.price),
+			finalPrice: toNumber(variant.finalPrice ?? variant.basePrice ?? variant.price),
+			stock: Number(variant.stock || 0),
+			status: variant.status || (Number(variant.stock || 0) <= 0 ? 'OUT_OF_STOCK' : 'AVAILABLE'),
 			image: images[0],
 			images,
 		};
@@ -341,10 +346,22 @@ const processProductWithReview = async (
 		processedVariants.flatMap(v => v.images)[0];
 
 
+	const availableVariants = processedVariants.filter(
+		(v: any) => Number(v.stock || 0) > 0 && v.status !== 'OUT_OF_STOCK'
+	);
+	const displayVariants = availableVariants.length > 0 ? availableVariants : processedVariants;
+	const totalStock = item.hasVariants
+		? processedVariants.reduce((sum: number, v: any) => sum + Number(v.stock || 0), 0)
+		: Number(item.stock || 0);
+	const effectiveStatus =
+		item.status === 'UNAVAILABLE'
+			? 'OUT_OF_STOCK'
+			: item.status || (totalStock <= 0 ? 'OUT_OF_STOCK' : totalStock < 5 ? 'LOW_STOCK' : 'AVAILABLE');
+
 	let basePrice = toNumber(item.basePrice);
 
-	if ((!basePrice || basePrice === 0) && processedVariants.length > 0) {
-		basePrice = toNumber(processedVariants[0].basePrice);
+	if ((!basePrice || basePrice === 0) && displayVariants.length > 0) {
+		basePrice = toNumber(displayVariants[0].basePrice);
 	}
 
 	const afterProductDiscount = applyDiscount(
@@ -375,8 +392,8 @@ const processProductWithReview = async (
 		title: item.name,
 		description: item.description,
 		basePrice: basePrice,
-		finalPrice: item.finalPrice,
-		stock: item.stock,
+		finalPrice: toNumber(item.finalPrice || displayVariants[0]?.finalPrice || finalPrice),
+		stock: totalStock,
 		deal: item.deal,
 		dealId: item.dealId,
 		price: Math.max(finalPrice, 0).toString(),
@@ -391,16 +408,46 @@ const processProductWithReview = async (
 				? processedProductImages
 				: processedVariants.flatMap(v => v.images).length > 0
 					? processedVariants.flatMap(v => v.images)
-					: [phone],
+					: [defaultProductImage],
 		hasVariants: item.hasVariants,
 		variants: processedVariants,
 		category: item.subcategory?.category?.name || 'Misc',
 		subcategory: item.subcategory,
 		brand_id: item.brand?.id || null,
-		status: item.status === 'UNAVAILABLE' ? 'OUT_OF_STOCK' : 'AVAILABLE',
-		stock: item.stock || 0
+		status: effectiveStatus,
 	};
 };
+
+const createFallbackProduct = (item: ApiProduct): Product => ({
+	id: item.id,
+	title: item.name || 'Unknown Product',
+	name: item.name || 'Unknown Product',
+	description: item.description || 'No description available',
+	basePrice: 0,
+	finalPrice: 0,
+	originalPrice: '0',
+	discount: item.discount ? `${item.discount}` : undefined,
+	discountPercentage: item.discount ? `${item.discount}%` : '0%',
+	discountType: item.discountType || 'NONE',
+	price: '0',
+	rating: 0,
+	ratingCount: '0',
+	isBestSeller: false,
+	freeDelivery: true,
+	image: defaultProductImage,
+	productImages: [defaultProductImage],
+	category: 'Misc',
+	brand: 'Unknown',
+	stock: Number(item.stock || 0),
+	status:
+		item.status === 'UNAVAILABLE'
+			? 'OUT_OF_STOCK'
+			: item.status || 'OUT_OF_STOCK',
+	hasVariants: Boolean(item.hasVariants),
+	variants: [],
+	deal: item.deal || null,
+	dealId: item.dealId,
+});
 
 
 // Rest of the Shop component (unchanged)
@@ -592,22 +639,7 @@ const Shop: React.FC = () => {
 								item.name,
 								error
 							);
-							return {
-								id: item.id,
-								title: item.name || 'Unknown Product',
-								description: item.description || 'No description available',
-								originalPrice: '0',
-								discount: item.discount ? `${item.discount}` : undefined,
-								discountPercentage: item.discount ? `${item.discount}%` : '0%',
-								price: '0',
-								rating: 0,
-								ratingCount: '0',
-								isBestSeller: false,
-								freeDelivery: true,
-								// image: phone,
-								category: 'Misc',
-								brand: 'Unknown',
-							};
+							return createFallbackProduct(item);
 						}
 					})
 				);
@@ -656,24 +688,7 @@ const Shop: React.FC = () => {
 									const processed = await processProductWithReview(item);
 									return processed;
 								} catch {
-									return {
-										id: item.id,
-										title: item.name || 'Unknown Product',
-										description: item.description || 'No description available',
-										originalPrice: '0',
-										discount: item.discount ? `${item.discount}` : undefined,
-										discountPercentage: item.discount
-											? `${item.discount}%`
-											: '0%',
-										price: '0',
-										rating: 0,
-										ratingCount: '0',
-										isBestSeller: false,
-										freeDelivery: true,
-										// image: phone,
-										category: 'Misc',
-										brand: 'Unknown',
-									};
+									return createFallbackProduct(item);
 								}
 							})
 						);
@@ -719,26 +734,7 @@ const Shop: React.FC = () => {
 											const processed = await processProductWithReview(item);
 											return processed;
 										} catch {
-											return {
-												id: item.id,
-												title: item.name || 'Unknown Product',
-												description:
-													item.description || 'No description available',
-												originalPrice: '0',
-												discount: item.discount
-													? `${item.discount}`
-													: undefined,
-												discountPercentage: item.discount
-													? `${item.discount}%`
-													: '0%',
-												price: '0',
-												rating: 0,
-												ratingCount: '0',
-												isBestSeller: false,
-												freeDelivery: true,
-												category: 'Misc',
-												brand: 'Unknown',
-											};
+											return createFallbackProduct(item);
 										}
 									})
 								);
@@ -1342,7 +1338,7 @@ const Shop: React.FC = () => {
 												key={product.id}
 												className="shop-product-card"
 											>
-												<ProductCard1
+												<ProductCard
 													product={product}
 												/>
 											</div>

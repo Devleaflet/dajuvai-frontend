@@ -147,7 +147,7 @@ const AdminCategories: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [categoriesPerPage] = useState(7);
+  const [categoriesPerPage, setCategoriesPerPage] = useState(20);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null,
@@ -1322,6 +1322,9 @@ const AdminCategories: React.FC = () => {
                 filteredCategories.length / categoriesPerPage,
               )}
               onPageChange={(pageNumber) => setCurrentPage(pageNumber)}
+              pageSize={categoriesPerPage}
+              totalItems={filteredCategories.length}
+              onPageSizeChange={(size) => { setCategoriesPerPage(size); setCurrentPage(1); }}
             />
           </div>
 

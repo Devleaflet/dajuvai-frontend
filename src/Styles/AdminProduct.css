@@ -1,12 +1,16 @@
 .admin-products {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   background-color: #f4f7fa;
 }
 
 .admin-products__content {
+  display: flex;
+  flex-direction: column;
   flex: 1;
-  overflow-y: auto;
+  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .admin-products__error {
@@ -29,6 +33,10 @@
 }
 
 .admin-products__list-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -64,7 +72,10 @@
 }
 
 .admin-products__table-container {
-  overflow-x: auto;
+  /* Only the table body scrolls — header, filters, and pagination stay put. */
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 .admin-products__table {
@@ -73,6 +84,9 @@
 }
 
 .admin-products__table-head th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   background-color: #f8f9fa;
   padding: 12px;
   text-align: left;

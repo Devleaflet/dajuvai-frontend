@@ -109,7 +109,7 @@ const AdminCustomers: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [usersPerPage] = useState(7);
+  const [usersPerPage, setUsersPerPage] = useState(20);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<{
@@ -523,15 +523,13 @@ const AdminCustomers: React.FC = () => {
           </div>
 
           <div className="admin-orders__pagination-container">
-            <div className="admin-orders__pagination-info">
-              Showing {indexOfFirstUser + 1}-
-              {Math.min(indexOfLastUser, filteredUsers.length)} out of{" "}
-              {filteredUsers.length}
-            </div>
             <Pagination
               currentPage={currentPage}
               totalPages={Math.ceil(filteredUsers.length / usersPerPage)}
               onPageChange={setCurrentPage}
+              pageSize={usersPerPage}
+              totalItems={filteredUsers.length}
+              onPageSizeChange={(size) => { setUsersPerPage(size); setCurrentPage(1); }}
             />
           </div>
         </div>

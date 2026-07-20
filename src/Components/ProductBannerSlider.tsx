@@ -67,9 +67,10 @@ const ProductBannerSlider: React.FC<ProductBannerSliderProps> = ({ onLoad }) => 
   const clickThreshold = 5;
   const swipeThreshold = sliderRef.current ? sliderRef.current.offsetWidth / 4 : 100;
 
-  const AUTO_SLIDE_DELAY = 3000;
+  const AUTO_SLIDE_DELAY = 4000;
 
   const autoSlideRef = useRef<NodeJS.Timeout | null>(null);
+  const isPausedRef = useRef(false);
 
 
   const { data: slides = [], isLoading, error } = useQuery<Slide[], Error>({
@@ -112,6 +113,7 @@ const ProductBannerSlider: React.FC<ProductBannerSliderProps> = ({ onLoad }) => 
   };
 
   const handleDragStart = (x: number, y: number) => {
+    isPausedRef.current = true;
     clearAutoSlide();
     setIsDragging(true);
     setStartPos({ x, y });
@@ -125,7 +127,7 @@ const ProductBannerSlider: React.FC<ProductBannerSliderProps> = ({ onLoad }) => 
     setTranslateX(Math.max(-max, Math.min(max, d)));
   };
 
-  const handleDragEnd = (x: number, y: number) => {
+  const handleDragEnd = (x: number, y: number, resumeWhenDone = true) => {
     if (!isDragging) return;
 
     setIsDragging(false);
@@ -144,7 +146,10 @@ const ProductBannerSlider: React.FC<ProductBannerSliderProps> = ({ onLoad }) => 
 
     setTranslateX(0);
     setStartPos(null);
-    startAutoSlide();
+    if (resumeWhenDone) {
+      isPausedRef.current = false;
+      startAutoSlide();
+    }
   };
 
   const handleBannerClick = (slide: Slide) => {
@@ -185,7 +190,7 @@ const ProductBannerSlider: React.FC<ProductBannerSliderProps> = ({ onLoad }) => 
   const startAutoSlide = () => {
     clearAutoSlide();
 
-    if (slides.length <= 1) return;
+    if (slides.length <= 1 || isPausedRef.current) return;
 
     autoSlideRef.current = setInterval(() => {
       setActiveSlide((prev) =>
@@ -195,6 +200,15 @@ const ProductBannerSlider: React.FC<ProductBannerSliderProps> = ({ onLoad }) => 
     }, AUTO_SLIDE_DELAY);
   };
 
+  const pauseAutoSlide = () => {
+    isPausedRef.current = true;
+    clearAutoSlide();
+  };
+
+  const resumeAutoSlide = () => {
+    isPausedRef.current = false;
+    startAutoSlide();
+  };
 
   if (isLoading) return <SliderSkeleton />;
   if (error) return <div>Error loading banners: {error.message}</div>;
@@ -204,10 +218,17 @@ const ProductBannerSlider: React.FC<ProductBannerSliderProps> = ({ onLoad }) => 
     <div
       className="hero-slider"
       ref={sliderRef}
+      onMouseEnter={pauseAutoSlide}
       onMouseDown={(e) => handleDragStart(e.clientX, e.clientY)}
       onMouseMove={(e) => handleDragMove(e.clientX)}
-      onMouseUp={(e) => handleDragEnd(e.clientX, e.clientY)}
-      onMouseLeave={() => isDragging && handleDragEnd(startPos?.x || 0, startPos?.y || 0)}
+      onMouseUp={(e) => handleDragEnd(e.clientX, e.clientY, false)}
+      onMouseLeave={() => {
+        if (isDragging) {
+          handleDragEnd(startPos?.x || 0, startPos?.y || 0, true);
+        } else {
+          resumeAutoSlide();
+        }
+      }}
       onTouchStart={(e) => handleDragStart(e.touches[0].clientX, e.touches[0].clientY)}
       onTouchMove={(e) => handleDragMove(e.touches[0].clientX)}
       onTouchEnd={(e) =>

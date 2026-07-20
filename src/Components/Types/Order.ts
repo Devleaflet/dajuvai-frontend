@@ -1,21 +1,26 @@
 export interface Order {
     id: number;
     orderId: string;
+    orderNumber?: string;
     orderedBy: string;
     product: string;
     createdAt: string;
     price: number;
     paymentStatus: string;
-    status: string; // e.g., "Delivered", "Pending", "Canceled"
+    status: string;
 }
 
 export interface OrderDetail {
     id: number;
+    orderNumber?: string;
     orderedBy: {
         id: number;
-        username: string;
+        name: string;
+        fullName?: string;
+        username?: string;
         email: string;
-        phoneNumber: string;
+        phoneNumber?: string;
+        phone?: string;
     };
     shippingAddress: {
         province: string;
@@ -28,24 +33,48 @@ export interface OrderDetail {
         productId: number;
         quantity: number;
         price: string;
-        product: { name: string; productImages: string[] };
-        variant: {
-            attributes: Array<{
-                name: string;
-                value: string;
-            }>;
-            basePrice: string;
-            finalPrice: string;
+        variantId?: number | null;
+        productNameSnapshot?: string | null;
+        skuSnapshot?: string | null;
+        imageSnapshot?: string | null;
+        unitPriceSnapshot?: number | null;
+        product: {
             id: number;
-            productId: number;
-            sku: string;
-            variantImages: string[];
+            name: string;
+            productImages: string[];
+            basePrice?: number;
+            description?: string;
+        } | null;
+        vendor: {
+            id: number;
+            businessName: string;
+            district?: { id: number; name: string };
+            phoneNumber?: string;
+            email?: string;
         };
-        variantId: number;
-        vendor: { id: number; businessName: string };
+        vendorId?: number;
+        variant?: {
+            id: number;
+            sku: string;
+            attributes: Record<string, string>;
+            finalPrice: number | null;
+            basePrice: number | null;
+            variantImages?: string[];
+        } | null;
     }>;
     totalPrice: string;
     shippingFee: string;
+    shippingBreakdown?: {
+        total: number;
+        vendors: Array<{
+            vendorId: number;
+            vendorName: string;
+            vendorDistrict: string;
+            itemCount: number;
+            subtotal: number;
+            shippingFee: number;
+        }>;
+    };
     paymentMethod: string;
     status: string;
     createdAt: string;

@@ -35,6 +35,7 @@
 
 .product-carousel__products {
   display: flex;
+  align-items: stretch;
   gap: 10px;
   overflow-x: auto;
   scroll-behavior: smooth;
@@ -142,22 +143,41 @@
   outline-offset: 3px;
 }
 
+/* Fixed width lives here (not on .product-card) — this wrapper only exists
+   in horizontal carousel rows, where a definite width is required. Grid
+   pages (Shop, Catalog) render .product-card directly into a grid cell with
+   no wrapper, so .product-card's own width:100% takes its size from the
+   grid track instead.
+   No height here — .product-carousel__products' align-items:stretch is what
+   equalizes row height; a height on the flex item itself fights that (this
+   was the actual cause of uneven card heights in the same carousel row). */
 .product-card__wrapper {
   flex: 0 0 auto;
+  width: 255px;
   pointer-events: auto;
 }
 
+/* Card shell: no overflow:hidden here on purpose — the floating cart button
+   (in .product-card__media) needs to poke past the image's bottom edge
+   without being clipped. The image itself clips its own corners instead. */
+/* Fills whatever container places it: .product-card__wrapper's fixed width
+   in a horizontal carousel, or a grid cell's own track width on grid pages
+   (Shop, Catalog, etc.) — so it never fights that page's own breakpoints. */
 .product-card {
-  flex: 0 0 auto;
-  width: 255px;
-  border-radius: 10px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
   background-color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   position: relative;
-  transition: transform 0.3s ease;
-  height: fit-content;
+  height: 100%;
+  transition: box-shadow 0.25s ease;
   pointer-events: auto;
+}
+
+.product-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .product-card--skeleton {
@@ -178,14 +198,6 @@
   pointer-events: none;
 }
 
-.product-card__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 5px;
-  max-height: 10px;
-}
-
 .product-card__tag {
   background-color: #4a4a4a;
   color: white;
@@ -201,42 +213,101 @@
   border-radius: 15px;
 }
 
-.product-card__wishlist-button {
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  background: #fff1f1;
-  border-radius: 100%;
-  border: none;
-  cursor: pointer;
-  color: #ff6b6b;
-  padding: 0;
-  transition: all 0.2s ease;
+/* Media block: holds the image plus everything that floats over/past it
+   (discount badge, wishlist heart, image dots, cart button). Position
+   context for all of those; itself never clips. */
+.product-card__media {
+  position: relative;
+}
+
+.product-card__image {
+  position: relative;
+  aspect-ratio: 1 / 1.05;
+  background: #f7f7f8;
+  border-radius: 14px 14px 0 0;
+  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid gray;
-  z-index: 10 !important;
+}
+
+.product-card__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 14px;
+  box-sizing: border-box;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  transition: transform 0.35s ease;
+}
+
+.product-card:hover .product-card__image img {
+  transform: scale(1.04);
+}
+
+.product-card__image-skeleton {
+  width: 100%;
+  height: 100%;
+  border-radius: 14px 14px 0 0;
+}
+
+.product-card__discount-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  background: #ea5f0a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 4px 9px;
+  border-radius: 6px;
+}
+
+.product-card__wishlist-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease, background 0.2s ease;
 }
 
 .product-card__wishlist-button:hover {
-  background: #ffffff;
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: #fff;
+  transform: scale(1.08);
+}
+
+.product-card__wishlist-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .product-card__wishlist-button svg {
-  width: 22px;
-  height: 22px;
-  stroke: #ff6b6b;
+  width: 18px;
+  height: 18px;
+  stroke: #333;
   fill: none;
-  transition: fill 0.2s ease;
+  transition: all 0.2s ease;
 }
 
-.product-card__wishlist-button:hover svg {
-  fill: #ff6b6b;
+/* Critical: this is what turns the heart red when wishlisted */
+.product-card__wishlist-button svg[fill="red"] {
+  fill: #ff3b30 !important;
+  stroke: #ff3b30 !important;
 }
 
 .product-card__wishlist-skeleton {
@@ -245,49 +316,15 @@
   border-radius: 100%;
 }
 
-.product-card__image {
-  position: relative;
-  height: 220px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 5px;
-  overflow: hidden;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.product-card__image img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  pointer-events: none;
-  user-select: none;
-  border-radius: 8px;
-  -webkit-user-drag: none;
-  transition: transform 0.3s ease;
-}
-
-.product-card:hover .product-card__image img {
-  transform: scale(1.05);
-}
-
-.product-card__image-skeleton {
-  width: 100%;
-  height: 100%;
-  border-radius: 8px;
-}
-
 .product-card__rating {
   display: flex;
   align-items: center;
-  margin-bottom: 5px;
 }
 
 .product-card__rating-info {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 
 .product-card__rating-skeleton {
@@ -297,32 +334,52 @@
 }
 
 .product-card__rating-score {
-  color: rgb(0, 0, 0);
-  border-radius: 4px;
+  color: #1a1a1a;
   font-size: 12px;
 }
 
 .product-card__rating-count {
-  color: #757575;
+  color: #9e9e9e;
   font-size: 12px;
 }
 
 .product-card__rating-star {
-  margin-right: 5px;
+  margin-right: 4px;
+  display: flex;
 }
 
 .product-card__rating-star img {
-  height: 14px;
+  height: 12px;
 }
 
+/* Cart button sits inside the image, bottom-right corner. */
 .product-card__cart-button {
   position: absolute;
   right: 10px;
-  top: 220px;
+  bottom: 10px;
+  z-index: 4;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #ea5f0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
-  border-radius: 4px;
-  padding: 4px;
   cursor: pointer;
+  box-shadow: 0 3px 10px rgba(234, 95, 10, 0.45);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.product-card__cart-button:hover {
+  background: #d65200;
+  transform: scale(1.06);
+}
+
+.product-card__cart-button:disabled {
+  background: #c7c7c7;
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 .product-card__cart-skeleton {
@@ -366,20 +423,34 @@
   border: 2px solid orange;
 }
 
+/* Content block: fills remaining card height so footers (price) align
+   across a row of cards regardless of title/description length. */
 .product-card__info {
-  padding-top: 5px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 6px;
+  padding: 18px 14px 14px;
+}
+
+.product-card__title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .product-card__title {
-  font-size: 14px;
-  font-weight: 600;
-  margin: 0 0 5px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-decoration: none !important;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
   line-height: 1.3;
-  min-height: 20px;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-decoration: none !important;
 }
 
 .product-card__title-skeleton {
@@ -389,16 +460,31 @@
   margin-bottom: 5px;
 }
 
-.product-card__description {
-  font-size: 10px;
-  color: #757575;
-  margin: 0 0 5px 0;
+.product-card__stock-badge {
+  flex-shrink: 0;
+  background: #ea5f0a;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
   white-space: nowrap;
+}
+
+.product-card__stock-badge--out {
+  background: #9e9e9e;
+}
+
+.product-card__description {
+  font-size: 12.5px;
+  color: #757575;
+  line-height: 1.4;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
   text-decoration: none !important;
-  line-height: 1.3;
-  min-height: 18px;
 }
 
 .product-card__description-skeleton {
@@ -410,15 +496,18 @@
 
 .product-card__price {
   display: flex;
-  gap: 5px;
-  align-items: center;
+  flex-direction: column;
+  gap: 2px;
   margin-top: auto;
+  padding-top: 4px;
 }
 
 .product-card__current-price {
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 19px;
+  font-weight: 800;
+  color: #111;
   display: block;
+  line-height: 1.15;
 }
 
 .product-card__price-skeleton {
@@ -431,15 +520,17 @@
 .product-card__price-details {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  flex-wrap: wrap;
   min-height: 18px;
 }
 
 .product-card__original-price {
-  font-size: 11px;
-  color: #858484;
+  font-size: 14px;
+  color: #9e9e9e;
   text-decoration: line-through;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 .product-card__original-price-skeleton {
@@ -449,9 +540,10 @@
 }
 
 .product-card__discount {
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(76, 175, 80, 1);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ea5f0a;
+  line-height: 1.2;
 }
 
 .product-card__discount-skeleton {
@@ -495,6 +587,15 @@
   color: inherit;
 }
 
+/* This is the actual grid/flex item on grid pages (Shop, Catalog, etc.) —
+   it needs to stretch to the row height itself before .product-card's own
+   height:100% has anything to fill, otherwise cards in the same row end up
+   different heights whenever title/description length differs. */
+.product-card__link-wrapper {
+  display: block;
+  height: 100%;
+}
+
 .skeleton {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
@@ -520,8 +621,11 @@
     width: 95%;
   }
 
-  .product-card {
+  .product-card__wrapper {
     width: 240px;
+  }
+
+  .product-card {
     min-height: 240px;
   }
 
@@ -530,21 +634,24 @@
   }
 
   .product-card__current-price {
-    font-size: 12px;
+    font-size: 18px;
   }
 
   .product-card__original-price {
-    font-size: 12px;
+    font-size: 13.5px;
   }
 
   .product-card__discount {
-    font-size: 12px;
+    font-size: 13px;
   }
 }
 
 @media (max-width: 992px) {
-  .product-card {
+  .product-card__wrapper {
     width: 220px;
+  }
+
+  .product-card {
     min-height: 360px;
   }
 
@@ -554,8 +661,11 @@
 }
 
 @media (max-width: 768px) {
-  .product-card {
+  .product-card__wrapper {
     width: 200px;
+  }
+
+  .product-card {
     min-height: 340px;
   }
 
@@ -571,39 +681,49 @@
     font-size: large;
   }
   .product-card__current-price {
-    font-size: 11px;
+    font-size: 17px;
   }
 
   .product-card__original-price {
-    font-size: 11px;
+    font-size: 13px;
   }
 
   .product-card__discount {
-    font-size: 11px;
+    font-size: 12.5px;
   }
 }
 
 @media (max-width: 576px) {
+  .product-card__wrapper {
+    width: 185px;
+  }
+
   .product-card {
-    width: 180px;
-    padding: 10px;
-    min-height: 320px;
+    min-height: 330px;
+    border-radius: 10px;
   }
 
   .product-card__image {
-    height: 180px;
+    border-radius: 10px 10px 0 0;
   }
 
-  .product-card__cart-button {
-    top: 140px;
+  .product-card__image img {
+    padding: 10px;
   }
 
   .product-card__title {
-    font-size: 12px;
+    font-size: 13px;
+    line-height: 1.35;
   }
 
   .product-card__description {
-    font-size: 12px;
+    font-size: 11.5px;
+    line-height: 1.35;
+  }
+
+  .product-card__info {
+    gap: 5px;
+    padding: 14px 10px 12px;
   }
 
   .product-carousel {
@@ -627,52 +747,60 @@
   .product-card__wishlist-button {
     top: 8px;
     right: 8px;
-    padding: 6px;
+    width: 28px;
+    height: 28px;
   }
 
   .product-card__wishlist-button svg {
-    width: 14px;
-    height: 14px;
+    width: 15px;
+    height: 15px;
   }
   .product-card__current-price {
-    font-size: 10px;
+    font-size: 16px;
   }
 
   .product-card__original-price {
-    font-size: 10px;
+    font-size: 12.5px;
   }
 
   .product-card__discount {
-    font-size: 10px;
+    font-size: 12px;
   }
 }
 
 @media (max-width: 480px) {
-  .product-card {
-    width: 160px;
-    min-height: 220px;
-  }
   .product-card__wrapper {
-    height: 220px;
+    width: 168px;
   }
 
-  .product-card__image {
-    height: 160px;
+  .product-card {
+    min-height: 318px;
   }
 
   .product-carousel__products {
     min-height: 320px;
   }
+
+  .product-card__rating-score,
+  .product-card__rating-count {
+    font-size: 11px;
+  }
+
   .product-card__current-price {
-    font-size: 9px;
+    font-size: 15.5px;
   }
 
   .product-card__original-price {
-    font-size: 9px;
+    font-size: 12px;
   }
 
   .product-card__discount {
-    font-size: 9px;
+    font-size: 11.75px;
+  }
+
+  .product-card__cart-button {
+    width: 34px;
+    height: 34px;
   }
 }
 
@@ -695,8 +823,4 @@
 
 .product-card__pagination--inside .product-card__dot {
   pointer-events: auto;
-}
-
-.product-card__wishlist-button {
-  top: 20px;
 }
