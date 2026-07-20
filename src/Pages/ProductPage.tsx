@@ -843,7 +843,7 @@ const ProductPage = () => {
 												});
 
 												// Order: color, size, length, then others
-												let attributeTypes = Object.keys(attributeOptions);
+												const attributeTypes = Object.keys(attributeOptions);
 												const order = ["color", "size", "length"];
 												const orderedTypes = [
 													...order.filter((t) => attributeTypes.includes(t)),

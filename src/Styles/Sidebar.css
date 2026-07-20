@@ -1,16 +1,19 @@
-/* General Sidebar Styles */
+/* ============================================
+   SIDEBAR — DESKTOP (column nav) + MOBILE (bottom dock)
+   ============================================ */
+
+/* ——— Desktop sidebar ——— */
 .sidebar {
   display: flex;
   flex-direction: column;
   width: 200px;
+  flex-shrink: 0;
+  height: 100vh;
   position: sticky;
   top: 0;
-  height: 100vh;
   overflow-y: auto;
-  flex-shrink: 0;
   background-color: #ffffff;
   border-right: 1px solid #e5e7eb;
-  transition: all 0.3s ease;
   z-index: 100;
 }
 
@@ -20,6 +23,7 @@
   height: 56px;
   padding: 0 16px;
   border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
 }
 
 .sidebar__logo {
@@ -45,6 +49,7 @@
 .sidebar__footer {
   padding: 8px;
   border-top: 1px solid #e5e7eb;
+  flex-shrink: 0;
 }
 
 .sidebar__item {
@@ -131,77 +136,105 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4'/%3E%3Cpolyline points='16 17 21 12 16 7'/%3E%3Cline x1='21' y1='12' x2='9' y2='12'/%3E%3C/svg%3E");
 }
 
-/* Dock Styles for Mobile Viewport */
+/* ============================================
+   MOBILE BOTTOM DOCK  ≤999px
+   ============================================ */
 @media (max-width: 999px) {
+  /* The sidebar becomes a fixed bottom tab bar */
   .sidebar {
-    width: 100%; 
-  
-    height: auto;
-    position: fixed;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%); /* Center the dock horizontally */
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    background-color: #ffffff;
-    border-top: 1px solid #e5e7eb;
-    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.05); /* Add subtle shadow for depth */
-    z-index: 100;
-    padding: 8px 16px; /* Add padding for spacing */
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 60px !important;
+    max-height: 60px !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+    border-right: none !important;
+    border-top: 1px solid #e5e7eb !important;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.08) !important;
+    z-index: 1000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    background-color: #ffffff !important;
   }
 
-  .sidebar--dock .sidebar__header {
-    display: none; /* Hide header in dock mode */
-  }
-
-  .sidebar--dock .sidebar__nav {
-    flex-direction: row;
-    justify-content: space-around; /* Distribute items evenly */
-    flex: 1;
-    padding: 0; /* Remove extra padding */
-    margin: 0; /* Ensure no margin */
-  }
-
+  /* Hide header & footer in dock mode */
+  .sidebar__header,
+  .sidebar__footer,
+  .sidebar--dock .sidebar__header,
   .sidebar--dock .sidebar__footer {
-    display: none; /* Hide footer in dock mode */
+    display: none !important;
   }
 
+  /* Nav becomes a horizontal row of equal-width items */
+  .sidebar__nav,
+  .sidebar--dock .sidebar__nav {
+    flex-direction: row !important;
+    flex: 1 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    align-items: center !important;
+  }
+
+  /* Each tab item takes equal space */
+  .sidebar__item,
   .sidebar--dock .sidebar__item {
-    flex-direction: column;
-    gap: 4px;
-    padding: 10px; /* Reduce padding slightly */
-    text-align: center;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px; /* Rounded corners for modern look */
-    transition: background-color 0.2s, color 0.2s, transform 0.2s; /* Smooth transitions */
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    padding: 4px 2px !important;
+    border-radius: 0 !important;
+    font-size: 10px !important;
+    text-align: center !important;
+    height: 100% !important;
+    max-height: 60px !important;
+    box-sizing: border-box !important;
   }
 
+  .sidebar__item:hover,
   .sidebar--dock .sidebar__item:hover {
-    background-color: #f3f4f6; /* Light hover effect */
-    transform: scale(1.05); /* Slight zoom effect on hover */
+    background-color: #f9fafb !important;
   }
 
+  .sidebar__item--active,
   .sidebar--dock .sidebar__item--active {
-    background-color: #fff7ed; /* Active item background */
-    color: #f97316; /* Active item text color */
-    transform: scale(1.1); /* Slightly larger active item */
+    background-color: #fff7ed !important;
+    color: #f97316 !important;
   }
 
-  .sidebar--dock .sidebar__icon {
-    width: 22px; /* Slightly reduce icon size */
-    height: 22px;
-    margin: 0 auto;
+  .sidebar__item--active svg,
+  .sidebar--dock .sidebar__item--active svg {
+    stroke: #f97316 !important;
   }
 
+  .sidebar__icon-wrap svg,
+  .sidebar--dock .sidebar__icon-wrap svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .sidebar__text,
   .sidebar--dock .sidebar__text {
-    font-size: 11px; /* Smaller text for compactness */
-    font-weight: 500;
-    color: #4b5563; /* Neutral text color */
+    font-size: 10px !important;
+    font-weight: 500 !important;
+    color: #4b5563 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
   }
 
+  .sidebar__item--active .sidebar__text,
   .sidebar--dock .sidebar__item--active .sidebar__text {
-    color: #f97316; /* Active text color */
+    color: #f97316 !important;
   }
 }

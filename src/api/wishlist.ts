@@ -1,8 +1,8 @@
 import axios from "axios";
 import { API_BASE_URL } from "../config";
 
-let inflight = new Map<string, Promise<any[]>>();
-let cache = new Map<string, { ts: number; data: any[] }>();
+const inflight = new Map<string, Promise<any[]>>();
+const cache = new Map<string, { ts: number; data: any[] }>();
 
 export const getWishlist = async (token?: string) => {
   const key = token ? `bearer:${token}` : "cookie";

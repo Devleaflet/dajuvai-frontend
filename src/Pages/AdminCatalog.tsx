@@ -263,13 +263,13 @@ const AdminCatalog = () => {
 
 	const handleSaveHomepageSection = async () => {
 		try {
-			let payload = {
+			const payload = {
 				title: modalTitle,
 				isActive: modalIsActive,
 				productSource: selectedProductSource,
 			};
 
-			let endpoint =
+			const endpoint =
 				`${API_BASE_URL}/api/homepage` +
 				(editingHomepage ? "/" + sectionToEdit : ``);
 

@@ -294,7 +294,7 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
             // Upload files and get URLs
             const uploadedTaxDocs = [...formData.taxDocuments];
             const uploadedCitizenshipDocs = [...formData.citizenshipDocuments];
-            let uploadedChequePhoto = formData.chequePhoto;
+            const uploadedChequePhoto = formData.chequePhoto;
             let uploadedProfilePicture = formData.profilePicture;
 
             // Upload tax documents

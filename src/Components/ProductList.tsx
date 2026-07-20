@@ -140,7 +140,7 @@ const ProductList: React.FC<ProductListProps> = ({
 						products.map((product) => {
 							const displayImage = getDisplayImage(product);
 							const hasDeal = product.deal !== null;
-							let numericStock = product.hasVariants
+							const numericStock = product.hasVariants
 								? getVariantStock(product)
 								: product.stock ?? 0;
 
