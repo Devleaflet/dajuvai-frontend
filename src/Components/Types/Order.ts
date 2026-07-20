@@ -29,6 +29,19 @@ export interface OrderDetail {
         quantity: number;
         price: string;
         product: { name: string; productImages: string[] };
+        variant: {
+            attributes: Array<{
+                name: string;
+                value: string;
+            }>;
+            basePrice: string;
+            finalPrice: string;
+            id: number;
+            productId: number;
+            sku: string;
+            variantImages: string[];
+        };
+        variantId: number;
         vendor: { id: number; businessName: string };
     }>;
     totalPrice: string;

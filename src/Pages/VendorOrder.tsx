@@ -50,13 +50,20 @@ const VendorOrder: React.FC = () => {
                 authState.token,
             );
             const apiOrders = response.data;
+
+            console.log("Fetched Orders:"); // Debugging line
+            console.log(apiOrders); // Debugging line
+
             return apiOrders.map((order: OrderDetail) => {
-                const firstItem = order.orderItems[0];
                 return {
                     id: order.id,
                     orderId: `#ORD${String(order.id).padStart(4, "0")}`,
                     orderedBy: order.orderedBy.username || "Unknown Customer",
-                    product: firstItem.product.name,
+                    product: [
+                        ...new Set(
+                            order.orderItems.map((item) => item.product.name),
+                        ),
+                    ].join(", "),
                     createdAt: order.createdAt,
                     price: parseFloat(order.totalPrice),
                     paymentStatus: order.paymentMethod || "",
@@ -69,6 +76,7 @@ const VendorOrder: React.FC = () => {
                             rawStatus === "RETURNED"
                         )
                             return "canceled";
+                        if (rawStatus === "CONFIRMED") return "confirmed";
                         return "pending";
                     })(),
                 };

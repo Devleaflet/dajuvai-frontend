@@ -22,6 +22,19 @@ interface OrderDetail {
         quantity: number;
         price: string;
         product: { name: string; productImages: string[] };
+        variant: {
+            attributes: Array<{
+                name: string;
+                value: string;
+            }>;
+            basePrice: string;
+            finalPrice: string;
+            id: number;
+            productId: number;
+            sku: string;
+            variantImages: string[];
+        };
+        variantId: number;
         vendor: { id: number; businessName: string };
     }>;
     totalPrice: string;
@@ -51,7 +64,55 @@ const ViewModal: React.FC<ViewModalProps> = ({
         0,
     );
 
+    const formatAttributes = (attributes: unknown) => {
+        if (Array.isArray(attributes)) {
+            return attributes.map((attr, index) => {
+                if (
+                    typeof attr === "object" &&
+                    attr !== null &&
+                    "name" in attr &&
+                    "value" in attr
+                ) {
+                    const typedAttr = attr as {
+                        name?: unknown;
+                        value?: unknown;
+                    };
+                    return (
+                        <span
+                            key={`${typedAttr.name ?? "attr"}-${index}`}
+                            style={{ display: "inline-block", marginRight: 8 }}
+                        >
+                            {String(typedAttr.name)}: {String(typedAttr.value)}
+                        </span>
+                    );
+                }
+
+                return null;
+            });
+        }
+
+        if (attributes && typeof attributes === "object") {
+            return Object.entries(attributes as Record<string, unknown>).map(
+                ([name, value]) => (
+                    <span
+                        key={name}
+                        style={{ display: "inline-block", marginRight: 8 }}
+                    >
+                        {name}: {String(value)}
+                    </span>
+                ),
+            );
+        }
+
+        return null;
+    };
+
     const orderDate = new Date(orderDetail.createdAt);
+
+    console.log("Order:");
+    console.log(order);
+    console.log("Order Detail:");
+    console.log(orderDetail);
 
     return (
         <div
@@ -226,7 +287,11 @@ const ViewModal: React.FC<ViewModalProps> = ({
                             >
                                 {/* Product Image */}
                                 <img
-                                    src={item.product.productImages[0]}
+                                    src={
+                                        item.variant
+                                            ? item.variant.variantImages[0]
+                                            : item.product.productImages[0]
+                                    }
                                     alt={item.product.name}
                                     style={{
                                         width: 64,
@@ -254,6 +319,19 @@ const ViewModal: React.FC<ViewModalProps> = ({
                                     >
                                         {item.product.name}
                                     </div>
+                                    {item.variant && (
+                                        <div
+                                            style={{
+                                                fontSize: 13,
+                                                lineHeight: 1.3,
+                                                wordBreak: "break-word",
+                                            }}
+                                        >
+                                            {formatAttributes(
+                                                item.variant.attributes,
+                                            )}
+                                        </div>
+                                    )}
 
                                     <div
                                         style={{
