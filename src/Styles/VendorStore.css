@@ -3,10 +3,13 @@
 	padding: 2.5rem 1.5rem 2rem;
 	margin: 0 auto;
 	min-height: 100vh;
+	min-height: 100svh;
+	min-height: 100dvh;
 	box-sizing: border-box;
 	background: #f8f9fa;
 	max-width: 1800px;
 	width: 85%;
+	overflow-x: hidden;
 }
 
 /* Header */
