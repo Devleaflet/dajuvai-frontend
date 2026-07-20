@@ -51,6 +51,7 @@ const VendorOrder: React.FC = () => {
                 authState.token,
             );
             const apiOrders = response.data;
+            console.log(apiOrders);
             return apiOrders.map((order: VendorOrderDetail) => {
                 const firstItem = order.orderItems[0];
                 return {
@@ -64,7 +65,12 @@ const VendorOrder: React.FC = () => {
                         order.orderedBy?.fullName ||
                         order.orderedBy?.username ||
                         "Unknown Customer",
-                    product: firstItem?.product?.name || "Unknown Product",
+                    product:
+                        order.orderItems
+                            .map((item) => item.product.name)
+                            .join(", ") ||
+                        firstItem.product.name ||
+                        "Unknown Product",
                     createdAt: order.createdAt,
                     // This vendor's own payable amount only — never the
                     // order's full multi-vendor total.
