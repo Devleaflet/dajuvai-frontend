@@ -8,6 +8,26 @@ interface OrderListProps {
   onView: (order: Order) => void;
 }
 
+// order.status here is one of: pending | confirmed | processing | shipped |
+// delayed | delivered | canceled (see VendorOrder.tsx's mapping from the
+// real backend OrderStatus enum). Badge color groups them by what the
+// vendor actually needs to know: awaiting confirmation, actively moving,
+// done, or a problem.
+const STATUS_BADGE_CLASS: Record<string, string> = {
+  pending: "on-sale",
+  confirmed: "in-progress",
+  processing: "in-progress",
+  shipped: "in-progress",
+  delayed: "in-progress",
+  delivered: "featured",
+  canceled: "out-of-stock",
+};
+
+const formatStatusLabel = (status?: string): string => {
+  if (!status) return "Pending";
+  return status.charAt(0).toUpperCase() + status.slice(1);
+};
+
 const OrderList: React.FC<OrderListProps> = ({ orders, onView }) => {
   return (
     <div className="vendor-order__table-container">
@@ -33,17 +53,9 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onView }) => {
               <td>{order.paymentStatus || "Unknown"}</td>
               <td>
                 <span
-                  className={`product-status ${
-                    order.status === "delivered"
-                      ? "featured"
-                      : order.status === "pending"
-                      ? "on-sale"
-                      : order.status === "canceled"
-                      ? "out-of-stock"
-                      : ""
-                  }`}
+                  className={`product-status ${STATUS_BADGE_CLASS[order.status ?? "pending"] ?? ""}`}
                 >
-                  {order.status || "Pending"}
+                  {formatStatusLabel(order.status)}
                 </span>
               </td>
               <td className="action-buttons">

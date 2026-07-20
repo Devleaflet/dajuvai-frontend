@@ -322,10 +322,21 @@
 	overflow-y: auto;
 	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
 		0 10px 10px -5px rgba(0, 0, 0, 0.04);
-	animation: slideIn 0.15s ease-out;
+	animation: adminCatalogModalSlideIn 0.15s ease-out;
 }
 
-@keyframes slideIn {
+/* Named uniquely on purpose: `slideIn` is (was) also defined in
+   OrderModals.css, VendorTerms.css, ProductPage.css, Shop.css,
+   NewProductModal.css, and AddVendorModal.css, each with different,
+   incompatible transforms. @keyframes names are global once bundled -
+   whichever file's definition loaded last silently won for every
+   `animation: slideIn` in the whole app. This modal was actually animating
+   with OrderModals.css/VendorTerms.css's translateY(20px)-based keyframe
+   instead of its own centering transform, which pinned its top-left corner
+   at dead-center-screen (top:50%;left:50% with no -50%/-50% correction)
+   instead of centering the box - visually landing in the bottom-right
+   quadrant of the viewport. */
+@keyframes adminCatalogModalSlideIn {
 	from {
 		opacity: 0;
 		transform: translate(-50%, -48%) scale(0.95);

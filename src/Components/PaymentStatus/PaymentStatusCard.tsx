@@ -268,7 +268,7 @@ const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
 							Check Status
 						</button>
 					)}
-					{status === "failed" && (
+					{(status === "failed" || status === "cancelled") && (
 						<button
 							onClick={onRetry || (() => navigate("/checkout"))}
 							className="psc-btn psc-btn--primary"

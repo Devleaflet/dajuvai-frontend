@@ -262,34 +262,70 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     if (product.hasVariants && product.variants?.length) {
       const validVariants = product.variants
         .filter((v) => v.status !== "OUT_OF_STOCK")
-        .map((v) => ({
-          base: Number(v.basePrice) || 0,
-          final: Number(v.finalPrice) || Number(v.basePrice) || 0,
-        }));
+        .map((v) => {
+          const base = Number(v.basePrice) || 0;
+          const final = Number(v.finalPrice) || base;
+          return {
+            base,
+            final,
+            savings: Math.max(0, base - final),
+            // A vendor sets discount per-variant, not on the product itself
+            // (the product-level discount fields are only used for
+            // non-variant products), so the badge must read the *variant's*
+            // discount here — falling back to product.discount only if the
+            // variant genuinely doesn't specify one.
+            discount: v.discount !== undefined ? v.discount : product.discount,
+            discountType:
+              v.discountType !== undefined ? v.discountType : product.discountType,
+          };
+        });
 
       if (validVariants.length > 0) {
-        const lowest = validVariants.reduce((prev, curr) =>
-          curr.final < prev.final ? curr : prev,
-        );
-        return { base: lowest.base, final: lowest.final };
+        // Prefer showing a discounted variant (biggest savings wins) over
+        // the merely-cheapest one — otherwise a shopper never sees the
+        // badge/deal unless the discounted variant also happens to be the
+        // lowest-priced option, even though the product genuinely is on
+        // sale for one of its variants.
+        const discounted = validVariants.filter((v) => v.savings > 0);
+        const chosen =
+          discounted.length > 0
+            ? discounted.reduce((best, curr) =>
+                curr.savings > best.savings ? curr : best,
+              )
+            : validVariants.reduce((prev, curr) =>
+                curr.final < prev.final ? curr : prev,
+              );
+        return {
+          base: chosen.base,
+          final: chosen.final,
+          discount: chosen.discount,
+          discountType: chosen.discountType,
+        };
       }
     }
 
     return {
       base: Number(product.basePrice) || 0,
       final: Number(product.finalPrice) || Number(product.basePrice) || 0,
+      discount: product.discount,
+      discountType: product.discountType,
     };
   };
 
-  const { base: basePriceNum, final: finalPriceNum } = getDisplayPrices();
+  const {
+    base: basePriceNum,
+    final: finalPriceNum,
+    discount: displayDiscount,
+    discountType: displayDiscountType,
+  } = getDisplayPrices();
 
   // Same shared utility used on product details/cart/checkout, so the
   // badge/savings shown here never disagrees with those pages.
   const discountDisplay = getDiscountDisplay({
     basePrice: basePriceNum,
     finalPrice: finalPriceNum,
-    discount: product.discount,
-    discountType: product.discountType,
+    discount: displayDiscount,
+    discountType: displayDiscountType,
   });
   const hasDiscount = discountDisplay.hasDiscount;
   const discountLabel = discountDisplay.savingsLabel;

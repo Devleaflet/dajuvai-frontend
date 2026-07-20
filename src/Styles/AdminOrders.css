@@ -428,13 +428,45 @@
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .admin-orders__filter-group {
     min-width: auto;
   }
-  
+
   .admin-orders__clear-filters {
     align-self: center;
     width: fit-content;
+  }
+
+  /* Same fix as AdminProduct.css: the desktop layout locks the page to
+     exactly 100vh with overflow:hidden so only the table body scrolls, but
+     on mobile the search/filter row wraps onto several lines and eats more
+     height than that rigid layout has to give - flex:1 had nowhere to
+     shrink the table-container to but ~0px. Let the page scroll normally
+     instead. */
+  .admin-orders {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .admin-orders__content {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .admin-orders__table-container {
+    flex: none;
+    max-height: 65vh;
+    overflow-x: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Without a min-width, `width: 100%` squeezes every column into the
+     narrow viewport instead of overflowing into the horizontal scroll the
+     container above now provides - give columns room to stay legible. */
+  .admin-orders__table {
+    min-width: 720px;
   }
 }

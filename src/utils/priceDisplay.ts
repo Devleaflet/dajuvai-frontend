@@ -52,14 +52,24 @@ export const getDiscountDisplay = ({
   }
 
   const normalizedType = String(discountType ?? 'NONE').toUpperCase();
-  let badgeLabel: string | null = null;
+  let badgeLabel: string | null;
 
   if (normalizedType === 'FLAT') {
     badgeLabel = `Rs ${formatMoney(savingsAmount)} off`;
-  } else if (normalizedType === 'PERCENTAGE') {
+  } else {
+    // PERCENTAGE, or NONE/unknown with a real price gap — a product can end
+    // up with finalPrice < basePrice without discount/discountType being
+    // set at all (e.g. an admin Deal applied to the product: deals are a
+    // separate mechanism from the product's own discount fields, and
+    // intentionally leave discount/discountType at 0/NONE). Since a
+    // percentage is always derivable directly from the price gap, default
+    // to that instead of showing no badge whenever the type doesn't
+    // positively say "FLAT".
     const actualPercent = (savingsAmount / base) * 100;
     const percentToShow =
-      discountValue > 0 && Math.abs(actualPercent - discountValue) <= 0.05
+      normalizedType === 'PERCENTAGE' &&
+      discountValue > 0 &&
+      Math.abs(actualPercent - discountValue) <= 0.05
         ? discountValue
         : actualPercent;
     badgeLabel = `-${formatPercent(percentToShow)}%`;

@@ -146,8 +146,10 @@ const AdminProduct: React.FC = () => {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to load products";
       console.error("Fetch products error:", err);
+      // The persistent inline banner below (with its Retry button) is
+      // the primary error UI for this fetch - a toast on top of it was
+      // redundant and visually overlapped the page header/filters.
       setError(errorMessage);
-      toast.error(errorMessage);
     } finally {
       if (productRequestRef.current === controller) {
         setLoading(false);
@@ -193,8 +195,11 @@ const AdminProduct: React.FC = () => {
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to load vendors";
-      console.error("Fetch products error:", err);
-      setError(errorMessage);
+      console.error("Fetch vendors error:", err);
+      // Toast only, not setError: `error` drives the persistent product-list
+      // banner whose Retry button calls fetchProducts specifically. Routing
+      // a vendor-dropdown failure through the same state showed a banner
+      // whose Retry action had nothing to do with the actual failure.
       toast.error(errorMessage);
     }
   }, [token, isAuthenticated]);

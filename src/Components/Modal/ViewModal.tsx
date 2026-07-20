@@ -353,8 +353,12 @@ const ViewModal: React.FC<ViewModalProps> = ({
 
                     {/* Vendor actions — only ever offers transitions this
                         vendor is actually allowed to make; delivered/other
-                        vendors' status changes are never available here. */}
-                    {nextStatuses.length > 0 && (
+                        vendors' status changes are never available here.
+                        Disabled for now: vendors aren't allowed to change
+                        order status yet (only admin/delivery are) - the
+                        transition logic and API call stay intact so this can
+                        be re-enabled later by removing the `false &&`. */}
+                    {false && nextStatuses.length > 0 && (
                         <div className="order-section">
                             <h3 className="order-section__title">Actions</h3>
                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

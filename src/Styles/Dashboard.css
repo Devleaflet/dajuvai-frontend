@@ -1,4 +1,11 @@
 /* General Responsive Styles */
+/* overflow-x removed: horizontal-overflow protection lives on <html> only
+   (index.css). This wrapper is the direct parent of <Sidebar>/<AdminSidebar>
+   on every page that uses it (vendor dashboard/products/orders, plus
+   AdminVendor.tsx and AdminDashboard.tsx, which reuse this same class) - its
+   own overflow-x:hidden gave it an independent overflow-y:auto too (the CSS
+   spec forces the visible axis to auto once the other is non-visible),
+   which broke position:sticky on the sidebar for every one of those pages. */
 .vendor-dash-container {
   display: flex;
   width: 100%;
@@ -6,7 +13,6 @@
   min-height: 100vh;
   min-height: 100svh;
   min-height: 100dvh;
-  overflow-x: hidden;
 }
 
 .dashboard {
@@ -19,11 +25,21 @@
   min-width: 0;
   background-color: #f9fafb;
   transition: width 0.3s ease;
-  overflow: auto;
+  /* overflow:auto removed: min-height is a floor, not a cap, so this box
+     grows to fit its content and its own overflow:auto scrollbar never
+     actually engages - but CSS still treats it as the nearest "scrolling
+     ancestor" for any sticky descendant (.dashboard__header), so the sticky
+     header measured against a container that never visibly scrolls instead
+     of the real page scroll, making it inert. */
   padding: 0px;
 }
 
 .dashboard__header {
+  /* Sticks to the top of the page scroll so only .dashboard__main moves -
+     same reasoning as .admin-page-header in Header.css. */
+  position: sticky;
+  top: 0;
+  z-index: 50;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -33,6 +49,22 @@
   background-color: #ffffff;
   border-bottom: 1px solid #e5e7eb;
   margin-bottom: 10px;
+}
+
+@media (max-width: 767px) {
+  /* The fixed sidebar__mobile-bar (Sidebar.css) already shows the page
+     title, avatar/logout moved into its drawer - this header (title again +
+     its own account dropdown) was rendering as a second, redundant header
+     stacked directly underneath it. dashboard__search-container (below
+     this component) is real, non-duplicated content and stays visible.
+     !important: VendorProduct.css separately redeclares a base (non-media)
+     .dashboard__header{display:flex} rule of its own - a duplicate/leaking
+     style on a class that belongs to this shared component - which silently
+     wins the cascade over a plain override here depending on CSS bundle
+     order. This guarantees the hide takes effect regardless of that. */
+  .dashboard__header {
+    display: none !important;
+  }
 }
 
 .dashboard__title {

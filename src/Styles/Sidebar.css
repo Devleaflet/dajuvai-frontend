@@ -291,6 +291,12 @@
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     z-index: 1002;
+    /* Forces this fixed+blurred bar onto its own GPU compositing layer.
+       iOS Safari is known to mishandle position:fixed combined with
+       backdrop-filter during scroll/overscroll — the layer can detach or
+       fail to repaint, leaving a blank strip where the bar should be. */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
   }
 
   .sidebar__mobile-brand {

@@ -135,18 +135,27 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 		if (product.hasVariants && product.variants?.length) {
 			const validVariants = product.variants
 				.filter(v => Number(v.stock || 0) > 0 && v.status !== "OUT_OF_STOCK")
-				.map(v => ({
-					base: Number((v as any).basePrice ?? v.price) || 0,
-					final: Number(v.finalPrice) || (Number((v as any).basePrice ?? v.price) || 0),
-					discount: v.discount !== undefined ? v.discount : product.discount,
-					discountType: v.discountType !== undefined ? v.discountType : product.discountType
-				}));
+				.map(v => {
+					const base = Number((v as any).basePrice ?? v.price) || 0;
+					const final = Number(v.finalPrice) || base;
+					return {
+						base,
+						final,
+						savings: Math.max(0, base - final),
+						discount: v.discount !== undefined ? v.discount : product.discount,
+						discountType: v.discountType !== undefined ? v.discountType : product.discountType
+					};
+				});
 
 			if (validVariants.length > 0) {
-				const lowest = validVariants.reduce((prev, curr) =>
-					curr.final < prev.final ? curr : prev
-				);
-				return { base: lowest.base, final: lowest.final, discount: lowest.discount, discountType: lowest.discountType };
+				// Prefer a discounted variant (biggest savings) over the merely
+				// cheapest one, so the badge shows whenever any variant is on
+				// sale — not only when the cheapest variant happens to be.
+				const discounted = validVariants.filter(v => v.savings > 0);
+				const chosen = discounted.length > 0
+					? discounted.reduce((best, curr) => curr.savings > best.savings ? curr : best)
+					: validVariants.reduce((prev, curr) => curr.final < prev.final ? curr : prev);
+				return { base: chosen.base, final: chosen.final, discount: chosen.discount, discountType: chosen.discountType };
 			}
 		}
 

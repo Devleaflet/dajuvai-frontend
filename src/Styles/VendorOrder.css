@@ -51,6 +51,11 @@
   color: #dc2626;
 }
 
+.product-status.in-progress {
+  background-color: #fed7aa;
+  color: #9a3412;
+}
+
 /* Action buttons */
 .vendor-product__actions-cell {
   display: flex;

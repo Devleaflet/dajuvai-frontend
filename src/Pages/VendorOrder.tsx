@@ -73,7 +73,15 @@ const VendorOrder: React.FC = () => {
                             rawStatus === "RETURNED"
                         )
                             return "canceled";
-                        return "pending";
+                        if (rawStatus === "PENDING" || !rawStatus) return "pending";
+                        // CONFIRMED / PROCESSING / SHIPPED / DELAYED are real,
+                        // distinct order states - the system has no "pending"
+                        // state after checkout for COD/paid orders (they start
+                        // CONFIRMED). Collapsing all of these into "pending"
+                        // made the table show a status that disagreed with the
+                        // order's actual (correct) status shown in its detail
+                        // view. Show the real status instead.
+                        return rawStatus.toLowerCase();
                     })(),
                 };
             });

@@ -10,17 +10,36 @@ body,
   min-height: 100%;
   width: 100%;
   max-width: 100%;
+}
+
+html {
+  /* Horizontal-overflow protection lives on <html> ONLY. <html> is the
+     element whose declared overflow wins for the document viewport (the
+     browser ignores <body>'s overflow once <html> declares one), so one
+     copy here is sufficient. Also setting it on <body> and/or #root used
+     to give each of them their own independent `overflow-y: auto` too (the
+     CSS spec forces the visible axis to auto once the other axis is
+     non-visible) - each becoming its own clipped, viewport-sized scroll
+     box nested inside the real one. That's what broke `position: sticky`
+     for every sidebar in the app (their nearest "scrolling ancestor" ended
+     up being one of those inert boxes instead of the actual page scroll). */
   overflow-x: hidden;
 }
 
+html,
 body {
-  font-family: 'Poppins', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  overscroll-behavior-y: none;
+  background-color: #ffffff;
+}
+
+body {
+  font-family: "Poppins", system-ui, Avenir, Helvetica, Arial, sans-serif;
   margin: 0px;
   padding: 0px;
 }
 
 * {
-  font-family: 'Poppins', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: "Poppins", system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
 input,

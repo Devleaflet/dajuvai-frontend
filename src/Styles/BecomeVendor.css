@@ -1,9 +1,12 @@
 /* ===== GLOBAL HEIGHT RESET (critical for 100% height to work) ===== */
+/* overflow-x removed: horizontal-overflow protection lives on <html> only
+   (index.css) - this rule applies globally (CSS imports aren't page-scoped)
+   and duplicating it on <body> broke position:sticky app-wide. See
+   index.css for the full explanation. */
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
 }
 
 /* ===== PAGE LAYOUT WRAPPER ===== */

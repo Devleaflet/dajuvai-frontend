@@ -405,9 +405,31 @@
     gap: 8px;
   }
 
+  /* Desktop locks the whole page to exactly 100vh with overflow:hidden so
+     only the table body scrolls (header/sidebar stay put) - that only
+     works because the header fits on one line. On mobile the search bar
+     and filter dropdowns wrap onto several lines, so the header alone can
+     exceed the space this rigid layout allows, and flex:1 has nowhere left
+     to shrink the table-container TO but ~0 height ("only shows 2-3 rows").
+     Let the page scroll normally instead; the table keeps its own
+     horizontal scroll for the wide columns. */
+  .admin-products {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .admin-products__content {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
   /* Table: allow horizontal scroll, shrink font */
   .admin-products__table-container {
+    flex: none;
+    max-height: 65vh;
     overflow-x: auto;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 

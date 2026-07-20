@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "../Components/Navbar";
 import { useAuth } from "../context/AuthContext";
 import PaymentStatusCard, { PaymentStatus } from "../Components/PaymentStatus/PaymentStatusCard";
@@ -31,6 +31,7 @@ function normalizeStatus(paymentStatus: string, orderStatus: string): PaymentSta
 
 const TransactionSuccess: React.FC = () => {
 	const [searchParams] = useSearchParams();
+	const navigate = useNavigate();
 	const [orderData, setOrderData] = useState<Order | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("pending");
@@ -40,43 +41,89 @@ const TransactionSuccess: React.FC = () => {
 	const merchantTxnId = searchParams.get("MerchantTxnId");
 	const gatewayTxnId = searchParams.get("GatewayTxnId");
 
-	useEffect(() => {
-		const hitAPIs = async () => {
-			if (merchantTxnId) {
-				try {
-					const orderResponse = await fetch(
-						`${API_BASE_URL}/api/order/search/merchant-transactionId`,
-						{
-							method: "POST",
-							headers: {
-								"Content-Type": "application/json",
-								Authorization: `Bearer ${token}`,
-							},
-							body: JSON.stringify({ mTransactionId: merchantTxnId }),
-						}
-					);
+	const cancelledRef = useRef(false);
+	const pollTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+	const [isCheckingNow, setIsCheckingNow] = useState(false);
 
-					if (orderResponse.ok) {
-						const orderResult = await orderResponse.json();
-						if (orderResult.success && orderResult.data) {
-							setOrderData(orderResult.data);
-							setPaymentStatus(
-								normalizeStatus(orderResult.data.paymentStatus, orderResult.data.status)
+	const fetchOrder = useCallback(
+		async (options: { isFirstFetch?: boolean; isManualCheck?: boolean } = {}) => {
+			if (!merchantTxnId) return;
+			if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+
+			try {
+				const orderResponse = await fetch(
+					`${API_BASE_URL}/api/order/search/merchant-transactionId`,
+					{
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							Authorization: `Bearer ${token}`,
+						},
+						body: JSON.stringify({ mTransactionId: merchantTxnId }),
+					}
+				);
+
+				if (cancelledRef.current) return;
+
+				if (orderResponse.ok) {
+					const orderResult = await orderResponse.json();
+					if (cancelledRef.current) return;
+					if (orderResult.success && orderResult.data) {
+						setOrderData(orderResult.data);
+						const nextStatus = normalizeStatus(
+							orderResult.data.paymentStatus,
+							orderResult.data.status
+						);
+						setPaymentStatus(nextStatus);
+
+						// The gateway redirect back to this page carries no
+						// definitive status of its own - the order's real
+						// status is only known once our NPX/eSewa webhook (or
+						// the stale-order cleanup cron) updates it server-side,
+						// which can happen a few seconds to minutes after this
+						// page loads. Keep polling while still "pending" so
+						// the page corrects itself instead of being stuck on
+						// a stale snapshot from the first load.
+						if (nextStatus === "pending" && !options.isManualCheck) {
+							pollTimeoutRef.current = setTimeout(
+								() => fetchOrder({}),
+								5000
 							);
 						}
 					}
-				} catch (error) {
-					console.error("Error fetching order data:", error);
-				} finally {
-					setLoading(false);
 				}
-			} else {
-				setLoading(false);
+			} catch (error) {
+				console.error("Error fetching order data:", error);
+			} finally {
+				if (!cancelledRef.current) {
+					if (options.isFirstFetch) setLoading(false);
+					if (options.isManualCheck) setIsCheckingNow(false);
+				}
 			}
-		};
+		},
+		[merchantTxnId, token]
+	);
 
-		hitAPIs();
+	useEffect(() => {
+		if (!merchantTxnId) {
+			setLoading(false);
+			return;
+		}
+
+		cancelledRef.current = false;
+		fetchOrder({ isFirstFetch: true });
+
+		return () => {
+			cancelledRef.current = true;
+			if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [merchantTxnId, token]);
+
+	const handleCheckStatusNow = () => {
+		setIsCheckingNow(true);
+		fetchOrder({ isManualCheck: true });
+	};
 
 	return (
 		<>
@@ -87,6 +134,8 @@ const TransactionSuccess: React.FC = () => {
 				merchantTxnId={merchantTxnId}
 				gatewayTxnId={gatewayTxnId}
 				loading={loading}
+				onCheckStatus={handleCheckStatusNow}
+				onRetry={() => navigate("/checkout")}
 			/>
 		</>
 	);

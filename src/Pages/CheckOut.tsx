@@ -1,10 +1,11 @@
 import CryptoJS from 'crypto-js';
 import React, { useEffect, useMemo, useState } from 'react';
 import { FaInfoCircle } from 'react-icons/fa';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import Footer from '../Components/Footer';
 import AlertModal from '../Components/Modal/AlertModal';
+import TermsModal from '../Components/Modal/TermsModal';
 import Navbar from '../Components/Navbar';
 import '../Styles/CheckOut.css';
 import logo from '../assets/logo.webp';
@@ -305,6 +306,7 @@ const Checkout: React.FC = () => {
 	const [alertMessage, setAlertMessage] = useState('');
 	const [confirmedOrderSummary, setConfirmedOrderSummary] =
 		useState<ConfirmedOrderSummary | null>(null);
+	const [termsModalOpen, setTermsModalOpen] = useState(false);
 	const [showPromoField, setShowPromoField] = useState(false);
 	const [enteredPromoCode, setEnteredPromoCode] = useState('');
 	const [appliedPromoCode, setAppliedPromoCode] = useState<PromoCode | null>(
@@ -1818,12 +1820,17 @@ const Checkout: React.FC = () => {
 							<span className="checkout-container__terms-checkbox-label">
 								<span className="checkout-container__terms-checkbox-text">
 									I have read and agree to the website{' '}
-									<Link
-										to="/terms"
-										rel="noopener noreferrer"
+									<button
+										type="button"
+										className="checkout-container__terms-link"
+										onClick={(e) => {
+											e.preventDefault();
+											e.stopPropagation();
+											setTermsModalOpen(true);
+										}}
 									>
 										terms and conditions
-									</Link>{' '}
+									</button>{' '}
 									*
 								</span>
 							</span>
@@ -1856,6 +1863,10 @@ const Checkout: React.FC = () => {
 					</div>
 				</div>
 			</div>
+			<TermsModal
+				open={termsModalOpen}
+				onClose={() => setTermsModalOpen(false)}
+			/>
 			<Footer />
 		</>
 	);

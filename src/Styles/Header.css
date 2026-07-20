@@ -9,11 +9,25 @@
 }
 
 .admin-page-header {
-  position: relative;
+  /* Sticks to the top of whatever scrolls (the page itself - the content
+     column is no longer its own separate scroll box, see AdminProduct.css /
+     AdminOrders.css) so only the content below the header actually moves.
+     Both direct children (__topbar, __toolbar) already paint their own
+     opaque background, so the header itself can stay visually transparent
+     while sticky. */
+  position: sticky;
+  top: 0;
   width: 100%;
   margin-bottom: var(--admin-header-content-gap);
   background: transparent;
   z-index: 50;
+}
+
+@media (max-width: 767px) {
+  .admin-page-header {
+    /* Stick below the fixed mobile sidebar bar, not underneath it. */
+    top: var(--mobile-admin-header-height, 60px);
+  }
 }
 
 /* =========================
@@ -37,6 +51,20 @@
      follows it in the DOM, regardless of the menu's own z-index. */
   position: relative;
   z-index: 2;
+}
+
+@media (max-width: 767px) {
+  /* The fixed sidebar__mobile-bar (Sidebar.css) already shows the page
+     title, avatar/logout moved into its drawer - this topbar (title again +
+     its own account dropdown) was rendering as a second, redundant header
+     stacked directly underneath it. The toolbar (search/sort/filter) below
+     it is real, non-duplicated content and stays visible. Placed after the
+     base .admin-page-header__topbar rule above (not just inside its own
+     media query) so it actually wins the cascade - an earlier version of
+     this rule sat before the base declaration and got overridden by it. */
+  .admin-page-header__topbar {
+    display: none;
+  }
 }
 
 .admin-page-header__heading {

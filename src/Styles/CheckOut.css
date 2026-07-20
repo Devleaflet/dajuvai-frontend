@@ -447,14 +447,24 @@
 	line-height: 1.5;
 }
 
-.checkout-container__terms-checkbox-text a {
+.checkout-container__terms-checkbox-text a,
+.checkout-container__terms-link {
 	color: #ff6b35;
 	text-decoration: none;
 	font-weight: 500;
 }
 
-.checkout-container__terms-checkbox-text a:hover {
+.checkout-container__terms-checkbox-text a:hover,
+.checkout-container__terms-link:hover {
 	text-decoration: underline;
+}
+
+.checkout-container__terms-link {
+	background: none;
+	border: none;
+	padding: 0;
+	font: inherit;
+	cursor: pointer;
 }
 
 .checkout-container__terms-checkbox-label {
@@ -1029,9 +1039,11 @@
 	box-sizing: border-box;
 }
 
-body {
-	overflow-x: hidden;
-}
+/* horizontal-overflow protection lives on <html> only (index.css) - a bare
+   `body { overflow-x: hidden }` here isn't page-scoped, CSS imports are
+   global, so it silently applied everywhere and (combined with <html>
+   already setting the same thing) broke position:sticky app-wide by giving
+   both elements their own independent internal scroll box. */
 
 /* Remove any container overflow that might clip shadows */
 .checkout-container__content,
