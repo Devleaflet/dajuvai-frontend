@@ -15,7 +15,10 @@ import { useAuth } from '../context/AuthContext';
 import defaultProductImage from "../assets/logo.webp";
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
-import { moveToCart as moveWishlistItemToCart } from '../api/wishlist';
+import {
+  moveManyToCart as moveWishlistItemsToCart,
+  moveToCart as moveWishlistItemToCart,
+} from '../api/wishlist';
 // ================================
 // TYPES & INTERFACES
 // ================================
@@ -116,6 +119,7 @@ const Wishlist: React.FC = () => {
     refreshWishlist,
     removeWishlistItem,
     removeWishlistItemsLocally,
+    replaceWishlistItems,
   } = useWishlist();
   const wishlistItems = wishlist as WishlistItem[];
   // Per-item "how many to move to cart" selector — not part of the wishlist
@@ -336,30 +340,37 @@ const Wishlist: React.FC = () => {
         return;
       }
 
-      removeWishlistItemsLocally(availableItems.map(item => item.id));
-      setQuantities(prev => {
-        const next = { ...prev };
-        availableItems.forEach(item => delete next[item.id]);
-        return next;
-      });
+      const moveRequests = availableItems.map((item) => ({
+        wishlistItemId: Number(item.id),
+        quantity: getItemQuantity(item.id),
+      }));
 
-      const results = await Promise.all(
-        availableItems.map((item) =>
-          handleMoveToCart(item.id, getItemQuantity(item.id), false, false, item)
-        )
-      );
-      const movedCount = results.filter(Boolean).length;
-      const failedCount = results.length - movedCount;
+      const result = await moveWishlistItemsToCart(moveRequests, token);
+      const movedItemIds: number[] = Array.isArray(result?.movedItemIds)
+        ? result.movedItemIds.map(Number)
+        : [];
+      const failedItems: any[] = Array.isArray(result?.failedItems)
+        ? result.failedItems
+        : [];
+      const movedCount = movedItemIds.length;
+      const failedCount = failedItems.length;
+      const nextWishlistItems = Array.isArray(result?.wishlist?.items)
+        ? result.wishlist.items
+        : wishlistItems.filter((item) => !movedItemIds.includes(Number(item.id)));
 
-      if (movedCount > 0) {
-        await Promise.all([refreshCart(), refreshWishlist()]);
-      }
+      replaceWishlistItems(nextWishlistItems);
 
       if (movedCount === 0) {
-        await refreshWishlist();
         toast.error('Could not move wishlist items to cart. Please check stock or try again.');
         return;
       }
+
+      setQuantities(prev => {
+        const next = { ...prev };
+        movedItemIds.forEach(id => delete next[id]);
+        return next;
+      });
+      await refreshCart();
 
       toast.success(
         failedCount === 0 && availableItems.length === wishlistItems.length
@@ -385,6 +396,7 @@ const Wishlist: React.FC = () => {
     return sum + price * getItemQuantity(item.id);
   }, 0);
   const hasCartableItems = wishlistItems.some(item => !isItemOutOfStock(item));
+  const isBulkMoving = Boolean(actionLoading['add_all']);
   // ================================
   // RENDER
   // ================================
@@ -420,7 +432,7 @@ const Wishlist: React.FC = () => {
               <EmptyWishlist />
             ) : (
               <>
-                <div className="wishlist__items">
+                <div className={`wishlist__items${isBulkMoving ? ' wishlist__items--bulk-moving' : ''}`} aria-busy={isBulkMoving}>
                   {wishlistItems.map((item) => {
                     const itemStock = getItemStock(item);
                     const itemOutOfStock = isItemOutOfStock(item);
@@ -462,7 +474,7 @@ const Wishlist: React.FC = () => {
                           onClick={() => handleQuantityChange(item.id, getItemQuantity(item.id) - 1)}
                           aria-label="Decrease quantity"
                           aria-controls={`qty-value-${item.id}`}
-                          disabled={actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`] || itemOutOfStock}
+                          disabled={isBulkMoving || actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`] || itemOutOfStock}
                         >
                           <FaMinus />
                         </button>
@@ -472,7 +484,7 @@ const Wishlist: React.FC = () => {
                           onClick={() => handleQuantityChange(item.id, getItemQuantity(item.id) + 1)}
                           aria-label="Increase quantity"
                           aria-controls={`qty-value-${item.id}`}
-                          disabled={actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`] || itemOutOfStock || getItemQuantity(item.id) >= itemStock}
+                          disabled={isBulkMoving || actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`] || itemOutOfStock || getItemQuantity(item.id) >= itemStock}
                         >
                           <FaPlus />
                         </button>
@@ -482,7 +494,7 @@ const Wishlist: React.FC = () => {
                           className="wishlist__action-btn wishlist__action-btn--delete"
                           onClick={() => handleRemoveItem(item.id)}
                           aria-label="Remove from wishlist"
-                          disabled={actionLoading[`remove_${item.id}`] || actionLoading[`cart_${item.id}`]}
+                          disabled={isBulkMoving || actionLoading[`remove_${item.id}`] || actionLoading[`cart_${item.id}`]}
                         >
                           {actionLoading[`remove_${item.id}`] ? (
                             <div className="spinner" aria-label="Removing item"></div>
@@ -495,7 +507,7 @@ const Wishlist: React.FC = () => {
                           onClick={() => handleMoveToCart(item.id, getItemQuantity(item.id))}
                           aria-label={itemOutOfStock ? 'Out of stock' : 'Move to cart'}
                           title={itemOutOfStock ? 'Out of stock' : 'Move to cart'}
-                          disabled={actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`] || itemOutOfStock}
+                          disabled={isBulkMoving || actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`] || itemOutOfStock}
                         >
                           {actionLoading[`cart_${item.id}`] ? (
                             <div className="spinner" aria-label="Adding to cart"></div>
@@ -518,16 +530,16 @@ const Wishlist: React.FC = () => {
                   <button 
                     className="wishlist__add-all-btn"
                     onClick={handleAddAllToCart}
-                    disabled={actionLoading['add_all'] || wishlistItems.length === 0 || !hasCartableItems}
+                    disabled={isBulkMoving || wishlistItems.length === 0 || !hasCartableItems}
                     aria-label="Add all items to cart"
                   >
-                    {actionLoading['add_all'] ? (
+                    {isBulkMoving ? (
                       <>
                         <div className="spinner" aria-label="Processing"></div>
-                        ADDING TO CART...
+                        Moving items...
                       </>
                     ) : (
-                      'ADD ALL TO CART'
+                      'Add all to cart'
                     )}
                   </button>
                 </div>

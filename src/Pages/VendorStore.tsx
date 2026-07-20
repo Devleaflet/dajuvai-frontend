@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
-import ProductCard1 from "../ALT/ProductCard1";
+import ProductCard from "../Components/ProductCard";
 import "../Styles/VendorStore.css";
 import defaultProductImage from "../assets/logo.webp";
 import Navbar from "../Components/Navbar";
@@ -26,6 +26,7 @@ interface ApiProduct {
 		id: number;
 		sku: string;
 		basePrice: string;
+		finalPrice?: number | string;
 		discount: string;
 		discountType: string;
 		attributes?: Record<string, any>;
@@ -60,6 +61,7 @@ interface VendorStoreResponse {
 	success: boolean;
 	data: {
 		products: ApiProduct[];
+		product?: ApiProduct[];
 		total: number;
 	};
 }
@@ -85,7 +87,8 @@ const VendorStore: React.FC = () => {
 					`/api/vendors/${vendorId}/products?page=${page}&limit=${limit}`
 				);
 				if (response.data.success) {
-					const products = response.data.data.product;
+					const products =
+						response.data.data.products ?? response.data.data.product ?? [];
 					// Set vendor info from first product if available
 					if (products && products.length > 0 && products[0].vendor) {
 						const v = products[0].vendor;
@@ -137,11 +140,15 @@ const VendorStore: React.FC = () => {
 								id: v.id,
 								sku: v.sku,
 								basePrice: v.basePrice,
-								finalPrice: v.finalPrice,
+								finalPrice: Number(v.finalPrice ?? v.basePrice ?? 0),
 								discount: v.discount,
 								discountType: v.discountType,
 								images: v.variantImages || [],
 								stock: v.stock ?? undefined,
+								status:
+									Number(v.stock ?? 0) <= 0
+										? ("OUT_OF_STOCK" as const)
+										: ("AVAILABLE" as const),
 								attributes: v.attributes || {},
 							}));
 
@@ -150,10 +157,12 @@ const VendorStore: React.FC = () => {
 								title: product.name,
 								name: product.name,
 								description: product.description || "",
-								basePrice: product.basePrice,
-								finalPrice: product.finalPrice,
+								basePrice: product.basePrice ?? priceNum,
+								finalPrice: Number((product as any).finalPrice ?? priceNum),
+								price: Number((product as any).finalPrice ?? priceNum),
 								discount: discount > 0 ? String(product.discount) : undefined,
 								hasVariants: product.hasVariants,
+								deal: null,
 								// Map rating info from backend if present
 								rating:
 									Number(
@@ -187,6 +196,13 @@ const VendorStore: React.FC = () => {
 								memoryOptions: product.size || [],
 								stock: product.stock ?? 0,
 								piece: product.stock ?? 0,
+								status:
+									product.status === "OUT_OF_STOCK" ||
+										Number(product.stock ?? 0) <= 0
+										? "OUT_OF_STOCK"
+										: product.status === "LOW_STOCK"
+											? "LOW_STOCK"
+											: "AVAILABLE",
 							};
 						}
 					);
@@ -217,7 +233,7 @@ const VendorStore: React.FC = () => {
 		return title.includes(q) || desc.includes(q);
 	});
 
-	// Helper to compute effective price similar to ProductCard1
+	// Helper to compute effective price consistent with the shared ProductCard.
 	const toNumber = (v: any): number => {
 		if (v === undefined || v === null) return 0;
 		const n = typeof v === "string" ? parseFloat(v) : Number(v);
@@ -505,13 +521,8 @@ const VendorStore: React.FC = () => {
 							<div className="vendor-store__product-grid">
 								{sortedProducts.map((product) => {
 
-									console.log(
-										"➡️ Sending product (JSON):",
-										JSON.parse(JSON.stringify(product))
-									);
-
 									return (
-										<ProductCard1
+										<ProductCard
 											key={product.id}
 											product={product}
 										/>

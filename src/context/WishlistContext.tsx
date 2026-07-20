@@ -22,6 +22,7 @@ interface WishlistContextType {
   addWishlistItem: (productId: number, variantId?: WishlistVariantId) => Promise<any | null>;
   removeWishlistItem: (wishlistItemId: number) => Promise<void>;
   removeWishlistItemsLocally: (wishlistItemIds: number[]) => void;
+  replaceWishlistItems: (items: any[]) => void;
 }
 
 const WishlistContext = createContext<WishlistContextType | null>(null);
@@ -213,6 +214,10 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
   }, []);
 
+  const replaceWishlistItems = useCallback((items: any[]) => {
+    setWishlist(Array.isArray(items) ? items : []);
+  }, []);
+
   const value = useMemo(
     () => ({
       wishlist,
@@ -225,6 +230,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       addWishlistItem,
       removeWishlistItem,
       removeWishlistItemsLocally,
+      replaceWishlistItems,
     }),
     [
       addWishlistItem,
@@ -235,6 +241,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       refreshWishlist,
       removeWishlistItem,
       removeWishlistItemsLocally,
+      replaceWishlistItems,
       wishlist,
       wishlistMap,
     ],

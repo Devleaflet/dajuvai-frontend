@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { IoIosArrowDropleftCircle, IoIosArrowDroprightCircle } from "react-icons/io";
 import { ApiProduct } from '../../types/product';
-import ProductCard1 from '../../ALT/ProductCard1';
+import ProductCard from '../ProductCard';
 import type { Product as UIProduct } from '../Types/Product';
 import "../../Styles/RecommendedProducts.css";
 
@@ -162,7 +162,8 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
 
   // Convert ApiProduct to UIProduct
   const convertToUIProduct = (apiProduct: ApiProduct): UIProduct => {
-    const hasVariants = apiProduct.hasVariants && apiProduct.variants?.length > 0;
+    const basePrice = Number((apiProduct as any).basePrice ?? (apiProduct as any).price ?? 0) || 0;
+    const finalPrice = Number((apiProduct as any).finalPrice ?? basePrice) || basePrice;
     // Derive IDs from multiple possible shapes
     const categoryId =
       (apiProduct as any).categoryId ??
@@ -178,9 +179,10 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
       id: apiProduct.id,
       title: apiProduct.name,
       description: apiProduct.description || '',
-      basePrice: apiProduct.basePrice,
-      finalPrice: apiProduct.finalPrice,
-      hasVariants: apiProduct.hasVariants,
+      price: finalPrice,
+      basePrice,
+      finalPrice,
+      hasVariants: Boolean(apiProduct.hasVariants),
       discount: (apiProduct as any).discount ?? undefined,
       discountType: apiProduct.discountType ?? undefined,
       rating: Number((apiProduct as any).avgRating?.avg ?? (apiProduct as any).rating ?? 0) || 0,
@@ -192,13 +194,15 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
       ),
       image: apiProduct.image || (apiProduct.productImages && apiProduct.productImages[0]) || '',
       stock: (apiProduct as any).stock ?? undefined,
+      status: ((apiProduct as any).status || "AVAILABLE") as UIProduct["status"],
       category: categoryId != null ? { id: Number(categoryId) } as any : undefined,
       subcategory: subcatId != null ? { id: Number(subcatId), name: (apiProduct as any)?.subcategory?.name || '' } : undefined,
       productImages: apiProduct.productImages || [],
+      deal: (apiProduct as any).deal || null,
       variants: (apiProduct.variants || []).map((v: any) => ({
         id: v.id,
-        basePrice: v.basePrice ?? v.price,
-        finalPrice: v.finalPrice,
+        basePrice: Number(v.basePrice ?? v.price ?? 0) || 0,
+        finalPrice: Number(v.finalPrice ?? v.basePrice ?? v.price ?? 0) || 0,
         stock: v.stock,
         sku: v.sku,
         image: Array.isArray(v.variantImages) ? v.variantImages[0] : (v.image || (Array.isArray(v.images) ? v.images[0] : undefined)),
@@ -208,7 +212,7 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
         attributes: v.attributes,
         status: v.status || "AVAILABLE",
         hasVariants: false, // Variants themselves don't have variants
-        deal: apiProduct.deal || null,
+        deal: (apiProduct as any).deal || null,
       })),
     };
   };
@@ -230,7 +234,7 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
       <section className="recommended-products">
         <div className="recommended-products__header">
           <h3 className="recommended-products__title">Recommended for you</h3>
-          <p className="recommended-products__subtitle">Products you might love ❤️</p>
+          <p className="recommended-products__subtitle">Fresh picks based on this product</p>
         </div>
         <div className="recommended-products__container">
           <div className="recommended-products__slider">
@@ -250,10 +254,10 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
       <section className="recommended-products">
         <div className="recommended-products__header">
           <h3 className="recommended-products__title">Recommended for you</h3>
-          <p className="recommended-products__subtitle">Products you might love ❤️</p>
+          <p className="recommended-products__subtitle">Fresh picks based on this product</p>
         </div>
         <div className="recommended-empty">
-          <div className="recommended-empty__icon">🛍️</div>
+          <div className="recommended-empty__icon">...</div>
           <h4 className="recommended-empty__text">No recommendations available</h4>
           <p className="recommended-empty__subtext">
             We're working on finding the perfect products for you. Check back soon!
@@ -267,7 +271,7 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
     <section className="recommended-products">
       <div className="recommended-products__header">
         <h3 className="recommended-products__title">Recommended for you</h3>
-        <p className="recommended-products__subtitle">Products you might love ❤️</p>
+        <p className="recommended-products__subtitle">Fresh picks based on this product</p>
       </div>
       <div className="recommended-products__container">
         {showScrollButtons && needsScrolling && (
@@ -295,7 +299,7 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
             const uiProduct = convertToUIProduct(product);
             return (
               <div key={product.id} className="recommended-product-card__wrapper">
-                <ProductCard1 product={uiProduct} />
+                <ProductCard product={uiProduct} />
               </div>
             );
           })}

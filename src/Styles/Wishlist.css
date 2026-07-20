@@ -666,6 +666,20 @@
   cursor: not-allowed;
   transform: none !important;
 }
+
+.wishlist__items--bulk-moving .wishlist__item {
+  opacity: 0.78;
+  pointer-events: none;
+}
+
+.wishlist__items--bulk-moving .wishlist__product-image {
+  transform: none !important;
+}
+
+.wishlist__items--bulk-moving .wishlist__action-btn,
+.wishlist__items--bulk-moving .wishlist__qty-btn {
+  box-shadow: none;
+}
 /* ================================
    FOOTER & SUMMARY
    ================================ */

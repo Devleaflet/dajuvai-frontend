@@ -1,5 +1,5 @@
 import CryptoJS from 'crypto-js';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FaInfoCircle } from 'react-icons/fa';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
@@ -220,11 +220,20 @@ const Checkout: React.FC = () => {
 	const [errors, setErrors] = useState<Record<string, string>>({});
 	const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-	// Handle "Buy Now" case
-	if (location.state?.buyNow && location.state?.products?.length > 0) {
+	// Handle "Buy Now" case. Memoized on location.state (stable across
+	// re-renders for the same navigation) — without this, a brand-new array
+	// and objects were built on every render, and since `cartItems` feeds the
+	// checkout-estimate effect's dependency array below, that meant every
+	// state update (including the ones the estimate effect itself triggers)
+	// created a new "different" cartItems, re-firing the effect forever and
+	// spamming /api/order/estimate.
+	const buyNowCartItems = useMemo<CartItem[] | null>(() => {
+		if (!(location.state?.buyNow && location.state?.products?.length > 0)) {
+			return null;
+		}
 		const buyNowProduct = location.state.products[0];
 		const { product, quantity } = buyNowProduct;
-		cartItems = [
+		return [
 			{
 				id: product.id,
 				quantity,
@@ -259,6 +268,11 @@ const Checkout: React.FC = () => {
 				},
 			},
 		];
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [location.state]);
+
+	if (buyNowCartItems) {
+		cartItems = buyNowCartItems;
 	}
 
 	const navigate = useNavigate();
@@ -921,12 +935,19 @@ const Checkout: React.FC = () => {
 	const [estimateError, setEstimateError] = useState('');
 
 	useEffect(() => {
-		const fetchEstimate = async () => {
-			if (!token || cartItems.length === 0 || !billingDetails.district) {
-				setCheckoutEstimate(null);
-				return;
-			}
+		if (!token || cartItems.length === 0 || !billingDetails.district) {
+			setCheckoutEstimate(null);
+			return;
+		}
 
+		const controller = new AbortController();
+
+		// Debounced: billingDetails.city is a free-text field, so without this
+		// every keystroke fired its own /api/order/estimate request — the
+		// AbortController above cancels the previous in-flight one whenever a
+		// new request starts, but debouncing avoids opening dozens of
+		// connections in the first place while someone is still typing.
+		const timeoutId = window.setTimeout(async () => {
 			setEstimateLoading(true);
 			setEstimateError('');
 			try {
@@ -960,6 +981,7 @@ const Checkout: React.FC = () => {
 						Authorization: `Bearer ${token}`,
 					},
 					body: JSON.stringify(body),
+					signal: controller.signal,
 				});
 				const result = await response.json();
 
@@ -970,15 +992,19 @@ const Checkout: React.FC = () => {
 					setEstimateError(result.message || 'Could not calculate shipping for this address');
 				}
 			} catch (error) {
+				if ((error as { name?: string })?.name === 'AbortError') return;
 				console.error('Error estimating checkout totals:', error);
 				setCheckoutEstimate(null);
 				setEstimateError('Could not calculate shipping for this address');
 			} finally {
 				setEstimateLoading(false);
 			}
-		};
+		}, 400);
 
-		fetchEstimate();
+		return () => {
+			window.clearTimeout(timeoutId);
+			controller.abort();
+		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
 		token,

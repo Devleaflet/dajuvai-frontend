@@ -431,8 +431,10 @@
 	width: 56px;
 	height: 56px;
 	position: fixed;
-	bottom: 80px;
+	bottom: 104px;
+	bottom: calc(104px + env(safe-area-inset-bottom, 0px));
 	right: 16px;
+	z-index: 990;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 	transition: all 0.3s ease;
 	touch-action: manipulation;
@@ -763,7 +765,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		z-index: 3;
+		z-index: 990;
 	}
 	.filter-sidebar {
 		width: 85vw;
@@ -1327,7 +1329,8 @@
 	.filter-button {
 		width: 50px;
 		height: 50px;
-		bottom: 70px;
+		bottom: 96px;
+		bottom: calc(96px + env(safe-area-inset-bottom, 0px));
 		right: 12px;
 	}
 }

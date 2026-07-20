@@ -1,91 +1,94 @@
-import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { API_BASE_URL } from '../config';
-import AlertModal from '../Components/Modal/AlertModal';
+import React, { useEffect, useState } from "react";
+import Navbar from "../Components/Navbar";
+import { useAuth } from "../context/AuthContext";
+import PaymentStatusCard, { PaymentStatus } from "../Components/PaymentStatus/PaymentStatusCard";
+import { API_BASE_URL } from "../config";
+
+interface Order {
+	id: number;
+	totalPrice: string | number;
+	shippingFee: string | number;
+	paymentStatus: string;
+	paymentMethod: string;
+	status: string;
+	createdAt: string;
+	instrumentName?: string;
+	updatedAt: string;
+}
 
 const EsewaPaymentFailure: React.FC = () => {
-    const [search] = useSearchParams();
-    const navigate = useNavigate();
-    const { token } = useAuth();
-    const [alertMessage, setAlertMessage] = useState('');
-    const [showAlert, setShowAlert] = useState(false);
+	const { token } = useAuth();
+	const [loading, setLoading] = useState(true);
+	const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("cancelled");
+	const [orderData, setOrderData] = useState<Order | null>(null);
 
-    const orderId = search.get('oid');
+	useEffect(() => {
+		const searchParams = new URLSearchParams(window.location.search);
+		const orderId = searchParams.get("oid");
 
-    useEffect(() => {
+		const handleFailure = async () => {
+			if (!orderId) {
+				setLoading(false);
+				return;
+			}
 
-        //('orderId from URL:', orderId);
-        //('token from AuthContext:', token);
-        
-        const handleFailure = async () => {
-            if (!orderId) {
-                setAlertMessage('Missing order ID');
-                setShowAlert(true);
-                return;
-            }
+			try {
+				const response = await fetch(`${API_BASE_URL}/api/order/esewa/fail`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`,
+					},
+					body: JSON.stringify({ orderId: parseInt(orderId) }),
+					credentials: "include",
+				});
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/order/esewa/fail`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token} `,
-                    },
-                    body: JSON.stringify({ orderId: parseInt(orderId) }),
-                    credentials: 'include',
-                });
+				const result = await response.json();
 
-                const result = await response.json();
-                //('Payment failure response:', result);
+				if (result.success) {
+					setPaymentStatus("cancelled");
+					// Fetch order details to display
+					try {
+						const orderResponse = await fetch(
+							`${API_BASE_URL}/api/order/customer/order/${orderId}`,
+							{
+								method: "GET",
+								headers: {
+									Authorization: `Bearer ${token}`,
+								},
+								credentials: "include",
+							}
+						);
+						if (orderResponse.ok) {
+							const orderResult = await orderResponse.json();
+							if (orderResult.success && orderResult.data) {
+								setOrderData(orderResult.data);
+							}
+						}
+					} catch {
+						// Order fetch failed — show cancellation without details
+					}
+				}
+			} catch {
+				// Network error — show cancelled state anyway
+			} finally {
+				setLoading(false);
+			}
+		};
 
-                if (result.success) {
-                    setAlertMessage('Payment failed. Your order has been cancelled.');
-                    setShowAlert(true);
-                } else {
-                    setAlertMessage(`Payment cancellation failed: ${result.msg || 'Unknown error'} `);
-                    setShowAlert(true);
-                }
-            } catch (error) {
-                console.error('Error handling payment failure:', error);
-                setAlertMessage('An error occurred while processing the payment failure. Please contact support.');
-                setShowAlert(true);
-            }
-        };
+		handleFailure();
+	}, [token]);
 
-        handleFailure();
-    }, [orderId, token]);
-
-    const handleBackHome = () => {
-        navigate('/');
-    };
-
-    const handleTryAgain = () => {
-        navigate('/checkout');
-    };
-
-    return (
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
-            <AlertModal
-                open={showAlert}
-                message={alertMessage}
-                onClose={() => setShowAlert(false)}
-                buttons={[
-                    {
-                        label: 'Try Again',
-                        action: handleTryAgain,
-                        style: { backgroundColor: '#ff6b35', color: 'white' },
-                    },
-                    {
-                        label: 'Back to Home',
-                        action: handleBackHome,
-                        style: { backgroundColor: '#22c55e', color: 'white' },
-                    },
-                ]}
-            />
-            <h1>Processing Payment Failure...</h1>
-        </div>
-    );
+	return (
+		<>
+			<Navbar />
+			<PaymentStatusCard
+				status={paymentStatus}
+				orderData={orderData}
+				loading={loading}
+			/>
+		</>
+	);
 };
 
 export default EsewaPaymentFailure;

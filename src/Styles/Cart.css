@@ -76,11 +76,14 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
   margin: 0;
   font-size: 1.3rem;
   font-weight: 700;
   color: #1a202c;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cart__title-icon {
@@ -123,12 +126,15 @@
   border-radius: 8px;
   width: 36px;
   height: 36px;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   color: #64748b;
   font-size: 0.9rem;
+  position: relative;
+  z-index: 2;
   transition: all 0.2s ease;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -793,19 +799,26 @@
   .cart {
     width: 100%;
     max-width: 100%;
-    height: calc(100vh - 60px);
-    bottom: 60px;
-    top: auto;
+    height: 100vh;
+    height: 100svh;
+    height: 100dvh;
+    bottom: 0;
+    top: 0;
     right: 0;
     left: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .cart__header-content {
+    position: relative;
     padding: 14px 18px;
+    padding-right: 72px;
+    min-height: 64px;
   }
   .cart__title {
     font-size: 1.1rem;
     gap: 8px;
+    max-width: 100%;
   }
 
   .cart__item-count {
@@ -816,9 +829,24 @@
   }
 
   .cart__close {
-    width: 40px;
-    height: 40px;
+    position: absolute;
+    top: 50%;
+    right: 18px;
+    width: 44px;
+    height: 44px;
+    transform: translateY(-50%);
     font-size: 1rem;
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  }
+
+  .cart__close:hover,
+  .cart__close:active {
+    transform: translateY(-50%);
+    background: #e2e8f0;
+    color: #475569;
   }
 
   .cart__items {
@@ -905,15 +933,18 @@
   .cart {
     width: 100%;
     max-width: 100%;
-    height: calc(100vh - 60px);
-    bottom: 60px;
-    top: auto;
+    height: 100vh;
+    height: 100svh;
+    height: 100dvh;
+    bottom: 0;
+    top: 0;
     right: 0;
     left: 0;
   }
 
   .cart__header-content {
     padding: 12px 14px;
+    padding-right: 66px;
   }
   .cart__title {
     font-size: 1rem;
