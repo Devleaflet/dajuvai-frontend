@@ -87,3 +87,19 @@ export const moveToCart = async (wishlistItemId: number, quantity: number, token
   // The API returns the updated wishlist
   return res.data.data;
 };
+
+export const moveManyToCart = async (
+  items: { wishlistItemId: number; quantity: number }[],
+  token?: string,
+) => {
+  const res = await axios.post(
+    `${API_BASE_URL}/api/wishlist/move-to-cart/batch`,
+    { items },
+    {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      withCredentials: true,
+    },
+  );
+  clearWishlistCache();
+  return res.data.data;
+};

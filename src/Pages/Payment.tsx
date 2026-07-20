@@ -227,9 +227,6 @@ const NepalPaymentGateway: React.FC = () => {
 
       const data: PaymentInitResponse = await response.json();
 
-      console.log("-------------Init payment response--------------");
-      console.log(data);
-
       if (data.success) {
         localStorage.setItem('currentTxnId', data.merchantTxnId);
 
@@ -536,7 +533,7 @@ const NepalPaymentGateway: React.FC = () => {
             <h1 className="status-header">Payment Status</h1>
             {renderTransactionStatus()}
 
-            {transactionStatus && transactionStatus.code === '0' && (
+            {transactionStatus && transactionStatus.code === '0' && transactionStatus.data?.Status === 'Success' && (
               <button
                 onClick={handleDownloadPDF}
                 className="pay-button download-bill-btn"
