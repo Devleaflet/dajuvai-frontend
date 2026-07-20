@@ -51,17 +51,11 @@
   margin-bottom: 10px;
 }
 
+.dashboard__menu-toggle {
+  display: none;
+}
+
 @media (max-width: 767px) {
-  /* The fixed sidebar__mobile-bar (Sidebar.css) already shows the page
-     title, avatar/logout moved into its drawer - this header (title again +
-     its own account dropdown) was rendering as a second, redundant header
-     stacked directly underneath it. dashboard__search-container (below
-     this component) is real, non-duplicated content and stays visible.
-     !important: VendorProduct.css separately redeclares a base (non-media)
-     .dashboard__header{display:flex} rule of its own - a duplicate/leaking
-     style on a class that belongs to this shared component - which silently
-     wins the cascade over a plain override here depending on CSS bundle
-     order. This guarantees the hide takes effect regardless of that. */
   .dashboard__header {
     display: none !important;
   }

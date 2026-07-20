@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useEffect, useState, useRef, useMemo } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../Styles/Sidebar.css";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../config";
@@ -8,14 +8,37 @@ import logo from "../assets/logo.webp";
 export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
   const [unapprovedCount, setUnapprovedCount] = useState(0);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const { user, token } = useAuth();
+  const [isAvatarOpen, setIsAvatarOpen] = useState(false);
+  const avatarDropdownRef = useRef<HTMLDivElement>(null);
+  const { user, token, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const profilePicture = useMemo(() => {
+    const value = user?.profilePicture;
+    if (!value) return "";
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("data:")) return trimmed;
+    if (trimmed.startsWith("//")) return `https:${trimmed}`;
+    const baseUrl = API_BASE_URL.replace(/\/api\/?$/, "");
+    return `${baseUrl}${trimmed.startsWith("/") ? "" : "/"}${trimmed}`;
+  }, [user?.profilePicture]);
+
+  const initials = useMemo(() => {
+    if (user?.username) {
+      return user.username.trim().split(/\s+/).slice(0, 2).map(n => n.charAt(0).toUpperCase()).join("");
+    }
+    return user?.email?.charAt(0).toUpperCase() || "A";
+  }, [user?.username, user?.email]);
 
   useEffect(() => {
     setIsMobileOpen(false);
+    setIsAvatarOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
+    setIsAvatarOpen(false);
     if (!isMobileOpen) return;
 
     const previousOverflow = document.body.style.overflow;
@@ -34,6 +57,24 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMobileOpen]);
+
+  useEffect(() => {
+    if (!isAvatarOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (avatarDropdownRef.current && !avatarDropdownRef.current.contains(e.target as Node)) {
+        setIsAvatarOpen(false);
+      }
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsAvatarOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isAvatarOpen]);
 
   useEffect(() => {
     if (location.pathname === "/admin-vendors") {
@@ -100,16 +141,57 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
           <span className="sidebar__mobile-brand-text">Admin Panel</span>
         </div>
 
-        <button
-          type="button"
-          className="sidebar__menu-button"
-          aria-label="Open admin navigation"
-          aria-expanded={isMobileOpen}
-          aria-controls="admin-sidebar-panel"
-          onClick={() => setIsMobileOpen(true)}
-        >
-          <MenuIcon />
-        </button>
+        <div className="sidebar__mobile-right">
+          <div className="sidebar__mobile-avatar" ref={avatarDropdownRef}>
+            <button
+              type="button"
+              className="sidebar__mobile-avatar-btn"
+              aria-label="Open account menu"
+              aria-haspopup="menu"
+              aria-expanded={isAvatarOpen}
+              onClick={() => setIsAvatarOpen(prev => !prev)}
+            >
+              {profilePicture ? (
+                <img src={profilePicture} alt="" className="sidebar__mobile-avatar-img" />
+              ) : (
+                <span className="sidebar__mobile-avatar-text">{initials}</span>
+              )}
+            </button>
+            {isAvatarOpen && (
+              <div className="sidebar__mobile-avatar-menu" role="menu">
+                <div className="sidebar__mobile-avatar-menu-header">
+                  <span className="sidebar__mobile-avatar-menu-name">{user?.username || user?.email || "Admin"}</span>
+                  {user?.email && <span className="sidebar__mobile-avatar-menu-email">{user.email}</span>}
+                </div>
+                <div className="sidebar__mobile-avatar-menu-divider" />
+                <button type="button" className="sidebar__mobile-avatar-menu-item" role="menuitem" onClick={() => { setIsAvatarOpen(false); navigate("/"); }}>
+                  <AvatarHomeIcon />
+                  <span>Home</span>
+                </button>
+                <button type="button" className="sidebar__mobile-avatar-menu-item" role="menuitem" onClick={() => { setIsAvatarOpen(false); navigate("/admin-profile"); }}>
+                  <AvatarProfileIcon />
+                  <span>Profile</span>
+                </button>
+                <div className="sidebar__mobile-avatar-menu-divider" />
+                <button type="button" className="sidebar__mobile-avatar-menu-item sidebar__mobile-avatar-menu-item--danger" role="menuitem" onClick={() => { setIsAvatarOpen(false); logout(); }}>
+                  <AvatarLogoutIcon />
+                  <span>Log out</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="sidebar__menu-button"
+            aria-label="Open admin navigation"
+            aria-expanded={isMobileOpen}
+            aria-controls="admin-sidebar-panel"
+            onClick={() => setIsMobileOpen(true)}
+          >
+            <MenuIcon />
+          </button>
+        </div>
       </div>
 
       <button
@@ -618,6 +700,39 @@ function ProfileIcon() {
         strokeWidth="2"
         strokeLinecap="round"
       />
+    </svg>
+  );
+}
+
+const avatarSvgProps = {
+  width: 18,
+  height: 18,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  xmlns: "http://www.w3.org/2000/svg",
+};
+
+function AvatarHomeIcon() {
+  return (
+    <svg {...avatarSvgProps} aria-hidden="true">
+      <path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function AvatarProfileIcon() {
+  return (
+    <svg {...avatarSvgProps} aria-hidden="true">
+      <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
+      <path d="M4 21v-2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function AvatarLogoutIcon() {
+  return (
+    <svg {...avatarSvgProps} aria-hidden="true">
+      <path d="M10 17l5-5-5-5M15 12H3M21 19V5a2 2 0 0 0-2-2h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

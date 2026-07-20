@@ -25,8 +25,7 @@
 
 @media (max-width: 767px) {
   .admin-page-header {
-    /* Stick below the fixed mobile sidebar bar, not underneath it. */
-    top: var(--mobile-admin-header-height, 60px);
+    top: 0;
   }
 }
 
@@ -45,23 +44,39 @@
   background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  /* backdrop-filter creates its own stacking context. Without an explicit
-     z-index here, this whole box (including the account dropdown menu
-     absolutely-positioned inside it) paints BELOW the toolbar section that
-     follows it in the DOM, regardless of the menu's own z-index. */
   position: relative;
   z-index: 2;
 }
 
+/* =========================
+   MENU TOGGLE (hamburger)
+   ========================= */
+
+.admin-page-header__menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--admin-text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.admin-page-header__menu-toggle:hover {
+  background: #f1f5f9;
+}
+
 @media (max-width: 767px) {
-  /* The fixed sidebar__mobile-bar (Sidebar.css) already shows the page
-     title, avatar/logout moved into its drawer - this topbar (title again +
-     its own account dropdown) was rendering as a second, redundant header
-     stacked directly underneath it. The toolbar (search/sort/filter) below
-     it is real, non-duplicated content and stays visible. Placed after the
-     base .admin-page-header__topbar rule above (not just inside its own
-     media query) so it actually wins the cascade - an earlier version of
-     this rule sat before the base declaration and got overridden by it. */
+  .admin-page-header__menu-toggle {
+    display: flex;
+  }
+
   .admin-page-header__topbar {
     display: none;
   }

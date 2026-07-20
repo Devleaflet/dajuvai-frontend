@@ -5,23 +5,31 @@ import VendorDashboardService from "../../services/vendorDashboardService";
 import { toast } from "react-hot-toast";
 import "../../Styles/OrderModals.css";
 
-type VendorFulfillmentStatus = 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+type VendorFulfillmentStatus =
+    | "CONFIRMED"
+    | "PROCESSING"
+    | "SHIPPED"
+    | "DELIVERED"
+    | "CANCELLED";
 
 // Mirrors backend VENDOR_ORDER_STATUS_TRANSITIONS (orderVendorShipping.entity.ts)
-const VENDOR_STATUS_TRANSITIONS: Record<VendorFulfillmentStatus, VendorFulfillmentStatus[]> = {
-    CONFIRMED: ['PROCESSING', 'CANCELLED'],
-    PROCESSING: ['SHIPPED', 'CANCELLED'],
+const VENDOR_STATUS_TRANSITIONS: Record<
+    VendorFulfillmentStatus,
+    VendorFulfillmentStatus[]
+> = {
+    CONFIRMED: ["PROCESSING", "CANCELLED"],
+    PROCESSING: ["SHIPPED", "CANCELLED"],
     SHIPPED: [],
     DELIVERED: [],
     CANCELLED: [],
 };
 
 const VENDOR_STATUS_LABEL: Record<string, string> = {
-    CONFIRMED: 'Confirmed',
-    PROCESSING: 'Mark as Processing',
-    SHIPPED: 'Mark as Shipped',
-    DELIVERED: 'Delivered',
-    CANCELLED: 'Reject Order',
+    CONFIRMED: "Confirmed",
+    PROCESSING: "Mark as Processing",
+    SHIPPED: "Mark as Shipped",
+    DELIVERED: "Delivered",
+    CANCELLED: "Reject Order",
 };
 
 interface OrderItem {
@@ -34,8 +42,17 @@ interface OrderItem {
     skuSnapshot?: string | null;
     imageSnapshot?: string | null;
     unitPriceSnapshot?: number | null;
-    product: { id: number; name: string; productImages: string[]; basePrice?: number } | null;
-    vendor: { id: number; businessName: string; district?: { id: number; name: string } };
+    product: {
+        id: number;
+        name: string;
+        productImages: string[];
+        basePrice?: number;
+    } | null;
+    vendor: {
+        id: number;
+        businessName: string;
+        district?: { id: number; name: string };
+    };
     vendorId?: number;
     variant?: {
         id: number;
@@ -71,7 +88,7 @@ export interface VendorOrderDetail {
     discountAllocation: number;
     vendorPayable: number;
     ownShippingFee: number | null;
-    ownShippingZone: 'SAME_DISTRICT' | 'CROSS_DISTRICT' | null;
+    ownShippingZone: "SAME_DISTRICT" | "CROSS_DISTRICT" | null;
     fulfillmentStatus: VendorFulfillmentStatus | null;
     paymentStatus: string;
     paymentMethod: string;
@@ -115,24 +132,30 @@ const ViewModal: React.FC<ViewModalProps> = ({
     if (!show || !order || !orderDetail) return null;
 
     const nextStatuses = orderDetail.fulfillmentStatus
-        ? VENDOR_STATUS_TRANSITIONS[orderDetail.fulfillmentStatus] ?? []
+        ? (VENDOR_STATUS_TRANSITIONS[orderDetail.fulfillmentStatus] ?? [])
         : [];
 
     const handleStatusChange = async (next: VendorFulfillmentStatus) => {
         if (!authState.token) return;
-        if (next === 'CANCELLED' && !window.confirm('Reject this order? This cannot be undone.')) return;
+        if (
+            next === "CANCELLED" &&
+            !window.confirm("Reject this order? This cannot be undone.")
+        )
+            return;
 
         setIsUpdating(true);
         try {
             await VendorDashboardService.getInstance().updateVendorOrderStatus(
                 authState.token,
                 orderDetail.id,
-                next as 'PROCESSING' | 'SHIPPED' | 'CANCELLED',
+                next as "PROCESSING" | "SHIPPED" | "CANCELLED",
             );
-            toast.success('Order status updated');
+            toast.success("Order status updated");
             onStatusChanged?.();
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Failed to update status');
+            toast.error(
+                err instanceof Error ? err.message : "Failed to update status",
+            );
         } finally {
             setIsUpdating(false);
         }
@@ -141,10 +164,18 @@ const ViewModal: React.FC<ViewModalProps> = ({
     // The backend already scopes orderItems to this vendor only; the filter
     // here is just a defensive no-op, not the source of the scoping.
     const vendorItems = vendorId
-        ? orderDetail.orderItems.filter((item) => item.vendorId === vendorId || item.vendor?.id === vendorId)
+        ? orderDetail.orderItems.filter(
+              (item) =>
+                  item.vendorId === vendorId || item.vendor?.id === vendorId,
+          )
         : orderDetail.orderItems;
 
     const orderDate = new Date(orderDetail.createdAt);
+
+    console.log("Order:");
+    console.log(order);
+    console.log("Order Detail:");
+    console.log(orderDetail);
 
     return (
         <div
@@ -184,15 +215,26 @@ const ViewModal: React.FC<ViewModalProps> = ({
                         </h2>
                         <p className="order-detail__order-date">
                             {orderDate.toLocaleDateString("en-US", {
-                                year: "numeric", month: "short", day: "numeric",
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
                             })}{" "}
                             {orderDate.toLocaleTimeString("en-US", {
-                                hour: "2-digit", minute: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
                             })}
                         </p>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span className={`status-badge status-badge--${(orderDetail.status || '').toLowerCase()}`}>
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                        }}
+                    >
+                        <span
+                            className={`status-badge status-badge--${(orderDetail.status || "").toLowerCase()}`}
+                        >
                             {orderDetail.status}
                         </span>
                         <button
@@ -219,36 +261,59 @@ const ViewModal: React.FC<ViewModalProps> = ({
                         <h3 className="order-section__title">Customer</h3>
                         <div className="order-info-grid">
                             <div className="order-info-grid__item">
-                                <span className="order-info-grid__label">Name</span>
+                                <span className="order-info-grid__label">
+                                    Name
+                                </span>
                                 <span className="order-info-grid__value">
-                                    {orderDetail.orderedBy.fullName || orderDetail.orderedBy.name || orderDetail.orderedBy.username || "Unknown Customer"}
+                                    {orderDetail.orderedBy.fullName ||
+                                        orderDetail.orderedBy.name ||
+                                        orderDetail.orderedBy.username ||
+                                        "Unknown Customer"}
                                 </span>
                             </div>
                             <div className="order-info-grid__item">
-                                <span className="order-info-grid__label">Phone</span>
+                                <span className="order-info-grid__label">
+                                    Phone
+                                </span>
                                 <span className="order-info-grid__value">
-                                    {orderDetail.orderedBy.phoneNumber || orderDetail.orderedBy.phone || "N/A"}
+                                    {orderDetail.orderedBy.phoneNumber ||
+                                        orderDetail.orderedBy.phone ||
+                                        "N/A"}
                                 </span>
                             </div>
                             <div className="order-info-grid__item">
-                                <span className="order-info-grid__label">Email</span>
-                                <span className="order-info-grid__value" style={{ wordBreak: "break-all" }}>
+                                <span className="order-info-grid__label">
+                                    Email
+                                </span>
+                                <span
+                                    className="order-info-grid__value"
+                                    style={{ wordBreak: "break-all" }}
+                                >
                                     {orderDetail.orderedBy.email}
                                 </span>
                             </div>
                             <div className="order-info-grid__item">
-                                <span className="order-info-grid__label">Payment</span>
-                                <span className="order-info-grid__value">{orderDetail.paymentMethod}</span>
+                                <span className="order-info-grid__label">
+                                    Payment
+                                </span>
+                                <span className="order-info-grid__value">
+                                    {orderDetail.paymentMethod}
+                                </span>
                             </div>
                             <div className="order-info-grid__item order-info-grid__item--full">
-                                <span className="order-info-grid__label">Shipping Address</span>
+                                <span className="order-info-grid__label">
+                                    Shipping Address
+                                </span>
                                 <span className="order-info-grid__value">
                                     {[
-                                        orderDetail.shippingAddress.localAddress,
+                                        orderDetail.shippingAddress
+                                            .localAddress,
                                         orderDetail.shippingAddress.city,
                                         orderDetail.shippingAddress.district,
                                         orderDetail.shippingAddress.province,
-                                    ].filter(Boolean).join(", ") || "N/A"}
+                                    ]
+                                        .filter(Boolean)
+                                        .join(", ") || "N/A"}
                                 </span>
                             </div>
                         </div>
@@ -257,47 +322,88 @@ const ViewModal: React.FC<ViewModalProps> = ({
                     {/* Items — only vendor's items */}
                     <div className="order-section">
                         <h3 className="order-section__title">
-                            Your Items ({vendorItems.length} item{vendorItems.length !== 1 ? 's' : ''})
+                            Your Items ({vendorItems.length} item
+                            {vendorItems.length !== 1 ? "s" : ""})
                         </h3>
                         {vendorItems.map((item) => {
-                            const img = item.imageSnapshot || item.product?.productImages?.[0] || item.variant?.variantImages?.[0];
-                            const name = item.productNameSnapshot || item.product?.name || "Unknown Product";
+                            const img =
+                                item.imageSnapshot ||
+                                item.product?.productImages?.[0] ||
+                                item.variant?.variantImages?.[0];
+                            const name =
+                                item.productNameSnapshot ||
+                                item.product?.name ||
+                                "Unknown Product";
                             const sku = item.skuSnapshot || item.variant?.sku;
                             const attrs = item.variant?.attributes;
                             const unitPrice = parseFloat(String(item.price));
                             const lineTotal = unitPrice * item.quantity;
 
                             return (
-                                <div key={item.id} className="order-modal__item-row">
+                                <div
+                                    key={item.id}
+                                    className="order-modal__item-row"
+                                >
                                     {img ? (
-                                        <img src={img} alt={name} className="order-modal__item-img" />
+                                        <img
+                                            src={img}
+                                            alt={name}
+                                            className="order-modal__item-img"
+                                        />
                                     ) : (
                                         <div className="vendor-card__item-img-placeholder">
                                             {name.charAt(0).toUpperCase()}
                                         </div>
                                     )}
                                     <div className="order-modal__item-info">
-                                        <p className="order-modal__item-name">{name}</p>
+                                        <p className="order-modal__item-name">
+                                            {name}
+                                        </p>
                                         <div className="order-modal__item-meta">
                                             Qty: {item.quantity}
-                                            {sku && <span style={{ marginLeft: 8 }}>SKU: {sku}</span>}
+                                            {sku && (
+                                                <span style={{ marginLeft: 8 }}>
+                                                    SKU: {sku}
+                                                </span>
+                                            )}
                                         </div>
-                                        {attrs && Object.keys(attrs).length > 0 && (
-                                            <div className="vendor-card__variant-attrs" style={{ marginTop: 4 }}>
-                                                {Object.entries(attrs).map(([key, val]) => (
-                                                    <span key={key} className="vendor-card__variant-tag">
-                                                        {key}: {val}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
+                                        {attrs &&
+                                            Object.keys(attrs).length > 0 && (
+                                                <div
+                                                    className="vendor-card__variant-attrs"
+                                                    style={{ marginTop: 4 }}
+                                                >
+                                                    {Object.entries(attrs).map(
+                                                        ([key, val]) => (
+                                                            <span
+                                                                key={key}
+                                                                className="vendor-card__variant-tag"
+                                                            >
+                                                                {key}: {val}
+                                                            </span>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            )}
                                     </div>
                                     <div className="order-modal__item-pricing">
-                                        <div style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>
+                                        <div
+                                            style={{
+                                                fontSize: 14,
+                                                fontWeight: 600,
+                                                color: "#111827",
+                                            }}
+                                        >
                                             Rs. {lineTotal.toFixed(2)}
                                         </div>
-                                        <div style={{ fontSize: 12, color: "#6b7280" }}>
-                                            Rs. {unitPrice.toFixed(2)} x {item.quantity}
+                                        <div
+                                            style={{
+                                                fontSize: 12,
+                                                color: "#6b7280",
+                                            }}
+                                        >
+                                            Rs. {unitPrice.toFixed(2)} x{" "}
+                                            {item.quantity}
                                         </div>
                                     </div>
                                 </div>
@@ -305,7 +411,14 @@ const ViewModal: React.FC<ViewModalProps> = ({
                         })}
 
                         {vendorItems.length === 0 && (
-                            <div style={{ padding: 20, textAlign: "center", color: "#9ca3af", fontSize: 14 }}>
+                            <div
+                                style={{
+                                    padding: 20,
+                                    textAlign: "center",
+                                    color: "#9ca3af",
+                                    fontSize: 14,
+                                }}
+                            >
                                 No items found for this vendor.
                             </div>
                         )}
@@ -318,18 +431,33 @@ const ViewModal: React.FC<ViewModalProps> = ({
                         <h3 className="order-section__title">Your Summary</h3>
                         <div className="order-summary-box">
                             <div className="order-summary-row">
-                                <span className="order-summary-row__label">Items subtotal</span>
-                                <span className="order-summary-row__value">Rs. {orderDetail.itemsSubtotal.toFixed(2)}</span>
+                                <span className="order-summary-row__label">
+                                    Items subtotal
+                                </span>
+                                <span className="order-summary-row__value">
+                                    Rs. {orderDetail.itemsSubtotal.toFixed(2)}
+                                </span>
                             </div>
                             {orderDetail.discountAllocation > 0 && (
                                 <div className="order-summary-row">
-                                    <span className="order-summary-row__label">Discount allocation</span>
-                                    <span className="order-summary-row__value">- Rs. {orderDetail.discountAllocation.toFixed(2)}</span>
+                                    <span className="order-summary-row__label">
+                                        Discount allocation
+                                    </span>
+                                    <span className="order-summary-row__value">
+                                        - Rs.{" "}
+                                        {orderDetail.discountAllocation.toFixed(
+                                            2,
+                                        )}
+                                    </span>
                                 </div>
                             )}
                             <div className="order-summary-row order-summary-row--total">
-                                <span className="order-summary-row__label">Vendor payable</span>
-                                <span className="order-summary-row__value">Rs. {orderDetail.vendorPayable.toFixed(2)}</span>
+                                <span className="order-summary-row__label">
+                                    Vendor payable
+                                </span>
+                                <span className="order-summary-row__value">
+                                    Rs. {orderDetail.vendorPayable.toFixed(2)}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -339,13 +467,23 @@ const ViewModal: React.FC<ViewModalProps> = ({
                         merchandise payable amount above. */}
                     {orderDetail.ownShippingFee != null && (
                         <div className="order-section">
-                            <h3 className="order-section__title">Fulfillment</h3>
+                            <h3 className="order-section__title">
+                                Fulfillment
+                            </h3>
                             <div className="order-summary-box">
                                 <div className="order-summary-row">
                                     <span className="order-summary-row__label">
-                                        Shipping ({orderDetail.ownShippingZone === 'SAME_DISTRICT' ? 'Same district' : 'Cross district'})
+                                        Shipping (
+                                        {orderDetail.ownShippingZone ===
+                                        "SAME_DISTRICT"
+                                            ? "Same district"
+                                            : "Cross district"}
+                                        )
                                     </span>
-                                    <span className="order-summary-row__value">Rs. {orderDetail.ownShippingFee.toFixed(2)}</span>
+                                    <span className="order-summary-row__value">
+                                        Rs.{" "}
+                                        {orderDetail.ownShippingFee.toFixed(2)}
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -361,23 +499,42 @@ const ViewModal: React.FC<ViewModalProps> = ({
                     {false && nextStatuses.length > 0 && (
                         <div className="order-section">
                             <h3 className="order-section__title">Actions</h3>
-                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: 8,
+                                    flexWrap: "wrap",
+                                }}
+                            >
                                 {nextStatuses.map((next) => (
                                     <button
                                         key={next}
                                         onClick={() => handleStatusChange(next)}
                                         disabled={isUpdating}
                                         style={{
-                                            padding: '8px 16px',
+                                            padding: "8px 16px",
                                             borderRadius: 8,
-                                            border: next === 'CANCELLED' ? '1px solid #dc2626' : '1px solid #16a34a',
-                                            background: next === 'CANCELLED' ? '#fff' : '#16a34a',
-                                            color: next === 'CANCELLED' ? '#dc2626' : '#fff',
+                                            border:
+                                                next === "CANCELLED"
+                                                    ? "1px solid #dc2626"
+                                                    : "1px solid #16a34a",
+                                            background:
+                                                next === "CANCELLED"
+                                                    ? "#fff"
+                                                    : "#16a34a",
+                                            color:
+                                                next === "CANCELLED"
+                                                    ? "#dc2626"
+                                                    : "#fff",
                                             fontWeight: 500,
-                                            cursor: isUpdating ? 'not-allowed' : 'pointer',
+                                            cursor: isUpdating
+                                                ? "not-allowed"
+                                                : "pointer",
                                         }}
                                     >
-                                        {isUpdating ? 'Updating…' : VENDOR_STATUS_LABEL[next]}
+                                        {isUpdating
+                                            ? "Updating…"
+                                            : VENDOR_STATUS_LABEL[next]}
                                     </button>
                                 ))}
                             </div>

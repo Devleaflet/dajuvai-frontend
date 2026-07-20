@@ -1,25 +1,49 @@
-import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom"; // Import useLocation
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../Styles/Sidebar.css";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import axiosInstance from "../api/axiosInstance";
+import { API_BASE_URL } from "../config";
 import logo from "../assets/logo.webp";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function Sidebar({ ...props }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isAvatarOpen, setIsAvatarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const { authState } = useVendorAuth();
+  const avatarDropdownRef = useRef<HTMLDivElement>(null);
+  const { authState, logout } = useVendorAuth();
+  const navigate = useNavigate();
 
   // Get the current location using React Router's useLocation hook
   const location = useLocation();
 
+  const vendorProfilePicture = useMemo(() => {
+    const value = authState.vendor?.profilePicture;
+    if (!value) return "";
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("data:")) return trimmed;
+    if (trimmed.startsWith("//")) return `https:${trimmed}`;
+    const baseUrl = API_BASE_URL.replace(/\/api\/?$/, "");
+    return `${baseUrl}${trimmed.startsWith("/") ? "" : "/"}${trimmed}`;
+  }, [authState.vendor?.profilePicture]);
+
+  const vendorInitials = useMemo(() => {
+    if (authState.vendor?.businessName) {
+      return authState.vendor.businessName.charAt(0).toUpperCase();
+    }
+    return "V";
+  }, [authState.vendor?.businessName]);
+
   useEffect(() => {
     setIsMobileOpen(false);
+    setIsAvatarOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
+    setIsAvatarOpen(false);
     if (!isMobileOpen) return;
 
     const previousOverflow = document.body.style.overflow;
@@ -38,6 +62,24 @@ export function Sidebar({ ...props }: SidebarProps) {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMobileOpen]);
+
+  useEffect(() => {
+    if (!isAvatarOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (avatarDropdownRef.current && !avatarDropdownRef.current.contains(e.target as Node)) {
+        setIsAvatarOpen(false);
+      }
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsAvatarOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isAvatarOpen]);
 
   // Fetch unread count — reset to 0 when on the notifications page, poll otherwise
   useEffect(() => {
@@ -82,16 +124,57 @@ export function Sidebar({ ...props }: SidebarProps) {
           <span className="sidebar__mobile-brand-text">Vendor Panel</span>
         </div>
 
-        <button
-          type="button"
-          className="sidebar__menu-button"
-          aria-label="Open vendor navigation"
-          aria-expanded={isMobileOpen}
-          aria-controls="vendor-sidebar-panel"
-          onClick={() => setIsMobileOpen(true)}
-        >
-          <MenuIcon />
-        </button>
+        <div className="sidebar__mobile-right">
+          <div className="sidebar__mobile-avatar" ref={avatarDropdownRef}>
+            <button
+              type="button"
+              className="sidebar__mobile-avatar-btn"
+              aria-label="Open account menu"
+              aria-haspopup="menu"
+              aria-expanded={isAvatarOpen}
+              onClick={() => setIsAvatarOpen(prev => !prev)}
+            >
+              {vendorProfilePicture ? (
+                <img src={vendorProfilePicture} alt="" className="sidebar__mobile-avatar-img" />
+              ) : (
+                <span className="sidebar__mobile-avatar-text">{vendorInitials}</span>
+              )}
+            </button>
+            {isAvatarOpen && (
+              <div className="sidebar__mobile-avatar-menu" role="menu">
+                <div className="sidebar__mobile-avatar-menu-header">
+                  <span className="sidebar__mobile-avatar-menu-name">{authState.vendor?.businessName || "Vendor"}</span>
+                  {authState.vendor?.email && <span className="sidebar__mobile-avatar-menu-email">{authState.vendor.email}</span>}
+                </div>
+                <div className="sidebar__mobile-avatar-menu-divider" />
+                <button type="button" className="sidebar__mobile-avatar-menu-item" role="menuitem" onClick={() => { setIsAvatarOpen(false); navigate("/"); }}>
+                  <VendorAvatarHomeIcon />
+                  <span>Home</span>
+                </button>
+                <button type="button" className="sidebar__mobile-avatar-menu-item" role="menuitem" onClick={() => { setIsAvatarOpen(false); navigate("/vendor-profile"); }}>
+                  <VendorAvatarProfileIcon />
+                  <span>Profile</span>
+                </button>
+                <div className="sidebar__mobile-avatar-menu-divider" />
+                <button type="button" className="sidebar__mobile-avatar-menu-item sidebar__mobile-avatar-menu-item--danger" role="menuitem" onClick={() => { setIsAvatarOpen(false); logout(); }}>
+                  <VendorAvatarLogoutIcon />
+                  <span>Log out</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="sidebar__menu-button"
+            aria-label="Open vendor navigation"
+            aria-expanded={isMobileOpen}
+            aria-controls="vendor-sidebar-panel"
+            onClick={() => setIsMobileOpen(true)}
+          >
+            <MenuIcon />
+          </button>
+        </div>
       </div>
 
       <button
@@ -272,5 +355,38 @@ function NavItem({ to, icon, children, active, badge }: NavItemProps) {
       </span>
       <span className="sidebar__text">{children}</span>
     </Link>
+  );
+}
+
+const avatarSvgProps = {
+  width: 18,
+  height: 18,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  xmlns: "http://www.w3.org/2000/svg",
+};
+
+function VendorAvatarHomeIcon() {
+  return (
+    <svg {...avatarSvgProps} aria-hidden="true">
+      <path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function VendorAvatarProfileIcon() {
+  return (
+    <svg {...avatarSvgProps} aria-hidden="true">
+      <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
+      <path d="M4 21v-2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function VendorAvatarLogoutIcon() {
+  return (
+    <svg {...avatarSvgProps} aria-hidden="true">
+      <path d="M10 17l5-5-5-5M15 12H3M21 19V5a2 2 0 0 0-2-2h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
