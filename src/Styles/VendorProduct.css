@@ -252,6 +252,11 @@
   border-collapse: collapse;
 }
 
+.vendor-product__table th:nth-child(2),
+.vendor-product__table td:nth-child(2) {
+  min-width: 200px;
+}
+
 .dashboard__table-header th {
   padding: 12px 16px;
   text-align: left;

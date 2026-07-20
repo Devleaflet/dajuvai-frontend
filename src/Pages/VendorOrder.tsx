@@ -65,12 +65,11 @@ const VendorOrder: React.FC = () => {
                         order.orderedBy?.fullName ||
                         order.orderedBy?.username ||
                         "Unknown Customer",
-                    product:
-                        order.orderItems
-                            .map((item) => item.product.name)
-                            .join(", ") ||
-                        firstItem.product.name ||
-                        "Unknown Product",
+                    product: (() => {
+                        const names = order.orderItems.map((item) => item.product.name);
+                        const unique = [...new Set(names.filter(Boolean))];
+                        return unique.join(", ") || firstItem.product.name || "Unknown Product";
+                    })(),
                     createdAt: order.createdAt,
                     // This vendor's own payable amount only — never the
                     // order's full multi-vendor total.

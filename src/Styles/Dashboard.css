@@ -772,12 +772,9 @@
     gap: 16px;
   }
 
-  .dashboard__table-header th:nth-child(2),
-  .dashboard__table-row td:nth-child(2),
   .dashboard__table-header th:nth-child(4),
   .dashboard__table-row td:nth-child(4) {
     display: none;
-    /* Hide location and piece columns on small screens */
   }
 
   .dashboard__table-header th,
