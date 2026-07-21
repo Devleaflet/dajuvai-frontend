@@ -64,48 +64,52 @@ const UserProfile: React.FC = () => {
         return "details";
     });
 
-  const [expandedOrders, setExpandedOrders] = useState<Set<number>>(new Set());
-  const [expandedOrderDetails, setExpandedOrderDetails] = useState<Set<number>>(
-    new Set(),
-  );
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 640);
-  const [isEditing, setIsEditing] = useState(false);
-  const [userDetails, setUserDetails] = useState<UserDetails | null>({
-    fullName: "",
-    username: "",
-    email: "",
-    phoneNumber: "",
-    role: "",
-    address: {
-      province: "",
-      district: "",
-      city: "",
-      localAddress: "",
-      landmark: "",
-    },
-  });
-  const [originalDetails, setOriginalDetails] = useState<UserDetails | null>(
-    null,
-  );
-  const [formState, setFormState] = useState<FormState>({ email: "" });
-  const [credentialsMode, setCredentialsMode] =
-    useState<CredentialsMode>("change");
-  const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
-  const [popup, setPopup] = useState<{
-    type: "success" | "error";
-    content: string;
-  } | null>(null);
-  const [orders, setOrders] = useState<OrderDetail[]>([]);
-  const [ordersLoading, setOrdersLoading] = useState(false);
-  const [ordersError, setOrdersError] = useState<string | null>(null);
-  const [provinceData, setProvinceData] = useState<string[]>([]);
-  const [districtData, setDistrictData] = useState<string[]>([]);
-  const [vendorCache, setVendorCache] = useState<Record<number, Vendor>>({});
-  const [orderDeliveryTimes, setOrderDeliveryTimes] = useState<
-    Record<number, string>
-  >({});
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [selectedOrderDetailId, setSelectedOrderDetailId] = useState<number | string | null>(null);
+    const [expandedOrders, setExpandedOrders] = useState<Set<number>>(
+        new Set(),
+    );
+    const [expandedOrderDetails, setExpandedOrderDetails] = useState<
+        Set<number>
+    >(new Set());
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 640);
+    const [isEditing, setIsEditing] = useState(false);
+    const [userDetails, setUserDetails] = useState<UserDetails | null>({
+        fullName: "",
+        username: "",
+        email: "",
+        phoneNumber: "",
+        role: "",
+        address: {
+            province: "",
+            district: "",
+            city: "",
+            localAddress: "",
+            landmark: "",
+        },
+    });
+    const [originalDetails, setOriginalDetails] = useState<UserDetails | null>(
+        null,
+    );
+    const [formState, setFormState] = useState<FormState>({ email: "" });
+    const [credentialsMode, setCredentialsMode] =
+        useState<CredentialsMode>("change");
+    const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
+    const [popup, setPopup] = useState<{
+        type: "success" | "error";
+        content: string;
+    } | null>(null);
+    const [orders, setOrders] = useState<OrderDetail[]>([]);
+    const [ordersLoading, setOrdersLoading] = useState(false);
+    const [ordersError, setOrdersError] = useState<string | null>(null);
+    const [provinceData, setProvinceData] = useState<string[]>([]);
+    const [districtData, setDistrictData] = useState<string[]>([]);
+    const [vendorCache, setVendorCache] = useState<Record<number, Vendor>>({});
+    const [orderDeliveryTimes, setOrderDeliveryTimes] = useState<
+        Record<number, string>
+    >({});
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+    const [selectedOrderDetailId, setSelectedOrderDetailId] = useState<
+        number | string | null
+    >(null);
 
     const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -1041,240 +1045,374 @@ const UserProfile: React.FC = () => {
         if (!orders.length)
             return <div className="orders__empty">No orders found.</div>;
 
-    return (
-      <div className="orders">
-        <h2 className="orders__title">Order History</h2>
-        <div className="orders__header">
-          <div className="orders__header-col">Order ID</div>
-          <div className="orders__header-col">Date</div>
-          <div className="orders__header-col">Status</div>
-          <div className="orders__header-col">Products</div>
-          <div className="orders__header-col">Payment</div>
-          <div className="orders__header-col">Total</div>
-        </div>
-        <div className="orders__list">
-          {orders.map((order) => (
-            <div
-              key={order.id}
-              className={`order-item ${isMobile ? "order-item--mobile" : ""}`}
-              onClick={() => setSelectedOrderDetailId(order.id)}
-              style={{ cursor: "pointer" }}
-            >
-              {isMobile ? (
-                <>
-                  <div className="order-item__mobile-header">
-                  <div className="order-item__id">#{order.orderNumber || order.id}</div>
-                    <div className="order-item__mobile-products">
-                      {order.orderItems && order.orderItems.length > 0 ? (
-                        (() => {
-                          const first = order.orderItems[0].product as Product;
-                          return (
-                            <div className="order-mobile-product">
-                              {first?.productImages?.length ? (
-                                <img
-                                  src={first.productImages[0]}
-                                  alt={first.name}
-                                  className="order-mobile-product__image"
-                                />
-                              ) : (
-                                <div className="order-mobile-product__placeholder">
-                                  ?
-                                </div>
-                              )}
-                              <div className="order-mobile-product__info">
-                                <span className="order-mobile-product__name">
-                                  {first?.name || "Product"}
-                                  {order.orderItems.length > 1 && (
-                                    <span className="order-mobile-product__count">
-                                      {" "}
-                                      +{order.orderItems.length - 1} more
-                                    </span>
-                                  )}
-                                  <span
-                                    className="order-mobile-product__see-more"
-                                    onClick={() => toggleOrderDetails(order.id)}
-                                  >
-                                    {expandedOrderDetails.has(order.id)
-                                      ? " see less"
-                                      : " see more"}
-                                  </span>
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })()
-                      ) : (
-                        <span>No items</span>
-                      )}
-                    </div>
-                  </div>
+        console.log("Order Details");
+        console.log(orders);
 
-                  {expandedOrderDetails.has(order.id) && (
-                    <div className="order-item__mobile-details">
-                      <div className="order-item__date" data-label="Date">
-                        {new Date(order.createdAt).toLocaleDateString()}
-                      </div>
-                      <div className="order-item__status" data-label="Status">
-                        <span
-                          className={`status-badge status-${order.status.toLowerCase()}`}
-                        >
-                          {order.status}
-                        </span>
-                      </div>
-                      <div
-                        className="order-item__products"
-                        data-label="Products"
-                      >
-                        <div className="order-products">
-                          {(expandedOrders.has(order.id)
-                            ? order.orderItems
-                            : order.orderItems.slice(0, 2)
-                          ).map((item) => {
-                            const product = item.product as Product;
-                            return (
-                              <div key={item.id} className="order-product">
-                                {product?.productImages?.length ? (
-                                  <img
-                                    src={product.productImages[0]}
-                                    alt={product.name}
-                                    className="order-product__image"
-                                  />
-                                ) : (
-                                  <div className="order-product__placeholder">
-                                    ?
-                                  </div>
-                                )}
-                                <span className="order-product__name">
-                                  {product?.name || "Product"}
-                                </span>
-                                <span className="order-product__quantity">
-                                  x{item.quantity}
-                                </span>
-                              </div>
-                            );
-                          })}
-                          {order.orderItems.length > 2 && (
-                            <div
-                              className="order-product-more clickable"
-                              onClick={() => toggleOrderExpansion(order.id)}
-                            >
-                              {expandedOrders.has(order.id)
-                                ? "Show less"
-                                : `+${order.orderItems.length - 2} more`}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="order-item__payment" data-label="Payment">
+        return (
+            <div className="orders">
+                <h2 className="orders__title">Order History</h2>
+                <div className="orders__header">
+                    <div className="orders__header-col">Order ID</div>
+                    <div className="orders__header-col">Date</div>
+                    <div className="orders__header-col">Status</div>
+                    <div className="orders__header-col">Products</div>
+                    <div className="orders__header-col">Payment</div>
+                    <div className="orders__header-col">Total</div>
+                </div>
+                <div className="orders__list">
+                    {orders.map((order) => (
                         <div
-                          className={`order-payment__method payment-method-${order.paymentMethod?.toLowerCase().replace("_", "-")}`}
+                            key={order.id}
+                            className={`order-item ${isMobile ? "order-item--mobile" : ""}`}
+                            onClick={() => setSelectedOrderDetailId(order.id)}
+                            style={{ cursor: "pointer" }}
                         >
-                          {formatPaymentMethod(order.paymentMethod)}
-                        </div>
-                      </div>
-                      <div className="order-item__total" data-label="Total">
-                        <div className="order-total__amount">
-                          Rs. {parseFloat(order.totalPrice).toLocaleString()}
-                        </div>
-                        <div className="order-total__shipping">
-                          Shipping: Rs.{" "}
-                          {parseFloat(order.shippingFee).toLocaleString()}
-                        </div>
-                        <div className="order-total__delivery">
-                          <small>
-                            Delivery:{" "}
-                            {orderDeliveryTimes[order.id] || "3-5 days"}
-                          </small>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div className="order-item__id" data-label="Order ID">
-                    #{order.orderNumber || order.id}
-                  </div>
-                  <div className="order-item__date" data-label="Date">
-                    {new Date(order.createdAt).toLocaleDateString()}
-                  </div>
-                  <div className="order-item__status" data-label="Status">
-                    <span
-                      className={`status-badge status-${order.status.toLowerCase()}`}
-                    >
-                      {order.status}
-                    </span>
-                  </div>
-                  <div className="order-item__products" data-label="Products">
-                    <div className="order-products">
-                      {(expandedOrders.has(order.id)
-                        ? order.orderItems
-                        : order.orderItems.slice(0, 2)
-                      ).map((item) => {
-                        const product = item.product as Product;
-                        return (
-                          <div key={item.id} className="order-product">
-                            {product?.productImages?.length ? (
-                              <img
-                                src={product.productImages[0]}
-                                alt={product.name}
-                                className="order-product__image"
-                              />
+                            {isMobile ? (
+                                <>
+                                    <div className="order-item__mobile-header">
+                                        <div className="order-item__id">
+                                            #{order.orderNumber || order.id}
+                                        </div>
+                                        <div className="order-item__mobile-products">
+                                            {order.orderItems &&
+                                            order.orderItems.length > 0 ? (
+                                                (() => {
+                                                    const first = order
+                                                        .orderItems[0]
+                                                        .product as Product;
+                                                    const imgSrc = order
+                                                        .orderItems[0].variant
+                                                        ? order.orderItems[0]
+                                                              .variant
+                                                              .variantImages[0]
+                                                        : order.orderItems[0]
+                                                              .product
+                                                              .productImages[0];
+
+                                                    return (
+                                                        <div className="order-mobile-product">
+                                                            {imgSrc ? (
+                                                                <img
+                                                                    src={imgSrc}
+                                                                    alt={
+                                                                        first.name
+                                                                    }
+                                                                    className="order-mobile-product__image"
+                                                                />
+                                                            ) : (
+                                                                <div className="order-mobile-product__placeholder">
+                                                                    ?
+                                                                </div>
+                                                            )}
+                                                            <div className="order-mobile-product__info">
+                                                                <span className="order-mobile-product__name">
+                                                                    {first?.name ||
+                                                                        "Product"}
+                                                                    {order
+                                                                        .orderItems
+                                                                        .length >
+                                                                        1 && (
+                                                                        <span className="order-mobile-product__count">
+                                                                            {" "}
+                                                                            +
+                                                                            {order
+                                                                                .orderItems
+                                                                                .length -
+                                                                                1}{" "}
+                                                                            more
+                                                                        </span>
+                                                                    )}
+                                                                    <span
+                                                                        className="order-mobile-product__see-more"
+                                                                        onClick={() =>
+                                                                            toggleOrderDetails(
+                                                                                order.id,
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        {expandedOrderDetails.has(
+                                                                            order.id,
+                                                                        )
+                                                                            ? " see less"
+                                                                            : " see more"}
+                                                                    </span>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()
+                                            ) : (
+                                                <span>No items</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {expandedOrderDetails.has(order.id) && (
+                                        <div className="order-item__mobile-details">
+                                            <div
+                                                className="order-item__date"
+                                                data-label="Date"
+                                            >
+                                                {new Date(
+                                                    order.createdAt,
+                                                ).toLocaleDateString()}
+                                            </div>
+                                            <div
+                                                className="order-item__status"
+                                                data-label="Status"
+                                            >
+                                                <span
+                                                    className={`status-badge status-${order.status.toLowerCase()}`}
+                                                >
+                                                    {order.status}
+                                                </span>
+                                            </div>
+                                            <div
+                                                className="order-item__products"
+                                                data-label="Products"
+                                            >
+                                                <div className="order-products">
+                                                    {(expandedOrders.has(
+                                                        order.id,
+                                                    )
+                                                        ? order.orderItems
+                                                        : order.orderItems.slice(
+                                                              0,
+                                                              2,
+                                                          )
+                                                    ).map((item) => {
+                                                        const product =
+                                                            item.product as Product;
+                                                        const imgSrc =
+                                                            item.variant
+                                                                ? item.variant
+                                                                      .variantImages[0]
+                                                                : item.product
+                                                                      .productImages[0];
+                                                        return (
+                                                            <div
+                                                                key={item.id}
+                                                                className="order-product"
+                                                            >
+                                                                {imgSrc ? (
+                                                                    <img
+                                                                        src={
+                                                                            imgSrc
+                                                                        }
+                                                                        alt={
+                                                                            product.name
+                                                                        }
+                                                                        className="order-product__image"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="order-product__placeholder">
+                                                                        ?
+                                                                    </div>
+                                                                )}
+                                                                <span className="order-product__name">
+                                                                    {product?.name ||
+                                                                        "Product"}
+                                                                </span>
+                                                                <span className="order-product__quantity">
+                                                                    x
+                                                                    {
+                                                                        item.quantity
+                                                                    }
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                    {order.orderItems.length >
+                                                        2 && (
+                                                        <div
+                                                            className="order-product-more clickable"
+                                                            onClick={() =>
+                                                                toggleOrderExpansion(
+                                                                    order.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            {expandedOrders.has(
+                                                                order.id,
+                                                            )
+                                                                ? "Show less"
+                                                                : `+${order.orderItems.length - 2} more`}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div
+                                                className="order-item__payment"
+                                                data-label="Payment"
+                                            >
+                                                <div
+                                                    className={`order-payment__method payment-method-${order.paymentMethod?.toLowerCase().replace("_", "-")}`}
+                                                >
+                                                    {formatPaymentMethod(
+                                                        order.paymentMethod,
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div
+                                                className="order-item__total"
+                                                data-label="Total"
+                                            >
+                                                <div className="order-total__amount">
+                                                    Rs.{" "}
+                                                    {parseFloat(
+                                                        order.totalPrice,
+                                                    ).toLocaleString()}
+                                                </div>
+                                                <div className="order-total__shipping">
+                                                    Shipping: Rs.{" "}
+                                                    {parseFloat(
+                                                        order.shippingFee,
+                                                    ).toLocaleString()}
+                                                </div>
+                                                <div className="order-total__delivery">
+                                                    <small>
+                                                        Delivery:{" "}
+                                                        {orderDeliveryTimes[
+                                                            order.id
+                                                        ] || "3-5 days"}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             ) : (
-                              <div className="order-product__placeholder">
-                                ?
-                              </div>
+                                <>
+                                    <div
+                                        className="order-item__id"
+                                        data-label="Order ID"
+                                    >
+                                        #{order.orderNumber || order.id}
+                                    </div>
+                                    <div
+                                        className="order-item__date"
+                                        data-label="Date"
+                                    >
+                                        {new Date(
+                                            order.createdAt,
+                                        ).toLocaleDateString()}
+                                    </div>
+                                    <div
+                                        className="order-item__status"
+                                        data-label="Status"
+                                    >
+                                        <span
+                                            className={`status-badge status-${order.status.toLowerCase()}`}
+                                        >
+                                            {order.status}
+                                        </span>
+                                    </div>
+                                    <div
+                                        className="order-item__products"
+                                        data-label="Products"
+                                    >
+                                        <div className="order-products">
+                                            {(expandedOrders.has(order.id)
+                                                ? order.orderItems
+                                                : order.orderItems.slice(0, 2)
+                                            ).map((item) => {
+                                                const product =
+                                                    item.product as Product;
+                                                const imgSrc = item.variant
+                                                    ? item.variant
+                                                          .variantImages[0]
+                                                    : item.product
+                                                          .productImages[0];
+                                                return (
+                                                    <div
+                                                        key={item.id}
+                                                        className="order-product"
+                                                    >
+                                                        {imgSrc ? (
+                                                            <img
+                                                                src={imgSrc}
+                                                                alt={
+                                                                    product.name
+                                                                }
+                                                                className="order-product__image"
+                                                            />
+                                                        ) : (
+                                                            <div className="order-product__placeholder">
+                                                                ?
+                                                            </div>
+                                                        )}
+                                                        <span className="order-product__name">
+                                                            {product?.name ||
+                                                                "Product"}
+                                                        </span>
+                                                        <span className="order-product__quantity">
+                                                            x{item.quantity}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                            {order.orderItems.length > 2 && (
+                                                <div
+                                                    className="order-product-more clickable"
+                                                    onClick={() =>
+                                                        toggleOrderExpansion(
+                                                            order.id,
+                                                        )
+                                                    }
+                                                >
+                                                    {expandedOrders.has(
+                                                        order.id,
+                                                    )
+                                                        ? "Show less"
+                                                        : `+${order.orderItems.length - 2} more`}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div
+                                        className="order-item__payment"
+                                        data-label="Payment"
+                                    >
+                                        <div
+                                            className={`order-payment__method payment-method-${order.paymentMethod?.toLowerCase().replace("_", "-")}`}
+                                        >
+                                            {formatPaymentMethod(
+                                                order.paymentMethod,
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div
+                                        className="order-item__total"
+                                        data-label="Total"
+                                    >
+                                        <div className="order-total__amount">
+                                            Rs.{" "}
+                                            {parseFloat(
+                                                order.totalPrice,
+                                            ).toLocaleString()}
+                                        </div>
+                                        <div className="order-total__shipping">
+                                            Shipping: Rs.{" "}
+                                            {parseFloat(
+                                                order.shippingFee,
+                                            ).toLocaleString()}
+                                        </div>
+                                        <div className="order-total__delivery">
+                                            <small>
+                                                Delivery:{" "}
+                                                {orderDeliveryTimes[order.id] ||
+                                                    "3-5 days"}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </>
                             )}
-                            <span className="order-product__name">
-                              {product?.name || "Product"}
-                            </span>
-                            <span className="order-product__quantity">
-                              x{item.quantity}
-                            </span>
-                          </div>
-                        );
-                      })}
-                      {order.orderItems.length > 2 && (
-                        <div
-                          className="order-product-more clickable"
-                          onClick={() => toggleOrderExpansion(order.id)}
-                        >
-                          {expandedOrders.has(order.id)
-                            ? "Show less"
-                            : `+${order.orderItems.length - 2} more`}
                         </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="order-item__payment" data-label="Payment">
-                    <div
-                      className={`order-payment__method payment-method-${order.paymentMethod?.toLowerCase().replace("_", "-")}`}
-                    >
-                      {formatPaymentMethod(order.paymentMethod)}
-                    </div>
-                  </div>
-                  <div className="order-item__total" data-label="Total">
-                    <div className="order-total__amount">
-                      Rs. {parseFloat(order.totalPrice).toLocaleString()}
-                    </div>
-                    <div className="order-total__shipping">
-                      Shipping: Rs.{" "}
-                      {parseFloat(order.shippingFee).toLocaleString()}
-                    </div>
-                    <div className="order-total__delivery">
-                      <small>
-                        Delivery: {orderDeliveryTimes[order.id] || "3-5 days"}
-                      </small>
-                    </div>
-                  </div>
-                </>
-              )}
+                    ))}
+                </div>
             </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
+        );
+    };
 
     return (
         <>
@@ -1464,15 +1602,15 @@ const UserProfile: React.FC = () => {
                 </div>
             </div>
 
-      {!popup && <Footer />}
+            {!popup && <Footer />}
 
-      <UserOrderDetailModal
-        show={selectedOrderDetailId !== null}
-        onClose={() => setSelectedOrderDetailId(null)}
-        orderId={selectedOrderDetailId}
-      />
-    </>
-  );
+            <UserOrderDetailModal
+                show={selectedOrderDetailId !== null}
+                onClose={() => setSelectedOrderDetailId(null)}
+                orderId={selectedOrderDetailId}
+            />
+        </>
+    );
 };
 
 export default UserProfile;

@@ -47,7 +47,7 @@ const getEffectiveStatus = (
 
 const SkeletonRow: React.FC = () => (
   <tr>
-    {[...Array(12)].map((_, i) => (
+    {[...Array(10)].map((_, i) => (
       <td key={i}>
         <div className="skeleton skeleton-text" />
       </td>
@@ -436,8 +436,7 @@ const AdminProduct: React.FC = () => {
                   <th>Price</th>
                   <th>Variants</th>
                   <th>Discount</th>
-                  <th>Status</th>
-                  <th>Count</th>
+                  <th>Stock</th>
                   <th>Created</th>
                   <th>Action</th>
                 </tr>
@@ -557,7 +556,12 @@ const AdminProduct: React.FC = () => {
                         <td>{product.id}</td>
 
                         {/* Product Name  */}
-                        <td>{product.name}</td>
+                        <td
+                          className="admin-products__name-cell"
+                          title={product.name}
+                        >
+                          {product.name}
+                        </td>
 
                         {/* Vendor Name  */}
                         <td>{product.vendor?.businessName || "Unknown"}</td>
@@ -641,64 +645,21 @@ const AdminProduct: React.FC = () => {
                           )}
                         </td>
 
-                        {/* Product Status */}
-                        <td style={{ textAlign: "center" }}>
-                          {(() => {
-                            let color = "#1b5e20";
-                            let backgroundColor = "#e8f5e9";
-                            let border = "1px solid #a5d6a7";
-                            let label = "AVAILABLE";
-
-                            if (effectiveStatus === "OUT_OF_STOCK") {
-                              color = "#b71c1c";
-                              backgroundColor = "#fdecea";
-                              border = "1px solid #f5c6cb";
-                              label = "OUT_OF_STOCK";
-                            } else if (effectiveStatus === "LOW_STOCK") {
-                              color = "#d32f2f";
-                              backgroundColor = "#ffebee";
-                              border = "1px solid #ffcdd2";
-                              label = "LOW_STOCK";
-                            }
-
-                            return (
-                              <span
-                                style={{
-                                  padding: "4px 12px",
-                                  borderRadius: "999px",
-                                  fontSize: "12px",
-                                  fontWeight: 600,
-                                  textTransform: "uppercase",
-                                  display: "inline-block",
-                                  minWidth: "110px",
-                                  textAlign: "center",
-                                  color,
-                                  backgroundColor,
-                                  border,
-                                }}
-                              >
-                                {label}
-                              </span>
-                            );
-                          })()}
-                        </td>
-
-                        {/* Product Count (Stock) */}
-                        <td style={{ textAlign: "center" }}>
-                          <span
-                            style={{
-                              padding: "4px 10px",
-                              borderRadius: "6px",
-                              backgroundColor: "#f3f4f6",
-                              color: "#1f2937",
-                              fontSize: "13px",
-                              fontWeight: 600,
-                              display: "inline-block",
-                              minWidth: "36px",
-                            }}
-                          >
-                            {displayStock}
-                          </span>
+                        {/* Stock (merged Status + Count) */}
+                        <td className="admin-products__stock-cell">
+                          {effectiveStatus === "OUT_OF_STOCK" ? (
+                            <span className="admin-products__stock-label admin-products__stock-label--out">
+                              {displayStock}
+                            </span>
+                          ) : effectiveStatus === "LOW_STOCK" ? (
+                            <span className="admin-products__stock-label admin-products__stock-label--low">
+                              {displayStock}
+                            </span>
+                          ) : (
+                            <span className="admin-products__stock-label admin-products__stock-label--ok">
+                              {displayStock}
+                            </span>
+                          )}
                         </td>
 
                         {/* Created at  */}
