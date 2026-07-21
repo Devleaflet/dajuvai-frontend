@@ -675,6 +675,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 			<div
 				className="auth-modal__content"
 				ref={modalRef}
+				onClick={(e) => e.stopPropagation()}
 			>
 				<button
 					className="auth-modal__close"

@@ -183,6 +183,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 
 
 	return (
+		<>
 		<Link
 			to={`/product-page/${product.id}`}
 			className="product1__link-wrapper"
@@ -310,14 +311,15 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 					</div>
 				</div>
 			</div>
-			<AuthModal
-				isOpen={authModalOpen}
-				onClose={(e?: React.MouseEvent) => {
-					e?.stopPropagation();
-					setAuthModalOpen(false);
-				}}
-			/>
 		</Link>
+		<AuthModal
+			isOpen={authModalOpen}
+			onClose={(e?: React.MouseEvent) => {
+				e?.stopPropagation();
+				setAuthModalOpen(false);
+			}}
+		/>
+		</>
 	);
 };
 
