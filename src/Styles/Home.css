@@ -26,6 +26,11 @@
    file previously carried a third, conflicting definition (gray circle,
    orange-on-hover) that fought whichever card CSS loaded second. */
 
+.home-page-content {
+	background-color: #f5f5f5;
+	padding-top: 16px;
+}
+
 .homepage-sections {
 	margin-top: 80px;
 }

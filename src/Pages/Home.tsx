@@ -48,12 +48,14 @@ const Home = () => {
 	return (
 		<div style={{ zIndex: "0" }}>
 			<Navbar />
-			<HeroSlider />
-			<CategorySlider />
-			<HomepageSections />
-			<SpecialOffers />
-			{/* <CategorySection maxItemsToShow={8} /> */}
-			<CategoryCatalogSection />
+			<div className="home-page-content">
+				<HeroSlider />
+				<CategorySlider />
+				<HomepageSections />
+				<SpecialOffers />
+				{/* <CategorySection maxItemsToShow={8} /> */}
+				<CategoryCatalogSection />
+			</div>
 			<Footer />
 		</div>
 	);

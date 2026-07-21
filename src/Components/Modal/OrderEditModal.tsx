@@ -51,14 +51,16 @@ const formatAddress = (shippingAddress: any, fallback: Order): string => {
     if (parts.length > 0) return parts.join(", ");
   }
 
-  return [
-    fallback.streetAddress || fallback.address,
-    fallback.town,
-    fallback.state,
-    fallback.country,
-  ]
-    .filter(Boolean)
-    .join(", ") || "N/A";
+  return (
+    [
+      fallback.streetAddress || fallback.address,
+      fallback.town,
+      fallback.state,
+      fallback.country,
+    ]
+      .filter(Boolean)
+      .join(", ") || "N/A"
+  );
 };
 
 const formatStatusLabel = (status: string) =>
@@ -71,7 +73,9 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
   order,
 }) => {
   const { token } = useAuth();
-  const [detailedOrder, setDetailedOrder] = useState<DetailedOrder | null>(null);
+  const [detailedOrder, setDetailedOrder] = useState<DetailedOrder | null>(
+    null,
+  );
   const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[]>([]);
   const [orderStatus, setOrderStatus] = useState("");
   const [reason, setReason] = useState("");
@@ -122,7 +126,10 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
     ? getOrderStatusMeta(orderStatus)
     : null;
   const itemCount =
-    detailedOrder?.orderItems?.reduce((total, item) => total + item.quantity, 0) ||
+    detailedOrder?.orderItems?.reduce(
+      (total, item) => total + item.quantity,
+      0,
+    ) ||
     order?.quantity ||
     0;
   const customerName =
@@ -183,12 +190,20 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
             <h2 className="order-detail__order-num">
               {detailedOrder?.orderNumber || `#${order.id}`}
             </h2>
-            <p className="order-detail__order-date">
-              {order.date || "N/A"}
-            </p>
+            <p className="order-detail__order-date">{order.date || "N/A"}</p>
           </div>
 
           <div className="order-detail__status-panel">
+            <span
+              className={`status-badge status-badge--${currentStatus.toLowerCase()}`}
+            >
+              {currentStatus ? formatStatusLabel(currentStatus) : "Loading"}
+            </span>
+            <span
+              className={`payment-badge payment-badge--${(detailedOrder?.paymentStatus || "").toLowerCase()}`}
+            >
+              {detailedOrder?.paymentStatus || "N/A"}
+            </span>
             <button
               type="button"
               className="order-modal__close-btn order-detail__close-btn"
@@ -196,17 +211,29 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
               aria-label="Close edit order status modal"
               disabled={isSaving}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M18 6L6 18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M6 6L18 18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </button>
-            <span className={`status-badge status-badge--${currentStatus.toLowerCase()}`}>
-              {currentStatus ? formatStatusLabel(currentStatus) : "Loading"}
-            </span>
-            <span className={`payment-badge payment-badge--${(detailedOrder?.paymentStatus || "").toLowerCase()}`}>
-              {detailedOrder?.paymentStatus || "N/A"}
-            </span>
           </div>
         </div>
 
@@ -246,19 +273,28 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
                     </div>
                     <div>
                       <h3>{customerName}</h3>
-                      <p>{detailedOrder?.orderedBy?.email || order.email || "N/A"}</p>
+                      <p>
+                        {detailedOrder?.orderedBy?.email ||
+                          order.email ||
+                          "N/A"}
+                      </p>
                     </div>
                   </div>
 
                   <div className="order-info-grid order-edit-modal__quick-facts">
                     <div className="order-info-grid__item">
                       <span className="order-info-grid__label">Items</span>
-                      <span className="order-info-grid__value">{itemCount}</span>
+                      <span className="order-info-grid__value">
+                        {itemCount}
+                      </span>
                     </div>
                     <div className="order-info-grid__item">
                       <span className="order-info-grid__label">Total</span>
                       <span className="order-info-grid__value">
-                        Rs. {detailedOrder ? Number(detailedOrder.totalPrice).toFixed(2) : "0.00"}
+                        Rs.{" "}
+                        {detailedOrder
+                          ? Number(detailedOrder.totalPrice).toFixed(2)
+                          : "0.00"}
                       </span>
                     </div>
                     <div className="order-info-grid__item">
@@ -270,14 +306,18 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
                     <div className="order-info-grid__item">
                       <span className="order-info-grid__label">Phone</span>
                       <span className="order-info-grid__value">
-                        {detailedOrder?.phoneNumber || order.phoneNumber || "N/A"}
+                        {detailedOrder?.phoneNumber ||
+                          order.phoneNumber ||
+                          "N/A"}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="order-info-grid__item order-info-grid__item--full order-edit-modal__address">
-                  <span className="order-info-grid__label">Shipping address</span>
+                  <span className="order-info-grid__label">
+                    Shipping address
+                  </span>
                   <span className="order-info-grid__value">
                     {formatAddress(detailedOrder?.shippingAddress, order)}
                   </span>
@@ -301,7 +341,9 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
                       disabled={!isEditable || isSaving}
                     >
                       <option value={currentStatus}>
-                        {currentStatus ? `${formatStatusLabel(currentStatus)} (current)` : "Current status"}
+                        {currentStatus
+                          ? `${formatStatusLabel(currentStatus)} (current)`
+                          : "Current status"}
                       </option>
                       {availableStatusOptions.map((status) => (
                         <option key={status.value} value={status.value}>
@@ -313,7 +355,9 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
 
                   {selectedStatusMeta && (
                     <div className="order-edit-modal__status-preview">
-                      <span className={`status-badge status-badge--${orderStatus.toLowerCase()}`}>
+                      <span
+                        className={`status-badge status-badge--${orderStatus.toLowerCase()}`}
+                      >
                         {selectedStatusMeta.label}
                       </span>
                       <p>{selectedStatusMeta.description}</p>
@@ -348,28 +392,39 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
                 <section className="order-section">
                   <h3 className="order-section__title">Recent history</h3>
                   <div className="order-edit-modal__timeline">
-                    {statusHistory.slice(-4).reverse().map((entry) => (
-                      <div key={entry.id} className="order-edit-modal__timeline-row">
-                        <span className={`status-badge status-badge--${entry.newStatus.toLowerCase()}`}>
-                          {formatStatusLabel(entry.newStatus)}
-                        </span>
-                        <div>
-                          <p>
-                            {new Date(entry.createdAt).toLocaleString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
-                          <small>
-                            {entry.changedByRole.toLowerCase()}
-                            {entry.reason ? ` - ${entry.reason}` : ""}
-                          </small>
+                    {statusHistory
+                      .slice(-4)
+                      .reverse()
+                      .map((entry) => (
+                        <div
+                          key={entry.id}
+                          className="order-edit-modal__timeline-row"
+                        >
+                          <span
+                            className={`status-badge status-badge--${entry.newStatus.toLowerCase()}`}
+                          >
+                            {formatStatusLabel(entry.newStatus)}
+                          </span>
+                          <div>
+                            <p>
+                              {new Date(entry.createdAt).toLocaleString(
+                                "en-US",
+                                {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
+                            </p>
+                            <small>
+                              {entry.changedByRole.toLowerCase()}
+                              {entry.reason ? ` - ${entry.reason}` : ""}
+                            </small>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </section>
               )}

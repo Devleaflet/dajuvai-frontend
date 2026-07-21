@@ -80,29 +80,6 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
     }
   };
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>): void => {
-    if (scrollContainerRef.current) {
-      setIsDragging(true);
-      setStartX(e.touches[0].clientX);
-      setScrollLeft(scrollContainerRef.current.scrollLeft);
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>): void => {
-    if (!isDragging || !scrollContainerRef.current) return;
-    e.preventDefault();
-    const x = e.touches[0].clientX;
-    const walk = (startX - x) * 2;
-    scrollContainerRef.current.scrollLeft = scrollLeft + walk;
-  };
-
-  const handleTouchEnd = (): void => {
-    setIsDragging(false);
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.style.pointerEvents = "auto";
-    }
-  };
-
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
     if (e.button !== 0) return;
     if (scrollContainerRef.current) {
@@ -225,9 +202,6 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
         >
           {isLoading
             ? Array.from({ length: 6 }).map((_, index) => (

@@ -911,20 +911,22 @@ const Shop: React.FC = () => {
 		return (
 			<>
 				<Navbar />
-				<div className="shop-error">
-					<div className="error-message">
-						<h2 className="error-title">Unable to Load Products</h2>
-						<p className="error-text">
-							{productsError instanceof Error
-								? productsError.message
-								: 'Unknown error occurred'}
-						</p>
-						<button
-							onClick={() => window.location.reload()}
-							className="error-refresh-button"
-						>
-							Refresh Page
-						</button>
+				<div className="shop-page-content">
+					<div className="shop-error">
+						<div className="error-message">
+							<h2 className="error-title">Unable to Load Products</h2>
+							<p className="error-text">
+								{productsError instanceof Error
+									? productsError.message
+									: 'Unknown error occurred'}
+							</p>
+							<button
+								onClick={() => window.location.reload()}
+								className="error-refresh-button"
+							>
+								Refresh Page
+							</button>
+						</div>
 					</div>
 				</div>
 				<Footer />
@@ -934,10 +936,11 @@ const Shop: React.FC = () => {
 	return (
 		<>
 			<Navbar />
-			<ProductBannerSlider />
-			<CategorySlider />
-			<div className="shop-max-width-container">
-				<div className="shop-container">
+			<div className="shop-page-content">
+				<ProductBannerSlider />
+				<CategorySlider />
+				<div className="shop-max-width-container">
+					<div className="shop-container">
 					<div className="shop-header">
 						<div className="shop-header-title">
 							<h2 className="shop-title">
@@ -1402,6 +1405,7 @@ const Shop: React.FC = () => {
 							</div>
 						</div>
 					</div>
+				</div>
 				</div>
 			</div>
 			<Footer />

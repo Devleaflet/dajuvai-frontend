@@ -218,6 +218,7 @@ const About = () => {
   return (
     <>
       <Navbar />
+      <div className="about-page-content">
       <div className="about-max-width-container">
         {/* ===============================
              CONTACT SECTION
@@ -417,6 +418,7 @@ const About = () => {
             </div>
           </div>
         </section>
+      </div>
       </div>
       <Footer />
       <ToastContainer 
