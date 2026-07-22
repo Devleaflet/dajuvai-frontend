@@ -712,7 +712,7 @@
        the carousel's own content width instead, so exactly 2 cards + 1 gap
        always fit fully on screen, on any phone width, with the 3rd peeking
        just enough to hint there's more to scroll. */
-    width: calc((100% - 10px) / 2.15);
+    width: calc((100% - 10px) / 1.97);
   }
 
   .product-card {

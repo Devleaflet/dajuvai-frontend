@@ -345,7 +345,17 @@ const AdminProduct: React.FC = () => {
         })
         .filter((v): v is number => v !== null);
 
-      return prices.length > 0 ? Math.min(...prices) : null;
+      if (prices.length === 0) return null;
+
+      // The backend sorts "high-to-low" by each product's highest variant
+      // price (GREATEST(...)) and "low-to-high" by its lowest (LEAST(...)) —
+      // this always showed the lowest regardless, so a high-to-low list
+      // displayed prices that didn't match what it was actually ranked by,
+      // making the table look unsorted. Show whichever variant price the
+      // active sort is actually keying off of.
+      return sortOption === "high-to-low"
+        ? Math.max(...prices)
+        : Math.min(...prices);
     }
 
     //  Non-variant product → product.finalPrice

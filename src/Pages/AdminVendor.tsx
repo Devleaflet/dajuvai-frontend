@@ -1259,7 +1259,13 @@ const AdminVendor: React.FC = () => {
         navigate,
     ]);
 
-    // Auto-filter when approval filter changes
+    // Search and every filter (district/status/approval/date) used to each
+    // recompute `filteredVendors` independently from the raw `vendors` array
+    // — whichever ran last won and silently discarded the other's criteria
+    // (type a search term, then change a filter, and the search term was
+    // dropped from the visible results; or vice versa). Both now read every
+    // current criterion and AND-combine them in one pass, so changing one
+    // never erases the others.
     useEffect(() => {
         handleFilter();
     }, [
@@ -1268,38 +1274,14 @@ const AdminVendor: React.FC = () => {
         statusFilter,
         startDate,
         endDate,
+        searchQuery,
         vendors,
     ]);
 
-    const handleSearch = useCallback(
-        (query: string) => {
-            setSearchQuery(query);
-            setCurrentPage(1);
-
-            const searchTerm = query.toLowerCase();
-            const filtered = vendors.filter((vendor) => {
-                const districtName =
-                    typeof vendor.district === "object" && vendor.district
-                        ? vendor.district.name
-                        : typeof vendor.district === "string"
-                          ? vendor.district
-                          : "";
-                return (
-                    (vendor.businessName || "")
-                        .toLowerCase()
-                        .includes(searchTerm) ||
-                    (vendor.email || "").toLowerCase().includes(searchTerm) ||
-                    (vendor.phoneNumber || "")
-                        .toLowerCase()
-                        .includes(searchTerm) ||
-                    districtName.toLowerCase().includes(searchTerm)
-                );
-            });
-
-            setFilteredVendors(filtered);
-        },
-        [vendors],
-    );
+    const handleSearch = useCallback((query: string) => {
+        setSearchQuery(query);
+        setCurrentPage(1);
+    }, []);
 
     const handleSort = (key: keyof Vendor) => {
         let direction: "asc" | "desc" = "asc";
@@ -1325,6 +1307,28 @@ const AdminVendor: React.FC = () => {
 
     const handleFilter = () => {
         let filtered = [...vendors];
+
+        if (searchQuery.trim()) {
+            const searchTerm = searchQuery.toLowerCase();
+            filtered = filtered.filter((vendor) => {
+                const districtName =
+                    typeof vendor.district === "object" && vendor.district
+                        ? vendor.district.name
+                        : typeof vendor.district === "string"
+                          ? vendor.district
+                          : "";
+                return (
+                    (vendor.businessName || "")
+                        .toLowerCase()
+                        .includes(searchTerm) ||
+                    (vendor.email || "").toLowerCase().includes(searchTerm) ||
+                    (vendor.phoneNumber || "")
+                        .toLowerCase()
+                        .includes(searchTerm) ||
+                    districtName.toLowerCase().includes(searchTerm)
+                );
+            });
+        }
 
         if (districtFilter !== "all") {
             filtered = filtered.filter((vendor) => {
@@ -1359,12 +1363,17 @@ const AdminVendor: React.FC = () => {
         }
 
         if (startDate && endDate) {
+            // `new Date("2026-07-14")` parses as that day's UTC midnight, so a
+            // plain `<=` compare excluded every vendor created later that same
+            // day — the end date acted as "before this day," not "through it."
+            // Push the upper bound to the last instant of the end date instead.
+            const rangeStart = new Date(startDate);
+            const rangeEnd = new Date(endDate);
+            rangeEnd.setHours(23, 59, 59, 999);
+
             filtered = filtered.filter((vendor) => {
                 const createdAt = new Date(vendor.createdAt || "");
-                return (
-                    createdAt >= new Date(startDate) &&
-                    createdAt <= new Date(endDate)
-                );
+                return createdAt >= rangeStart && createdAt <= rangeEnd;
             });
         }
 

@@ -307,6 +307,16 @@
 	}
 }
 
+/* No entrance animation here on purpose. It previously animated with a
+   different transform-based keyframe entirely (a global @keyframes name
+   collision — see git history) which pinned the box's top-left corner at
+   dead-center instead of centering it, landing it in the bottom-right
+   quadrant for the animation's duration before snapping to the correct
+   spot. Renaming the keyframe fixed the collision, but any transform-driven
+   entrance animation on a translate(-50%,-50%)-centered fixed element is one
+   more incompatible global `slideIn`/`fadeIn` rename away from the same bug
+   recurring. The static transform below already centers it correctly from
+   the very first frame — simplest permanent fix is to not animate it. */
 .admin-catalog__modal {
 	position: fixed;
 	top: 50%;
@@ -322,29 +332,6 @@
 	overflow-y: auto;
 	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
 		0 10px 10px -5px rgba(0, 0, 0, 0.04);
-	animation: adminCatalogModalSlideIn 0.15s ease-out;
-}
-
-/* Named uniquely on purpose: `slideIn` is (was) also defined in
-   OrderModals.css, VendorTerms.css, ProductPage.css, Shop.css,
-   NewProductModal.css, and AddVendorModal.css, each with different,
-   incompatible transforms. @keyframes names are global once bundled -
-   whichever file's definition loaded last silently won for every
-   `animation: slideIn` in the whole app. This modal was actually animating
-   with OrderModals.css/VendorTerms.css's translateY(20px)-based keyframe
-   instead of its own centering transform, which pinned its top-left corner
-   at dead-center-screen (top:50%;left:50% with no -50%/-50% correction)
-   instead of centering the box - visually landing in the bottom-right
-   quadrant of the viewport. */
-@keyframes adminCatalogModalSlideIn {
-	from {
-		opacity: 0;
-		transform: translate(-50%, -48%) scale(0.95);
-	}
-	to {
-		opacity: 1;
-		transform: translate(-50%, -50%) scale(1);
-	}
 }
 
 .admin-catalog__modal--delete {

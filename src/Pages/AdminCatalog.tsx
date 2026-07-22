@@ -90,8 +90,10 @@ const AdminCatalog = () => {
 	useEffect(() => {
 		const handler = setTimeout(() => {
 			setDebouncedSearchQuery(productSearchQuery);
+			fetchProducts(productSearchQuery);
 		}, 300);
 		return () => clearTimeout(handler);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [productSearchQuery]);
 
 	useEffect(() => {
@@ -127,12 +129,20 @@ const AdminCatalog = () => {
 		}
 	};
 
-	const fetchProducts = async () => {
+	const fetchProducts = async (search?: string) => {
 		if (!token) return;
 		setLoadingProducts(true);
 		try {
+			// The manual product picker searches this list client-side, but the
+			// endpoint defaults to a 40-item page — anything past that was
+			// silently unfindable/unselectable no matter what you typed. Send
+			// the search term to the backend (same param the admin products
+			// page and navbar search already use) so the picker can actually
+			// reach the full catalog instead of just its first page.
+			const params = new URLSearchParams({ limit: "100" });
+			if (search?.trim()) params.set("search", search.trim());
 			const response = await fetch(
-				`${API_BASE_URL}/api/categories/all/products`,
+				`${API_BASE_URL}/api/categories/all/products?${params.toString()}`,
 				{
 					headers: {
 						Authorization: `Bearer ${token}`,

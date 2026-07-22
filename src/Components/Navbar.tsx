@@ -336,6 +336,11 @@ const Navbar: React.FC = () => {
 
 		const handleScroll = (): void => {
 			const currentScrollPos = window.pageYOffset;
+			// The dropdown's position is only ever computed relative to the
+			// search input at open time — once the page scrolls, that anchor is
+			// stale, so close it rather than let it float disconnected from the
+			// field it was opened from.
+			setShowSearchDropdown(false);
 			if (window.innerWidth <= 1099) {
 				if (currentScrollPos <= 10 || prevScrollPos - currentScrollPos > 500) {
 					searchRow?.classList.remove('hidden');
@@ -925,6 +930,13 @@ const Navbar: React.FC = () => {
 									value={searchQuery}
 									onChange={handleSearchInputChange}
 									onKeyDown={handleKeyDown}
+									onFocus={() => {
+										// Scroll dismisses the dropdown, but the query and its
+										// results are still sitting in state — re-clicking the
+										// field should bring the same list straight back instead
+										// of forcing the user to retype to see it again.
+										if (searchResults.length > 0) setShowSearchDropdown(true);
+									}}
 									className="navbar__search-input"
 									autoComplete="off"
 									style={{

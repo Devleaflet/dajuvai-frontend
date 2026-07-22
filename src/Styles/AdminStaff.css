@@ -379,6 +379,13 @@
     padding: 1rem;
   }
 
+  /* Opens the doc in a new tab, which mobile browsers handle poorly for
+     these file types (forced downloads / unreadable inline renders) —
+     Download and Preview already cover the mobile use case. */
+  .admin-staff__btn--view {
+    display: none;
+  }
+
   .admin-staff__header {
     flex-direction: column;
     align-items: stretch;

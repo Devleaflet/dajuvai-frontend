@@ -908,14 +908,15 @@
 
   .navbar__search-row {
     position: relative;
-    transition: transform 0.3s ease;
   }
 
+  /* No transition/transform here on purpose: animating transform while also
+     switching position (relative -> absolute) mid-transition changes the
+     element's containing block reference frame partway through, which is
+     what caused the visible jump/glitch instead of a clean slide. An instant
+     hide reads better than a broken animation. */
   .navbar__search-row.hidden {
-    transform: translateY(-100%);
-    position: absolute;
-    width: 100%;
-    visibility: hidden;
+    display: none;
   }
 
   .navbar__account-icon-link {
@@ -1405,14 +1406,18 @@
     max-width: 100%;
   }
 
+  /* No position:fixed / hardcoded top here anymore — that top:190px was a
+     magic number that only matched the navbar's height on some screens;
+     any other navbar height (different device, wrapped mega-menu row, etc.)
+     left the dropdown floating disconnected from the input. The base rule's
+     position:absolute + top:100% anchors it to .navbar__search itself
+     (which has position:relative), so it always sits directly below the
+     field regardless of navbar height. */
   .navbar__search-dropdown {
-    position: fixed;
-    top: 190px;
     left: 0;
     right: 0;
-    margin: 0px 20px;
-    border-radius: 0;
-    max-height: calc(100vh - 60px);
+    border-radius: 4px;
+    max-height: calc(100vh - 220px);
   }
 }
 

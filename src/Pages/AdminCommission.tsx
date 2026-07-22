@@ -115,7 +115,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
             type="button"
             onClick={onView}
             disabled={actionLoading !== null}
-            className="admin-staff__btn admin-staff__btn--secondary"
+            className="admin-staff__btn admin-staff__btn--secondary admin-staff__btn--view"
           >
             {actionLoading === "view" ? "Opening…" : "View"}
           </button>

@@ -433,20 +433,50 @@ html {
 }
 
 .product-brand {
-  margin: 0 0 1rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin: 1rem 0 1rem 0;
 }
 
-.product-brand__brand {
+.product-brand__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid #f0d9cc;
+  background: #fff7f2;
+  border-radius: 999px;
+}
+
+.product-brand__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #f26925;
+}
+
+.product-brand__value {
   font-size: 0.85rem;
-  color: #0f1111;
-  font-weight: 500;
+  font-weight: 600;
+  color: #222;
 }
 
 .product-brand__keywords {
   display: flex;
   flex-wrap: wrap;
-  font-size: 0.85rem;
-  color: #666;
+  gap: 0.4rem;
+}
+
+.product-brand__keyword-chip {
+  font-size: 0.78rem;
+  color: #555;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
 }
 
 .product-price {

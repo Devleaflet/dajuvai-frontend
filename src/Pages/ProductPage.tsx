@@ -756,7 +756,7 @@ const ProductPage = () => {
       return;
     }
     try {
-      const response = await fetch(`/api/vendors/auth/vendor}`, {
+      const response = await fetch(`/api/vendors/${vendorId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -902,14 +902,34 @@ const ProductPage = () => {
                 <div className="product-info__header">
                   <h1 className="product-info__title">{product.name}</h1>
 
-                  <div className="product-brand">
-                    <span className="product-brand__brand">
-                      {product.brand ? `Brand: ${product.brand}` : ""}
-                    </span>
-                    <span className="product-brand__keywords">
-                      {product.keywords ? `Keywords: ${product.keywords}` : ""}
-                    </span>
-                  </div>
+                  {(product.brand || product.keywords) && (
+                    <div className="product-brand">
+                      {product.brand && (
+                        <span className="product-brand__badge">
+                          <span className="product-brand__label">Brand</span>
+                          <span className="product-brand__value">
+                            {product.brand}
+                          </span>
+                        </span>
+                      )}
+                      {product.keywords && (
+                        <div className="product-brand__keywords">
+                          {product.keywords
+                            .split(",")
+                            .map((kw) => kw.trim())
+                            .filter(Boolean)
+                            .map((kw, i) => (
+                              <span
+                                key={i}
+                                className="product-brand__keyword-chip"
+                              >
+                                {kw}
+                              </span>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="product-price">
                     <span className="product-price__current">
