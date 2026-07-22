@@ -12,6 +12,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useUI } from "../context/UIContext";
 import Portal from "./Portal";
+import { getDiscountDisplay } from "../utils/priceDisplay";
 import "../Styles/Cart.css";
 
 interface CartProps {
@@ -319,7 +320,39 @@ const CartItemRow = React.memo(
 
           <div className="cart__item-footer">
             <div className="cart__item-price">
-              Rs. {item.price.toLocaleString("en-IN")}
+              <span className="cart__item-price-current">
+                Rs. {item.price.toLocaleString("en-IN")}
+              </span>
+              {(() => {
+                const basePrice = Number(
+                  item.variant?.basePrice ?? item.product?.basePrice ?? item.price,
+                );
+                const discount = item.variant
+                  ? item.variant?.discount
+                  : item.product?.discount;
+                const discountType = item.variant
+                  ? item.variant?.discountType
+                  : item.product?.discountType;
+                const discountDisplay = getDiscountDisplay({
+                  basePrice,
+                  finalPrice: item.price,
+                  discount,
+                  discountType,
+                });
+                if (!discountDisplay.hasDiscount) return null;
+                return (
+                  <>
+                    <span className="cart__item-price-original">
+                      Rs. {basePrice.toLocaleString("en-IN")}
+                    </span>
+                    {discountDisplay.badgeLabel && (
+                      <span className="cart__item-price-badge">
+                        {discountDisplay.badgeLabel}
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             <div className="cart__item-controls">

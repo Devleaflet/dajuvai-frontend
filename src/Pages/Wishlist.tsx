@@ -19,6 +19,7 @@ import {
   moveManyToCart as moveWishlistItemsToCart,
   moveToCart as moveWishlistItemToCart,
 } from '../api/wishlist';
+import { getDiscountDisplay } from '../utils/priceDisplay';
 // ================================
 // TYPES & INTERFACES
 // ================================
@@ -28,6 +29,8 @@ interface Product {
   description: string;
   basePrice: number;
   finalPrice?: number | string;
+  discount?: number | string;
+  discountType?: 'PERCENTAGE' | 'FLAT' | string;
   stock?: number | string;
   productImages?: string[];
   image?: string;
@@ -225,6 +228,24 @@ const Wishlist: React.FC = () => {
       return base;
     }
     return Number(item.product.finalPrice) || Number(item.product.basePrice) || 0;
+  };
+  // Original (pre-discount) price — needed alongside getItemPrice's final
+  // price so the discount badge/strikethrough can be shown at all; both
+  // wishlist and cart previously only rendered the already-discounted price,
+  // making a discount invisible even though it was correctly applied.
+  const getItemBasePrice = (item: WishlistItem): number => {
+    if (item.variant) return Number(item.variant.basePrice) || 0;
+    return Number(item.product.basePrice) || 0;
+  };
+  const getItemDiscount = (item: WishlistItem) => {
+    const discount = item.variant ? item.variant.discount : item.product.discount;
+    const discountType = item.variant ? item.variant.discountType : item.product.discountType;
+    return getDiscountDisplay({
+      basePrice: getItemBasePrice(item),
+      finalPrice: getItemPrice(item),
+      discount,
+      discountType,
+    });
   };
   const getItemStock = (item: WishlistItem): number => {
     if (item.variant) {
@@ -466,7 +487,21 @@ const Wishlist: React.FC = () => {
                         <p className="wishlist__item-specs">{item.product.description}</p>
                       </div>
                       <div className="wishlist__item-price">
-                        Rs. {getItemPrice(item).toLocaleString('en-IN')}
+                        <span className="wishlist__item-price-current">
+                          Rs. {getItemPrice(item).toLocaleString('en-IN')}
+                        </span>
+                        {getItemDiscount(item).hasDiscount && (
+                          <>
+                            <span className="wishlist__item-price-original">
+                              Rs. {getItemBasePrice(item).toLocaleString('en-IN')}
+                            </span>
+                            {getItemDiscount(item).badgeLabel && (
+                              <span className="wishlist__item-price-badge">
+                                {getItemDiscount(item).badgeLabel}
+                              </span>
+                            )}
+                          </>
+                        )}
                       </div>
                       <div className="wishlist__item-quantity">
                         <button 

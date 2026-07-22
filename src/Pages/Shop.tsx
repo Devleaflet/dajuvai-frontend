@@ -918,7 +918,7 @@ const Shop: React.FC = () => {
         const trimmedSearch = searchInputValue.trim();
         const newSearchParams = new URLSearchParams(searchParams);
         if (trimmedSearch) {
-            newSearchParams.set("search", trimmedSearch);
+            newSearchParams.set("search", encodeURIComponent(trimmedSearch));
         } else {
             newSearchParams.delete("search");
         }
@@ -977,20 +977,24 @@ const Shop: React.FC = () => {
         return (
             <>
                 <Navbar />
-                <div className="shop-error">
-                    <div className="error-message">
-                        <h2 className="error-title">Unable to Load Products</h2>
-                        <p className="error-text">
-                            {productsError instanceof Error
-                                ? productsError.message
-                                : "Unknown error occurred"}
-                        </p>
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="error-refresh-button"
-                        >
-                            Refresh Page
-                        </button>
+                <div className="shop-page-content">
+                    <div className="shop-error">
+                        <div className="error-message">
+                            <h2 className="error-title">
+                                Unable to Load Products
+                            </h2>
+                            <p className="error-text">
+                                {productsError instanceof Error
+                                    ? productsError.message
+                                    : "Unknown error occurred"}
+                            </p>
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="error-refresh-button"
+                            >
+                                Refresh Page
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <Footer />
@@ -1000,370 +1004,217 @@ const Shop: React.FC = () => {
     return (
         <>
             <Navbar />
-            <ProductBannerSlider />
-            <CategorySlider />
-            <div className="shop-max-width-container">
-                <div className="shop-container">
-                    <div className="shop-header">
-                        <div className="shop-header-title">
-                            <h2 className="shop-title">
-                                {getDisplayTitle()}
-                                {getCurrentSubcategoryName() && (
-                                    <span className="shop-subtitle">
-                                        {" > "}
-                                        {getCurrentSubcategoryName()}
-                                    </span>
-                                )}
-                            </h2>
-                        </div>
-                        <div className="search-bar-container">
-                            <form
-                                onSubmit={handleSearchSubmit}
-                                className="search-form"
-                            >
-                                <div
-                                    className={`search-input-container ${
-                                        searchInputValue
-                                            ? "has-clear-button"
-                                            : ""
-                                    }`}
+            <div className="shop-page-content">
+                <ProductBannerSlider />
+                <CategorySlider />
+                <div className="shop-max-width-container">
+                    <div className="shop-container">
+                        <div className="shop-header">
+                            <div className="shop-header-title">
+                                <h2 className="shop-title">
+                                    {getDisplayTitle()}
+                                    {getCurrentSubcategoryName() && (
+                                        <span className="shop-subtitle">
+                                            {" > "}
+                                            {getCurrentSubcategoryName()}
+                                        </span>
+                                    )}
+                                </h2>
+                            </div>
+                            <div className="search-bar-container">
+                                <form
+                                    onSubmit={handleSearchSubmit}
+                                    className="search-form"
                                 >
-                                    <input
-                                        type="text"
-                                        value={searchInputValue}
-                                        onChange={handleSearchInputChange}
-                                        placeholder="Search for products, brands, or categories..."
-                                        className="search-input"
-                                    />
-                                    {searchInputValue && (
+                                    <div
+                                        className={`search-input-container ${
+                                            searchInputValue
+                                                ? "has-clear-button"
+                                                : ""
+                                        }`}
+                                    >
+                                        <input
+                                            type="text"
+                                            value={searchInputValue}
+                                            onChange={handleSearchInputChange}
+                                            placeholder="Search for products, brands, or categories..."
+                                            className="search-input"
+                                        />
+                                        {searchInputValue && (
+                                            <button
+                                                type="button"
+                                                onClick={handleClearSearch}
+                                                className="search-clear-button"
+                                            >
+                                                ×
+                                            </button>
+                                        )}
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        className="search-button"
+                                    >
+                                        <span className="search-text">
+                                            Search
+                                        </span>
+                                        <Search
+                                            size={15}
+                                            color="white"
+                                            className="search-icon"
+                                        />
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div className="product-count">
+                                <div className="product-count__badge">
+                                    {isLoadingProducts ? (
+                                        <div className="product-count__loading">
+                                            <div className="product-count__spinner"></div>
+                                            <span>Loading products...</span>
+                                        </div>
+                                    ) : (
+                                        <div className="product-count__result">
+                                            <span className="product-count__number">
+                                                {pagination.total_items}
+                                            </span>
+                                            <span className="product-count__label">
+                                                {pagination.total_items === 1
+                                                    ? "product"
+                                                    : "products"}{" "}
+                                                found
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="shop-content">
+                            <div className="shop">
+                                <button
+                                    className="filter-button"
+                                    onClick={toggleSidebar}
+                                    aria-label="Toggle filters"
+                                >
+                                    <span className="filter-icon">
+                                        <Settings2 />
+                                    </span>
+                                </button>
+                                <div
+                                    className={`filter-sidebar-overlay ${
+                                        isSidebarOpen ? "open" : ""
+                                    }`}
+                                    onClick={toggleSidebar}
+                                    aria-label="Close filters"
+                                />
+                                <div
+                                    className={`filter-sidebar ${isSidebarOpen ? "open" : ""}`}
+                                >
+                                    <div className="filter-sidebar__header">
+                                        <h3>Filter</h3>
                                         <button
-                                            type="button"
-                                            onClick={handleClearSearch}
-                                            className="search-clear-button"
+                                            className="filter-sidebar__close"
+                                            onClick={toggleSidebar}
+                                            aria-label="Close filters"
                                         >
                                             ×
                                         </button>
-                                    )}
-                                </div>
-                                <button type="submit" className="search-button">
-                                    <span className="search-text">Search</span>
-                                    <Search
-                                        size={15}
-                                        color="white"
-                                        className="search-icon"
-                                    />
-                                </button>
-                            </form>
-                        </div>
-
-                        <div className="product-count">
-                            <div className="product-count__badge">
-                                {isLoadingProducts ? (
-                                    <div className="product-count__loading">
-                                        <div className="product-count__spinner"></div>
-                                        <span>Loading products...</span>
                                     </div>
-                                ) : (
-                                    <div className="product-count__result">
-                                        <span className="product-count__number">
-                                            {pagination.total_items}
-                                        </span>
-                                        <span className="product-count__label">
-                                            {pagination.total_items === 1
-                                                ? "product"
-                                                : "products"}{" "}
-                                            found
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    <div className="shop-content">
-                        <div className="shop">
-                            <button
-                                className="filter-button"
-                                onClick={toggleSidebar}
-                                aria-label="Toggle filters"
-                            >
-                                <span className="filter-icon">
-                                    <Settings2 />
-                                </span>
-                            </button>
-                            <div
-                                className={`filter-sidebar-overlay ${
-                                    isSidebarOpen ? "open" : ""
-                                }`}
-                                onClick={toggleSidebar}
-                                aria-label="Close filters"
-                            />
-                            <div
-                                className={`filter-sidebar ${isSidebarOpen ? "open" : ""}`}
-                            >
-                                <div className="filter-sidebar__header">
-                                    <h3>Filter</h3>
-                                    <button
-                                        className="filter-sidebar__close"
-                                        onClick={toggleSidebar}
-                                        aria-label="Close filters"
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                                {hasActiveFilters && (
-                                    <div className="filter-sidebar__section">
-                                        <button
-                                            onClick={clearAllFilters}
-                                            className="sidebar-clear-all-button"
-                                        >
-                                            Clear All Filters
-                                        </button>
-                                    </div>
-                                )}
-                                {searchQuery.trim() && (
-                                    <div className="filter-sidebar__section">
-                                        <h4 className="filter-sidebar__section-title">
-                                            Search
-                                        </h4>
-                                        <div className="sidebar-search-display">
-                                            <strong>Searching for:</strong> "
-                                            {searchQuery}"
-                                        </div>
-                                    </div>
-                                )}
-                                <div className="filter-sidebar__section">
-                                    <h4 className="filter-sidebar__section-title">
-                                        Sort By
-                                    </h4>
-                                    <div className="filter-sidebar__radio-list">
-                                        {[
-                                            { value: "all", label: "Default" },
-                                            {
-                                                value: "low-to-high",
-                                                label: "Price: Low to High",
-                                            },
-                                            {
-                                                value: "high-to-low",
-                                                label: "Price: High to Low",
-                                            },
-                                        ].map((option) => (
-                                            <div
-                                                key={option.value}
-                                                className="filter-sidebar__radio-item"
+                                    {hasActiveFilters && (
+                                        <div className="filter-sidebar__section">
+                                            <button
+                                                onClick={clearAllFilters}
+                                                className="sidebar-clear-all-button"
                                             >
-                                                <input
-                                                    type="radio"
-                                                    id={`sort-${option.value}`}
-                                                    name="sort"
-                                                    checked={
-                                                        sortBy === option.value
-                                                    }
-                                                    onChange={() =>
-                                                        handleSortChange(
-                                                            option.value,
-                                                        )
-                                                    }
-                                                />
-                                                <label
-                                                    htmlFor={`sort-${option.value}`}
-                                                >
-                                                    {option.label}
-                                                </label>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="filter-sidebar__section">
-                                    <h4 className="filter-sidebar__section-title">
-                                        Categories
-                                        <button
-                                            className="dropdown-toggle"
-                                            onClick={() =>
-                                                setIsCategoryDropdownOpen(
-                                                    !isCategoryDropdownOpen,
-                                                )
-                                            }
-                                            aria-label="Toggle categories dropdown"
-                                        >
-                                            {isCategoryDropdownOpen ? (
-                                                <ChevronUp size={18} />
-                                            ) : (
-                                                <ChevronDown size={18} />
-                                            )}
-                                        </button>
-                                    </h4>
-                                    {isCategoryDropdownOpen && (
-                                        <div className="filter-sidebar__dropdown-content">
-                                            <div className="filter-sidebar__search-container filter-sidebar__search-container--categories">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Search categories..."
-                                                    value={categorySearch}
-                                                    onChange={(e) =>
-                                                        setCategorySearch(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === "Enter") {
-                                                            e.preventDefault();
-                                                            const match =
-                                                                categories.find(
-                                                                    (
-                                                                        cat: Category,
-                                                                    ) =>
-                                                                        cat.name
-                                                                            .toLowerCase()
-                                                                            .includes(
-                                                                                categorySearch.toLowerCase(),
-                                                                            ),
-                                                                );
-                                                            if (match) {
-                                                                handleCategoryChange(
-                                                                    match.id,
-                                                                );
-                                                            }
-                                                        }
-                                                    }}
-                                                    className="filter-sidebar__search-input"
-                                                />
-                                            </div>
-                                            <div className="filter-sidebar__checkbox-list">
-                                                {isLoadingCategories ? (
-                                                    <p className="filter-sidebar__loading">
-                                                        Loading categories...
-                                                    </p>
-                                                ) : (
-                                                    <>
-                                                        <div className="filter-sidebar__checkbox-item">
-                                                            <input
-                                                                type="radio"
-                                                                id="category-all"
-                                                                name="category"
-                                                                checked={
-                                                                    selectedCategory ===
-                                                                    undefined
-                                                                }
-                                                                onChange={() =>
-                                                                    handleCategoryChange(
-                                                                        undefined,
-                                                                    )
-                                                                }
-                                                            />
-                                                            <label htmlFor="category-all">
-                                                                All Categories
-                                                            </label>
-                                                        </div>
-                                                        {categories
-                                                            .filter(
-                                                                (
-                                                                    category: Category,
-                                                                ) =>
-                                                                    category.name
-                                                                        .toLowerCase()
-                                                                        .includes(
-                                                                            categorySearch.toLowerCase(),
-                                                                        ),
-                                                            )
-                                                            .slice(
-                                                                0,
-                                                                selectedCategory ===
-                                                                    undefined
-                                                                    ? showMoreCategories
-                                                                        ? undefined
-                                                                        : 5
-                                                                    : undefined,
-                                                            )
-                                                            .map(
-                                                                (
-                                                                    category: Category,
-                                                                ) => (
-                                                                    <div
-                                                                        key={
-                                                                            category.id
-                                                                        }
-                                                                        className="filter-sidebar__category-group"
-                                                                    >
-                                                                        <div className="filter-sidebar__checkbox-item">
-                                                                            <input
-                                                                                type="radio"
-                                                                                id={`category-${category.id}`}
-                                                                                name="category"
-                                                                                checked={
-                                                                                    selectedCategory ===
-                                                                                    category.id
-                                                                                }
-                                                                                onChange={() =>
-                                                                                    handleCategoryChange(
-                                                                                        category.id,
-                                                                                    )
-                                                                                }
-                                                                            />
-                                                                            <label
-                                                                                htmlFor={`category-${category.id}`}
-                                                                            >
-                                                                                {
-                                                                                    category.name
-                                                                                }
-                                                                            </label>
-                                                                        </div>
-                                                                    </div>
-                                                                ),
-                                                            )}
-                                                        {selectedCategory ===
-                                                            undefined &&
-                                                            categories.length >
-                                                                5 && (
-                                                                <button
-                                                                    onClick={() =>
-                                                                        setShowMoreCategories(
-                                                                            !showMoreCategories,
-                                                                        )
-                                                                    }
-                                                                    className="view-more-categories-button"
-                                                                >
-                                                                    {showMoreCategories
-                                                                        ? "View Less"
-                                                                        : "View More"}
-                                                                </button>
-                                                            )}
-                                                    </>
-                                                )}
+                                                Clear All Filters
+                                            </button>
+                                        </div>
+                                    )}
+                                    {searchQuery.trim() && (
+                                        <div className="filter-sidebar__section">
+                                            <h4 className="filter-sidebar__section-title">
+                                                Search
+                                            </h4>
+                                            <div className="sidebar-search-display">
+                                                <strong>Searching for:</strong>{" "}
+                                                "{searchQuery}"
                                             </div>
                                         </div>
                                     )}
-                                </div>
-                                {selectedCategory !== undefined && (
                                     <div className="filter-sidebar__section">
                                         <h4 className="filter-sidebar__section-title">
-                                            Subcategories
+                                            Sort By
+                                        </h4>
+                                        <div className="filter-sidebar__radio-list">
+                                            {[
+                                                {
+                                                    value: "all",
+                                                    label: "Default",
+                                                },
+                                                {
+                                                    value: "low-to-high",
+                                                    label: "Price: Low to High",
+                                                },
+                                                {
+                                                    value: "high-to-low",
+                                                    label: "Price: High to Low",
+                                                },
+                                            ].map((option) => (
+                                                <div
+                                                    key={option.value}
+                                                    className="filter-sidebar__radio-item"
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        id={`sort-${option.value}`}
+                                                        name="sort"
+                                                        checked={
+                                                            sortBy ===
+                                                            option.value
+                                                        }
+                                                        onChange={() =>
+                                                            handleSortChange(
+                                                                option.value,
+                                                            )
+                                                        }
+                                                    />
+                                                    <label
+                                                        htmlFor={`sort-${option.value}`}
+                                                    >
+                                                        {option.label}
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="filter-sidebar__section">
+                                        <h4 className="filter-sidebar__section-title">
+                                            Categories
                                             <button
                                                 className="dropdown-toggle"
                                                 onClick={() =>
-                                                    setIsSubCategoryDropdownOpen(
-                                                        !isSubCategoryDropdownOpen,
+                                                    setIsCategoryDropdownOpen(
+                                                        !isCategoryDropdownOpen,
                                                     )
                                                 }
-                                                aria-label="Toggle subcategories dropdown"
+                                                aria-label="Toggle categories dropdown"
                                             >
-                                                {isSubCategoryDropdownOpen ? (
+                                                {isCategoryDropdownOpen ? (
                                                     <ChevronUp size={18} />
                                                 ) : (
                                                     <ChevronDown size={18} />
                                                 )}
                                             </button>
                                         </h4>
-                                        {isSubCategoryDropdownOpen && (
+                                        {isCategoryDropdownOpen && (
                                             <div className="filter-sidebar__dropdown-content">
-                                                <div className="filter-sidebar__search-container">
+                                                <div className="filter-sidebar__search-container filter-sidebar__search-container--categories">
                                                     <input
                                                         type="text"
-                                                        placeholder="Search subcategories..."
-                                                        value={
-                                                            subcategorySearch
-                                                        }
+                                                        placeholder="Search categories..."
+                                                        value={categorySearch}
                                                         onChange={(e) =>
-                                                            setSubcategorySearch(
+                                                            setCategorySearch(
                                                                 e.target.value,
                                                             )
                                                         }
@@ -1374,18 +1225,18 @@ const Shop: React.FC = () => {
                                                             ) {
                                                                 e.preventDefault();
                                                                 const match =
-                                                                    subcategories.find(
+                                                                    categories.find(
                                                                         (
-                                                                            sub: Subcategory,
+                                                                            cat: Category,
                                                                         ) =>
-                                                                            sub.name
+                                                                            cat.name
                                                                                 .toLowerCase()
                                                                                 .includes(
-                                                                                    subcategorySearch.toLowerCase(),
+                                                                                    categorySearch.toLowerCase(),
                                                                                 ),
                                                                     );
                                                                 if (match) {
-                                                                    handleSubcategoryChange(
+                                                                    handleCategoryChange(
                                                                         match.id,
                                                                     );
                                                                 }
@@ -1395,204 +1246,378 @@ const Shop: React.FC = () => {
                                                     />
                                                 </div>
                                                 <div className="filter-sidebar__checkbox-list">
-                                                    {isLoadingSubcategories ? (
+                                                    {isLoadingCategories ? (
                                                         <p className="filter-sidebar__loading">
                                                             Loading
-                                                            subcategories...
+                                                            categories...
                                                         </p>
-                                                    ) : subcategories.length >
-                                                      0 ? (
+                                                    ) : (
                                                         <>
                                                             <div className="filter-sidebar__checkbox-item">
                                                                 <input
                                                                     type="radio"
-                                                                    id="subcategory-all"
-                                                                    name="subcategory"
+                                                                    id="category-all"
+                                                                    name="category"
                                                                     checked={
-                                                                        selectedSubcategory ===
+                                                                        selectedCategory ===
                                                                         undefined
                                                                     }
                                                                     onChange={() =>
-                                                                        handleSubcategoryChange(
+                                                                        handleCategoryChange(
                                                                             undefined,
                                                                         )
                                                                     }
                                                                 />
-                                                                <label htmlFor="subcategory-all">
+                                                                <label htmlFor="category-all">
                                                                     All
-                                                                    Subcategories
+                                                                    Categories
                                                                 </label>
                                                             </div>
-                                                            {subcategories
+                                                            {categories
                                                                 .filter(
                                                                     (
-                                                                        sub: Subcategory,
+                                                                        category: Category,
                                                                     ) =>
-                                                                        sub.name
+                                                                        category.name
                                                                             .toLowerCase()
                                                                             .includes(
-                                                                                subcategorySearch.toLowerCase(),
+                                                                                categorySearch.toLowerCase(),
                                                                             ),
                                                                 )
                                                                 .slice(
                                                                     0,
-                                                                    showMoreSubcategories
-                                                                        ? undefined
-                                                                        : 5,
+                                                                    selectedCategory ===
+                                                                        undefined
+                                                                        ? showMoreCategories
+                                                                            ? undefined
+                                                                            : 5
+                                                                        : undefined,
                                                                 )
                                                                 .map(
                                                                     (
-                                                                        subcategory: Subcategory,
+                                                                        category: Category,
                                                                     ) => (
                                                                         <div
                                                                             key={
-                                                                                subcategory.id
+                                                                                category.id
                                                                             }
-                                                                            className="filter-sidebar__checkbox-item"
+                                                                            className="filter-sidebar__category-group"
                                                                         >
-                                                                            <input
-                                                                                type="radio"
-                                                                                id={`subcategory-${subcategory.id}`}
-                                                                                name="subcategory"
-                                                                                checked={
-                                                                                    selectedSubcategory ===
-                                                                                    subcategory.id
-                                                                                }
-                                                                                onChange={() =>
-                                                                                    handleSubcategoryChange(
-                                                                                        subcategory.id,
-                                                                                    )
-                                                                                }
-                                                                            />
-                                                                            <label
-                                                                                htmlFor={`subcategory-${subcategory.id}`}
-                                                                            >
-                                                                                {
-                                                                                    subcategory.name
-                                                                                }
-                                                                            </label>
+                                                                            <div className="filter-sidebar__checkbox-item">
+                                                                                <input
+                                                                                    type="radio"
+                                                                                    id={`category-${category.id}`}
+                                                                                    name="category"
+                                                                                    checked={
+                                                                                        selectedCategory ===
+                                                                                        category.id
+                                                                                    }
+                                                                                    onChange={() =>
+                                                                                        handleCategoryChange(
+                                                                                            category.id,
+                                                                                        )
+                                                                                    }
+                                                                                />
+                                                                                <label
+                                                                                    htmlFor={`category-${category.id}`}
+                                                                                >
+                                                                                    {
+                                                                                        category.name
+                                                                                    }
+                                                                                </label>
+                                                                            </div>
                                                                         </div>
                                                                     ),
                                                                 )}
-                                                            {subcategories.length >
-                                                                5 && (
-                                                                <button
-                                                                    onClick={() =>
-                                                                        setShowMoreSubcategories(
-                                                                            !showMoreSubcategories,
-                                                                        )
-                                                                    }
-                                                                    className="view-more-subcategories-button"
-                                                                >
-                                                                    {showMoreSubcategories
-                                                                        ? "View Less"
-                                                                        : "View More"}
-                                                                </button>
-                                                            )}
+                                                            {selectedCategory ===
+                                                                undefined &&
+                                                                categories.length >
+                                                                    5 && (
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            setShowMoreCategories(
+                                                                                !showMoreCategories,
+                                                                            )
+                                                                        }
+                                                                        className="view-more-categories-button"
+                                                                    >
+                                                                        {showMoreCategories
+                                                                            ? "View Less"
+                                                                            : "View More"}
+                                                                    </button>
+                                                                )}
                                                         </>
-                                                    ) : (
-                                                        <p className="filter-sidebar__no-data">
-                                                            No subcategories
-                                                            available
-                                                        </p>
                                                     )}
                                                 </div>
                                             </div>
                                         )}
                                     </div>
-                                )}
-                            </div>
-                            <div>
-                                <div className="shop-products">
-                                    {isLoadingProducts ? (
-                                        Array(8)
-                                            .fill(null)
-                                            .map((_, index) => (
-                                                <ProductCardSkeleton
-                                                    key={index}
-                                                    count={1}
-                                                />
-                                            ))
-                                    ) : pagination.total_items > 0 ? (
-                                        productsData.map((product) => (
-                                            <div
-                                                key={product.id}
-                                                className="shop-product-card"
-                                            >
-                                                <ProductCard
-                                                    product={product}
-                                                />
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="shop-no-products">
-                                            <div className="shop-no-products-icon">
-                                                📦
-                                            </div>
-                                            <h3 className="shop-no-products-title">
-                                                No products found
-                                            </h3>
-                                            <p className="shop-no-products-text">
-                                                {searchQuery.trim()
-                                                    ? `No products found matching "${searchQuery}". Try adjusting your search terms or browse categories.`
-                                                    : selectedBannerId
-                                                      ? "No products found for this special offer."
-                                                      : selectedCategory ===
-                                                          undefined
-                                                        ? "No products available at the moment."
-                                                        : `No products found in ${getCurrentCategoryName()}${
-                                                              getCurrentSubcategoryName()
-                                                                  ? ` > ${getCurrentSubcategoryName()}`
-                                                                  : ""
-                                                          }.`}
-                                            </p>
-                                            {hasActiveFilters && (
+                                    {selectedCategory !== undefined && (
+                                        <div className="filter-sidebar__section">
+                                            <h4 className="filter-sidebar__section-title">
+                                                Subcategories
                                                 <button
-                                                    onClick={clearAllFilters}
-                                                    className="shop-no-products-clear-button"
+                                                    className="dropdown-toggle"
+                                                    onClick={() =>
+                                                        setIsSubCategoryDropdownOpen(
+                                                            !isSubCategoryDropdownOpen,
+                                                        )
+                                                    }
+                                                    aria-label="Toggle subcategories dropdown"
                                                 >
-                                                    Clear All Filters
+                                                    {isSubCategoryDropdownOpen ? (
+                                                        <ChevronUp size={18} />
+                                                    ) : (
+                                                        <ChevronDown
+                                                            size={18}
+                                                        />
+                                                    )}
                                                 </button>
+                                            </h4>
+                                            {isSubCategoryDropdownOpen && (
+                                                <div className="filter-sidebar__dropdown-content">
+                                                    <div className="filter-sidebar__search-container">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search subcategories..."
+                                                            value={
+                                                                subcategorySearch
+                                                            }
+                                                            onChange={(e) =>
+                                                                setSubcategorySearch(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            onKeyDown={(e) => {
+                                                                if (
+                                                                    e.key ===
+                                                                    "Enter"
+                                                                ) {
+                                                                    e.preventDefault();
+                                                                    const match =
+                                                                        subcategories.find(
+                                                                            (
+                                                                                sub: Subcategory,
+                                                                            ) =>
+                                                                                sub.name
+                                                                                    .toLowerCase()
+                                                                                    .includes(
+                                                                                        subcategorySearch.toLowerCase(),
+                                                                                    ),
+                                                                        );
+                                                                    if (match) {
+                                                                        handleSubcategoryChange(
+                                                                            match.id,
+                                                                        );
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="filter-sidebar__search-input"
+                                                        />
+                                                    </div>
+                                                    <div className="filter-sidebar__checkbox-list">
+                                                        {isLoadingSubcategories ? (
+                                                            <p className="filter-sidebar__loading">
+                                                                Loading
+                                                                subcategories...
+                                                            </p>
+                                                        ) : subcategories.length >
+                                                          0 ? (
+                                                            <>
+                                                                <div className="filter-sidebar__checkbox-item">
+                                                                    <input
+                                                                        type="radio"
+                                                                        id="subcategory-all"
+                                                                        name="subcategory"
+                                                                        checked={
+                                                                            selectedSubcategory ===
+                                                                            undefined
+                                                                        }
+                                                                        onChange={() =>
+                                                                            handleSubcategoryChange(
+                                                                                undefined,
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                    <label htmlFor="subcategory-all">
+                                                                        All
+                                                                        Subcategories
+                                                                    </label>
+                                                                </div>
+                                                                {subcategories
+                                                                    .filter(
+                                                                        (
+                                                                            sub: Subcategory,
+                                                                        ) =>
+                                                                            sub.name
+                                                                                .toLowerCase()
+                                                                                .includes(
+                                                                                    subcategorySearch.toLowerCase(),
+                                                                                ),
+                                                                    )
+                                                                    .slice(
+                                                                        0,
+                                                                        showMoreSubcategories
+                                                                            ? undefined
+                                                                            : 5,
+                                                                    )
+                                                                    .map(
+                                                                        (
+                                                                            subcategory: Subcategory,
+                                                                        ) => (
+                                                                            <div
+                                                                                key={
+                                                                                    subcategory.id
+                                                                                }
+                                                                                className="filter-sidebar__checkbox-item"
+                                                                            >
+                                                                                <input
+                                                                                    type="radio"
+                                                                                    id={`subcategory-${subcategory.id}`}
+                                                                                    name="subcategory"
+                                                                                    checked={
+                                                                                        selectedSubcategory ===
+                                                                                        subcategory.id
+                                                                                    }
+                                                                                    onChange={() =>
+                                                                                        handleSubcategoryChange(
+                                                                                            subcategory.id,
+                                                                                        )
+                                                                                    }
+                                                                                />
+                                                                                <label
+                                                                                    htmlFor={`subcategory-${subcategory.id}`}
+                                                                                >
+                                                                                    {
+                                                                                        subcategory.name
+                                                                                    }
+                                                                                </label>
+                                                                            </div>
+                                                                        ),
+                                                                    )}
+                                                                {subcategories.length >
+                                                                    5 && (
+                                                                    <button
+                                                                        onClick={() =>
+                                                                            setShowMoreSubcategories(
+                                                                                !showMoreSubcategories,
+                                                                            )
+                                                                        }
+                                                                        className="view-more-subcategories-button"
+                                                                    >
+                                                                        {showMoreSubcategories
+                                                                            ? "View Less"
+                                                                            : "View More"}
+                                                                    </button>
+                                                                )}
+                                                            </>
+                                                        ) : (
+                                                            <p className="filter-sidebar__no-data">
+                                                                No subcategories
+                                                                available
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
                                     )}
                                 </div>
-                                {pagination.total_pages > 1 && (
-                                    <div className="pagination-controls">
-                                        <button
-                                            className="pagination-button"
-                                            disabled={currentPage === 1}
-                                            onClick={() =>
-                                                setCurrentPage((prev) =>
-                                                    Math.max(prev - 1, 1),
-                                                )
-                                            }
-                                        >
-                                            Previous
-                                        </button>
-                                        <span className="pagination-info">
-                                            Page {pagination.current_page} of{" "}
-                                            {pagination.total_pages}
-                                        </span>
-                                        <button
-                                            className="pagination-button"
-                                            disabled={
-                                                currentPage >=
-                                                pagination.total_pages
-                                            }
-                                            onClick={() =>
-                                                setCurrentPage((prev) =>
-                                                    Math.min(
-                                                        prev + 1,
-                                                        pagination.total_pages,
-                                                    ),
-                                                )
-                                            }
-                                        >
-                                            Next
-                                        </button>
+                                <div>
+                                    <div className="shop-products">
+                                        {isLoadingProducts ? (
+                                            Array(8)
+                                                .fill(null)
+                                                .map((_, index) => (
+                                                    <ProductCardSkeleton
+                                                        key={index}
+                                                        count={1}
+                                                    />
+                                                ))
+                                        ) : pagination.total_items > 0 ? (
+                                            productsData.map((product) => (
+                                                <div
+                                                    key={product.id}
+                                                    className="shop-product-card"
+                                                >
+                                                    <ProductCard
+                                                        product={product}
+                                                    />
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="shop-no-products">
+                                                <div className="shop-no-products-icon">
+                                                    📦
+                                                </div>
+                                                <h3 className="shop-no-products-title">
+                                                    No products found
+                                                </h3>
+                                                <p className="shop-no-products-text">
+                                                    {searchQuery.trim()
+                                                        ? `No products found matching "${searchQuery}". Try adjusting your search terms or browse categories.`
+                                                        : selectedBannerId
+                                                          ? "No products found for this special offer."
+                                                          : selectedCategory ===
+                                                              undefined
+                                                            ? "No products available at the moment."
+                                                            : `No products found in ${getCurrentCategoryName()}${
+                                                                  getCurrentSubcategoryName()
+                                                                      ? ` > ${getCurrentSubcategoryName()}`
+                                                                      : ""
+                                                              }.`}
+                                                </p>
+                                                {hasActiveFilters && (
+                                                    <button
+                                                        onClick={
+                                                            clearAllFilters
+                                                        }
+                                                        className="shop-no-products-clear-button"
+                                                    >
+                                                        Clear All Filters
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+                                    {pagination.total_pages > 1 && (
+                                        <div className="pagination-controls">
+                                            <button
+                                                className="pagination-button"
+                                                disabled={currentPage === 1}
+                                                onClick={() =>
+                                                    setCurrentPage((prev) =>
+                                                        Math.max(prev - 1, 1),
+                                                    )
+                                                }
+                                            >
+                                                Previous
+                                            </button>
+                                            <span className="pagination-info">
+                                                Page {pagination.current_page}{" "}
+                                                of {pagination.total_pages}
+                                            </span>
+                                            <button
+                                                className="pagination-button"
+                                                disabled={
+                                                    currentPage >=
+                                                    pagination.total_pages
+                                                }
+                                                onClick={() =>
+                                                    setCurrentPage((prev) =>
+                                                        Math.min(
+                                                            prev + 1,
+                                                            pagination.total_pages,
+                                                        ),
+                                                    )
+                                                }
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

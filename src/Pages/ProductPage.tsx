@@ -91,6 +91,36 @@ const ProductPage = () => {
     const mainImageRef = useRef<HTMLDivElement>(null);
     const quantityInputRef = useRef<HTMLInputElement>(null);
 
+    const thumbnailsRef = useRef<HTMLDivElement>(null);
+    const [isDraggingThumbnails, setIsDraggingThumbnails] = useState(false);
+    const dragStartXRef = useRef(0);
+    const dragScrollLeftRef = useRef(0);
+    const dragMovedRef = useRef(false);
+
+    const handleThumbnailsMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.button !== 0 || !thumbnailsRef.current) return;
+        setIsDraggingThumbnails(true);
+        dragMovedRef.current = false;
+        dragStartXRef.current = e.pageX - thumbnailsRef.current.offsetLeft;
+        dragScrollLeftRef.current = thumbnailsRef.current.scrollLeft;
+    };
+
+    const DRAG_THRESHOLD_PX = 8;
+
+    const handleThumbnailsMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!isDraggingThumbnails || !thumbnailsRef.current) return;
+        const x = e.pageX - thumbnailsRef.current.offsetLeft;
+        const walk = x - dragStartXRef.current;
+        if (!dragMovedRef.current) {
+            if (Math.abs(walk) < DRAG_THRESHOLD_PX) return;
+            dragMovedRef.current = true;
+        }
+        e.preventDefault();
+        thumbnailsRef.current.scrollLeft = dragScrollLeftRef.current - walk;
+    };
+
+    const stopThumbnailsDrag = () => setIsDraggingThumbnails(false);
+
     const ZOOM_LEVEL = 3;
 
     const { handleCartOnAdd } = useCart();
@@ -503,22 +533,75 @@ const ProductPage = () => {
             );
         }
     }, [product]);
+    useEffect(() => {
+        if (product) {
+            const variants: any[] =
+                product.hasVariants && product.variants ? product.variants : [];
+            const defaultVar =
+                variants.find(
+                    (v) =>
+                        Number(v.stock || 0) > 0 && v.status !== "OUT_OF_STOCK",
+                ) ||
+                variants[0] ||
+                null;
+            setSelectedColor(defaultVar?.attributes?.color || "");
+            setSelectedSize(defaultVar?.attributes?.size || "");
+            setSelectedVariant(defaultVar);
+            const entries = getGalleryEntries();
+            setImageError(new Array(entries.length || 1).fill(false));
+        }
+    }, [product]);
+
+    // Combined thumbnail gallery: the product's own photos plus one
+    // representative image per variant (so every variant is browsable and
+    // clickable from the thumbnail strip, not just the currently selected
+    // one). Each entry remembers which variant (if any) it belongs to, so
+    // clicking it can select that variant.
+    const getGalleryEntries = (): {
+        url: string;
+        variantId: number | null;
+    }[] => {
+        if (!product) return [];
+        // Variant photos win the tag: a variant's own photo is often just one
+        // of the product's existing gallery photos reused, and if it were left
+        // untagged (variantId: null) clicking that exact thumbnail could never
+        // select the variant it belongs to. Claim every one of a variant's
+        // photos (not just its first) for that variant, then only add the
+        // plain product photos that no variant already owns.
+        const claimedUrls = new Set<string>();
+        const variantImgs: { url: string; variantId: number }[] = [];
+        (product.variants || []).forEach((v: any) => {
+            (v?.variantImgUrls || []).forEach((url: string) => {
+                if (!url || claimedUrls.has(url)) return;
+                claimedUrls.add(url);
+                variantImgs.push({ url, variantId: v.id });
+            });
+        });
+        const productImgs = (product.productImages || [])
+            .filter((url: string) => !claimedUrls.has(url))
+            .map((url: string) => ({ url, variantId: null as number | null }));
+        return [...productImgs, ...variantImgs];
+    };
+
+    const getCurrentImages = () =>
+        getGalleryEntries().map((entry) => entry.url);
 
     const handleImageSelect = (index: number) => {
         setSelectedImageIndex(index);
-    };
-
-    const getCurrentImages = () => {
-        if (selectedVariant?.variantImgUrls?.length > 0) {
-            return selectedVariant.variantImgUrls;
-        }
+        const entry = getGalleryEntries()[index];
         if (
-            product?.hasVariants &&
-            product?.variants?.[0]?.variantImgUrls?.length > 0
+            entry?.variantId != null &&
+            entry.variantId !== selectedVariant?.id
         ) {
-            return product.variants[0].variantImgUrls;
+            const variant = product?.variants?.find(
+                (v: any) => v.id === entry.variantId,
+            );
+            if (variant) {
+                setSelectedVariant(variant);
+                setSelectedColor(variant.attributes?.color || "");
+                setSelectedSize(variant.attributes?.size || "");
+            }
         }
-        return product?.productImages || [];
     };
 
     useEffect(() => {
@@ -554,11 +637,13 @@ const ProductPage = () => {
 
     const handleVariantSelect = (variant: any) => {
         setSelectedVariant(variant);
-        if (variant.variantImgUrls && variant.variantImgUrls.length > 0) {
-            setSelectedImageIndex(0);
-        } else if (product?.productImages?.length > 0) {
-            setSelectedImageIndex(0);
-        }
+        // Jump the main image to this variant's own thumbnail in the merged
+        // gallery, so picking a variant via the color/size swatches stays in
+        // sync with picking it via its thumbnail.
+        const idx = getGalleryEntries().findIndex(
+            (entry) => entry.variantId === variant.id,
+        );
+        setSelectedImageIndex(idx >= 0 ? idx : 0);
     };
 
     const handleMouseEnter = () => {
@@ -813,240 +898,397 @@ const ProductPage = () => {
         <div className="app">
             <ScrollToTop />
             <Navbar />
-            <main className="product-page">
-                <div className="product-page__container">
-                    <div className="product-page__content product-page__content--three-column">
-                        <div className="product-gallery">
-                            <div className="product-gallery__images">
-                                <div
-                                    className="product-gallery__main-image"
-                                    ref={mainImageRef}
-                                    onMouseEnter={handleMouseEnter}
-                                    onMouseLeave={handleMouseLeave}
-                                    onMouseMove={handleMouseMove}
-                                    id="imageZoom"
-                                >
-                                    {currentImage ? (
-                                        <img
-                                            src={currentImage}
-                                            alt={product.name}
-                                            onError={() =>
-                                                handleImageError(
-                                                    selectedImageIndex,
-                                                )
-                                            }
-                                            onLoad={handleImageLoad}
-                                            draggable={false}
-                                        />
-                                    ) : (
-                                        <div className="product-gallery__no-image">
-                                            No image available
-                                        </div>
-                                    )}
-                                    {isZoomActive && currentImage && (
-                                        <div
-                                            className={`product-gallery__zoom-box ${
-                                                isZoomActive ? "active" : ""
-                                            }`}
-                                            style={{
-                                                backgroundImage: `url(${currentImage})`,
-                                                backgroundSize: `${ZOOM_LEVEL * 100}%`,
-                                                backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
-                                                backgroundRepeat: "no-repeat",
-                                            }}
-                                        />
-                                    )}
-                                </div>
-
-                                {currentImages && currentImages.length > 1 && (
-                                    <div className="product-gallery__thumbnails">
-                                        {currentImages.map(
-                                            (image: string, index: number) => (
-                                                <button
-                                                    key={index}
-                                                    className={`product-gallery__thumbnail ${
-                                                        selectedImageIndex ===
-                                                        index
-                                                            ? "product-gallery__thumbnail--active"
-                                                            : ""
-                                                    }`}
-                                                    onClick={() =>
-                                                        handleImageSelect(index)
-                                                    }
-                                                >
-                                                    {image &&
-                                                    !imageError[index] ? (
-                                                        <img
-                                                            src={image}
-                                                            alt={`Product view ${index + 1}`}
-                                                            onError={() =>
-                                                                handleImageError(
-                                                                    index,
-                                                                )
-                                                            }
-                                                        />
-                                                    ) : (
-                                                        <div className="product-gallery__thumbnail-no-image">
-                                                            No image
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            ),
+            <div className="product-page-content">
+                <main className="product-page">
+                    <div className="product-page__container">
+                        <div className="product-page__content product-page__content--three-column">
+                            <div className="product-gallery">
+                                <div className="product-gallery__images">
+                                    <div
+                                        className="product-gallery__main-image"
+                                        ref={mainImageRef}
+                                        onMouseEnter={handleMouseEnter}
+                                        onMouseLeave={handleMouseLeave}
+                                        onMouseMove={handleMouseMove}
+                                        id="imageZoom"
+                                    >
+                                        {currentImage ? (
+                                            <img
+                                                src={currentImage}
+                                                alt={product.name}
+                                                onError={() =>
+                                                    handleImageError(
+                                                        selectedImageIndex,
+                                                    )
+                                                }
+                                                onLoad={handleImageLoad}
+                                                draggable={false}
+                                            />
+                                        ) : (
+                                            <div className="product-gallery__no-image">
+                                                No image available
+                                            </div>
+                                        )}
+                                        {isZoomActive && currentImage && (
+                                            <div
+                                                className={`product-gallery__zoom-box ${
+                                                    isZoomActive ? "active" : ""
+                                                }`}
+                                                style={{
+                                                    backgroundImage: `url(${currentImage})`,
+                                                    backgroundSize: `${ZOOM_LEVEL * 100}%`,
+                                                    backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                                                    backgroundRepeat:
+                                                        "no-repeat",
+                                                }}
+                                            />
                                         )}
                                     </div>
-                                )}
+
+                                    {currentImages &&
+                                        currentImages.length > 1 && (
+                                            <div
+                                                className={`product-gallery__thumbnails${
+                                                    isDraggingThumbnails
+                                                        ? " product-gallery__thumbnails--dragging"
+                                                        : ""
+                                                }`}
+                                                ref={thumbnailsRef}
+                                                onMouseDown={
+                                                    handleThumbnailsMouseDown
+                                                }
+                                                onMouseMove={
+                                                    handleThumbnailsMouseMove
+                                                }
+                                                onMouseUp={stopThumbnailsDrag}
+                                                onMouseLeave={
+                                                    stopThumbnailsDrag
+                                                }
+                                            >
+                                                {currentImages.map(
+                                                    (
+                                                        image: string,
+                                                        index: number,
+                                                    ) => (
+                                                        <button
+                                                            key={index}
+                                                            className={`product-gallery__thumbnail ${
+                                                                selectedImageIndex ===
+                                                                index
+                                                                    ? "product-gallery__thumbnail--active"
+                                                                    : ""
+                                                            }`}
+                                                            onClick={() => {
+                                                                if (
+                                                                    dragMovedRef.current
+                                                                )
+                                                                    return;
+                                                                handleImageSelect(
+                                                                    index,
+                                                                );
+                                                            }}
+                                                        >
+                                                            {image &&
+                                                            !imageError[
+                                                                index
+                                                            ] ? (
+                                                                <img
+                                                                    src={image}
+                                                                    alt={`Product view ${index + 1}`}
+                                                                    onError={() =>
+                                                                        handleImageError(
+                                                                            index,
+                                                                        )
+                                                                    }
+                                                                    draggable={
+                                                                        false
+                                                                    }
+                                                                />
+                                                            ) : (
+                                                                <div className="product-gallery__thumbnail-no-image">
+                                                                    No image
+                                                                </div>
+                                                            )}
+                                                        </button>
+                                                    ),
+                                                )}
+                                            </div>
+                                        )}
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="product-info">
-                            <div className="product-info__header">
-                                <h1 className="product-info__title">
-                                    {product.name}
-                                </h1>
+                            <div className="product-info">
+                                <div className="product-info__header">
+                                    <h1 className="product-info__title">
+                                        {product.name}
+                                    </h1>
 
-                                <div className="product-brand">
-                                    <span className="product-brand__brand">
-                                        {product.brand
-                                            ? `Brand: ${product.brand}`
-                                            : ""}
-                                    </span>
-                                    <span className="product-brand__keywords">
-                                        {product.keywords
-                                            ? `Keywords: ${product.keywords}`
-                                            : ""}
-                                    </span>
+                                    <div className="product-brand">
+                                        <span className="product-brand__brand">
+                                            {product.brand
+                                                ? `Brand: ${product.brand}`
+                                                : ""}
+                                        </span>
+                                        <span className="product-brand__keywords">
+                                            {product.keywords
+                                                ? `Keywords: ${product.keywords}`
+                                                : ""}
+                                        </span>
+                                    </div>
+
+                                    <div className="product-price">
+                                        <span className="product-price__current">
+                                            Rs. {getCurrentPrice().toFixed(2)}
+                                        </span>
+                                        {getOriginalPrice() >
+                                            getCurrentPrice() && (
+                                            <>
+                                                <span className="product-price__original">
+                                                    Rs.{" "}
+                                                    {getOriginalPrice().toFixed(
+                                                        2,
+                                                    )}
+                                                </span>
+                                                <span className="product-price__savings">
+                                                    Save Rs.{" "}
+                                                    {(
+                                                        getOriginalPrice() -
+                                                        getCurrentPrice()
+                                                    ).toFixed(2)}
+                                                </span>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <div className="product-price">
-                                    <span className="product-price__current">
-                                        Rs. {getCurrentPrice().toFixed(2)}
-                                    </span>
-                                    {getOriginalPrice() > getCurrentPrice() && (
-                                        <>
-                                            <span className="product-price__original">
-                                                Rs.{" "}
-                                                {getOriginalPrice().toFixed(2)}
-                                            </span>
-                                            <span className="product-price__savings">
-                                                Save Rs.{" "}
-                                                {(
-                                                    getOriginalPrice() -
-                                                    getCurrentPrice()
-                                                ).toFixed(2)}
-                                            </span>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-
-                            {product.hasVariants &&
-                                product.variants &&
-                                product.variants.length > 1 && (
-                                    <div className="product-options">
-                                        <h4 className="product-options__label">
-                                            Available Options:
-                                        </h4>
-                                        <div className="product-options__variants">
-                                            {(() => {
-                                                // Dynamically build attribute options from variants
-                                                const attributeOptions: Record<
-                                                    string,
-                                                    Set<string>
-                                                > = {};
-                                                product.variants.forEach(
-                                                    (variant: any) => {
-                                                        if (
-                                                            variant.attributes
-                                                        ) {
-                                                            Object.entries(
-                                                                variant.attributes,
-                                                            ).forEach(
-                                                                ([
-                                                                    key,
-                                                                    value,
-                                                                ]) => {
-                                                                    if (
-                                                                        !attributeOptions[
-                                                                            key
-                                                                        ]
-                                                                    )
+                                {product.hasVariants &&
+                                    product.variants &&
+                                    product.variants.length > 1 && (
+                                        <div className="product-options">
+                                            <h4 className="product-options__label">
+                                                Available Options:
+                                            </h4>
+                                            <div className="product-options__variants">
+                                                {(() => {
+                                                    // Dynamically build attribute options from variants
+                                                    const attributeOptions: Record<
+                                                        string,
+                                                        Set<string>
+                                                    > = {};
+                                                    product.variants.forEach(
+                                                        (variant: any) => {
+                                                            if (
+                                                                variant.attributes
+                                                            ) {
+                                                                Object.entries(
+                                                                    variant.attributes,
+                                                                ).forEach(
+                                                                    ([
+                                                                        key,
+                                                                        value,
+                                                                    ]) => {
+                                                                        if (
+                                                                            !attributeOptions[
+                                                                                key
+                                                                            ]
+                                                                        )
+                                                                            attributeOptions[
+                                                                                key
+                                                                            ] =
+                                                                                new Set();
                                                                         attributeOptions[
                                                                             key
-                                                                        ] =
-                                                                            new Set();
-                                                                    attributeOptions[
-                                                                        key
-                                                                    ].add(
-                                                                        String(
-                                                                            value,
-                                                                        ),
-                                                                    );
-                                                                },
-                                                            );
-                                                        }
-                                                    },
-                                                );
-
-                                                // Order: color, size, length, then others
-                                                let attributeTypes =
-                                                    Object.keys(
-                                                        attributeOptions,
-                                                    );
-                                                const order = [
-                                                    "color",
-                                                    "size",
-                                                    "length",
-                                                ];
-                                                const orderedTypes = [
-                                                    ...order.filter((t) =>
-                                                        attributeTypes.includes(
-                                                            t,
-                                                        ),
-                                                    ),
-                                                    ...attributeTypes
-                                                        .filter(
-                                                            (t) =>
-                                                                !order.includes(
-                                                                    t,
-                                                                ),
-                                                        )
-                                                        .sort(),
-                                                ];
-
-                                                // Build selected attributes from selectedVariant
-                                                const selectedAttributes =
-                                                    orderedTypes.reduce(
-                                                        (acc, key) => {
-                                                            acc[key] =
-                                                                (selectedVariant?.attributes &&
-                                                                    selectedVariant
-                                                                        .attributes[
-                                                                        key
-                                                                    ]) ||
-                                                                "";
-                                                            return acc;
+                                                                        ].add(
+                                                                            String(
+                                                                                value,
+                                                                            ),
+                                                                        );
+                                                                    },
+                                                                );
+                                                            }
                                                         },
-                                                        {} as Record<
-                                                            string,
-                                                            string
-                                                        >,
                                                     );
 
-                                                return orderedTypes.map(
-                                                    (attrType, idx) => {
-                                                        const optionValues = [
-                                                            ...attributeOptions[
-                                                                attrType
-                                                            ],
-                                                        ];
-                                                        const hasMultipleOptions =
-                                                            optionValues.length >
-                                                            4;
+                                                    // Order: color, size, length, then others
+                                                    let attributeTypes =
+                                                        Object.keys(
+                                                            attributeOptions,
+                                                        );
+                                                    const order = [
+                                                        "color",
+                                                        "size",
+                                                        "length",
+                                                    ];
+                                                    const orderedTypes = [
+                                                        ...order.filter((t) =>
+                                                            attributeTypes.includes(
+                                                                t,
+                                                            ),
+                                                        ),
+                                                        ...attributeTypes
+                                                            .filter(
+                                                                (t) =>
+                                                                    !order.includes(
+                                                                        t,
+                                                                    ),
+                                                            )
+                                                            .sort(),
+                                                    ];
 
-                                                        // Special logic for color buttons
-                                                        if (
-                                                            attrType === "color"
-                                                        ) {
+                                                    // Build selected attributes from selectedVariant
+                                                    const selectedAttributes =
+                                                        orderedTypes.reduce(
+                                                            (acc, key) => {
+                                                                acc[key] =
+                                                                    (selectedVariant?.attributes &&
+                                                                        selectedVariant
+                                                                            .attributes[
+                                                                            key
+                                                                        ]) ||
+                                                                    "";
+                                                                return acc;
+                                                            },
+                                                            {} as Record<
+                                                                string,
+                                                                string
+                                                            >,
+                                                        );
+
+                                                    return orderedTypes.map(
+                                                        (attrType, idx) => {
+                                                            const optionValues =
+                                                                [
+                                                                    ...attributeOptions[
+                                                                        attrType
+                                                                    ],
+                                                                ];
+                                                            const hasMultipleOptions =
+                                                                optionValues.length >
+                                                                4;
+
+                                                            // Special logic for color buttons
+                                                            if (
+                                                                attrType ===
+                                                                "color"
+                                                            ) {
+                                                                return (
+                                                                    <div
+                                                                        className="product-options__attribute"
+                                                                        key={
+                                                                            attrType
+                                                                        }
+                                                                    >
+                                                                        <span className="product-options__attribute-label">
+                                                                            {
+                                                                                attrType
+                                                                            }
+                                                                        </span>
+                                                                        <div
+                                                                            className={`product-options__variant-row ${
+                                                                                hasMultipleOptions
+                                                                                    ? "product-options__variant-row--many"
+                                                                                    : ""
+                                                                            }`}
+                                                                        >
+                                                                            {optionValues.map(
+                                                                                (
+                                                                                    optionValue,
+                                                                                ) => {
+                                                                                    const isSelected =
+                                                                                        selectedAttributes[
+                                                                                            attrType
+                                                                                        ] ===
+                                                                                        optionValue;
+                                                                                    const hasStock =
+                                                                                        product.variants.some(
+                                                                                            (
+                                                                                                v,
+                                                                                            ) =>
+                                                                                                v
+                                                                                                    .attributes
+                                                                                                    ?.color ===
+                                                                                                    optionValue &&
+                                                                                                v.stock >
+                                                                                                    0,
+                                                                                        );
+                                                                                    const isOutOfStock =
+                                                                                        !hasStock;
+
+                                                                                    return (
+                                                                                        <button
+                                                                                            key={
+                                                                                                optionValue
+                                                                                            }
+                                                                                            className={`product-options__button${
+                                                                                                isSelected
+                                                                                                    ? " product-options__button--active"
+                                                                                                    : ""
+                                                                                            }${
+                                                                                                isOutOfStock
+                                                                                                    ? " product-options__button--disabled"
+                                                                                                    : ""
+                                                                                            }${
+                                                                                                hasMultipleOptions
+                                                                                                    ? " product-options__button--compact"
+                                                                                                    : ""
+                                                                                            }`}
+                                                                                            onClick={() => {
+                                                                                                if (
+                                                                                                    isOutOfStock
+                                                                                                ) {
+                                                                                                    toast(
+                                                                                                        "This color is out of stock.",
+                                                                                                    );
+                                                                                                    return;
+                                                                                                }
+                                                                                                setSelectedSize(
+                                                                                                    "",
+                                                                                                );
+                                                                                                setQuantity(
+                                                                                                    1,
+                                                                                                );
+                                                                                                const variant =
+                                                                                                    product.variants.find(
+                                                                                                        (
+                                                                                                            v,
+                                                                                                        ) =>
+                                                                                                            v
+                                                                                                                .attributes
+                                                                                                                ?.color ===
+                                                                                                                optionValue &&
+                                                                                                            v.stock >
+                                                                                                                0,
+                                                                                                    );
+                                                                                                if (
+                                                                                                    variant
+                                                                                                ) {
+                                                                                                    handleVariantSelect(
+                                                                                                        variant,
+                                                                                                    );
+                                                                                                }
+                                                                                            }}
+                                                                                            disabled={
+                                                                                                isOutOfStock
+                                                                                            }
+                                                                                            title={
+                                                                                                optionValue
+                                                                                            }
+                                                                                        >
+                                                                                            {optionValue.length >
+                                                                                                8 &&
+                                                                                            hasMultipleOptions
+                                                                                                ? `${optionValue.substring(0, 6)}...`
+                                                                                                : optionValue}
+                                                                                        </button>
+                                                                                    );
+                                                                                },
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            }
+
+                                                            // Default logic for other attributes
                                                             return (
                                                                 <div
                                                                     className="product-options__attribute"
@@ -1075,20 +1317,38 @@ const ProductPage = () => {
                                                                                         attrType
                                                                                     ] ===
                                                                                     optionValue;
-                                                                                const hasStock =
-                                                                                    product.variants.some(
+                                                                                const selection =
+                                                                                    {
+                                                                                        ...selectedAttributes,
+                                                                                        [attrType]:
+                                                                                            optionValue,
+                                                                                    };
+                                                                                const variant =
+                                                                                    product.variants.find(
                                                                                         (
                                                                                             v,
-                                                                                        ) =>
-                                                                                            v
-                                                                                                .attributes
-                                                                                                ?.color ===
-                                                                                                optionValue &&
-                                                                                            v.stock >
-                                                                                                0,
+                                                                                        ) => {
+                                                                                            return (
+                                                                                                Object.entries(
+                                                                                                    selection,
+                                                                                                ).every(
+                                                                                                    ([
+                                                                                                        k,
+                                                                                                        val,
+                                                                                                    ]) =>
+                                                                                                        v
+                                                                                                            .attributes?.[
+                                                                                                            k
+                                                                                                        ] ===
+                                                                                                        val,
+                                                                                                ) &&
+                                                                                                v.stock >
+                                                                                                    0
+                                                                                            );
+                                                                                        },
                                                                                     );
                                                                                 const isOutOfStock =
-                                                                                    !hasStock;
+                                                                                    !variant;
 
                                                                                 return (
                                                                                     <button
@@ -1113,35 +1373,16 @@ const ProductPage = () => {
                                                                                                 isOutOfStock
                                                                                             ) {
                                                                                                 toast(
-                                                                                                    "This color is out of stock.",
+                                                                                                    `This ${attrType} is out of stock.`,
                                                                                                 );
                                                                                                 return;
                                                                                             }
-                                                                                            setSelectedSize(
-                                                                                                "",
-                                                                                            );
                                                                                             setQuantity(
                                                                                                 1,
                                                                                             );
-                                                                                            const variant =
-                                                                                                product.variants.find(
-                                                                                                    (
-                                                                                                        v,
-                                                                                                    ) =>
-                                                                                                        v
-                                                                                                            .attributes
-                                                                                                            ?.color ===
-                                                                                                            optionValue &&
-                                                                                                        v.stock >
-                                                                                                            0,
-                                                                                                );
-                                                                                            if (
-                                                                                                variant
-                                                                                            ) {
-                                                                                                handleVariantSelect(
-                                                                                                    variant,
-                                                                                                );
-                                                                                            }
+                                                                                            handleVariantSelect(
+                                                                                                variant,
+                                                                                            );
                                                                                         }}
                                                                                         disabled={
                                                                                             isOutOfStock
@@ -1162,422 +1403,315 @@ const ProductPage = () => {
                                                                     </div>
                                                                 </div>
                                                             );
-                                                        }
-
-                                                        // Default logic for other attributes
-                                                        return (
-                                                            <div
-                                                                className="product-options__attribute"
-                                                                key={attrType}
-                                                            >
-                                                                <span className="product-options__attribute-label">
-                                                                    {attrType}
-                                                                </span>
-                                                                <div
-                                                                    className={`product-options__variant-row ${
-                                                                        hasMultipleOptions
-                                                                            ? "product-options__variant-row--many"
-                                                                            : ""
-                                                                    }`}
-                                                                >
-                                                                    {optionValues.map(
-                                                                        (
-                                                                            optionValue,
-                                                                        ) => {
-                                                                            const isSelected =
-                                                                                selectedAttributes[
-                                                                                    attrType
-                                                                                ] ===
-                                                                                optionValue;
-                                                                            const selection =
-                                                                                {
-                                                                                    ...selectedAttributes,
-                                                                                    [attrType]:
-                                                                                        optionValue,
-                                                                                };
-                                                                            const variant =
-                                                                                product.variants.find(
-                                                                                    (
-                                                                                        v,
-                                                                                    ) => {
-                                                                                        return (
-                                                                                            Object.entries(
-                                                                                                selection,
-                                                                                            ).every(
-                                                                                                ([
-                                                                                                    k,
-                                                                                                    val,
-                                                                                                ]) =>
-                                                                                                    v
-                                                                                                        .attributes?.[
-                                                                                                        k
-                                                                                                    ] ===
-                                                                                                    val,
-                                                                                            ) &&
-                                                                                            v.stock >
-                                                                                                0
-                                                                                        );
-                                                                                    },
-                                                                                );
-                                                                            const isOutOfStock =
-                                                                                !variant;
-
-                                                                            return (
-                                                                                <button
-                                                                                    key={
-                                                                                        optionValue
-                                                                                    }
-                                                                                    className={`product-options__button${
-                                                                                        isSelected
-                                                                                            ? " product-options__button--active"
-                                                                                            : ""
-                                                                                    }${
-                                                                                        isOutOfStock
-                                                                                            ? " product-options__button--disabled"
-                                                                                            : ""
-                                                                                    }${
-                                                                                        hasMultipleOptions
-                                                                                            ? " product-options__button--compact"
-                                                                                            : ""
-                                                                                    }`}
-                                                                                    onClick={() => {
-                                                                                        if (
-                                                                                            isOutOfStock
-                                                                                        ) {
-                                                                                            toast(
-                                                                                                `This ${attrType} is out of stock.`,
-                                                                                            );
-                                                                                            return;
-                                                                                        }
-                                                                                        setQuantity(
-                                                                                            1,
-                                                                                        );
-                                                                                        handleVariantSelect(
-                                                                                            variant,
-                                                                                        );
-                                                                                    }}
-                                                                                    disabled={
-                                                                                        isOutOfStock
-                                                                                    }
-                                                                                    title={
-                                                                                        optionValue
-                                                                                    }
-                                                                                >
-                                                                                    {optionValue.length >
-                                                                                        8 &&
-                                                                                    hasMultipleOptions
-                                                                                        ? `${optionValue.substring(0, 6)}...`
-                                                                                        : optionValue}
-                                                                                </button>
-                                                                            );
-                                                                        },
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    },
-                                                );
-                                            })()}
+                                                        },
+                                                    );
+                                                })()}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
 
-                            <div className="product-quantity">
-                                <h4 className="product-quantity__label">
-                                    Quantity:
-                                </h4>
-                                <div className="product-quantity__selector">
-                                    <button
-                                        className="product-quantity__button"
-                                        onClick={() =>
-                                            handleQuantityChange(false)
-                                        }
-                                        disabled={
-                                            quantity <= 1 ||
-                                            getCurrentStock() <= 0
-                                        }
-                                    >
-                                        -
-                                    </button>
-                                    <input
-                                        ref={quantityInputRef}
-                                        type="number"
-                                        className="product-quantity__input"
-                                        value={quantity}
-                                        onChange={handleQuantityInputChange}
-                                        onBlur={handleQuantityBlur}
-                                        onClick={handleQuantitySelect}
-                                        onFocus={handleQuantitySelect}
-                                        onKeyDown={(e) => {
-                                            if (
-                                                [
-                                                    "e",
-                                                    "E",
-                                                    "+",
-                                                    "-",
-                                                    ".",
-                                                ].includes(e.key)
-                                            ) {
-                                                e.preventDefault();
+                                <div className="product-quantity">
+                                    <h4 className="product-quantity__label">
+                                        Quantity:
+                                    </h4>
+                                    <div className="product-quantity__selector">
+                                        <button
+                                            className="product-quantity__button"
+                                            onClick={() =>
+                                                handleQuantityChange(false)
                                             }
-                                        }}
-                                        min="1"
-                                        max={getCurrentStock()}
+                                            disabled={
+                                                quantity <= 1 ||
+                                                getCurrentStock() <= 0
+                                            }
+                                        >
+                                            -
+                                        </button>
+                                        <input
+                                            ref={quantityInputRef}
+                                            type="number"
+                                            className="product-quantity__input"
+                                            value={quantity}
+                                            onChange={handleQuantityInputChange}
+                                            onBlur={handleQuantityBlur}
+                                            onClick={handleQuantitySelect}
+                                            onFocus={handleQuantitySelect}
+                                            onKeyDown={(e) => {
+                                                if (
+                                                    [
+                                                        "e",
+                                                        "E",
+                                                        "+",
+                                                        "-",
+                                                        ".",
+                                                    ].includes(e.key)
+                                                ) {
+                                                    e.preventDefault();
+                                                }
+                                            }}
+                                            min="1"
+                                            max={getCurrentStock()}
+                                            disabled={getCurrentStock() <= 0}
+                                        />
+                                        <button
+                                            className="product-quantity__button"
+                                            onClick={() =>
+                                                handleQuantityChange(true)
+                                            }
+                                            disabled={
+                                                quantity >= getCurrentStock() ||
+                                                getCurrentStock() <= 0
+                                            }
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                    {getCurrentStock() <= 0 && (
+                                        <div className="product-quantity__stock-message">
+                                            <span className="product-quantity__stock-icon">
+                                                ⓘ
+                                            </span>
+                                            Out of stock
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="product-actions">
+                                    <button
+                                        className="product-actions__button product-actions__button--primary"
+                                        onClick={handleAddToCart}
                                         disabled={getCurrentStock() <= 0}
-                                    />
-                                    <button
-                                        className="product-quantity__button"
-                                        onClick={() =>
-                                            handleQuantityChange(true)
-                                        }
-                                        disabled={
-                                            quantity >= getCurrentStock() ||
-                                            getCurrentStock() <= 0
-                                        }
                                     >
-                                        +
+                                        {getCurrentStock() > 0
+                                            ? "Add to Cart"
+                                            : "Out of Stock"}
                                     </button>
+
+                                    {getCurrentStock() > 0 ? (
+                                        <button
+                                            className="product-actions__button product-actions__button--secondary"
+                                            onClick={handleBuyNow}
+                                        >
+                                            Buy Now
+                                        </button>
+                                    ) : (
+                                        <button
+                                            className="product-actions__button product-actions__button--secondary"
+                                            onClick={handleAddToWishlist}
+                                            disabled={wishlistPending}
+                                        >
+                                            {productIsWishlisted
+                                                ? "In Wishlist"
+                                                : "Add to Wishlist"}
+                                        </button>
+                                    )}
+
+                                    {getCurrentStock() > 0 && (
+                                        <button
+                                            className="product-actions__button product-actions__button--secondary"
+                                            onClick={handleAddToWishlist}
+                                            disabled={wishlistPending}
+                                        >
+                                            {productIsWishlisted
+                                                ? "In Wishlist"
+                                                : "Add to Wishlist"}
+                                        </button>
+                                    )}
                                 </div>
-                                {getCurrentStock() <= 0 && (
-                                    <div className="product-quantity__stock-message">
-                                        <span className="product-quantity__stock-icon">
-                                            ⓘ
-                                        </span>
-                                        Out of stock
-                                    </div>
-                                )}
                             </div>
 
-                            <div className="product-actions">
-                                <button
-                                    className="product-actions__button product-actions__button--primary"
-                                    onClick={handleAddToCart}
-                                    disabled={getCurrentStock() <= 0}
-                                >
-                                    {getCurrentStock() > 0
-                                        ? "Add to Cart"
-                                        : "Out of Stock"}
-                                </button>
-
-                                {getCurrentStock() > 0 ? (
-                                    <button
-                                        className="product-actions__button product-actions__button--secondary"
-                                        onClick={handleBuyNow}
-                                    >
-                                        Buy Now
-                                    </button>
-                                ) : (
-                                    <button
-                                        className="product-actions__button product-actions__button--secondary"
-                                        onClick={handleAddToWishlist}
-                                        disabled={wishlistPending}
-                                    >
-                                        {productIsWishlisted
-                                            ? "In Wishlist"
-                                            : "Add to Wishlist"}
-                                    </button>
-                                )}
-
-                                {getCurrentStock() > 0 && (
-                                    <button
-                                        className="product-actions__button product-actions__button--secondary"
-                                        onClick={handleAddToWishlist}
-                                        disabled={wishlistPending}
-                                    >
-                                        {productIsWishlisted
-                                            ? "In Wishlist"
-                                            : "Add to Wishlist"}
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* -------------Vendor Details Section ------------------ */}
-                        <div className="vendor-details">
-                            <div className="vendor-details__header">
-                                <h3 className="vendor-details__title">
-                                    Seller Information
-                                </h3>
-                            </div>
-
-                            <div className="vendor-details__content">
-                                <div
-                                    className="vendor-details__profile"
-                                    onClick={handleVendorClick}
-                                >
-                                    <div className="vendor-details__avatar">
-                                        {product.vendor?.businessName
-                                            ?.charAt(0)
-                                            .toUpperCase() || "U"}
-                                    </div>
-                                    <div className="vendor-details__info">
-                                        <h4 className="vendor-details__name">
-                                            {product.vendor?.businessName ||
-                                                "Unknown Vendor"}
-                                        </h4>
-                                        <p className="vendor-details__subtitle">
-                                            Verified Seller
-                                        </p>
-                                    </div>
+                            {/* -------------Vendor Details Section ------------------ */}
+                            <div className="vendor-details">
+                                <div className="vendor-details__header">
+                                    <h3 className="vendor-details__title">
+                                        Seller Information
+                                    </h3>
                                 </div>
 
-                                <div className="vendor-details__features">
-                                    <div className="vendor-details__feature">
-                                        <div className="vendor-details__feature-icon">
-                                            <Truck
-                                                style={{
-                                                    opacity: "1",
-                                                    color: "#ff6b35",
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="vendor-details__feature-text">
-                                            <span className="vendor-details__feature-title">
-                                                Fast Shipping
-                                            </span>
-                                            <span className="vendor-details__feature-desc">
-                                                14 business days
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="vendor-details__feature">
-                                        <div className="vendor-details__feature-icon">
-                                            <Undo2
-                                                style={{
-                                                    opacity: "1",
-                                                    color: "#ff6b35",
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="vendor-details__feature-text">
-                                            <span className="vendor-details__feature-title">
-                                                Easy Returns
-                                            </span>
-                                            <span className="vendor-details__feature-desc">
-                                                1 week return policy
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="vendor-details__feature">
-                                        <div className="vendor-details__feature-icon">
-                                            <ShieldCheck
-                                                style={{
-                                                    opacity: "1",
-                                                    color: "#ff6b35",
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="vendor-details__feature-text">
-                                            <span className="vendor-details__feature-title">
-                                                Secure Payment
-                                            </span>
-                                            <span className="vendor-details__feature-desc">
-                                                Protected transactions
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="vendor-details__feature">
-                                        <div className="vendor-details__feature-icon">
-                                            <Phone
-                                                style={{
-                                                    opacity: "1",
-                                                    color: "#ff6b35",
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="vendor-details__feature-text">
-                                            <span className="vendor-details__feature-title">
-                                                24/7 Support
-                                            </span>
-                                            <span className="vendor-details__feature-desc">
-                                                Customer service
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="vendor-details__actions">
-                                    <button
-                                        className="vendor-details__button vendor-details__button--primary"
+                                <div className="vendor-details__content">
+                                    <div
+                                        className="vendor-details__profile"
                                         onClick={handleVendorClick}
                                     >
-                                        Visit Store
-                                    </button>
-                                </div>
+                                        <div className="vendor-details__avatar">
+                                            {product.vendor?.businessName
+                                                ?.charAt(0)
+                                                .toUpperCase() || "U"}
+                                        </div>
+                                        <div className="vendor-details__info">
+                                            <h4 className="vendor-details__name">
+                                                {product.vendor?.businessName ||
+                                                    "Unknown Vendor"}
+                                            </h4>
+                                            <p className="vendor-details__subtitle">
+                                                Verified Seller
+                                            </p>
+                                        </div>
+                                    </div>
 
-                                <div className="vendor-details__badges">
-                                    <div className="vendor-details__badge">
-                                        ✓ Verified
+                                    <div className="vendor-details__features">
+                                        <div className="vendor-details__feature">
+                                            <div className="vendor-details__feature-icon">
+                                                <Truck
+                                                    style={{
+                                                        opacity: "1",
+                                                        color: "#ff6b35",
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="vendor-details__feature-text">
+                                                <span className="vendor-details__feature-title">
+                                                    Fast Shipping
+                                                </span>
+                                                <span className="vendor-details__feature-desc">
+                                                    14 business days
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="vendor-details__feature">
+                                            <div className="vendor-details__feature-icon">
+                                                <Undo2
+                                                    style={{
+                                                        opacity: "1",
+                                                        color: "#ff6b35",
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="vendor-details__feature-text">
+                                                <span className="vendor-details__feature-title">
+                                                    Easy Returns
+                                                </span>
+                                                <span className="vendor-details__feature-desc">
+                                                    1 week return policy
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="vendor-details__feature">
+                                            <div className="vendor-details__feature-icon">
+                                                <ShieldCheck
+                                                    style={{
+                                                        opacity: "1",
+                                                        color: "#ff6b35",
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="vendor-details__feature-text">
+                                                <span className="vendor-details__feature-title">
+                                                    Secure Payment
+                                                </span>
+                                                <span className="vendor-details__feature-desc">
+                                                    Protected transactions
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="vendor-details__feature">
+                                            <div className="vendor-details__feature-icon">
+                                                <Phone
+                                                    style={{
+                                                        opacity: "1",
+                                                        color: "#ff6b35",
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="vendor-details__feature-text">
+                                                <span className="vendor-details__feature-title">
+                                                    24/7 Support
+                                                </span>
+                                                <span className="vendor-details__feature-desc">
+                                                    Customer service
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="vendor-details__badge">
-                                        ⭐ Top Rated
+
+                                    <div className="vendor-details__actions">
+                                        <button
+                                            className="vendor-details__button vendor-details__button--primary"
+                                            onClick={handleVendorClick}
+                                        >
+                                            Visit Store
+                                        </button>
                                     </div>
-                                    <div className="vendor-details__badge">
-                                        🔒 Trusted
+
+                                    <div className="vendor-details__badges">
+                                        <div className="vendor-details__badge">
+                                            ✓ Verified
+                                        </div>
+                                        <div className="vendor-details__badge">
+                                            ⭐ Top Rated
+                                        </div>
+                                        <div className="vendor-details__badge">
+                                            🔒 Trusted
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {product.description && (
-                    <div className="product-page__description-section">
-                        <div className="product-page__description-card">
-                            <h3>Description</h3>
-                            <p>{product.description}</p>
+                    {product.description && (
+                        <div className="product-page__description-section">
+                            <div className="product-page__description-card">
+                                <h3>Description</h3>
+                                <p>{product.description}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* -----------------Reviews section ----------------------  */}
+                    <div
+                        id="reviews-section"
+                        className="product-page__reviews-section"
+                    >
+                        <div className="product-page__reviews">
+                            <Reviews
+                                productId={Number(id)}
+                                initialReviews={reviews}
+                                initialAverageRating={averageRating}
+                                totalReviews={totalReviews}
+                                currentPage={currentReviewPage}
+                                totalPages={totalPages}
+                                onReviewUpdate={async () => {
+                                    localStorage.removeItem(
+                                        `${CACHE_KEY_REVIEWS}_${id}`,
+                                    );
+                                    setCurrentReviewPage(1);
+                                }}
+                                onPageChange={handleReviewPageChange}
+                            />
                         </div>
                     </div>
-                )}
 
-                {/* -----------------Reviews section ----------------------  */}
-                <div id="reviews-section" className="product-page__reviews">
-                    <Reviews
-                        productId={Number(id)}
-                        initialReviews={reviews}
-                        initialAverageRating={averageRating}
-                        totalReviews={totalReviews}
-                        currentPage={currentReviewPage}
-                        totalPages={totalPages}
-                        onReviewUpdate={async () => {
-                            localStorage.removeItem(
-                                `${CACHE_KEY_REVIEWS}_${id}`,
-                            );
-                            setCurrentReviewPage(1);
-                        }}
-                        onPageChange={handleReviewPageChange}
-                    />
-                </div>
-
-                {/* ---------------- Recommended products -----------------  */}
-                <div className="product-page__recommended">
-                    <RecommendedProducts
-                        products={recommendedProducts ?? []}
-                        currentProductId={product.id}
-                        fallbackCategoryId={effectiveCategoryId}
-                        fallbackSubcategoryId={effectiveSubcategoryId}
-                        isLoading={isLoadingRecommended}
-                    />
-                </div>
-
-                {showToast && (
-                    <div className="toast">
-                        <div className="toast__content">
-                            <span className="toast__icon">✓</span>
-                            <span className="toast__message">
-                                {toastMessage}
-                            </span>
-                        </div>
+                    {/* ---------------- Recommended products -----------------  */}
+                    <div className="product-page__recommended">
+                        <RecommendedProducts
+                            products={recommendedProducts ?? []}
+                            currentProductId={product.id}
+                            fallbackCategoryId={effectiveCategoryId}
+                            fallbackSubcategoryId={effectiveSubcategoryId}
+                            isLoading={isLoadingRecommended}
+                        />
                     </div>
-                )}
 
-                {authModalOpen && (
-                    <AuthModal
-                        isOpen={authModalOpen}
-                        onClose={() => setAuthModalOpen(false)}
-                    />
-                )}
-            </main>
+                    {showToast && (
+                        <div className="toast">
+                            <div className="toast__content">
+                                <span className="toast__icon">✓</span>
+                                <span className="toast__message">
+                                    {toastMessage}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    {authModalOpen && (
+                        <AuthModal
+                            isOpen={authModalOpen}
+                            onClose={() => setAuthModalOpen(false)}
+                        />
+                    )}
+                </main>
+            </div>
             <Footer />
         </div>
     );

@@ -387,7 +387,11 @@ const Footer: React.FC = () => {
             {/* Order Tracking Modal */}
             <OrderTrackingModal
                 isOpen={isTrackingModalOpen}
-                onClose={() => setIsTrackingModalOpen(false)}
+                onClose={() => {
+                    setIsTrackingModalOpen(false);
+                    setOrderId("");
+                    setEmail("");
+                }}
                 trackingResult={trackingResult}
             />
         </footer>

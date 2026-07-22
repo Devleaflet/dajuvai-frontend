@@ -1,5 +1,5 @@
 .product-carousel {
-  width: 85%;
+  width: 92%;
   margin: 0 auto;
   box-sizing: border-box;
   position: relative;
@@ -8,7 +8,6 @@
   user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
-  touch-action: pan-y;
   padding-bottom: 0;
 }
 
@@ -39,12 +38,20 @@
   gap: 10px;
   overflow-x: auto;
   scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
   -ms-overflow-style: none;
   scrollbar-width: none;
   width: 100%;
   min-height: 320px;
   cursor: pointer !important;
-  margin-bottom: 20px;
+  /* overflow-x: auto clips at this element's own edges, so the first/last
+     card's hover shadow (0 8px 24px) had no room on the left/right, and the
+     bottom shadow had none below either. Padding on all three sides gives
+     the shadow somewhere to render before it gets clipped; margin-bottom
+     trimmed to match so total whitespace before the next section is
+     unchanged. */
+  padding: 0 12px 24px;
+  margin-bottom: -4px;
 }
 
 .product-carousel__products:active {
@@ -282,7 +289,9 @@
   align-items: center;
   cursor: pointer !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
 }
 
 .product-card__wishlist-button:hover {
@@ -368,7 +377,9 @@
   border: none;
   cursor: pointer;
   box-shadow: 0 3px 10px rgba(234, 95, 10, 0.45);
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
 }
 
 .product-card__cart-button:hover {
@@ -695,7 +706,13 @@
 
 @media (max-width: 576px) {
   .product-card__wrapper {
-    width: 185px;
+    /* Fixed pixel widths here (185px/168px below) left the 2nd card cut off
+       on common phone widths (e.g. 390-430px) — 2 cards + the gap didn't
+       actually fit the visible scroll area at those sizes. Size relative to
+       the carousel's own content width instead, so exactly 2 cards + 1 gap
+       always fit fully on screen, on any phone width, with the 3rd peeking
+       just enough to hint there's more to scroll. */
+    width: calc((100% - 10px) / 2.15);
   }
 
   .product-card {
@@ -770,7 +787,10 @@
 
 @media (max-width: 480px) {
   .product-card__wrapper {
-    width: 168px;
+    /* Same fix as the 576px breakpoint above: relative width so 2 full
+       cards always fit this viewport instead of a fixed px value that only
+       happened to fit on some phone widths. */
+    width: calc((100% - 10px) / 1.93);
   }
 
   .product-card {

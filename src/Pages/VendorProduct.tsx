@@ -23,6 +23,7 @@ import { ProductFormData } from "../types/product";
 import { normalizeDiscountType } from "../utils/productPricing";
 import * as XLSX from "xlsx";
 import VendorHeader from "../Components/VendorHeader";
+import VendorDashboardService from "../services/vendorDashboardService";
 
 const ProductListSkeleton: React.FC = () => {
     return (
@@ -170,7 +171,13 @@ const VendorProduct: React.FC = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: ["vendor-products"],
+                queryKey: [
+                    "vendor-products",
+                    authState.vendor?.id,
+                    currentPage,
+                    productsPerPage,
+                    authState.token,
+                ],
             });
             toast.success("Product deleted successfully!");
             setShowDeleteDialog(false);
@@ -476,7 +483,13 @@ const VendorProduct: React.FC = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({
-                queryKey: ["vendor-products"],
+                queryKey: [
+                    "vendor-products",
+                    authState.vendor?.id,
+                    currentPage,
+                    productsPerPage,
+                    authState.token,
+                ],
             });
         },
     });
@@ -631,6 +644,15 @@ const VendorProduct: React.FC = () => {
             setEditingProduct(null);
         }
     };
+
+    const { data: vendorStats } = useQuery({
+        queryKey: ["vendor-stats", authState.vendor?.id],
+        enabled: !!authState.vendor?.id && !!authState.token,
+        queryFn: () =>
+            VendorDashboardService.getInstance().getVendorStats(
+                authState.token!,
+            ),
+    });
 
     const products: Product[] = productData?.products || [];
     const totalProducts = productData?.serverTotal || productData?.total || 0;

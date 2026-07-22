@@ -1,3 +1,9 @@
+/* Gray backdrop below navbar down to footer — auto height (sized to actual
+   content), never 100vh, so it always reaches exactly to the footer. */
+.shop-page-content {
+	background-color: #f5f5f5;
+	padding-top: 16px;
+}
 .shop-max-width-container {
 	max-width: 1800px;
 	margin: 0 auto;

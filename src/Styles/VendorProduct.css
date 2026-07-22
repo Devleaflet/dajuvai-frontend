@@ -41,6 +41,30 @@
   color: #78350f;
 }
 
+/* Out-of-stock is more severe than low-stock, so it gets a red variant
+   instead of amber — same layout, different severity color. */
+.low-stock-banner--out {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  border-left-color: #dc2626;
+}
+
+.low-stock-banner--out .low-stock-banner__icon {
+  color: #dc2626;
+}
+
+.low-stock-banner--out .low-stock-banner__msg {
+  color: #7f1d1d;
+}
+
+.low-stock-banner--out .low-stock-banner__close {
+  color: #991b1b;
+}
+
+.low-stock-banner--out .low-stock-banner__close:hover {
+  color: #7f1d1d;
+}
+
 /* Reuse existing dashboard container styles */
 .vendor-dash-container {
   display: flex;

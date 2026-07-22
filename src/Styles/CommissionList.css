@@ -2,15 +2,13 @@
 /* horizontal-overflow protection lives on <html> only (index.css). A bare
    `body { overflow-x: hidden }` here isn't page-scoped - CSS imports are
    global - so it silently applied on every page and broke position:sticky
-   app-wide (see index.css for the full explanation). */
-body {
+   app-wide (see index.css for the full explanation). The `background`
+   below had the same bug: a bare `body` selector leaked this page's gray
+   gradient onto every other route once this CSS loaded. Scoped to
+   `.commission-container` instead. */
+.commission-container {
     font-family: 'Inter', Arial, sans-serif;
     background: linear-gradient(to bottom right, #f9fafb, #e5e7eb);
-    margin: 0;
-    padding: 0;
-}
-
-.commission-container {
     min-height: 100vh;
     display: flex;
     align-items: center;

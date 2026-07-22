@@ -462,12 +462,35 @@
 }
 
 .cart__item-price {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cart__item-price-current {
   font-size: 1rem;
   font-weight: 700;
   color: #f97316;
-  white-space: nowrap;
   transition: color 0.2s ease;
-  flex-shrink: 0;
+}
+
+.cart__item-price-original {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #9ca3af;
+  text-decoration: line-through;
+}
+
+.cart__item-price-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #dc2626;
+  background-color: #fee2e2;
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  width: fit-content;
 }
 
 .cart__item-controls {

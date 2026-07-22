@@ -462,33 +462,6 @@ const ViewModal: React.FC<ViewModalProps> = ({
                         </div>
                     </div>
 
-                    {/* Fulfillment — this vendor's own shipping fee only,
-                        shown separately since it's not part of the
-                        merchandise payable amount above. */}
-                    {orderDetail.ownShippingFee != null && (
-                        <div className="order-section">
-                            <h3 className="order-section__title">
-                                Fulfillment
-                            </h3>
-                            <div className="order-summary-box">
-                                <div className="order-summary-row">
-                                    <span className="order-summary-row__label">
-                                        Shipping (
-                                        {orderDetail.ownShippingZone ===
-                                        "SAME_DISTRICT"
-                                            ? "Same district"
-                                            : "Cross district"}
-                                        )
-                                    </span>
-                                    <span className="order-summary-row__value">
-                                        Rs.{" "}
-                                        {orderDetail.ownShippingFee.toFixed(2)}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
                     {/* Vendor actions — only ever offers transitions this
                         vendor is actually allowed to make; delivered/other
                         vendors' status changes are never available here.

@@ -12,6 +12,7 @@ import logo from '../assets/logo.webp';
 import { API_BASE_URL, FRONTEND_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { getDiscountDisplay } from '../utils/priceDisplay';
 
 interface PromoCode {
 	id: number;
@@ -75,6 +76,9 @@ interface CartItem {
 		stock?: number;
 		calculatedPrice?: number;
 		originalPrice?: number;
+		basePrice?: number | string;
+		discount?: number | string;
+		discountType?: 'PERCENTAGE' | 'FLAT' | string;
 		variantImgUrls?: string[];
 	};
 	selectedVariant?: CartItem['variant'];
@@ -84,6 +88,9 @@ interface CartItem {
 		id: number;
 		name?: string;
 		vendorId?: number;
+		basePrice?: number | string;
+		discount?: number | string;
+		discountType?: 'PERCENTAGE' | 'FLAT' | string;
 		vendor?: string | {
 			id?: number;
 			businessName?: string;
@@ -905,6 +912,28 @@ const Checkout: React.FC = () => {
 		return item.quantity;
 	};
 
+	// Per-item original (pre-discount) price — item.price is always the
+	// already-discounted unit price (from the cart, or from ProductPage's
+	// Buy Now handoff), but nothing on this page previously showed what it
+	// was discounted FROM, so a product-level discount was invisible here
+	// even though it was correctly applied to item.price.
+	const getItemOriginalPrice = (item: CartItem): number => {
+		const base = item.variant?.basePrice ?? item.product?.basePrice;
+		const parsed = Number(base);
+		return Number.isFinite(parsed) && parsed > 0 ? parsed : Number(item.price);
+	};
+
+	const getItemDiscountDisplay = (item: CartItem) => {
+		const discount = item.variant?.discount ?? item.product?.discount;
+		const discountType = item.variant?.discountType ?? item.product?.discountType;
+		return getDiscountDisplay({
+			basePrice: getItemOriginalPrice(item),
+			finalPrice: Number(item.price),
+			discount,
+			discountType,
+		});
+	};
+
 	// Groups items by vendor purely for display (product list/images) — money
 	// figures (subtotal, shipping fee, zone) always come from
 	// checkoutEstimate.vendorShippingBreakdown, never recomputed here.
@@ -1022,6 +1051,16 @@ const Checkout: React.FC = () => {
 	const discountAmount = checkoutEstimate?.discountTotal ?? 0;
 	const finalTotal = checkoutEstimate?.grandTotal ?? merchandiseSubtotal;
 	const discountPercentage = appliedPromoCode?.discountPercentage ?? 0;
+
+	// The original (pre-product-discount) merchandise value — merchandiseSubtotal
+	// from the backend is already net of each item's own product/variant
+	// discount, so the gap between the two is the "Product Discount" line,
+	// distinct from the promo-code discount (discountAmount) applied on top.
+	const originalMerchandiseTotal = cartItems.reduce(
+		(sum, item) => sum + getItemOriginalPrice(item) * getCurrentQuantity(item),
+		0,
+	);
+	const productDiscountTotal = Math.max(0, originalMerchandiseTotal - merchandiseSubtotal);
 
 	const toFiniteNumber = (value: unknown, fallback = 0): number => {
 		const numeric = Number(value);
@@ -1680,10 +1719,27 @@ const Checkout: React.FC = () => {
 													</div>
 												</div>
 												<span className="checkout-container__product-price">
-													Rs{' '}
-													{(
-														Number(item.price) * getCurrentQuantity(item)
-													).toLocaleString()}
+													<span className="checkout-container__product-price-current">
+														Rs{' '}
+														{(
+															Number(item.price) * getCurrentQuantity(item)
+														).toLocaleString()}
+													</span>
+													{getItemDiscountDisplay(item).hasDiscount && (
+														<>
+															<span className="checkout-container__product-price-original">
+																Rs{' '}
+																{(
+																	getItemOriginalPrice(item) * getCurrentQuantity(item)
+																).toLocaleString()}
+															</span>
+															{getItemDiscountDisplay(item).badgeLabel && (
+																<span className="checkout-container__product-price-badge">
+																	{getItemDiscountDisplay(item).badgeLabel}
+																</span>
+															)}
+														</>
+													)}
 												</span>
 											</div>
 										))}
@@ -1736,27 +1792,41 @@ const Checkout: React.FC = () => {
 							)}
 
 							<div className="checkout-container__order-total">
-								<span>Subtotal (all items):</span>
-								<span>Rs {merchandiseSubtotal.toLocaleString()}</span>
+								<span>Actual Price:</span>
+								<span>Rs {originalMerchandiseTotal.toLocaleString()}</span>
 							</div>
 
-							{billingDetails.district && (
+							{productDiscountTotal > 0 && (
 								<div className="checkout-container__order-total">
-									<span>Total shipping:</span>
-									<span>{estimateLoading ? 'Calculating…' : `Rs ${totalShipping.toLocaleString()}`}</span>
+									<span>Product Discount:</span>
+									<span className="checkout-container__discount-value">
+										- Rs {productDiscountTotal.toLocaleString()}
+									</span>
 								</div>
 							)}
+
+							<div className="checkout-container__order-total">
+								<span>Subtotal:</span>
+								<span>Rs {merchandiseSubtotal.toLocaleString()}</span>
+							</div>
 
 							{appliedPromoCode && (
 								<div className="checkout-container__order-total">
 									<span>
 										{appliedPromoCode.applyOn === 'SHIPPING'
-											? `Shipping Discount (${discountPercentage}%):`
-											: `Subtotal Discount (${discountPercentage}%):`}
+											? `Promo Discount — Shipping (${discountPercentage}%, "${appliedPromoCode.promoCode}"):`
+											: `Promo Discount (${discountPercentage}%, "${appliedPromoCode.promoCode}"):`}
 									</span>
-									<span style={{ color: 'green' }}>
+									<span className="checkout-container__discount-value">
 										- Rs {discountAmount.toLocaleString()}
 									</span>
+								</div>
+							)}
+
+							{billingDetails.district && (
+								<div className="checkout-container__order-total">
+									<span>Shipping:</span>
+									<span>{estimateLoading ? 'Calculating…' : `Rs ${totalShipping.toLocaleString()}`}</span>
 								</div>
 							)}
 
