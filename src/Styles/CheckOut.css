@@ -313,11 +313,33 @@
 }
 
 .checkout-container__product-price {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
+	flex-shrink: 0;
+	text-align: right;
+}
+
+.checkout-container__product-price-current {
 	font-size: 16px;
 	color: #333;
 	font-weight: bold;
-	flex-shrink: 0;
-	text-align: right;
+}
+
+.checkout-container__product-price-original {
+	font-size: 13px;
+	color: #9ca3af;
+	text-decoration: line-through;
+}
+
+.checkout-container__product-price-badge {
+	font-size: 11px;
+	font-weight: 700;
+	color: #dc2626;
+	background-color: #fee2e2;
+	border-radius: 4px;
+	padding: 1px 6px;
 }
 
 .checkout-container__order-total {
@@ -326,6 +348,11 @@
 	margin-top: 10px;
 	font-size: 16px;
 	color: #333;
+}
+
+.checkout-container__discount-value {
+	color: #2e7d32;
+	font-weight: 600;
 }
 
 .checkout-container__order-total--total {

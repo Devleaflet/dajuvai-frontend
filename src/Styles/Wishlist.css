@@ -569,12 +569,32 @@
   -webkit-box-orient: vertical;
 }
 .wishlist__item-price {
-  font-size: clamp(1rem, 3vw, 1.2rem);
-  font-weight: 700;
-  color: #10b981;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
   text-align: center;
   white-space: nowrap;
   padding: 0 0.5rem;
+}
+.wishlist__item-price-current {
+  font-size: clamp(1rem, 3vw, 1.2rem);
+  font-weight: 700;
+  color: #10b981;
+}
+.wishlist__item-price-original {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #9ca3af;
+  text-decoration: line-through;
+}
+.wishlist__item-price-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #dc2626;
+  background-color: #fee2e2;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
 }
 .wishlist__item-quantity {
   display: flex;
