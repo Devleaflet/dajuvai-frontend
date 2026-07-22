@@ -14,18 +14,18 @@ interface OrderListProps {
 // vendor actually needs to know: awaiting confirmation, actively moving,
 // done, or a problem.
 const STATUS_BADGE_CLASS: Record<string, string> = {
-  pending: "on-sale",
-  confirmed: "in-progress",
-  processing: "in-progress",
-  shipped: "in-progress",
-  delayed: "in-progress",
-  delivered: "featured",
-  canceled: "out-of-stock",
+    pending: "on-sale",
+    confirmed: "in-progress",
+    processing: "in-progress",
+    shipped: "in-progress",
+    delayed: "in-progress",
+    delivered: "featured",
+    canceled: "out-of-stock",
 };
 
 const formatStatusLabel = (status?: string): string => {
-  if (!status) return "Pending";
-  return status.charAt(0).toUpperCase() + status.slice(1);
+    if (!status) return "Pending";
+    return status.charAt(0).toUpperCase() + status.slice(1);
 };
 
 const OrderList: React.FC<OrderListProps> = ({ orders, onView }) => {
@@ -56,7 +56,10 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onView }) => {
                             <td>{order.orderedBy || "Unknown Customer"}</td>
                             <td>{order.product || "Unknown Product"}</td>
                             <td>Rs. {order.price?.toFixed(2) || "0.00"}</td>
-                            <td>{order.paymentStatus || "Unknown"}</td>
+                            <td>
+                                {`${order.paymentStatus}(${order.paymentMethod})` ||
+                                    "unknown"}
+                            </td>
                             <td>
                                 <span
                                     className={`product-status ${

@@ -1,8 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500&display=swap");
 
 :root {
     /* Font Settings */
-    --font-family: 'Poppins', system-ui, Avenir, Helvetica, Arial, sans-serif;
+    --font-family: "Poppins", system-ui, Avenir, Helvetica, Arial, sans-serif;
     --font-size-base: 1em;
     --font-size-large: 3.2em;
     --line-height: 1.5;
@@ -74,18 +74,17 @@ button:hover {
 }
 button:focus,
 button:focus-visible {
-    
 }
 
 .homepage-sections-loading {
-  width: 85%;
-  margin: 0 auto;
-  padding: 20px 0;
+    width: 85%;
+    margin: 0 auto;
+    padding: 20px 0;
 }
 
 .homepage-sections-loading-row {
-  display: flex;
-  gap: 20px;
-  overflow-x: auto;
-  padding: 10px 0;
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding: 10px 0;
 }

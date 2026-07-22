@@ -91,14 +91,11 @@ const ProductList: React.FC<ProductListProps> = ({
     ): "AVAILABLE" | "LOW_STOCK" | "OUT_OF_STOCK" => {
         const variants = product.variants || [];
         if (variants.length === 0) return "OUT_OF_STOCK";
-        const allOutOfStock = variants.every(
-            (v) => v.status === "OUT_OF_STOCK",
-        );
-        if (allOutOfStock) return "OUT_OF_STOCK";
-        const anyLowOrOut = variants.some(
-            (v) => v.status === "LOW_STOCK" || v.status === "OUT_OF_STOCK",
-        );
-        if (anyLowOrOut) return "LOW_STOCK";
+        
+        const totalStock = variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+        
+        if (totalStock <= 0) return "OUT_OF_STOCK";
+        if (totalStock < 5) return "LOW_STOCK";
         return "AVAILABLE";
     };
 
@@ -126,7 +123,6 @@ const ProductList: React.FC<ProductListProps> = ({
                         <th>Stock</th>
                         <th>Deal</th>
                         <th>Variants</th>
-                        <th>Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -137,11 +133,11 @@ const ProductList: React.FC<ProductListProps> = ({
                                 colSpan={
                                     isMobile
                                         ? showVendor
-                                            ? 9
-                                            : 8
+                                            ? 8
+                                            : 7
                                         : showVendor
-                                          ? 10
-                                          : 9
+                                          ? 9
+                                          : 8
                                 }
                                 className="empty-state"
                             >
@@ -172,29 +168,29 @@ const ProductList: React.FC<ProductListProps> = ({
                                 ? getVariantStatus(product)
                                 : product.status;
 
-                            const statusDisplay = (() => {
+                            const stockDisplay = (() => {
                                 if (effectiveStatus === "OUT_OF_STOCK") {
                                     return (
                                         <span className="product-status out-of-stock">
-                                            Out of Stock
+                                            {numericStock}
                                         </span>
                                     );
                                 }
                                 if (effectiveStatus === "LOW_STOCK") {
                                     return (
                                         <span className="product-status low-stock">
-                                            Low Stock
+                                            {numericStock}
                                         </span>
                                     );
                                 }
                                 if (effectiveStatus === "AVAILABLE") {
                                     return (
                                         <span className="product-status available">
-                                            Available
+                                            {numericStock}
                                         </span>
                                     );
                                 }
-                                return "-";
+                                return <span>{numericStock}</span>;
                             })();
 
                             return (
@@ -241,7 +237,7 @@ const ProductList: React.FC<ProductListProps> = ({
                                             <span className="price-na">—</span>
                                         )}
                                     </td>
-                                    <td>{numericStock}</td>
+                                    <td>{stockDisplay}</td>
                                     <td>
                                         {hasDeal ? (
                                             <span className="deal-badge">
@@ -264,7 +260,6 @@ const ProductList: React.FC<ProductListProps> = ({
                                             </span>
                                         )}
                                     </td>
-                                    <td>{statusDisplay}</td>
                                     <td>
                                         <div className="vendor-product__actions-cell">
                                             <button

@@ -594,27 +594,44 @@ export const deleteProduct = async (productId: number, token?: string) => {
 	}
 };
 
+export type ProductSortOption =
+	| "newest"
+	| "oldest"
+	| "a-z"
+	| "z-a"
+	| "price-low-high"
+	| "price-high-low"
+	| "stock-low-high"
+	| "stock-high-low";
+
+export type ProductStatusFilter = "" | "AVAILABLE" | "LOW_STOCK" | "OUT_OF_STOCK";
+
 export const fetchProducts = async (
 	vendorId: number,
 	page: number = 1,
-	limit: number = 10
+	limit: number = 10,
+	options?: {
+		search?: string;
+		sortBy?: ProductSortOption;
+		status?: ProductStatusFilter;
+	}
 ) => {
 	try {
-
-		//"Making request to:", `/api/vendors/${vendorId}/products`);
+		const params: Record<string, string | number> = { page, limit };
+		if (options?.search && options.search.trim()) {
+			params.search = options.search.trim();
+		}
+		if (options?.sortBy) {
+			params.sortBy = options.sortBy;
+		}
+		if (options?.status) {
+			params.status = options.status;
+		}
 
 		const response = await axiosInstance.get(
 			`/api/vendors/${vendorId}/products`,
-			{
-				params: {
-					page,
-					limit,
-				},
-			}
+			{ params }
 		);
-
-		//"fetchProducts response:", response);
-		//"fetchProducts response.data:", response.data);
 
 		return response;
 	} catch (error: unknown) {
