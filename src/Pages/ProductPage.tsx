@@ -91,6 +91,36 @@ const ProductPage = () => {
   const mainImageRef = useRef<HTMLDivElement>(null);
   const quantityInputRef = useRef<HTMLInputElement>(null);
 
+  const thumbnailsRef = useRef<HTMLDivElement>(null);
+  const [isDraggingThumbnails, setIsDraggingThumbnails] = useState(false);
+  const dragStartXRef = useRef(0);
+  const dragScrollLeftRef = useRef(0);
+  const dragMovedRef = useRef(false);
+
+  const handleThumbnailsMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || !thumbnailsRef.current) return;
+    setIsDraggingThumbnails(true);
+    dragMovedRef.current = false;
+    dragStartXRef.current = e.pageX - thumbnailsRef.current.offsetLeft;
+    dragScrollLeftRef.current = thumbnailsRef.current.scrollLeft;
+  };
+
+  const DRAG_THRESHOLD_PX = 8;
+
+  const handleThumbnailsMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDraggingThumbnails || !thumbnailsRef.current) return;
+    const x = e.pageX - thumbnailsRef.current.offsetLeft;
+    const walk = x - dragStartXRef.current;
+    if (!dragMovedRef.current) {
+      if (Math.abs(walk) < DRAG_THRESHOLD_PX) return;
+      dragMovedRef.current = true;
+    }
+    e.preventDefault();
+    thumbnailsRef.current.scrollLeft = dragScrollLeftRef.current - walk;
+  };
+
+  const stopThumbnailsDrag = () => setIsDraggingThumbnails(false);
+
   const ZOOM_LEVEL = 3;
 
   const { handleCartOnAdd } = useCart();
@@ -824,7 +854,18 @@ const ProductPage = () => {
                   </div>
 
                   {currentImages && currentImages.length > 1 && (
-                    <div className="product-gallery__thumbnails">
+                    <div
+                      className={`product-gallery__thumbnails${
+                        isDraggingThumbnails
+                          ? " product-gallery__thumbnails--dragging"
+                          : ""
+                      }`}
+                      ref={thumbnailsRef}
+                      onMouseDown={handleThumbnailsMouseDown}
+                      onMouseMove={handleThumbnailsMouseMove}
+                      onMouseUp={stopThumbnailsDrag}
+                      onMouseLeave={stopThumbnailsDrag}
+                    >
                       {currentImages.map((image: string, index: number) => (
                         <button
                           key={index}
@@ -833,13 +874,17 @@ const ProductPage = () => {
                               ? "product-gallery__thumbnail--active"
                               : ""
                           }`}
-                          onClick={() => handleImageSelect(index)}
+                          onClick={() => {
+                            if (dragMovedRef.current) return;
+                            handleImageSelect(index);
+                          }}
                         >
                           {image && !imageError[index] ? (
                             <img
                               src={image}
                               alt={`Product view ${index + 1}`}
                               onError={() => handleImageError(index)}
+                              draggable={false}
                             />
                           ) : (
                             <div className="product-gallery__thumbnail-no-image">
