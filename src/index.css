@@ -1,19 +1,19 @@
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 html,
 body,
 #root {
-  min-height: 100%;
-  width: 100%;
-  max-width: 100%;
+    min-height: 100%;
+    width: 100%;
+    max-width: 100%;
 }
 
 html {
-  /* Horizontal-overflow protection lives on <html> ONLY. <html> is the
+    /* Horizontal-overflow protection lives on <html> ONLY. <html> is the
      element whose declared overflow wins for the document viewport (the
      browser ignores <body>'s overflow once <html> declares one), so one
      copy here is sufficient. Also setting it on <body> and/or #root used
@@ -23,27 +23,45 @@ html {
      box nested inside the real one. That's what broke `position: sticky`
      for every sidebar in the app (their nearest "scrolling ancestor" ended
      up being one of those inert boxes instead of the actual page scroll). */
-  overflow-x: hidden;
+    overflow-x: hidden;
 }
 
 html,
 body {
-  overscroll-behavior-y: none;
-  background-color: #ffffff;
+    overscroll-behavior-y: none;
+    background-color: #ffffff;
 }
 
 body {
-  font-family: "Poppins", system-ui, Avenir, Helvetica, Arial, sans-serif;
-  margin: 0px;
-  padding: 0px;
+    font-family: "Poppins", system-ui, Avenir, Helvetica, Arial, sans-serif;
+    margin: 0px;
+    padding: 0px;
 }
 
 * {
-  font-family: "Poppins", system-ui, Avenir, Helvetica, Arial, sans-serif;
+    font-family: "Poppins", system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
 input,
 textarea,
 select {
-  font-size: 16px;
+    font-size: 16px;
+}
+
+/* Make horizontal scrollbars thicker on mobile, while keeping vertical scrollbars thin */
+@media (max-width: 768px) {
+    [class*="table-container"]::-webkit-scrollbar {
+        -webkit-appearance: none;
+        height: 12px !important; /* horizontal scrollbar */
+        width: 4px !important; /* vertical scrollbar */
+    }
+
+    [class*="table-container"]::-webkit-scrollbar-thumb {
+        border-radius: 6px !important;
+        background-color: #a0aec0 !important;
+    }
+
+    [class*="table-container"]::-webkit-scrollbar-track {
+        background-color: #f1f5f9 !important;
+    }
 }

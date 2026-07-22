@@ -7,6 +7,7 @@ export interface Order {
     createdAt: string;
     price: number;
     paymentStatus: string;
+    paymentMethod: string;
     status: string;
 }
 

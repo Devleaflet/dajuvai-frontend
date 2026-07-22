@@ -66,15 +66,26 @@ const VendorOrder: React.FC = () => {
                         order.orderedBy?.username ||
                         "Unknown Customer",
                     product: (() => {
-                        const names = order.orderItems.map((item) => item.product.name);
+                        const names = order.orderItems.map(
+                            (item) => item.product.name,
+                        );
                         const unique = [...new Set(names.filter(Boolean))];
-                        return unique.join(", ") || firstItem.product.name || "Unknown Product";
+                        return (
+                            unique.join(", ") ||
+                            firstItem.product.name ||
+                            "Unknown Product"
+                        );
                     })(),
                     createdAt: order.createdAt,
                     // This vendor's own payable amount only — never the
                     // order's full multi-vendor total.
                     price: order.vendorPayable,
                     paymentStatus: order.paymentStatus || "",
+                    paymentMethod: (() => {
+                        const method = order.paymentMethod || "";
+                        if (method === "CASH_ON_DELIVERY") return "COD";
+                        return method;
+                    })(),
                     status: (() => {
                         const rawStatus = (order.status || "").toUpperCase();
                         if (rawStatus === "DELIVERED") return "delivered";
@@ -84,7 +95,8 @@ const VendorOrder: React.FC = () => {
                             rawStatus === "RETURNED"
                         )
                             return "canceled";
-                        if (rawStatus === "PENDING" || !rawStatus) return "pending";
+                        if (rawStatus === "PENDING" || !rawStatus)
+                            return "pending";
                         // CONFIRMED / PROCESSING / SHIPPED / DELAYED are real,
                         // distinct order states - the system has no "pending"
                         // state after checkout for COD/paid orders (they start
