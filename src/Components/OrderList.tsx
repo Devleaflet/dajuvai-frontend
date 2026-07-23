@@ -54,7 +54,27 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onView }) => {
                                     `#ORD${String(order.id).padStart(4, "0")}`}
                             </td>
                             <td>{order.orderedBy || "Unknown Customer"}</td>
-                            <td>{order.product || "Unknown Product"}</td>
+                            <td>
+                                {(() => {
+                                    const raw = order.product || "Unknown Product";
+                                    const products = raw.split(",").map((p: string) => p.trim()).filter(Boolean);
+                                    const MAX_LEN = 20;
+                                    const truncate = (name: string) =>
+                                        name.length > MAX_LEN ? name.slice(0, MAX_LEN).trimEnd() + "…" : name;
+                                    const visible = products.slice(0, 2).map(truncate);
+                                    const extra = products.length - 2;
+                                    return (
+                                        <span title={raw}>
+                                            {visible.join(", ")}
+                                            {extra > 0 && (
+                                                <span style={{ color: "var(--color-primary, #6366f1)", fontWeight: 500 }}>
+                                                    {" "}+ {extra} other(s)
+                                                </span>
+                                            )}
+                                        </span>
+                                    );
+                                })()}
+                            </td>
                             <td>Rs. {order.price?.toFixed(2) || "0.00"}</td>
                             <td>
                                 {`${order.paymentStatus}(${order.paymentMethod})` ||

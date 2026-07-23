@@ -17,7 +17,6 @@ const VendorOrder: React.FC = () => {
     const [searchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState<string>("All Orders");
     const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth < 768);
-    const [searchQuery, setSearchQuery] = useState<string>("");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const docketHeight = useDocketHeight();
     const { authState } = useVendorAuth();
@@ -37,22 +36,40 @@ const VendorOrder: React.FC = () => {
 
     // TanStack Query for orders
     const {
-        data: allOrders = [] as Order[],
+        data: queryData,
         isLoading: loading,
         error,
         refetch,
     } = useQuery({
-        queryKey: ["vendor-orders", authState.token],
+        queryKey: [
+            "vendor-orders",
+            authState.token,
+            currentPage,
+            ordersPerPage,
+            activeTab,
+            sortOption,
+        ],
         queryFn: async () => {
             if (!authState.token)
                 throw new Error("No authentication token available");
             const dashboardService = VendorDashboardService.getInstance();
+
+            let status = undefined;
+            if (activeTab === "Completed") status = "delivered";
+            if (activeTab === "Pending") status = "pending";
+            if (activeTab === "Canceled") status = "canceled";
+
             const response = await dashboardService.getVendorOrdersNew(
                 authState.token,
+                {
+                    page: currentPage,
+                    limit: ordersPerPage,
+                    status: status,
+                    sort: sortOption,
+                }
             );
             const apiOrders = response.data;
-            console.log(apiOrders);
-            return apiOrders.map((order: VendorOrderDetail) => {
+            const mappedOrders = apiOrders.map((order: any) => {
                 const firstItem = order.orderItems[0];
                 return {
                     id: order.id,
@@ -67,12 +84,12 @@ const VendorOrder: React.FC = () => {
                         "Unknown Customer",
                     product: (() => {
                         const names = order.orderItems.map(
-                            (item) => item.product.name,
+                            (item: any) => item.product?.name,
                         );
                         const unique = [...new Set(names.filter(Boolean))];
                         return (
                             unique.join(", ") ||
-                            firstItem.product.name ||
+                            firstItem?.product?.name ||
                             "Unknown Product"
                         );
                     })(),
@@ -108,16 +125,31 @@ const VendorOrder: React.FC = () => {
                     })(),
                 };
             });
+
+            return {
+                items: mappedOrders,
+                pagination: response.pagination,
+                statusCounts: response.statusCounts,
+            };
         },
         enabled: !!authState.token,
     });
 
+    const displayedOrders = queryData?.items || [];
+    const totalPages = queryData?.pagination?.totalPages || 1;
+    const statusCounts = queryData?.statusCounts || {
+        all: 0,
+        pending: 0,
+        delivered: 0,
+        canceled: 0,
+    };
+
     const orderIdFromParams = searchParams.get("orderId");
 
     useEffect(() => {
-        if (orderIdFromParams && allOrders.length > 0) {
-            const order = allOrders.find(
-                (o) => o.id.toString() === orderIdFromParams,
+        if (orderIdFromParams && displayedOrders.length > 0) {
+            const order = displayedOrders.find(
+                (o: Order) => o.id.toString() === orderIdFromParams,
             );
             if (order) {
                 setSelectedOrder(order);
@@ -125,7 +157,7 @@ const VendorOrder: React.FC = () => {
                 setIsViewModalOpen(true);
             }
         }
-    }, [orderIdFromParams, allOrders]);
+    }, [orderIdFromParams, displayedOrders]);
 
     // Fetch order details for viewing
     const fetchOrderDetails = async (orderId: number) => {
@@ -144,67 +176,7 @@ const VendorOrder: React.FC = () => {
         }
     };
 
-    // Filtering
-    let filteredOrders = [...allOrders];
-    switch (activeTab) {
-        case "Completed":
-            filteredOrders = filteredOrders.filter(
-                (o: Order) => o.status === "delivered",
-            );
-            break;
-        case "Pending":
-            filteredOrders = filteredOrders.filter(
-                (o: Order) => o.status === "pending",
-            );
-            break;
-        case "Canceled":
-            filteredOrders = filteredOrders.filter(
-                (o: Order) => o.status === "canceled",
-            );
-            break;
-        default:
-            break;
-    }
-    if (searchQuery.trim() !== "") {
-        const query = searchQuery.toLowerCase();
-        filteredOrders = filteredOrders.filter(
-            (order: Order) =>
-                order.product.toLowerCase().includes(query) ||
-                order.orderedBy.toLowerCase().includes(query),
-        );
-    }
-    // Sorting
-    switch (sortOption) {
-        case "newest":
-            filteredOrders.sort(
-                (a: Order, b: Order) =>
-                    new Date(b.createdAt).getTime() -
-                    new Date(a.createdAt).getTime(),
-            );
-            break;
-        case "oldest":
-            filteredOrders.sort(
-                (a: Order, b: Order) =>
-                    new Date(a.createdAt).getTime() -
-                    new Date(b.createdAt).getTime(),
-            );
-            break;
-        case "highestPrice":
-            filteredOrders.sort((a: Order, b: Order) => b.price - a.price);
-            break;
-        case "lowestPrice":
-            filteredOrders.sort((a: Order, b: Order) => a.price - b.price);
-            break;
-        default:
-            break;
-    }
-    // Pagination
-    const indexOfLastOrder = currentPage * ordersPerPage;
-    const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-    const displayedOrders = filteredOrders.slice(
-        indexOfFirstOrder,
-        indexOfLastOrder,
-    );
+    // Filtering, Sorting, and Pagination are now handled by the backend.
 
     useEffect(() => {
         const handleResize = () => {
@@ -215,31 +187,28 @@ const VendorOrder: React.FC = () => {
     }, []);
 
     const tabs = [
-        { id: "All Orders", label: `All Orders (${allOrders.length})` },
+        { id: "All Orders", label: `All Orders (${statusCounts.all})` },
         {
             id: "Completed",
-            label: `Completed (${allOrders.filter((o: Order) => o.status === "delivered").length})`,
+            label: `Completed (${statusCounts.delivered})`,
         },
         {
             id: "Pending",
-            label: `Pending (${allOrders.filter((o: Order) => o.status === "pending").length})`,
+            label: `Pending (${statusCounts.pending})`,
         },
         {
             id: "Canceled",
-            label: `Canceled (${allOrders.filter((o: Order) => o.status === "canceled").length})`,
+            label: `Canceled (${statusCounts.canceled})`,
         },
     ];
 
-    const handleSearch = (query: string) => {
-        setSearchQuery(query);
-        setCurrentPage(1);
-    };
 
-    const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
 
-    // Export to CSV
+
+
+    // Export to CSV (exports currently displayed page)
     const handleExportCSV = () => {
-        const csvData = filteredOrders.map((order: Order) => ({
+        const csvData = displayedOrders.map((order: Order) => ({
             "Order ID": order.orderId,
             "Ordered By": order.orderedBy,
             Product: order.product,
@@ -254,9 +223,9 @@ const VendorOrder: React.FC = () => {
         XLSX.writeFile(workbook, "orders.csv");
     };
 
-    // Export to Excel
+    // Export to Excel (exports currently displayed page)
     const handleExportExcel = () => {
-        const excelData = filteredOrders.map((order: Order) => ({
+        const excelData = displayedOrders.map((order: Order) => ({
             "Order ID": order.orderId,
             "Ordered By": order.orderedBy,
             Product: order.product,
@@ -287,8 +256,7 @@ const VendorOrder: React.FC = () => {
                 >
                     <VendorHeader
                         title="Order Management"
-                        onSearch={handleSearch}
-                        showSearch={true}
+                        showSearch={false}
                     />
                     <main
                         className="dashboard__main"
@@ -398,7 +366,6 @@ const VendorOrder: React.FC = () => {
                 >
                     <VendorHeader
                         title="Order Management"
-                        onSearch={handleSearch}
                         showSearch={false}
                     />
                     <main
@@ -467,8 +434,7 @@ const VendorOrder: React.FC = () => {
                             </>
                         ) : (
                             <div className="vendor-order__no-results">
-                                No orders found.{" "}
-                                {searchQuery && "Try a different search query."}
+                                No orders found.
                             </div>
                         )}
                     </main>

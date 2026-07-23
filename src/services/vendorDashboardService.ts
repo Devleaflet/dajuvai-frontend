@@ -30,9 +30,24 @@ class VendorDashboardService {
         return response.json();
     }
 
-    async getVendorOrdersNew(token: string) {
+    async getVendorOrdersNew(
+        token: string,
+        params: {
+            page?: number;
+            limit?: number;
+            status?: string;
+            sort?: string;
+        } = {}
+    ) {
         const realToken = token || localStorage.getItem("vendorToken");
-        const response = await fetch(`${this.baseUrl}/order/vendor/orders`, {
+        const queryParams = new URLSearchParams();
+        if (params.page) queryParams.append("page", params.page.toString());
+        if (params.limit) queryParams.append("limit", params.limit.toString());
+        if (params.status) queryParams.append("status", params.status);
+        if (params.sort) queryParams.append("sort", params.sort);
+
+        const url = `${this.baseUrl}/order/vendor/orders${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+        const response = await fetch(url, {
             headers: {
                 Authorization: `Bearer ${realToken}`,
                 "Content-Type": "application/json",
@@ -42,7 +57,6 @@ class VendorDashboardService {
         if (!response.ok) throw new Error("Failed to fetch orders");
         return response.json();
     }
-
     async getVendorOrderDetail(token: string, orderId: number) {
         const realToken = token || localStorage.getItem("vendorToken");
         const response = await fetch(

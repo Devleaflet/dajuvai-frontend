@@ -229,7 +229,7 @@ const ProductList: React.FC<ProductListProps> = ({
                                                 {product.hasVariants && (
                                                     <span className="variant-price-note">
                                                         {" "}
-                                                        (from)
+                                                        (has variant)
                                                     </span>
                                                 )}
                                             </>

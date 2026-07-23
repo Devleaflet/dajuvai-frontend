@@ -8,6 +8,7 @@ import { Sidebar } from "../Components/Sidebar";
 import VendorHeader from "../Components/VendorHeader";
 import "../Styles/ProfilePage.css";
 import axiosInstance from "../api/axiosInstance";
+import { getProvinceForDistrict } from "../utils/nepalProvinces";
 import {
   FaTrash,
   FaPlus,
@@ -169,6 +170,7 @@ const ProfilePage: React.FC = () => {
         ...v,
         businessName: v.businessName || "",
         phoneNumber: v.phoneNumber || "",
+        telePhone: v.telePhone === "-" ? "" : (v.telePhone || ""),
         businessAddress: v.district?.name || v.businessAddress || "",
         taxNumber: v.taxNumber || "",
         businessRegNumber: v.businessRegNumber || "",
@@ -397,6 +399,7 @@ const ProfilePage: React.FC = () => {
       const payload: Record<string, any> = {
         businessName: vendorDetails.businessName,
         phoneNumber: vendorDetails.phoneNumber,
+        telePhone: vendorDetails.telePhone?.trim() || null,
         taxNumber: vendorDetails.taxNumber,
         citizenshipDocuments: vendorDetails.citizenshipDocuments,
         taxDocuments: vendorDetails.taxDocuments,
@@ -584,6 +587,21 @@ const ProfilePage: React.FC = () => {
               <Display value={vendorDetails.phoneNumber} />
             )}
           </Field>
+          <Field label="Telephone Number">
+            {isEditing ? (
+              <input
+                className="vendor-profile-form__input"
+                value={vendorDetails.telePhone === "-" ? "" : (vendorDetails.telePhone || "")}
+                onChange={(e) => setVendorField("telePhone", e.target.value)}
+                placeholder="e.g. 056-XXXXXXX"
+              />
+            ) : (
+              <Display value={vendorDetails.telePhone === "-" ? "" : vendorDetails.telePhone} />
+            )}
+          </Field>
+        </div>
+
+        <div className="vendor-profile-form__row">
           <Field label="District / Business Address">
             {isEditing ? (
               <input
@@ -597,6 +615,9 @@ const ProfilePage: React.FC = () => {
             ) : (
               <Display value={vendorDetails.businessAddress} />
             )}
+          </Field>
+          <Field label="Province">
+            <Display value={getProvinceForDistrict(vendorDetails.businessAddress)} />
           </Field>
         </div>
 

@@ -42,6 +42,9 @@ const SkeletonRow: React.FC = () => {
             <td>
                 <div className="admin-vendors__skeleton"></div>
             </td>
+            <td>
+                <div className="admin-vendors__skeleton"></div>
+            </td>
         </tr>
     );
 };
@@ -1938,6 +1941,16 @@ const AdminVendor: React.FC = () => {
                                                     <th
                                                         onClick={() =>
                                                             handleSort(
+                                                                "telePhone",
+                                                            )
+                                                        }
+                                                        className="admin-vendors__phone-column"
+                                                    >
+                                                        Telephone
+                                                    </th>
+                                                    <th
+                                                        onClick={() =>
+                                                            handleSort(
                                                                 "district",
                                                             )
                                                         }
@@ -1981,7 +1994,7 @@ const AdminVendor: React.FC = () => {
                                                   0 ? (
                                                     <tr>
                                                         <td
-                                                            colSpan={7}
+                                                            colSpan={8}
                                                             className="admin-vendors__table-row"
                                                         >
                                                             No vendors found
@@ -2007,6 +2020,11 @@ const AdminVendor: React.FC = () => {
                                                                 <td className="admin-vendors__phone-column">
                                                                     {
                                                                         vendor.phoneNumber
+                                                                    }
+                                                                </td>
+                                                                <td className="admin-vendors__phone-column">
+                                                                    {
+                                                                        vendor.telePhone === "-" ? "" : vendor.telePhone
                                                                     }
                                                                 </td>
                                                                 <td className="admin-vendors__district-column">

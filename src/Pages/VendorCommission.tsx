@@ -140,7 +140,7 @@ const VendorCommission: React.FC = () => {
 
   return (
     <>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } } @media (max-width: 1024px) { .preview-btn-mobile { display: none !important; } }`}</style>
 
       <div className="vendor-dash-container">
         <Sidebar />
@@ -231,27 +231,29 @@ const VendorCommission: React.FC = () => {
                     {/* action buttons */}
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {canPreview && (
-                        <button
-                          type="button"
-                          onClick={handleTogglePreview}
-                          disabled={actionLoading !== null}
-                          style={{
-                            padding: "10px 18px",
-                            background: previewOpen ? "#f3f4f6" : "#fff",
-                            color: "#F97316",
-                            border: "1px solid #F97316",
-                            borderRadius: 6,
-                            fontWeight: 600,
-                            cursor: "pointer",
-                            fontSize: 14,
-                          }}
-                        >
-                          {previewLoading
-                            ? "Loading…"
-                            : previewOpen
-                              ? "Hide Preview"
-                              : "Preview"}
-                        </button>
+                        <span className="preview-btn-mobile">
+                          <button
+                            type="button"
+                            onClick={handleTogglePreview}
+                            disabled={actionLoading !== null}
+                            style={{
+                              padding: "10px 18px",
+                              background: previewOpen ? "#f3f4f6" : "#fff",
+                              color: "#F97316",
+                              border: "1px solid #F97316",
+                              borderRadius: 6,
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              fontSize: 14,
+                            }}
+                          >
+                            {previewLoading
+                              ? "Loading…"
+                              : previewOpen
+                                ? "Hide Preview"
+                                : "Preview"}
+                          </button>
+                        </span>
                       )}
 
                       <button
