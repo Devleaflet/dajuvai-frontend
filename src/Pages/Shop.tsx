@@ -325,7 +325,12 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
         .filter((img): img is string => !!img && typeof img === "string")
         .map(processImageUrl);
 
-    const processedVariants = (item.variants || []).map((variant: any) => {
+    // Gate on hasVariants, not just array presence — a product just
+    // converted to non-variant can still carry orphaned variant rows (kept
+    // only because they have real order history), which must never surface.
+    const processedVariants = (
+        item.hasVariants ? item.variants || [] : []
+    ).map((variant: any) => {
         const rawImages = Array.isArray(variant.images)
             ? variant.images
             : Array.isArray(variant.variantImages)

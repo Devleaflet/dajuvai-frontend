@@ -38,9 +38,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const navigate = useNavigate();
   const { title, description, rating, ratingCount, id } = product;
 
-  const variantsArr = [...(product.variants || [])].sort(
-    (a, b) => (Number(a?.id) || 0) - (Number(b?.id) || 0),
-  );
+  // Gate on hasVariants, not just array presence — a product just converted
+  // to non-variant can still have orphaned variant rows in the DB (kept
+  // around only because they have real order history), and some read paths
+  // don't strip them. The flag is the single source of truth for "is this
+  // a variant product" everywhere in the app.
+  const variantsArr = product.hasVariants
+    ? [...(product.variants || [])].sort(
+        (a, b) => (Number(a?.id) || 0) - (Number(b?.id) || 0),
+      )
+    : [];
   const inStockVariants = variantsArr.filter(
     (v) => Number(v.stock || 0) > 0 && v.status !== "OUT_OF_STOCK",
   );

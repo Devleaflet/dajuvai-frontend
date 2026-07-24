@@ -153,7 +153,16 @@ const ProductPage = () => {
             let allVariants = [];
             let defaultVariant = null;
 
-            if (apiProduct.variants && Array.isArray(apiProduct.variants)) {
+            // Gate on hasVariants, not just array presence — a product just
+            // converted to non-variant can still carry orphaned variant rows
+            // (kept only because they have real order history), and not
+            // every read path strips them. hasVariants is the single source
+            // of truth for "is this a variant product" everywhere.
+            if (
+                apiProduct.hasVariants &&
+                apiProduct.variants &&
+                Array.isArray(apiProduct.variants)
+            ) {
                 allVariants = apiProduct.variants.map((variant: any) => {
                     const variantImgUrls: string[] = [];
                     if (

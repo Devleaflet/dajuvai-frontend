@@ -26,9 +26,13 @@ export const getProductPrimaryImage = (
   defaultImage: string
 ): string => {
   try {
-    const variants: any[] = Array.isArray(product?.variants)
-      ? product.variants
-      : [];
+    // Gate on hasVariants, not just array presence — a product just
+    // converted to non-variant can still carry orphaned variant rows (kept
+    // only because they have real order history), which must never surface.
+    const variants: any[] =
+      product?.hasVariants && Array.isArray(product?.variants)
+        ? product.variants
+        : [];
 
     if (variants.length > 0) {
       // id ascending = creation order (no "position" column on Variant).

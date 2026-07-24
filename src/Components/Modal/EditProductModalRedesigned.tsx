@@ -369,9 +369,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
             );
         }
 
-        // Compute hasVariants based on the presence of variants in the fresh product
-        const hasVariants =
-            fullProduct.variants && fullProduct.variants.length > 0;
+        // The real flag, not array-length inference — a product just
+        // converted to non-variant can still carry orphaned variant rows
+        // (kept only because they have real order history; see
+        // ProductService.deleteVariantsSafely on the backend), and inferring
+        // from array presence would make it look like a variant product
+        // again the moment it's reopened for edit.
+        const hasVariants = fullProduct.hasVariants === true;
 
         // Helper: normalize various backend attribute shapes to Attribute[]
         const normalizeVariantAttributes = (raw: any): Attribute[] => {
@@ -436,7 +440,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
         // Map API variants to ProductVariant interface
         const mappedVariants: ProductVariant[] =
-            fullProduct.variants && fullProduct.variants.length > 0
+            hasVariants && fullProduct.variants && fullProduct.variants.length > 0
                 ? fullProduct.variants.map((v: any) => {
                       const imgs = v.variantImages || v.images || [];
                       return {

@@ -157,7 +157,9 @@ const AdminCatalog = () => {
 				name: item.name,
 				title: item.name,
 				price: parseFloat(item.basePrice),
-				productImages: item.variants?.[0]?.variantImages || item.productImages,
+				productImages:
+					(item.hasVariants && item.variants?.[0]?.variantImages) ||
+					item.productImages,
 			}));
 			setAllProducts(formattedProducts);
 		} catch (err) {
@@ -431,7 +433,7 @@ const AdminCatalog = () => {
 				hasVariants: item.hasVariants,
 				price: parseFloat(item.basePrice),
 				productImages:
-					item.variants.length > 0
+					item.hasVariants && item.variants.length > 0
 						? item.variants[0].variantImages
 						: item.productImages,
 			}));
