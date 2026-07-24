@@ -725,6 +725,13 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
     const [showConfirm, setShowConfirm] = useState(false);
     const [localError, setLocalError] = useState("");
 
+    const meetsLength = newPass.length >= 8;
+    const meetsNumber = /[0-9]/.test(newPass);
+    const meetsUpper = /[A-Z]/.test(newPass);
+    const meetsSymbol = /[^a-zA-Z0-9]/.test(newPass);
+    const isPasswordValid = meetsLength && meetsNumber && meetsUpper && meetsSymbol;
+    const isFormValid = isPasswordValid && newPass === confirmPass;
+
     useEffect(() => {
         if (!show) {
             setNewPass("");
@@ -740,8 +747,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLocalError("");
-        if (newPass.length < 8) {
-            setLocalError("Password must be at least 8 characters.");
+        if (!isPasswordValid) {
+            setLocalError("Password must meet all criteria.");
             return;
         }
         if (newPass !== confirmPass) {
@@ -873,6 +880,12 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
                     {/* New Password */}
                     <div style={{ marginBottom: "16px" }}>
+                        <div style={{ marginBottom: "8px", fontSize: "12px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <div style={{ color: meetsLength ? "#10b981" : "#6b7280" }}>{meetsLength ? "✓" : "○"} At least 8 characters</div>
+                            <div style={{ color: meetsNumber ? "#10b981" : "#6b7280" }}>{meetsNumber ? "✓" : "○"} Contains a number</div>
+                            <div style={{ color: meetsUpper ? "#10b981" : "#6b7280" }}>{meetsUpper ? "✓" : "○"} Contains a capital letter</div>
+                            <div style={{ color: meetsSymbol ? "#10b981" : "#6b7280" }}>{meetsSymbol ? "✓" : "○"} Contains a symbol</div>
+                        </div>
                         <label
                             style={{
                                 display: "block",
@@ -884,6 +897,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                         >
                             New Password
                         </label>
+
                         <div style={{ position: "relative" }}>
                             <input
                                 type={showNew ? "text" : "password"}
@@ -1028,8 +1042,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                             type="submit"
                             disabled={
                                 loading ||
-                                newPass.length < 8 ||
-                                newPass !== confirmPass
+                                !isFormValid
                             }
                             style={{
                                 flex: 1,
@@ -1040,15 +1053,13 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                                 borderRadius: "8px",
                                 backgroundColor:
                                     loading ||
-                                    newPass.length < 8 ||
-                                    newPass !== confirmPass
+                                    !isFormValid
                                         ? "#a5b4fc"
                                         : "#6366f1",
                                 color: "white",
                                 cursor:
                                     loading ||
-                                    newPass.length < 8 ||
-                                    newPass !== confirmPass
+                                    !isFormValid
                                         ? "not-allowed"
                                         : "pointer",
                                 boxShadow: "0 4px 12px rgba(99,102,241,0.3)",
