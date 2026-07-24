@@ -31,15 +31,21 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   } = useWishlist();
   const { cartOpen } = useUI();
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
 
   const navigate = useNavigate();
   const { title, description, rating, ratingCount, id } = product;
 
-  const variantCount = product.variants?.length || 0;
-  const variantId = variantCount > 0 ? product.variants![0].id : undefined;
+  const variantsArr = [...(product.variants || [])].sort(
+    (a, b) => (Number(a?.id) || 0) - (Number(b?.id) || 0),
+  );
+  const inStockVariants = variantsArr.filter(
+    (v) => Number(v.stock || 0) > 0 && v.status !== "OUT_OF_STOCK",
+  );
+  const defaultVariant = inStockVariants[0] || variantsArr[0] || null;
+  const variantId = defaultVariant?.id;
 
   // Single source of truth: WishlistContext, so every card/page reflects the
   // same state instantly instead of each component tracking its own copy.
@@ -65,26 +71,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     return url.replace(/([^:]\/)\/+/, "$1/");
   };
 
-  // Get all available images following the same logic as getProductPrimaryImage
+  // All variant images, so the hover auto-slider previews every variant —
+  // ordered with the default (first in-stock) variant's photos leading, to
+  // stay consistent with the price/discount shown (also from that variant).
   const getProductImages = () => {
     const images = [];
 
     try {
-      const variantsArray: any[] = Array.isArray(product?.variants)
-        ? product.variants
-        : [];
-
-      // Process variants in order (position first, then id)
-      if (variantsArray.length > 0) {
-        const orderedVariants = [...variantsArray].sort((a: any, b: any) => {
-          const ap = Number(a?.position);
-          const bp = Number(b?.position);
-          if (Number.isFinite(ap) && Number.isFinite(bp)) return ap - bp;
-          const aid = Number(a?.id);
-          const bid = Number(b?.id);
-          if (Number.isFinite(aid) && Number.isFinite(bid)) return aid - bid;
-          return 0;
-        });
+      // variantsArr is already id-sorted; just float the default variant
+      // to the front so its photo leads (matching the price/discount shown).
+      if (variantsArr.length > 0) {
+        const rest = variantsArr.filter((v: any) => v.id !== defaultVariant?.id);
+        const orderedVariants = defaultVariant
+          ? [defaultVariant, ...rest]
+          : rest;
 
         orderedVariants.forEach((variant) => {
           // Add variant.image
@@ -160,7 +160,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   };
 
   const productImages = getProductImages();
-  const displayImage = imageError
+  const displayImage = imageErrors.has(currentImageIndex)
     ? defaultProductImage
     : productImages[currentImageIndex];
 
@@ -182,7 +182,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   }, [isHovering, productImages.length]);
 
   const handleImageError = () => {
-    setImageError(true);
+    setImageErrors((prev) => new Set(prev).add(currentImageIndex));
   };
 
   const handleDotClick = (index: number, e: React.MouseEvent) => {
@@ -257,51 +257,29 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     }, 100);
   };
 
-  // Price Determination (Aligned with backend source of truth)
+  // Price/discount always mirror the default (first in-stock) variant, so
+  // they stay consistent with the image and stock state shown on the card.
   const getDisplayPrices = () => {
-    if (product.hasVariants && product.variants?.length) {
-      const validVariants = product.variants
-        .filter((v) => v.status !== "OUT_OF_STOCK")
-        .map((v) => {
-          const base = Number(v.basePrice) || 0;
-          const final = Number(v.finalPrice) || base;
-          return {
-            base,
-            final,
-            savings: Math.max(0, base - final),
-            // A vendor sets discount per-variant, not on the product itself
-            // (the product-level discount fields are only used for
-            // non-variant products), so the badge must read the *variant's*
-            // discount here — falling back to product.discount only if the
-            // variant genuinely doesn't specify one.
-            discount: v.discount !== undefined ? v.discount : product.discount,
-            discountType:
-              v.discountType !== undefined ? v.discountType : product.discountType,
-          };
-        });
-
-      if (validVariants.length > 0) {
-        // Prefer showing a discounted variant (biggest savings wins) over
-        // the merely-cheapest one — otherwise a shopper never sees the
-        // badge/deal unless the discounted variant also happens to be the
-        // lowest-priced option, even though the product genuinely is on
-        // sale for one of its variants.
-        const discounted = validVariants.filter((v) => v.savings > 0);
-        const chosen =
-          discounted.length > 0
-            ? discounted.reduce((best, curr) =>
-                curr.savings > best.savings ? curr : best,
-              )
-            : validVariants.reduce((prev, curr) =>
-                curr.final < prev.final ? curr : prev,
-              );
-        return {
-          base: chosen.base,
-          final: chosen.final,
-          discount: chosen.discount,
-          discountType: chosen.discountType,
-        };
-      }
+    if (product.hasVariants && defaultVariant) {
+      const base = Number(defaultVariant.basePrice) || 0;
+      const final = Number(defaultVariant.finalPrice) || base;
+      return {
+        base,
+        final,
+        // A vendor sets discount per-variant, not on the product itself
+        // (the product-level discount fields are only used for
+        // non-variant products), so the badge must read the *variant's*
+        // discount here — falling back to product.discount only if the
+        // variant genuinely doesn't specify one.
+        discount:
+          defaultVariant.discount !== undefined
+            ? defaultVariant.discount
+            : product.discount,
+        discountType:
+          defaultVariant.discountType !== undefined
+            ? defaultVariant.discountType
+            : product.discountType,
+      };
     }
 
     return {
@@ -333,18 +311,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   // Stock state — variant-level stock is authoritative when the product has
   // variants (matches backend: a product is only out of stock when every
   // variant is out of stock).
-  const availableVariants = (product.variants || []).filter(
-    (v: any) => Number(v.stock || 0) > 0 && v.status !== "OUT_OF_STOCK",
-  );
-  const displayStock = product.hasVariants
-    ? (product.variants || []).reduce(
-        (total: number, v: any) => total + Number(v.stock || 0),
-        0,
-      )
-    : Number((product as any).stock || (product as any).piece || 0);
   const isOutOfStock = product.hasVariants
-    ? availableVariants.length === 0
-    : (product as any).status === "OUT_OF_STOCK" || displayStock <= 0;
+    ? inStockVariants.length === 0
+    : (product as any).status === "OUT_OF_STOCK" ||
+      Number((product as any).stock || (product as any).piece || 0) <= 0;
 
   return (
     <div onClick={handleCardClick} className="product-card__link-wrapper">

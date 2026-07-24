@@ -559,6 +559,10 @@ const AdminProduct: React.FC = () => {
                             src={displayImage}
                             alt={product.name}
                             className="admin-products__product-image"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src =
+                                defaultProductImage as string;
+                            }}
                           />
                         </td>
 

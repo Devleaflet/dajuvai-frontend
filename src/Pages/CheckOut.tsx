@@ -1683,6 +1683,9 @@ const Checkout: React.FC = () => {
 													src={item.image || logo}
 													alt={item.name}
 													className="checkout-container__product-item-img"
+													onError={(e) => {
+														(e.target as HTMLImageElement).src = logo;
+													}}
 												/>
 												<div className="checkout-container__product-info">
 													<span className="checkout-container__product-info-text">

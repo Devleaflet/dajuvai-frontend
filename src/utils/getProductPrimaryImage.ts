@@ -20,7 +20,7 @@ const processImageUrl = (imgUrl: string): string => {
 };
 
 // Returns the primary image URL for a product using variant-first logic.
-// Order: first variant (image -> images[0] -> variantImages[0]) -> product.productImages[0] -> product.image -> defaultImage
+// Order: default variant (first in-stock, else first) -> image -> images[0] -> variantImages[0] -> product.productImages[0] -> product.image -> defaultImage
 export const getProductPrimaryImage = (
   product: any,
   defaultImage: string
@@ -30,19 +30,22 @@ export const getProductPrimaryImage = (
       ? product.variants
       : [];
 
-    // Strictly use the FIRST variant's first available image,
-    // but normalize order: prefer 'position', else 'id' ascending
     if (variants.length > 0) {
+      // id ascending = creation order (no "position" column on Variant).
       const ordered = [...variants].sort((a: any, b: any) => {
-        const ap = Number(a?.position);
-        const bp = Number(b?.position);
-        if (Number.isFinite(ap) && Number.isFinite(bp)) return ap - bp;
         const aid = Number(a?.id);
         const bid = Number(b?.id);
         if (Number.isFinite(aid) && Number.isFinite(bid)) return aid - bid;
         return 0;
       });
-      const v = ordered[0];
+      // Match the default-variant rule used everywhere else (ProductCard,
+      // ProductPage): first in-stock variant, falling back to the first
+      // variant only if none have stock — never the stock-blind first one.
+      const inStock = ordered.filter(
+        (v: any) =>
+          Number(v?.stock || 0) > 0 && v?.status !== "OUT_OF_STOCK",
+      );
+      const v = inStock[0] || ordered[0];
       const candidate: string | undefined =
         (typeof v?.image === "string" && v.image.trim() ? v.image : undefined) ||
         (Array.isArray(v?.images) && v.images[0] ? v.images[0] : undefined) ||

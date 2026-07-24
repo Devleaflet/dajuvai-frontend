@@ -590,27 +590,36 @@ const NewProductModal: React.FC<NewProductModalProps> = ({
 
         try {
             /* ---------------- PRODUCT IMAGES ---------------- */
-            const imageFiles = images.filter(
-                (img) => img instanceof File,
-            ) as File[];
-            const existingImageUrls = images.filter(
-                (img) => typeof img === "string",
-            ) as string[];
+            // Variant products carry images per-variant only — the
+            // "Product Images" section is hidden once hasVariants is on, so
+            // never upload/send whatever is still sitting in `images` state
+            // from before the vendor switched the toggle on.
+            let productImageUrls: string[] = [];
 
-            let productImageUrls: string[] = [...existingImageUrls];
+            if (!formData.hasVariants) {
+                const imageFiles = images.filter(
+                    (img) => img instanceof File,
+                ) as File[];
+                const existingImageUrls = images.filter(
+                    (img) => typeof img === "string",
+                ) as string[];
 
-            if (imageFiles.length > 0) {
-                const uploadResponse = await uploadProductImages(imageFiles);
-                if (!uploadResponse.success) {
-                    throw new Error(
-                        uploadResponse.message ||
-                            "Failed to upload product images",
-                    );
+                productImageUrls = [...existingImageUrls];
+
+                if (imageFiles.length > 0) {
+                    const uploadResponse =
+                        await uploadProductImages(imageFiles);
+                    if (!uploadResponse.success) {
+                        throw new Error(
+                            uploadResponse.message ||
+                                "Failed to upload product images",
+                        );
+                    }
+                    productImageUrls = [
+                        ...existingImageUrls,
+                        ...uploadResponse.urls,
+                    ];
                 }
-                productImageUrls = [
-                    ...existingImageUrls,
-                    ...uploadResponse.urls,
-                ];
             }
 
             /* ---------------- VARIANT IMAGES ---------------- */

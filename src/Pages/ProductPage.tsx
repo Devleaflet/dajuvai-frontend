@@ -17,6 +17,7 @@ import { useCart } from "../context/CartContext";
 import { makeWishlistKey, useWishlist } from "../context/WishlistContext";
 import "../Styles/ProductPage.css";
 import ScrollToTop from "../Components/ScrollToTop";
+import defaultProductImage from "../assets/logo.webp";
 
 const CACHE_KEY_REVIEWS = "productReviewsData";
 
@@ -84,6 +85,7 @@ const ProductPage = () => {
     const [toastMessage, setToastMessage] = useState("");
     const [authModalOpen, setAuthModalOpen] = useState(false);
     const [imageError, setImageError] = useState<boolean[]>([]);
+    const [vendorAvatarError, setVendorAvatarError] = useState(false);
     const [currentReviewPage, setCurrentReviewPage] = useState(1);
 
     const [isZoomActive, setIsZoomActive] = useState(false);
@@ -925,9 +927,11 @@ const ProductPage = () => {
                                                 draggable={false}
                                             />
                                         ) : (
-                                            <div className="product-gallery__no-image">
-                                                No image available
-                                            </div>
+                                            <img
+                                                src={defaultProductImage}
+                                                alt={product.name}
+                                                draggable={false}
+                                            />
                                         )}
                                         {isZoomActive && currentImage && (
                                             <div
@@ -1005,9 +1009,15 @@ const ProductPage = () => {
                                                                     }
                                                                 />
                                                             ) : (
-                                                                <div className="product-gallery__thumbnail-no-image">
-                                                                    No image
-                                                                </div>
+                                                                <img
+                                                                    src={
+                                                                        defaultProductImage
+                                                                    }
+                                                                    alt={`Product view ${index + 1}`}
+                                                                    draggable={
+                                                                        false
+                                                                    }
+                                                                />
                                                             )}
                                                         </button>
                                                     ),
@@ -1023,32 +1033,14 @@ const ProductPage = () => {
                                         {product.name}
                                     </h1>
 
-                  {(product.brand || product.keywords) && (
+                  {product.brand && (
                     <div className="product-brand">
-                      {product.brand && (
-                        <span className="product-brand__badge">
-                          <span className="product-brand__label">Brand</span>
-                          <span className="product-brand__value">
-                            {product.brand}
-                          </span>
+                      <span className="product-brand__badge">
+                        <span className="product-brand__label">Brand</span>
+                        <span className="product-brand__value">
+                          {product.brand}
                         </span>
-                      )}
-                      {product.keywords && (
-                        <div className="product-brand__keywords">
-                          {product.keywords
-                            .split(",")
-                            .map((kw) => kw.trim())
-                            .filter(Boolean)
-                            .map((kw, i) => (
-                              <span
-                                key={i}
-                                className="product-brand__keyword-chip"
-                              >
-                                {kw}
-                              </span>
-                            ))}
-                        </div>
-                      )}
+                      </span>
                     </div>
                   )}
 
@@ -1536,6 +1528,17 @@ const ProductPage = () => {
                                 </div>
                             </div>
 
+                            {/* Mobile/tablet-only copy — hidden on desktop via CSS,
+                                shown above Seller Information once the layout stacks. */}
+                            {product.description && (
+                                <div className="product-page__description-section product-page__description-section--mobile-copy">
+                                    <div className="product-page__description-card">
+                                        <h3>Description</h3>
+                                        <p>{product.description}</p>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* -------------Vendor Details Section ------------------ */}
                             <div className="vendor-details">
                                 <div className="vendor-details__header">
@@ -1550,9 +1553,30 @@ const ProductPage = () => {
                                         onClick={handleVendorClick}
                                     >
                                         <div className="vendor-details__avatar">
-                                            {product.vendor?.businessName
-                                                ?.charAt(0)
-                                                .toUpperCase() || "U"}
+                                            {(product.vendor as any)
+                                                ?.profilePicture &&
+                                            !vendorAvatarError ? (
+                                                <img
+                                                    src={
+                                                        (product.vendor as any)
+                                                            .profilePicture
+                                                    }
+                                                    alt={
+                                                        product.vendor
+                                                            ?.businessName ||
+                                                        "Vendor"
+                                                    }
+                                                    onError={() =>
+                                                        setVendorAvatarError(
+                                                            true,
+                                                        )
+                                                    }
+                                                />
+                                            ) : (
+                                                product.vendor?.businessName
+                                                    ?.charAt(0)
+                                                    .toUpperCase() || "U"
+                                            )}
                                         </div>
                                         <div className="vendor-details__info">
                                             <h4 className="vendor-details__name">
@@ -1662,11 +1686,14 @@ const ProductPage = () => {
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
 
+                    {/* Desktop/wide copy — hidden once the layout stacks (see
+                        the mobile-copy rendered above Seller Information). */}
                     {product.description && (
-                        <div className="product-page__description-section">
+                        <div className="product-page__description-section product-page__description-section--desktop-copy">
                             <div className="product-page__description-card">
                                 <h3>Description</h3>
                                 <p>{product.description}</p>

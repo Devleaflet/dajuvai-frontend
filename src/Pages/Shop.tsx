@@ -918,7 +918,7 @@ const Shop: React.FC = () => {
         const trimmedSearch = searchInputValue.trim();
         const newSearchParams = new URLSearchParams(searchParams);
         if (trimmedSearch) {
-            newSearchParams.set("search", encodeURIComponent(trimmedSearch));
+            newSearchParams.set("search", trimmedSearch);
         } else {
             newSearchParams.delete("search");
         }

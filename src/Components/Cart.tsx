@@ -13,6 +13,7 @@ import { useCart } from "../context/CartContext";
 import { useUI } from "../context/UIContext";
 import Portal from "./Portal";
 import { getDiscountDisplay } from "../utils/priceDisplay";
+import defaultProductImage from "../assets/logo.webp";
 import "../Styles/Cart.css";
 
 interface CartProps {
@@ -277,12 +278,11 @@ const CartItemRow = React.memo(
 
         <div className="cart__item-image-container">
           <img
-            src={item.image || "../assets/iphone.jpg"}
+            src={item.image || defaultProductImage}
             alt={item.name}
             className="cart__item-image"
             onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.src = "../assets/iphone.jpg";
+              (e.target as HTMLImageElement).src = defaultProductImage;
             }}
           />
         </div>
