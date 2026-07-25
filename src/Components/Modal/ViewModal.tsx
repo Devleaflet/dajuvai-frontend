@@ -4,6 +4,7 @@ import { useVendorAuth } from "../../context/VendorAuthContext";
 import VendorDashboardService from "../../services/vendorDashboardService";
 import { toast } from "react-hot-toast";
 import "../../Styles/OrderModals.css";
+import defaultProductImage from "../../assets/logo.webp";
 
 type VendorFulfillmentStatus =
     | "CONFIRMED"
@@ -344,17 +345,17 @@ const ViewModal: React.FC<ViewModalProps> = ({
                                     key={item.id}
                                     className="order-modal__item-row"
                                 >
-                                    {img ? (
-                                        <img
-                                            src={img}
-                                            alt={name}
-                                            className="order-modal__item-img"
-                                        />
-                                    ) : (
-                                        <div className="vendor-card__item-img-placeholder">
-                                            {name.charAt(0).toUpperCase()}
-                                        </div>
-                                    )}
+                                    <img
+                                        src={img || defaultProductImage}
+                                        alt={name}
+                                        className="order-modal__item-img"
+                                        onError={(e) => {
+                                            (
+                                                e.target as HTMLImageElement
+                                            ).src =
+                                                defaultProductImage as string;
+                                        }}
+                                    />
                                     <div className="order-modal__item-info">
                                         <p className="order-modal__item-name">
                                             {name}

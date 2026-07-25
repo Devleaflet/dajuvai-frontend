@@ -369,9 +369,13 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
             );
         }
 
-        // Compute hasVariants based on the presence of variants in the fresh product
-        const hasVariants =
-            fullProduct.variants && fullProduct.variants.length > 0;
+        // The real flag, not array-length inference — a product just
+        // converted to non-variant can still carry orphaned variant rows
+        // (kept only because they have real order history; see
+        // ProductService.deleteVariantsSafely on the backend), and inferring
+        // from array presence would make it look like a variant product
+        // again the moment it's reopened for edit.
+        const hasVariants = fullProduct.hasVariants === true;
 
         // Helper: normalize various backend attribute shapes to Attribute[]
         const normalizeVariantAttributes = (raw: any): Attribute[] => {
@@ -436,7 +440,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
         // Map API variants to ProductVariant interface
         const mappedVariants: ProductVariant[] =
-            fullProduct.variants && fullProduct.variants.length > 0
+            hasVariants && fullProduct.variants && fullProduct.variants.length > 0
                 ? fullProduct.variants.map((v: any) => {
                       const imgs = v.variantImages || v.images || [];
                       return {
@@ -804,7 +808,12 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                 newImageUrls = uploadResponse.urls;
             }
 
-            const allImages = [...existingImages, ...newImageUrls];
+            // Variant products carry images per-variant only — never resend
+            // stale product-level images left in state from before the
+            // vendor switched a product over to variants.
+            const allImages = formData.hasVariants
+                ? []
+                : [...existingImages, ...newImageUrls];
 
             /* -------------------- BASE PAYLOAD -------------------- */
             const updatePayload: any = {
@@ -819,7 +828,12 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
             if (formData.description)
                 updatePayload.description = formData.description;
             if (formData.bannerId) updatePayload.bannerId = formData.bannerId;
-            if (allImages.length > 0) updatePayload.productImages = allImages;
+            // Always send productImages when switching to variants, even
+            // empty, so the backend actually clears out images left over
+            // from when this product was a simple (non-variant) product.
+            if (formData.hasVariants || allImages.length > 0) {
+                updatePayload.productImages = allImages;
+            }
 
             /* -------------------- DISCOUNT (PRODUCT LEVEL) -------------------- */
             updatePayload.discount =
@@ -1985,104 +1999,111 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                             </div>
                         )}
 
-                        {/* Image Upload Section */}
-                        <div className="form-section">
-                            <div className="section-header">
-                                <div className="section-icon">
-                                    <svg
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                    >
-                                        <path d="M9 16.2L4.8 12L3.4 13.4L9 19L21 7L19.6 5.6L9 16.2Z" />
-                                    </svg>
-                                </div>
-                                <h3 className="section-title">
-                                    Product Images
-                                </h3>
-                            </div>
-
-                            <div
-                                className="image-upload-container"
-                                onClick={() =>
-                                    document
-                                        .getElementById("image-upload")
-                                        ?.click()
-                                }
-                            >
-                                <div className="upload-icon">
-                                    <svg
-                                        width="48"
-                                        height="48"
-                                        viewBox="0 0 24 24"
-                                        fill="currentColor"
-                                    >
-                                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
-                                    </svg>
-                                </div>
-                                <div className="upload-text">
-                                    Drop images here or click to browse
-                                </div>
-                                <div className="upload-hint">
-                                    PNG, JPG, GIF up to 5MB each
-                                </div>
-                                <input
-                                    id="image-upload"
-                                    type="file"
-                                    multiple
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    style={{ display: "none" }}
-                                />
-                            </div>
-
-                            {(existingImages.length > 0 ||
-                                images.length > 0) && (
-                                <div className="image-preview-grid">
-                                    {existingImages.map((image, index) => (
-                                        <div
-                                            key={`existing-${index}`}
-                                            className="image-preview"
+                        {/* Image Upload Section (base/non-variant products only —
+                            variant products upload images per-variant instead) */}
+                        {!formData.hasVariants && (
+                            <div className="form-section">
+                                <div className="section-header">
+                                    <div className="section-icon">
+                                        <svg
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                            fill="currentColor"
                                         >
-                                            <img
-                                                src={image}
-                                                alt={`Existing ${index + 1}`}
-                                            />
-                                            <button
-                                                type="button"
-                                                className="image-remove"
-                                                onClick={() =>
-                                                    removeExistingImage(index)
-                                                }
-                                            >
-                                                ×
-                                            </button>
-                                        </div>
-                                    ))}
-                                    {images.map((image, index) => (
-                                        <div
-                                            key={`new-${index}`}
-                                            className="image-preview"
-                                        >
-                                            <img
-                                                src={URL.createObjectURL(image)}
-                                                alt={`New ${index + 1}`}
-                                            />
-                                            <button
-                                                type="button"
-                                                className="image-remove"
-                                                onClick={() =>
-                                                    removeImage(index)
-                                                }
-                                            >
-                                                ×
-                                            </button>
-                                        </div>
-                                    ))}
+                                            <path d="M9 16.2L4.8 12L3.4 13.4L9 19L21 7L19.6 5.6L9 16.2Z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="section-title">
+                                        Product Images
+                                    </h3>
                                 </div>
-                            )}
-                        </div>
+
+                                <div
+                                    className="image-upload-container"
+                                    onClick={() =>
+                                        document
+                                            .getElementById("image-upload")
+                                            ?.click()
+                                    }
+                                >
+                                    <div className="upload-icon">
+                                        <svg
+                                            width="48"
+                                            height="48"
+                                            viewBox="0 0 24 24"
+                                            fill="currentColor"
+                                        >
+                                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+                                        </svg>
+                                    </div>
+                                    <div className="upload-text">
+                                        Drop images here or click to browse
+                                    </div>
+                                    <div className="upload-hint">
+                                        PNG, JPG, GIF up to 5MB each
+                                    </div>
+                                    <input
+                                        id="image-upload"
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        onChange={handleImageUpload}
+                                        style={{ display: "none" }}
+                                    />
+                                </div>
+
+                                {(existingImages.length > 0 ||
+                                    images.length > 0) && (
+                                    <div className="image-preview-grid">
+                                        {existingImages.map((image, index) => (
+                                            <div
+                                                key={`existing-${index}`}
+                                                className="image-preview"
+                                            >
+                                                <img
+                                                    src={image}
+                                                    alt={`Existing ${index + 1}`}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="image-remove"
+                                                    onClick={() =>
+                                                        removeExistingImage(
+                                                            index,
+                                                        )
+                                                    }
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {images.map((image, index) => (
+                                            <div
+                                                key={`new-${index}`}
+                                                className="image-preview"
+                                            >
+                                                <img
+                                                    src={URL.createObjectURL(
+                                                        image,
+                                                    )}
+                                                    alt={`New ${index + 1}`}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="image-remove"
+                                                    onClick={() =>
+                                                        removeImage(index)
+                                                    }
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Submit Buttons */}
                         <div className="form-section">

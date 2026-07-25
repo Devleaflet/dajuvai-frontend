@@ -15,6 +15,7 @@ import VendorService from "../services/vendorService";
 import { FaCamera } from "react-icons/fa";
 import { Vendor } from "../Components/Types/vendor";
 import UserOrderDetailModal from "../Components/Modal/UserOrderDetailModal";
+import defaultProductImage from "../assets/logo.webp";
 
 interface UserDetails {
     id?: number;
@@ -1091,19 +1092,24 @@ const UserProfile: React.FC = () => {
 
                                                     return (
                                                         <div className="order-mobile-product">
-                                                            {imgSrc ? (
-                                                                <img
-                                                                    src={imgSrc}
-                                                                    alt={
-                                                                        first.name
-                                                                    }
-                                                                    className="order-mobile-product__image"
-                                                                />
-                                                            ) : (
-                                                                <div className="order-mobile-product__placeholder">
-                                                                    ?
-                                                                </div>
-                                                            )}
+                                                            <img
+                                                                src={
+                                                                    imgSrc ||
+                                                                    defaultProductImage
+                                                                }
+                                                                alt={
+                                                                    first.name
+                                                                }
+                                                                className="order-mobile-product__image"
+                                                                onError={(
+                                                                    e,
+                                                                ) => {
+                                                                    (
+                                                                        e.target as HTMLImageElement
+                                                                    ).src =
+                                                                        defaultProductImage as string;
+                                                                }}
+                                                            />
                                                             <div className="order-mobile-product__info">
                                                                 <span className="order-mobile-product__name">
                                                                     {first?.name ||
@@ -1194,21 +1200,24 @@ const UserProfile: React.FC = () => {
                                                                 key={item.id}
                                                                 className="order-product"
                                                             >
-                                                                {imgSrc ? (
-                                                                    <img
-                                                                        src={
-                                                                            imgSrc
-                                                                        }
-                                                                        alt={
-                                                                            product.name
-                                                                        }
-                                                                        className="order-product__image"
-                                                                    />
-                                                                ) : (
-                                                                    <div className="order-product__placeholder">
-                                                                        ?
-                                                                    </div>
-                                                                )}
+                                                                <img
+                                                                    src={
+                                                                        imgSrc ||
+                                                                        defaultProductImage
+                                                                    }
+                                                                    alt={
+                                                                        product.name
+                                                                    }
+                                                                    className="order-product__image"
+                                                                    onError={(
+                                                                        e,
+                                                                    ) => {
+                                                                        (
+                                                                            e.target as HTMLImageElement
+                                                                        ).src =
+                                                                            defaultProductImage as string;
+                                                                    }}
+                                                                />
                                                                 <span className="order-product__name">
                                                                     {product?.name ||
                                                                         "Product"}
@@ -1328,19 +1337,22 @@ const UserProfile: React.FC = () => {
                                                         key={item.id}
                                                         className="order-product"
                                                     >
-                                                        {imgSrc ? (
-                                                            <img
-                                                                src={imgSrc}
-                                                                alt={
-                                                                    product.name
-                                                                }
-                                                                className="order-product__image"
-                                                            />
-                                                        ) : (
-                                                            <div className="order-product__placeholder">
-                                                                ?
-                                                            </div>
-                                                        )}
+                                                        <img
+                                                            src={
+                                                                imgSrc ||
+                                                                defaultProductImage
+                                                            }
+                                                            alt={
+                                                                product.name
+                                                            }
+                                                            className="order-product__image"
+                                                            onError={(e) => {
+                                                                (
+                                                                    e.target as HTMLImageElement
+                                                                ).src =
+                                                                    defaultProductImage as string;
+                                                            }}
+                                                        />
                                                         <span className="order-product__name">
                                                             {product?.name ||
                                                                 "Product"}

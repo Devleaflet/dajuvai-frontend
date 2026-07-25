@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-hot-toast";
 import { getAvailableNextStatuses, getOrderStatusMeta } from "../orderStatus";
 import "../../Styles/OrderModals.css";
+import defaultProductImage from "../../assets/logo.webp";
 
 interface Order {
     id: string;
@@ -518,21 +519,22 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                                                             key={item.id}
                                                             className="vendor-card__item"
                                                         >
-                                                            {img ? (
-                                                                <img
-                                                                    src={img}
-                                                                    alt={name}
-                                                                    className="vendor-card__item-img"
-                                                                />
-                                                            ) : (
-                                                                <div className="vendor-card__item-img-placeholder">
-                                                                    {name
-                                                                        .charAt(
-                                                                            0,
-                                                                        )
-                                                                        .toUpperCase()}
-                                                                </div>
-                                                            )}
+                                                            <img
+                                                                src={
+                                                                    img ||
+                                                                    defaultProductImage
+                                                                }
+                                                                alt={name}
+                                                                className="vendor-card__item-img"
+                                                                onError={(
+                                                                    e,
+                                                                ) => {
+                                                                    (
+                                                                        e.target as HTMLImageElement
+                                                                    ).src =
+                                                                        defaultProductImage as string;
+                                                                }}
+                                                            />
                                                             <div className="vendor-card__item-details">
                                                                 <p className="vendor-card__item-name">
                                                                     {name}

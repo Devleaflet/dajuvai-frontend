@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { OrderService, DetailedOrder } from '../../services/orderService';
 import { useAuth } from '../../context/AuthContext';
 import '../../Styles/OrderModals.css';
+import defaultProductImage from '../../assets/logo.webp';
 
 interface UserOrderDetailModalProps {
   show: boolean;
@@ -177,13 +178,15 @@ const UserOrderDetailModal: React.FC<UserOrderDetailModalProps> = ({
                           const attrs = item.variant?.attributes;
                           return (
                             <div key={item.id} className="vendor-card__item">
-                              {img ? (
-                                <img src={img} alt={name} className="vendor-card__item-img" />
-                              ) : (
-                                <div className="vendor-card__item-img-placeholder">
-                                  {name.charAt(0).toUpperCase()}
-                                </div>
-                              )}
+                              <img
+                                src={img || defaultProductImage}
+                                alt={name}
+                                className="vendor-card__item-img"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src =
+                                    defaultProductImage as string;
+                                }}
+                              />
                               <div className="vendor-card__item-details">
                                 <p className="vendor-card__item-name">{name}</p>
                                 <div className="vendor-card__item-meta">

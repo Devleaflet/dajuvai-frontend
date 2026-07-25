@@ -420,7 +420,7 @@ const Navbar: React.FC = () => {
 				image:
 					product.productImages?.[0] ||
 					product.variants?.find((v) => v?.variantImages?.[0])?.variantImages?.[0] ||
-					'../assets/iphone.jpg',
+					logo,
 			}));
 			setSearchResults(results);
 			setShowSearchDropdown(results.length > 0);
@@ -963,6 +963,9 @@ const Navbar: React.FC = () => {
 												src={result.image}
 												alt={result.name}
 												className="navbar__search-result-image"
+												onError={(e) => {
+													(e.target as HTMLImageElement).src = logo;
+												}}
 											/>
 											<div className="navbar__search-result-info">
 												<h4 className="navbar__search-result-title">
