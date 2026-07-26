@@ -312,6 +312,7 @@
 /* ========== SECTION HEADER ========== */
 .order-section {
   margin-bottom: 24px;
+  margin-top: 24px;
 }
 .order-section__title {
   font-size: 14px;
