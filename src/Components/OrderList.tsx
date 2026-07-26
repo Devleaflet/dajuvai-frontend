@@ -1,5 +1,6 @@
 import React from "react";
 import { Order } from "./Types/Order";
+import { getOrderStatusMeta } from "./orderStatus";
 
 // Define props interface
 interface OrderListProps {
@@ -7,26 +8,6 @@ interface OrderListProps {
     isMobile: boolean;
     onView: (order: Order) => void;
 }
-
-// order.status here is one of: pending | confirmed | processing | shipped |
-// delayed | delivered | canceled (see VendorOrder.tsx's mapping from the
-// real backend OrderStatus enum). Badge color groups them by what the
-// vendor actually needs to know: awaiting confirmation, actively moving,
-// done, or a problem.
-const STATUS_BADGE_CLASS: Record<string, string> = {
-    pending: "on-sale",
-    confirmed: "in-progress",
-    processing: "in-progress",
-    shipped: "in-progress",
-    delayed: "in-progress",
-    delivered: "featured",
-    canceled: "out-of-stock",
-};
-
-const formatStatusLabel = (status?: string): string => {
-    if (!status) return "Pending";
-    return status.charAt(0).toUpperCase() + status.slice(1);
-};
 
 const OrderList: React.FC<OrderListProps> = ({ orders, onView }) => {
     return (
@@ -81,21 +62,14 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onView }) => {
                                     "unknown"}
                             </td>
                             <td>
-                                <span
-                                    className={`product-status ${
-                                        order.status === "delivered"
-                                            ? "featured"
-                                            : order.status === "pending"
-                                              ? "pending"
-                                              : order.status === "confirmed"
-                                                ? "on-sale"
-                                                : order.status === "canceled"
-                                                  ? "out-of-stock"
-                                                  : ""
-                                    }`}
-                                >
-                                    {order.status || "Pending"}
-                                </span>
+                                {(() => {
+                                    const meta = getOrderStatusMeta(order.status || "CREATED");
+                                    return (
+                                        <span className={`status-badge ${meta.badgeClassName}`}>
+                                            {meta.label}
+                                        </span>
+                                    );
+                                })()}
                             </td>
                             <td className="action-buttons">
                                 <button

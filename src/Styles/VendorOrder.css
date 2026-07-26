@@ -351,6 +351,24 @@
   color: white;
 }
 /* Sort By Dropdown */
+.vendor-order__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.vendor-order__toolbar .vendor-order__sorting {
+  margin-bottom: 0;
+}
+
+.vendor-order__count {
+  margin-left: auto;
+  font-size: 14px;
+  color: #6b7280;
+}
+
 .vendor-order__sorting {
   display: flex;
   align-items: center;
