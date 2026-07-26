@@ -4,17 +4,23 @@
 //
 // Keep in sync with the backend's source of truth:
 //   dajuvai-backend/src/entities/order.entity.ts (OrderStatus enum)
-//   dajuvai-backend/src/constants/orderStatus.constants.ts (ORDER_STATUS_TRANSITIONS)
+//   dajuvai-backend/src/constants/orderStatus.constants.ts (canTransition)
 // There is no shared package between the two repos, so this mirror has to
 // be updated by hand when the backend enum changes.
+//
+// Admin/staff can move to ANY status at any time (server-enforced, not
+// just this file) — this module no longer gates which options the admin
+// UI offers; it only supplies labels/colors and the full status list.
 
 export type OrderStatusValue =
-  | 'PENDING'
+  | 'CREATED'
   | 'CONFIRMED'
   | 'PROCESSING'
+  | 'ARRIVED_AT_WAREHOUSE'
   | 'DELAYED'
-  | 'SHIPPED'
+  | 'ASSIGNED_TO_RIDER'
   | 'DELIVERED'
+  | 'NOT_RECEIVED'
   | 'CANCELLED'
   | 'RETURNED';
 
@@ -26,12 +32,14 @@ export interface OrderStatusMeta {
 }
 
 export const ORDER_STATUS_OPTIONS: OrderStatusMeta[] = [
-  { value: 'PENDING', label: 'Pending', description: 'Awaiting payment confirmation', badgeClassName: 'status-badge--pending' },
-  { value: 'CONFIRMED', label: 'Confirmed', description: 'Payment confirmed, not yet being prepared', badgeClassName: 'status-badge--confirmed' },
+  { value: 'CREATED', label: 'Order Placed', description: 'Order received, awaiting confirmation', badgeClassName: 'status-badge--created' },
+  { value: 'CONFIRMED', label: 'Confirmed', description: 'Confirmed, will move into preparation soon', badgeClassName: 'status-badge--confirmed' },
   { value: 'PROCESSING', label: 'Processing', description: 'Vendor is preparing the order', badgeClassName: 'status-badge--processing' },
+  { value: 'ARRIVED_AT_WAREHOUSE', label: 'At Warehouse', description: 'Arrived at the warehouse', badgeClassName: 'status-badge--arrived_at_warehouse' },
   { value: 'DELAYED', label: 'Delayed', description: 'Fulfillment is behind schedule', badgeClassName: 'status-badge--delayed' },
-  { value: 'SHIPPED', label: 'Shipped', description: 'Handed to courier', badgeClassName: 'status-badge--shipped' },
+  { value: 'ASSIGNED_TO_RIDER', label: 'Out for Delivery', description: 'Handed to a delivery rider', badgeClassName: 'status-badge--assigned_to_rider' },
   { value: 'DELIVERED', label: 'Delivered', description: 'Received by the customer', badgeClassName: 'status-badge--delivered' },
+  { value: 'NOT_RECEIVED', label: 'Not Received', description: 'Delivery attempt failed — customer did not receive the order', badgeClassName: 'status-badge--not_received' },
   { value: 'CANCELLED', label: 'Cancelled', description: 'Order will not be fulfilled', badgeClassName: 'status-badge--cancelled' },
   { value: 'RETURNED', label: 'Returned', description: 'Customer returned the order after delivery', badgeClassName: 'status-badge--returned' },
 ];
@@ -40,26 +48,30 @@ export const ORDER_STATUS_LABEL: Record<OrderStatusValue, string> = Object.fromE
   ORDER_STATUS_OPTIONS.map((s) => [s.value, s.label]),
 ) as Record<OrderStatusValue, string>;
 
-/** Mirrors backend ORDER_STATUS_TRANSITIONS exactly — the status-update
- * modal must only ever offer values from this map for the order's current
- * status, so the backend never rejects a choice the UI itself offered. */
-export const ORDER_STATUS_TRANSITIONS: Record<OrderStatusValue, OrderStatusValue[]> = {
-  PENDING: ['CONFIRMED', 'CANCELLED'],
-  CONFIRMED: ['PROCESSING', 'DELAYED', 'CANCELLED'],
-  PROCESSING: ['SHIPPED', 'DELAYED', 'CANCELLED'],
-  DELAYED: ['PROCESSING', 'SHIPPED', 'CANCELLED'],
-  SHIPPED: ['DELIVERED', 'CANCELLED'],
-  DELIVERED: ['RETURNED'],
-  CANCELLED: [],
-  RETURNED: [],
-};
+export const ALL_ORDER_STATUSES: OrderStatusValue[] = ORDER_STATUS_OPTIONS.map((s) => s.value);
 
+const OPTIONS_BY_VALUE: Record<string, OrderStatusMeta> = Object.fromEntries(
+  ORDER_STATUS_OPTIONS.map((option) => [option.value, option]),
+);
+
+/** Falls back gracefully for legacy status strings still sitting in old
+ * history rows (e.g. a pre-migration "PENDING"/"SHIPPED" row) instead of
+ * throwing or rendering "undefined". */
 export function getOrderStatusMeta(status: string): OrderStatusMeta {
-  const found = ORDER_STATUS_OPTIONS.find((s) => s.value === status);
-  return found ?? { value: status as OrderStatusValue, label: status, description: '', badgeClassName: 'status-badge--pending' };
+  const normalized = (status || '').toUpperCase();
+  return (
+    OPTIONS_BY_VALUE[normalized] ?? {
+      value: normalized as OrderStatusValue,
+      label: normalized || 'Unknown',
+      description: '',
+      badgeClassName: 'status-badge--default',
+    }
+  );
 }
 
+/** Every status except the current one — admin/staff can freely move to
+ * any of them; the dropdown just needs to exclude the no-op "same status"
+ * option. */
 export function getAvailableNextStatuses(currentStatus: string): OrderStatusMeta[] {
-  const next = ORDER_STATUS_TRANSITIONS[currentStatus as OrderStatusValue] ?? [];
-  return next.map(getOrderStatusMeta);
+  return ORDER_STATUS_OPTIONS.filter((option) => option.value !== currentStatus.toUpperCase());
 }

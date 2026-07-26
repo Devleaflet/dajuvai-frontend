@@ -384,9 +384,9 @@ export const OrderService = {
         token: string,
         options: {
             expectedCurrentStatus?: string;
-            reason?: string;
+            reason: string;
             note?: string;
-        } = {},
+        },
     ): Promise<any> => {
         if (!token) {
             throw new Error("No authentication token provided");

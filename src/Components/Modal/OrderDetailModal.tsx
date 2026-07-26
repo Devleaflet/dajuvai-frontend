@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { OrderService, DetailedOrder } from "../../services/orderService";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-hot-toast";
-import { getAvailableNextStatuses, getOrderStatusMeta } from "../orderStatus";
+import { getOrderStatusMeta } from "../orderStatus";
+import OrderStatusEditor from "../OrderStatusEditor";
 import "../../Styles/OrderModals.css";
 import defaultProductImage from "../../assets/logo.webp";
 
@@ -95,26 +96,29 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         fetchOrderDetails();
     }, [show, order, token]);
 
-    const availableNextStatuses = detailedOrder
-        ? getAvailableNextStatuses(detailedOrder.status)
-        : [];
-
-    const handleStatusSave = useCallback(async () => {
+    const handleStatusUpdate = async (
+        newStatus: string,
+        reason: string,
+        note: string,
+    ) => {
         if (!detailedOrder || !token) return;
         setIsSaving(true);
         try {
             await OrderService.updateOrderStatus(
                 detailedOrder.id,
-                currentStatus,
+                newStatus,
                 token,
                 {
                     expectedCurrentStatus: detailedOrder.status,
+                    reason,
+                    note: note || undefined,
                 },
             );
             setDetailedOrder((prev) =>
-                prev ? { ...prev, status: currentStatus } : prev,
+                prev ? { ...prev, status: newStatus } : prev,
             );
-            onStatusUpdate?.(detailedOrder.id.toString(), currentStatus);
+            setCurrentStatus(newStatus);
+            onStatusUpdate?.(detailedOrder.id.toString(), newStatus);
             toast.success("Order status updated");
             const history = await OrderService.getOrderStatusHistory(
                 detailedOrder.id,
@@ -125,11 +129,10 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             toast.error(
                 err instanceof Error ? err.message : "Failed to update status",
             );
-            setCurrentStatus(detailedOrder.status || currentStatus);
         } finally {
             setIsSaving(false);
         }
-    }, [detailedOrder, currentStatus, token, onStatusUpdate]);
+    };
 
     if (!show || !order) return null;
 
@@ -258,55 +261,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                                 />
                             </svg>
                         </button>
-
-                        {/* Inline status change — only ever offers transitions the
-                backend will actually accept from the order's current status. */}
-                        <div className="order-status-select">
-                            <select
-                                value={currentStatus}
-                                onChange={(e) =>
-                                    setCurrentStatus(e.target.value)
-                                }
-                                disabled={availableNextStatuses.length === 0}
-                            >
-                                {detailedOrder && (
-                                    <option value={detailedOrder.status}>
-                                        {
-                                            getOrderStatusMeta(
-                                                detailedOrder.status,
-                                            ).label
-                                        }{" "}
-                                        (current)
-                                    </option>
-                                )}
-                                {availableNextStatuses.map((s) => (
-                                    <option key={s.value} value={s.value}>
-                                        {s.label}
-                                    </option>
-                                ))}
-                            </select>
-                            <button
-                                className="order-status-select__save"
-                                onClick={handleStatusSave}
-                                disabled={
-                                    isSaving ||
-                                    currentStatus === detailedOrder?.status
-                                }
-                            >
-                                {isSaving ? "Saving..." : "Update"}
-                            </button>
-                            {availableNextStatuses.length === 0 && (
-                                <small
-                                    style={{
-                                        display: "block",
-                                        color: "#9ca3af",
-                                    }}
-                                >
-                                    This is a final status — no further
-                                    transitions available.
-                                </small>
-                            )}
-                        </div>
                     </div>
                 </div>
 
@@ -702,6 +656,17 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                                         </span>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className="order-section">
+                                <h3 className="order-section__title">
+                                    Status update
+                                </h3>
+                                <OrderStatusEditor
+                                    currentStatus={currentStatus}
+                                    onSubmit={handleStatusUpdate}
+                                    isSaving={isSaving}
+                                />
                             </div>
 
                             {/* Status timeline — append-only audit trail, never
