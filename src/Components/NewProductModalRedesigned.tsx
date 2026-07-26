@@ -30,6 +30,8 @@ type ProductVariant = {
     stock: number;
     status: InventoryStatus;
     discount?: number | string | null;
+    discountAmount?:number | string | null;
+    discountPercent?:number | string| null;
     discountType?: string | null;
     attributes: {
         type: string;
@@ -52,6 +54,8 @@ type NewProductFormData = {
     basePrice?: number;
     stock?: number;
     discount?: number;
+    discountAmount?: number;
+    discountPercent?: number;
     discountType?: string;
     status: InventoryStatus;
     productImages: (File | string)[];
@@ -1144,7 +1148,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({
                                 <div className="form-grid two-columns">
                                     <div className="form-group">
                                         <label className="form-label">
-                                            Discount Amount
+                                            Discount {formData.discountType === "NONE" ? "" : formData.discountType}
                                         </label>
                                         <input
                                             type="number"
@@ -1556,7 +1560,7 @@ const NewProductModal: React.FC<NewProductModalProps> = ({
                                                     <>
                                                         <div className="form-group">
                                                             <label className="form-label">
-                                                                Discount Amount
+                                                                Discount {variant.discountType === "NONE" ? "" : variant.discountType}
                                                             </label>
                                                             <input
                                                                 type="number"

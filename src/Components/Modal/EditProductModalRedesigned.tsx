@@ -451,6 +451,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                           stock: Number(v.stock || 0),
                           status: v.status || InventoryStatus.AVAILABLE,
                           discount: v.discountType === "PERCENTAGE" ? (v.discountPercent ?? 0) : (v.discountAmount ?? 0),
+                          discountAmount: v.discountAmount ?? 0,
+                          discountPercent: v.discountPercent ?? 0,
                           discountType: v.discountType || "NONE",
                           finalPrice: Number(v.finalPrice || v.basePrice || 0),
                           attributes: normalizeVariantAttributes(v.attributes),
@@ -1325,7 +1327,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                                 <div className="form-grid two-columns">
                                     <div className="form-group">
                                         <label className="form-label">
-                                            Discount Amount
+                                            Discount {formData.discountType === "NONE" ? "" : formData.discountType}
                                         </label>
                                         <input
                                             type="number"
@@ -1741,7 +1743,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
                                                     <div className="form-group">
                                                         <label className="form-label">
-                                                            Discount Amount
+                                                            Discount {variant.discountType === "NONE" ? "" : variant.discountType}
                                                         </label>
 
                                                         <input
@@ -1960,7 +1962,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                                 <div className="form-grid two-columns">
                                     <div className="form-group">
                                         <label className="form-label">
-                                            Discount Amount
+                                            Discount {formData.discountType === "NONE" ? "" : formData.discountType}
                                         </label>
                                         <input
                                             type="number"

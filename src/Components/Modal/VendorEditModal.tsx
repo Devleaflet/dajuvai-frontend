@@ -138,6 +138,10 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
                 toast.error("Wallet number and account name are required for wallet types.");
                 return;
             }
+            if (walletNumber.trim().length !== 10) {
+                toast.error("Wallet number must be exactly 10 digits.");
+                return;
+            }
         } else {
             if (!accountNumber.trim() || !bankName.trim() || !accountName.trim() || !bankBranch.trim()) {
                 toast.error("Account number, bank name, account name, and branch are required for Bank.");
@@ -222,13 +226,20 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
         // Email field is disabled, so no validation needed
         if (!formData.phoneNumber.trim()) {
             newErrors.phoneNumber = 'Phone Number is required';
+        } else if (formData.phoneNumber.trim().length !== 10) {
+            newErrors.phoneNumber = 'Phone Number must be exactly 10 digits';
         }
         if (formData.districtId === 0) {
             newErrors.districtId = 'Please select a district';
         }
 
         setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        
+        if (Object.keys(newErrors).length > 0) {
+            return false;
+        }
+
+        return true;
     };
 
     const handleChange = (
@@ -294,7 +305,7 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
             // Upload files and get URLs
             const uploadedTaxDocs = [...formData.taxDocuments];
             const uploadedCitizenshipDocs = [...formData.citizenshipDocuments];
-            let uploadedChequePhoto = formData.chequePhoto;
+            // let uploadedChequePhoto = formData.chequePhoto;
             let uploadedProfilePicture = formData.profilePicture;
 
             // Upload tax documents
@@ -317,7 +328,7 @@ const VendorEditModal: FC<VendorEditModalProps> = ({ show, onClose, onSave, vend
             const apiData: Partial<VendorUpdateRequest> = {
                 businessName: formData.businessName,
                 phoneNumber: formData.phoneNumber,
-                telePhone: formData.telePhone,
+                telePhone: formData.telePhone ? formData.telePhone.trim() : "",
                 businessRegNumber: formData.businessRegNumber,
                 district: formData.district,
                 taxNumber: formData.taxNumber,
