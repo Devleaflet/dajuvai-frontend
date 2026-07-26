@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { OrderService, DetailedOrder } from '../../services/orderService';
 import { useAuth } from '../../context/AuthContext';
+import { getOrderStatusMeta } from '../orderStatus';
 import '../../Styles/OrderModals.css';
 import defaultProductImage from '../../assets/logo.webp';
 
@@ -93,8 +94,10 @@ const UserOrderDetailModal: React.FC<UserOrderDetailModalProps> = ({
     const status = (detailedOrder?.status || '').toUpperCase();
     if (status === 'DELIVERED') return 'Delivered';
     if (status === 'CANCELLED') return 'Cancelled';
-    if (status === 'SHIPPED') return '1-2 days';
-    if (status === 'PROCESSING') return '2-3 days';
+    if (status === 'RETURNED') return 'Returned';
+    if (status === 'NOT_RECEIVED') return 'Delivery unsuccessful';
+    if (status === 'ASSIGNED_TO_RIDER') return '1-2 days';
+    if (status === 'ARRIVED_AT_WAREHOUSE' || status === 'PROCESSING') return '2-3 days';
     return '3-5 days';
   };
 
@@ -121,7 +124,7 @@ const UserOrderDetailModal: React.FC<UserOrderDetailModalProps> = ({
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
             <span className={`status-badge status-badge--${(detailedOrder?.status || '').toLowerCase()}`}>
-              {detailedOrder?.status || 'N/A'}
+              {detailedOrder?.status ? getOrderStatusMeta(detailedOrder.status).label : 'N/A'}
             </span>
             <span style={{ fontSize: 12, color: '#6b7280' }}>
               Est. delivery: {getDeliveryEstimate()}
