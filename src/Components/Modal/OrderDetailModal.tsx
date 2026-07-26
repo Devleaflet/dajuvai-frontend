@@ -55,7 +55,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[]>(
         [],
     );
-
+    
     useEffect(() => {
         const fetchOrderDetails = async () => {
             if (!show || !order || !token) return;
@@ -354,16 +354,23 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                                             {vendors.length}
                                         </span>
                                     </div>
-                                    <div className="order-info-grid__item order-info-grid__item--full">
+                                    <div className="order-info-grid__item">
                                         <span className="order-info-grid__label">
                                             Shipping Address
                                         </span>
                                         <span className="order-info-grid__value">
-                                            {formatAddress(
-                                                detailedOrder.shippingAddress,
-                                            )}
+                                            {formatAddress(detailedOrder.shippingAddress)}
                                         </span>
-                                    </div>
+                                        </div>
+
+                                        <div className="order-info-grid__item">
+                                            <span className="order-info-grid__label">
+                                                Nearest Landmark
+                                            </span>
+                                            <span className="order-info-grid__value">
+                                                {detailedOrder.shippingAddress?.landmark || "N/A"}
+                                            </span>
+                                        </div>
                                 </div>
                             </div>
 

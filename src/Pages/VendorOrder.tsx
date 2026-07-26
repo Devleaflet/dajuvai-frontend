@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Sidebar } from "../Components/Sidebar";
-import Pagination from "../Components/Pagination";
+import Pagination, {
+    DEFAULT_PAGE_SIZE,
+} from "../Components/Pagination";
 import OrderList from "../Components/OrderList";
 import ViewModal, { VendorOrderDetail } from "../Components/Modal/ViewModal";
 import { useDocketHeight } from "../Hook/UseDockerHeight";
 import "../Styles/VendorOrder.css";
 import * as XLSX from "xlsx";
+import { toast } from "react-hot-toast";
 import VendorDashboardService from "../services/vendorDashboardService";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import { Order } from "../Components/Types/Order";
@@ -19,6 +22,48 @@ const STATUS_FILTER_OPTIONS = [
     ...ORDER_STATUS_OPTIONS.map((s) => ({ value: s.value, label: s.label })),
 ];
 
+/** Shared shape mapper for both the paginated list and the full export —
+ * keeps the two in sync so an exported row always looks like its table row. */
+const mapVendorOrder = (order: any): Order => {
+    const firstItem = order.orderItems?.[0];
+    return {
+        id: order.id,
+        orderId:
+            order.orderNumber || `#ORD${String(order.id).padStart(4, "0")}`,
+        orderNumber: order.orderNumber,
+        orderedBy:
+            order.orderedBy?.name ||
+            order.orderedBy?.fullName ||
+            order.orderedBy?.username ||
+            "Unknown Customer",
+        product: (() => {
+            const names = (order.orderItems || []).map(
+                (item: any) => item.product?.name,
+            );
+            const unique = [...new Set(names.filter(Boolean))];
+            return (
+                unique.join(", ") ||
+                firstItem?.product?.name ||
+                "Unknown Product"
+            );
+        })(),
+        createdAt: order.createdAt,
+        // This vendor's own payable amount only — never the order's full
+        // multi-vendor total.
+        price: order.vendorPayable,
+        paymentStatus: order.paymentStatus || "",
+        paymentMethod: (() => {
+            const method = order.paymentMethod || "";
+            if (method === "CASH_ON_DELIVERY") return "COD";
+            return method;
+        })(),
+        // Real backend status, unchanged — OrderList renders it through the
+        // same shared status-meta map admin uses, so labels/colors stay
+        // consistent across both dashboards.
+        status: (order.status || "CREATED").toUpperCase(),
+    };
+};
+
 const VendorOrder: React.FC = () => {
     const [searchParams] = useSearchParams();
     const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -29,10 +74,25 @@ const VendorOrder: React.FC = () => {
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState<number>(1);
-    const [ordersPerPage] = useState<number>(5);
+    const [ordersPerPage, setOrdersPerPage] = useState<number>(DEFAULT_PAGE_SIZE);
+
+    // Search state — debounced so every keystroke doesn't hit the backend
+    const [searchInput, setSearchInput] = useState<string>("");
+    const [searchQuery, setSearchQuery] = useState<string>("");
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            setSearchQuery(searchInput.trim());
+            setCurrentPage(1);
+        }, 400);
+        return () => clearTimeout(timeout);
+    }, [searchInput]);
 
     // Sorting state
     const [sortOption, setSortOption] = useState<string>("newest");
+
+    // Export state
+    const [isExporting, setIsExporting] = useState<false | "csv" | "excel">(false);
 
     // Modal states
     const [isViewModalOpen, setIsViewModalOpen] = useState<boolean>(false);
@@ -54,6 +114,7 @@ const VendorOrder: React.FC = () => {
             ordersPerPage,
             statusFilter,
             sortOption,
+            searchQuery,
         ],
         queryFn: async () => {
             if (!authState.token)
@@ -67,56 +128,15 @@ const VendorOrder: React.FC = () => {
                 {
                     page: currentPage,
                     limit: ordersPerPage,
-                    status: status,
+                    status,
                     sort: sortOption,
+                    search: searchQuery || undefined,
                 }
             );
-            const apiOrders = response.data;
-            const mappedOrders = apiOrders.map((order: any) => {
-                const firstItem = order.orderItems[0];
-                return {
-                    id: order.id,
-                    orderId:
-                        order.orderNumber ||
-                        `#ORD${String(order.id).padStart(4, "0")}`,
-                    orderNumber: order.orderNumber,
-                    orderedBy:
-                        order.orderedBy?.name ||
-                        order.orderedBy?.fullName ||
-                        order.orderedBy?.username ||
-                        "Unknown Customer",
-                    product: (() => {
-                        const names = order.orderItems.map(
-                            (item: any) => item.product?.name,
-                        );
-                        const unique = [...new Set(names.filter(Boolean))];
-                        return (
-                            unique.join(", ") ||
-                            firstItem?.product?.name ||
-                            "Unknown Product"
-                        );
-                    })(),
-                    createdAt: order.createdAt,
-                    // This vendor's own payable amount only — never the
-                    // order's full multi-vendor total.
-                    price: order.vendorPayable,
-                    paymentStatus: order.paymentStatus || "",
-                    paymentMethod: (() => {
-                        const method = order.paymentMethod || "";
-                        if (method === "CASH_ON_DELIVERY") return "COD";
-                        return method;
-                    })(),
-                    // Real backend status, unchanged — OrderList renders it
-                    // through the same shared status-meta map admin uses, so
-                    // labels/colors stay consistent across both dashboards.
-                    status: (order.status || "CREATED").toUpperCase(),
-                };
-            });
 
             return {
-                items: mappedOrders,
+                items: (response.data || []).map(mapVendorOrder),
                 pagination: response.pagination,
-                statusCounts: response.statusCounts,
             };
         },
         enabled: !!authState.token,
@@ -169,26 +189,23 @@ const VendorOrder: React.FC = () => {
     }, []);
 
 
-    // Export to CSV (exports currently displayed page)
-    const handleExportCSV = () => {
-        const csvData = displayedOrders.map((order: Order) => ({
-            "Order ID": order.orderId,
-            "Ordered By": order.orderedBy,
-            Product: order.product,
-            "Created At": order.createdAt,
-            Price: order.price,
-            "Payment Status": order.paymentStatus,
-            Status: order.status,
-        }));
-        const worksheet = XLSX.utils.json_to_sheet(csvData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
-        XLSX.writeFile(workbook, "orders.csv");
+    /** Fetches EVERY order matching the current filters from the backend
+     * (not just the current page) so exports are complete regardless of
+     * pagination — the previous version only ever exported displayedOrders,
+     * i.e. whatever page happened to be on screen. */
+    const fetchAllOrdersForExport = async (): Promise<Order[]> => {
+        if (!authState.token) throw new Error("No authentication token available");
+        const dashboardService = VendorDashboardService.getInstance();
+        const response = await dashboardService.exportVendorOrders(authState.token, {
+            status: statusFilter !== "all" ? statusFilter : undefined,
+            sort: sortOption,
+            search: searchQuery || undefined,
+        });
+        return (response.data || []).map(mapVendorOrder);
     };
 
-    // Export to Excel (exports currently displayed page)
-    const handleExportExcel = () => {
-        const excelData = displayedOrders.map((order: Order) => ({
+    const toExportRows = (rows: Order[]) =>
+        rows.map((order) => ({
             "Order ID": order.orderId,
             "Ordered By": order.orderedBy,
             Product: order.product,
@@ -197,10 +214,37 @@ const VendorOrder: React.FC = () => {
             "Payment Status": order.paymentStatus,
             Status: order.status,
         }));
-        const worksheet = XLSX.utils.json_to_sheet(excelData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
-        XLSX.writeFile(workbook, "orders.xlsx");
+
+    const handleExportCSV = async () => {
+        setIsExporting("csv");
+        try {
+            const rows = toExportRows(await fetchAllOrdersForExport());
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+            XLSX.writeFile(workbook, "orders.csv");
+            toast.success(`Exported ${rows.length} order${rows.length === 1 ? "" : "s"}`);
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to export orders");
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    const handleExportExcel = async () => {
+        setIsExporting("excel");
+        try {
+            const rows = toExportRows(await fetchAllOrdersForExport());
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+            XLSX.writeFile(workbook, "orders.xlsx");
+            toast.success(`Exported ${rows.length} order${rows.length === 1 ? "" : "s"}`);
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to export orders");
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     // Modal handler for viewing
@@ -255,7 +299,8 @@ const VendorOrder: React.FC = () => {
                 >
                     <VendorHeader
                         title="Order Management"
-                        showSearch={false}
+                        showSearch={true}
+                        onSearch={(value) => setSearchInput(value)}
                     />
                     <main
                         className="dashboard__main"
@@ -310,16 +355,18 @@ const VendorOrder: React.FC = () => {
                             </span>
                         </div>
                         <div className="vendor-order__export-buttons">
-                            <button onClick={handleExportCSV}>
-                                Export to CSV
+                            <button onClick={handleExportCSV} disabled={!!isExporting}>
+                                {isExporting === "csv" ? "Exporting..." : "Export to CSV"}
                             </button>
-                            <button onClick={handleExportExcel}>
-                                Export to Excel
+                            <button onClick={handleExportExcel} disabled={!!isExporting}>
+                                {isExporting === "excel" ? "Exporting..." : "Export to Excel"}
                             </button>
                         </div>
                         {!isFetching && displayedOrders.length === 0 ? (
                             <div className="vendor-order__no-results">
-                                No orders found.
+                                {searchQuery
+                                    ? `No orders found for "${searchQuery}".`
+                                    : "No orders found."}
                             </div>
                         ) : (
                             <>
@@ -333,6 +380,12 @@ const VendorOrder: React.FC = () => {
                                     currentPage={currentPage}
                                     totalPages={totalPages}
                                     onPageChange={setCurrentPage}
+                                    pageSize={ordersPerPage}
+                                    totalItems={totalItems}
+                                    onPageSizeChange={(size) => {
+                                        setOrdersPerPage(size);
+                                        setCurrentPage(1);
+                                    }}
                                 />
                             </>
                         )}

@@ -55,6 +55,7 @@ export interface VendorOrderDetail {
     district: string;
     city: string;
     localAddress?: string;
+    landmark?: string;
   };
   orderItems: OrderItem[];
   itemsSubtotal: number;
@@ -262,6 +263,12 @@ const ViewModal: React.FC<ViewModalProps> = ({
                   ]
                     .filter(Boolean)
                     .join(", ") || "N/A"}
+                </span>
+              </div>
+              <div className="order-info-grid__item">
+                <span className="order-info-grid__label">Nearest Landmark</span>
+                <span className="order-info-grid__value">
+                  {orderDetail.shippingAddress.landmark || "N/A"}
                 </span>
               </div>
             </div>

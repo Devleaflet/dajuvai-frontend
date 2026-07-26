@@ -37,6 +37,7 @@ class VendorDashboardService {
             limit?: number;
             status?: string;
             sort?: string;
+            search?: string;
         } = {}
     ) {
         const realToken = token || localStorage.getItem("vendorToken");
@@ -45,6 +46,7 @@ class VendorDashboardService {
         if (params.limit) queryParams.append("limit", params.limit.toString());
         if (params.status) queryParams.append("status", params.status);
         if (params.sort) queryParams.append("sort", params.sort);
+        if (params.search) queryParams.append("search", params.search);
 
         const url = `${this.baseUrl}/order/vendor/orders${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
         const response = await fetch(url, {
@@ -55,6 +57,30 @@ class VendorDashboardService {
             },
         });
         if (!response.ok) throw new Error("Failed to fetch orders");
+        return response.json();
+    }
+
+    /** Every order matching the given filters, unpaginated — for CSV/Excel
+     * export, so the exported file isn't limited to the current page. */
+    async exportVendorOrders(
+        token: string,
+        params: { status?: string; sort?: string; search?: string } = {},
+    ) {
+        const realToken = token || localStorage.getItem("vendorToken");
+        const queryParams = new URLSearchParams();
+        if (params.status) queryParams.append("status", params.status);
+        if (params.sort) queryParams.append("sort", params.sort);
+        if (params.search) queryParams.append("search", params.search);
+
+        const url = `${this.baseUrl}/order/vendor/orders/export${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+        const response = await fetch(url, {
+            headers: {
+                Authorization: `Bearer ${realToken}`,
+                "Content-Type": "application/json",
+                accept: "application/json",
+            },
+        });
+        if (!response.ok) throw new Error("Failed to export orders");
         return response.json();
     }
     async getVendorOrderDetail(token: string, orderId: number) {

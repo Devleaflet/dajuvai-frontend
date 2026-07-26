@@ -324,9 +324,15 @@ const ProfilePage: React.FC = () => {
       return;
     }
     const isWallet = ["ESEWA", "KHALTI"].includes(currentPaymentType);
-    if (isWallet && (!walletNumber.trim() || !accountName.trim())) {
-      showPopup("error", "Wallet number and account name are required");
-      return;
+    if (isWallet) {
+      if (!walletNumber.trim() || !accountName.trim()) {
+        showPopup("error", "Wallet number and account name are required");
+        return;
+      }
+      if (walletNumber.trim().length !== 10) {
+        showPopup("error", "Wallet number must be exactly 10 digits");
+        return;
+      }
     }
     if (
       !isWallet &&
