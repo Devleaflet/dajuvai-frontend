@@ -9,7 +9,8 @@ export interface Product {
   finalPrice?: number | null;
   stock: number;
   hasVariants: boolean;
-  discount: string | number | null;
+  discountAmount?: number;
+  discountPercent?: number;
   discountType: "PERCENTAGE" | "FLAT" | "NONE" | null;
   size: string[];
   status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
@@ -71,7 +72,8 @@ export interface ListProduct {
   description: string;
   price: number;
   originalPrice: number;
-  discount: string | number | null;
+  discountAmount?: number;
+  discountPercent?: number;
   rating: number;
   ratingCount: string;
   isBestSeller: boolean;
@@ -94,6 +96,8 @@ export interface ProductFormData {
   basePrice: string | number | null;
   stock: number;
   discount: string | number | null;
+  discountAmount?: string | number | null;
+  discountPercent?: string | number | null;
   discountType: "PERCENTAGE" | "FLAT" | "NONE" | null;
   size: string[];
   status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
@@ -147,7 +151,8 @@ export interface ProductVariant {
   // Keep both images fields to support UI and API payload compatibility
   images: (File | string)[];
   variantImages?: (File | string)[];
-  discount?: number | string | null;
+  discountAmount?: number;
+  discountPercent?: number;
   discountType?: 'PERCENTAGE' | 'FLAT' | 'NONE' | null;
   imagePreviews?: string[]; // For client-side preview URLs
 }
@@ -158,7 +163,8 @@ export interface NewProductFormData {
   keywords?: string;
   description?: string;
   basePrice?: number;
-  discount?: number;
+  discountAmount?: number | null;
+  discountPercent?: number | null;
   discountType?: 'PERCENTAGE' | 'FLAT' | 'NONE';
   status?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
   stock?: number;
@@ -178,7 +184,9 @@ export interface ApiProduct {
   basePrice: number | null;
   finalPrice: number;
   stock: number;
-  discount: number | null;
+  discount: string;
+  discountAmount?: string;
+  discountPercent?: string;
   discountType: 'PERCENTAGE' | 'FLAT' | 'NONE' | null;
   size: string[];
   status: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';

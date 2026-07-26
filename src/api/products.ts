@@ -291,7 +291,12 @@ const normalizeVariantPayload = (variant: any, index: number) => {
 		basePrice,
 		stock,
 		status: deriveInventoryStatus(stock),
-		discount: Number(variant.discount || 0),
+		discountAmount: variant.discountAmount !== undefined 
+			? Number(variant.discountAmount) 
+			: (normalizeDiscountType(variant.discountType) === "FLAT" ? Number(variant.discount || 0) : undefined),
+		discountPercent: variant.discountPercent !== undefined 
+			? Number(variant.discountPercent) 
+			: (normalizeDiscountType(variant.discountType) === "PERCENTAGE" ? Number(variant.discount || 0) : undefined),
 		discountType: normalizeDiscountType(variant.discountType),
 		attributes: normalizeVariantAttributes(variant.attributes),
 		variantImages: normalizeImageUrls(variant.variantImages || variant.images),
@@ -308,6 +313,8 @@ export const createProduct = async (
 		keywords?: string;
 		basePrice?: number;
 		discount?: number;
+		discountAmount?: number;
+		discountPercent?: number;
 		discountType?: "PERCENTAGE" | "FLAT" | "NONE";
 		status?: "AVAILABLE" | "OUT_OF_STOCK" | "LOW_STOCK";
 		stock?: number;
@@ -366,10 +373,19 @@ export const createProduct = async (
 		if (productData.brand !== undefined && productData.brand !== null) payload.brand = productData.brand;
 		if (productData.description) payload.description = productData.description;
 		if (productData.keywords !== undefined && productData.keywords !== null) payload.keywords = productData.keywords;
-		if (productData.discount !== undefined)
-			payload.discount = productData.discount;
-		if (productData.discountType)
+		if (productData.discountAmount !== undefined) payload.discountAmount = productData.discountAmount;
+		if (productData.discountPercent !== undefined) payload.discountPercent = productData.discountPercent;
+
+		if (productData.discount !== undefined && payload.discountAmount === undefined && payload.discountPercent === undefined) {
+			if (productData.discountType === "PERCENTAGE") {
+				payload.discountPercent = Number(productData.discount || 0);
+			} else if (productData.discountType === "FLAT") {
+				payload.discountAmount = Number(productData.discount || 0);
+			}
+		}
+		if (productData.discountType) {
 			payload.discountType = normalizeDiscountType(productData.discountType);
+		}
 		if (productData.dealId) payload.dealId = productData.dealId;
 		if (productData.bannerId) payload.bannerId = productData.bannerId;
 		if (productData.productImages && productData.productImages.length > 0) {
@@ -468,6 +484,8 @@ export const updateProduct = async (
 		keywords?: string;
 		basePrice?: number;
 		discount?: number;
+		discountAmount?: number;
+		discountPercent?: number;
 		discountType?: "PERCENTAGE" | "FLAT" | "NONE";
 		status?: "AVAILABLE" | "OUT_OF_STOCK" | "LOW_STOCK";
 		stock?: number;
@@ -495,11 +513,27 @@ export const updateProduct = async (
 		if (productData.keywords !== undefined && productData.keywords !== null)
 			payload.keywords = productData.keywords;
 
-		if (productData.discount !== undefined)
-			payload.discount = productData.discount;
+		if (productData.discountAmount !== undefined) {
+			payload.discountAmount = productData.discountAmount;
+		}
+		if (productData.discountPercent !== undefined) {
+			payload.discountPercent = productData.discountPercent;
+		}
 
-		if (productData.discountType !== undefined)
+		if (productData.discount !== undefined && payload.discountAmount === undefined && payload.discountPercent === undefined) {
+			if (productData.discountType === "PERCENTAGE") {
+				payload.discountPercent = Number(productData.discount || 0);
+			} else if (productData.discountType === "FLAT") {
+				payload.discountAmount = Number(productData.discount || 0);
+			} else if (productData.discountType === "NONE" || !productData.discountType) {
+				payload.discountAmount = 0;
+				payload.discountPercent = 0;
+			}
+		}
+
+		if (productData.discountType !== undefined) {
 			payload.discountType = normalizeDiscountType(productData.discountType);
+		}
 
 		if (productData.dealId === null) {
 			payload.dealId = null;              // REMOVE deal

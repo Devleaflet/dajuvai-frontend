@@ -31,6 +31,8 @@ interface Product {
   finalPrice?: number | string;
   discount?: number | string;
   discountType?: 'PERCENTAGE' | 'FLAT' | string;
+  discountAmount?: number | null;
+  discountPercent?: number | null;
   stock?: number | string;
   productImages?: string[];
   image?: string;
@@ -41,6 +43,8 @@ interface Variant {
   finalPrice?: number | string;
   discount?: number | string;
   discountType?: 'PERCENTAGE' | 'FLAT' | string;
+  discountAmount?: number | null;
+  discountPercent?: number | null;
   stock?: number | string;
   status?: string;
   attributes?: Record<string, any> | Array<any>;
@@ -218,12 +222,13 @@ const Wishlist: React.FC = () => {
       if (Number.isFinite(variantFinal) && variantFinal > 0) return variantFinal;
 
       const base = Number(item.variant.basePrice) || 0;
-      const disc = Number(item.variant.discount) || 0;
       if (item.variant.discountType === 'PERCENTAGE') {
-        return Math.max(0, base - base * (disc / 100));
+        const discPercent = Number(item.variant.discountPercent) || 0;
+        return Math.max(0, base - base * (discPercent / 100));
       }
       if (item.variant.discountType === 'FLAT') {
-        return Math.max(0, base - disc);
+        const discAmount = Number(item.variant.discountAmount) || 0;
+        return Math.max(0, base - discAmount);
       }
       return base;
     }
@@ -239,11 +244,15 @@ const Wishlist: React.FC = () => {
   };
   const getItemDiscount = (item: WishlistItem) => {
     const discount = item.variant ? item.variant.discount : item.product.discount;
+    const discountAmount = item.variant ? item.variant.discountAmount : item.product.discountAmount;
+    const discountPercent = item.variant ? item.variant.discountPercent : item.product.discountPercent;
     const discountType = item.variant ? item.variant.discountType : item.product.discountType;
     return getDiscountDisplay({
       basePrice: getItemBasePrice(item),
       finalPrice: getItemPrice(item),
       discount,
+      discountAmount,
+      discountPercent,
       discountType,
     });
   };

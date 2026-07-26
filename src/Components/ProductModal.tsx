@@ -50,7 +50,6 @@ const ProductModal: React.FC<ProductModalProps> = ({
     inventory: [],
     hasVariants: false,
     variants: [],
-    bannerId: null,
     brandId: null,
   });
   
@@ -105,7 +104,6 @@ const ProductModal: React.FC<ProductModalProps> = ({
         inventory: initialData.inventory || [],
         hasVariants: initialData.hasVariants || false,
         variants: initialData.variants || [],
-        bannerId: initialData.bannerId || null,
         brandId: initialData.brandId || null,
       });
       setSelectedCategory(initialData.categoryId || 0);
@@ -662,7 +660,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                   className="product-modal__select"
                 >
                   <option value="PERCENTAGE">Percentage</option>
-                  <option value="FIXED">Fixed Amount</option>
+                  <option value="FLAT">Fixed Amount</option>
                 </select>
               </div>
             </div>

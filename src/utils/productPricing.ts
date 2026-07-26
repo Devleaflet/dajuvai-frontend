@@ -24,17 +24,20 @@ export const normalizeDiscountType = (
 
 export const calculatePricingPreview = ({
   basePrice,
-  discount,
+  discountAmount,
+  discountPercent,
   discountType,
   dealDiscountPercentage,
 }: {
   basePrice: number | string | null | undefined;
-  discount?: number | string | null;
+  discountAmount?: number | string | null;
+  discountPercent?: number | string | null;
   discountType?: DiscountType;
   dealDiscountPercentage?: number | string | null;
 }) => {
   const normalizedBasePrice = Math.max(0, toFiniteNumber(basePrice));
-  const normalizedDiscount = Math.max(0, toFiniteNumber(discount));
+  const normalizedDiscountAmount = Math.max(0, toFiniteNumber(discountAmount));
+  const normalizedDiscountPercent = Math.max(0, toFiniteNumber(discountPercent));
   const normalizedDealDiscountPercentage = Math.max(
     0,
     toFiniteNumber(dealDiscountPercentage)
@@ -45,10 +48,10 @@ export const calculatePricingPreview = ({
     normalizedBasePrice * (normalizedDealDiscountPercentage / 100);
 
   let customDiscountAmount = 0;
-  if (normalizedDiscount > 0 && normalizedDiscountType === "PERCENTAGE") {
-    customDiscountAmount = normalizedBasePrice * (normalizedDiscount / 100);
-  } else if (normalizedDiscount > 0 && normalizedDiscountType === "FLAT") {
-    customDiscountAmount = normalizedDiscount;
+  if (normalizedDiscountPercent > 0 && normalizedDiscountType === "PERCENTAGE") {
+    customDiscountAmount = normalizedBasePrice * (normalizedDiscountPercent / 100);
+  } else if (normalizedDiscountAmount > 0 && normalizedDiscountType === "FLAT") {
+    customDiscountAmount = normalizedDiscountAmount;
   }
 
   const rawDiscountAmount = dealDiscountAmount + customDiscountAmount;

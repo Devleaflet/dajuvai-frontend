@@ -57,7 +57,7 @@ const calcPrice = (base: any, disc?: any, discType?: string): number => {
   const d = typeof disc === 'string' ? parseFloat(disc) : Number(disc);
   if (!Number.isFinite(d)) return baseNum;
   if (discType === 'PERCENTAGE') return baseNum * (1 - d / 100);
-  if (discType === 'FIXED' || discType === 'FLAT') return baseNum - d;
+  if (discType === 'FLAT') return baseNum - d;
   return baseNum;
 };
 

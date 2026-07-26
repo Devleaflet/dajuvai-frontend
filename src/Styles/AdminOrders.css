@@ -1,7 +1,7 @@
 /* AdminOrders.css */
 .admin-orders {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
   background-color: #f9fafb;
 }
 
@@ -10,17 +10,12 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  height: 100vh;
   padding: 0;
-  overflow-x: hidden;
-  overflow-y: hidden;
 }
 
 .admin-orders__list-container {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
   padding: 1.5rem 2rem;
 }
 
@@ -35,22 +30,14 @@
   background-color: #fff;
   border-radius: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  /* Only the table body scrolls — header, filters, and pagination stay put. */
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
   margin-bottom: 1.5rem;
-}
-
-.admin-orders__table-head {
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  overflow-x: auto;
 }
 
 .admin-orders__table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .admin-orders__table-head {
@@ -62,6 +49,7 @@
   text-align: left;
   font-weight: 500;
   color: #6b7280;
+  background-color: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
 }
 
@@ -106,6 +94,25 @@
 
 .admin-orders__name-cell {
   min-width: 180px;
+  font-weight: 500;
+}
+
+.admin-orders__id-cell {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.admin-orders__email-cell {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-orders__price-cell {
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .admin-orders__profile-container {
@@ -438,34 +445,10 @@
     width: fit-content;
   }
 
-  /* Same fix as AdminProduct.css: the desktop layout locks the page to
-     exactly 100vh with overflow:hidden so only the table body scrolls, but
-     on mobile the search/filter row wraps onto several lines and eats more
-     height than that rigid layout has to give - flex:1 had nowhere to
-     shrink the table-container to but ~0px. Let the page scroll normally
-     instead. */
-  .admin-orders {
-    height: auto;
-    min-height: 100vh;
-  }
-
-  .admin-orders__content {
-    height: auto;
-    min-height: 100vh;
-    overflow: visible;
-  }
-
-  .admin-orders__table-container {
-    flex: none;
-    max-height: 65vh;
-    overflow-x: auto;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
   /* Without a min-width, `width: 100%` squeezes every column into the
-     narrow viewport instead of overflowing into the horizontal scroll the
-     container above now provides - give columns room to stay legible. */
+     narrow viewport instead of overflowing into the horizontal scroll
+     .admin-orders__table-container already provides - give columns room
+     to stay legible. */
   .admin-orders__table {
     min-width: 720px;
   }

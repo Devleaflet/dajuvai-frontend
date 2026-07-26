@@ -26,6 +26,8 @@ interface ApiProduct {
   stock: number;
   discount: number | null;
   discountType: "PERCENTAGE" | "FLAT" | null;
+  discountAmount?: number | null;
+  discountPercent?: number | null;
   size: string[];
   status: string;
   finalPrice: number;
@@ -49,6 +51,8 @@ interface ApiProduct {
     attributes?: Record<string, any>;
     discount?: number | string;
     discountType?: "PERCENTAGE" | "FLAT";
+    discountAmount?: number | null;
+    discountPercent?: number | null;
     basePrice?: number | string;
     calculatedPrice?: number;
     [key: string]: any;
@@ -95,7 +99,7 @@ const calculatePrice = (base: any, disc?: any, discType?: string): number => {
   const d = typeof disc === 'string' ? parseFloat(disc) : Number(disc);
   if (!isFinite(d)) return baseNum;
   if (discType === 'PERCENTAGE') return baseNum * (1 - d / 100);
-  if (discType === 'FIXED' || discType === 'FLAT') return baseNum - d;
+  if (discType === 'FLAT') return baseNum - d;
   return baseNum;
 };
 
@@ -192,6 +196,10 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
       basePrice,
       finalPrice,
       price: finalPrice.toString(),
+      discount: item.discount,
+      discountAmount: item.discountAmount,
+      discountPercent: item.discountPercent,
+      discountType: item.discountType,
       rating: Number(averageRating) || 0,
       ratingCount: reviews?.length?.toString() || "0",
       isBestSeller: item.stock > 20,
@@ -224,6 +232,7 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
       basePrice: Number(item.basePrice) || 0,
       finalPrice: Number(item.finalPrice) || Number(item.basePrice) || 0,
       price: item.finalPrice?.toString() || item.basePrice?.toString() || "0",
+      discount: item.discount,
       rating: 0,
       ratingCount: "0",
       isBestSeller: false,

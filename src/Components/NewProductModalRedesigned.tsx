@@ -1206,7 +1206,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({
                                     : undefined;
                                 const pricingPreview = calculatePricingPreview({
                                     basePrice: formData.basePrice,
-                                    discount: formData.discount,
+                                    discountAmount: formData.discountAmount,
+                                    discountPercent: formData.discountPercent,
                                     discountType: formData.discountType,
                                     dealDiscountPercentage:
                                         selectedDeal?.discountPercentage,
@@ -1430,7 +1431,8 @@ const NewProductModal: React.FC<NewProductModalProps> = ({
                                         const variantPricingPreview =
                                             calculatePricingPreview({
                                                 basePrice: variant.price,
-                                                discount: variant.discount,
+                                                discountAmount: variant.discountAmount,
+                                                discountPercent: variant.discountPercent,
                                                 discountType:
                                                     variant.discountType,
                                                 dealDiscountPercentage:

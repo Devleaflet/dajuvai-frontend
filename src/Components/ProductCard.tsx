@@ -278,12 +278,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         // non-variant products), so the badge must read the *variant's*
         // discount here — falling back to product.discount only if the
         // variant genuinely doesn't specify one.
-        discount:
-          defaultVariant.discount !== undefined
+        discount: defaultVariant.discount !== undefined
             ? defaultVariant.discount
             : product.discount,
-        discountType:
-          defaultVariant.discountType !== undefined
+        discountAmount: defaultVariant.discountAmount !== undefined
+            ? defaultVariant.discountAmount
+            : product.discountAmount,
+        discountPercent: defaultVariant.discountPercent !== undefined
+            ? defaultVariant.discountPercent
+            : product.discountPercent,
+        discountType: defaultVariant.discountType !== undefined
             ? defaultVariant.discountType
             : product.discountType,
       };
@@ -293,6 +297,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       base: Number(product.basePrice) || 0,
       final: Number(product.finalPrice) || Number(product.basePrice) || 0,
       discount: product.discount,
+      discountAmount: product.discountAmount,
+      discountPercent: product.discountPercent,
       discountType: product.discountType,
     };
   };
@@ -300,7 +306,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const {
     base: basePriceNum,
     final: finalPriceNum,
-    discount: displayDiscount,
+    discount: discountNum,
+    discountAmount: displayDiscountAmount,
+    discountPercent: displayDiscountPercent,
     discountType: displayDiscountType,
   } = getDisplayPrices();
 
@@ -309,7 +317,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const discountDisplay = getDiscountDisplay({
     basePrice: basePriceNum,
     finalPrice: finalPriceNum,
-    discount: displayDiscount,
+    discount: discountNum,
+    discountAmount: displayDiscountAmount,
+    discountPercent: displayDiscountPercent,
     discountType: displayDiscountType,
   });
   const hasDiscount = discountDisplay.hasDiscount;

@@ -41,6 +41,7 @@ interface ApiProduct {
 		id: number;
 		businessName: string;
 		email: string;
+		profilePicture?: string | null;
 
 		districtId: number;
 		district: {
@@ -53,6 +54,7 @@ interface ApiProduct {
 interface VendorInfo {
 	businessName: string;
 	email?: string;
+	profilePicture?: string | null;
 
 	districtName?: string;
 }
@@ -74,6 +76,7 @@ const VendorStore: React.FC = () => {
 	const [page, setPage] = useState<number>(1);
 	const [limit] = useState<number>(10);
 	const [vendorInfo, setVendorInfo] = useState<VendorInfo | null>(null);
+	const [vendorAvatarError, setVendorAvatarError] = useState(false);
 	const [searchTerm, setSearchTerm] = useState<string>("");
 	const [sortBy, setSortBy] = useState<
 		"relevance" | "price_asc" | "price_desc" | "name_asc" | "name_desc"
@@ -95,6 +98,7 @@ const VendorStore: React.FC = () => {
 						setVendorInfo({
 							businessName: v.businessName,
 							email: v.email,
+							profilePicture: v.profilePicture,
 
 							districtName: v?.district?.name,
 						});
@@ -105,35 +109,12 @@ const VendorStore: React.FC = () => {
 					const transformedProducts: DisplayProduct[] = products.map(
 						(product) => {
 							//("vendorproduct", product);
-							// Calculate product-level price if basePrice is present; otherwise defer to variants
-							const hasBase =
-								product.basePrice !== null && product.basePrice !== undefined;
-							const basePrice = hasBase
-								? parseFloat(String(product.basePrice))
-								: NaN;
-							const discount = parseFloat(String(product.discount || "0"));
-							let priceNum = hasBase && isFinite(basePrice) ? basePrice : 0;
-							let originalPrice: string | undefined = undefined;
-							const discountType = (product.discountType || "").toUpperCase();
-							if (
-								hasBase &&
-								isFinite(basePrice) &&
-								discount > 0 &&
-								(discountType === "PERCENTAGE" ||
-									discountType === "FLAT" ||
-									discountType === "FIXED")
-							) {
-								if (discountType === "PERCENTAGE") {
-									priceNum = basePrice - (basePrice * discount) / 100;
-									originalPrice = basePrice.toFixed(2);
-								} else if (
-									discountType === "FLAT" ||
-									discountType === "FIXED"
-								) {
-									priceNum = basePrice - discount;
-									originalPrice = basePrice.toFixed(2);
-								}
-							}
+							// Use backend-computed finalPrice as the source of truth.
+							const discountPercent = (product as any).discountPercent;
+							const discountAmount = (product as any).discountAmount;
+							const priceNum = Number((product as any).finalPrice ?? product.basePrice ?? 0);
+							const basePrice = Number(product.basePrice ?? 0);
+							const originalPrice: string | undefined = priceNum < basePrice && basePrice > 0 ? basePrice.toFixed(2) : undefined;
 
 							// Map variants (if any) and normalize images
 							const variants = (product.variants || []).map((v) => ({
@@ -141,8 +122,9 @@ const VendorStore: React.FC = () => {
 								sku: v.sku,
 								basePrice: v.basePrice,
 								finalPrice: Number(v.finalPrice ?? v.basePrice ?? 0),
-								discount: v.discount,
-								discountType: v.discountType,
+								discountAmount: (v as any).discountAmount,
+								discountPercent: (v as any).discountPercent,
+								discountType: v.discountType as any,
 								images: v.variantImages || [],
 								stock: v.stock ?? undefined,
 								status:
@@ -158,9 +140,11 @@ const VendorStore: React.FC = () => {
 								name: product.name,
 								description: product.description || "",
 								basePrice: product.basePrice ?? priceNum,
-								finalPrice: Number((product as any).finalPrice ?? priceNum),
-								price: Number((product as any).finalPrice ?? priceNum),
-								discount: discount > 0 ? String(product.discount) : undefined,
+								finalPrice: priceNum,
+								price: priceNum,
+								originalPrice,
+								discountAmount: discountAmount,
+								discountPercent: discountPercent,
 								hasVariants: product.hasVariants,
 								deal: null,
 								// Map rating info from backend if present
@@ -246,7 +230,7 @@ const VendorStore: React.FC = () => {
 		if (!isFinite(d)) return baseNum;
 		const t = String(discType).toUpperCase();
 		if (t === "PERCENTAGE") return baseNum * (1 - d / 100);
-		if (t === "FIXED" || t === "FLAT") return baseNum - d;
+		if (t === "FLAT") return baseNum - d;
 		return baseNum;
 	};
 	// Compute the minimum effective price across all variants, falling back to product/base price
@@ -260,7 +244,10 @@ const VendorStore: React.FC = () => {
 		for (const v of variants as any[]) {
 			const base = v.basePrice ?? v.originalPrice ?? prodBase;
 			let eff = toNumber(base);
-			if (v.discount && v.discountType)
+			if (v.discountAmount || v.discountPercent) {
+				const disc = v.discountType === 'PERCENTAGE' ? v.discountPercent : v.discountAmount;
+				eff = calcPrice(base, disc, v.discountType);
+			} else if (v.discount && v.discountType)
 				eff = calcPrice(base, v.discount, v.discountType);
 			else if (prodDisc && prodDiscType)
 				eff = calcPrice(base, prodDisc, prodDiscType);
@@ -407,9 +394,18 @@ const VendorStore: React.FC = () => {
 			<div className="vendor-store">
 				<header className="vendor-store__header">
 					<div className="vendor-store__logo">
-						<span className="vendor-store__logo-letter">
-							{vendorInfo?.businessName?.[0] || "U"}
-						</span>
+						{vendorInfo?.profilePicture && !vendorAvatarError ? (
+							<img
+								src={vendorInfo.profilePicture}
+								alt={vendorInfo.businessName || "Vendor"}
+								className="vendor-store__logo-image"
+								onError={() => setVendorAvatarError(true)}
+							/>
+						) : (
+							<span className="vendor-store__logo-letter">
+								{vendorInfo?.businessName?.[0]?.toUpperCase() || "U"}
+							</span>
+						)}
 					</div>
 					<div className="vendor-store__info">
 						<h1>{vendorInfo?.businessName || "Unknown Vendor"}</h1>

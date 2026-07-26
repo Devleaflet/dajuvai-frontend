@@ -18,6 +18,7 @@ import { makeWishlistKey, useWishlist } from "../context/WishlistContext";
 import "../Styles/ProductPage.css";
 import ScrollToTop from "../Components/ScrollToTop";
 import defaultProductImage from "../assets/logo.webp";
+import { getDiscountDisplay } from "../utils/priceDisplay";
 
 const CACHE_KEY_REVIEWS = "productReviewsData";
 
@@ -98,6 +99,9 @@ const ProductPage = () => {
   const dragStartXRef = useRef(0);
   const dragScrollLeftRef = useRef(0);
   const dragMovedRef = useRef(false);
+
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [isTitleTruncated, setIsTitleTruncated] = useState(false);
 
   const handleThumbnailsMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button !== 0 || !thumbnailsRef.current) return;
@@ -284,57 +288,63 @@ const ProductPage = () => {
             : undefined;
       const derivedSubcategoryName = apiProduct?.subcategory?.name;
 
-      return {
-        product: {
-          id: apiProduct.id,
-          name: apiProduct.name,
-          description: apiProduct.description,
-          brand: apiProduct.brand || null,
-          keywords: apiProduct.keywords || null,
-          finalPrice: finalPrice,
-          basePrice: basePrice,
-          price: finalPrice.toFixed(2),
-          originalPrice:
-            basePrice > finalPrice ? basePrice.toFixed(2) : undefined,
-          deal: apiProduct.deal,
-          rating: 0,
-          ratingCount: "0",
-          image: allImages[0] || "",
-          category:
-            derivedCategoryId != null
-              ? {
-                  id: derivedCategoryId,
-                  name: derivedCategoryName || "Category",
-                }
-              : undefined,
-          subcategory:
-            derivedSubcategoryId != null
-              ? {
-                  id: derivedSubcategoryId,
-                  name: derivedSubcategoryName || "Subcategory",
-                }
-              : undefined,
-          vendor: apiProduct.vendor || {
-            id: null,
-            businessName: "Unknown Vendor",
-          },
-          productImages: allImages,
-          colors: Array.from(colorOptions).map((name) => ({
-            name,
-            img: "",
-          })),
-          sizeOptions: Array.from(sizeOptions),
-          stock: apiProduct.stock || defaultVariant?.stock || 0,
-          variants: allVariants,
-          hasVariants: apiProduct.hasVariants || false,
-          selectedVariant: defaultVariant,
+            return {
+                product: {
+                    id: apiProduct.id,
+                    name: apiProduct.name,
+                    description: apiProduct.description,
+                    brand: apiProduct.brand || null,
+                    keywords: apiProduct.keywords || null,
+                    finalPrice: finalPrice,
+                    basePrice: basePrice,
+                    price: finalPrice.toFixed(2),
+                    originalPrice:
+                        basePrice > finalPrice
+                            ? basePrice.toFixed(2)
+                            : undefined,
+                    discount: apiProduct.discount,
+                    discountAmount: apiProduct.discountAmount,
+                    discountPercent: apiProduct.discountPercent,
+                    discountType: apiProduct.discountType,
+                    deal: apiProduct.deal,
+                    rating: 0,
+                    ratingCount: "0",
+                    image: allImages[0] || "",
+                    category:
+                        derivedCategoryId != null
+                            ? {
+                                  id: derivedCategoryId,
+                                  name: derivedCategoryName || "Category",
+                              }
+                            : undefined,
+                    subcategory:
+                        derivedSubcategoryId != null
+                            ? {
+                                  id: derivedSubcategoryId,
+                                  name: derivedSubcategoryName || "Subcategory",
+                              }
+                            : undefined,
+                    vendor: apiProduct.vendor || {
+                        id: null,
+                        businessName: "Unknown Vendor",
+                    },
+                    productImages: allImages,
+                    colors: Array.from(colorOptions).map((name) => ({
+                        name,
+                        img: "",
+                    })),
+                    sizeOptions: Array.from(sizeOptions),
+                    stock: apiProduct.stock || defaultVariant?.stock || 0,
+                    variants: allVariants,
+                    hasVariants: apiProduct.hasVariants || false,
+                    selectedVariant: defaultVariant,
+                },
+                vendorId: apiProduct.vendorId || null,
+            };
         },
-        vendorId: apiProduct.vendorId || null,
-      };
-    },
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
+    });
 
   const { data: reviewsData, isLoading: isReviewsLoading } = useQuery({
     queryKey: ["reviews", id, currentReviewPage],
@@ -762,6 +772,17 @@ const ProductPage = () => {
     };
   }, []);
 
+  // Only show the hover tooltip when the title is actually clipped —
+  // showing it unconditionally on every short title is noisy and redundant.
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    const check = () => setIsTitleTruncated(el.scrollHeight > el.clientHeight + 1);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, [product?.name]);
+
   const handleImageLoad = () => {
     // Reset zoom when image loads
     setZoomPosition({ x: 50, y: 50 });
@@ -841,53 +862,69 @@ const ProductPage = () => {
     }
   });
 
-  return (
-    <div className="app">
-      <ScrollToTop />
-      <Navbar />
-      <div className="product-page-content">
-        <main className="product-page">
-          <div className="product-page__container">
-            <div className="product-page__content product-page__content--three-column">
-              <div className="product-gallery">
-                <div className="product-gallery__images">
-                  <div
-                    className="product-gallery__main-image"
-                    ref={mainImageRef}
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                    onMouseMove={handleMouseMove}
-                    id="imageZoom"
-                  >
-                    {currentImage ? (
-                      <img
-                        src={currentImage}
-                        alt={product.name}
-                        onError={() => handleImageError(selectedImageIndex)}
-                        onLoad={handleImageLoad}
-                        draggable={false}
-                      />
-                    ) : (
-                      <img
-                        src={defaultProductImage}
-                        alt={product.name}
-                        draggable={false}
-                      />
-                    )}
-                    {isZoomActive && currentImage && (
-                      <div
-                        className={`product-gallery__zoom-box ${
-                          isZoomActive ? "active" : ""
-                        }`}
-                        style={{
-                          backgroundImage: `url(${currentImage})`,
-                          backgroundSize: `${ZOOM_LEVEL * 100}%`,
-                          backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
-                          backgroundRepeat: "no-repeat",
-                        }}
-                      />
-                    )}
-                  </div>
+    const discountDisplay = product
+        ? getDiscountDisplay({
+              basePrice: getOriginalPrice(),
+              finalPrice: getCurrentPrice(),
+              discount: product.discount,
+              discountAmount: product.discountAmount,
+              discountPercent: product.discountPercent,
+              discountType: product.discountType,
+          })
+        : { hasDiscount: false, savingsAmount: 0, badgeLabel: null, savingsLabel: null };
+
+    return (
+        <div className="app">
+            <ScrollToTop />
+            <Navbar />
+            <div className="product-page-content">
+                <main className="product-page">
+                    <div className="product-page__container">
+                        <div className="product-page__content product-page__content--three-column">
+                            <div className="product-gallery">
+                                <div className="product-gallery__images">
+                                    <div
+                                        className="product-gallery__main-image"
+                                        ref={mainImageRef}
+                                        onMouseEnter={handleMouseEnter}
+                                        onMouseLeave={handleMouseLeave}
+                                        onMouseMove={handleMouseMove}
+                                        id="imageZoom"
+                                    >
+                                        {currentImage ? (
+                                            <img
+                                                src={currentImage}
+                                                alt={product.name}
+                                                onError={() =>
+                                                    handleImageError(
+                                                        selectedImageIndex,
+                                                    )
+                                                }
+                                                onLoad={handleImageLoad}
+                                                draggable={false}
+                                            />
+                                        ) : (
+                                            <img
+                                                src={defaultProductImage}
+                                                alt={product.name}
+                                                draggable={false}
+                                            />
+                                        )}
+                                        {isZoomActive && currentImage && (
+                                            <div
+                                                className={`product-gallery__zoom-box ${
+                                                    isZoomActive ? "active" : ""
+                                                }`}
+                                                style={{
+                                                    backgroundImage: `url(${currentImage})`,
+                                                    backgroundSize: `${ZOOM_LEVEL * 100}%`,
+                                                    backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                                                    backgroundRepeat:
+                                                        "no-repeat",
+                                                }}
+                                            />
+                                        )}
+                                    </div>
 
                   {currentImages && currentImages.length > 1 && (
                     <div
@@ -938,7 +975,17 @@ const ProductPage = () => {
 
               <div className="product-info">
                 <div className="product-info__header">
-                  <h1 className="product-info__title">{product.name}</h1>
+                  <h1
+                    className="product-info__title"
+                    ref={titleRef}
+                    aria-label={product.name}
+                    tabIndex={isTitleTruncated ? 0 : undefined}
+                    {...(isTitleTruncated
+                      ? { "data-tooltip": product.name }
+                      : {})}
+                  >
+                    {product.name}
+                  </h1>
 
                   {product.brand && (
                     <div className="product-brand">
@@ -951,23 +998,30 @@ const ProductPage = () => {
                     </div>
                   )}
 
-                  <div className="product-price">
-                    <span className="product-price__current">
-                      Rs. {getCurrentPrice().toFixed(2)}
-                    </span>
-                    {getOriginalPrice() > getCurrentPrice() && (
-                      <>
-                        <span className="product-price__original">
-                          Rs. {getOriginalPrice().toFixed(2)}
-                        </span>
-                        <span className="product-price__savings">
-                          Save Rs.{" "}
-                          {(getOriginalPrice() - getCurrentPrice()).toFixed(2)}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
+                                     <div className="product-price">
+                                        <span className="product-price__current">
+                                            Rs. {getCurrentPrice().toFixed(2)}
+                                        </span>
+                                        {getOriginalPrice() >
+                                            getCurrentPrice() && (
+                                            <>
+                                                <span className="product-price__original">
+                                                    Rs.{" "}
+                                                    {getOriginalPrice().toFixed(
+                                                        2,
+                                                    )}
+                                                </span>
+                                                <span className="product-price__savings">
+                                                    Save Rs.{" "}
+                                                    {(
+                                                        getOriginalPrice() -
+                                                        getCurrentPrice()
+                                                    ).toFixed(2)}
+                                                </span>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
 
                 {product.hasVariants &&
                   product.variants &&

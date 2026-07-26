@@ -40,8 +40,10 @@ const BestOfTop: React.FC = () => {
       title: item.name,
       description: item.description,
       originalPrice: item.basePrice,
-      discount: item.discount,
-      price: Number(item.basePrice * (1 - item.discount / 100)).toFixed(2),
+      discountAmount: item.discountAmount ?? undefined,
+      discountPercent: item.discountPercent ?? undefined,
+      discountType: item.discountType,
+      price: (Number(item.finalPrice) || Number(item.basePrice)).toFixed(2),
       rating: Number(averageRating),
       ratingCount: reviews.length,
       isBestSeller: item.stock > 20,
@@ -77,6 +79,7 @@ const BestOfTop: React.FC = () => {
   return (
     <ProductCarousel
       title="Best of Top Products"
+      sectionId="best-of-top"
       products={recommendedProducts}
       scrollAmount={300}
     />

@@ -143,6 +143,8 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 						final,
 						savings: Math.max(0, base - final),
 						discount: v.discount !== undefined ? v.discount : product.discount,
+						discountAmount: v.discountAmount !== undefined ? v.discountAmount : product.discountAmount,
+						discountPercent: v.discountPercent !== undefined ? v.discountPercent : product.discountPercent,
 						discountType: v.discountType !== undefined ? v.discountType : product.discountType
 					};
 				});
@@ -155,7 +157,7 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 				const chosen = discounted.length > 0
 					? discounted.reduce((best, curr) => curr.savings > best.savings ? curr : best)
 					: validVariants.reduce((prev, curr) => curr.final < prev.final ? curr : prev);
-				return { base: chosen.base, final: chosen.final, discount: chosen.discount, discountType: chosen.discountType };
+				return { base: chosen.base, final: chosen.final, discount: chosen.discount , discountAmount: chosen.discountAmount, discountPercent: chosen.discountPercent, discountType: chosen.discountType };
 			}
 		}
 
@@ -163,11 +165,13 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 			base: Number(product.basePrice) || 0,
 			final: Number(product.finalPrice) || (Number(product.basePrice) || 0),
 			discount: product.discount,
+			discountAmount: product.discountAmount,
+			discountPercent: product.discountPercent,
 			discountType: product.discountType
 		};
 	};
 
-	const { base: basePrice, final: finalPrice, discount, discountType } = getDisplayPrices();
+	const { base: basePrice, final: finalPrice, discount, discountAmount, discountPercent, discountType } = getDisplayPrices();
 
 	// Same shared utility used on product details/cart/checkout, so the
 	// badge/savings shown here never disagrees with those pages.
@@ -175,6 +179,8 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 		basePrice,
 		finalPrice,
 		discount,
+		discountAmount,
+		discountPercent,
 		discountType,
 	});
 	const savingPrice = discountDisplay.hasDiscount

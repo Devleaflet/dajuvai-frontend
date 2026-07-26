@@ -27,30 +27,17 @@ export const convertApiProductToDisplayProduct = (apiProduct: ApiProduct) => {
     return isFinite(n) ? n : 0;
   };
 
-  const calc = (base: any, disc?: any, discType?: string): number => {
-    const baseNum = toNum(base);
-    const d = toNum(disc);
-    if (!disc || !discType) return baseNum;
-    if (discType === 'PERCENTAGE') return baseNum * (1 - d / 100);
-    if (discType === 'FIXED' || discType === 'FLAT') return baseNum - d;
-    return baseNum;
-  };
-
   // Compute display price: prefer first variant if present, else product base
   let displayPrice = 0;
   let originalPrice: string | undefined = undefined;
   if (firstV) {
-    const variantBase = firstV?.price ?? firstV?.originalPrice ?? firstV?.basePrice ?? apiProduct.basePrice ?? 0;
-    const discounted = calc(variantBase, firstV?.discount, String(firstV?.discountType || ''));
-    displayPrice = discounted;
-    const baseNum = toNum(variantBase);
-    if (baseNum > discounted) originalPrice = baseNum.toFixed(2);
+    displayPrice = toNum(firstV.finalPrice ?? firstV.price ?? firstV.basePrice ?? apiProduct.basePrice ?? 0);
+    const baseNum = toNum(firstV.basePrice ?? firstV.price ?? firstV.originalPrice ?? apiProduct.basePrice ?? 0);
+    if (baseNum > displayPrice) originalPrice = baseNum.toFixed(2);
   } else {
-    const base = apiProduct.basePrice ?? 0;
-    const discounted = calc(base, apiProduct.discount, String(apiProduct.discountType || ''));
-    displayPrice = discounted;
-    const baseNum = toNum(base);
-    if (apiProduct.discount && baseNum > discounted) originalPrice = baseNum.toFixed(2);
+    displayPrice = toNum(apiProduct.finalPrice ?? apiProduct.basePrice ?? 0);
+    const baseNum = toNum(apiProduct.basePrice ?? 0);
+    if (apiProduct.discountAmount && apiProduct.discountAmount > 0 && baseNum > displayPrice) originalPrice = baseNum.toFixed(2);
   }
 
   return {
@@ -59,7 +46,8 @@ export const convertApiProductToDisplayProduct = (apiProduct: ApiProduct) => {
     description: apiProduct.description,
     price: displayPrice.toFixed(2),
     originalPrice,
-    discount: apiProduct.discount?.toString() || undefined,
+    discountAmount: apiProduct.discountAmount,
+    discountPercent: apiProduct.discountPercent,
     // Prefer backend-provided avgRating when available, else fall back to 0
     rating: Number((apiProduct as any).avgRating ?? (apiProduct as any).rating ?? 0) || 0,
     // Try reviews array length, then reviewsCount/ratingCount fields, else 0
@@ -88,7 +76,8 @@ export const convertApiProductToDisplayProduct = (apiProduct: ApiProduct) => {
       image: v?.image,
       images: Array.isArray(v?.images) ? v.images : undefined,
       variantImages: Array.isArray(v?.variantImages) ? v.variantImages : undefined,
-      discount: v?.discount,
+      discountAmount: v?.discountAmount,
+      discountPercent: v?.discountPercent,
       discountType: v?.discountType,
       position: v?.position,
       attributes: v?.attributes,

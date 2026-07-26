@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext'; // Added for token
 
 import { convertApiProductToDisplayProduct } from '../Components/Types/ApiProduct';
 import { getProductPrimaryImage } from '../utils/getProductPrimaryImage';
+import defaultProductImage from '../assets/logo.webp';
 import '../Styles/Catalog.css';
 
 const Catalog: React.FC = () => {
@@ -19,7 +20,7 @@ const Catalog: React.FC = () => {
 
   // Using shared helper for consistent variant-first image selection across app
 
-  const productService = ProductService.getInstance();
+  const productService = ProductService;
 
   useEffect(() => {
     fetchProducts();
@@ -62,13 +63,11 @@ const Catalog: React.FC = () => {
   };
 
   const calculateDiscountedPrice = (product: Product) => {
-    if (!product.discount) return Number(product.price);
-
-    const discount = Number(product.discount);
-    const price = Number(product.price);
-
-    // Assume FLAT discount since discountType is not in Product type
-    return price - discount; // Adjust if PERCENTAGE discounts are needed
+    // Use backend-provided finalPrice as the source of truth
+    if (product.finalPrice != null && Number(product.finalPrice) > 0) {
+      return Number(product.finalPrice);
+    }
+    return Number(product.price);
   };
 
   if (loading) {

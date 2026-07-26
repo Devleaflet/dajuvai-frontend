@@ -72,7 +72,9 @@ const HomepageSections: React.FC = () => {
 								deal: product.deal ?? null,
 								basePrice: product.basePrice,
 								finalPrice: product.finalPrice,
-								discount: product.discount,
+								discount: Number(product.discount),
+								discountAmount: product.discountAmount ? Number(product.discountAmount) : 0,
+								discountPercent: product.discountPercent ? Number(product.discountPercent) : 0,
 								discountType: (product.discountType === "PERCENTAGE" ||
 									product.discountType === "FLAT"
 									? product.discountType

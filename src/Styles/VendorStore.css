@@ -42,10 +42,18 @@
 	background: #fff3e9;
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 	border: 1px solid #ffe1cc;
+	overflow: hidden;
+	flex-shrink: 0;
 }
 
 .vendor-store__logo-letter {
 	line-height: 1;
+}
+
+.vendor-store__logo-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
 }
 
 .vendor-store__info {
