@@ -1017,6 +1017,10 @@ const NewProductModal: React.FC<NewProductModalProps> = ({
                                             </option>
                                         ))}
                                     </select>
+                                    <label className="form-label">
+                                        Note: When a deal is applied, any existing
+                                        discount will be removed. Deals and discounts cannot be applied together.
+                                    </label>
                                 </div>
                             </div>
                         </div>

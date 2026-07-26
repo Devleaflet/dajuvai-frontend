@@ -83,6 +83,7 @@ export interface VendorOrderDetail {
         district: string;
         city: string;
         localAddress?: string;
+        landmark?: string;
     };
     orderItems: OrderItem[];
     itemsSubtotal: number;
@@ -259,66 +260,70 @@ const ViewModal: React.FC<ViewModalProps> = ({
                 <div style={{ padding: "0 24px 24px" }}>
                     {/* Customer Info */}
                     <div className="order-section">
-                        <h3 className="order-section__title">Customer</h3>
-                        <div className="order-info-grid">
-                            <div className="order-info-grid__item">
-                                <span className="order-info-grid__label">
-                                    Name
-                                </span>
-                                <span className="order-info-grid__value">
-                                    {orderDetail.orderedBy.fullName ||
-                                        orderDetail.orderedBy.name ||
-                                        orderDetail.orderedBy.username ||
-                                        "Unknown Customer"}
-                                </span>
-                            </div>
-                            <div className="order-info-grid__item">
-                                <span className="order-info-grid__label">
-                                    Phone
-                                </span>
-                                <span className="order-info-grid__value">
-                                    {orderDetail.orderedBy.phoneNumber ||
-                                        orderDetail.orderedBy.phone ||
-                                        "N/A"}
-                                </span>
-                            </div>
-                            <div className="order-info-grid__item">
-                                <span className="order-info-grid__label">
-                                    Email
-                                </span>
-                                <span
-                                    className="order-info-grid__value"
-                                    style={{ wordBreak: "break-all" }}
-                                >
-                                    {orderDetail.orderedBy.email}
-                                </span>
-                            </div>
-                            <div className="order-info-grid__item">
-                                <span className="order-info-grid__label">
-                                    Payment
-                                </span>
-                                <span className="order-info-grid__value">
-                                    {orderDetail.paymentMethod}
-                                </span>
-                            </div>
-                            <div className="order-info-grid__item order-info-grid__item--full">
-                                <span className="order-info-grid__label">
-                                    Shipping Address
-                                </span>
-                                <span className="order-info-grid__value">
-                                    {[
-                                        orderDetail.shippingAddress
-                                            .localAddress,
-                                        orderDetail.shippingAddress.city,
-                                        orderDetail.shippingAddress.district,
-                                        orderDetail.shippingAddress.province,
-                                    ]
-                                        .filter(Boolean)
-                                        .join(", ") || "N/A"}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+    <h3 className="order-section__title">Customer</h3>
+    <div className="order-info-grid">
+        <div className="order-info-grid__item">
+            <span className="order-info-grid__label">Name</span>
+            <span className="order-info-grid__value">
+                {orderDetail.orderedBy.fullName ||
+                    orderDetail.orderedBy.name ||
+                    orderDetail.orderedBy.username ||
+                    "Unknown Customer"}
+            </span>
+        </div>
+
+        <div className="order-info-grid__item">
+            <span className="order-info-grid__label">Phone</span>
+            <span className="order-info-grid__value">
+                {orderDetail.orderedBy.phoneNumber ||
+                    orderDetail.orderedBy.phone ||
+                    "N/A"}
+            </span>
+        </div>
+
+        <div className="order-info-grid__item">
+            <span className="order-info-grid__label">Email</span>
+            <span
+                className="order-info-grid__value"
+                style={{ wordBreak: "break-all" }}
+            >
+                {orderDetail.orderedBy.email}
+            </span>
+        </div>
+
+        <div className="order-info-grid__item">
+            <span className="order-info-grid__label">Payment</span>
+            <span className="order-info-grid__value">
+                {orderDetail.paymentMethod}
+            </span>
+        </div>
+
+        <div className="order-info-grid__item">
+            <span className="order-info-grid__label">
+                Shipping Address
+            </span>
+            <span className="order-info-grid__value">
+                {[
+                    orderDetail.shippingAddress.localAddress,
+                    orderDetail.shippingAddress.city,
+                    orderDetail.shippingAddress.district,
+                    orderDetail.shippingAddress.province,
+                ]
+                    .filter(Boolean)
+                    .join(", ") || "N/A"}
+            </span>
+        </div>
+
+        <div className="order-info-grid__item">
+            <span className="order-info-grid__label">
+                Nearest Landmark
+            </span>
+            <span className="order-info-grid__value">
+                {orderDetail.shippingAddress.landmark || "N/A"}
+            </span>
+        </div>
+    </div>
+</div>
 
                     {/* Items — only vendor's items */}
                     <div className="order-section">
