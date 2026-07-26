@@ -204,37 +204,64 @@ const VendorOrder: React.FC = () => {
 
 
 
+    const getAllOrdersForExport = async () => {
+        if (!authState.token) return [];
 
+        const dashboardService = VendorDashboardService.getInstance();
 
-    // Export to CSV (exports currently displayed page)
-    const handleExportCSV = () => {
-        const csvData = displayedOrders.map((order: Order) => ({
-            "Order ID": order.orderId,
-            "Ordered By": order.orderedBy,
-            Product: order.product,
-            "Created At": order.createdAt,
-            Price: order.price,
-            "Payment Status": order.paymentStatus,
-            Status: order.status,
-        }));
-        const worksheet = XLSX.utils.json_to_sheet(csvData);
+        let status = undefined;
+        if (activeTab === "Completed") status = "delivered";
+        if (activeTab === "Pending") status = "pending";
+        if (activeTab === "Canceled") status = "canceled";
+
+        const response = await dashboardService.getVendorOrdersNew(
+            authState.token,
+            {
+                page: 1,
+                limit: 9999,
+                status,
+                sort: sortOption,
+            }
+        );
+
+        return response.data.map((order: any) => {
+            const firstItem = order.orderItems[0];
+
+            return {
+                "Order ID":
+                    order.orderNumber ||
+                    `#ORD${String(order.id).padStart(4, "0")}`,
+                "Ordered By":
+                    order.orderedBy?.name ||
+                    order.orderedBy?.fullName ||
+                    order.orderedBy?.username ||
+                    "Unknown Customer",
+                Product: [
+                    ...new Set(
+                        order.orderItems
+                            .map((item: any) => item.product?.name)
+                            .filter(Boolean)
+                    ),
+                ].join(", ") || firstItem?.product?.name || "Unknown Product",
+                "Created At": order.createdAt,
+                Price: order.vendorPayable,
+                "Payment Status": order.paymentStatus || "",
+                Status: order.status,
+            };
+        });
+    };
+
+    const handleExportCSV = async () => {
+        const allOrders = await getAllOrdersForExport();
+        const worksheet = XLSX.utils.json_to_sheet(allOrders);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
         XLSX.writeFile(workbook, "orders.csv");
     };
 
-    // Export to Excel (exports currently displayed page)
-    const handleExportExcel = () => {
-        const excelData = displayedOrders.map((order: Order) => ({
-            "Order ID": order.orderId,
-            "Ordered By": order.orderedBy,
-            Product: order.product,
-            "Created At": order.createdAt,
-            Price: order.price,
-            "Payment Status": order.paymentStatus,
-            Status: order.status,
-        }));
-        const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const handleExportExcel = async () => {
+        const allOrders = await getAllOrdersForExport();
+        const worksheet = XLSX.utils.json_to_sheet(allOrders);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
         XLSX.writeFile(workbook, "orders.xlsx");
