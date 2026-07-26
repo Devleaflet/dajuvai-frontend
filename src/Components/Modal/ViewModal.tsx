@@ -1,37 +1,9 @@
 import "./ViewModal.css";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useVendorAuth } from "../../context/VendorAuthContext";
 import VendorDashboardService from "../../services/vendorDashboardService";
-import { toast } from "react-hot-toast";
 import "../../Styles/OrderModals.css";
 import defaultProductImage from "../../assets/logo.webp";
-
-type VendorFulfillmentStatus =
-    | "CONFIRMED"
-    | "PROCESSING"
-    | "SHIPPED"
-    | "DELIVERED"
-    | "CANCELLED";
-
-// Mirrors backend VENDOR_ORDER_STATUS_TRANSITIONS (orderVendorShipping.entity.ts)
-const VENDOR_STATUS_TRANSITIONS: Record<
-    VendorFulfillmentStatus,
-    VendorFulfillmentStatus[]
-> = {
-    CONFIRMED: ["PROCESSING", "CANCELLED"],
-    PROCESSING: ["SHIPPED", "CANCELLED"],
-    SHIPPED: [],
-    DELIVERED: [],
-    CANCELLED: [],
-};
-
-const VENDOR_STATUS_LABEL: Record<string, string> = {
-    CONFIRMED: "Confirmed",
-    PROCESSING: "Mark as Processing",
-    SHIPPED: "Mark as Shipped",
-    DELIVERED: "Delivered",
-    CANCELLED: "Reject Order",
-};
 
 interface OrderItem {
     id: number;
@@ -90,7 +62,6 @@ export interface VendorOrderDetail {
     vendorPayable: number;
     ownShippingFee: number | null;
     ownShippingZone: "SAME_DISTRICT" | "CROSS_DISTRICT" | null;
-    fulfillmentStatus: VendorFulfillmentStatus | null;
     paymentStatus: string;
     paymentMethod: string;
     status: string;
@@ -128,39 +99,27 @@ const ViewModal: React.FC<ViewModalProps> = ({
 }) => {
     const { authState } = useVendorAuth();
     const vendorId = authState.vendor?.id;
-    const [isUpdating, setIsUpdating] = useState(false);
+    const [statusHistory, setStatusHistory] = useState<
+        Array<{
+            id: number;
+            previousStatus: string | null;
+            newStatus: string;
+            changedByRole: string;
+            reason: string | null;
+            note: string | null;
+            createdAt: string;
+        }>
+    >([]);
+
+    useEffect(() => {
+        if (!show || !order || !authState.token) return;
+        VendorDashboardService.getInstance()
+            .getOrderStatusHistory(authState.token, order.id)
+            .then(setStatusHistory)
+            .catch(() => setStatusHistory([]));
+    }, [show, order, authState.token]);
 
     if (!show || !order || !orderDetail) return null;
-
-    const nextStatuses = orderDetail.fulfillmentStatus
-        ? (VENDOR_STATUS_TRANSITIONS[orderDetail.fulfillmentStatus] ?? [])
-        : [];
-
-    const handleStatusChange = async (next: VendorFulfillmentStatus) => {
-        if (!authState.token) return;
-        if (
-            next === "CANCELLED" &&
-            !window.confirm("Reject this order? This cannot be undone.")
-        )
-            return;
-
-        setIsUpdating(true);
-        try {
-            await VendorDashboardService.getInstance().updateVendorOrderStatus(
-                authState.token,
-                orderDetail.id,
-                next as "PROCESSING" | "SHIPPED" | "CANCELLED",
-            );
-            toast.success("Order status updated");
-            onStatusChanged?.();
-        } catch (err) {
-            toast.error(
-                err instanceof Error ? err.message : "Failed to update status",
-            );
-        } finally {
-            setIsUpdating(false);
-        }
-    };
 
     // The backend already scopes orderItems to this vendor only; the filter
     // here is just a defensive no-op, not the source of the scoping.
@@ -463,53 +422,60 @@ const ViewModal: React.FC<ViewModalProps> = ({
                         </div>
                     </div>
 
-                    {/* Vendor actions — only ever offers transitions this
-                        vendor is actually allowed to make; delivered/other
-                        vendors' status changes are never available here.
-                        Disabled for now: vendors aren't allowed to change
-                        order status yet (only admin/delivery are) - the
-                        transition logic and API call stay intact so this can
-                        be re-enabled later by removing the `false &&`. */}
-                    {false && nextStatuses.length > 0 && (
+                    {/* Vendors are read-only on order status — this is a
+                        history view only, no action buttons. Status is
+                        changed by admin/staff or the delivery rider. */}
+                    {statusHistory.length > 0 && (
                         <div className="order-section">
-                            <h3 className="order-section__title">Actions</h3>
+                            <h3 className="order-section__title">Status History</h3>
                             <div
                                 style={{
                                     display: "flex",
-                                    gap: 8,
-                                    flexWrap: "wrap",
+                                    flexDirection: "column",
+                                    gap: 10,
                                 }}
                             >
-                                {nextStatuses.map((next) => (
-                                    <button
-                                        key={next}
-                                        onClick={() => handleStatusChange(next)}
-                                        disabled={isUpdating}
+                                {statusHistory.map((entry) => (
+                                    <div
+                                        key={entry.id}
                                         style={{
-                                            padding: "8px 16px",
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            gap: 10,
+                                            fontSize: 13,
+                                            background: "#fff",
+                                            padding: "12px 16px",
                                             borderRadius: 8,
-                                            border:
-                                                next === "CANCELLED"
-                                                    ? "1px solid #dc2626"
-                                                    : "1px solid #16a34a",
-                                            background:
-                                                next === "CANCELLED"
-                                                    ? "#fff"
-                                                    : "#16a34a",
-                                            color:
-                                                next === "CANCELLED"
-                                                    ? "#dc2626"
-                                                    : "#fff",
-                                            fontWeight: 500,
-                                            cursor: isUpdating
-                                                ? "not-allowed"
-                                                : "pointer",
+                                            border: "1px solid #e5e7eb",
                                         }}
                                     >
-                                        {isUpdating
-                                            ? "Updating…"
-                                            : VENDOR_STATUS_LABEL[next]}
-                                    </button>
+                                        <div
+                                            style={{
+                                                minWidth: 130,
+                                                color: "#6b7280",
+                                            }}
+                                        >
+                                            {new Date(
+                                                entry.createdAt,
+                                            ).toLocaleString("en-US", {
+                                                year: "numeric",
+                                                month: "short",
+                                                day: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                            })}
+                                        </div>
+                                        <div style={{ textAlign: "right" }}>
+                                            <strong>{entry.newStatus}</strong>
+                                            <div style={{ color: "#6b7280" }}>
+                                                by{" "}
+                                                {entry.changedByRole.toLowerCase()}
+                                                {entry.reason
+                                                    ? ` · ${entry.reason}`
+                                                    : ""}
+                                            </div>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         </div>
