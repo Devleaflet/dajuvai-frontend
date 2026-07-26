@@ -61,12 +61,12 @@ export const getDiscountDisplay = ({
   if (hasNewFields) {
     savingsAmount = dAmount;
     percentToShow = dPercent;
-  } else if (normalizedType === "FIXED" || normalizedType === "PERCENTAGE") {
+  } else if (normalizedType === "FLAT" || normalizedType === "PERCENTAGE") {
 
     if (discount != null) {
       const dValue = toMoneyNumber(discount);
 
-      if (normalizedType === "FIXED") {
+      if (normalizedType === "FLAT") {
         savingsAmount = Math.max(0, dValue);
         percentToShow = base > 0 ? (savingsAmount / base) * 100 : 0;
       } else {

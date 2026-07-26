@@ -309,6 +309,8 @@ export const createProduct = async (
 		keywords?: string;
 		basePrice?: number;
 		discount?: number;
+		discountAmount?: number;
+		discountPercent?: number;
 		discountType?: "PERCENTAGE" | "FLAT" | "NONE";
 		status?: "AVAILABLE" | "OUT_OF_STOCK" | "LOW_STOCK";
 		stock?: number;
@@ -367,7 +369,10 @@ export const createProduct = async (
 		if (productData.brand !== undefined && productData.brand !== null) payload.brand = productData.brand;
 		if (productData.description) payload.description = productData.description;
 		if (productData.keywords !== undefined && productData.keywords !== null) payload.keywords = productData.keywords;
-		if (productData.discount !== undefined) {
+		if (productData.discountAmount !== undefined) payload.discountAmount = productData.discountAmount;
+		if (productData.discountPercent !== undefined) payload.discountPercent = productData.discountPercent;
+
+		if (productData.discount !== undefined && payload.discountAmount === undefined && payload.discountPercent === undefined) {
 			if (productData.discountType === "PERCENTAGE") {
 				payload.discountPercent = Number(productData.discount || 0);
 			} else if (productData.discountType === "FLAT") {
@@ -475,6 +480,8 @@ export const updateProduct = async (
 		keywords?: string;
 		basePrice?: number;
 		discount?: number;
+		discountAmount?: number;
+		discountPercent?: number;
 		discountType?: "PERCENTAGE" | "FLAT" | "NONE";
 		status?: "AVAILABLE" | "OUT_OF_STOCK" | "LOW_STOCK";
 		stock?: number;
@@ -502,7 +509,14 @@ export const updateProduct = async (
 		if (productData.keywords !== undefined && productData.keywords !== null)
 			payload.keywords = productData.keywords;
 
-		if (productData.discount !== undefined) {
+		if (productData.discountAmount !== undefined) {
+			payload.discountAmount = productData.discountAmount;
+		}
+		if (productData.discountPercent !== undefined) {
+			payload.discountPercent = productData.discountPercent;
+		}
+
+		if (productData.discount !== undefined && payload.discountAmount === undefined && payload.discountPercent === undefined) {
 			if (productData.discountType === "PERCENTAGE") {
 				payload.discountPercent = Number(productData.discount || 0);
 			} else if (productData.discountType === "FLAT") {

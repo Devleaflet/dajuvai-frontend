@@ -463,7 +463,7 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
                   className="product-modal__select"
                 >
                   <option value="PERCENTAGE">Percentage</option>
-                  <option value="FIXED">Fixed Amount</option>
+                  <option value="FLAT">Fixed Amount</option>
                 </select>
               </div>
             </div>

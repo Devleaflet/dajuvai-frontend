@@ -53,6 +53,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         description: "",
         basePrice: null,
         stock: 0,
+        discount: 0,
         discountAmount: 0,
         discountPercent: 0,
         discountType: "NONE",
@@ -511,6 +512,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
             description: fullProduct.description || "",
             basePrice: fullProduct.basePrice ?? null,
             stock: Number(fullProduct.stock ?? 0),
+            discount: fullProduct.discount ?? null,
             discountAmount: fullProduct.discountAmount ?? null,
             discountPercent: fullProduct.discountPercent ?? null,
             discountType: fullProduct.discountType ?? "NONE",size: Array.isArray(fullProduct.size) ? fullProduct.size : [],
@@ -941,6 +943,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
             description: "",
             basePrice: null,
             stock: 0,
+            discount: null,
             discountAmount: null,
             discountPercent: null,
             discountType: "NONE",
@@ -1327,9 +1330,22 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                                         <input
                                             type="number"
                                             className="form-input"
-                                            value={formData.discountType === "PERCENTAGE"
-                                                ? formData.discountPercent
-                                                : formData.discountAmount
+                                            value={
+                                                formData.discountType === "NONE"
+                                                    ? 0
+                                                    : (
+                                                        Number(
+                                                            formData.discountType === "PERCENTAGE"
+                                                                ? formData.discountPercent
+                                                                : formData.discountAmount
+                                                        ) > 0
+                                                    )
+                                                        ? Number(
+                                                            formData.discountType === "PERCENTAGE"
+                                                                ? formData.discountPercent
+                                                                : formData.discountAmount
+                                                        )
+                                                        : Number(formData.discount)
                                             }
                                             onChange={(e) => {
                                                 const val = e.target.value === "" ?null: Number(e.target.value);

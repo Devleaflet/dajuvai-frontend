@@ -95,6 +95,7 @@ export interface ProductFormData {
   description: string;
   basePrice: string | number | null;
   stock: number;
+  discount: string | number | null;
   discountAmount?: string | number | null;
   discountPercent?: string | number | null;
   discountType: "PERCENTAGE" | "FLAT" | "NONE" | null;

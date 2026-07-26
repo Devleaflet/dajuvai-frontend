@@ -1069,19 +1069,26 @@ const ProductPage = () => {
                     </div>
                   )}
 
-                                    <div className="product-price">
+                                     <div className="product-price">
                                         <span className="product-price__current">
                                             Rs. {getCurrentPrice().toFixed(2)}
                                         </span>
-                                        {discountDisplay.hasDiscount && (
+                                        {getOriginalPrice() >
+                                            getCurrentPrice() && (
                                             <>
                                                 <span className="product-price__original">
-                                                    Rs. {getOriginalPrice().toFixed(2)}
+                                                    Rs.{" "}
+                                                    {getOriginalPrice().toFixed(
+                                                        2,
+                                                    )}
                                                 </span>
                                                 <span className="product-price__savings">
-                                                    {discountDisplay.savingsLabel}
+                                                    Save Rs.{" "}
+                                                    {(
+                                                        getOriginalPrice() -
+                                                        getCurrentPrice()
+                                                    ).toFixed(2)}
                                                 </span>
-                                                
                                             </>
                                         )}
                                     </div>

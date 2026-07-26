@@ -226,7 +226,7 @@ const VendorStore: React.FC = () => {
 		if (!isFinite(d)) return baseNum;
 		const t = String(discType).toUpperCase();
 		if (t === "PERCENTAGE") return baseNum * (1 - d / 100);
-		if (t === "FIXED" || t === "FLAT") return baseNum - d;
+		if (t === "FLAT") return baseNum - d;
 		return baseNum;
 	};
 	// Compute the minimum effective price across all variants, falling back to product/base price
