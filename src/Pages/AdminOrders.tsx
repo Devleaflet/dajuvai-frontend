@@ -566,8 +566,7 @@ const AdminOrders: React.FC = () => {
           </button>
         </div>
 
-        {!showOrderDetails ? (
-          <div className="admin-orders__list-container">
+        <div className="admin-orders__list-container">
             <div className="admin-orders__header">
               <h2>Order Management</h2>
             </div>
@@ -673,7 +672,6 @@ const AdminOrders: React.FC = () => {
               />
             </div>
           </div>
-        ) : null}
       </div>
 
       <OrderDetailModal

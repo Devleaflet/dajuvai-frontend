@@ -31,19 +31,30 @@
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   width: 100%;
-  max-width: 900px;
+  max-width: 700px;
   max-height: 90vh;
   overflow-y: auto;
   animation: slideIn 0.3s ease-out;
   padding: 10px;
 }
 
+/* `.modal-overlay` is a shared classname reused by several unrelated
+   modals across the app (Cart, AuthModal, TermsModal, etc.), and at
+   least one of those stylesheets sets its `display` to `grid` instead
+   of this file's `flex` — whichever loads last in the bundle wins. On
+   a `grid` overlay, an auto-sized track shrinks to the item's content
+   width regardless of `width: 100%` (the percentage resolves against
+   the track, which is sized *by* the item — a shrink-to-fit loop), so
+   these two modals get an explicit non-percentage width instead of
+   depending on the parent's layout mode to stretch them. */
 .order-modal.order-detail-modal {
+  width: min(1040px, calc(100vw - 32px));
   max-width: min(1040px, calc(100vw - 32px)) !important;
 }
 
 .order-modal.order-edit-modal {
-  max-width: min(760px, calc(100vw - 32px)) !important;
+  width: min(820px, calc(100vw - 32px));
+  max-width: min(820px, calc(100vw - 32px)) !important;
 }
 
 .order-detail-modal,
@@ -458,7 +469,7 @@
 
 /* ========== EDIT STATUS MODAL ========== */
 .order-edit-modal--modern {
-  max-width: min(920px, calc(100vw - 32px)) !important;
+  max-width: min(980px, calc(100vw - 32px)) !important;
 }
 
 .order-edit-modal__hero {
