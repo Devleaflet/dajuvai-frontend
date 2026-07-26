@@ -48,13 +48,13 @@
    these two modals get an explicit non-percentage width instead of
    depending on the parent's layout mode to stretch them. */
 .order-modal.order-detail-modal {
-  width: min(1040px, calc(100vw - 32px));
-  max-width: min(1040px, calc(100vw - 32px)) !important;
+  width: min(1100px, calc(100vw - 32px));
+  max-width: min(1100px, calc(100vw - 32px)) !important;
 }
 
 .order-modal.order-edit-modal {
-  width: min(820px, calc(100vw - 32px));
-  max-width: min(820px, calc(100vw - 32px)) !important;
+  width: min(900px, calc(100vw - 32px));
+  max-width: min(900px, calc(100vw - 32px)) !important;
 }
 
 .order-detail-modal,
@@ -705,7 +705,7 @@
   margin-bottom: 16px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .modal-overlay {
     align-items: stretch;
     padding: 10px;
@@ -713,9 +713,13 @@
 
   .order-modal.order-detail-modal,
   .order-modal.order-edit-modal {
-    width: 100%;
+    width: 100% !important;
     max-width: none !important;
     max-height: calc(100vh - 20px);
+  }
+
+  .order-status-editor {
+    padding: 14px;
   }
 
   .order-detail__header,

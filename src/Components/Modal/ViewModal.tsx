@@ -155,7 +155,7 @@ const ViewModal: React.FC<ViewModalProps> = ({
             <div
                 style={{
                     width: "100%",
-                    maxWidth: 680,
+                    maxWidth: 900,
                     maxHeight: "90vh",
                     overflowY: "auto",
                     background: "#fff",
