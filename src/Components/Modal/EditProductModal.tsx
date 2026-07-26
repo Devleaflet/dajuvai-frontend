@@ -63,8 +63,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     inventory: [],
     hasVariants: false,
     variants: [],
-    bannerId: null,
-    brandId: null,
   });
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -115,7 +113,9 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         basePrice:
           product.basePrice != null ? product.basePrice.toString() : "0",
         stock: product.stock || 0,
-        discount: product.discount != null ? product.discount.toString() : "0",
+        discount: product.discountType === "PERCENTAGE" 
+          ? (product.discountPercent != null ? product.discountPercent.toString() : "0")
+          : (product.discountAmount != null ? product.discountAmount.toString() : "0"),
         discountType: product.discountType || "NONE",
         size: product.size || [],
         status: (product.status as InventoryStatus) || InventoryStatus.AVAILABLE,
@@ -131,8 +131,6 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
           : (product.vendorId ? String(product.vendorId) : ""),
         hasVariants: hasVariants, // Use computed value
         variants: product.variants || [],
-        bannerId: product.bannerId || null,
-        brandId: product.brandId || null,
       };
   
       setFormData(initialFormData);
@@ -163,6 +161,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
             attributes: attrs,
             images: imgs,
             variantImages: imgs,
+            discount: v.discountType === "PERCENTAGE" ? (v.discountPercent ?? 0) : (v.discountAmount ?? 0),
+            discountType: v.discountType || "NONE",
           } as ProductVariant;
         });
         setVariants(mappedVariants);

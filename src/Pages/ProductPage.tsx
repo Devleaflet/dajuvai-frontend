@@ -18,6 +18,7 @@ import { makeWishlistKey, useWishlist } from "../context/WishlistContext";
 import "../Styles/ProductPage.css";
 import ScrollToTop from "../Components/ScrollToTop";
 import defaultProductImage from "../assets/logo.webp";
+import { getDiscountDisplay } from "../utils/priceDisplay";
 
 const CACHE_KEY_REVIEWS = "productReviewsData";
 
@@ -317,6 +318,10 @@ const ProductPage = () => {
                         basePrice > finalPrice
                             ? basePrice.toFixed(2)
                             : undefined,
+                    discount: apiProduct.discount,
+                    discountAmount: apiProduct.discountAmount,
+                    discountPercent: apiProduct.discountPercent,
+                    discountType: apiProduct.discountType,
                     deal: apiProduct.deal,
                     rating: 0,
                     ratingCount: "0",
@@ -905,6 +910,17 @@ const ProductPage = () => {
         }
     });
 
+    const discountDisplay = product
+        ? getDiscountDisplay({
+              basePrice: getOriginalPrice(),
+              finalPrice: getCurrentPrice(),
+              discount: product.discount,
+              discountAmount: product.discountAmount,
+              discountPercent: product.discountPercent,
+              discountType: product.discountType,
+          })
+        : { hasDiscount: false, savingsAmount: 0, badgeLabel: null, savingsLabel: null };
+
     return (
         <div className="app">
             <ScrollToTop />
@@ -1057,22 +1073,15 @@ const ProductPage = () => {
                                         <span className="product-price__current">
                                             Rs. {getCurrentPrice().toFixed(2)}
                                         </span>
-                                        {getOriginalPrice() >
-                                            getCurrentPrice() && (
+                                        {discountDisplay.hasDiscount && (
                                             <>
                                                 <span className="product-price__original">
-                                                    Rs.{" "}
-                                                    {getOriginalPrice().toFixed(
-                                                        2,
-                                                    )}
+                                                    Rs. {getOriginalPrice().toFixed(2)}
                                                 </span>
                                                 <span className="product-price__savings">
-                                                    Save Rs.{" "}
-                                                    {(
-                                                        getOriginalPrice() -
-                                                        getCurrentPrice()
-                                                    ).toFixed(2)}
+                                                    {discountDisplay.savingsLabel}
                                                 </span>
+                                                
                                             </>
                                         )}
                                     </div>

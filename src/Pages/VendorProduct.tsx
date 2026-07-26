@@ -328,7 +328,8 @@ const VendorProduct: React.FC = () => {
                         hasVariants,
                         variants: normalizedVariants,
 
-                        discount: product.discount?.toString() || "0",
+                        discountAmount: product.discountAmount,
+                        discountPercent: product.discountPercent,
                         discountType: product.discountType,
 
                         productImages: images,
@@ -427,10 +428,14 @@ const VendorProduct: React.FC = () => {
                 productData.discount !== null &&
                 productData.discount !== ""
             ) {
-                updatePayload.discount =
-                    typeof productData.discount === "string"
-                        ? parseFloat(productData.discount)
-                        : productData.discount;
+                const discVal = typeof productData.discount === "string"
+                    ? parseFloat(productData.discount)
+                    : productData.discount;
+                if (productData.discountType === "PERCENTAGE") {
+                    updatePayload.discountPercent = discVal;
+                } else if (productData.discountType === "FLAT") {
+                    updatePayload.discountAmount = discVal;
+                }
             }
             if (productData.discountType)
                 updatePayload.discountType = productData.discountType;
@@ -450,10 +455,13 @@ const VendorProduct: React.FC = () => {
                         (variant: any) => ({
                             sku: variant.sku,
                             basePrice: variant.price || variant.basePrice,
-                            discount: variant.discount || 0,
-                            discountType: normalizeDiscountType(
-                                variant.discountType,
-                            ),
+                            discountAmount: normalizeDiscountType(variant.discountType) === "FLAT"
+                                ? Number(variant.discount || 0)
+                                : undefined,
+                            discountPercent: normalizeDiscountType(variant.discountType) === "PERCENTAGE"
+                                ? Number(variant.discount || 0)
+                                : undefined,
+                            discountType: normalizeDiscountType(variant.discountType),
                             attributes: variant.attributes || {},
                             variantImages:
                                 variant.images || variant.variantImages || [],
@@ -496,12 +504,10 @@ const VendorProduct: React.FC = () => {
 
     const handleEditProduct = (product: Product) => {
         let discount: number | null = null;
-        if (product.discount) {
-            if (typeof product.discount === "number") {
-                discount = product.discount;
-            } else {
-                discount = parseFloat(product.discount.toString());
-            }
+        if (product.discountPercent != null && product.discountType === 'PERCENTAGE') {
+            discount = Number(product.discountPercent);
+        } else if (product.discountAmount != null && product.discountType === 'FLAT') {
+            discount = Number(product.discountAmount);
         }
 
         type SubcategoryType = {

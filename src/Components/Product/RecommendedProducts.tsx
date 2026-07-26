@@ -183,7 +183,8 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
       basePrice,
       finalPrice,
       hasVariants: Boolean(apiProduct.hasVariants),
-      discount: (apiProduct as any).discount ?? undefined,
+      discountAmount: (apiProduct as any).discountAmount ?? undefined,
+      discountPercent: (apiProduct as any).discountPercent ?? undefined,
       discountType: apiProduct.discountType ?? undefined,
       rating: Number((apiProduct as any).avgRating?.avg ?? (apiProduct as any).rating ?? 0) || 0,
       ratingCount: String(
@@ -209,6 +210,8 @@ const RecommendedProducts: React.FC<RecommendedProductsProps> = ({
         images: Array.isArray(v.variantImages) ? v.variantImages : Array.isArray(v.images) ? v.images : (v.image ? [v.image] : undefined),
         discount: v.discount,
         discountType: v.discountType,
+        discountAmount: v.discountAmount,
+        discountPercent: v.discountPercent,
         attributes: v.attributes,
         status: v.status || "AVAILABLE",
         hasVariants: false, // Variants themselves don't have variants

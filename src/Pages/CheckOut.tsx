@@ -79,6 +79,8 @@ interface CartItem {
 		basePrice?: number | string;
 		discount?: number | string;
 		discountType?: 'PERCENTAGE' | 'FLAT' | string;
+		discountAmount?: number | null;
+		discountPercent?: number | null;
 		variantImgUrls?: string[];
 	};
 	selectedVariant?: CartItem['variant'];
@@ -91,6 +93,8 @@ interface CartItem {
 		basePrice?: number | string;
 		discount?: number | string;
 		discountType?: 'PERCENTAGE' | 'FLAT' | string;
+		discountAmount?: number | null;
+		discountPercent?: number | null;
 		vendor?: string | {
 			id?: number;
 			businessName?: string;
@@ -924,12 +928,14 @@ const Checkout: React.FC = () => {
 	};
 
 	const getItemDiscountDisplay = (item: CartItem) => {
-		const discount = item.variant?.discount ?? item.product?.discount;
+		const discountAmount = item.variant?.discountAmount ?? item.product?.discountAmount;
+		const discountPercent = item.variant?.discountPercent ?? item.product?.discountPercent;
 		const discountType = item.variant?.discountType ?? item.product?.discountType;
 		return getDiscountDisplay({
 			basePrice: getItemOriginalPrice(item),
 			finalPrice: Number(item.price),
-			discount,
+			discountAmount,
+			discountPercent,
 			discountType,
 		});
 	};

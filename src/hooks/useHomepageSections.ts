@@ -10,6 +10,8 @@ export interface HomepageProduct {
   basePrice: number;
   stock: number;
   discount: string;
+  discountAmount: string;
+  discountPercent: string;
   discountType?: string;
   size: string[];
   productImages: string[];

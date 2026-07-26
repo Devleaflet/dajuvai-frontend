@@ -49,6 +49,8 @@ interface ApiProduct {
     stock: number;
     hasVariants: boolean;
     discount: number | null;
+    discountAmount?: number | null;
+    discountPercent?: number | null;
     discountType: "PERCENTAGE" | "FLAT" | "NONE" | null;
     size: string[];
     status: "AVAILABLE" | "OUT_OF_STOCK" | "LOW_STOCK" | "UNAVAILABLE";
@@ -76,6 +78,8 @@ interface ApiProduct {
         attributes?: Record<string, any>;
         discount?: number | string;
         discountType?: "PERCENTAGE" | "FLAT" | "NONE";
+        discountAmount?: number | null;
+        discountPercent?: number | null;
         calculatedPrice?: number;
         [key: string]: any;
     }>;
@@ -239,16 +243,8 @@ const fetchProductsWithFilters = async (
         // Client-side sort if provided
         if (filters.sort && filters.sort !== "all") {
             selectedProducts = [...selectedProducts].sort((a, b) => {
-                const priceA = calculatePrice(
-                    a.basePrice,
-                    a.discount,
-                    a.discountType,
-                );
-                const priceB = calculatePrice(
-                    b.basePrice,
-                    b.discount,
-                    b.discountType,
-                );
+                const priceA = toNumber(a.finalPrice) || calculatePrice(a.basePrice, a.discountAmount ?? a.discount, a.discountType);
+                const priceB = toNumber(b.finalPrice) || calculatePrice(b.basePrice, b.discountAmount ?? b.discount, b.discountType);
                 if (filters.sort === "low-to-high") return priceA - priceB;
                 if (filters.sort === "high-to-low") return priceB - priceA;
                 return 0;
@@ -391,21 +387,29 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
         basePrice = toNumber(displayVariants[0].basePrice);
     }
 
-    const afterProductDiscount = applyDiscount(
-        basePrice,
-        item.discount,
-        item.discountType,
-    );
+    // Use backend-computed finalPrice as the source of truth for the effective price.
+    // applyDiscount is kept for legacy fallback when finalPrice is missing.
+    const backendFinalPrice = toNumber(item.finalPrice);
+    const afterProductDiscount = backendFinalPrice > 0
+        ? backendFinalPrice
+        : applyDiscount(basePrice, item.discountAmount ?? item.discount, item.discountType);
 
     const finalPrice = applyDeal(afterProductDiscount, item.deal);
 
     let discountPctNum = 0;
-    if (item.discountType === "PERCENTAGE" && item.discount) {
+    if (item.discountType === "PERCENTAGE" && item.discountPercent) {
+        discountPctNum = Math.round(Number(item.discountPercent));
+    } else if (item.discountType === "PERCENTAGE" && item.discount) {
         discountPctNum = Math.round(parseFloat(`${item.discount}`));
     } else if (basePrice > 0 && item.finalPrice < basePrice) {
         discountPctNum = Math.max(
             1,
             Math.round(((basePrice - item.finalPrice) / basePrice) * 100),
+        );
+    } else if (item.discountType === "FLAT" && item.discountAmount && basePrice > 0) {
+        discountPctNum = Math.max(
+            1,
+            Math.round((Number(item.discountAmount) / basePrice) * 100),
         );
     } else if (item.discountType === "FLAT" && item.discount && basePrice > 0) {
         discountPctNum = Math.max(
@@ -428,7 +432,9 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
         deal: item.deal,
         dealId: item.dealId,
         price: Math.max(finalPrice, 0).toString(),
-        discount: item.discount ? `${item.discount}` : undefined,
+        discount: item.discount,
+        discountAmount: item.discountAmount ?? undefined,
+        discountPercent: item.discountPercent ?? undefined,
         discountPercentage: discountPctStr,
         discountType: item.discountType,
         rating: Number(averageRating) || 0,
@@ -457,7 +463,7 @@ const createFallbackProduct = (item: ApiProduct): Product => ({
     basePrice: 0,
     finalPrice: 0,
     originalPrice: "0",
-    discount: item.discount ? `${item.discount}` : undefined,
+    discount: item.discount ? item.discount : 0,
     discountPercentage: item.discount ? `${item.discount}%` : "0%",
     discountType: item.discountType || "NONE",
     price: "0",

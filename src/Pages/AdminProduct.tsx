@@ -458,14 +458,26 @@ const AdminProduct: React.FC = () => {
                   ))
                 ) : displayedProducts.length > 0 ? (
                   displayedProducts.map((product) => {
+                    let discountValue: number | null = null;
+
+                    if (product.discountType === "PERCENTAGE") {
+                      discountValue = Number(product.discountPercent);
+                    } else if (product.discountType === "FLAT") {
+                      discountValue = Number(product.discountAmount);
+                    }
+
+                    if (product.discountType !== "NONE" && (!discountValue || discountValue === 0)) {
+                      discountValue = Number(product.discount);
+                    }
+
                     const productDiscountLabel =
                       !product.hasVariants &&
                       !product.deal &&
-                      product.discount &&
-                      Number(product.discount) > 0
+                      discountValue &&
+                      Number(discountValue) > 0
                         ? product.discountType === "PERCENTAGE"
-                          ? `${product.discount}%`
-                          : `Rs ${product.discount}`
+                          ? `${discountValue}%`
+                          : `Rs ${discountValue}`
                         : null;
 
                     const dealDiscountPercentage = (product.deal as any)?.discountPercentage;

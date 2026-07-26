@@ -3,7 +3,9 @@ type DiscountType = 'PERCENTAGE' | 'FLAT' | 'NONE' | string | null | undefined;
 interface DiscountDisplayInput {
   basePrice: number | string | null | undefined;
   finalPrice: number | string | null | undefined;
-  discount?: number | string | null;
+  discount: number | string | null;
+  discountAmount?: number | string | null;
+  discountPercent?: number | string | null;
   discountType?: DiscountType;
 }
 
@@ -34,13 +36,58 @@ export const getDiscountDisplay = ({
   basePrice,
   finalPrice,
   discount,
+  discountAmount,
+  discountPercent,
   discountType,
 }: DiscountDisplayInput): DiscountDisplay => {
+
   const base = toMoneyNumber(basePrice);
   const final = toMoneyNumber(finalPrice);
-  const discountValue = toMoneyNumber(discount);
-  const savingsAmount = Math.max(0, Math.round((base - final) * 100) / 100);
-  const hasDiscount = base > 0 && final >= 0 && savingsAmount > 0;
+  const normalizedType = String(discountType ?? "NONE").toUpperCase();
+
+  // Normalize values. null/undefined become 0.
+  const dAmount = toMoneyNumber(discountAmount ?? 0);
+  const dPercent = toMoneyNumber(discountPercent ?? 0);
+
+  const hasNewFields =
+    discountAmount != null &&
+    discountPercent != null &&
+    dAmount > 0 &&
+    dPercent > 0;
+
+  let savingsAmount = 0;
+  let percentToShow = 0;
+
+  if (hasNewFields) {
+    savingsAmount = dAmount;
+    percentToShow = dPercent;
+  } else if (normalizedType === "FIXED" || normalizedType === "PERCENTAGE") {
+
+    if (discount != null) {
+      const dValue = toMoneyNumber(discount);
+
+      if (normalizedType === "FIXED") {
+        savingsAmount = Math.max(0, dValue);
+        percentToShow = base > 0 ? (savingsAmount / base) * 100 : 0;
+      } else {
+        percentToShow = Math.max(0, dValue);
+        savingsAmount =
+          base > 0
+            ? Math.round(((percentToShow / 100) * base) * 100) / 100
+            : 0;
+      }
+    } else {
+      savingsAmount = Math.max(
+        0,
+        Math.round((base - final) * 100) / 100
+      );
+
+      percentToShow =
+        base > 0 ? (savingsAmount / base) * 100 : 0;
+    }
+  }
+
+  const hasDiscount = base > 0 && savingsAmount > 0;
 
   if (!hasDiscount) {
     return {
@@ -51,24 +98,10 @@ export const getDiscountDisplay = ({
     };
   }
 
-  const normalizedType = String(discountType ?? 'NONE').toUpperCase();
-
-  // Top-left badge is always a percentage — even for a FLAT (Rs amount)
-  // discount, converted from the actual price gap — so the two badges never
-  // show the same kind of number twice (badge = %, savingsLabel = Rs amount).
-  const actualPercent = (savingsAmount / base) * 100;
-  const percentToShow =
-    normalizedType === 'PERCENTAGE' &&
-    discountValue > 0 &&
-    Math.abs(actualPercent - discountValue) <= 0.05
-      ? discountValue
-      : actualPercent;
-  const badgeLabel = `-${formatPercent(percentToShow)}%`;
-
   return {
     hasDiscount: true,
     savingsAmount,
-    badgeLabel,
+    badgeLabel: `-${formatPercent(percentToShow)}%`,
     savingsLabel: `Save Rs ${formatMoney(savingsAmount)}`,
   };
 };

@@ -10,7 +10,9 @@ export interface Product {
   basePrice?: string | number;
   originalPrice?: string | number;
   finalPrice: number;
-  discount?: string;
+  discount: number;
+  discountAmount?: number;
+  discountPercent?: number;
   rating: number;
   ratingCount: string | number;
   isBestSeller?: boolean;
@@ -57,6 +59,10 @@ export interface Product {
     images?: string[];
     attributes?: Record<string, any>;
     status?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
+    discount?: number;
+    discountAmount?: number;
+    discountPercent?: number;
+    discountType?: "PERCENTAGE" | "FLAT" | "NONE" | null;
     [key: string]: any;
   }>;
   

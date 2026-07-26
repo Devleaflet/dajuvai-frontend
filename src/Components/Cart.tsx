@@ -327,16 +327,20 @@ const CartItemRow = React.memo(
                 const basePrice = Number(
                   item.variant?.basePrice ?? item.product?.basePrice ?? item.price,
                 );
-                const discount = item.variant
-                  ? item.variant?.discount
-                  : item.product?.discount;
+                const discountAmount = item.variant
+                  ? item.variant?.discountAmount
+                  : item.product?.discountAmount;
+                const discountPercent = item.variant
+                  ? item.variant?.discountPercent
+                  : item.product?.discountPercent;
                 const discountType = item.variant
                   ? item.variant?.discountType
                   : item.product?.discountType;
                 const discountDisplay = getDiscountDisplay({
                   basePrice,
                   finalPrice: item.price,
-                  discount,
+                  discountAmount,
+                  discountPercent,
                   discountType,
                 });
                 if (!discountDisplay.hasDiscount) return null;
