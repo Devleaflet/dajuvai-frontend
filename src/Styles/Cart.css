@@ -682,6 +682,14 @@
   transform: translateY(-1px);
 }
 
+.cart__button--checkout:disabled {
+  background: #cbd5e1;
+  color: #64748b;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .cart__button--continue {
   background: white;
   color: #475569;

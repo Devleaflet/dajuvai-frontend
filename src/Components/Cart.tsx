@@ -276,6 +276,15 @@ const CartItemRow = React.memo(
           </div>
         )}
 
+        {!itemError && item.warningMessage && (
+          <div className="cart__item-error cart__item-error--stock">
+            <FaExclamationCircle className="cart__item-error-icon" />
+            <span className="cart__item-error-text">
+              {item.warningMessage}
+            </span>
+          </div>
+        )}
+
         <div className="cart__item-image-container">
           <img
             src={item.image || defaultProductImage}
@@ -601,6 +610,11 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
     );
   }, [cartItems]);
 
+  const hasBlockingWarnings = React.useMemo(
+    () => cartItems.some((item) => Boolean(item.warningMessage)),
+    [cartItems],
+  );
+
   const handleIncreaseForItem = useCallback(
     (itemId: number) => handleIncreaseQuantity(itemId, 1),
     [handleIncreaseQuantity],
@@ -717,20 +731,34 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
                 </div>
 
                 <div className="cart__shipping-note">
-                  Shipping & taxes calculated at checkout
+                  {hasBlockingWarnings
+                    ? "Resolve the item(s) above before checking out"
+                    : "Shipping & taxes calculated at checkout"}
                 </div>
 
                 <div className="cart__buttons">
-                  <Link
-                    to="/checkout"
-                    className="cart__button cart__button--checkout"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleCart();
-                    }}
-                  >
-                    Proceed to Checkout
-                  </Link>
+                  {hasBlockingWarnings ? (
+                    <button
+                      type="button"
+                      className="cart__button cart__button--checkout"
+                      disabled
+                      aria-disabled="true"
+                      title="Remove or adjust the flagged item(s) before checking out"
+                    >
+                      Proceed to Checkout
+                    </button>
+                  ) : (
+                    <Link
+                      to="/checkout"
+                      className="cart__button cart__button--checkout"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCart();
+                      }}
+                    >
+                      Proceed to Checkout
+                    </Link>
+                  )}
 
                   <Link
                     to="/shop"

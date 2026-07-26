@@ -29,6 +29,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const getTokenExpiration = (token: string): number | null => {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.exp ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+};
+
 export const VendorAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -119,6 +128,31 @@ export const VendorAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       logout();
     }
   };
+
+  // Proactively refresh before the short-lived access token expires — without
+  // this, a vendor mid-session (e.g. on the Archived Products tab) hits a
+  // hard 401 on every write action once the token ages out, since nothing
+  // else here calls refreshToken() on its own. Mirrors AuthContext's
+  // customer-session refresh loop.
+  useEffect(() => {
+    if (!authState.token || !authState.isAuthenticated) return;
+
+    const checkTokenExpiration = () => {
+      const expiration = getTokenExpiration(authState.token!);
+      if (!expiration) return;
+      const timeUntilExpiry = expiration - Date.now();
+      const refreshThreshold = 5 * 60 * 1000; // 5 minutes before expiry
+      if (timeUntilExpiry < refreshThreshold && timeUntilExpiry > 0) {
+        refreshToken();
+      }
+    };
+
+    const interval = setInterval(checkTokenExpiration, 2 * 60 * 1000);
+    checkTokenExpiration();
+
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authState.token, authState.isAuthenticated]);
 
   const login = (token: string, vendor: Vendor) => {
     setAuthState({ token, vendor, isAuthenticated: true });

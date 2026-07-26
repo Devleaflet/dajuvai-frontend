@@ -25,6 +25,10 @@ interface CartItem {
   variant?: any;
   selectedVariant?: any;
   stock?: number;
+  // Set server-side (CartService.getCart) when the item's product/variant
+  // is gone, unavailable, or its stock has dropped below the cart quantity
+  // since it was added — surfaced so the user finds out here, not at checkout.
+  warningMessage?: string;
 }
 
 // Reducer action types

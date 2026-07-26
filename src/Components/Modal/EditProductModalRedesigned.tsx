@@ -371,12 +371,10 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
             );
         }
 
-        // The real flag, not array-length inference — a product just
-        // converted to non-variant can still carry orphaned variant rows
-        // (kept only because they have real order history; see
-        // ProductService.deleteVariantsSafely on the backend), and inferring
-        // from array presence would make it look like a variant product
-        // again the moment it's reopened for edit.
+        // Use the real flag, not array-length inference: variants removed
+        // during an edit are archived (soft-deleted) on the backend, not
+        // returned in `fullProduct.variants` at all, so inferring from array
+        // presence would be redundant with (and could drift from) this flag.
         const hasVariants = fullProduct.hasVariants === true;
 
         // Helper: normalize various backend attribute shapes to Attribute[]

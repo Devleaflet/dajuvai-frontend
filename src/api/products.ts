@@ -607,9 +607,11 @@ export const deleteProduct = async (productId: number, token?: string) => {
 		if (typeof error === "object" && error !== null && "response" in error) {
 			const err = error as { response?: { status?: number; data?: any } };
 			console.error("Error deleting product:", err.response?.data || error);
-			// Prefer the backend's own message when it sent one (e.g. 409
-			// "This product has existing orders...") over a generic
-			// per-status message that would otherwise swallow it.
+			// Prefer the backend's own message when it sent one over a
+			// generic per-status message that would otherwise swallow it.
+			// Deleting a product now always succeeds (it's archived, not
+			// blocked, regardless of order history), so this mainly covers
+			// 403/404/validation errors.
 			const backendMessage = err.response?.data?.message;
 			if (backendMessage) {
 				throw new Error(backendMessage);
@@ -626,6 +628,44 @@ export const deleteProduct = async (productId: number, token?: string) => {
 		}
 		throw error;
 	}
+};
+
+export const restoreProduct = async (productId: number, token?: string) => {
+	const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
+	const response = await axios.patch(
+		`${API_BASE_URL}/api/product/${productId}/restore`,
+		{},
+		{ headers },
+	);
+	return response.data;
+};
+
+export const restoreVariant = async (
+	productId: number,
+	variantId: number,
+	token?: string,
+) => {
+	const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
+	const response = await axios.patch(
+		`${API_BASE_URL}/api/product/${productId}/variant/${variantId}/restore`,
+		{},
+		{ headers },
+	);
+	return response.data;
+};
+
+export const fetchArchivedProducts = async (
+	page: number = 1,
+	limit: number = 20,
+	token?: string,
+	options: { search?: string; type?: "product" | "variants" } = {},
+) => {
+	const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
+	const response = await axios.get(`${API_BASE_URL}/api/product/archived`, {
+		params: { page, limit, ...options },
+		headers,
+	});
+	return response.data;
 };
 
 export type ProductSortOption =

@@ -6,6 +6,7 @@ import OrderEditModal from "../Components/Modal/OrderEditModal";
 import OrderDetailModal from "../Components/Modal/OrderDetailModal";
 import AdminOrdersSkeleton from "../skeleton/AdminOrdersSkeleton";
 import "../Styles/AdminOrders.css";
+import "../Styles/OrderModals.css";
 import { OrderService } from "../services/orderService";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -16,6 +17,10 @@ const ORDER_STATUS_OPTIONS = [
   { value: "all", label: "All Statuses" },
   ...ALL_ORDER_STATUSES.map((s) => ({ value: s.value, label: s.label })),
 ];
+
+const ORDER_STATUS_META = Object.fromEntries(
+  ALL_ORDER_STATUSES.map((s) => [s.value, s]),
+);
 
 interface DisplayOrder {
   id: string;
@@ -591,35 +596,57 @@ const AdminOrders: React.FC = () => {
                       </td>
                     </tr>
                   ) : currentOrders.length > 0 ? (
-                    currentOrders.map((order) => (
+                    currentOrders.map((order) => {
+                      const statusMeta = ORDER_STATUS_META[order.status];
+                      const paymentKey = order.paymentStatus.toLowerCase();
+                      return (
                     <tr key={order.id} className="admin-orders__table-row">
-                      <td>{order.orderNumber || order.id}</td>
+                      <td className="admin-orders__id-cell">{order.orderNumber || order.id}</td>
                       <td className="admin-orders__name-cell">
                         {order.customer}
                       </td>
-                      <td>{order.email}</td>
+                      <td className="admin-orders__email-cell">{order.email}</td>
                       <td>{order.orderDate}</td>
-                      <td>{order.totalPrice}</td>
-                      <td>{order.status}</td>
-                      <td>{order.paymentStatus}</td>
+                      <td className="admin-orders__price-cell">{order.totalPrice}</td>
+                      <td>
+                        <span
+                          className={`status-badge ${statusMeta?.badgeClassName ?? ""}`}
+                        >
+                          {statusMeta?.label ?? order.status}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`payment-badge payment-badge--${paymentKey}`}>
+                          {order.paymentStatus}
+                        </span>
+                      </td>
                       <td className="admin-orders__actions">
                         <button
                           className="admin-orders__action-btn admin-orders__view-btn"
                           onClick={() => viewOrderDetails(order)}
                           aria-label="View order details"
+                          title="View details"
                         >
-                          👁
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+                          </svg>
                         </button>
                         <button
                           className="admin-orders__action-btn admin-orders__edit-btn"
                           onClick={() => editOrder(order)}
                           aria-label="Edit order"
+                          title="Edit order"
                         >
-                          ✏️
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
                         </button>
                       </td>
                     </tr>
-                    ))
+                      );
+                    })
                   ) : (
                     <tr>
                       <td colSpan={8}>

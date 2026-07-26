@@ -41,6 +41,7 @@ interface ApiProduct {
 		id: number;
 		businessName: string;
 		email: string;
+		profilePicture?: string | null;
 
 		districtId: number;
 		district: {
@@ -53,6 +54,7 @@ interface ApiProduct {
 interface VendorInfo {
 	businessName: string;
 	email?: string;
+	profilePicture?: string | null;
 
 	districtName?: string;
 }
@@ -74,6 +76,7 @@ const VendorStore: React.FC = () => {
 	const [page, setPage] = useState<number>(1);
 	const [limit] = useState<number>(10);
 	const [vendorInfo, setVendorInfo] = useState<VendorInfo | null>(null);
+	const [vendorAvatarError, setVendorAvatarError] = useState(false);
 	const [searchTerm, setSearchTerm] = useState<string>("");
 	const [sortBy, setSortBy] = useState<
 		"relevance" | "price_asc" | "price_desc" | "name_asc" | "name_desc"
@@ -95,6 +98,7 @@ const VendorStore: React.FC = () => {
 						setVendorInfo({
 							businessName: v.businessName,
 							email: v.email,
+							profilePicture: v.profilePicture,
 
 							districtName: v?.district?.name,
 						});
@@ -390,9 +394,18 @@ const VendorStore: React.FC = () => {
 			<div className="vendor-store">
 				<header className="vendor-store__header">
 					<div className="vendor-store__logo">
-						<span className="vendor-store__logo-letter">
-							{vendorInfo?.businessName?.[0] || "U"}
-						</span>
+						{vendorInfo?.profilePicture && !vendorAvatarError ? (
+							<img
+								src={vendorInfo.profilePicture}
+								alt={vendorInfo.businessName || "Vendor"}
+								className="vendor-store__logo-image"
+								onError={() => setVendorAvatarError(true)}
+							/>
+						) : (
+							<span className="vendor-store__logo-letter">
+								{vendorInfo?.businessName?.[0]?.toUpperCase() || "U"}
+							</span>
+						)}
 					</div>
 					<div className="vendor-store__info">
 						<h1>{vendorInfo?.businessName || "Unknown Vendor"}</h1>

@@ -11,6 +11,7 @@ import {
 } from "../api/products";
 import EditProductModal from "../Components/Modal/EditProductModalRedesigned";
 import DeleteModal from "../Components/Modal/DeleteModal";
+import ArchivedProductsTab from "../Components/ArchivedProductsTab";
 import NewProductModal from "../Components/NewProductModalRedesigned";
 import Pagination from "../Components/Pagination";
 import ProductList from "../Components/ProductList";
@@ -106,6 +107,9 @@ const VendorProduct: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [isMobile] = useState<boolean>(window.innerWidth < 768);
     const [showAddModal, setShowAddModal] = useState<boolean>(false);
+    const [activeTab, setActiveTab] = useState<"active" | "archived">(
+        "active",
+    );
     const [docketHeight] = useState<number>(80);
     const [showEditModal, setShowEditModal] = useState<boolean>(false);
     const [editingProduct, setEditingProduct] = useState<ApiProduct | null>(
@@ -170,14 +174,13 @@ const VendorProduct: React.FC = () => {
             return deleteProduct(productId, authState.token);
         },
         onSuccess: () => {
+            // Root-key match: the live query key is
+            // ["vendor-products", vendorId, page, perPage, search, sort, status, token] —
+            // spelling out a shorter key with `token` in the wrong position
+            // here never partial-matched it, so the list silently never
+            // refetched after a delete/archive.
             queryClient.invalidateQueries({
-                queryKey: [
-                    "vendor-products",
-                    authState.vendor?.id,
-                    currentPage,
-                    productsPerPage,
-                    authState.token,
-                ],
+                queryKey: ["vendor-products", authState.vendor?.id],
             });
             toast.success("Product deleted successfully!");
             setShowDeleteDialog(false);
@@ -827,6 +830,39 @@ const VendorProduct: React.FC = () => {
                             : "24px",
                     }}
                 >
+                    <div className="vendor-view-tabs">
+                        <button
+                            className={`vendor-view-tab-btn ${
+                                activeTab === "active"
+                                    ? "vendor-view-tab-btn--active"
+                                    : ""
+                            }`}
+                            onClick={() => setActiveTab("active")}
+                        >
+                            Active Products
+                        </button>
+                        <button
+                            className={`vendor-view-tab-btn ${
+                                activeTab === "archived"
+                                    ? "vendor-view-tab-btn--active"
+                                    : ""
+                            }`}
+                            onClick={() => setActiveTab("archived")}
+                        >
+                            Archived Products
+                        </button>
+                    </div>
+                    {activeTab === "archived" ? (
+                        <ArchivedProductsTab
+                            token={authState.token}
+                            onRestored={() =>
+                                queryClient.invalidateQueries({
+                                    queryKey: ["vendor-products"],
+                                })
+                            }
+                        />
+                    ) : (
+                    <>
                     {!lowStockBannerDismissed && lowStockCount > 0 && (
                         <div className="low-stock-banner">
                             <span className="low-stock-banner__icon">
@@ -997,6 +1033,8 @@ const VendorProduct: React.FC = () => {
                         <div className="vendor-product__no-results">
                             No product found.
                         </div>
+                    )}
+                    </>
                     )}
                 </main>
             </div>

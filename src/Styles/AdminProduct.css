@@ -1,6 +1,7 @@
+
 .admin-products {
     display: flex;
-    height: 100vh;
+    min-height: 100vh;
     background-color: #f4f7fa;
 }
 
@@ -9,8 +10,6 @@
     flex-direction: column;
     flex: 1;
     min-width: 0;
-    height: 100vh;
-    overflow: hidden;
 }
 
 .admin-products__error {
@@ -35,13 +34,11 @@
 .admin-products__list-container {
     display: flex;
     flex-direction: column;
-    flex: 1;
-    min-height: 0;
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     padding: 20px;
-    margin: 0 2rem;
+    margin: 0 2rem 2rem;
 }
 
 .admin-products__header {
@@ -55,6 +52,40 @@
     margin: 0;
     font-size: 24px;
     color: #333;
+}
+
+.admin-products__tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e2e8f0;
+    overflow-x: auto;
+}
+
+.admin-products__tab-btn {
+    padding: 10px 18px;
+    border: none;
+    background: none;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.admin-products__tab-btn--active {
+    color: #ea580c;
+    border-bottom-color: #ea580c;
+}
+
+@media (max-width: 480px) {
+    .admin-products__tab-btn {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
 }
 
 .admin-products__add-btn {
@@ -72,27 +103,19 @@
 }
 
 .admin-products__table-container {
-    /* Vertical scroll for the table body; horizontal scroll when the table
-     is wider than the viewport (prevents any cell from ever needing to wrap). */
-    flex: 1;
-    min-height: 0;
     overflow-x: auto;
-    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
 }
 
 .admin-products__table {
-    /* Never shrink below this — container scrolls horizontally instead */
     min-width: 960px;
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     table-layout: auto;
 }
 
 .admin-products__table-head th {
-    position: sticky;
-    top: 0;
-    z-index: 1;
     background-color: #f8f9fa;
     padding: 10px 12px;
     text-align: left;
@@ -100,7 +123,6 @@
     color: #333;
     border-bottom: 1px solid #dee2e6;
     vertical-align: middle;
-    /* Headers never wrap — they are the scroll anchor */
     white-space: nowrap;
 }
 
@@ -113,11 +135,9 @@
     border-bottom: 1px solid #dee2e6;
     color: #333;
     vertical-align: middle;
-    /* No wrapping needed — horizontal scroll handles wide content */
     white-space: nowrap;
 }
 
-/* Name column: truncates with ellipsis; full name shown on hover via title attr */
 .admin-products__name-cell,
 .admin-products__table-row td:nth-child(3),
 .admin-products__table-head th:nth-child(3) {
@@ -472,34 +492,7 @@
         gap: 8px;
     }
 
-    /* Desktop locks the whole page to exactly 100vh with overflow:hidden so
-     only the table body scrolls (header/sidebar stay put) - that only
-     works because the header fits on one line. On mobile the search bar
-     and filter dropdowns wrap onto several lines, so the header alone can
-     exceed the space this rigid layout allows, and flex:1 has nowhere left
-     to shrink the table-container TO but ~0 height ("only shows 2-3 rows").
-     Let the page scroll normally instead; the table keeps its own
-     horizontal scroll for the wide columns. */
-    .admin-products {
-        height: auto;
-        min-height: 100vh;
-    }
-
-    .admin-products__content {
-        height: auto;
-        min-height: 100vh;
-        overflow: visible;
-    }
-
     /* Table: allow horizontal scroll, shrink font */
-    .admin-products__table-container {
-        flex: none;
-        max-height: 65vh;
-        overflow-x: auto;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
     .admin-products__table {
         min-width: 820px;
         font-size: 13px;

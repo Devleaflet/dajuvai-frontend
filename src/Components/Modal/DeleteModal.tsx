@@ -39,7 +39,8 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
           Are you sure you want to delete{" "}
           <strong className="delete-modal__product-name">"{productName}"</strong>?
           <br />
-          This will permanently remove the product and all its images. This action cannot be undone.
+          It will be archived and removed from your store, order history stays
+          intact, and you can restore it later from Archived Products.
         </p>
         <div className="delete-modal__actions">
           <button
