@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { OrderService, DetailedOrder } from "../../services/orderService";
 import { useAuth } from "../../context/AuthContext";
-import { toast } from "react-hot-toast";
 import { getOrderStatusMeta } from "../orderStatus";
-import OrderStatusEditor from "../OrderStatusEditor";
 import "../../Styles/OrderModals.css";
 import defaultProductImage from "../../assets/logo.webp";
 
@@ -54,8 +52,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     );
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [currentStatus, setCurrentStatus] = useState("");
-    const [isSaving, setIsSaving] = useState(false);
     const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[]>(
         [],
     );
@@ -71,7 +67,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     token,
                 );
                 setDetailedOrder(orderDetails);
-                setCurrentStatus(orderDetails.status || "");
             } catch (err) {
                 setError(
                     err instanceof Error
@@ -95,44 +90,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         };
         fetchOrderDetails();
     }, [show, order, token]);
-
-    const handleStatusUpdate = async (
-        newStatus: string,
-        reason: string,
-        note: string,
-    ) => {
-        if (!detailedOrder || !token) return;
-        setIsSaving(true);
-        try {
-            await OrderService.updateOrderStatus(
-                detailedOrder.id,
-                newStatus,
-                token,
-                {
-                    expectedCurrentStatus: detailedOrder.status,
-                    reason,
-                    note: note || undefined,
-                },
-            );
-            setDetailedOrder((prev) =>
-                prev ? { ...prev, status: newStatus } : prev,
-            );
-            setCurrentStatus(newStatus);
-            onStatusUpdate?.(detailedOrder.id.toString(), newStatus);
-            toast.success("Order status updated");
-            const history = await OrderService.getOrderStatusHistory(
-                detailedOrder.id,
-                token,
-            );
-            setStatusHistory(history);
-        } catch (err) {
-            toast.error(
-                err instanceof Error ? err.message : "Failed to update status",
-            );
-        } finally {
-            setIsSaving(false);
-        }
-    };
 
     if (!show || !order) return null;
 
@@ -236,7 +193,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                             className="order-modal__close-btn order-detail__close-btn"
                             onClick={onClose}
                             aria-label="Close order details"
-                            disabled={isSaving}
                         >
                             <svg
                                 width="20"
@@ -656,17 +612,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                                         </span>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div className="order-section">
-                                <h3 className="order-section__title">
-                                    Status update
-                                </h3>
-                                <OrderStatusEditor
-                                    currentStatus={currentStatus}
-                                    onSubmit={handleStatusUpdate}
-                                    isSaving={isSaving}
-                                />
                             </div>
 
                             {/* Status timeline — append-only audit trail, never
