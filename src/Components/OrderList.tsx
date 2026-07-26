@@ -7,9 +7,16 @@ interface OrderListProps {
     orders: Order[];
     isMobile: boolean;
     onView: (order: Order) => void;
+    /** Shows skeleton rows in place of data — used while a filter/sort/page
+     * change is refetching, so the table frame (header, toolbar) never
+     * unmounts, only the rows placeholder while new data loads. */
+    loading?: boolean;
 }
 
-const OrderList: React.FC<OrderListProps> = ({ orders, onView }) => {
+const SKELETON_ROW_COUNT = 5;
+const TABLE_COLUMN_COUNT = 7;
+
+const OrderList: React.FC<OrderListProps> = ({ orders, onView, loading }) => {
     return (
         <div className="vendor-order__table-container">
             <table className="vendor-order__table">
@@ -25,7 +32,20 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onView }) => {
                     </tr>
                 </thead>
                 <tbody>
-                    {orders.map((order, index) => (
+                    {loading
+                        ? [...Array(SKELETON_ROW_COUNT)].map((_, rowIndex) => (
+                              <tr key={`skeleton-row-${rowIndex}`} className="dashboard__table-row">
+                                  {[...Array(TABLE_COLUMN_COUNT)].map((__, colIndex) => (
+                                      <td key={colIndex}>
+                                          <div
+                                              className="skeleton"
+                                              style={{ width: "80%", height: "16px" }}
+                                          />
+                                      </td>
+                                  ))}
+                              </tr>
+                          ))
+                        : orders.map((order, index) => (
                         <tr
                             key={`order-${order.id || index}-${order.orderId || order.createdAt || index}`}
                             className="dashboard__table-row"

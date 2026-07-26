@@ -43,7 +43,7 @@ const VendorOrder: React.FC = () => {
     // TanStack Query for orders
     const {
         data: queryData,
-        isLoading: loading,
+        isFetching,
         error,
         refetch,
     } = useQuery({
@@ -210,73 +210,6 @@ const VendorOrder: React.FC = () => {
         setIsViewModalOpen(true);
     };
 
-    if (loading) {
-        return (
-            <div className="vendor-dash-container">
-                <Sidebar />
-                <div
-                    className={`dashboard ${isMobile ? "dashboard--mobile" : ""}`}
-                >
-                    <VendorHeader
-                        title="Order Management"
-                        showSearch={false}
-                    />
-                    <main
-                        className="dashboard__main"
-                        style={{
-                            paddingBottom: isMobile
-                                ? `${docketHeight + 24}px`
-                                : "24px",
-                        }}
-                    >
-                        <div className="vendor-order__toolbar">
-                            <div
-                                className="skeleton"
-                                style={{ width: "180px", height: "36px" }}
-                            ></div>
-                        </div>
-                        <div className="vendor-order__sorting">
-                            <div
-                                className="skeleton"
-                                style={{ width: "80px", height: "16px" }}
-                            ></div>
-                            <div
-                                className="skeleton"
-                                style={{ width: "120px", height: "24px" }}
-                            ></div>
-                        </div>
-                        <div className="vendor-order__export-buttons">
-                            {[...Array(2)].map((_, index) => (
-                                <div
-                                    key={index}
-                                    className="skeleton"
-                                    style={{
-                                        width: "100px",
-                                        height: "24px",
-                                        margin: "0 8px",
-                                    }}
-                                ></div>
-                            ))}
-                        </div>
-                        <div className="vendor-order__order-list-skeleton">
-                            {[...Array(5)].map((_, index) => (
-                                <div
-                                    key={index}
-                                    className="skeleton"
-                                    style={{
-                                        width: "100%",
-                                        height: "60px",
-                                        marginBottom: "8px",
-                                    }}
-                                ></div>
-                            ))}
-                        </div>
-                    </main>
-                </div>
-            </div>
-        );
-    }
-
     if (error)
         return <div className="vendor-order__error">{error.message}</div>;
     if (errorMessage)
@@ -384,12 +317,17 @@ const VendorOrder: React.FC = () => {
                                 Export to Excel
                             </button>
                         </div>
-                        {displayedOrders.length > 0 ? (
+                        {!isFetching && displayedOrders.length === 0 ? (
+                            <div className="vendor-order__no-results">
+                                No orders found.
+                            </div>
+                        ) : (
                             <>
                                 <OrderList
                                     orders={displayedOrders}
                                     isMobile={isMobile}
                                     onView={handleViewOrder}
+                                    loading={isFetching}
                                 />
                                 <Pagination
                                     currentPage={currentPage}
@@ -397,10 +335,6 @@ const VendorOrder: React.FC = () => {
                                     onPageChange={setCurrentPage}
                                 />
                             </>
-                        ) : (
-                            <div className="vendor-order__no-results">
-                                No orders found.
-                            </div>
                         )}
                     </main>
                 </div>
