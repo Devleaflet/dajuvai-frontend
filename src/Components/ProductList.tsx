@@ -99,6 +99,15 @@ const ProductList: React.FC<ProductListProps> = ({
         return "AVAILABLE";
     };
 
+    // Long/repeated-word product names (see test data) otherwise blow out the
+    // row height and push Action off-screen — cap at 6 words, full name still
+    // available via the title tooltip on hover.
+    const truncateName = (name: string, wordLimit = 6): string => {
+        const words = name.trim().split(/\s+/);
+        if (words.length <= wordLimit) return name;
+        return `${words.slice(0, wordLimit).join(" ")}...`;
+    };
+
     const getVariantStock = (product: Product): number => {
         if (!product.variants || product.variants.length === 0)
             return product.stock ?? 0;
@@ -212,7 +221,12 @@ const ProductList: React.FC<ProductListProps> = ({
                                             }}
                                         ></div>
                                     </td>
-                                    <td>{product.name || "Unnamed Product"}</td>
+                                    <td
+                                        className="vendor-product__name-cell"
+                                        title={product.name || "Unnamed Product"}
+                                    >
+                                        {truncateName(product.name || "Unnamed Product")}
+                                    </td>
                                     <td>
                                         {product.subcategory?.name ||
                                             product.category ||
