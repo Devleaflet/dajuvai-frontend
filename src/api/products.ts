@@ -291,8 +291,12 @@ const normalizeVariantPayload = (variant: any, index: number) => {
 		basePrice,
 		stock,
 		status: deriveInventoryStatus(stock),
-		discountAmount: normalizeDiscountType(variant.discountType) === "FLAT" ? Number(variant.discount || 0) : undefined,
-		discountPercent: normalizeDiscountType(variant.discountType) === "PERCENTAGE" ? Number(variant.discount || 0) : undefined,
+		discountAmount: variant.discountAmount !== undefined 
+			? Number(variant.discountAmount) 
+			: (normalizeDiscountType(variant.discountType) === "FLAT" ? Number(variant.discount || 0) : undefined),
+		discountPercent: variant.discountPercent !== undefined 
+			? Number(variant.discountPercent) 
+			: (normalizeDiscountType(variant.discountType) === "PERCENTAGE" ? Number(variant.discount || 0) : undefined),
 		discountType: normalizeDiscountType(variant.discountType),
 		attributes: normalizeVariantAttributes(variant.attributes),
 		variantImages: normalizeImageUrls(variant.variantImages || variant.images),
