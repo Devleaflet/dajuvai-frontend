@@ -4,6 +4,7 @@ import Header from "../Components/Header";
 import Pagination from "../Components/Pagination";
 import DeleteModal from "../Components/Modal/DeleteModal";
 import EditProductModal from "../Components/Modal/EditProductModalRedesigned";
+import ArchivedProductsTab from "../Components/ArchivedProductsTab";
 import { useAuth } from "../context/AuthContext";
 import ProductService from "../services/productService";
 import "../Styles/AdminProduct.css";
@@ -64,6 +65,7 @@ const AdminProduct: React.FC = () => {
   const [productsPerPage, setProductsPerPage] = useState(20);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
   const [productToDelete, setProductToDelete] = useState<ApiProduct | null>(
     null,
   );
@@ -435,6 +437,34 @@ const AdminProduct: React.FC = () => {
               )}
             </div>
           </div>
+          <div className="admin-products__tabs">
+            <button
+              className={`admin-products__tab-btn ${
+                activeTab === "active" ? "admin-products__tab-btn--active" : ""
+              }`}
+              onClick={() => setActiveTab("active")}
+            >
+              Active Products
+            </button>
+            <button
+              className={`admin-products__tab-btn ${
+                activeTab === "archived"
+                  ? "admin-products__tab-btn--active"
+                  : ""
+              }`}
+              onClick={() => setActiveTab("archived")}
+            >
+              Archived Products
+            </button>
+          </div>
+          {activeTab === "archived" ? (
+            <ArchivedProductsTab
+              token={token ?? undefined}
+              isAdmin
+              onRestored={fetchProducts}
+            />
+          ) : (
+          <>
           <div className="admin-products__table-container">
             <table className="admin-products__table">
               <thead className="admin-products__table-head">
@@ -796,6 +826,8 @@ const AdminProduct: React.FC = () => {
               }}
             />
           </div>
+          </>
+          )}
         </div>
       </div>
       <EditProductModal

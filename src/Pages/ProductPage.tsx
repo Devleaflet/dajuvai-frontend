@@ -22,828 +22,766 @@ import defaultProductImage from "../assets/logo.webp";
 const CACHE_KEY_REVIEWS = "productReviewsData";
 
 interface Category {
+  id: number;
+  name: string;
+  createdBy?: {
+    id: number;
+    username: string;
+  };
+  subcategories?: Array<{
     id: number;
     name: string;
-    createdBy?: {
-        id: number;
-        username: string;
-    };
-    subcategories?: Array<{
-        id: number;
-        name: string;
-    }>;
+  }>;
 }
 
 interface Review {
-    id: number;
-    userId: number;
-    rating: number;
-    comment: string;
-    createdAt: string;
-    user?: {
-        username?: string;
-        email?: string;
-    };
+  id: number;
+  userId: number;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  user?: {
+    username?: string;
+    email?: string;
+  };
 }
 
 interface ReviewsResponse {
-    success: boolean;
-    data: {
-        averageRating: number;
-        reviews: Review[];
-        total: number;
-        totalPages: number;
-    };
+  success: boolean;
+  data: {
+    averageRating: number;
+    reviews: Review[];
+    total: number;
+    totalPages: number;
+  };
 }
 
 const ProductPage = () => {
-    const toFullUrl = (imgUrl: string): string => {
-        if (!imgUrl) return ""; // Return empty string if no image URL
-        return imgUrl.startsWith("http")
-            ? imgUrl
-            : `${window.location.origin}${
-                  imgUrl.startsWith("/") ? "" : "/"
-              }${imgUrl}`;
-    };
+  const toFullUrl = (imgUrl: string): string => {
+    if (!imgUrl) return ""; // Return empty string if no image URL
+    return imgUrl.startsWith("http")
+      ? imgUrl
+      : `${window.location.origin}${
+          imgUrl.startsWith("/") ? "" : "/"
+        }${imgUrl}`;
+  };
 
-    const {
-        id: productId,
-        categoryId,
-        subcategoryId,
-    } = useParams<{
-        id: string;
-        categoryId?: string;
-        subcategoryId?: string;
-    }>();
-    const id = productId;
-    const [selectedColor, setSelectedColor] = useState("");
-    const [selectedSize, setSelectedSize] = useState("");
-    const [selectedVariant, setSelectedVariant] = useState<any>(null);
-    const [quantity, setQuantity] = useState(1);
-    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-    const [showToast, setShowToast] = useState(false);
-    const [toastMessage, setToastMessage] = useState("");
-    const [authModalOpen, setAuthModalOpen] = useState(false);
-    const [imageError, setImageError] = useState<boolean[]>([]);
-    const [vendorAvatarError, setVendorAvatarError] = useState(false);
-    const [currentReviewPage, setCurrentReviewPage] = useState(1);
+  const {
+    id: productId,
+    categoryId,
+    subcategoryId,
+  } = useParams<{
+    id: string;
+    categoryId?: string;
+    subcategoryId?: string;
+  }>();
+  const id = productId;
+  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedSize, setSelectedSize] = useState("");
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [imageError, setImageError] = useState<boolean[]>([]);
+  const [vendorAvatarError, setVendorAvatarError] = useState(false);
+  const [currentReviewPage, setCurrentReviewPage] = useState(1);
 
-    const [isZoomActive, setIsZoomActive] = useState(false);
-    const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
-    const mainImageRef = useRef<HTMLDivElement>(null);
-    const quantityInputRef = useRef<HTMLInputElement>(null);
+  const [isZoomActive, setIsZoomActive] = useState(false);
+  const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
+  const mainImageRef = useRef<HTMLDivElement>(null);
+  const quantityInputRef = useRef<HTMLInputElement>(null);
 
-    const thumbnailsRef = useRef<HTMLDivElement>(null);
-    const [isDraggingThumbnails, setIsDraggingThumbnails] = useState(false);
-    const dragStartXRef = useRef(0);
-    const dragScrollLeftRef = useRef(0);
-    const dragMovedRef = useRef(false);
+  const thumbnailsRef = useRef<HTMLDivElement>(null);
+  const [isDraggingThumbnails, setIsDraggingThumbnails] = useState(false);
+  const dragStartXRef = useRef(0);
+  const dragScrollLeftRef = useRef(0);
+  const dragMovedRef = useRef(false);
 
-    const handleThumbnailsMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (e.button !== 0 || !thumbnailsRef.current) return;
-        setIsDraggingThumbnails(true);
-        dragMovedRef.current = false;
-        dragStartXRef.current = e.pageX - thumbnailsRef.current.offsetLeft;
-        dragScrollLeftRef.current = thumbnailsRef.current.scrollLeft;
-    };
+  const handleThumbnailsMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || !thumbnailsRef.current) return;
+    setIsDraggingThumbnails(true);
+    dragMovedRef.current = false;
+    dragStartXRef.current = e.pageX - thumbnailsRef.current.offsetLeft;
+    dragScrollLeftRef.current = thumbnailsRef.current.scrollLeft;
+  };
 
-    const DRAG_THRESHOLD_PX = 8;
+  const DRAG_THRESHOLD_PX = 8;
 
-    const handleThumbnailsMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!isDraggingThumbnails || !thumbnailsRef.current) return;
-        const x = e.pageX - thumbnailsRef.current.offsetLeft;
-        const walk = x - dragStartXRef.current;
-        if (!dragMovedRef.current) {
-            if (Math.abs(walk) < DRAG_THRESHOLD_PX) return;
-            dragMovedRef.current = true;
-        }
-        e.preventDefault();
-        thumbnailsRef.current.scrollLeft = dragScrollLeftRef.current - walk;
-    };
+  const handleThumbnailsMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDraggingThumbnails || !thumbnailsRef.current) return;
+    const x = e.pageX - thumbnailsRef.current.offsetLeft;
+    const walk = x - dragStartXRef.current;
+    if (!dragMovedRef.current) {
+      if (Math.abs(walk) < DRAG_THRESHOLD_PX) return;
+      dragMovedRef.current = true;
+    }
+    e.preventDefault();
+    thumbnailsRef.current.scrollLeft = dragScrollLeftRef.current - walk;
+  };
 
-    const stopThumbnailsDrag = () => setIsDraggingThumbnails(false);
+  const stopThumbnailsDrag = () => setIsDraggingThumbnails(false);
 
-    const ZOOM_LEVEL = 3;
+  const ZOOM_LEVEL = 3;
 
-    const { handleCartOnAdd } = useCart();
-    const { isAuthenticated } = useAuth();
-    const {
-        addWishlistItem,
-        isWishlisted: hasWishlistItem,
-        pendingKeys,
-    } = useWishlist();
-    const navigate = useNavigate();
+  const { handleCartOnAdd } = useCart();
+  const { isAuthenticated } = useAuth();
+  const {
+    addWishlistItem,
+    isWishlisted: hasWishlistItem,
+    pendingKeys,
+  } = useWishlist();
+  const navigate = useNavigate();
 
-    const { data: productData, isLoading: isProductLoading } = useQuery({
-        queryKey: ["product", id],
-        queryFn: async () => {
-            if (!id || isNaN(Number(id))) throw new Error("Invalid product ID");
+  const { data: productData, isLoading: isProductLoading } = useQuery({
+    queryKey: ["product", id],
+    queryFn: async () => {
+      if (!id || isNaN(Number(id))) throw new Error("Invalid product ID");
 
-            const response = await axiosInstance.get(`/api/product/${id}`);
-            const apiProduct = response.data.product;
+      const response = await axiosInstance.get(`/api/product/${id}`);
+      const apiProduct = response.data.product;
 
-            console.log("----------------------API Products------------");
-            console.log(apiProduct);
+      console.log("----------------------API Products------------");
+      console.log(apiProduct);
 
-            if (!apiProduct) {
-                throw new Error("Product not found");
-            }
+      if (!apiProduct) {
+        throw new Error("Product not found");
+      }
 
-            const variantImages: string[] = [];
-            let allVariants = [];
-            let defaultVariant = null;
+      const variantImages: string[] = [];
+      let allVariants = [];
+      let defaultVariant = null;
 
-            // Gate on hasVariants, not just array presence — a product just
-            // converted to non-variant can still carry orphaned variant rows
-            // (kept only because they have real order history), and not
-            // every read path strips them. hasVariants is the single source
-            // of truth for "is this a variant product" everywhere.
-            if (
-                apiProduct.hasVariants &&
-                apiProduct.variants &&
-                Array.isArray(apiProduct.variants)
-            ) {
-                allVariants = apiProduct.variants.map((variant: any) => {
-                    const variantImgUrls: string[] = [];
-                    if (
-                        variant.variantImages &&
-                        Array.isArray(variant.variantImages)
-                    ) {
-                        variant.variantImages.forEach((img: any) => {
-                            try {
-                                let imgUrl = "";
-                                if (typeof img === "string") {
-                                    try {
-                                        const parsed = JSON.parse(img);
-                                        imgUrl =
-                                            parsed.url ||
-                                            parsed.imageUrl ||
-                                            img;
-                                    } catch {
-                                        imgUrl = img;
-                                    }
-                                } else if (img && typeof img === "object") {
-                                    imgUrl = img.url || img.imageUrl || "";
-                                }
-                                if (imgUrl) {
-                                    const fullUrl = toFullUrl(imgUrl);
-                                    variantImgUrls.push(fullUrl);
-                                    if (!variantImages.includes(fullUrl)) {
-                                        variantImages.push(fullUrl);
-                                    }
-                                }
-                            } catch (e) {
-                                console.error(
-                                    "Error parsing variant image:",
-                                    e,
-                                    img,
-                                );
-                            }
-                        });
-                    }
-
-                    const basePrice = parseFloat(variant.basePrice) || 0;
-                    const finalPrice = parseFloat(variant.finalPrice) || 0;
-
-                    const variantData = {
-                        ...variant,
-                        variantImgUrls,
-                        finalPrice,
-                        basePrice,
-                        stock: variant.stock || 0,
-                        status: variant.status || "AVAILABLE",
-                    };
-
-                    if (
-                        !defaultVariant &&
-                        Number(variantData.stock || 0) > 0 &&
-                        variantData.status !== "OUT_OF_STOCK"
-                    ) {
-                        defaultVariant = variantData;
-                    }
-
-                    return variantData;
-                });
-
-                if (!defaultVariant && allVariants.length > 0) {
-                    defaultVariant = allVariants[0];
+      // Gate on hasVariants, not just array presence — a product just
+      // converted to non-variant can still carry orphaned variant rows
+      // (kept only because they have real order history), and not
+      // every read path strips them. hasVariants is the single source
+      // of truth for "is this a variant product" everywhere.
+      if (
+        apiProduct.hasVariants &&
+        apiProduct.variants &&
+        Array.isArray(apiProduct.variants)
+      ) {
+        allVariants = apiProduct.variants.map((variant: any) => {
+          const variantImgUrls: string[] = [];
+          if (variant.variantImages && Array.isArray(variant.variantImages)) {
+            variant.variantImages.forEach((img: any) => {
+              try {
+                let imgUrl = "";
+                if (typeof img === "string") {
+                  try {
+                    const parsed = JSON.parse(img);
+                    imgUrl = parsed.url || parsed.imageUrl || img;
+                  } catch {
+                    imgUrl = img;
+                  }
+                } else if (img && typeof img === "object") {
+                  imgUrl = img.url || img.imageUrl || "";
                 }
-            }
-
-            const productImages = Array.isArray(apiProduct.productImages)
-                ? apiProduct.productImages
-                      .map((img: any) => {
-                          try {
-                              let imgUrl = "";
-                              if (typeof img === "string") {
-                                  try {
-                                      const parsed = JSON.parse(img);
-                                      imgUrl =
-                                          parsed.url || parsed.imageUrl || img;
-                                  } catch {
-                                      imgUrl = img;
-                                  }
-                              } else if (img && typeof img === "object") {
-                                  imgUrl = img.url || img.imageUrl || "";
-                              }
-                              return imgUrl ? toFullUrl(imgUrl) : "";
-                          } catch (e) {
-                              console.error(
-                                  "Error parsing product image:",
-                                  e,
-                                  img,
-                              );
-                              return "";
-                          }
-                      })
-                      .filter(Boolean)
-                : [];
-
-            const allImages = [
-                ...new Set([...productImages, ...variantImages]),
-            ].filter(Boolean);
-
-            const basePrice = parseFloat(apiProduct.basePrice) || 0;
-            const finalPrice = parseFloat(apiProduct.finalPrice) || 0;
-
-            const sizeOptions = new Set<string>();
-            const colorOptions = new Set<string>();
-
-            allVariants.forEach((variant: any) => {
-                if (variant.attributes) {
-                    Object.entries(variant.attributes).forEach(
-                        ([key, value]) => {
-                            if (typeof value === "string") {
-                                if (key.toLowerCase().includes("size")) {
-                                    sizeOptions.add(value);
-                                } else if (
-                                    key.toLowerCase().includes("color")
-                                ) {
-                                    colorOptions.add(value);
-                                }
-                            }
-                        },
-                    );
+                if (imgUrl) {
+                  const fullUrl = toFullUrl(imgUrl);
+                  variantImgUrls.push(fullUrl);
+                  if (!variantImages.includes(fullUrl)) {
+                    variantImages.push(fullUrl);
+                  }
                 }
+              } catch (e) {
+                console.error("Error parsing variant image:", e, img);
+              }
             });
+          }
 
-            const derivedCategoryId =
-                apiProduct?.category?.id != null
-                    ? Number(apiProduct.category.id)
-                    : (apiProduct as any)?.categoryId != null
-                      ? Number((apiProduct as any).categoryId)
-                      : undefined;
-            const derivedCategoryName = apiProduct?.category?.name;
+          const basePrice = parseFloat(variant.basePrice) || 0;
+          const finalPrice = parseFloat(variant.finalPrice) || 0;
 
-            const derivedSubcategoryId =
-                apiProduct?.subcategory?.id != null
-                    ? Number(apiProduct.subcategory.id)
-                    : (apiProduct as any)?.subcategoryId != null
-                      ? Number((apiProduct as any).subcategoryId)
-                      : undefined;
-            const derivedSubcategoryName = apiProduct?.subcategory?.name;
+          const variantData = {
+            ...variant,
+            variantImgUrls,
+            finalPrice,
+            basePrice,
+            stock: variant.stock || 0,
+            status: variant.status || "AVAILABLE",
+          };
 
-            return {
-                product: {
-                    id: apiProduct.id,
-                    name: apiProduct.name,
-                    description: apiProduct.description,
-                    brand: apiProduct.brand || null,
-                    keywords: apiProduct.keywords || null,
-                    finalPrice: finalPrice,
-                    basePrice: basePrice,
-                    price: finalPrice.toFixed(2),
-                    originalPrice:
-                        basePrice > finalPrice
-                            ? basePrice.toFixed(2)
-                            : undefined,
-                    deal: apiProduct.deal,
-                    rating: 0,
-                    ratingCount: "0",
-                    image: allImages[0] || "",
-                    category:
-                        derivedCategoryId != null
-                            ? {
-                                  id: derivedCategoryId,
-                                  name: derivedCategoryName || "Category",
-                              }
-                            : undefined,
-                    subcategory:
-                        derivedSubcategoryId != null
-                            ? {
-                                  id: derivedSubcategoryId,
-                                  name: derivedSubcategoryName || "Subcategory",
-                              }
-                            : undefined,
-                    vendor: apiProduct.vendor || {
-                        id: null,
-                        businessName: "Unknown Vendor",
-                    },
-                    productImages: allImages,
-                    colors: Array.from(colorOptions).map((name) => ({
-                        name,
-                        img: "",
-                    })),
-                    sizeOptions: Array.from(sizeOptions),
-                    stock: apiProduct.stock || defaultVariant?.stock || 0,
-                    variants: allVariants,
-                    hasVariants: apiProduct.hasVariants || false,
-                    selectedVariant: defaultVariant,
-                },
-                vendorId: apiProduct.vendorId || null,
-            };
-        },
-        staleTime: 5 * 60 * 1000,
-        gcTime: 10 * 60 * 1000,
-    });
+          if (
+            !defaultVariant &&
+            Number(variantData.stock || 0) > 0 &&
+            variantData.status !== "OUT_OF_STOCK"
+          ) {
+            defaultVariant = variantData;
+          }
 
-    const { data: reviewsData, isLoading: isReviewsLoading } = useQuery({
-        queryKey: ["reviews", id, currentReviewPage],
-        queryFn: async () => {
-            if (!id || isNaN(Number(id))) throw new Error("Invalid product ID");
-
-            const response = await axiosInstance.get<ReviewsResponse>(
-                `/api/reviews/${id}?page=${currentReviewPage}`,
-            );
-            if (!response.data.success) {
-                throw new Error("Failed to fetch reviews");
-            }
-            return {
-                reviews: response.data.data.reviews || [],
-                averageRating: response.data.data.averageRating || 0,
-                totalReviews: response.data.data.total || 0,
-                totalPages: response.data.data.totalPages || 1,
-            };
-        },
-        staleTime: 5 * 60 * 1000,
-        gcTime: 10 * 60 * 1000,
-    });
-
-    const product = productData?.product;
-    const vendorId = productData?.vendorId;
-    const wishlistVariantId = selectedVariant?.id;
-    const wishlistPending = product
-        ? pendingKeys.has(makeWishlistKey(product.id, wishlistVariantId))
-        : false;
-    const productIsWishlisted = product
-        ? hasWishlistItem(product.id, wishlistVariantId)
-        : false;
-
-    const effectiveCategoryId =
-        categoryId ??
-        (product?.category?.id != null
-            ? String(product.category.id)
-            : undefined);
-    const effectiveSubcategoryId =
-        subcategoryId ??
-        (product?.subcategory?.id != null
-            ? String(product.subcategory.id)
-            : undefined);
-
-    const { data: recommendedProducts, isLoading: isLoadingRecommended } =
-        useQuery({
-            queryKey: [
-                "recommendedProducts",
-                effectiveCategoryId,
-                effectiveSubcategoryId,
-            ],
-            queryFn: async () => {
-                const fetchWithParams = async (p: URLSearchParams) => {
-                    const url = p.toString()
-                        ? `/api/categories/all/products?${p.toString()}`
-                        : `/api/categories/all/products`;
-                    const res = await axiosInstance.get(url);
-                    const products = (res?.data?.data ?? []) as any[];
-                    return products.map((product) => {
-                        const rating = product.avgRating || product.rating || 0;
-                        const ratingCount =
-                            product.count || product.reviews?.length || 0;
-                        return {
-                            ...product,
-                            rating,
-                            ratingCount,
-                        };
-                    });
-                };
-
-                try {
-                    if (effectiveCategoryId && effectiveSubcategoryId) {
-                        const params = new URLSearchParams();
-                        params.append(
-                            "categoryId",
-                            String(effectiveCategoryId),
-                        );
-                        params.append(
-                            "subcategoryId",
-                            String(effectiveSubcategoryId),
-                        );
-                        let data = await fetchWithParams(params);
-                        if (!Array.isArray(data) || data.length <= 1) {
-                            const catOnly = new URLSearchParams();
-                            catOnly.append(
-                                "categoryId",
-                                String(effectiveCategoryId),
-                            );
-                            data = await fetchWithParams(catOnly);
-                            if (!Array.isArray(data) || data.length <= 1) {
-                                data = await fetchWithParams(
-                                    new URLSearchParams(),
-                                );
-                            }
-                        }
-                        return data;
-                    }
-
-                    if (effectiveSubcategoryId && !effectiveCategoryId) {
-                        const params = new URLSearchParams();
-                        params.append(
-                            "subcategoryId",
-                            String(effectiveSubcategoryId),
-                        );
-                        let data = await fetchWithParams(params);
-                        if (!Array.isArray(data) || data.length <= 1) {
-                            data = await fetchWithParams(new URLSearchParams());
-                        }
-                        return data;
-                    }
-
-                    if (effectiveCategoryId && !effectiveSubcategoryId) {
-                        const params = new URLSearchParams();
-                        params.append(
-                            "categoryId",
-                            String(effectiveCategoryId),
-                        );
-                        let data = await fetchWithParams(params);
-                        if (!Array.isArray(data) || data.length <= 1) {
-                            data = await fetchWithParams(new URLSearchParams());
-                        }
-                        return data;
-                    }
-
-                    return await fetchWithParams(new URLSearchParams());
-                } catch (error) {
-                    console.error(
-                        "Failed to fetch recommended products:",
-                        error,
-                    );
-                    return [];
-                }
-            },
-            enabled: true,
-            staleTime: 5 * 60 * 1000,
+          return variantData;
         });
 
-    const { data: categoryData } = useQuery<{ data: Category }>({
-        queryKey: ["category", categoryId],
-        queryFn: async () => {
-            if (!categoryId) return null;
-            try {
-                const response = await axiosInstance.get(
-                    `/api/categories/${categoryId}`,
-                );
-                return response.data;
-            } catch (error) {
-                console.error("Error fetching category:", error);
-                return null;
+        if (!defaultVariant && allVariants.length > 0) {
+          defaultVariant = allVariants[0];
+        }
+      }
+
+      const productImages = Array.isArray(apiProduct.productImages)
+        ? apiProduct.productImages
+            .map((img: any) => {
+              try {
+                let imgUrl = "";
+                if (typeof img === "string") {
+                  try {
+                    const parsed = JSON.parse(img);
+                    imgUrl = parsed.url || parsed.imageUrl || img;
+                  } catch {
+                    imgUrl = img;
+                  }
+                } else if (img && typeof img === "object") {
+                  imgUrl = img.url || img.imageUrl || "";
+                }
+                return imgUrl ? toFullUrl(imgUrl) : "";
+              } catch (e) {
+                console.error("Error parsing product image:", e, img);
+                return "";
+              }
+            })
+            .filter(Boolean)
+        : [];
+
+      const allImages = [
+        ...new Set([...productImages, ...variantImages]),
+      ].filter(Boolean);
+
+      const basePrice = parseFloat(apiProduct.basePrice) || 0;
+      const finalPrice = parseFloat(apiProduct.finalPrice) || 0;
+
+      const sizeOptions = new Set<string>();
+      const colorOptions = new Set<string>();
+
+      allVariants.forEach((variant: any) => {
+        if (variant.attributes) {
+          Object.entries(variant.attributes).forEach(([key, value]) => {
+            if (typeof value === "string") {
+              if (key.toLowerCase().includes("size")) {
+                sizeOptions.add(value);
+              } else if (key.toLowerCase().includes("color")) {
+                colorOptions.add(value);
+              }
             }
+          });
+        }
+      });
+
+      const derivedCategoryId =
+        apiProduct?.category?.id != null
+          ? Number(apiProduct.category.id)
+          : (apiProduct as any)?.categoryId != null
+            ? Number((apiProduct as any).categoryId)
+            : undefined;
+      const derivedCategoryName = apiProduct?.category?.name;
+
+      const derivedSubcategoryId =
+        apiProduct?.subcategory?.id != null
+          ? Number(apiProduct.subcategory.id)
+          : (apiProduct as any)?.subcategoryId != null
+            ? Number((apiProduct as any).subcategoryId)
+            : undefined;
+      const derivedSubcategoryName = apiProduct?.subcategory?.name;
+
+      return {
+        product: {
+          id: apiProduct.id,
+          name: apiProduct.name,
+          description: apiProduct.description,
+          brand: apiProduct.brand || null,
+          keywords: apiProduct.keywords || null,
+          finalPrice: finalPrice,
+          basePrice: basePrice,
+          price: finalPrice.toFixed(2),
+          originalPrice:
+            basePrice > finalPrice ? basePrice.toFixed(2) : undefined,
+          deal: apiProduct.deal,
+          rating: 0,
+          ratingCount: "0",
+          image: allImages[0] || "",
+          category:
+            derivedCategoryId != null
+              ? {
+                  id: derivedCategoryId,
+                  name: derivedCategoryName || "Category",
+                }
+              : undefined,
+          subcategory:
+            derivedSubcategoryId != null
+              ? {
+                  id: derivedSubcategoryId,
+                  name: derivedSubcategoryName || "Subcategory",
+                }
+              : undefined,
+          vendor: apiProduct.vendor || {
+            id: null,
+            businessName: "Unknown Vendor",
+          },
+          productImages: allImages,
+          colors: Array.from(colorOptions).map((name) => ({
+            name,
+            img: "",
+          })),
+          sizeOptions: Array.from(sizeOptions),
+          stock: apiProduct.stock || defaultVariant?.stock || 0,
+          variants: allVariants,
+          hasVariants: apiProduct.hasVariants || false,
+          selectedVariant: defaultVariant,
         },
-        enabled: !!categoryId,
-        staleTime: 5 * 60 * 1000,
-    });
+        vendorId: apiProduct.vendorId || null,
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
 
-    const reviews = (reviewsData?.reviews || []).map((review: Review) => ({
-        ...review,
-        userName:
-            review.user?.username ||
-            review.user?.email?.split("@")[0] ||
-            "Anonymous",
-    }));
-    const averageRating = reviewsData?.averageRating || 0;
-    const totalReviews = reviewsData?.totalReviews || 0;
-    const totalPages = reviewsData?.totalPages || 1;
+  const { data: reviewsData, isLoading: isReviewsLoading } = useQuery({
+    queryKey: ["reviews", id, currentReviewPage],
+    queryFn: async () => {
+      if (!id || isNaN(Number(id))) throw new Error("Invalid product ID");
 
-    useEffect(() => {
-        if (product) {
-            const defaultVar =
-                product.hasVariants &&
-                product.variants &&
-                product.variants.length > 0
-                    ? product.variants[0]
-                    : null;
-            setSelectedColor(defaultVar?.attributes?.color || "");
-            setSelectedSize(defaultVar?.attributes?.size || "");
-            setSelectedVariant(defaultVar);
-            const imgs =
-                defaultVar &&
-                defaultVar.variantImgUrls &&
-                defaultVar.variantImgUrls.length > 0
-                    ? defaultVar.variantImgUrls
-                    : product.productImages || [];
-            setImageError(
-                new Array(imgs && imgs.length ? imgs.length : 1).fill(false),
-            );
-        }
-    }, [product]);
-    useEffect(() => {
-        if (product) {
-            const variants: any[] =
-                product.hasVariants && product.variants ? product.variants : [];
-            const defaultVar =
-                variants.find(
-                    (v) =>
-                        Number(v.stock || 0) > 0 && v.status !== "OUT_OF_STOCK",
-                ) ||
-                variants[0] ||
-                null;
-            setSelectedColor(defaultVar?.attributes?.color || "");
-            setSelectedSize(defaultVar?.attributes?.size || "");
-            setSelectedVariant(defaultVar);
-            const entries = getGalleryEntries();
-            setImageError(new Array(entries.length || 1).fill(false));
-        }
-    }, [product]);
+      const response = await axiosInstance.get<ReviewsResponse>(
+        `/api/reviews/${id}?page=${currentReviewPage}`,
+      );
+      if (!response.data.success) {
+        throw new Error("Failed to fetch reviews");
+      }
+      return {
+        reviews: response.data.data.reviews || [],
+        averageRating: response.data.data.averageRating || 0,
+        totalReviews: response.data.data.total || 0,
+        totalPages: response.data.data.totalPages || 1,
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
 
-    // Combined thumbnail gallery: the product's own photos plus one
-    // representative image per variant (so every variant is browsable and
-    // clickable from the thumbnail strip, not just the currently selected
-    // one). Each entry remembers which variant (if any) it belongs to, so
-    // clicking it can select that variant.
-    const getGalleryEntries = (): {
-        url: string;
-        variantId: number | null;
-    }[] => {
-        if (!product) return [];
-        // Variant photos win the tag: a variant's own photo is often just one
-        // of the product's existing gallery photos reused, and if it were left
-        // untagged (variantId: null) clicking that exact thumbnail could never
-        // select the variant it belongs to. Claim every one of a variant's
-        // photos (not just its first) for that variant, then only add the
-        // plain product photos that no variant already owns.
-        const claimedUrls = new Set<string>();
-        const variantImgs: { url: string; variantId: number }[] = [];
-        (product.variants || []).forEach((v: any) => {
-            (v?.variantImgUrls || []).forEach((url: string) => {
-                if (!url || claimedUrls.has(url)) return;
-                claimedUrls.add(url);
-                variantImgs.push({ url, variantId: v.id });
-            });
-        });
-        const productImgs = (product.productImages || [])
-            .filter((url: string) => !claimedUrls.has(url))
-            .map((url: string) => ({ url, variantId: null as number | null }));
-        return [...productImgs, ...variantImgs];
-    };
+  const product = productData?.product;
+  const vendorId = productData?.vendorId;
+  const wishlistVariantId = selectedVariant?.id;
+  const wishlistPending = product
+    ? pendingKeys.has(makeWishlistKey(product.id, wishlistVariantId))
+    : false;
+  const productIsWishlisted = product
+    ? hasWishlistItem(product.id, wishlistVariantId)
+    : false;
 
-    const getCurrentImages = () =>
-        getGalleryEntries().map((entry) => entry.url);
+  const effectiveCategoryId =
+    categoryId ??
+    (product?.category?.id != null ? String(product.category.id) : undefined);
+  const effectiveSubcategoryId =
+    subcategoryId ??
+    (product?.subcategory?.id != null
+      ? String(product.subcategory.id)
+      : undefined);
 
-    const handleImageSelect = (index: number) => {
-        setSelectedImageIndex(index);
-        const entry = getGalleryEntries()[index];
-        if (
-            entry?.variantId != null &&
-            entry.variantId !== selectedVariant?.id
-        ) {
-            const variant = product?.variants?.find(
-                (v: any) => v.id === entry.variantId,
-            );
-            if (variant) {
-                setSelectedVariant(variant);
-                setSelectedColor(variant.attributes?.color || "");
-                setSelectedSize(variant.attributes?.size || "");
-            }
-        }
-    };
-
-    useEffect(() => {
-        const imgs = getCurrentImages();
-        setImageError(
-            new Array(imgs && imgs.length ? imgs.length : 1).fill(false),
-        );
-        if (selectedImageIndex >= (imgs?.length || 0)) {
-            setSelectedImageIndex(0);
-        }
-    }, [selectedVariant, product]);
-
-    const getCurrentStock = () => {
-        if (selectedVariant) {
-            return selectedVariant.stock || 0;
-        }
-        return product?.stock || 0;
-    };
-
-    const getCurrentPrice = () => {
-        if (selectedVariant) {
-            return selectedVariant.finalPrice || 0;
-        }
-        return Number(product?.finalPrice || 0);
-    };
-
-    const getOriginalPrice = () => {
-        if (selectedVariant) {
-            return selectedVariant.basePrice || 0;
-        }
-        return Number(product?.basePrice || 0);
-    };
-
-    const handleVariantSelect = (variant: any) => {
-        setSelectedVariant(variant);
-        // Jump the main image to this variant's own thumbnail in the merged
-        // gallery, so picking a variant via the color/size swatches stays in
-        // sync with picking it via its thumbnail.
-        const idx = getGalleryEntries().findIndex(
-            (entry) => entry.variantId === variant.id,
-        );
-        setSelectedImageIndex(idx >= 0 ? idx : 0);
-    };
-
-    const handleMouseEnter = () => {
-        const currentImages = getCurrentImages();
-        if (
-            currentImages[selectedImageIndex] &&
-            !imageError[selectedImageIndex]
-        ) {
-            setIsZoomActive(true);
-        }
-    };
-
-    const handleMouseLeave = () => {
-        setIsZoomActive(false);
-    };
-
-    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!isZoomActive || !mainImageRef.current) return;
-
-        const rect = mainImageRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        // Calculate relative position (0-1)
-        const relativeX = Math.max(0, Math.min(1, x / rect.width));
-        const relativeY = Math.max(0, Math.min(1, y / rect.height));
-
-        // Convert to percentage for background-position
-        const percentX = relativeX * 100;
-        const percentY = relativeY * 100;
-
-        setZoomPosition({ x: percentX, y: percentY });
-    };
-
-    const handleAddToCart = () => {
-        if (!isAuthenticated) {
-            setAuthModalOpen(true);
-            return;
-        }
-        if (!product) return;
-        const variantId = selectedVariant?.id;
-        handleCartOnAdd(product, quantity, variantId);
-    };
-
-    const handleAddToWishlist = async () => {
-        if (!isAuthenticated || !product) {
-            setAuthModalOpen(true);
-            return;
-        }
-        if (wishlistPending) return;
-        if (productIsWishlisted) {
-            toast("Already present in the wishlist");
-            return;
-        }
+  const { data: recommendedProducts, isLoading: isLoadingRecommended } =
+    useQuery({
+      queryKey: [
+        "recommendedProducts",
+        effectiveCategoryId,
+        effectiveSubcategoryId,
+      ],
+      queryFn: async () => {
+        const fetchWithParams = async (p: URLSearchParams) => {
+          const url = p.toString()
+            ? `/api/categories/all/products?${p.toString()}`
+            : `/api/categories/all/products`;
+          const res = await axiosInstance.get(url);
+          const products = (res?.data?.data ?? []) as any[];
+          return products.map((product) => {
+            const rating = product.avgRating || product.rating || 0;
+            const ratingCount = product.count || product.reviews?.length || 0;
+            return {
+              ...product,
+              rating,
+              ratingCount,
+            };
+          });
+        };
 
         try {
-            const addedItem = await addWishlistItem(
-                product.id,
-                wishlistVariantId,
-            );
-            if (addedItem !== null) {
-                toast.success("Added to wishlist");
+          if (effectiveCategoryId && effectiveSubcategoryId) {
+            const params = new URLSearchParams();
+            params.append("categoryId", String(effectiveCategoryId));
+            params.append("subcategoryId", String(effectiveSubcategoryId));
+            let data = await fetchWithParams(params);
+            if (!Array.isArray(data) || data.length <= 1) {
+              const catOnly = new URLSearchParams();
+              catOnly.append("categoryId", String(effectiveCategoryId));
+              data = await fetchWithParams(catOnly);
+              if (!Array.isArray(data) || data.length <= 1) {
+                data = await fetchWithParams(new URLSearchParams());
+              }
             }
-        } catch (e: any) {
-            const status = e?.response?.status;
-            const msg: string =
-                e?.response?.data?.message ||
-                e?.response?.data?.error ||
-                e?.message ||
-                "";
-            if (status === 409 || /already/i.test(msg)) {
-                toast("Already present in the wishlist");
-            } else {
-                toast.error("Failed to add to wishlist");
-            }
-        }
-    };
+            return data;
+          }
 
-    const handleBuyNow = () => {
-        if (!isAuthenticated) {
-            setAuthModalOpen(true);
-            return;
+          if (effectiveSubcategoryId && !effectiveCategoryId) {
+            const params = new URLSearchParams();
+            params.append("subcategoryId", String(effectiveSubcategoryId));
+            let data = await fetchWithParams(params);
+            if (!Array.isArray(data) || data.length <= 1) {
+              data = await fetchWithParams(new URLSearchParams());
+            }
+            return data;
+          }
+
+          if (effectiveCategoryId && !effectiveSubcategoryId) {
+            const params = new URLSearchParams();
+            params.append("categoryId", String(effectiveCategoryId));
+            let data = await fetchWithParams(params);
+            if (!Array.isArray(data) || data.length <= 1) {
+              data = await fetchWithParams(new URLSearchParams());
+            }
+            return data;
+          }
+
+          return await fetchWithParams(new URLSearchParams());
+        } catch (error) {
+          console.error("Failed to fetch recommended products:", error);
+          return [];
         }
-        if (!product) return;
-        navigate("/checkout", {
-            state: {
-                buyNow: true,
-                products: [
-                    {
-                        product: {
-                            ...product,
-                            selectedColor,
-                            price: getCurrentPrice().toFixed(2),
-                            basePrice: getOriginalPrice().toFixed(2),
-                            selectedVariant: selectedVariant
-                                ? {
-                                      id: selectedVariant.id,
-                                      attributes: selectedVariant.attributes,
-                                      finalPrice: selectedVariant.finalPrice,
-                                      basePrice: selectedVariant.basePrice,
-                                      stock: selectedVariant.stock,
-                                      variantImgUrls:
-                                          selectedVariant.variantImgUrls,
-                                  }
-                                : undefined,
-                        },
-                        quantity,
-                    },
-                ],
+      },
+      enabled: true,
+      staleTime: 5 * 60 * 1000,
+    });
+
+  const { data: categoryData } = useQuery<{ data: Category }>({
+    queryKey: ["category", categoryId],
+    queryFn: async () => {
+      if (!categoryId) return null;
+      try {
+        const response = await axiosInstance.get(
+          `/api/categories/${categoryId}`,
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching category:", error);
+        return null;
+      }
+    },
+    enabled: !!categoryId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const reviews = (reviewsData?.reviews || []).map((review: Review) => ({
+    ...review,
+    userName:
+      review.user?.username || review.user?.email?.split("@")[0] || "Anonymous",
+  }));
+  const averageRating = reviewsData?.averageRating || 0;
+  const totalReviews = reviewsData?.totalReviews || 0;
+  const totalPages = reviewsData?.totalPages || 1;
+
+  useEffect(() => {
+    if (product) {
+      const defaultVar =
+        product.hasVariants && product.variants && product.variants.length > 0
+          ? product.variants[0]
+          : null;
+      setSelectedColor(defaultVar?.attributes?.color || "");
+      setSelectedSize(defaultVar?.attributes?.size || "");
+      setSelectedVariant(defaultVar);
+      const imgs =
+        defaultVar &&
+        defaultVar.variantImgUrls &&
+        defaultVar.variantImgUrls.length > 0
+          ? defaultVar.variantImgUrls
+          : product.productImages || [];
+      setImageError(
+        new Array(imgs && imgs.length ? imgs.length : 1).fill(false),
+      );
+    }
+  }, [product]);
+  useEffect(() => {
+    if (product) {
+      const variants: any[] =
+        product.hasVariants && product.variants ? product.variants : [];
+      const defaultVar =
+        variants.find(
+          (v) => Number(v.stock || 0) > 0 && v.status !== "OUT_OF_STOCK",
+        ) ||
+        variants[0] ||
+        null;
+      setSelectedColor(defaultVar?.attributes?.color || "");
+      setSelectedSize(defaultVar?.attributes?.size || "");
+      setSelectedVariant(defaultVar);
+      const entries = getGalleryEntries();
+      setImageError(new Array(entries.length || 1).fill(false));
+    }
+  }, [product]);
+
+  // Combined thumbnail gallery: the product's own photos plus one
+  // representative image per variant (so every variant is browsable and
+  // clickable from the thumbnail strip, not just the currently selected
+  // one). Each entry remembers which variant (if any) it belongs to, so
+  // clicking it can select that variant.
+  const getGalleryEntries = (): {
+    url: string;
+    variantId: number | null;
+  }[] => {
+    if (!product) return [];
+    // Variant photos win the tag: a variant's own photo is often just one
+    // of the product's existing gallery photos reused, and if it were left
+    // untagged (variantId: null) clicking that exact thumbnail could never
+    // select the variant it belongs to. Claim every one of a variant's
+    // photos (not just its first) for that variant, then only add the
+    // plain product photos that no variant already owns.
+    const claimedUrls = new Set<string>();
+    const variantImgs: { url: string; variantId: number }[] = [];
+    (product.variants || []).forEach((v: any) => {
+      (v?.variantImgUrls || []).forEach((url: string) => {
+        if (!url || claimedUrls.has(url)) return;
+        claimedUrls.add(url);
+        variantImgs.push({ url, variantId: v.id });
+      });
+    });
+    const productImgs = (product.productImages || [])
+      .filter((url: string) => !claimedUrls.has(url))
+      .map((url: string) => ({ url, variantId: null as number | null }));
+    return [...productImgs, ...variantImgs];
+  };
+
+  const getCurrentImages = () => getGalleryEntries().map((entry) => entry.url);
+
+  const handleImageSelect = (index: number) => {
+    setSelectedImageIndex(index);
+    const entry = getGalleryEntries()[index];
+    if (entry?.variantId != null && entry.variantId !== selectedVariant?.id) {
+      const variant = product?.variants?.find(
+        (v: any) => v.id === entry.variantId,
+      );
+      if (variant) {
+        setSelectedVariant(variant);
+        setSelectedColor(variant.attributes?.color || "");
+        setSelectedSize(variant.attributes?.size || "");
+      }
+    }
+  };
+
+  useEffect(() => {
+    const imgs = getCurrentImages();
+    setImageError(new Array(imgs && imgs.length ? imgs.length : 1).fill(false));
+    if (selectedImageIndex >= (imgs?.length || 0)) {
+      setSelectedImageIndex(0);
+    }
+  }, [selectedVariant, product]);
+
+  const getCurrentStock = () => {
+    if (selectedVariant) {
+      return selectedVariant.stock || 0;
+    }
+    return product?.stock || 0;
+  };
+
+  const getCurrentPrice = () => {
+    if (selectedVariant) {
+      return selectedVariant.finalPrice || 0;
+    }
+    return Number(product?.finalPrice || 0);
+  };
+
+  const getOriginalPrice = () => {
+    if (selectedVariant) {
+      return selectedVariant.basePrice || 0;
+    }
+    return Number(product?.basePrice || 0);
+  };
+
+  const handleVariantSelect = (variant: any) => {
+    setSelectedVariant(variant);
+    // Jump the main image to this variant's own thumbnail in the merged
+    // gallery, so picking a variant via the color/size swatches stays in
+    // sync with picking it via its thumbnail.
+    const idx = getGalleryEntries().findIndex(
+      (entry) => entry.variantId === variant.id,
+    );
+    setSelectedImageIndex(idx >= 0 ? idx : 0);
+  };
+
+  const handleMouseEnter = () => {
+    const currentImages = getCurrentImages();
+    if (currentImages[selectedImageIndex] && !imageError[selectedImageIndex]) {
+      setIsZoomActive(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsZoomActive(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isZoomActive || !mainImageRef.current) return;
+
+    const rect = mainImageRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Calculate relative position (0-1)
+    const relativeX = Math.max(0, Math.min(1, x / rect.width));
+    const relativeY = Math.max(0, Math.min(1, y / rect.height));
+
+    // Convert to percentage for background-position
+    const percentX = relativeX * 100;
+    const percentY = relativeY * 100;
+
+    setZoomPosition({ x: percentX, y: percentY });
+  };
+
+  const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      setAuthModalOpen(true);
+      return;
+    }
+    if (!product) return;
+    const variantId = selectedVariant?.id;
+    handleCartOnAdd(product, quantity, variantId);
+  };
+
+  const handleAddToWishlist = async () => {
+    if (!isAuthenticated || !product) {
+      setAuthModalOpen(true);
+      return;
+    }
+    if (wishlistPending) return;
+    if (productIsWishlisted) {
+      toast("Already present in the wishlist");
+      return;
+    }
+
+    try {
+      const addedItem = await addWishlistItem(product.id, wishlistVariantId);
+      if (addedItem !== null) {
+        toast.success("Added to wishlist");
+      }
+    } catch (e: any) {
+      const status = e?.response?.status;
+      const msg: string =
+        e?.response?.data?.message ||
+        e?.response?.data?.error ||
+        e?.message ||
+        "";
+      if (status === 409 || /already/i.test(msg)) {
+        toast("Already present in the wishlist");
+      } else {
+        toast.error("Failed to add to wishlist");
+      }
+    }
+  };
+
+  const handleBuyNow = () => {
+    if (!isAuthenticated) {
+      setAuthModalOpen(true);
+      return;
+    }
+    if (!product) return;
+    navigate("/checkout", {
+      state: {
+        buyNow: true,
+        products: [
+          {
+            product: {
+              ...product,
+              selectedColor,
+              price: getCurrentPrice().toFixed(2),
+              basePrice: getOriginalPrice().toFixed(2),
+              selectedVariant: selectedVariant
+                ? {
+                    id: selectedVariant.id,
+                    attributes: selectedVariant.attributes,
+                    finalPrice: selectedVariant.finalPrice,
+                    basePrice: selectedVariant.basePrice,
+                    stock: selectedVariant.stock,
+                    variantImgUrls: selectedVariant.variantImgUrls,
+                  }
+                : undefined,
             },
-        });
+            quantity,
+          },
+        ],
+      },
+    });
+  };
+
+  const handleQuantityChange = (increment: boolean) => {
+    if (!product) return;
+    const currentStock = getCurrentStock();
+    if (increment && quantity < currentStock) {
+      setQuantity((prev) => prev + 1);
+    } else if (!increment && quantity > 1) {
+      setQuantity((prev) => prev - 1);
+    }
+  };
+
+  const handleQuantityInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const value = e.target.value;
+    const currentStock = getCurrentStock();
+
+    if (value === "") {
+      setQuantity(1);
+      return;
+    }
+
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue)) {
+      if (numValue <= 0) {
+        setQuantity(1);
+      } else if (numValue <= currentStock) {
+        setQuantity(numValue);
+      } else {
+        setQuantity(currentStock);
+      }
+    }
+  };
+
+  const handleQuantityBlur = () => {
+    if (quantity < 1) {
+      setQuantity(1);
+    }
+  };
+
+  const handleQuantitySelect = () => {
+    if (quantityInputRef.current) {
+      quantityInputRef.current.select();
+    }
+  };
+
+  useEffect(() => {
+    setZoomPosition({ x: 50, y: 50 }); // Center the zoom initially
+  }, [selectedImageIndex, selectedVariant]);
+
+  useEffect(() => {
+    return () => {
+      setIsZoomActive(false);
+      setZoomPosition({ x: 50, y: 50 });
     };
+  }, []);
 
-    const handleQuantityChange = (increment: boolean) => {
-        if (!product) return;
-        const currentStock = getCurrentStock();
-        if (increment && quantity < currentStock) {
-            setQuantity((prev) => prev + 1);
-        } else if (!increment && quantity > 1) {
-            setQuantity((prev) => prev - 1);
-        }
-    };
+  const handleImageLoad = () => {
+    // Reset zoom when image loads
+    setZoomPosition({ x: 50, y: 50 });
+  };
 
-    const handleQuantityInputChange = (
-        e: React.ChangeEvent<HTMLInputElement>,
-    ) => {
-        const value = e.target.value;
-        const currentStock = getCurrentStock();
+  const handleImageError = (index: number) => {
+    console.warn(`Image failed to load: ${getCurrentImages()[index]}`);
+    setImageError((prev) => {
+      const newState = [...prev];
+      newState[index] = true;
+      return newState;
+    });
+  };
 
-        if (value === "") {
-            setQuantity(1);
-            return;
-        }
-
-        const numValue = parseInt(value, 10);
-        if (!isNaN(numValue)) {
-            if (numValue <= 0) {
-                setQuantity(1);
-            } else if (numValue <= currentStock) {
-                setQuantity(numValue);
-            } else {
-                setQuantity(currentStock);
-            }
-        }
-    };
-
-    const handleQuantityBlur = () => {
-        if (quantity < 1) {
-            setQuantity(1);
-        }
-    };
-
-    const handleQuantitySelect = () => {
-        if (quantityInputRef.current) {
-            quantityInputRef.current.select();
-        }
-    };
-
-    useEffect(() => {
-        setZoomPosition({ x: 50, y: 50 }); // Center the zoom initially
-    }, [selectedImageIndex, selectedVariant]);
-
-    useEffect(() => {
-        return () => {
-            setIsZoomActive(false);
-            setZoomPosition({ x: 50, y: 50 });
-        };
-    }, []);
-
-    const handleImageLoad = () => {
-        // Reset zoom when image loads
-        setZoomPosition({ x: 50, y: 50 });
-    };
-
-    const handleImageError = (index: number) => {
-        console.warn(`Image failed to load: ${getCurrentImages()[index]}`);
-        setImageError((prev) => {
-            const newState = [...prev];
-            newState[index] = true;
-            return newState;
-        });
-    };
-
-    const handleReviewPageChange = (page: number) => {
-        setCurrentReviewPage(page);
-        document
-            .getElementById("reviews-section")
-            ?.scrollIntoView({ behavior: "smooth" });
-    };
+  const handleReviewPageChange = (page: number) => {
+    setCurrentReviewPage(page);
+    document
+      .getElementById("reviews-section")
+      ?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const handleVendorClick = async () => {
     const vendorId = product?.vendor?.id;
@@ -873,174 +811,134 @@ const ProductPage = () => {
     }
   };
 
-    if (isProductLoading || isReviewsLoading || !product) {
-        return (
-            <>
-                <Navbar />
-                <Preloader />
-                <Footer />
-            </>
-        );
-    }
-
-    const currentImages = getCurrentImages();
-    const currentImage =
-        currentImages[selectedImageIndex] && !imageError[selectedImageIndex]
-            ? currentImages[selectedImageIndex]
-            : "";
-
-    // Build color-size mapping from variants
-    const colorSizeMap: Record<string, string[]> = {};
-    const sizeColorMap: Record<string, string[]> = {};
-    product.variants.forEach((variant: any) => {
-        const color = variant.attributes?.color?.toLowerCase();
-        const size = variant.attributes?.size;
-        if (color && size) {
-            if (!colorSizeMap[color]) colorSizeMap[color] = [];
-            if (!colorSizeMap[color].includes(size))
-                colorSizeMap[color].push(size);
-            if (!sizeColorMap[size]) sizeColorMap[size] = [];
-            if (!sizeColorMap[size].includes(color))
-                sizeColorMap[size].push(color);
-        }
-    });
-
+  if (isProductLoading || isReviewsLoading || !product) {
     return (
-        <div className="app">
-            <ScrollToTop />
-            <Navbar />
-            <div className="product-page-content">
-                <main className="product-page">
-                    <div className="product-page__container">
-                        <div className="product-page__content product-page__content--three-column">
-                            <div className="product-gallery">
-                                <div className="product-gallery__images">
-                                    <div
-                                        className="product-gallery__main-image"
-                                        ref={mainImageRef}
-                                        onMouseEnter={handleMouseEnter}
-                                        onMouseLeave={handleMouseLeave}
-                                        onMouseMove={handleMouseMove}
-                                        id="imageZoom"
-                                    >
-                                        {currentImage ? (
-                                            <img
-                                                src={currentImage}
-                                                alt={product.name}
-                                                onError={() =>
-                                                    handleImageError(
-                                                        selectedImageIndex,
-                                                    )
-                                                }
-                                                onLoad={handleImageLoad}
-                                                draggable={false}
-                                            />
-                                        ) : (
-                                            <img
-                                                src={defaultProductImage}
-                                                alt={product.name}
-                                                draggable={false}
-                                            />
-                                        )}
-                                        {isZoomActive && currentImage && (
-                                            <div
-                                                className={`product-gallery__zoom-box ${
-                                                    isZoomActive ? "active" : ""
-                                                }`}
-                                                style={{
-                                                    backgroundImage: `url(${currentImage})`,
-                                                    backgroundSize: `${ZOOM_LEVEL * 100}%`,
-                                                    backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
-                                                    backgroundRepeat:
-                                                        "no-repeat",
-                                                }}
-                                            />
-                                        )}
-                                    </div>
+      <>
+        <Navbar />
+        <Preloader />
+        <Footer />
+      </>
+    );
+  }
 
-                                    {currentImages &&
-                                        currentImages.length > 1 && (
-                                            <div
-                                                className={`product-gallery__thumbnails${
-                                                    isDraggingThumbnails
-                                                        ? " product-gallery__thumbnails--dragging"
-                                                        : ""
-                                                }`}
-                                                ref={thumbnailsRef}
-                                                onMouseDown={
-                                                    handleThumbnailsMouseDown
-                                                }
-                                                onMouseMove={
-                                                    handleThumbnailsMouseMove
-                                                }
-                                                onMouseUp={stopThumbnailsDrag}
-                                                onMouseLeave={
-                                                    stopThumbnailsDrag
-                                                }
-                                            >
-                                                {currentImages.map(
-                                                    (
-                                                        image: string,
-                                                        index: number,
-                                                    ) => (
-                                                        <button
-                                                            key={index}
-                                                            className={`product-gallery__thumbnail ${
-                                                                selectedImageIndex ===
-                                                                index
-                                                                    ? "product-gallery__thumbnail--active"
-                                                                    : ""
-                                                            }`}
-                                                            onClick={() => {
-                                                                if (
-                                                                    dragMovedRef.current
-                                                                )
-                                                                    return;
-                                                                handleImageSelect(
-                                                                    index,
-                                                                );
-                                                            }}
-                                                        >
-                                                            {image &&
-                                                            !imageError[
-                                                                index
-                                                            ] ? (
-                                                                <img
-                                                                    src={image}
-                                                                    alt={`Product view ${index + 1}`}
-                                                                    onError={() =>
-                                                                        handleImageError(
-                                                                            index,
-                                                                        )
-                                                                    }
-                                                                    draggable={
-                                                                        false
-                                                                    }
-                                                                />
-                                                            ) : (
-                                                                <img
-                                                                    src={
-                                                                        defaultProductImage
-                                                                    }
-                                                                    alt={`Product view ${index + 1}`}
-                                                                    draggable={
-                                                                        false
-                                                                    }
-                                                                />
-                                                            )}
-                                                        </button>
-                                                    ),
-                                                )}
-                                            </div>
-                                        )}
-                                </div>
-                            </div>
+  const currentImages = getCurrentImages();
+  const currentImage =
+    currentImages[selectedImageIndex] && !imageError[selectedImageIndex]
+      ? currentImages[selectedImageIndex]
+      : "";
 
-                            <div className="product-info">
-                                <div className="product-info__header">
-                                    <h1 className="product-info__title">
-                                        {product.name}
-                                    </h1>
+  // Build color-size mapping from variants
+  const colorSizeMap: Record<string, string[]> = {};
+  const sizeColorMap: Record<string, string[]> = {};
+  product.variants.forEach((variant: any) => {
+    const color = variant.attributes?.color?.toLowerCase();
+    const size = variant.attributes?.size;
+    if (color && size) {
+      if (!colorSizeMap[color]) colorSizeMap[color] = [];
+      if (!colorSizeMap[color].includes(size)) colorSizeMap[color].push(size);
+      if (!sizeColorMap[size]) sizeColorMap[size] = [];
+      if (!sizeColorMap[size].includes(color)) sizeColorMap[size].push(color);
+    }
+  });
+
+  return (
+    <div className="app">
+      <ScrollToTop />
+      <Navbar />
+      <div className="product-page-content">
+        <main className="product-page">
+          <div className="product-page__container">
+            <div className="product-page__content product-page__content--three-column">
+              <div className="product-gallery">
+                <div className="product-gallery__images">
+                  <div
+                    className="product-gallery__main-image"
+                    ref={mainImageRef}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                    onMouseMove={handleMouseMove}
+                    id="imageZoom"
+                  >
+                    {currentImage ? (
+                      <img
+                        src={currentImage}
+                        alt={product.name}
+                        onError={() => handleImageError(selectedImageIndex)}
+                        onLoad={handleImageLoad}
+                        draggable={false}
+                      />
+                    ) : (
+                      <img
+                        src={defaultProductImage}
+                        alt={product.name}
+                        draggable={false}
+                      />
+                    )}
+                    {isZoomActive && currentImage && (
+                      <div
+                        className={`product-gallery__zoom-box ${
+                          isZoomActive ? "active" : ""
+                        }`}
+                        style={{
+                          backgroundImage: `url(${currentImage})`,
+                          backgroundSize: `${ZOOM_LEVEL * 100}%`,
+                          backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                          backgroundRepeat: "no-repeat",
+                        }}
+                      />
+                    )}
+                  </div>
+
+                  {currentImages && currentImages.length > 1 && (
+                    <div
+                      className={`product-gallery__thumbnails${
+                        isDraggingThumbnails
+                          ? " product-gallery__thumbnails--dragging"
+                          : ""
+                      }`}
+                      ref={thumbnailsRef}
+                      onMouseDown={handleThumbnailsMouseDown}
+                      onMouseMove={handleThumbnailsMouseMove}
+                      onMouseUp={stopThumbnailsDrag}
+                      onMouseLeave={stopThumbnailsDrag}
+                    >
+                      {currentImages.map((image: string, index: number) => (
+                        <button
+                          key={index}
+                          className={`product-gallery__thumbnail ${
+                            selectedImageIndex === index
+                              ? "product-gallery__thumbnail--active"
+                              : ""
+                          }`}
+                          onClick={() => {
+                            if (dragMovedRef.current) return;
+                            handleImageSelect(index);
+                          }}
+                        >
+                          {image && !imageError[index] ? (
+                            <img
+                              src={image}
+                              alt={`Product view ${index + 1}`}
+                              onError={() => handleImageError(index)}
+                              draggable={false}
+                            />
+                          ) : (
+                            <img
+                              src={defaultProductImage}
+                              alt={`Product view ${index + 1}`}
+                              draggable={false}
+                            />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="product-info">
+                <div className="product-info__header">
+                  <h1 className="product-info__title">{product.name}</h1>
 
                   {product.brand && (
                     <div className="product-brand">
@@ -1053,720 +951,515 @@ const ProductPage = () => {
                     </div>
                   )}
 
-                                    <div className="product-price">
-                                        <span className="product-price__current">
-                                            Rs. {getCurrentPrice().toFixed(2)}
-                                        </span>
-                                        {getOriginalPrice() >
-                                            getCurrentPrice() && (
-                                            <>
-                                                <span className="product-price__original">
-                                                    Rs.{" "}
-                                                    {getOriginalPrice().toFixed(
-                                                        2,
-                                                    )}
-                                                </span>
-                                                <span className="product-price__savings">
-                                                    Save Rs.{" "}
-                                                    {(
-                                                        getOriginalPrice() -
-                                                        getCurrentPrice()
-                                                    ).toFixed(2)}
-                                                </span>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {product.hasVariants &&
-                                    product.variants &&
-                                    product.variants.length > 1 && (
-                                        <div className="product-options">
-                                            <h4 className="product-options__label">
-                                                Available Options:
-                                            </h4>
-                                            <div className="product-options__variants">
-                                                {(() => {
-                                                    // Dynamically build attribute options from variants
-                                                    const attributeOptions: Record<
-                                                        string,
-                                                        Set<string>
-                                                    > = {};
-                                                    product.variants.forEach(
-                                                        (variant: any) => {
-                                                            if (
-                                                                variant.attributes
-                                                            ) {
-                                                                Object.entries(
-                                                                    variant.attributes,
-                                                                ).forEach(
-                                                                    ([
-                                                                        key,
-                                                                        value,
-                                                                    ]) => {
-                                                                        if (
-                                                                            !attributeOptions[
-                                                                                key
-                                                                            ]
-                                                                        )
-                                                                            attributeOptions[
-                                                                                key
-                                                                            ] =
-                                                                                new Set();
-                                                                        attributeOptions[
-                                                                            key
-                                                                        ].add(
-                                                                            String(
-                                                                                value,
-                                                                            ),
-                                                                        );
-                                                                    },
-                                                                );
-                                                            }
-                                                        },
-                                                    );
-
-                                                    // Order: color, size, length, then others
-                                                    let attributeTypes =
-                                                        Object.keys(
-                                                            attributeOptions,
-                                                        );
-                                                    const order = [
-                                                        "color",
-                                                        "size",
-                                                        "length",
-                                                    ];
-                                                    const orderedTypes = [
-                                                        ...order.filter((t) =>
-                                                            attributeTypes.includes(
-                                                                t,
-                                                            ),
-                                                        ),
-                                                        ...attributeTypes
-                                                            .filter(
-                                                                (t) =>
-                                                                    !order.includes(
-                                                                        t,
-                                                                    ),
-                                                            )
-                                                            .sort(),
-                                                    ];
-
-                                                    // Build selected attributes from selectedVariant
-                                                    const selectedAttributes =
-                                                        orderedTypes.reduce(
-                                                            (acc, key) => {
-                                                                acc[key] =
-                                                                    (selectedVariant?.attributes &&
-                                                                        selectedVariant
-                                                                            .attributes[
-                                                                            key
-                                                                        ]) ||
-                                                                    "";
-                                                                return acc;
-                                                            },
-                                                            {} as Record<
-                                                                string,
-                                                                string
-                                                            >,
-                                                        );
-
-                                                    return orderedTypes.map(
-                                                        (attrType, idx) => {
-                                                            const optionValues =
-                                                                [
-                                                                    ...attributeOptions[
-                                                                        attrType
-                                                                    ],
-                                                                ];
-                                                            const hasMultipleOptions =
-                                                                optionValues.length >
-                                                                4;
-
-                                                            // Special logic for color buttons
-                                                            if (
-                                                                attrType ===
-                                                                "color"
-                                                            ) {
-                                                                return (
-                                                                    <div
-                                                                        className="product-options__attribute"
-                                                                        key={
-                                                                            attrType
-                                                                        }
-                                                                    >
-                                                                        <span className="product-options__attribute-label">
-                                                                            {
-                                                                                attrType
-                                                                            }
-                                                                        </span>
-                                                                        <div
-                                                                            className={`product-options__variant-row ${
-                                                                                hasMultipleOptions
-                                                                                    ? "product-options__variant-row--many"
-                                                                                    : ""
-                                                                            }`}
-                                                                        >
-                                                                            {optionValues.map(
-                                                                                (
-                                                                                    optionValue,
-                                                                                ) => {
-                                                                                    const isSelected =
-                                                                                        selectedAttributes[
-                                                                                            attrType
-                                                                                        ] ===
-                                                                                        optionValue;
-                                                                                    const hasStock =
-                                                                                        product.variants.some(
-                                                                                            (
-                                                                                                v,
-                                                                                            ) =>
-                                                                                                v
-                                                                                                    .attributes
-                                                                                                    ?.color ===
-                                                                                                    optionValue &&
-                                                                                                v.stock >
-                                                                                                    0,
-                                                                                        );
-                                                                                    const isOutOfStock =
-                                                                                        !hasStock;
-
-                                                                                    return (
-                                                                                        <button
-                                                                                            key={
-                                                                                                optionValue
-                                                                                            }
-                                                                                            className={`product-options__button${
-                                                                                                isSelected
-                                                                                                    ? " product-options__button--active"
-                                                                                                    : ""
-                                                                                            }${
-                                                                                                isOutOfStock
-                                                                                                    ? " product-options__button--disabled"
-                                                                                                    : ""
-                                                                                            }${
-                                                                                                hasMultipleOptions
-                                                                                                    ? " product-options__button--compact"
-                                                                                                    : ""
-                                                                                            }`}
-                                                                                            onClick={() => {
-                                                                                                if (
-                                                                                                    isOutOfStock
-                                                                                                ) {
-                                                                                                    toast(
-                                                                                                        "This color is out of stock.",
-                                                                                                    );
-                                                                                                    return;
-                                                                                                }
-                                                                                                setSelectedSize(
-                                                                                                    "",
-                                                                                                );
-                                                                                                setQuantity(
-                                                                                                    1,
-                                                                                                );
-                                                                                                const variant =
-                                                                                                    product.variants.find(
-                                                                                                        (
-                                                                                                            v,
-                                                                                                        ) =>
-                                                                                                            v
-                                                                                                                .attributes
-                                                                                                                ?.color ===
-                                                                                                                optionValue &&
-                                                                                                            v.stock >
-                                                                                                                0,
-                                                                                                    );
-                                                                                                if (
-                                                                                                    variant
-                                                                                                ) {
-                                                                                                    handleVariantSelect(
-                                                                                                        variant,
-                                                                                                    );
-                                                                                                }
-                                                                                            }}
-                                                                                            disabled={
-                                                                                                isOutOfStock
-                                                                                            }
-                                                                                            title={
-                                                                                                optionValue
-                                                                                            }
-                                                                                        >
-                                                                                            {optionValue.length >
-                                                                                                8 &&
-                                                                                            hasMultipleOptions
-                                                                                                ? `${optionValue.substring(0, 6)}...`
-                                                                                                : optionValue}
-                                                                                        </button>
-                                                                                    );
-                                                                                },
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            }
-
-                                                            // Default logic for other attributes
-                                                            return (
-                                                                <div
-                                                                    className="product-options__attribute"
-                                                                    key={
-                                                                        attrType
-                                                                    }
-                                                                >
-                                                                    <span className="product-options__attribute-label">
-                                                                        {
-                                                                            attrType
-                                                                        }
-                                                                    </span>
-                                                                    <div
-                                                                        className={`product-options__variant-row ${
-                                                                            hasMultipleOptions
-                                                                                ? "product-options__variant-row--many"
-                                                                                : ""
-                                                                        }`}
-                                                                    >
-                                                                        {optionValues.map(
-                                                                            (
-                                                                                optionValue,
-                                                                            ) => {
-                                                                                const isSelected =
-                                                                                    selectedAttributes[
-                                                                                        attrType
-                                                                                    ] ===
-                                                                                    optionValue;
-                                                                                const selection =
-                                                                                    {
-                                                                                        ...selectedAttributes,
-                                                                                        [attrType]:
-                                                                                            optionValue,
-                                                                                    };
-                                                                                const variant =
-                                                                                    product.variants.find(
-                                                                                        (
-                                                                                            v,
-                                                                                        ) => {
-                                                                                            return (
-                                                                                                Object.entries(
-                                                                                                    selection,
-                                                                                                ).every(
-                                                                                                    ([
-                                                                                                        k,
-                                                                                                        val,
-                                                                                                    ]) =>
-                                                                                                        v
-                                                                                                            .attributes?.[
-                                                                                                            k
-                                                                                                        ] ===
-                                                                                                        val,
-                                                                                                ) &&
-                                                                                                v.stock >
-                                                                                                    0
-                                                                                            );
-                                                                                        },
-                                                                                    );
-                                                                                const isOutOfStock =
-                                                                                    !variant;
-
-                                                                                return (
-                                                                                    <button
-                                                                                        key={
-                                                                                            optionValue
-                                                                                        }
-                                                                                        className={`product-options__button${
-                                                                                            isSelected
-                                                                                                ? " product-options__button--active"
-                                                                                                : ""
-                                                                                        }${
-                                                                                            isOutOfStock
-                                                                                                ? " product-options__button--disabled"
-                                                                                                : ""
-                                                                                        }${
-                                                                                            hasMultipleOptions
-                                                                                                ? " product-options__button--compact"
-                                                                                                : ""
-                                                                                        }`}
-                                                                                        onClick={() => {
-                                                                                            if (
-                                                                                                isOutOfStock
-                                                                                            ) {
-                                                                                                toast(
-                                                                                                    `This ${attrType} is out of stock.`,
-                                                                                                );
-                                                                                                return;
-                                                                                            }
-                                                                                            setQuantity(
-                                                                                                1,
-                                                                                            );
-                                                                                            handleVariantSelect(
-                                                                                                variant,
-                                                                                            );
-                                                                                        }}
-                                                                                        disabled={
-                                                                                            isOutOfStock
-                                                                                        }
-                                                                                        title={
-                                                                                            optionValue
-                                                                                        }
-                                                                                    >
-                                                                                        {optionValue.length >
-                                                                                            8 &&
-                                                                                        hasMultipleOptions
-                                                                                            ? `${optionValue.substring(0, 6)}...`
-                                                                                            : optionValue}
-                                                                                    </button>
-                                                                                );
-                                                                            },
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        },
-                                                    );
-                                                })()}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                <div className="product-quantity">
-                                    <h4 className="product-quantity__label">
-                                        Quantity:
-                                    </h4>
-                                    <div className="product-quantity__selector">
-                                        <button
-                                            className="product-quantity__button"
-                                            onClick={() =>
-                                                handleQuantityChange(false)
-                                            }
-                                            disabled={
-                                                quantity <= 1 ||
-                                                getCurrentStock() <= 0
-                                            }
-                                        >
-                                            -
-                                        </button>
-                                        <input
-                                            ref={quantityInputRef}
-                                            type="number"
-                                            className="product-quantity__input"
-                                            value={quantity}
-                                            onChange={handleQuantityInputChange}
-                                            onBlur={handleQuantityBlur}
-                                            onClick={handleQuantitySelect}
-                                            onFocus={handleQuantitySelect}
-                                            onKeyDown={(e) => {
-                                                if (
-                                                    [
-                                                        "e",
-                                                        "E",
-                                                        "+",
-                                                        "-",
-                                                        ".",
-                                                    ].includes(e.key)
-                                                ) {
-                                                    e.preventDefault();
-                                                }
-                                            }}
-                                            min="1"
-                                            max={getCurrentStock()}
-                                            disabled={getCurrentStock() <= 0}
-                                        />
-                                        <button
-                                            className="product-quantity__button"
-                                            onClick={() =>
-                                                handleQuantityChange(true)
-                                            }
-                                            disabled={
-                                                quantity >= getCurrentStock() ||
-                                                getCurrentStock() <= 0
-                                            }
-                                        >
-                                            +
-                                        </button>
-                                    </div>
-                                    {getCurrentStock() <= 0 && (
-                                        <div className="product-quantity__stock-message">
-                                            <span className="product-quantity__stock-icon">
-                                                ⓘ
-                                            </span>
-                                            Out of stock
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="product-actions">
-                                    <button
-                                        className="product-actions__button product-actions__button--primary"
-                                        onClick={handleAddToCart}
-                                        disabled={getCurrentStock() <= 0}
-                                    >
-                                        {getCurrentStock() > 0
-                                            ? "Add to Cart"
-                                            : "Out of Stock"}
-                                    </button>
-
-                                    {getCurrentStock() > 0 ? (
-                                        <button
-                                            className="product-actions__button product-actions__button--secondary"
-                                            onClick={handleBuyNow}
-                                        >
-                                            Buy Now
-                                        </button>
-                                    ) : (
-                                        <button
-                                            className="product-actions__button product-actions__button--secondary"
-                                            onClick={handleAddToWishlist}
-                                            disabled={wishlistPending}
-                                        >
-                                            {productIsWishlisted
-                                                ? "In Wishlist"
-                                                : "Add to Wishlist"}
-                                        </button>
-                                    )}
-
-                                    {getCurrentStock() > 0 && (
-                                        <button
-                                            className="product-actions__button product-actions__button--secondary"
-                                            onClick={handleAddToWishlist}
-                                            disabled={wishlistPending}
-                                        >
-                                            {productIsWishlisted
-                                                ? "In Wishlist"
-                                                : "Add to Wishlist"}
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Mobile/tablet-only copy — hidden on desktop via CSS,
-                                shown above Seller Information once the layout stacks. */}
-                            {product.description && (
-                                <div className="product-page__description-section product-page__description-section--mobile-copy">
-                                    <div className="product-page__description-card">
-                                        <h3>Description</h3>
-                                        <p>{product.description}</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* -------------Vendor Details Section ------------------ */}
-                            <div className="vendor-details">
-                                <div className="vendor-details__header">
-                                    <h3 className="vendor-details__title">
-                                        Seller Information
-                                    </h3>
-                                </div>
-
-                                <div className="vendor-details__content">
-                                    <div
-                                        className="vendor-details__profile"
-                                        onClick={handleVendorClick}
-                                    >
-                                        <div className="vendor-details__avatar">
-                                            {(product.vendor as any)
-                                                ?.profilePicture &&
-                                            !vendorAvatarError ? (
-                                                <img
-                                                    src={
-                                                        (product.vendor as any)
-                                                            .profilePicture
-                                                    }
-                                                    alt={
-                                                        product.vendor
-                                                            ?.businessName ||
-                                                        "Vendor"
-                                                    }
-                                                    onError={() =>
-                                                        setVendorAvatarError(
-                                                            true,
-                                                        )
-                                                    }
-                                                />
-                                            ) : (
-                                                product.vendor?.businessName
-                                                    ?.charAt(0)
-                                                    .toUpperCase() || "U"
-                                            )}
-                                        </div>
-                                        <div className="vendor-details__info">
-                                            <h4 className="vendor-details__name">
-                                                {product.vendor?.businessName ||
-                                                    "Unknown Vendor"}
-                                            </h4>
-                                            <p className="vendor-details__subtitle">
-                                                Verified Seller
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="vendor-details__features">
-                                        <div className="vendor-details__feature">
-                                            <div className="vendor-details__feature-icon">
-                                                <Truck
-                                                    style={{
-                                                        opacity: "1",
-                                                        color: "#ff6b35",
-                                                    }}
-                                                />
-                                            </div>
-                                            <div className="vendor-details__feature-text">
-                                                <span className="vendor-details__feature-title">
-                                                    Fast Shipping
-                                                </span>
-                                                <span className="vendor-details__feature-desc">
-                                                    14 business days
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="vendor-details__feature">
-                                            <div className="vendor-details__feature-icon">
-                                                <Undo2
-                                                    style={{
-                                                        opacity: "1",
-                                                        color: "#ff6b35",
-                                                    }}
-                                                />
-                                            </div>
-                                            <div className="vendor-details__feature-text">
-                                                <span className="vendor-details__feature-title">
-                                                    Easy Returns
-                                                </span>
-                                                <span className="vendor-details__feature-desc">
-                                                    1 week return policy
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="vendor-details__feature">
-                                            <div className="vendor-details__feature-icon">
-                                                <ShieldCheck
-                                                    style={{
-                                                        opacity: "1",
-                                                        color: "#ff6b35",
-                                                    }}
-                                                />
-                                            </div>
-                                            <div className="vendor-details__feature-text">
-                                                <span className="vendor-details__feature-title">
-                                                    Secure Payment
-                                                </span>
-                                                <span className="vendor-details__feature-desc">
-                                                    Protected transactions
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="vendor-details__feature">
-                                            <div className="vendor-details__feature-icon">
-                                                <Phone
-                                                    style={{
-                                                        opacity: "1",
-                                                        color: "#ff6b35",
-                                                    }}
-                                                />
-                                            </div>
-                                            <div className="vendor-details__feature-text">
-                                                <span className="vendor-details__feature-title">
-                                                    24/7 Support
-                                                </span>
-                                                <span className="vendor-details__feature-desc">
-                                                    Customer service
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="vendor-details__actions">
-                                        <button
-                                            className="vendor-details__button vendor-details__button--primary"
-                                            onClick={handleVendorClick}
-                                        >
-                                            Visit Store
-                                        </button>
-                                    </div>
-
-                                    <div className="vendor-details__badges">
-                                        <div className="vendor-details__badge">
-                                            ✓ Verified
-                                        </div>
-                                        <div className="vendor-details__badge">
-                                            ⭐ Top Rated
-                                        </div>
-                                        <div className="vendor-details__badge">
-                                            🔒 Trusted
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-
-                    {/* Desktop/wide copy — hidden once the layout stacks (see
-                        the mobile-copy rendered above Seller Information). */}
-                    {product.description && (
-                        <div className="product-page__description-section product-page__description-section--desktop-copy">
-                            <div className="product-page__description-card">
-                                <h3>Description</h3>
-                                <p>{product.description}</p>
-                            </div>
-                        </div>
+                  <div className="product-price">
+                    <span className="product-price__current">
+                      Rs. {getCurrentPrice().toFixed(2)}
+                    </span>
+                    {getOriginalPrice() > getCurrentPrice() && (
+                      <>
+                        <span className="product-price__original">
+                          Rs. {getOriginalPrice().toFixed(2)}
+                        </span>
+                        <span className="product-price__savings">
+                          Save Rs.{" "}
+                          {(getOriginalPrice() - getCurrentPrice()).toFixed(2)}
+                        </span>
+                      </>
                     )}
+                  </div>
+                </div>
 
-                    {/* -----------------Reviews section ----------------------  */}
-                    <div
-                        id="reviews-section"
-                        className="product-page__reviews-section"
-                    >
-                        <div className="product-page__reviews">
-                            <Reviews
-                                productId={Number(id)}
-                                initialReviews={reviews}
-                                initialAverageRating={averageRating}
-                                totalReviews={totalReviews}
-                                currentPage={currentReviewPage}
-                                totalPages={totalPages}
-                                onReviewUpdate={async () => {
-                                    localStorage.removeItem(
-                                        `${CACHE_KEY_REVIEWS}_${id}`,
-                                    );
-                                    setCurrentReviewPage(1);
-                                }}
-                                onPageChange={handleReviewPageChange}
-                            />
-                        </div>
-                    </div>
+                {product.hasVariants &&
+                  product.variants &&
+                  product.variants.length > 1 && (
+                    <div className="product-options">
+                      <h4 className="product-options__label">
+                        Available Options:
+                      </h4>
+                      <div className="product-options__variants">
+                        {(() => {
+                          // Dynamically build attribute options from variants
+                          const attributeOptions: Record<
+                            string,
+                            Set<string>
+                          > = {};
+                          product.variants.forEach((variant: any) => {
+                            if (variant.attributes) {
+                              Object.entries(variant.attributes).forEach(
+                                ([key, value]) => {
+                                  if (!attributeOptions[key])
+                                    attributeOptions[key] = new Set();
+                                  attributeOptions[key].add(String(value));
+                                },
+                              );
+                            }
+                          });
 
-                    {/* ---------------- Recommended products -----------------  */}
-                    <div className="product-page__recommended">
-                        <RecommendedProducts
-                            products={recommendedProducts ?? []}
-                            currentProductId={product.id}
-                            fallbackCategoryId={effectiveCategoryId}
-                            fallbackSubcategoryId={effectiveSubcategoryId}
-                            isLoading={isLoadingRecommended}
-                        />
-                    </div>
+                          // Order: color, size, length, then others
+                          let attributeTypes = Object.keys(attributeOptions);
+                          const order = ["color", "size", "length"];
+                          const orderedTypes = [
+                            ...order.filter((t) => attributeTypes.includes(t)),
+                            ...attributeTypes
+                              .filter((t) => !order.includes(t))
+                              .sort(),
+                          ];
 
-                    {showToast && (
-                        <div className="toast">
-                            <div className="toast__content">
-                                <span className="toast__icon">✓</span>
-                                <span className="toast__message">
-                                    {toastMessage}
+                          // Build selected attributes from selectedVariant
+                          const selectedAttributes = orderedTypes.reduce(
+                            (acc, key) => {
+                              acc[key] =
+                                (selectedVariant?.attributes &&
+                                  selectedVariant.attributes[key]) ||
+                                "";
+                              return acc;
+                            },
+                            {} as Record<string, string>,
+                          );
+
+                          return orderedTypes.map((attrType, idx) => {
+                            const optionValues = [
+                              ...attributeOptions[attrType],
+                            ];
+                            const hasMultipleOptions = optionValues.length > 4;
+
+                            // Special logic for color buttons
+                            if (attrType === "color") {
+                              return (
+                                <div
+                                  className="product-options__attribute"
+                                  key={attrType}
+                                >
+                                  <span className="product-options__attribute-label">
+                                    {attrType}
+                                  </span>
+                                  <div
+                                    className={`product-options__variant-row ${
+                                      hasMultipleOptions
+                                        ? "product-options__variant-row--many"
+                                        : ""
+                                    }`}
+                                  >
+                                    {optionValues.map((optionValue) => {
+                                      const isSelected =
+                                        selectedAttributes[attrType] ===
+                                        optionValue;
+                                      const hasStock = product.variants.some(
+                                        (v) =>
+                                          v.attributes?.color === optionValue &&
+                                          v.stock > 0,
+                                      );
+                                      const isOutOfStock = !hasStock;
+
+                                      return (
+                                        <button
+                                          key={optionValue}
+                                          className={`product-options__button${
+                                            isSelected
+                                              ? " product-options__button--active"
+                                              : ""
+                                          }${
+                                            isOutOfStock
+                                              ? " product-options__button--disabled"
+                                              : ""
+                                          }${
+                                            hasMultipleOptions
+                                              ? " product-options__button--compact"
+                                              : ""
+                                          }`}
+                                          onClick={() => {
+                                            if (isOutOfStock) {
+                                              toast(
+                                                "This color is out of stock.",
+                                              );
+                                              return;
+                                            }
+                                            setSelectedSize("");
+                                            setQuantity(1);
+                                            const variant =
+                                              product.variants.find(
+                                                (v) =>
+                                                  v.attributes?.color ===
+                                                    optionValue && v.stock > 0,
+                                              );
+                                            if (variant) {
+                                              handleVariantSelect(variant);
+                                            }
+                                          }}
+                                          disabled={isOutOfStock}
+                                          title={optionValue}
+                                        >
+                                          {optionValue}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            // Default logic for other attributes
+                            return (
+                              <div
+                                className="product-options__attribute"
+                                key={attrType}
+                              >
+                                <span className="product-options__attribute-label">
+                                  {attrType}
                                 </span>
-                            </div>
-                        </div>
-                    )}
+                                <div
+                                  className={`product-options__variant-row ${
+                                    hasMultipleOptions
+                                      ? "product-options__variant-row--many"
+                                      : ""
+                                  }`}
+                                >
+                                  {optionValues.map((optionValue) => {
+                                    const isSelected =
+                                      selectedAttributes[attrType] ===
+                                      optionValue;
+                                    const selection = {
+                                      ...selectedAttributes,
+                                      [attrType]: optionValue,
+                                    };
+                                    const variant = product.variants.find(
+                                      (v) => {
+                                        return (
+                                          Object.entries(selection).every(
+                                            ([k, val]) =>
+                                              v.attributes?.[k] === val,
+                                          ) && v.stock > 0
+                                        );
+                                      },
+                                    );
+                                    const isOutOfStock = !variant;
 
-                    {authModalOpen && (
-                        <AuthModal
-                            isOpen={authModalOpen}
-                            onClose={() => setAuthModalOpen(false)}
+                                    return (
+                                      <button
+                                        key={optionValue}
+                                        className={`product-options__button${
+                                          isSelected
+                                            ? " product-options__button--active"
+                                            : ""
+                                        }${
+                                          isOutOfStock
+                                            ? " product-options__button--disabled"
+                                            : ""
+                                        }${
+                                          hasMultipleOptions
+                                            ? " product-options__button--compact"
+                                            : ""
+                                        }`}
+                                        onClick={() => {
+                                          if (isOutOfStock) {
+                                            toast(
+                                              `This ${attrType} is out of stock.`,
+                                            );
+                                            return;
+                                          }
+                                          setQuantity(1);
+                                          handleVariantSelect(variant);
+                                        }}
+                                        disabled={isOutOfStock}
+                                        title={optionValue}
+                                      >
+                                        {optionValue}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+                  )}
+
+                <div className="product-quantity">
+                  <h4 className="product-quantity__label">Quantity:</h4>
+                  <div className="product-quantity__selector">
+                    <button
+                      className="product-quantity__button"
+                      onClick={() => handleQuantityChange(false)}
+                      disabled={quantity <= 1 || getCurrentStock() <= 0}
+                    >
+                      -
+                    </button>
+                    <input
+                      ref={quantityInputRef}
+                      type="number"
+                      className="product-quantity__input"
+                      value={quantity}
+                      onChange={handleQuantityInputChange}
+                      onBlur={handleQuantityBlur}
+                      onClick={handleQuantitySelect}
+                      onFocus={handleQuantitySelect}
+                      onKeyDown={(e) => {
+                        if (["e", "E", "+", "-", "."].includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                      min="1"
+                      max={getCurrentStock()}
+                      disabled={getCurrentStock() <= 0}
+                    />
+                    <button
+                      className="product-quantity__button"
+                      onClick={() => handleQuantityChange(true)}
+                      disabled={
+                        quantity >= getCurrentStock() || getCurrentStock() <= 0
+                      }
+                    >
+                      +
+                    </button>
+                  </div>
+                  {getCurrentStock() <= 0 && (
+                    <div className="product-quantity__stock-message">
+                      <span className="product-quantity__stock-icon">ⓘ</span>
+                      Out of stock
+                    </div>
+                  )}
+                </div>
+
+                <div className="product-actions">
+                  <button
+                    className="product-actions__button product-actions__button--primary"
+                    onClick={handleAddToCart}
+                    disabled={getCurrentStock() <= 0}
+                  >
+                    {getCurrentStock() > 0 ? "Add to Cart" : "Out of Stock"}
+                  </button>
+
+                  {getCurrentStock() > 0 ? (
+                    <button
+                      className="product-actions__button product-actions__button--secondary"
+                      onClick={handleBuyNow}
+                    >
+                      Buy Now
+                    </button>
+                  ) : (
+                    <button
+                      className="product-actions__button product-actions__button--secondary"
+                      onClick={handleAddToWishlist}
+                      disabled={wishlistPending}
+                    >
+                      {productIsWishlisted ? "In Wishlist" : "Add to Wishlist"}
+                    </button>
+                  )}
+
+                  {getCurrentStock() > 0 && (
+                    <button
+                      className="product-actions__button product-actions__button--secondary"
+                      onClick={handleAddToWishlist}
+                      disabled={wishlistPending}
+                    >
+                      {productIsWishlisted ? "In Wishlist" : "Add to Wishlist"}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Mobile/tablet-only copy — hidden on desktop via CSS,
+                                shown above Seller Information once the layout stacks. */}
+              {product.description && (
+                <div className="product-page__description-section product-page__description-section--mobile-copy">
+                  <div className="product-page__description-card">
+                    <h3>Description</h3>
+                    <p>{product.description}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* -------------Vendor Details Section ------------------ */}
+              <div className="vendor-details">
+                <div className="vendor-details__header">
+                  <h3 className="vendor-details__title">Seller Information</h3>
+                </div>
+
+                <div className="vendor-details__content">
+                  <div
+                    className="vendor-details__profile"
+                    onClick={handleVendorClick}
+                  >
+                    <div className="vendor-details__avatar">
+                      {(product.vendor as any)?.profilePicture &&
+                      !vendorAvatarError ? (
+                        <img
+                          src={(product.vendor as any).profilePicture}
+                          alt={product.vendor?.businessName || "Vendor"}
+                          onError={() => setVendorAvatarError(true)}
                         />
-                    )}
-                </main>
+                      ) : (
+                        product.vendor?.businessName?.charAt(0).toUpperCase() ||
+                        "U"
+                      )}
+                    </div>
+                    <div className="vendor-details__info">
+                      <h4 className="vendor-details__name">
+                        {product.vendor?.businessName || "Unknown Vendor"}
+                      </h4>
+                      <p className="vendor-details__subtitle">
+                        Verified Seller
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="vendor-details__features">
+                    <div className="vendor-details__feature">
+                      <div className="vendor-details__feature-icon">
+                        <Truck
+                          style={{
+                            opacity: "1",
+                            color: "#ff6b35",
+                          }}
+                        />
+                      </div>
+                      <div className="vendor-details__feature-text">
+                        <span className="vendor-details__feature-title">
+                          Fast Shipping
+                        </span>
+                        <span className="vendor-details__feature-desc">
+                          14 business days
+                        </span>
+                      </div>
+                    </div>
+                    <div className="vendor-details__feature">
+                      <div className="vendor-details__feature-icon">
+                        <Undo2
+                          style={{
+                            opacity: "1",
+                            color: "#ff6b35",
+                          }}
+                        />
+                      </div>
+                      <div className="vendor-details__feature-text">
+                        <span className="vendor-details__feature-title">
+                          Easy Returns
+                        </span>
+                        <span className="vendor-details__feature-desc">
+                          1 week return policy
+                        </span>
+                      </div>
+                    </div>
+                    <div className="vendor-details__feature">
+                      <div className="vendor-details__feature-icon">
+                        <ShieldCheck
+                          style={{
+                            opacity: "1",
+                            color: "#ff6b35",
+                          }}
+                        />
+                      </div>
+                      <div className="vendor-details__feature-text">
+                        <span className="vendor-details__feature-title">
+                          Secure Payment
+                        </span>
+                        <span className="vendor-details__feature-desc">
+                          Protected transactions
+                        </span>
+                      </div>
+                    </div>
+                    <div className="vendor-details__feature">
+                      <div className="vendor-details__feature-icon">
+                        <Phone
+                          style={{
+                            opacity: "1",
+                            color: "#ff6b35",
+                          }}
+                        />
+                      </div>
+                      <div className="vendor-details__feature-text">
+                        <span className="vendor-details__feature-title">
+                          24/7 Support
+                        </span>
+                        <span className="vendor-details__feature-desc">
+                          Customer service
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="vendor-details__actions">
+                    <button
+                      className="vendor-details__button vendor-details__button--primary"
+                      onClick={handleVendorClick}
+                    >
+                      Visit Store
+                    </button>
+                  </div>
+
+                  <div className="vendor-details__badges">
+                    <div className="vendor-details__badge">✓ Verified</div>
+                    <div className="vendor-details__badge">⭐ Top Rated</div>
+                    <div className="vendor-details__badge">🔒 Trusted</div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <Footer />
-        </div>
-    );
+          </div>
+
+          {/* Desktop/wide copy — hidden once the layout stacks (see
+                        the mobile-copy rendered above Seller Information). */}
+          {product.description && (
+            <div className="product-page__description-section product-page__description-section--desktop-copy">
+              <div className="product-page__description-card">
+                <h3>Description</h3>
+                <p>{product.description}</p>
+              </div>
+            </div>
+          )}
+
+          {/* -----------------Reviews section ----------------------  */}
+          <div id="reviews-section" className="product-page__reviews-section">
+            <div className="product-page__reviews">
+              <Reviews
+                productId={Number(id)}
+                initialReviews={reviews}
+                initialAverageRating={averageRating}
+                totalReviews={totalReviews}
+                currentPage={currentReviewPage}
+                totalPages={totalPages}
+                onReviewUpdate={async () => {
+                  localStorage.removeItem(`${CACHE_KEY_REVIEWS}_${id}`);
+                  setCurrentReviewPage(1);
+                }}
+                onPageChange={handleReviewPageChange}
+              />
+            </div>
+          </div>
+
+          {/* ---------------- Recommended products -----------------  */}
+          <div className="product-page__recommended">
+            <RecommendedProducts
+              products={recommendedProducts ?? []}
+              currentProductId={product.id}
+              fallbackCategoryId={effectiveCategoryId}
+              fallbackSubcategoryId={effectiveSubcategoryId}
+              isLoading={isLoadingRecommended}
+            />
+          </div>
+
+          {showToast && (
+            <div className="toast">
+              <div className="toast__content">
+                <span className="toast__icon">✓</span>
+                <span className="toast__message">{toastMessage}</span>
+              </div>
+            </div>
+          )}
+
+          {authModalOpen && (
+            <AuthModal
+              isOpen={authModalOpen}
+              onClose={() => setAuthModalOpen(false)}
+            />
+          )}
+        </main>
+      </div>
+      <Footer />
+    </div>
+  );
 };
 
 export default ProductPage;
