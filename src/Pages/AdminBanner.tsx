@@ -36,6 +36,7 @@ interface Banner {
   selectedDeal?: number | { id: number; title?: string; name?: string } | null;
   selectedDealId?: number | { id: number; title?: string; name?: string } | null;
   externalLink?: string;
+  placementAfterSection?: number | null;
 }
 
 interface TransformedBanner {
@@ -59,6 +60,7 @@ interface TransformedBanner {
   selectedSubcategory?: number | null;
   selectedDeal?: number | null;
   externalLink?: string;
+  placementAfterSection?: number | null;
 }
 
 interface ApiResponse<T> {
@@ -101,6 +103,14 @@ interface Deal {
   discountPercentage?: number;
   status?: string;
 }
+
+// Surfaces backend field-level validation errors instead of the generic "Validation failed" message
+const formatApiError = (errorData: any, status: number): string => {
+  if (Array.isArray(errorData?.errors) && errorData.errors.length > 0) {
+    return errorData.errors.map((e: { field?: string; message: string }) => e.message).join("; ");
+  }
+  return errorData?.message || `HTTP error! status: ${status}`;
+};
 
 // API service functions with auth headers
 const createBannerAPI = (token: string | null) => ({
@@ -151,9 +161,7 @@ const createBannerAPI = (token: string | null) => ({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(
-          errorData.message || `HTTP error! status: ${response.status}`
-        );
+        throw new Error(formatApiError(errorData, response.status));
       }
 
       const result: ApiResponse<Banner> = await response.json();
@@ -183,9 +191,7 @@ const createBannerAPI = (token: string | null) => ({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(
-          errorData.message || `HTTP error! status: ${response.status}`
-        );
+        throw new Error(formatApiError(errorData, response.status));
       }
 
       const result: ApiResponse<Banner> = await response.json();
@@ -968,6 +974,9 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(editingBanner?.selectedSubcategory || null);
   const [selectedDeal, setSelectedDeal] = useState<number | null>(editingBanner?.selectedDeal || null);
   const [externalLink, setExternalLink] = useState(editingBanner?.externalLink || "");
+  const [placementAfterSection, setPlacementAfterSection] = useState<number>(
+    editingBanner?.placementAfterSection ?? 3
+  );
   const [desktopImages, setDesktopImages] = useState<File | null>(null);
   const [mobileImage, setMobileImage] = useState<File | null>(null);
   const [desktopImagePreviews, setDesktopImagePreviews] = useState<string[]>(editingBanner?.desktopImage ? [editingBanner.desktopImage] : []);
@@ -975,16 +984,56 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [loadingCategoryProducts, setLoadingCategoryProducts] = useState(false);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [fetching, setFetching] = useState(false);
+
+  const [selectedProductDetails, setSelectedProductDetails] = useState<Record<number, Product>>({});
+
+  const handleProductSelect = (product: Product) => {
+    const isSelected = selectedProducts.includes(product.id);
+    setSelectedProducts((prev) =>
+      isSelected ? prev.filter((id) => id !== product.id) : [...prev, product.id]
+    );
+    setSelectedProductDetails((prev) => {
+      if (isSelected) {
+        const { [product.id]: _removed, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [product.id]: product };
+    });
+  };
+
+  // Hydrate details for ids selected before their product list was loaded
+  // (e.g. editing an existing banner, or re-visiting a subcategory).
+  useEffect(() => {
+    if (products.length === 0) return;
+    setSelectedProductDetails((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const p of products) {
+        if (selectedProducts.includes(p.id) && !next[p.id]) {
+          next[p.id] = p;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [products, selectedProducts]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
       setFetching(true);
       try {
-        const [fetchedCategories, fetchedDeals] = await Promise.all([categoryAPI.getCategories(), dealAPI.getDeals()]);
+        const [fetchedCategories, fetchedDeals, fetchedAllProducts] = await Promise.all([
+          categoryAPI.getCategories(),
+          dealAPI.getDeals(),
+          categoryAPI.getProducts(),
+        ]);
         setCategories(fetchedCategories);
         setDeals(fetchedDeals);
+        setAllProducts(fetchedAllProducts);
 
         // Set selectedCategory for productSource === "subcategory" based on selectedSubcategory
         if (editingBanner && editingBanner.productSource === "subcategory" && editingBanner.selectedSubcategory) {
@@ -1013,6 +1062,7 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
 
   useEffect(() => {
     const fetchProducts = async () => {
+      setLoadingCategoryProducts(true);
       try {
         let fetchedProducts: Product[] = [];
         if (productSource === "manual" && selectedCategory && selectedSubcategory) {
@@ -1023,6 +1073,8 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
         setProducts(fetchedProducts);
       } catch (error) {
         onError(error instanceof Error ? error.message : "Failed to fetch products");
+      } finally {
+        setLoadingCategoryProducts(false);
       }
     };
     if (productSource !== "external") {
@@ -1067,6 +1119,22 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
             </div>
             {bannerType === "Special Deals Banner" && <p className="create-banner__note">Must upload 1 banner.</p>}
           </div>
+          {bannerType === "Sidebar Banner" && (
+            <div className="create-banner__field">
+              <label className="create-banner__label">Placement After Catalog Section</label>
+              <input
+                type="number"
+                min={1}
+                className="create-banner__input"
+                value={placementAfterSection}
+                onChange={(e) => setPlacementAfterSection(Math.max(1, parseInt(e.target.value) || 1))}
+                disabled={loading || fetching}
+              />
+              <p className="create-banner__note">
+                Renders on the homepage after this many visible catalog sections (default: 3).
+              </p>
+            </div>
+          )}
           <div className="create-banner__field">
             <label className="create-banner__label">Start Date *</label>
             <input
@@ -1079,7 +1147,7 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
             />
           </div>
           <div className="create-banner__field">
-            <label className="create-banner__label">End Date</label>
+            <label className="create-banner__label">End Date *</label>
             <input
               type="date"
               className="create-banner__input"
@@ -1131,8 +1199,9 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
                       const categoryId = parseInt(e.target.value) || null;
                       setSelectedCategory(categoryId);
                       setSelectedSubcategory(null);
-                      setSelectedProducts([]);
                       setProducts([]);
+                      // selectedProducts is intentionally left untouched so picks
+                      // made in other categories/subcategories stay selected.
                     }}
                     value={selectedCategory ?? ""}
                     disabled={loading || fetching}
@@ -1153,7 +1222,6 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
                       onChange={(e) => {
                         const subcategoryId = parseInt(e.target.value) || null;
                         setSelectedSubcategory(subcategoryId);
-                        setSelectedProducts([]);
                         setProducts([]);
                       }}
                       value={selectedSubcategory ?? ""}
@@ -1168,34 +1236,96 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
                     </select>
                   </div>
                 )}
+
+                {selectedProducts.length > 0 && (
+                  <div className="create-banner__field">
+                    <label className="create-banner__label">Selected Products ({selectedProducts.length})</label>
+                    <div className="create-banner__product-grid">
+                      {selectedProducts.map((id) => {
+                        const product = selectedProductDetails[id] || allProducts.find((p) => p.id === id);
+                        if (!product) {
+                          return (
+                            <div key={id} className="create-banner__product-card create-banner__product-card--selected">
+                              <div className="create-banner__product-image-wrapper">
+                                <div className="create-banner__product-image" />
+                              </div>
+                              <p className="create-banner__product-title">Product #{id}</p>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div
+                            key={product.id}
+                            className="create-banner__product-card create-banner__product-card--selected"
+                            onClick={() => handleProductSelect(product)}
+                          >
+                            <input
+                              type="checkbox"
+                              className="create-banner__product-checkbox"
+                              checked
+                              onChange={() => handleProductSelect(product)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div className="create-banner__product-image-wrapper">
+                              <img
+                                src={product.productImages?.[0] || "/placeholder.png"}
+                                alt={product.name}
+                                className="create-banner__product-image"
+                              />
+                            </div>
+                            <p className="create-banner__product-title" title={product.name}>
+                              {product.name}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {selectedCategory && selectedSubcategory && (
                   <div className="create-banner__field">
-                    <label className="create-banner__label">Select Products</label>
-                    <div className="create-banner__product-list">
-                      {products.map((product) => (
-                        <div
-                          key={product.id}
-                          className={`create-banner__product-item ${
-                            selectedProducts.includes(product.id) ? "create-banner__product-item--selected" : ""
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedProducts.includes(product.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedProducts([...selectedProducts, product.id]);
-                              } else {
-                                setSelectedProducts(selectedProducts.filter((id) => id !== product.id));
-                              }
-                            }}
-                            disabled={loading || fetching}
-                          />
-                          <img src={product.productImages[0] || "path/to/placeholder.jpg"} alt={product.name} />
-                          {product.name}
-                        </div>
-                      ))}
-                    </div>
+                    <label className="create-banner__label">Available Products</label>
+                    {loadingCategoryProducts ? (
+                      <div className="create-banner__product-grid">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <div key={i} className="create-banner__product-card create-banner__product-card--skeleton" />
+                        ))}
+                      </div>
+                    ) : products.length > 0 ? (
+                      <div className="create-banner__product-grid">
+                        {products.map((product) => {
+                          const isSelected = selectedProducts.includes(product.id);
+                          return (
+                            <div
+                              key={product.id}
+                              className={`create-banner__product-card ${isSelected ? "create-banner__product-card--selected" : ""}`}
+                              onClick={() => handleProductSelect(product)}
+                            >
+                              <input
+                                type="checkbox"
+                                className="create-banner__product-checkbox"
+                                checked={isSelected}
+                                onChange={() => handleProductSelect(product)}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <div className="create-banner__product-image-wrapper">
+                                <img
+                                  src={product.productImages?.[0] || "/placeholder.png"}
+                                  alt={product.name}
+                                  className="create-banner__product-image"
+                                />
+                              </div>
+                              <p className="create-banner__product-title" title={product.name}>
+                                {product.name}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="create-banner__note">No products available for this subcategory.</p>
+                    )}
                     {selectedProducts.length === 0 && <p className="create-banner__error">At least 1 product must be selected.</p>}
                   </div>
                 )}
@@ -1363,6 +1493,14 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
             </div>
           ) : (
             <>
+              {(bannerType === "Hero Banner" || bannerType === "Sidebar Banner") && (
+                <p className="create-banner__note">
+                  Recommended size:{" "}
+                  {bannerType === "Hero Banner"
+                    ? "Desktop 1800×400 (4.5:1), Mobile 1200×500 (2.4:1)."
+                    : "Desktop 1600×320 (5:1), Mobile 1200×400 (3:1)."}
+                </p>
+              )}
               <div className="create-banner__field">
                 <label className="create-banner__label">Desktop Image</label>
                 <div className="create-banner__image-upload">
@@ -1464,7 +1602,11 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
       return;
     }
 
-    if (endDate && new Date(endDate) < new Date(startDate)) {
+    if (!endDate) {
+      onError("End date is required");
+      return;
+    }
+    if (new Date(endDate) < new Date(startDate)) {
       onError("End date must be >= start date");
       return;
     }
@@ -1511,6 +1653,10 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
       }
 
       bannerData.productSource = productSource;
+
+      if (bannerType === "Sidebar Banner") {
+        bannerData.placementAfterSection = placementAfterSection;
+      }
 
       if (productSource === "manual") {
         bannerData.selectedProducts = selectedProducts;

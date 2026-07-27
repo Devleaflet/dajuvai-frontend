@@ -89,22 +89,27 @@ interface HomepageSection {
 
 const toNumber = (v: any): number => {
   if (v === undefined || v === null) return 0;
-  const n = typeof v === 'string' ? parseFloat(v) : Number(v);
+  const n = typeof v === "string" ? parseFloat(v) : Number(v);
   return isFinite(n) ? n : 0;
 };
 
 const calculatePrice = (base: any, disc?: any, discType?: string): number => {
   const baseNum = toNumber(base);
   if (!disc || !discType) return baseNum;
-  const d = typeof disc === 'string' ? parseFloat(disc) : Number(disc);
+  const d = typeof disc === "string" ? parseFloat(disc) : Number(disc);
   if (!isFinite(d)) return baseNum;
-  if (discType === 'PERCENTAGE') return baseNum * (1 - d / 100);
-  if (discType === 'FLAT') return baseNum - d;
+  if (discType === "PERCENTAGE") return baseNum * (1 - d / 100);
+  if (discType === "FLAT") return baseNum - d;
   return baseNum;
 };
 
-const apiRequest = async (endpoint: string, token: string | null | undefined = undefined) => {
-  const url = endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`;
+const apiRequest = async (
+  endpoint: string,
+  token: string | null | undefined = undefined,
+) => {
+  const url = endpoint.startsWith("http")
+    ? endpoint
+    : `${API_BASE_URL}${endpoint}`;
   const response = await fetch(url, {
     headers: {
       Authorization: token ? `Bearer ${token}` : "",
@@ -113,7 +118,9 @@ const apiRequest = async (endpoint: string, token: string | null | undefined = u
     },
   });
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `API request failed: ${response.status} ${response.statusText}`,
+    );
   }
   const contentType = response.headers.get("content-type");
   if (!contentType || !contentType.includes("application/json")) {
@@ -131,7 +138,11 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
       const trimmed = imgUrl.trim();
       if (!trimmed) return "";
       if (trimmed.startsWith("//")) return `https:${trimmed}`;
-      if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("/")) {
+      if (
+        trimmed.startsWith("http://") ||
+        trimmed.startsWith("https://") ||
+        trimmed.startsWith("/")
+      ) {
         return trimmed;
       }
       const base = API_BASE_URL.replace(/\/?api\/?$/, "");
@@ -141,7 +152,10 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
     };
 
     const processedProductImages = (item.productImages || [])
-      .filter((img): img is string => !!img && typeof img === "string" && img.trim() !== "")
+      .filter(
+        (img): img is string =>
+          !!img && typeof img === "string" && img.trim() !== "",
+      )
       .map(processImageUrl)
       .filter(Boolean);
 
@@ -152,11 +166,15 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
           ? (variant as any).variantImages
           : [];
       const normalizedImages = rawImages
-        .filter((img): img is string => !!img && typeof img === "string" && img.trim() !== "")
+        .filter(
+          (img): img is string =>
+            !!img && typeof img === "string" && img.trim() !== "",
+        )
         .map(processImageUrl)
         .filter(Boolean);
       const primaryImage =
-        typeof (variant as any).image === "string" && (variant as any).image.trim()
+        typeof (variant as any).image === "string" &&
+        (variant as any).image.trim()
           ? processImageUrl((variant as any).image)
           : normalizedImages[0] || undefined;
 
@@ -170,7 +188,7 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
         basePrice: vBasePrice,
         finalPrice: vFinalPrice,
         price: vFinalPrice.toString(),
-        originalPrice: vBasePrice.toString()
+        originalPrice: vBasePrice.toString(),
       };
     });
 
@@ -202,7 +220,8 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
       discountType: item.discountType,
       rating: Number(averageRating) || 0,
       ratingCount: reviews?.length?.toString() || "0",
-      isBestSeller: item.stock > 20,
+      // isBestSeller: item.stock > 20,
+      isBestSeller: false,
       freeDelivery: true,
       image: displayImage,
       productImages:
@@ -246,8 +265,6 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
   }
 };
 
-
-
 const SectionProducts: React.FC = () => {
   const { token } = useAuth();
   const { sectionId } = useParams<{ sectionId: string }>();
@@ -255,7 +272,9 @@ const SectionProducts: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchInputValue, setSearchInputValue] = useState<string>("");
   const [sortBy, setSortBy] = useState<string>("all");
-  const [selectedPriceRange, setSelectedPriceRange] = useState<string | undefined>(undefined);
+  const [selectedPriceRange, setSelectedPriceRange] = useState<
+    string | undefined
+  >(undefined);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [sectionName, setSectionName] = useState<string>("");
   const prevSearchQueryRef = useRef<string>("");
@@ -293,7 +312,11 @@ const SectionProducts: React.FC = () => {
   }, [searchParams]);
 
   // Fetch section products
-  const { data: sectionData, isLoading: isLoadingProducts, error: productsError } = useQuery({
+  const {
+    data: sectionData,
+    isLoading: isLoadingProducts,
+    error: productsError,
+  } = useQuery({
     queryKey: ["sectionProducts", sectionId],
     queryFn: async () => {
       if (!sectionId) throw new Error("Section ID is required");
@@ -314,7 +337,8 @@ const SectionProducts: React.FC = () => {
               title: item.name || "Unknown Product",
               description: item.description || "No description available",
               basePrice: Number(item.basePrice) || 0,
-              finalPrice: Number(item.finalPrice) || Number(item.basePrice) || 0,
+              finalPrice:
+                Number(item.finalPrice) || Number(item.basePrice) || 0,
               price: "0",
               rating: 0,
               ratingCount: "0",
@@ -327,10 +351,13 @@ const SectionProducts: React.FC = () => {
               deal: null,
             };
           }
-        })
+        }),
       );
       return {
-        title: response?.data?.[0]?.section?.title || sectionName || "Section Products",
+        title:
+          response?.data?.[0]?.section?.title ||
+          sectionName ||
+          "Section Products",
         products: processedProducts,
       };
     },
@@ -414,7 +441,10 @@ const SectionProducts: React.FC = () => {
     setSearchParams(newSearchParams);
   };
 
-  const hasActiveFilters = selectedPriceRange !== undefined || sortBy !== "all" || searchQuery.trim() !== "";
+  const hasActiveFilters =
+    selectedPriceRange !== undefined ||
+    sortBy !== "all" ||
+    searchQuery.trim() !== "";
 
   // Error state (unchanged)
   if (productsError) {
@@ -432,9 +462,13 @@ const SectionProducts: React.FC = () => {
             border: "1px solid #e9ecef",
           }}
         >
-          <h2 style={{ color: "#dc3545", marginBottom: "1rem" }}>Unable to Load Products</h2>
+          <h2 style={{ color: "#dc3545", marginBottom: "1rem" }}>
+            Unable to Load Products
+          </h2>
           <p style={{ marginBottom: "1rem" }}>
-            {productsError instanceof Error ? productsError.message : "Unknown error occurred"}
+            {productsError instanceof Error
+              ? productsError.message
+              : "Unknown error occurred"}
           </p>
           <button
             onClick={() => window.location.reload()}
@@ -471,8 +505,13 @@ const SectionProducts: React.FC = () => {
               </h2>
             </div>
             <div className="shop-header-actions">
-              <form onSubmit={handleSearchSubmit} className="section-search-form">
-                <div className={`search-input-container ${searchInputValue ? "has-clear-button" : ""}`}>
+              <form
+                onSubmit={handleSearchSubmit}
+                className="section-search-form"
+              >
+                <div
+                  className={`search-input-container ${searchInputValue ? "has-clear-button" : ""}`}
+                >
                   <input
                     type="text"
                     value={searchInputValue}
@@ -491,12 +530,18 @@ const SectionProducts: React.FC = () => {
                     </button>
                   )}
                 </div>
-                <button type="submit" className="search-submit-button" aria-label="Search">
+                <button
+                  type="submit"
+                  className="search-submit-button"
+                  aria-label="Search"
+                >
                   <Search size={16} />
                 </button>
               </form>
               <div className="product-count">
-                {isLoadingProducts ? "Loading..." : `${sortedProducts.length} products`}
+                {isLoadingProducts
+                  ? "Loading..."
+                  : `${sortedProducts.length} products`}
               </div>
             </div>
           </div>
@@ -599,7 +644,9 @@ const SectionProducts: React.FC = () => {
                 {isLoadingProducts ? (
                   Array(8)
                     .fill(null)
-                    .map((_, index) => <ProductCardSkeleton key={index} count={1} />)
+                    .map((_, index) => (
+                      <ProductCardSkeleton key={index} count={1} />
+                    ))
                 ) : sortedProducts.length > 0 ? (
                   sortedProducts.map((product) => (
                     <ProductCard1 key={product.id} product={product} />
@@ -617,7 +664,11 @@ const SectionProducts: React.FC = () => {
                     </div>
                     <h3
                       className="shop-no-products-title"
-                      style={{ color: "#333", marginBottom: "0.75rem", fontSize: "1.5rem" }}
+                      style={{
+                        color: "#333",
+                        marginBottom: "0.75rem",
+                        fontSize: "1.5rem",
+                      }}
                     >
                       No products found
                     </h3>
@@ -652,12 +703,14 @@ const SectionProducts: React.FC = () => {
                         onMouseOver={(e) => {
                           e.currentTarget.style.backgroundColor = "#e05a00";
                           e.currentTarget.style.transform = "translateY(-1px)";
-                          e.currentTarget.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
+                          e.currentTarget.style.boxShadow =
+                            "0 4px 6px rgba(0, 0, 0, 0.1)";
                         }}
                         onMouseOut={(e) => {
                           e.currentTarget.style.backgroundColor = "#ff6b00";
                           e.currentTarget.style.transform = "translateY(0)";
-                          e.currentTarget.style.boxShadow = "0 2px 4px rgba(0, 0, 0, 0.1)";
+                          e.currentTarget.style.boxShadow =
+                            "0 2px 4px rgba(0, 0, 0, 0.1)";
                         }}
                       >
                         Clear All Filters

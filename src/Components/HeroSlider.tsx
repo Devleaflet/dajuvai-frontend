@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import '../Styles/HeroSlider.css';
 import SliderSkeleton from '../skeleton/SliderSkeleton';
+import ResponsiveBanner from './ResponsiveBanner';
 import { API_BASE_URL } from '../config';
 
 interface Slide {
@@ -59,15 +60,32 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   const navigate = useNavigate();
   const [activeSlide, setActiveSlide] = useState<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
-  const [translateX, setTranslateX] = useState<number>(0);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const autoSlideRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isPausedRef = useRef(false);
+  // Set once a drag/swipe moves past a few pixels; the subsequent native
+  // click (which the browser fires on mouseup regardless) checks this to
+  // avoid triggering navigation right after a swipe.
+  const didDragRef = useRef(false);
+  // Drag bookkeeping lives in refs, not state: mousemove can fire dozens of
+  // times per drag, and re-rendering on every one of them (plus reading
+  // offsetWidth mid-render, which forces a synchronous layout) is what made
+  // dragging feel laggy/glitchy. The track's transform is mutated directly
+  // during the drag; React only re-renders at drag start/end.
+  const startPosRef = useRef<{ x: number; y: number } | null>(null);
+  const dragXRef = useRef(0);
+  const sliderWidthRef = useRef(0);
+  const pointerIdRef = useRef<number | null>(null);
+  const lastSampleRef = useRef<{ x: number; t: number } | null>(null);
+  const velocityRef = useRef(0);
+  const isHoveringRef = useRef(false);
+  const activeSlideRef = useRef(0);
 
-  const clickThreshold = 5; // Pixels to consider as a click vs. drag
-  const swipeThreshold = sliderRef.current ? sliderRef.current.offsetWidth / 4 : 100;
-  const AUTO_SLIDE_DELAY = 2500;
+  const DRAG_THRESHOLD = 5; // Movement before a press counts as a drag, not a click
+  const SWIPE_DISTANCE = 50; // Committing to the next slide takes only a short drag
+  const SWIPE_VELOCITY = 0.35; // px/ms — a fast flick commits regardless of distance
+  const AUTO_SLIDE_DELAY = 5000;
 
   const { data: slides = [], isLoading, error } = useQuery<Slide[], Error>({
     queryKey: ['heroBanners'],
@@ -97,10 +115,30 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
     //('Slides loaded:', slides);
   }, [onLoad, slides]);
 
+  // Single authoritative place that writes the track's resting transform.
+  // handleDragMove also writes trackRef.current.style.transform directly
+  // (for the high-frequency drag-follow update, see below) — once a style
+  // property is ever set imperatively, letting React's declarative style
+  // diffing ALSO manage it is unreliable: React compares against its own
+  // last-rendered value, not the DOM's actual current value, so it can
+  // silently skip writing a value it thinks is unchanged even though the
+  // live DOM disagrees. Routing every settled position through this one
+  // effect (keyed on the only two things that should move the track)
+  // avoids that class of bug entirely.
+  useEffect(() => {
+    activeSlideRef.current = activeSlide;
+    if (!trackRef.current) return;
+    trackRef.current.style.transition = isDragging
+      ? 'none'
+      : 'transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1)';
+    if (!isDragging) {
+      trackRef.current.style.transform = `translateX(calc(-${activeSlide * 100}% + 0px))`;
+    }
+  }, [activeSlide, isDragging]);
+
   const goToSlide = (index: number): void => {
     clearAutoSlide();
     setActiveSlide(index);
-    setTranslateX(0);
     startAutoSlide();
     //('Go to slide:', index);
   };
@@ -108,7 +146,6 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   const goToPrevSlide = (): void => {
     clearAutoSlide();
     setActiveSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
-    setTranslateX(0);
     startAutoSlide();
     //('Previous slide');
   };
@@ -116,95 +153,119 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   const goToNextSlide = (): void => {
     clearAutoSlide();
     setActiveSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
-    setTranslateX(0);
     startAutoSlide();
     //('Next slide');
   };
 
-  const handleDragStart = (clientX: number, clientY: number): void => {
+  // Pointer events (rather than separate mouse/touch handlers) give one code
+  // path for mouse, touch and pen, and pointer capture keeps the move/up
+  // stream coming even when the cursor leaves the slider mid-drag — the old
+  // mouse-only version silently dropped the gesture in that case.
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return; // Left button only
     pauseAutoSlide();
+    didDragRef.current = false;
+    dragXRef.current = 0;
+    velocityRef.current = 0;
+    sliderWidthRef.current = sliderRef.current?.offsetWidth || 0;
+    startPosRef.current = { x: e.clientX, y: e.clientY };
+    lastSampleRef.current = { x: e.clientX, t: e.timeStamp };
+    pointerIdRef.current = e.pointerId;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // Capture is best-effort; the drag still works without it.
+    }
     setIsDragging(true);
-    setStartPos({ x: clientX, y: clientY });
-    setTranslateX(0);
-    //('Drag start at:', { x: clientX, y: clientY });
   };
 
-  const handleDragMove = (clientX: number): void => {
-    if (!isDragging) return;
-    const currentDrag = clientX - (startPos?.x || 0);
-    const maxDrag = sliderRef.current ? sliderRef.current.offsetWidth / 3 : 200;
-    setTranslateX(Math.max(-maxDrag, Math.min(maxDrag, currentDrag)));
-    //('Dragging, translateX:', currentDrag);
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>): void => {
+    if (!startPosRef.current || !trackRef.current) return;
+    if (pointerIdRef.current !== null && e.pointerId !== pointerIdRef.current) return;
+
+    const dx = e.clientX - startPosRef.current.x;
+    if (Math.abs(dx) > DRAG_THRESHOLD) didDragRef.current = true;
+
+    const last = lastSampleRef.current;
+    if (last) {
+      const dt = e.timeStamp - last.t;
+      if (dt > 0) velocityRef.current = (e.clientX - last.x) / dt;
+    }
+    lastSampleRef.current = { x: e.clientX, t: e.timeStamp };
+
+    const maxDrag = sliderWidthRef.current || 400;
+    const clamped = Math.max(-maxDrag, Math.min(maxDrag, dx));
+    dragXRef.current = clamped;
+    // Written straight to the node: this fires on every pointer sample, and
+    // routing it through React state would re-render the whole slider dozens
+    // of times per gesture.
+    trackRef.current.style.transform = `translateX(calc(-${activeSlideRef.current * 100}% + ${clamped}px))`;
   };
 
-  const handleDragEnd = (
-    clientX: number,
-    clientY: number,
-    resumeWhenDone = true,
-  ): void => {
-    if (!isDragging) return;
+  const handlePointerEnd = (e: React.PointerEvent<HTMLDivElement>): void => {
+    if (!startPosRef.current) return;
+    if (pointerIdRef.current !== null && e.pointerId !== pointerIdRef.current) return;
+
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // Already released (or never captured) — nothing to undo.
+    }
+
+    const dx = dragXRef.current;
+    const v = velocityRef.current;
     setIsDragging(false);
 
-    // Check drag distance for swipe
-    if (Math.abs(translateX) > swipeThreshold) {
-      if (translateX > 0) {
+    // Either a short deliberate drag or a quick flick commits to the
+    // neighbouring slide; anything less snaps back. Whichever happens, the
+    // settle effect above applies the resting transform, since isDragging
+    // flipping to false always re-runs it.
+    const committed =
+      Math.abs(dx) > SWIPE_DISTANCE || Math.abs(v) > SWIPE_VELOCITY;
+    if (committed) {
+      if (dx > 0 || (dx === 0 && v > 0)) {
         goToPrevSlide();
       } else {
         goToNextSlide();
       }
-    } else {
-      setTranslateX(0); // Snap back
     }
-    //('Drag end, translateX:', translateX);
 
-    // Check for click (minimal movement)
-    if (startPos) {
-      const dx = clientX - startPos.x;
-      const dy = clientY - startPos.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance <= clickThreshold) {
-        handleImageClick(slides[activeSlide]);
-      }
-    }
-    setStartPos(null);
-    if (resumeWhenDone) {
+    dragXRef.current = 0;
+    velocityRef.current = 0;
+    startPosRef.current = null;
+    lastSampleRef.current = null;
+    pointerIdRef.current = null;
+
+    // A mouse resting on the slider should stay paused until it actually
+    // leaves; touch/pen have no hover, so autoplay picks straight back up.
+    if (e.pointerType !== 'mouse' || !isHoveringRef.current) {
       resumeAutoSlide();
     }
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
-    if (e.button !== 0) return; // Only left-click
-    handleDragStart(e.clientX, e.clientY);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
-    handleDragMove(e.clientX);
-  };
-
-  const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>): void => {
-    handleDragEnd(e.clientX, e.clientY, false);
-  };
-
-  const handleMouseLeave = (): void => {
-    if (isDragging) {
-      handleDragEnd(startPos?.x || 0, startPos?.y || 0, true);
-    } else {
-      resumeAutoSlide();
+  // Native click handles navigation — the pointer handlers above only drive
+  // the drag/swipe animation. didDragRef swallows the click the browser still
+  // fires after a real drag.
+  const handleSlideClick = (slide: Slide): void => {
+    if (didDragRef.current) {
+      didDragRef.current = false;
+      return;
     }
+    handleImageClick(slide);
   };
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>): void => {
-    handleDragStart(e.touches[0].clientX, e.touches[0].clientY);
+  const handlePointerEnter = (e: React.PointerEvent<HTMLDivElement>): void => {
+    if (e.pointerType !== 'mouse') return;
+    isHoveringRef.current = true;
+    pauseAutoSlide();
   };
 
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>): void => {
-    handleDragMove(e.touches[0].clientX);
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>): void => {
-    const clientX = e.changedTouches[0]?.clientX || startPos?.x || 0;
-    const clientY = e.changedTouches[0]?.clientY || startPos?.y || 0;
-    handleDragEnd(clientX, clientY, true);
+  const handlePointerLeave = (e: React.PointerEvent<HTMLDivElement>): void => {
+    if (e.pointerType !== 'mouse') return;
+    isHoveringRef.current = false;
+    // Mid-drag the pointer is captured, so the gesture continues off-element
+    // and pointerup still resolves it; only resume when nothing is in flight.
+    if (!startPosRef.current) resumeAutoSlide();
   };
 
   const handleImageClick = (slide: Slide): void => {
@@ -293,7 +354,6 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
       setActiveSlide((prev) =>
         prev === slides.length - 1 ? 0 : prev + 1
       );
-      setTranslateX(0);
     }, AUTO_SLIDE_DELAY);
   };
 
@@ -317,33 +377,29 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
     <div
       className="hero-slider"
       ref={sliderRef}
-      onMouseEnter={pauseAutoSlide}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerEnd}
+      onPointerCancel={handlePointerEnd}
       style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
     >
       <div
         className="hero-slider__track"
-        style={{
-          transform: `translateX(calc(-${activeSlide * 100}% + ${translateX}px))`,
-          transition: isDragging ? 'none' : 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}
+        ref={trackRef}
       >
-        {slides.map((slide) => (
+        {slides.map((slide, idx) => (
           <div key={slide.id} className="hero-slider__slide">
             <div className="hero-slider__image-container">
-              <img
-                src={window.innerWidth < 768 ? slide.mobileImage || slide.desktopImage : slide.desktopImage}
-                alt={slide.name}
+              <ResponsiveBanner
+                type="hero"
+                desktopImageUrl={slide.desktopImage ?? ''}
+                mobileImageUrl={slide.mobileImage}
+                altText={slide.name}
+                priority={idx === 0}
                 className="hero-slider__image"
-                loading="lazy"
-                draggable={false}
-                onDragStart={(e) => e.preventDefault()}
+                onClick={() => handleSlideClick(slide)}
               />
             </div>
           </div>

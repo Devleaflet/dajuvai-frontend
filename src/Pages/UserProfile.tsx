@@ -1,7 +1,8 @@
 // UserProfile.tsx
 import axios from "axios";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import Popup from "reactjs-popup";
 import "reactjs-popup/dist/index.css";
 import Footer from "../Components/Footer";
@@ -98,15 +99,8 @@ const UserProfile: React.FC = () => {
         type: "success" | "error";
         content: string;
     } | null>(null);
-    const [orders, setOrders] = useState<OrderDetail[]>([]);
-    const [ordersLoading, setOrdersLoading] = useState(false);
-    const [ordersError, setOrdersError] = useState<string | null>(null);
     const [provinceData, setProvinceData] = useState<string[]>([]);
     const [districtData, setDistrictData] = useState<string[]>([]);
-    const [vendorCache, setVendorCache] = useState<Record<number, Vendor>>({});
-    const [orderDeliveryTimes, setOrderDeliveryTimes] = useState<
-        Record<number, string>
-    >({});
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
     const [selectedOrderDetailId, setSelectedOrderDetailId] = useState<
         number | string | null
@@ -241,45 +235,21 @@ const UserProfile: React.FC = () => {
             ? "1-2 days"
             : "3-5 days";
 
-    const fetchVendorInfo = async (
-        vendorId: number,
-    ): Promise<Vendor | null> => {
-        if (vendorCache[vendorId]) return vendorCache[vendorId];
-        try {
-            if (!token) return null;
-            const vendor = await VendorService.getInstance().getVendorById(
-                vendorId,
-                token,
-            );
-            setVendorCache((prev) => ({ ...prev, [vendorId]: vendor }));
-            return vendor;
-        } catch {
-            return null;
-        }
-    };
-
-    const getOrderDeliveryTime = async (
+    const computeDeliveryTimeForOrder = (
         order: OrderDetail,
-    ): Promise<string> => {
+        vendorMap: Map<number, Vendor | null>,
+    ): string => {
         const customerDistrict = order.shippingAddress?.district;
         if (!customerDistrict || !order.orderItems?.length) return "3-5 days";
-        try {
-            const vendorIds = [
-                ...new Set(order.orderItems.map((i) => i.vendorId)),
-            ];
-            const vendors = await Promise.all(vendorIds.map(fetchVendorInfo));
-            const times = vendors
-                .filter(Boolean)
-                .map((v) =>
-                    calculateDeliveryTime(customerDistrict, v!.district.name),
-                );
-            if (times.some((t) => t === "3-5 days")) return "3-5 days";
-            if (times.length && times.every((t) => t === "1-2 days"))
-                return "1-2 days";
-            return "3-5 days";
-        } catch {
-            return "3-5 days";
-        }
+        const vendorIds = [...new Set(order.orderItems.map((i) => i.vendorId))];
+        const times = vendorIds
+            .map((id) => vendorMap.get(id))
+            .filter((v): v is Vendor => Boolean(v))
+            .map((v) => calculateDeliveryTime(customerDistrict, v.district.name));
+        if (times.some((t) => t === "3-5 days")) return "3-5 days";
+        if (times.length && times.every((t) => t === "1-2 days"))
+            return "1-2 days";
+        return "3-5 days";
     };
 
     useEffect(() => {
@@ -377,41 +347,68 @@ const UserProfile: React.FC = () => {
         fetchUserDetails();
     }, [userId, isAuthLoading]);
 
-    useEffect(() => {
-        if (!user) return;
-        setOrdersLoading(true);
-        setOrdersError(null);
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        fetch(`${API_BASE_URL}/api/order/customer/history`, {
-            credentials: "include",
-            headers,
-        })
-            .then((r) => r.json())
-            .then(async (data) => {
-                if (data.success) {
-                    setOrders(data.data);
-                    const results = await Promise.all(
-                        data.data.map(async (order: OrderDetail) => ({
-                            orderId: order.id,
-                            deliveryTime: await getOrderDeliveryTime(order),
-                        })),
-                    );
-                    setOrderDeliveryTimes(
-                        results.reduce(
-                            (acc, { orderId, deliveryTime }) => ({
-                                ...acc,
-                                [orderId]: deliveryTime,
-                            }),
-                            {},
-                        ),
-                    );
-                } else {
-                    setOrdersError(data.message || "Failed to load orders");
-                }
-            })
-            .catch(() => setOrdersError("Failed to load orders"))
-            .finally(() => setOrdersLoading(false));
-    }, [user, token]);
+    const ordersQuery = useQuery<OrderDetail[]>({
+        queryKey: ["orders", "history", userId],
+        enabled: !!userId,
+        queryFn: async () => {
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            const res = await fetch(
+                `${API_BASE_URL}/api/order/customer/history`,
+                { credentials: "include", headers },
+            );
+            if (!res.ok) throw new Error(`Request failed (${res.status})`);
+            const data = await res.json();
+            if (!data.success)
+                throw new Error(data.message || "Failed to load orders");
+            return data.data;
+        },
+    });
+
+    const orders = ordersQuery.data ?? [];
+    const ordersLoading = ordersQuery.isLoading;
+    const ordersError = ordersQuery.isError
+        ? ordersQuery.error instanceof Error
+            ? ordersQuery.error.message
+            : "Failed to load orders"
+        : null;
+
+    const vendorIds = useMemo(
+        () => [
+            ...new Set(
+                orders.flatMap((order) =>
+                    order.orderItems?.map((i) => i.vendorId) ?? [],
+                ),
+            ),
+        ],
+        [orders],
+    );
+
+    const vendorQueries = useQueries({
+        queries: vendorIds.map((vendorId) => ({
+            queryKey: ["vendor", vendorId],
+            queryFn: () =>
+                VendorService.getInstance().getVendorById(vendorId, token!),
+            enabled: !!token,
+            staleTime: 10 * 60 * 1000,
+        })),
+    });
+
+    const vendorMap = useMemo(() => {
+        const map = new Map<number, Vendor | null>();
+        vendorIds.forEach((id, i) => map.set(id, vendorQueries[i]?.data ?? null));
+        return map;
+    }, [vendorIds, vendorQueries]);
+
+    const orderDeliveryTimes = useMemo(
+        () =>
+            Object.fromEntries(
+                orders.map((order) => [
+                    order.id,
+                    computeDeliveryTimeForOrder(order, vendorMap),
+                ]),
+            ),
+        [orders, vendorMap],
+    );
 
     useEffect(() => {
         if (location.state && typeof location.state.activeTab === "string") {
@@ -1045,9 +1042,6 @@ const UserProfile: React.FC = () => {
             return <div className="orders__error">{ordersError}</div>;
         if (!orders.length)
             return <div className="orders__empty">No orders found.</div>;
-
-        console.log("Order Details");
-        console.log(orders);
 
         return (
             <div className="orders">
