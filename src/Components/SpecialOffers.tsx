@@ -111,7 +111,7 @@ const SpecialOffers = () => {
 
   const visibleOffers = offers.filter((o) => !brokenImages.has(o.id));
 
-  if (visibleOffers.length !== 0) {
+  if (visibleOffers.length === 0) {
     return (
       <div className="special-offers-section">
         <div className="special-offers-container">
