@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import ResponsiveBanner from "./ResponsiveBanner";
 import { API_BASE_URL } from "../config";
+import { appendBannerSourceToShopLink } from "../utils/bannerNavigation";
 
 interface SidebarBanner {
   id: number;
@@ -92,27 +93,51 @@ const SidebarBannerStrip: React.FC<SidebarBannerStripProps> = ({
 
   if (!banner) return null;
 
-  const handleClick = () => {
+  const getBannerShopUrl = () => {
+    const params = new URLSearchParams({
+      sourceBannerId: banner.id.toString(),
+      sourceBannerType: "sidebar",
+    });
+
     if (banner.productSource === "category" && banner.selectedCategory) {
-      navigate(`/shop?categoryId=${banner.selectedCategory.id}`);
+      params.set("categoryId", banner.selectedCategory.id.toString());
     } else if (
       banner.productSource === "subcategory" &&
       banner.selectedSubcategory
     ) {
       const catId = banner.selectedSubcategory.category?.id;
-      if (catId) {
-        navigate(
-          `/shop?categoryId=${catId}&subcategoryId=${banner.selectedSubcategory.id}`,
-        );
-      } else {
-        navigate(`/shop?subcategoryId=${banner.selectedSubcategory.id}`);
-      }
+      if (catId) params.set("categoryId", catId.toString());
+      params.set("subcategoryId", banner.selectedSubcategory.id.toString());
     } else if (banner.productSource === "manual") {
-      navigate(`/shop?bannerId=${banner.id}`);
+      params.set("bannerId", banner.id.toString());
+    }
+
+    return `/shop?${params.toString()}`;
+  };
+
+  const handleClick = () => {
+    if (banner.productSource === "category" && banner.selectedCategory) {
+      navigate(getBannerShopUrl());
+    } else if (
+      banner.productSource === "subcategory" &&
+      banner.selectedSubcategory
+    ) {
+      navigate(getBannerShopUrl());
+    } else if (banner.productSource === "manual") {
+      navigate(getBannerShopUrl());
     } else if (banner.productSource === "external" && banner.externalLink) {
-      window.open(banner.externalLink, "_blank", "noopener,noreferrer");
+      const url = appendBannerSourceToShopLink(banner.externalLink, {
+        sourceBannerId: banner.id,
+        sourceBannerType: "sidebar",
+      });
+
+      if (url) {
+        navigate(url);
+      } else {
+        window.open(banner.externalLink, "_blank", "noopener,noreferrer");
+      }
     } else {
-      navigate("/shop");
+      navigate(getBannerShopUrl());
     }
   };
 

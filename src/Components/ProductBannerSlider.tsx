@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import '../Styles/HeroSlider.css';
 import SliderSkeleton from '../skeleton/SliderSkeleton';
+import ResponsiveBanner from './ResponsiveBanner';
 import { API_BASE_URL } from '../config';
 
 interface Slide {
@@ -246,14 +247,15 @@ const ProductBannerSlider: React.FC<ProductBannerSliderProps> = ({ onLoad }) => 
           transition: isDragging ? 'none' : 'transform 0.5s ease',
         }}
       >
-        {slides.map((slide) => (
+        {slides.map((slide, idx) => (
           <div key={slide.id} className="hero-slider__slide">
-            <img
-              src={window.innerWidth < 768 ? slide.mobileImage || slide.desktopImage : slide.desktopImage}
-              alt={slide.name}
+            <ResponsiveBanner
+              type="hero"
+              desktopImageUrl={slide.desktopImage ?? ''}
+              mobileImageUrl={slide.mobileImage}
+              altText={slide.name}
+              priority={idx === 0}
               className="hero-slider__image"
-              loading="lazy"
-              draggable={false}
             />
           </div>
         ))}

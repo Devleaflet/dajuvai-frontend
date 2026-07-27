@@ -1372,7 +1372,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
             </button>
           </div>
         ) : (
-          <form className="auth-modal__form" onSubmit={handleSubmit}>
+          <form className="auth-modal__form" onSubmit={handleSubmit} noValidate>
             {showVerification ? (
               <>
                 <div className="auth-modal__verification-info">
@@ -1518,24 +1518,30 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                             background: "transparent",
                             border: "1px solid #ddd",
                             borderRadius: "4px",
+                            width: "100%",
+                            boxSizing: "border-box",
                           }}
                         />
                       </div>
                       <div>
+                        <label className="auth-modal__label">
+                          Province *
+                        </label>
                         <select
-                          className={`auth-modal__input ${
-                            errors.province && touched.province ? "error" : ""
-                          }`}
+                          className="auth-modal__input"
                           name="province"
                           value={province}
                           onChange={handleInputChange}
                           onBlur={handleBlur}
+                          aria-invalid={Boolean(errors.province && touched.province)}
                           required
                           disabled={isLoading || provinceData.length === 0}
                           style={{
-                            background: "transparent",
+                            backgroundColor: "transparent",
                             border: "1px solid #ddd",
                             borderRadius: "4px",
+                            width: "100%",
+                            boxSizing: "border-box",
                           }}
                         >
                           <option value="">Select Province</option>
@@ -1564,7 +1570,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                           required
                           disabled={isLoading || districtData.length === 0}
                           style={{
-                            background: "transparent",
+                            backgroundColor: "transparent",
                             border: "1px solid #ddd",
                             borderRadius: "4px",
                             width: "100%",

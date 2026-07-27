@@ -5,6 +5,7 @@ import '../Styles/HeroSlider.css';
 import SliderSkeleton from '../skeleton/SliderSkeleton';
 import ResponsiveBanner from './ResponsiveBanner';
 import { API_BASE_URL } from '../config';
+import { appendBannerSourceToShopLink } from '../utils/bannerNavigation';
 
 interface Slide {
   id: number;
@@ -243,15 +244,22 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
     }
   };
 
-  // Native click handles navigation — the pointer handlers above only drive
-  // the drag/swipe animation. didDragRef swallows the click the browser still
-  // fires after a real drag.
-  const handleSlideClick = (slide: Slide): void => {
+  // Click handler bound on the slider container itself. On desktop (mouse),
+  // handlePointerDown calls setPointerCapture on THIS element, which makes the
+  // browser dispatch the synthetic `click` (fired after pointerup) to the
+  // capture target — i.e. here — rather than to the inner ResponsiveBanner the
+  // pointer is actually over. Binding the handler here (and reading the visible
+  // slide from activeSlideRef) is what makes banner clicks work on desktop;
+  // previously the click was bound only on ResponsiveBanner, which left desktop
+  // clicks dead (the captured click never reached it) while touch still worked.
+  // didDragRef swallows the click the browser still fires after a real drag.
+  const handleSliderClick = (): void => {
     if (didDragRef.current) {
       didDragRef.current = false;
       return;
     }
-    handleImageClick(slide);
+    const slide = slides[activeSlideRef.current];
+    if (slide) handleImageClick(slide);
   };
 
   const handlePointerEnter = (e: React.PointerEvent<HTMLDivElement>): void => {
@@ -266,6 +274,28 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
     // Mid-drag the pointer is captured, so the gesture continues off-element
     // and pointerup still resolves it; only resume when nothing is in flight.
     if (!startPosRef.current) resumeAutoSlide();
+  };
+
+  const getBannerShopUrl = (slide: Slide): string => {
+    const params = new URLSearchParams({
+      sourceBannerId: slide.id.toString(),
+      sourceBannerType: 'hero',
+    });
+
+    if (slide.productSource === 'category' && slide.selectedCategory?.id) {
+      params.set('categoryId', slide.selectedCategory.id.toString());
+    } else if (
+      slide.productSource === 'subcategory' &&
+      slide.selectedSubcategory?.id &&
+      slide.selectedSubcategory?.category?.id
+    ) {
+      params.set('categoryId', slide.selectedSubcategory.category.id.toString());
+      params.set('subcategoryId', slide.selectedSubcategory.id.toString());
+    } else if (slide.productSource === 'manual') {
+      params.set('bannerId', slide.id.toString());
+    }
+
+    return `/shop?${params.toString()}`;
   };
 
   const handleImageClick = (slide: Slide): void => {
@@ -283,11 +313,12 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
 
     if (slide.productSource === 'category' && slide.selectedCategory?.id) {
       //('Navigating to category:', slide.selectedCategory.id);
+      const url = getBannerShopUrl(slide);
       try {
-        navigate(`/shop?categoryId=${slide.selectedCategory.id}`);
+        navigate(url);
       } catch (error) {
         console.error('Navigation failed:', error);
-        window.location.href = `/shop?categoryId=${slide.selectedCategory.id}`;
+        window.location.href = url;
       }
     } else if (
       slide.productSource === 'subcategory' &&
@@ -295,28 +326,42 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
       slide.selectedSubcategory?.category?.id
     ) {
 
+      const url = getBannerShopUrl(slide);
       try {
-        navigate(
-          `/shop?categoryId=${slide.selectedSubcategory.category.id}&subcategoryId=${slide.selectedSubcategory.id}`
-        );
+        navigate(url);
       } catch (error) {
         console.error('Navigation failed:', error);
-        window.location.href = `/shop?categoryId=${slide.selectedSubcategory.category.id}&subcategoryId=${slide.selectedSubcategory.id}`;
+        window.location.href = url;
       }
     } else if (slide.productSource === 'manual') {
       //('Navigating to manual banner:', slide.id);
+      const url = getBannerShopUrl(slide);
       try {
-        navigate(`/shop?bannerId=${slide.id}`);
+        navigate(url);
       } catch (error) {
         console.error('Navigation failed:', error);
-        window.location.href = `/shop?bannerId=${slide.id}`;
+        window.location.href = url;
       }
     } else if (slide.productSource === 'external' && slide.externalLink) {
-      //('Opening external link:', slide.externalLink);
-      try {
-        window.open(slide.externalLink, '_blank');
-      } catch (error) {
-        console.error('Failed to open external link:', error);
+      const url = appendBannerSourceToShopLink(slide.externalLink, {
+        sourceBannerId: slide.id,
+        sourceBannerType: 'hero',
+      });
+
+      if (url) {
+        try {
+          navigate(url);
+        } catch (error) {
+          console.error('Navigation failed:', error);
+          window.location.href = url;
+        }
+      } else {
+        //('Opening external link:', slide.externalLink);
+        try {
+          window.open(slide.externalLink, '_blank', 'noopener,noreferrer');
+        } catch (error) {
+          console.error('Failed to open external link:', error);
+        }
       }
     } else {
       console.warn(
@@ -329,11 +374,12 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
           slideName: slide.name,
         }
       );
+      const url = getBannerShopUrl(slide);
       try {
-        navigate('/shop');
+        navigate(url);
       } catch (error) {
         console.error('Navigation failed:', error);
-        window.location.href = '/shop';
+        window.location.href = url;
       }
     }
   };
@@ -377,6 +423,19 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
     <div
       className="hero-slider"
       ref={sliderRef}
+      onClick={handleSliderClick}
+      onKeyDown={(e) => {
+        // Keyboard activation (Enter / Space) for the visible slide, since the
+        // click handler now lives on the slider rather than on ResponsiveBanner.
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          const slide = slides[activeSlideRef.current];
+          if (slide) handleImageClick(slide);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label="Hero banner"
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
       onPointerDown={handlePointerDown}
@@ -399,7 +458,6 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
                 altText={slide.name}
                 priority={idx === 0}
                 className="hero-slider__image"
-                onClick={() => handleSlideClick(slide)}
               />
             </div>
           </div>
@@ -411,7 +469,12 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
           {slides.map((_, index) => (
             <button
               key={index}
-              onClick={() => goToSlide(index)}
+              onClick={(e) => {
+                // Stop the click from bubbling to the slider's onClick
+                // (handleSliderClick), which would otherwise navigate away.
+                e.stopPropagation();
+                goToSlide(index);
+              }}
               className={`hero-slider__indicator ${activeSlide === index ? 'hero-slider__indicator--active' : ''}`}
             />
           ))}

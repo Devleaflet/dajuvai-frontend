@@ -1,8 +1,8 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import {
-  IoIosArrowDropleftCircle,
-  IoIosArrowDroprightCircle,
+  IoIosArrowBack,
+  IoIosArrowForward,
 } from "react-icons/io";
 import { Link } from "react-router-dom";
 import "../Styles/ProductCarousel.css";
@@ -181,7 +181,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
             onClick={() => scroll("left")}
             aria-label="Scroll left"
           >
-            <IoIosArrowDropleftCircle />
+            <IoIosArrowBack />
           </button>
         )}
         {showScrollButtons && showRightButton && !cartOpen && (
@@ -190,7 +190,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
             onClick={() => scroll("right")}
             aria-label="Scroll right"
           >
-            <IoIosArrowDroprightCircle />
+            <IoIosArrowForward />
           </button>
         )}
         <div

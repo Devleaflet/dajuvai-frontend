@@ -327,38 +327,25 @@ const Navbar: React.FC = () => {
 	}, [sideMenuOpen]);
 
 	useEffect(() => {
-		let prevScrollPos = window.pageYOffset;
 		const searchRow = document.querySelector('.navbar__search-row');
-
-		if (window.pageYOffset > 10) {
-			searchRow?.classList.add('hidden');
-		}
+		// Keep the search row always visible on every breakpoint. Previously it
+		// toggled .hidden on scroll for mobile (<=1099px), which made the bar
+		// vanish/reappear on every small scroll and felt janky. Removing the
+		// hide-on-scroll behaviour keeps it pinned and smooth.
+		searchRow?.classList.remove('hidden');
 
 		const handleScroll = (): void => {
-			const currentScrollPos = window.pageYOffset;
 			// The dropdown's position is only ever computed relative to the
 			// search input at open time — once the page scrolls, that anchor is
 			// stale, so close it rather than let it float disconnected from the
 			// field it was opened from.
 			setShowSearchDropdown(false);
-			if (window.innerWidth <= 1099) {
-				if (currentScrollPos <= 10 || prevScrollPos - currentScrollPos > 500) {
-					searchRow?.classList.remove('hidden');
-				} else {
-					searchRow?.classList.add('hidden');
-				}
-			} else {
-				searchRow?.classList.remove('hidden');
-			}
-			prevScrollPos = currentScrollPos;
 		};
 
-		window.addEventListener('scroll', handleScroll);
-		window.addEventListener('resize', handleScroll);
+		window.addEventListener('scroll', handleScroll, { passive: true });
 
 		return () => {
 			window.removeEventListener('scroll', handleScroll);
-			window.removeEventListener('resize', handleScroll);
 		};
 	}, []);
 

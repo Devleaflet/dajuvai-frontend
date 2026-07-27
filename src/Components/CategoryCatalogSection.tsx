@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { fetchCategoryCatalog } from "../api/categoryCatalog";
 import {
-	IoIosArrowDropleftCircle,
-	IoIosArrowDroprightCircle,
+	IoIosArrowBack,
+	IoIosArrowForward,
 } from "react-icons/io";
 import "../Styles/CategoryCatalogSection.css";
 
@@ -235,16 +235,18 @@ const CategoryCatalogSection: React.FC = () => {
 								<button
 									className="category-section__scroll-button category-section__scroll-button--left"
 									onClick={() => scroll(catId, "left")}
+									aria-label={`Scroll ${category.category.name} left`}
 								>
-									<IoIosArrowDropleftCircle />
+									<IoIosArrowBack />
 								</button>
 							)}
 							{showScrollButtons && hasOverflow && !atEnd && (
 								<button
 									className="category-section__scroll-button category-section__scroll-button--right"
 									onClick={() => scroll(catId, "right")}
+									aria-label={`Scroll ${category.category.name} right`}
 								>
-									<IoIosArrowDroprightCircle />
+									<IoIosArrowForward />
 								</button>
 							)}
 							<div

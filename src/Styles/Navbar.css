@@ -868,9 +868,12 @@
     display: none;
   }
 
+  /* The whole .navbar__top (logo row + search row together) is the single
+     sticky container on mobile (see rule below). Do NOT also make the inner
+     top-row sticky: two nested sticky elements both pinned to top:0 fight each
+     other and the search row ended up overlapping the logo/hamburger row. */
   .navbar__top-row {
-    position: sticky;
-    top: 0;
+    position: static;
   }
 
   .navbar__search-row {
@@ -908,15 +911,6 @@
 
   .navbar__search-row {
     position: relative;
-  }
-
-  /* No transition/transform here on purpose: animating transform while also
-     switching position (relative -> absolute) mid-transition changes the
-     element's containing block reference frame partway through, which is
-     what caused the visible jump/glitch instead of a clean slide. An instant
-     hide reads better than a broken animation. */
-  .navbar__search-row.hidden {
-    display: none;
   }
 
   .navbar__account-icon-link {

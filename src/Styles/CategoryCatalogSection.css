@@ -63,21 +63,31 @@
 	position: absolute;
 	top: 50%;
 	transform: translateY(-50%);
-	background: rgba(255, 255, 255, 0.9);
-	color: #000;
-	border: solid 1px #000;
-	width: 44px;
-	height: 44px;
+	background: rgba(255, 255, 255, 0.96);
+	color: #2f3137;
+	border: 1px solid rgba(17, 24, 39, 0.12);
+	width: 42px;
+	height: 42px;
 	border-radius: 50%;
-	font-size: 30px;
+	font-size: 24px;
 	cursor: pointer;
-	z-index: 1;
+	z-index: 3;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: all 0.2s ease;
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		box-shadow 0.2s ease,
+		color 0.2s ease,
+		transform 0.2s ease;
+	box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
 	pointer-events: auto;
+}
+
+.category-section__scroll-button svg {
+	display: block;
+	stroke-width: 1.8;
 }
 
 .no-underline,
@@ -89,17 +99,28 @@
 }
 
 .category-section__scroll-button:hover {
-	background-color: #f5f5f5;
-	transform: translateY(-50%) scale(1.05);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+	background-color: #fff7ed;
+	border-color: rgba(255, 107, 0, 0.35);
+	color: #ff6b00;
+	transform: translateY(-50%) scale(1.04);
+	box-shadow: 0 12px 28px rgba(255, 107, 0, 0.18);
+}
+
+.category-section__scroll-button:active {
+	transform: translateY(-50%) scale(0.98);
+}
+
+.category-section__scroll-button:focus-visible {
+	outline: 3px solid rgba(255, 107, 0, 0.24);
+	outline-offset: 3px;
 }
 
 .category-section__scroll-button--left {
-	left: -22px;
+	left: -18px;
 }
 
 .category-section__scroll-button--right {
-	right: -22px;
+	right: -18px;
 }
 
 .category-section__subcategories {
