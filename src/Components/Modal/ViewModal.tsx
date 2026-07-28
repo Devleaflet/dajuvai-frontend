@@ -15,6 +15,23 @@ interface OrderItem {
   skuSnapshot?: string | null;
   imageSnapshot?: string | null;
   unitPriceSnapshot?: number | null;
+  priceBreakdown?: {
+    basePrice: number;
+    unitPrice: number;
+    lineBaseTotal: number;
+    lineTotal: number;
+    productDiscount: {
+      label: string | null;
+      type: string | null;
+      amount: number;
+    };
+    dealDiscount: {
+      label: string | null;
+      percent: number | null;
+      amount: number;
+    };
+    savingsTotal: number;
+  };
   product: {
     id: number;
     name: string;
@@ -293,6 +310,18 @@ const ViewModal: React.FC<ViewModalProps> = ({
               const attrs = item.variant?.attributes;
               const unitPrice = parseFloat(String(item.price));
               const lineTotal = unitPrice * item.quantity;
+              const itemPriceBreakdown = item.priceBreakdown;
+              const productDiscountAmount = Number(
+                itemPriceBreakdown?.productDiscount?.amount ?? 0,
+              );
+              const dealDiscountAmount = Number(
+                itemPriceBreakdown?.dealDiscount?.amount ?? 0,
+              );
+              const hasLineSavings = productDiscountAmount + dealDiscountAmount > 0;
+              const lineBaseTotal = Number(
+                itemPriceBreakdown?.lineBaseTotal ??
+                  Number(item.product?.basePrice ?? unitPrice) * item.quantity,
+              );
 
               return (
                 <div key={item.id} className="order-modal__item-row">
@@ -323,8 +352,31 @@ const ViewModal: React.FC<ViewModalProps> = ({
                         ))}
                       </div>
                     )}
+                    {hasLineSavings && (
+                      <div className="vendor-card__price-breakdown">
+                        {productDiscountAmount > 0 && (
+                          <span className="vendor-card__price-pill vendor-card__price-pill--discount">
+                            Discount: -Rs. {productDiscountAmount.toFixed(2)}
+                          </span>
+                        )}
+                        {dealDiscountAmount > 0 && (
+                          <span className="vendor-card__price-pill vendor-card__price-pill--deal">
+                            Deal{itemPriceBreakdown?.dealDiscount.label
+                              ? `: ${itemPriceBreakdown.dealDiscount.label}`
+                              : itemPriceBreakdown?.dealDiscount.percent
+                                ? `: ${itemPriceBreakdown.dealDiscount.percent}%`
+                                : ""}: -Rs. {dealDiscountAmount.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="order-modal__item-pricing">
+                    {hasLineSavings && lineBaseTotal > lineTotal && (
+                      <div className="order-modal__item-price-original">
+                        Rs. {lineBaseTotal.toFixed(2)}
+                      </div>
+                    )}
                     <div
                       style={{
                         fontSize: 14,

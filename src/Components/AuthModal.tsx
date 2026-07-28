@@ -9,6 +9,7 @@ import "../Styles/AuthModal.css";
 import popup from "../assets/auth.jpg";
 import close from "../assets/close.png";
 import { Toaster, toast } from "react-hot-toast";
+import { getApiErrorMessage } from "../utils/apiError";
 
 interface AuthModalProps {
 	isOpen: boolean;
@@ -614,11 +615,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
 		setIsLoading(true);
 		try {
-			await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email });
+			await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, {
+				email: email.trim(),
+			});
 			setSuccess("Password reset email sent! Check your inbox.");
 			setForgotMode("reset");
-		} catch {
-			setError("Failed to send reset email. Please try again.");
+		} catch (error) {
+			setError(
+				getApiErrorMessage(
+					error,
+					"Failed to send reset email. Please try again."
+				)
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -640,6 +648,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 		setIsLoading(true);
 		try {
 			await axios.post(`${API_BASE_URL}/api/auth/reset-password`, {
+				email: email.trim(),
 				newPass: newPassword,
 				confirmPass: confirmNewPassword,
 				token: resetToken,
@@ -649,9 +658,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 			setResetToken("");
 			setNewPassword("");
 			setConfirmNewPassword("");
-		} catch {
+		} catch (error) {
 			setError(
-				"Failed to reset password. Please check your token and try again."
+				getApiErrorMessage(
+					error,
+					"Failed to reset password. Please check your token and try again."
+				)
 			);
 		} finally {
 			setIsLoading(false);

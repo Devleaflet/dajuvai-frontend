@@ -493,6 +493,39 @@
   width: fit-content;
 }
 
+.cart__item-price-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+  white-space: normal;
+}
+
+.cart__item-price-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 190px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.25;
+  white-space: normal;
+}
+
+.cart__item-price-pill--discount {
+  color: #24713a;
+  background: #ecfdf3;
+  border: 1px solid #bbf7d0;
+}
+
+.cart__item-price-pill--deal {
+  color: #0e7490;
+  background: #ecfeff;
+  border: 1px solid #a5f3fc;
+}
+
 .cart__item-controls {
   display: flex;
   align-items: center;

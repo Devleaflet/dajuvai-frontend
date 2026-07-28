@@ -16,6 +16,59 @@
   animation: fadeIn 0.2s ease-out;
 }
 
+.vendor-card__price-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.vendor-card__price-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.vendor-card__price-pill--discount {
+  color: #24713a;
+  background: #ecfdf3;
+  border: 1px solid #bbf7d0;
+}
+
+.vendor-card__price-pill--deal {
+  color: #0e7490;
+  background: #ecfeff;
+  border: 1px solid #a5f3fc;
+}
+
+.order-summary-row--savings .order-summary-row__value {
+  color: #15803d;
+  font-weight: 700;
+}
+
+.order-modal__item-price-original {
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: line-through;
+}
+
+@media (max-width: 720px) {
+  .order-detail-modal {
+    width: min(100vw - 24px, 700px);
+    max-height: calc(100vh - 24px);
+  }
+
+  .vendor-card__item-pricing {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -376,7 +429,8 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
-.status-badge--pending {
+.status-badge--pending,
+.status-badge--order_placed {
   background: #fef3c7;
   color: #92400e;
 }

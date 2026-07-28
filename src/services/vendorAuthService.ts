@@ -447,7 +447,7 @@ export class VendorAuthService {
 
   static async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+      const response = await fetch(`${API_BASE_URL}/api/vendors/forgot-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -466,15 +466,15 @@ export class VendorAuthService {
     }
   }
 
-  static async resetPassword(newPass: string, confirmPass: string, token: string): Promise<{ success: boolean; message: string }> {
+  static async resetPassword(email: string, newPass: string, confirmPass: string, token: string): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+      const response = await fetch(`${API_BASE_URL}/api/vendors/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
-        body: JSON.stringify({ newPass, confirmPass, token }),
+        body: JSON.stringify({ email, newPass, confirmPass, token }),
       });
       const data = await response.json();
       if (response.ok) {

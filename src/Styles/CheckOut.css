@@ -355,6 +355,41 @@
 	font-weight: 600;
 }
 
+.checkout-container__deal-value {
+	color: #0f766e;
+	font-weight: 700;
+}
+
+.checkout-container__price-transparency {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 7px;
+}
+
+.checkout-container__price-chip {
+	display: inline-flex;
+	align-items: center;
+	max-width: 100%;
+	padding: 3px 7px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1.25;
+}
+
+.checkout-container__price-chip--discount {
+	background: #ecfdf3;
+	color: #24713a;
+	border: 1px solid #bbf7d0;
+}
+
+.checkout-container__price-chip--deal {
+	background: #ecfeff;
+	color: #0e7490;
+	border: 1px solid #a5f3fc;
+}
+
 .checkout-container__order-total--total {
 	display: flex;
 	justify-content: space-between;
@@ -1428,3 +1463,190 @@
 } */
 
 /* comment those two css after esewa succesfully works  */
+
+/* Order placed modal refresh */
+.checkout-success-modal-overlay {
+	background: rgba(15, 23, 42, 0.68);
+	backdrop-filter: blur(3px);
+	align-items: center;
+	padding: 18px;
+}
+
+.checkout-success-modal {
+	width: min(100%, 560px);
+	max-width: 560px;
+	border-radius: 12px;
+	box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+	border: 1px solid rgba(255, 255, 255, 0.64);
+}
+
+.checkout-success-modal__content {
+	padding: 28px;
+	background:
+		linear-gradient(180deg, rgba(255, 247, 237, 0.82) 0%, rgba(255, 255, 255, 0) 34%),
+		#fff;
+}
+
+.checkout-success-modal__header {
+	display: grid;
+	grid-template-columns: 58px 1fr;
+	gap: 16px;
+	justify-content: start;
+	text-align: left;
+	margin-bottom: 14px;
+}
+
+.checkout-success-modal__icon-wrapper {
+	width: 58px;
+	height: 58px;
+	border-radius: 50%;
+	background: #eff7ea;
+	color: #4f7f3b;
+	box-shadow: inset 0 0 0 1px rgba(79, 127, 59, 0.14);
+}
+
+.checkout-success-modal__icon {
+	width: 28px;
+	height: 28px;
+	font-size: 28px;
+	color: currentColor;
+	margin: 0;
+	animation: none;
+}
+
+.checkout-success-modal__eyebrow {
+	margin: 2px 0 4px;
+	color: #6b7280;
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 0;
+	text-transform: uppercase;
+}
+
+.checkout-success-modal__title {
+	margin: 0;
+	color: #263826;
+	font-size: 28px;
+	line-height: 1.12;
+	font-weight: 800;
+	letter-spacing: 0;
+}
+
+.checkout-success-modal__message {
+	margin: 0 0 18px;
+	color: #5f6673;
+	font-size: 15px;
+	line-height: 1.55;
+	text-align: left;
+}
+
+.checkout-success-modal__summary-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px;
+	margin-bottom: 18px;
+}
+
+.checkout-success-modal__summary-item {
+	min-width: 0;
+	padding: 11px 12px;
+	background: #fbfbfa;
+	border: 1px solid #ece7df;
+	border-radius: 8px;
+	text-align: left;
+}
+
+.checkout-success-modal__summary-item--wide {
+	grid-column: 1 / -1;
+}
+
+.checkout-success-modal__summary-item span {
+	display: block;
+	color: #7b7280;
+	font-size: 12px;
+	font-weight: 700;
+	margin-bottom: 4px;
+}
+
+.checkout-success-modal__summary-item strong {
+	display: block;
+	color: #334155;
+	font-size: 14px;
+	font-weight: 800;
+	overflow-wrap: anywhere;
+	text-transform: uppercase;
+}
+
+.checkout-success-modal__actions {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+}
+
+.checkout-success-modal__btn {
+	min-width: 0;
+	width: 100%;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 46px;
+	padding: 12px 16px;
+	border-radius: 8px;
+	font-size: 14px;
+	letter-spacing: 0;
+}
+
+.checkout-success-modal__btn svg {
+	width: 15px;
+	height: 15px;
+}
+
+.checkout-success-modal__btn--primary {
+	background: #ff7a2f;
+	box-shadow: 0 8px 18px rgba(255, 122, 47, 0.25);
+}
+
+.checkout-success-modal__btn--primary:hover {
+	background: #ef6d24;
+	transform: translateY(-1px);
+	box-shadow: 0 10px 22px rgba(255, 122, 47, 0.3);
+}
+
+.checkout-success-modal__btn--secondary {
+	background: #f8fafc;
+	color: #334155;
+	border: 1px solid #e5e7eb;
+	box-shadow: none;
+}
+
+.checkout-success-modal__btn--secondary:hover {
+	background: #eef2f7;
+	transform: translateY(-1px);
+	box-shadow: none;
+}
+
+@media (max-width: 600px) {
+	.checkout-success-modal__content {
+		padding: 22px;
+	}
+
+	.checkout-success-modal__header {
+		grid-template-columns: 50px 1fr;
+		gap: 12px;
+	}
+
+	.checkout-success-modal__icon-wrapper {
+		width: 50px;
+		height: 50px;
+	}
+
+	.checkout-success-modal__title {
+		font-size: 23px;
+	}
+
+	.checkout-success-modal__summary-grid,
+	.checkout-success-modal__actions {
+		grid-template-columns: 1fr;
+	}
+}

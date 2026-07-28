@@ -83,7 +83,7 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onView, loading }) => {
                             </td>
                             <td>
                                 {(() => {
-                                    const meta = getOrderStatusMeta(order.status || "CREATED");
+                                    const meta = getOrderStatusMeta(order.status || "ORDER_PLACED");
                                     return (
                                         <span className={`status-badge ${meta.badgeClassName}`}>
                                             {meta.label}

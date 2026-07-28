@@ -17,6 +17,7 @@ import { FaCamera } from "react-icons/fa";
 import { Vendor } from "../Components/Types/vendor";
 import UserOrderDetailModal from "../Components/Modal/UserOrderDetailModal";
 import defaultProductImage from "../assets/logo.webp";
+import { getOrderStatusMeta } from "../Components/orderStatus";
 
 interface UserDetails {
     id?: number;
@@ -53,6 +54,9 @@ interface FormState {
 
 type Tab = "details" | "credentials" | "orders";
 type CredentialsMode = "change" | "forgot" | "reset";
+
+const GOOGLE_PASSWORD_ERROR =
+    "google registered users cannot change password, please login through google.";
 
 const UserProfile: React.FC = () => {
     const location = useLocation();
@@ -141,6 +145,8 @@ const UserProfile: React.FC = () => {
         u.trim().length >= 3 && /^[a-zA-Z0-9_]+$/.test(u);
     const validatePhone = (p: string) => /^[0-9]{10}$/.test(p);
     const validateFullName = (n: string) => n.trim().length >= 2;
+    const isGoogleRegisteredUser = () =>
+        userDetails?.provider?.toLowerCase() === "google";
 
     const handleError = (error: unknown, defaultMsg: string) => {
         if (!axios.isAxiosError(error)) return showPopup("error", defaultMsg);
@@ -163,6 +169,13 @@ const UserProfile: React.FC = () => {
 
     const capitalizeFirstLetter = (s: string) =>
         s.charAt(0).toUpperCase() + s.slice(1);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 640);
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     useEffect(() => {
         fetch("/Nepal-Address-API-main/data/provinces.json")
@@ -618,12 +631,15 @@ const UserProfile: React.FC = () => {
     };
 
     const handleForgotPassword = async () => {
+        if (isGoogleRegisteredUser()) {
+            return showPopup("error", GOOGLE_PASSWORD_ERROR);
+        }
         if (!formState.email)
             return showPopup("error", "Please enter your email address");
         setIsLoading((prev) => ({ ...prev, forgot: true }));
         try {
             await axiosInstance.post(`/api/auth/forgot-password`, {
-                email: formState.email,
+                email: formState.email.trim(),
             });
             showPopup(
                 "success",
@@ -638,6 +654,9 @@ const UserProfile: React.FC = () => {
     };
 
     const handleResetPassword = async () => {
+        if (isGoogleRegisteredUser()) {
+            return showPopup("error", GOOGLE_PASSWORD_ERROR);
+        }
         if (formState.newPassword !== formState.confirmPassword)
             return showPopup("error", "Passwords do not match!");
         if (!formState.token)
@@ -645,6 +664,7 @@ const UserProfile: React.FC = () => {
         setIsLoading((prev) => ({ ...prev, reset: true }));
         try {
             await axiosInstance.post(`/api/auth/reset-password`, {
+                email: formState.email.trim(),
                 newPass: formState.newPassword,
                 confirmPass: formState.confirmPassword,
                 token: formState.token,
@@ -1124,11 +1144,12 @@ const UserProfile: React.FC = () => {
                                                                     )}
                                                                     <span
                                                                         className="order-mobile-product__see-more"
-                                                                        onClick={() =>
+                                                                        onClick={(event) => {
+                                                                            event.stopPropagation();
                                                                             toggleOrderDetails(
                                                                                 order.id,
-                                                                            )
-                                                                        }
+                                                                            );
+                                                                        }}
                                                                     >
                                                                         {expandedOrderDetails.has(
                                                                             order.id,
@@ -1162,9 +1183,9 @@ const UserProfile: React.FC = () => {
                                                 data-label="Status"
                                             >
                                                 <span
-                                                    className={`status-badge status-${order.status.toLowerCase()}`}
+                                                    className={`status-badge ${getOrderStatusMeta(order.status).badgeClassName}`}
                                                 >
-                                                    {order.status}
+                                                    {getOrderStatusMeta(order.status).label}
                                                 </span>
                                             </div>
                                             <div
@@ -1229,11 +1250,12 @@ const UserProfile: React.FC = () => {
                                                         2 && (
                                                         <div
                                                             className="order-product-more clickable"
-                                                            onClick={() =>
+                                                            onClick={(event) => {
+                                                                event.stopPropagation();
                                                                 toggleOrderExpansion(
                                                                     order.id,
-                                                                )
-                                                            }
+                                                                );
+                                                            }}
                                                         >
                                                             {expandedOrders.has(
                                                                 order.id,
@@ -1305,9 +1327,9 @@ const UserProfile: React.FC = () => {
                                         data-label="Status"
                                     >
                                         <span
-                                            className={`status-badge status-${order.status.toLowerCase()}`}
+                                            className={`status-badge ${getOrderStatusMeta(order.status).badgeClassName}`}
                                         >
-                                            {order.status}
+                                            {getOrderStatusMeta(order.status).label}
                                         </span>
                                     </div>
                                     <div
@@ -1360,11 +1382,12 @@ const UserProfile: React.FC = () => {
                                             {order.orderItems.length > 2 && (
                                                 <div
                                                     className="order-product-more clickable"
-                                                    onClick={() =>
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
                                                         toggleOrderExpansion(
                                                             order.id,
-                                                        )
-                                                    }
+                                                        );
+                                                    }}
                                                 >
                                                     {expandedOrders.has(
                                                         order.id,
@@ -1491,7 +1514,7 @@ const UserProfile: React.FC = () => {
 
             <div className="profile">
                 <div
-                    className={`profile-card ${["details", "credentials", "orders"].includes(activeTab) ? "profile-card--wide" : ""}`}
+                    className={`profile-card profile-card--${activeTab} ${["details", "credentials", "orders"].includes(activeTab) ? "profile-card--wide" : ""}`}
                 >
                     <div className="profile-sidebar">
                         {isLoading.fetchUser ? (

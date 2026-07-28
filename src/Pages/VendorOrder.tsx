@@ -60,7 +60,7 @@ const mapVendorOrder = (order: any): Order => {
         // Real backend status, unchanged — OrderList renders it through the
         // same shared status-meta map admin uses, so labels/colors stay
         // consistent across both dashboards.
-        status: (order.status || "CREATED").toUpperCase(),
+        status: (order.status || "ORDER_PLACED").toUpperCase(),
     };
 };
 

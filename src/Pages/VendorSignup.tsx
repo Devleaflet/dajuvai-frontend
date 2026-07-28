@@ -216,8 +216,36 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     }
   }
 
+  const normalizeLocalPhoneNumber = (value: string) => {
+    const trimmed = value.trim();
+    const withoutCountryCode = trimmed.startsWith("+977")
+      ? trimmed.slice(4)
+      : trimmed.startsWith("977")
+        ? trimmed.slice(3)
+        : trimmed;
+    return withoutCountryCode.replace(/\D/g, "").slice(0, 10);
+  };
+
+  const normalizeTelephoneNumber = (value: string) => {
+    let sawHyphen = false;
+    return value
+      .trim()
+      .split("")
+      .filter((char) => {
+        if (/\d/.test(char)) return true;
+        if (char === "-" && !sawHyphen) {
+          sawHyphen = true;
+          return true;
+        }
+        return false;
+      })
+      .join("")
+      .slice(0, 10);
+  };
+
   // Validation function for individual fields
   const validateField = (name: string, value: any): string => {
+    const normalizedValue = typeof value === "string" ? value.trim() : value;
     switch (name) {
       case "businessName":
         if (!value.trim()) return "Business name is required";
@@ -228,10 +256,15 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
         return "";
 
       case "phoneNumber":
-        if (!value.trim()) return "Phone number is required";
-        if (value.length != 10) return "Phone number should be 10 digits";
-        if (!/^\+?[\d\s-]{10,}$/.test(value))
-          return "Invalid phone number format";
+        if (!normalizedValue) return "Phone number is required";
+        if (!/^\d{10}$/.test(normalizedValue))
+          return "Enter the 10-digit mobile number after +977";
+        return "";
+
+      case "telePhone":
+        if (!normalizedValue) return "";
+        if (!/^(?:\d{9}|\d{2}-\d{7})$/.test(normalizedValue))
+          return "Enter 9 digits or use the format 01-1234567";
         return "";
 
       case "businessRegNumber":
@@ -361,6 +394,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
+    let nextValue = value;
 
     // Update the corresponding state
     switch (name) {
@@ -368,10 +402,12 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
         setBusinessName(value);
         break;
       case "phoneNumber":
-        setPhoneNumber(value);
+        nextValue = normalizeLocalPhoneNumber(value);
+        setPhoneNumber(nextValue);
         break;
       case "telePhone":
-        setTelePhone(value);
+        nextValue = normalizeTelephoneNumber(value);
+        setTelePhone(nextValue);
         break;
       case "businessRegNumber":
         setBusinessRegNumber(value);
@@ -419,7 +455,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 
     // Validate field in real-time if it's been touched before
     if (touched[name]) {
-      const error = validateField(name, value);
+      const error = validateField(name, nextValue);
       setErrors((prev) => ({ ...prev, [name]: error }));
     }
   };
@@ -1476,26 +1512,35 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                         <label className="auth-modal__label">
                           Phone Number *
                         </label>
-                        <input
-                          type="text"
-                          className={`auth-modal__input ${
+                        <div
+                          className={`auth-modal__phone-prefix-field ${
                             errors.phoneNumber && touched.phoneNumber
                               ? "error"
                               : ""
                           }`}
-                          placeholder="Enter phone number"
-                          name="phoneNumber"
-                          value={phoneNumber}
-                          onChange={handleInputChange}
-                          onBlur={handleBlur}
-                          required
-                          disabled={isLoading}
-                          style={{
-                            background: "transparent",
-                            border: "1px solid #ddd",
-                            borderRadius: "4px",
-                          }}
-                        />
+                        >
+                          <span className="auth-modal__phone-prefix">
+                            +977
+                          </span>
+                          <input
+                            type="text"
+                            className="auth-modal__input auth-modal__input--prefixed"
+                            placeholder="9812345678"
+                            name="phoneNumber"
+                            value={phoneNumber}
+                            onChange={handleInputChange}
+                            onBlur={handleBlur}
+                            required
+                            disabled={isLoading}
+                            inputMode="numeric"
+                            maxLength={10}
+                          />
+                        </div>
+                        {errors.phoneNumber && touched.phoneNumber && (
+                          <div className="auth-modal__field-error">
+                            {errors.phoneNumber}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="auth-modal__form-group auth-modal__form-group--grid">
@@ -1522,6 +1567,11 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                             boxSizing: "border-box",
                           }}
                         />
+                        {errors.telePhone && touched.telePhone && (
+                          <div className="auth-modal__field-error">
+                            {errors.telePhone}
+                          </div>
+                        )}
                       </div>
                       <div>
                         <label className="auth-modal__label">

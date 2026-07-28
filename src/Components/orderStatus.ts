@@ -13,7 +13,7 @@
 // UI offers; it only supplies labels/colors and the full status list.
 
 export type OrderStatusValue =
-  | 'CREATED'
+  | 'ORDER_PLACED'
   | 'CONFIRMED'
   | 'PROCESSING'
   | 'ARRIVED_AT_WAREHOUSE'
@@ -32,7 +32,7 @@ export interface OrderStatusMeta {
 }
 
 export const ORDER_STATUS_OPTIONS: OrderStatusMeta[] = [
-  { value: 'CREATED', label: 'Order Placed', description: 'Order received, awaiting confirmation', badgeClassName: 'status-badge--created' },
+  { value: 'ORDER_PLACED', label: 'Order Placed', description: 'Order received, awaiting confirmation', badgeClassName: 'status-badge--order_placed' },
   { value: 'CONFIRMED', label: 'Confirmed', description: 'Confirmed, will move into preparation soon', badgeClassName: 'status-badge--confirmed' },
   { value: 'PROCESSING', label: 'Processing', description: 'Vendor is preparing the order', badgeClassName: 'status-badge--processing' },
   { value: 'ARRIVED_AT_WAREHOUSE', label: 'At Warehouse', description: 'Arrived at the warehouse', badgeClassName: 'status-badge--arrived_at_warehouse' },

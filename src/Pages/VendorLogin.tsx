@@ -257,7 +257,12 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
       setIsLoading(true);
       setError("");
       setSuccess("");
-      const result = await VendorAuthService.resetPassword(newPassword, confirmPassword, resetToken);
+      const result = await VendorAuthService.resetPassword(
+        forgotPasswordEmail.trim(),
+        newPassword,
+        confirmPassword,
+        resetToken,
+      );
       if (result.success) {
         toast.success("Password reset successfully! Please login.");
         setShowResetPassword(false);

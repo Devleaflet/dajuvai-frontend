@@ -29,6 +29,22 @@ interface ErrorState {
   type: "delete" | "quantity" | "stock";
 }
 
+interface CartPriceBreakdownView {
+  baseUnitPrice: number;
+  productDiscountAmount: number;
+  dealDiscountAmount: number;
+  dealLabel: string | null;
+  dealPercent: number | null;
+  productDiscountType: string | null;
+  savingsTotal: number;
+}
+
+const formatCartMoney = (value: number | string | null | undefined): string =>
+  Number(value ?? 0).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
 const formatAttributes = (attrs: any): string => {
   if (!attrs) return "";
   if (Array.isArray(attrs)) {
@@ -99,6 +115,73 @@ const getCartItemStockLimit = (item: any): number | null => {
   return Number.isFinite(parsedStock) && parsedStock >= 0 ? parsedStock : null;
 };
 
+const getCartPriceBreakdownView = (item: any): CartPriceBreakdownView | null => {
+  const quantity = Number(item?.quantity ?? 0) || 1;
+  const snapshot = item?.priceBreakdown;
+  const snapshotSavings = Number(snapshot?.savingsTotal ?? 0);
+
+  if (snapshot && snapshotSavings > 0) {
+    const productDiscountAmount = Number(snapshot.productDiscount?.amount ?? 0);
+    const dealDiscountAmount = Number(snapshot.dealDiscount?.amount ?? 0);
+    return {
+      baseUnitPrice: Number(
+        snapshot.basePrice ??
+          (Number(snapshot.lineBaseTotal ?? 0) > 0
+            ? Number(snapshot.lineBaseTotal) / quantity
+            : item.price),
+      ),
+      productDiscountAmount,
+      dealDiscountAmount,
+      dealLabel: snapshot.dealDiscount?.label ?? null,
+      dealPercent:
+        snapshot.dealDiscount?.percent != null
+          ? Number(snapshot.dealDiscount.percent)
+          : null,
+      productDiscountType: snapshot.productDiscount?.type ?? null,
+      savingsTotal: productDiscountAmount + dealDiscountAmount,
+    };
+  }
+
+  const product = item?.product ?? {};
+  const source = item?.variant ?? product;
+  const basePrice = Number(source?.basePrice ?? product?.basePrice ?? item?.price);
+  const deal = product?.deal;
+  const hasDeal =
+    deal &&
+    String(deal.status ?? "ENABLED").toUpperCase() !== "DISABLED" &&
+    Number(deal.discountPercentage ?? 0) > 0;
+
+  const discountDisplay = getDiscountDisplay({
+    basePrice,
+    finalPrice: item?.price,
+    discount: source?.discount ?? null,
+    discountAmount: source?.discountAmount,
+    discountPercent: source?.discountPercent,
+    discountType: source?.discountType,
+  });
+
+  if (!discountDisplay.hasDiscount && !hasDeal) return null;
+
+  const fallbackSavings = Math.max(0, (basePrice - Number(item?.price ?? 0)) * quantity);
+  const productDiscountAmount = hasDeal ? 0 : discountDisplay.savingsAmount * quantity;
+  const dealDiscountAmount = hasDeal
+    ? fallbackSavings || discountDisplay.savingsAmount * quantity
+    : 0;
+  const savingsTotal = productDiscountAmount + dealDiscountAmount;
+
+  if (savingsTotal <= 0) return null;
+
+  return {
+    baseUnitPrice: basePrice,
+    productDiscountAmount,
+    dealDiscountAmount,
+    dealLabel: deal?.name ?? null,
+    dealPercent: hasDeal ? Number(deal.discountPercentage) || null : null,
+    productDiscountType: source?.discountType ?? null,
+    savingsTotal,
+  };
+};
+
 interface CartItemRowProps {
   item: any;
   isUpdating: boolean;
@@ -125,6 +208,7 @@ const CartItemRow = React.memo(
     const itemId = numericItemId ? String(numericItemId) : "invalid";
     const variantLabel = getCartVariantLabel(item);
     const stockLimit = getCartItemStockLimit(item);
+    const priceBreakdown = getCartPriceBreakdownView(item);
 
     const [localQuantity, setLocalQuantity] = useState(item.quantity);
     const [isLocalUpdating, setIsLocalUpdating] = useState(false);
@@ -332,40 +416,25 @@ const CartItemRow = React.memo(
               <span className="cart__item-price-current">
                 Rs. {item.price.toLocaleString("en-IN")}
               </span>
-              {(() => {
-                const basePrice = Number(
-                  item.variant?.basePrice ?? item.product?.basePrice ?? item.price,
-                );
-                const discountAmount = item.variant
-                  ? item.variant?.discountAmount
-                  : item.product?.discountAmount;
-                const discountPercent = item.variant
-                  ? item.variant?.discountPercent
-                  : item.product?.discountPercent;
-                const discountType = item.variant
-                  ? item.variant?.discountType
-                  : item.product?.discountType;
-                const discountDisplay = getDiscountDisplay({
-                  basePrice,
-                  finalPrice: item.price,
-                  discountAmount,
-                  discountPercent,
-                  discountType,
-                });
-                if (!discountDisplay.hasDiscount) return null;
-                return (
-                  <>
-                    <span className="cart__item-price-original">
-                      Rs. {basePrice.toLocaleString("en-IN")}
-                    </span>
-                    {discountDisplay.badgeLabel && (
-                      <span className="cart__item-price-badge">
-                        {discountDisplay.badgeLabel}
+              {priceBreakdown && (
+                <>
+                  <span className="cart__item-price-original">
+                    Rs. {formatCartMoney(priceBreakdown.baseUnitPrice)}
+                  </span>
+                  <div className="cart__item-price-breakdown">
+                    {priceBreakdown.productDiscountAmount > 0 && (
+                      <span className="cart__item-price-pill cart__item-price-pill--discount">
+                        Discount: -Rs. {formatCartMoney(priceBreakdown.productDiscountAmount)}
                       </span>
                     )}
-                  </>
-                );
-              })()}
+                    {priceBreakdown.dealDiscountAmount > 0 && (
+                      <span className="cart__item-price-pill cart__item-price-pill--deal">
+                        Deal{priceBreakdown.dealLabel ? `: ${priceBreakdown.dealLabel}` : priceBreakdown.dealPercent ? `: ${priceBreakdown.dealPercent}%` : ""}: -Rs. {formatCartMoney(priceBreakdown.dealDiscountAmount)}
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="cart__item-controls">
@@ -427,8 +496,12 @@ const CartItemRow = React.memo(
     return (
       prevProps.item.quantity === nextProps.item.quantity &&
       prevProps.item.price === nextProps.item.price &&
+      prevProps.item.priceBreakdown === nextProps.item.priceBreakdown &&
       prevProps.item.name === nextProps.item.name &&
       prevProps.item.image === nextProps.item.image &&
+      prevProps.item.product?.deal?.id === nextProps.item.product?.deal?.id &&
+      prevProps.item.product?.discount === nextProps.item.product?.discount &&
+      prevProps.item.variant?.discount === nextProps.item.variant?.discount &&
       prevProps.isUpdating === nextProps.isUpdating &&
       prevProps.itemError === nextProps.itemError
     );
