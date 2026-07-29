@@ -10,88 +10,67 @@
 .product-card-skeleton-wrapper {
   flex: 0 0 auto;
   width: 280px;
-  margin-right: 20px;
+  margin: 0;
 }
 
 .product-card-skeleton {
   background: #fff;
-  border-radius: 10px;
+  border-radius: 14px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: 100%;
-  min-height: 400px;
+  padding: 10px;
+  display: grid;
+  grid-template-rows: minmax(180px, 1fr) auto;
+  box-sizing: border-box;
+  min-height: 360px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
-.skeleton-image {
+.product-card-skeleton__media {
+  position: relative;
+  min-height: 0;
+}
+
+.product-card-skeleton__image {
   width: 100%;
-  aspect-ratio: 1/1;
-  border-radius: 10px;
-  background: #e0e0e0;
-  margin-bottom: 1.2rem;
+  height: 100%;
+  border-radius: 10px 10px 8px 8px;
+  background: #eceff2;
 }
 
-.skeleton-content {
+.product-card-skeleton__content {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: 9px;
+  padding: 16px 4px 4px;
+  box-sizing: border-box;
 }
 
-.skeleton-title {
-  width: 80%;
-  height: 24px;
+.product-card-skeleton__line {
   border-radius: 4px;
-  background: #e0e0e0;
+  background: #e5e7eb;
 }
 
-.skeleton-desc {
-  width: 60%;
-  height: 20px;
-  border-radius: 4px;
-  background: #e0e0e0;
-}
-
-.skeleton-price {
-  width: 40%;
-  height: 20px;
-  border-radius: 4px;
-  background: #e0e0e0;
-}
-
-.skeleton-rating {
-  width: 30%;
-  height: 20px;
-  border-radius: 4px;
-  background: #e0e0e0;
-}
-
-.skeleton-button {
-  width: 100%;
-  height: 40px;
-  border-radius: 8px;
-  background: #e0e0e0;
-  margin-top: auto;
-}
+.product-card-skeleton__line--title { width: 78%; height: 18px; }
+.product-card-skeleton__line--description { width: 58%; height: 14px; }
+.product-card-skeleton__line--rating { width: 34%; height: 13px; }
+.product-card-skeleton__line--price { width: 45%; height: 21px; margin-top: auto; }
 
 /* Shimmer effect */
-.shimmer {
+.product-card-skeleton__shimmer {
   position: relative;
   overflow: hidden;
 }
-.shimmer::after {
+.product-card-skeleton__shimmer::after {
   content: "";
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   background: linear-gradient(90deg, rgba(224,224,224,0) 0%, rgba(255,255,255,0.7) 50%, rgba(224,224,224,0) 100%);
-  animation: shimmer 1.2s infinite;
+  animation: product-card-skeleton-shimmer 1.2s infinite;
 }
 
-@keyframes shimmer {
+@keyframes product-card-skeleton-shimmer {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
-} 
+}

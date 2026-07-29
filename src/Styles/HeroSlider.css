@@ -52,7 +52,7 @@
   pointer-events: auto; /* Changed from none to auto for clickability */
   user-select: none;
   -webkit-user-drag: none;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  /* box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); */
   transition:
     box-shadow 0.3s ease,
     transform 0.3s ease;

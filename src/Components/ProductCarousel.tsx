@@ -9,6 +9,7 @@ import "../Styles/ProductCarousel.css";
 import ProductCard from "./ProductCard";
 import type { Product } from "./Types/Product";
 import { useUI } from "../context/UIContext";
+import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
 
 interface ProductCarouselProps {
   title: string;
@@ -117,34 +118,6 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
     }
   };
 
-  const ProductCardSkeleton = () => (
-    <div className="product-card product-card--skeleton">
-      <div className="product-card__header">
-        <div className="product-card__tag-skeleton skeleton"></div>
-        <div className="product-card__wishlist-skeleton skeleton"></div>
-      </div>
-      <div className="product-card__image">
-        <div className="product-card__image-skeleton skeleton"></div>
-      </div>
-      <div className="product-card__rating">
-        <div className="product-card__rating-skeleton skeleton"></div>
-        <div className="product-card__cart-skeleton skeleton"></div>
-      </div>
-      <div className="product-card__info">
-        <div className="product-card__title-skeleton skeleton"></div>
-        <div className="product-card__description-skeleton skeleton"></div>
-        <div className="product-card__price">
-          <div className="product-card__price-skeleton skeleton"></div>
-          <div className="product-card__price-details">
-            <div className="product-card__original-price-skeleton skeleton"></div>
-            <div className="product-card__discount-skeleton skeleton"></div>
-          </div>
-        </div>
-        <div className="product-card__delivery-skeleton skeleton"></div>
-      </div>
-    </div>
-  );
-
   return (
     <section className="product-carousel">
       {showTitle && (
@@ -205,7 +178,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({
         >
           {isLoading
             ? Array.from({ length: 6 }).map((_, index) => (
-                <ProductCardSkeleton key={`skeleton-${index}`} />
+                <ProductCardSkeleton key={`skeleton-${index}`} count={1} />
               ))
             : displayedProducts.map((product) => (
                 <div key={product.id} className="product-card__wrapper">

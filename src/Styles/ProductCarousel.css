@@ -129,7 +129,7 @@
    was the actual cause of uneven card heights in the same carousel row). */
 .product-card__wrapper {
   flex: 0 0 auto;
-  width: 270px;
+  width: 260px;
   pointer-events: auto;
 }
 
@@ -148,6 +148,8 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   position: relative;
   height: 100%;
+  padding: 10px 10px 0;
+  box-sizing: border-box;
   transition: box-shadow 0.25s ease;
   pointer-events: auto;
 }
@@ -200,7 +202,7 @@
   position: relative;
   aspect-ratio: 1 / 1;
   background: #f7f7f8;
-  border-radius: 14px 14px 0 0;
+  border-radius: 10px 10px 8px 8px;
   overflow: hidden;
   display: flex;
   justify-content: center;
@@ -212,7 +214,7 @@
   height: 100%;
   object-fit: contain;
   padding: 8px;
-  border-radius: 16px 16px 0px 0px;
+  border-radius: 12px;
   box-sizing: border-box;
   pointer-events: none;
   user-select: none;
@@ -411,7 +413,7 @@
   flex-direction: column;
   flex: 1;
   gap: 6px;
-  padding: 18px 14px 14px;
+  padding: 16px 4px 14px;
 }
 
 .product-card__title-row {
@@ -577,24 +579,21 @@
   height: 100%;
 }
 
-.skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+.product-carousel__products > .product-card-skeleton-wrapper {
+  flex: 0 0 auto;
+  width: 270px;
+  height: 100%;
+}
+
+.product-carousel__products
+  > .product-card-skeleton-wrapper
+  .product-card-skeleton {
+  height: 100%;
+  min-height: 370px;
 }
 
 .product-carousel__products {
   min-height: 370px;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-
-  100% {
-    background-position: 200% 0;
-  }
 }
 
 @media (max-width: 1200px) {
@@ -603,6 +602,10 @@
   }
 
   .product-card__wrapper {
+    width: 240px;
+  }
+
+  .product-carousel__products > .product-card-skeleton-wrapper {
     width: 240px;
   }
 
@@ -632,6 +635,10 @@
     width: 220px;
   }
 
+  .product-carousel__products > .product-card-skeleton-wrapper {
+    width: 220px;
+  }
+
   .product-card {
     min-height: 360px;
   }
@@ -643,6 +650,10 @@
 
 @media (max-width: 768px) {
   .product-card__wrapper {
+    width: 200px;
+  }
+
+  .product-carousel__products > .product-card-skeleton-wrapper {
     width: 200px;
   }
 
@@ -685,13 +696,17 @@
     width: calc((100% - 10px) / 1.97);
   }
 
+  .product-carousel__products > .product-card-skeleton-wrapper {
+    width: calc((100% - 10px) / 1.97);
+  }
+
   .product-card {
     min-height: 330px;
     border-radius: 10px;
   }
 
   .product-card__image {
-    border-radius: 10px 10px 0 0;
+    border-radius: 10px 10px 8px 8px;
   }
 
   .product-card__image img {
@@ -757,6 +772,10 @@
 
 @media (max-width: 480px) {
   .product-card__wrapper {
+    width: calc((100% - 10px) / 1.96);
+  }
+
+  .product-carousel__products > .product-card-skeleton-wrapper {
     width: calc((100% - 10px) / 1.96);
   }
 
