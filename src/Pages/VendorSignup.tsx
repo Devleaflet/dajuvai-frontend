@@ -243,6 +243,11 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
       .slice(0, 10);
   };
 
+  const isValidTelephoneNumber = (value: string) =>
+    (value.match(/-/g) ?? []).length <= 1 &&
+    (value.includes("-") ? /^\d+-\d+$/.test(value) : /^\d+$/.test(value)) &&
+    value.replace(/\D/g, "").length === 9;
+
   // Validation function for individual fields
   const validateField = (name: string, value: any): string => {
     const normalizedValue = typeof value === "string" ? value.trim() : value;
@@ -263,8 +268,8 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 
       case "telePhone":
         if (!normalizedValue) return "";
-        if (!/^(?:\d{9}|\d{2}-\d{7})$/.test(normalizedValue))
-          return "Enter 9 digits or use the format 01-1234567";
+        if (!isValidTelephoneNumber(normalizedValue))
+          return "Enter 9 digits, with or without one hyphen";
         return "";
 
       case "businessRegNumber":
