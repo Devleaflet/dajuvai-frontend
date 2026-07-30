@@ -88,7 +88,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       // variantsArr is already id-sorted; just float the default variant
       // to the front so its photo leads (matching the price/discount shown).
       if (variantsArr.length > 0) {
-        const rest = variantsArr.filter((v: any) => v.id !== defaultVariant?.id);
+        const rest = variantsArr.filter(
+          (v: any) => v.id !== defaultVariant?.id,
+        );
         const orderedVariants = defaultVariant
           ? [defaultVariant, ...rest]
           : rest;
@@ -278,16 +280,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         // non-variant products), so the badge must read the *variant's*
         // discount here — falling back to product.discount only if the
         // variant genuinely doesn't specify one.
-        discount: defaultVariant.discount !== undefined
+        discount:
+          defaultVariant.discount !== undefined
             ? defaultVariant.discount
             : product.discount,
-        discountAmount: defaultVariant.discountAmount !== undefined
+        discountAmount:
+          defaultVariant.discountAmount !== undefined
             ? defaultVariant.discountAmount
             : product.discountAmount,
-        discountPercent: defaultVariant.discountPercent !== undefined
+        discountPercent:
+          defaultVariant.discountPercent !== undefined
             ? defaultVariant.discountPercent
             : product.discountPercent,
-        discountType: defaultVariant.discountType !== undefined
+        discountType:
+          defaultVariant.discountType !== undefined
             ? defaultVariant.discountType
             : product.discountType,
       };
@@ -417,7 +423,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 handleCartOnAdd(product, 1, variantId);
               }}
             >
-              <FaCartPlus style={{ color: "#fff", width: "16px", height: "16px" }} />
+              <FaCartPlus
+                style={{ color: "#fff", width: "16px", height: "16px" }}
+              />
             </button>
           )}
         </div>
@@ -428,9 +436,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               {title}
             </h3>
             {isOutOfStock && (
-              <span
-                className="product-card__stock-badge product-card__stock-badge--out"
-              >
+              <span className="product-card__stock-badge product-card__stock-badge--out">
                 Out of stock
               </span>
             )}

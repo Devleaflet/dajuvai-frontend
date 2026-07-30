@@ -1092,17 +1092,14 @@ const UserProfile: React.FC = () => {
                                             {order.orderItems &&
                                             order.orderItems.length > 0 ? (
                                                 (() => {
-                                                    const first = order
-                                                        .orderItems[0]
-                                                        .product as Product;
-                                                    const imgSrc = order
-                                                        .orderItems[0].variant
-                                                        ? order.orderItems[0]
-                                                              .variant
-                                                              .variantImages[0]
-                                                        : order.orderItems[0]
-                                                              .product
-                                                              .productImages[0];
+                                                    const first =
+                                                        order.orderItems[0];
+                                                    const imgSrc =
+                                                        first.imageSnapshot ||
+                                                        first.variant
+                                                            ?.variantImages?.[0] ||
+                                                        first.product
+                                                            ?.productImages?.[0];
 
                                                     return (
                                                         <div className="order-mobile-product">
@@ -1112,7 +1109,10 @@ const UserProfile: React.FC = () => {
                                                                     defaultProductImage
                                                                 }
                                                                 alt={
-                                                                    first.name
+                                                                    first.productNameSnapshot ||
+                                                                    first.product
+                                                                        ?.name ||
+                                                                    "Product"
                                                                 }
                                                                 className="order-mobile-product__image"
                                                                 onError={(
@@ -1202,14 +1202,17 @@ const UserProfile: React.FC = () => {
                                                               2,
                                                           )
                                                     ).map((item) => {
-                                                        const product =
-                                                            item.product as Product;
                                                         const imgSrc =
+                                                            item.imageSnapshot ||
                                                             item.variant
-                                                                ? item.variant
-                                                                      .variantImages[0]
-                                                                : item.product
-                                                                      .productImages[0];
+                                                                ?.variantImages?.[0] ||
+                                                            item.product
+                                                                ?.productImages?.[0];
+                                                        const name =
+                                                            item.productNameSnapshot ||
+                                                            item.product
+                                                                ?.name ||
+                                                            "Product";
                                                         return (
                                                             <div
                                                                 key={item.id}
@@ -1220,9 +1223,7 @@ const UserProfile: React.FC = () => {
                                                                         imgSrc ||
                                                                         defaultProductImage
                                                                     }
-                                                                    alt={
-                                                                        product.name
-                                                                    }
+                                                                    alt={name}
                                                                     className="order-product__image"
                                                                     onError={(
                                                                         e,
@@ -1234,8 +1235,7 @@ const UserProfile: React.FC = () => {
                                                                     }}
                                                                 />
                                                                 <span className="order-product__name">
-                                                                    {product?.name ||
-                                                                        "Product"}
+                                                                    {name}
                                                                 </span>
                                                                 <span className="order-product__quantity">
                                                                     x
@@ -1341,13 +1341,16 @@ const UserProfile: React.FC = () => {
                                                 ? order.orderItems
                                                 : order.orderItems.slice(0, 2)
                                             ).map((item) => {
-                                                const product =
-                                                    item.product as Product;
-                                                const imgSrc = item.variant
-                                                    ? item.variant
-                                                          .variantImages[0]
-                                                    : item.product
-                                                          .productImages[0];
+                                                const imgSrc =
+                                                    item.imageSnapshot ||
+                                                    item.variant
+                                                        ?.variantImages?.[0] ||
+                                                    item.product
+                                                        ?.productImages?.[0];
+                                                const name =
+                                                    item.productNameSnapshot ||
+                                                    item.product?.name ||
+                                                    "Product";
                                                 return (
                                                     <div
                                                         key={item.id}
@@ -1358,9 +1361,7 @@ const UserProfile: React.FC = () => {
                                                                 imgSrc ||
                                                                 defaultProductImage
                                                             }
-                                                            alt={
-                                                                product.name
-                                                            }
+                                                            alt={name}
                                                             className="order-product__image"
                                                             onError={(e) => {
                                                                 (
@@ -1370,8 +1371,7 @@ const UserProfile: React.FC = () => {
                                                             }}
                                                         />
                                                         <span className="order-product__name">
-                                                            {product?.name ||
-                                                                "Product"}
+                                                            {name}
                                                         </span>
                                                         <span className="order-product__quantity">
                                                             x{item.quantity}

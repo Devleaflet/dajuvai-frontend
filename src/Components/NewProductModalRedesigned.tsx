@@ -1212,10 +1212,11 @@ const NewProductModal: React.FC<NewProductModalProps> = ({
                                               Number(formData.dealId),
                                       )
                                     : undefined;
+                                const normalizedType = normalizeDiscountType(formData.discountType);
                                 const pricingPreview = calculatePricingPreview({
                                     basePrice: formData.basePrice,
-                                    discountAmount: formData.discountAmount,
-                                    discountPercent: formData.discountPercent,
+                                    discountAmount: normalizedType === "FLAT" ? formData.discount : undefined,
+                                    discountPercent: normalizedType === "PERCENTAGE" ? formData.discount : undefined,
                                     discountType: formData.discountType,
                                     dealDiscountPercentage:
                                         selectedDeal?.discountPercentage,
@@ -1436,11 +1437,12 @@ const NewProductModal: React.FC<NewProductModalProps> = ({
                                                       Number(formData.dealId),
                                               )
                                             : undefined;
+                                        const variantDiscType = normalizeDiscountType(variant.discountType);
                                         const variantPricingPreview =
                                             calculatePricingPreview({
                                                 basePrice: variant.price,
-                                                discountAmount: variant.discountAmount,
-                                                discountPercent: variant.discountPercent,
+                                                discountAmount: variantDiscType === "FLAT" ? variant.discount : undefined,
+                                                discountPercent: variantDiscType === "PERCENTAGE" ? variant.discount : undefined,
                                                 discountType:
                                                     variant.discountType,
                                                 dealDiscountPercentage:
