@@ -1,4 +1,7 @@
+import { normalizeSearchTerm } from "./recentSearches";
+
 export type CatalogSort =
+  | "relevance"
   | "newest"
   | "price_low_high"
   | "price_high_low"
@@ -13,7 +16,8 @@ export interface CatalogFilters {
   maxPrice?: number;
   minRating?: number;
   hasDeal?: boolean;
-  dealId?: number;
+  dealIds: number[];
+  bannerId?: number;
   sort: CatalogSort;
   page: number;
 }
@@ -28,6 +32,7 @@ const parseNumber = (value: string | null, min = 0): number | undefined => {
 };
 
 const sorts: CatalogSort[] = [
+  "relevance",
   "newest",
   "price_low_high",
   "price_high_low",
@@ -37,16 +42,23 @@ const sorts: CatalogSort[] = [
 
 export const parseCatalogFilters = (params: URLSearchParams): CatalogFilters => {
   const requestedSort = params.get("sort") as CatalogSort | null;
+  const search = normalizeSearchTerm(params.get("q") ?? params.get("search") ?? "");
+  const sort = requestedSort && sorts.includes(requestedSort)
+    ? requestedSort
+    : "newest";
   return {
-    search: params.get("q") ?? params.get("search") ?? "",
+    search,
     categoryIds: parseIds(params.get("categoryId")),
     subcategoryIds: parseIds(params.get("subcategoryId")),
     minPrice: parseNumber(params.get("minPrice")),
     maxPrice: parseNumber(params.get("maxPrice")),
     minRating: parseNumber(params.get("minRating"), 1),
     hasDeal: params.get("hasDeal") === "true" ? true : undefined,
-    dealId: parseNumber(params.get("dealId"), 1),
-    sort: requestedSort && sorts.includes(requestedSort) ? requestedSort : "newest",
+    dealIds: parseIds(params.get("dealId")),
+    bannerId: parseNumber(params.get("bannerId"), 1),
+    // Relevance has meaning only for a text search. Keep URLs and the selected
+    // UI option truthful when a stale or hand-written URL omits the query.
+    sort: sort === "relevance" && !search ? "newest" : sort,
     page: Math.max(1, Math.floor(parseNumber(params.get("page"), 1) ?? 1)),
   };
 };
@@ -54,11 +66,18 @@ export const parseCatalogFilters = (params: URLSearchParams): CatalogFilters => 
 export const updateCatalogFilters = (
   current: CatalogFilters,
   updates: Partial<CatalogFilters>,
-): CatalogFilters => ({
-  ...current,
-  ...updates,
-  page: updates.page ?? 1,
-});
+): CatalogFilters => {
+  const next = {
+    ...current,
+    ...updates,
+    page: updates.page ?? 1,
+  };
+
+  return {
+    ...next,
+    sort: next.sort === "relevance" && !next.search.trim() ? "newest" : next.sort,
+  };
+};
 
 export const toggleCatalogSubcategoryFilter = (
   current: CatalogFilters,
@@ -73,15 +92,19 @@ export const toggleCatalogSubcategoryFilter = (
 
 export const catalogFiltersToSearchParams = (filters: CatalogFilters): URLSearchParams => {
   const params = new URLSearchParams();
-  if (filters.search.trim()) params.set("q", filters.search.trim());
+  const search = filters.search.trim();
+  if (search) params.set("q", search);
   if (filters.categoryIds.length) params.set("categoryId", filters.categoryIds.join(","));
   if (filters.subcategoryIds.length) params.set("subcategoryId", filters.subcategoryIds.join(","));
   if (filters.minPrice !== undefined) params.set("minPrice", String(filters.minPrice));
   if (filters.maxPrice !== undefined) params.set("maxPrice", String(filters.maxPrice));
   if (filters.minRating !== undefined) params.set("minRating", String(filters.minRating));
-  if (filters.dealId !== undefined) params.set("dealId", String(filters.dealId));
+  if (filters.dealIds.length) params.set("dealId", filters.dealIds.join(","));
   else if (filters.hasDeal) params.set("hasDeal", "true");
-  if (filters.sort !== "newest") params.set("sort", filters.sort);
+  if (filters.bannerId !== undefined) params.set("bannerId", String(filters.bannerId));
+  if (filters.sort !== "newest" && !(filters.sort === "relevance" && !search)) {
+    params.set("sort", filters.sort);
+  }
   if (filters.page > 1) params.set("page", String(filters.page));
   return params;
 };

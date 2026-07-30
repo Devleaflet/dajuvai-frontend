@@ -10,7 +10,6 @@ import {
 	FaHeart,
 	FaHome,
 	FaInfoCircle,
-	FaSearch,
 	FaShoppingBag,
 	FaShoppingCart,
 	FaSignOutAlt,
@@ -19,7 +18,6 @@ import {
 } from 'react-icons/fa';
 import { FaFacebook, FaInstagram, FaTiktok, FaWhatsapp, FaYoutube } from 'react-icons/fa6';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import axiosInstance from '../api/axiosInstance';
 import { fetchPlacementCategories, PLACEMENTS } from '../api/placements';
 import logo from '../assets/logo.webp';
 import nepal from '../assets/nepal.gif';
@@ -33,6 +31,7 @@ import VendorLogin from '../Pages/VendorLogin';
 import '../Styles/Navbar.css';
 import AuthModal from './AuthModal';
 import Cart from './Cart';
+import InlineNavbarSearch from './InlineNavbarSearch';
 
 interface Category {
 	id: number;
@@ -56,9 +55,6 @@ const Navbar: React.FC = () => {
 	const { authState: vendorAuthState, logout: vendorLogout } = useVendorAuth();
 	const { cartOpen, setCartOpen, sideMenuOpen, setSideMenuOpen } = useUI();
 	const [searchQuery, setSearchQuery] = useState<string>('');
-	const [searchResults, setSearchResults] = useState<any[]>([]);
-	const [showSearchDropdown, setShowSearchDropdown] = useState<boolean>(false);
-	const [activeSearchIndex, setActiveSearchIndex] = useState(-1);
 	const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
 	const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
 	const [vendorAuthModalOpen, setVendorAuthModalOpen] =
@@ -80,11 +76,15 @@ const Navbar: React.FC = () => {
 
 	const sideMenuRef = useRef<HTMLDivElement>(null);
 	const hamburgerRef = useRef<HTMLButtonElement>(null);
-	const cartButtonRef = useRef<any>(null);
+	const cartButtonRef = useRef<HTMLButtonElement>(null);
 	const profileRef = useRef<HTMLDivElement>(null);
 	const dropdownTriggerRef = useRef<HTMLDivElement>(null);
-	const searchRef = useRef<HTMLDivElement>(null);
+	const searchTriggerRef = useRef<HTMLInputElement>(null);
 	const moreDropdownRef = useRef<HTMLDivElement>(null);
+	const focusSearch = useCallback((query = '') => {
+		setSearchQuery(query);
+		requestAnimationFrame(() => searchTriggerRef.current?.focus());
+	}, []);
 
 	const { cartItems, cartCount } = useCart();
 
@@ -251,7 +251,7 @@ const Navbar: React.FC = () => {
 		return <FaUser />;
 	};
 
-	const toggleSideMenu = (e?: React.MouseEvent): void => {
+	const toggleSideMenu = useCallback((e?: React.MouseEvent): void => {
 		e?.preventDefault();
 		e?.stopPropagation();
 		const newState = !sideMenuOpen;
@@ -262,7 +262,7 @@ const Navbar: React.FC = () => {
 		} else {
 			document.body.classList.remove('navbar--menu-open');
 		}
-	};
+	}, [cartOpen, setCartOpen, setSideMenuOpen, sideMenuOpen]);
 
 	const toggleCart = (e?: React.MouseEvent): void => {
 		e?.preventDefault();
@@ -325,7 +325,7 @@ const Navbar: React.FC = () => {
 		return () => {
 			document.removeEventListener('click', handleClickOutside);
 		};
-	}, [sideMenuOpen]);
+	}, [sideMenuOpen, toggleSideMenu]);
 
 	useEffect(() => {
 		const searchRow = document.querySelector('.navbar__search-row');
@@ -340,7 +340,7 @@ const Navbar: React.FC = () => {
 			// search input at open time — once the page scrolls, that anchor is
 			// stale, so close it rather than let it float disconnected from the
 			// field it was opened from.
-			setShowSearchDropdown(false);
+			void searchRow;
 		};
 
 		window.addEventListener('scroll', handleScroll, { passive: true });
@@ -375,121 +375,27 @@ const Navbar: React.FC = () => {
 	const location = useLocation();
 
 	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (
-				searchRef.current &&
-				!searchRef.current.contains(event.target as Node)
-			) {
-				setShowSearchDropdown(false);
-			}
-		};
-
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => document.removeEventListener('mousedown', handleClickOutside);
-	}, []);
-
-	const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
-	const searchAbortRef = useRef<AbortController | null>(null);
-
-	const handleSearch = useCallback(async (query: string) => {
-		if (!query.trim()) {
-			setSearchResults([]);
-			setShowSearchDropdown(false);
-			setActiveSearchIndex(-1);
-			return;
-		}
-		searchAbortRef.current?.abort();
-		const controller = new AbortController();
-		searchAbortRef.current = controller;
-		try {
-			const response = await fetch(
-				`${API_BASE_URL}/api/categories/all/products?q=${encodeURIComponent(query.trim())}&limit=5`,
-				{ signal: controller.signal },
-			);
-			if (!response.ok) throw new Error('Search failed');
-			const data = await response.json();
-			const results = (data.success ? data.data : []).slice(0, 5).map((product: { id: number; name: string; productImages?: string[]; variants?: { variantImages?: string[] }[] }) => ({
-				id: product.id,
-				name: product.name,
-				image:
-					product.productImages?.[0] ||
-					product.variants?.find((v) => v?.variantImages?.[0])?.variantImages?.[0] ||
-					logo,
-			}));
-			setSearchResults(results);
-			setShowSearchDropdown(results.length > 0);
-			setActiveSearchIndex(-1);
-		} catch (error) {
-			if ((error as Error).name === 'AbortError') return;
-			console.error('Search error:', error);
-			setSearchResults([]);
-			setShowSearchDropdown(false);
-		}
-	}, []);
-
-	useEffect(() => () => searchAbortRef.current?.abort(), []);
-
-	useEffect(() => {
 		const handleSetNavbarSearch = (event: CustomEvent) => {
-			const { searchQuery: query } = event.detail;
-			setSearchQuery(query);
-			if (query) handleSearch(query);
+			focusSearch(event.detail?.searchQuery ?? '');
 		};
 
 		window.addEventListener('setNavbarSearch', handleSetNavbarSearch as EventListener);
 		return () => window.removeEventListener('setNavbarSearch', handleSetNavbarSearch as EventListener);
-	}, [handleSearch]);
+	}, [focusSearch]);
 
-	const handleSearchSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-		if (activeSearchIndex >= 0 && searchResults[activeSearchIndex]) {
-			handleSearchResultClick(searchResults[activeSearchIndex].id);
-			return;
-		}
-		const term = searchQuery.trim();
-		if (!term) return;
-		setShowSearchDropdown(false);
-		navigate(`/shop?q=${encodeURIComponent(term)}`);
-	};
-
-	const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value;
-		setSearchQuery(value);
-		setActiveSearchIndex(-1);
-
-		if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-
-		if (value.trim()) {
-			searchDebounceRef.current = setTimeout(() => handleSearch(value), 300);
-		} else {
-			setSearchResults([]);
-			setShowSearchDropdown(false);
-			searchAbortRef.current?.abort();
-		}
-	};
-
-	const handleSearchResultClick = (productId: number) => {
-		setShowSearchDropdown(false);
-		setActiveSearchIndex(-1);
-		setSearchQuery('');
-		navigate(`/product-page/${productId}`);
-	};
-
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-		if (e.key === 'Escape') {
-			setShowSearchDropdown(false);
-			setActiveSearchIndex(-1);
-		} else if (e.key === 'ArrowDown' && searchResults.length > 0) {
-			e.preventDefault();
-			setShowSearchDropdown(true);
-			setActiveSearchIndex((index) => (index + 1) % searchResults.length);
-		} else if (e.key === 'ArrowUp' && searchResults.length > 0) {
-			e.preventDefault();
-			setShowSearchDropdown(true);
-			setActiveSearchIndex((index) => (index <= 0 ? searchResults.length - 1 : index - 1));
-		}
-	};
+	useEffect(() => {
+		const openGlobalSearch = (event: KeyboardEvent) => {
+			const target = event.target as HTMLElement | null;
+			const isEditing = target?.matches('input, textarea, select, [contenteditable="true"]');
+			if (isEditing) return;
+			if ((event.key === 'k' && (event.ctrlKey || event.metaKey)) || event.key === '/') {
+				event.preventDefault();
+				focusSearch();
+			}
+		};
+		window.addEventListener('keydown', openGlobalSearch);
+		return () => window.removeEventListener('keydown', openGlobalSearch);
+	}, [focusSearch]);
 
 	const handleSubcategoryClick = (
 		categoryId: number,
@@ -533,7 +439,7 @@ const Navbar: React.FC = () => {
 		}, 150); // 150ms delay
 	};
 
-	const renderCategoryDropdown = (category: any) => {
+	const renderCategoryDropdown = (category: Category) => {
 		if (activeDropdown !== category.id) return null;
 
 		// Subcategories come straight from the MEGA_MENU placement data already
@@ -933,33 +839,36 @@ const Navbar: React.FC = () => {
 					)}
 
 					<div className="navbar__search-row">
-						<div
-							className="navbar__search"
-							ref={searchRef}
-						>
-							<form
-								onSubmit={handleSearchSubmit}
-								className="navbar__search-form"
-							>
+						<InlineNavbarSearch
+							query={searchQuery}
+							onQueryChange={setSearchQuery}
+							inputRef={searchTriggerRef}
+						/>
+						{/*
 								<input
+									ref={searchTriggerRef}
 									type="text"
 									placeholder="Search products..."
 									value={searchQuery}
-									onChange={handleSearchInputChange}
-									onKeyDown={handleKeyDown}
+									onChange={(event) => setSearchQuery(event.target.value)}
+									onKeyDown={(event) => {
+										if (event.key === 'Enter') {
+											event.preventDefault();
+											void searchQuery;
+										}
+									}}
 									onFocus={() => {
+										if (skipSearchTriggerFocusRef.current) {
+											skipSearchTriggerFocusRef.current = false;
+											return;
+										}
 										// Scroll dismisses the dropdown, but the query and its
 										// results are still sitting in state — re-clicking the
 										// field should bring the same list straight back instead
 										// of forcing the user to retype to see it again.
-										if (searchResults.length > 0) setShowSearchDropdown(true);
+										void searchQuery;
 									}}
 									className="navbar__search-input"
-									role="combobox"
-									aria-autocomplete="list"
-									aria-expanded={showSearchDropdown}
-									aria-controls="navbar-product-suggestions"
-									aria-activedescendant={activeSearchIndex >= 0 ? `navbar-suggestion-${searchResults[activeSearchIndex]?.id}` : undefined}
 									autoComplete="off"
 									style={{
 										outline: 'none',
@@ -971,39 +880,8 @@ const Navbar: React.FC = () => {
 								>
 									<FaSearch />
 								</button>
-							</form>
-
-							{showSearchDropdown && searchResults.length > 0 && (
-								<div className="navbar__search-dropdown" id="navbar-product-suggestions" role="listbox">
-									{searchResults.map((result, index) => (
-										<div
-											key={result.id}
-											id={`navbar-suggestion-${result.id}`}
-											role="option"
-											aria-selected={activeSearchIndex === index}
-											className={activeSearchIndex === index ? "navbar__search-result navbar__search-result--active" : "navbar__search-result"}
-											onMouseEnter={() => setActiveSearchIndex(index)}
-											onClick={() => handleSearchResultClick(result.id)}
-										>
-											<img
-												src={result.image}
-												alt={result.name}
-												className="navbar__search-result-image"
-												onError={(e) => {
-													(e.target as HTMLImageElement).src = logo;
-												}}
-											/>
-											<div className="navbar__search-result-info">
-												<h4 className="navbar__search-result-title">
-													{result.name}
-												</h4>
-											</div>
-										</div>
-									))}
-								</div>
-							)}
+							</form>*/}
 						</div>
-					</div>
 
 					<div className="navbar__desktop-links">
 						<div className="navbar__links">
@@ -1429,7 +1307,7 @@ const Navbar: React.FC = () => {
 							className="navbar__categories"
 							ref={categoriesRef}
 						>
-							{categories.map((category: any) => (
+							{categories.map((category) => (
 								<div
 									key={category.id}
 									ref={(el) => {
@@ -1441,11 +1319,8 @@ const Navbar: React.FC = () => {
 										clearDropdownTimeout();
 										setActiveDropdown(category.id);
 										const element = categoryRefs.current[category.id];
-										const sliderContainer = categoriesRef.current;
-										if (element && sliderContainer) {
+										if (element) {
 											const rect = element.getBoundingClientRect();
-											const sliderRect =
-												sliderContainer.getBoundingClientRect();
 
 											const adjustedLeft = rect.left + window.scrollX;
 											const adjustedTop = rect.bottom + window.scrollY;
@@ -1592,7 +1467,6 @@ const Navbar: React.FC = () => {
 				isOpen={vendorAuthModalOpen}
 				onClose={() => setVendorAuthModalOpen(false)}
 			/>
-
 			{activeDropdown && dropdownPosition && (
 				<div
 					className="navbar__dropdown-portal"

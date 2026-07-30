@@ -1,12 +1,12 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Check,
   ChevronDown,
   ChevronUp,
   Filter,
   Search,
   SlidersHorizontal,
-  Star,
   X,
 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
@@ -18,6 +18,7 @@ import Footer from "../Components/Footer";
 import Navbar from "../Components/Navbar";
 import CategorySlider from "../Components/CategorySlider";
 import ProductBannerSlider from "../Components/ProductBannerSlider";
+import ResponsiveBanner from "../Components/ResponsiveBanner";
 import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
 import defaultProductImage from "../assets/logo.webp";
 import { API_BASE_URL } from "../config";
@@ -33,6 +34,12 @@ import {
   toggleCatalogSubcategoryFilter,
   updateCatalogFilters,
 } from "../utils/catalogFilters";
+import { normalizeSearchTerm } from "../utils/recentSearches";
+import {
+  isActiveShopSourceBanner,
+  parseShopSourceBanner,
+  type ShopSourceBannerRecord,
+} from "../utils/shopSourceBanner";
 
 interface CatalogResponse {
   data: RawCatalogProduct[];
@@ -48,6 +55,14 @@ interface CatalogResponse {
 interface DealsFilterResponse {
   deals: Deal[];
   productCounts: Record<string, number>;
+}
+
+interface ShopSourceBannerResponse {
+  data: ShopSourceBannerRecord & {
+    name: string;
+    desktopImage: string | null;
+    mobileImage: string | null;
+  };
 }
 
 interface RawVariant {
@@ -79,7 +94,10 @@ interface RawCatalogProduct {
 }
 
 const PER_PAGE = 24;
+const catalogPageCache = new Map<string, Map<number, Product[]>>();
+const MAX_CATALOG_CACHE_KEYS = 20;
 const sortOptions: Array<{ value: CatalogSort; label: string }> = [
+  { value: "relevance", label: "Relevance" },
   { value: "newest", label: "Newest" },
   { value: "price_low_high", label: "Price: Low to high" },
   { value: "price_high_low", label: "Price: High to low" },
@@ -127,25 +145,29 @@ const toCardProduct = (raw: RawCatalogProduct): Product => {
 const fetchCatalog = async (
   filters: CatalogFilters,
 ): Promise<{ products: Product[]; meta: CatalogResponse["meta"] }> => {
-  const requests = Array.from({ length: filters.page }, (_, index) => {
-    const params = catalogFiltersToSearchParams({
-      ...filters,
-      page: index + 1,
-    });
-    params.set("limit", String(PER_PAGE));
-    return fetch(
-      `${API_BASE_URL}/api/categories/all/products?${params.toString()}`,
-    ).then(async (response) => {
-      if (!response.ok)
-        throw new Error("Could not load products. Please retry.");
-      return response.json() as Promise<CatalogResponse>;
-    });
-  });
-  const pages = await Promise.all(requests);
-  const last = pages.at(-1);
+  const params = catalogFiltersToSearchParams(filters);
+  params.set("limit", String(PER_PAGE));
+  const response = await fetch(
+    `${API_BASE_URL}/api/categories/all/products?${params.toString()}`,
+  );
+  if (!response.ok) throw new Error("Could not load products. Please retry.");
+
+  const page = (await response.json()) as CatalogResponse;
+  const cacheKey = catalogFiltersToSearchParams({ ...filters, page: 1 }).toString();
+  if (!catalogPageCache.has(cacheKey) && catalogPageCache.size >= MAX_CATALOG_CACHE_KEYS) {
+    catalogPageCache.delete(catalogPageCache.keys().next().value as string);
+  }
+  const pages = catalogPageCache.get(cacheKey) ?? new Map<number, Product[]>();
+  if (filters.page === 1) pages.clear();
+  pages.set(filters.page, (page.data ?? []).map(toCardProduct));
+  catalogPageCache.set(cacheKey, pages);
+
   return {
-    products: pages.flatMap((page) => (page.data ?? []).map(toCardProduct)),
-    meta: last?.meta ?? {
+    products: [...pages.entries()]
+      .filter(([pageNumber]) => pageNumber <= filters.page)
+      .sort(([left], [right]) => left - right)
+      .flatMap(([, products]) => products),
+    meta: page.meta ?? {
       total: 0,
       page: 1,
       limit: PER_PAGE,
@@ -153,6 +175,15 @@ const fetchCatalog = async (
       hasNextPage: false,
     },
   };
+};
+
+const fetchShopSourceBanner = async (
+  id: number,
+): Promise<ShopSourceBannerResponse["data"]> => {
+  const response = await fetch(`${API_BASE_URL}/api/banners/${id}`);
+  if (!response.ok) throw new Error("Could not load source banner.");
+  const payload = (await response.json()) as ShopSourceBannerResponse;
+  return payload.data;
 };
 
 interface FilterPanelProps {
@@ -222,6 +253,12 @@ const FilterPanel = ({
     onChange(
       toggleCatalogSubcategoryFilter(filters, parentCategoryId, subcategoryId),
     );
+  const toggleDeal = (dealId: number) => {
+    const dealIds = filters.dealIds.includes(dealId)
+      ? filters.dealIds.filter((id) => id !== dealId)
+      : [...filters.dealIds, dealId];
+    onChange({ dealIds, hasDeal: undefined });
+  };
   const applyPrice = () => {
     const min = minPrice.trim() === "" ? undefined : Number(minPrice);
     const max = maxPrice.trim() === "" ? undefined : Number(maxPrice);
@@ -287,6 +324,9 @@ const FilterPanel = ({
                   checked={filters.categoryIds.includes(category.id)}
                   onChange={() => toggleId("categoryIds", category.id)}
                 />
+                <span className="catalog-control__checkbox" aria-hidden="true">
+                  <Check size={12} strokeWidth={3} />
+                </span>
                 <span>{category.name}</span>
               </label>
               {category.subcategories?.length > 0 && (
@@ -318,6 +358,9 @@ const FilterPanel = ({
                       toggleSubcategory(category.id, subcategory.id)
                     }
                   />
+                  <span className="catalog-control__checkbox" aria-hidden="true">
+                    <Check size={12} strokeWidth={3} />
+                  </span>
                   <span>{subcategory.name}</span>
                 </label>
               ))}
@@ -356,14 +399,17 @@ const FilterPanel = ({
         <label className="catalog-control">
           <input
             type="checkbox"
-            checked={filters.hasDeal === true && filters.dealId === undefined}
+            checked={filters.hasDeal === true && filters.dealIds.length === 0}
             onChange={(event) =>
               onChange({
                 hasDeal: event.target.checked ? true : undefined,
-                dealId: undefined,
+                dealIds: [],
               })
             }
           />
+          <span className="catalog-control__checkbox" aria-hidden="true">
+            <Check size={12} strokeWidth={3} />
+          </span>
           <span>Deals only</span>
         </label>
         {dealsLoading ? (
@@ -378,26 +424,26 @@ const FilterPanel = ({
                   key={deal.id}
                 >
                   <input
-                    type="radio"
-                    name={`deal-${compact ? "mobile" : "desktop"}`}
-                    checked={filters.dealId === deal.id}
-                    onChange={() =>
-                      onChange({ dealId: deal.id, hasDeal: undefined })
-                    }
+                    type="checkbox"
+                    checked={filters.dealIds.includes(deal.id)}
+                    onChange={() => toggleDeal(deal.id)}
                   />
+                  <span className="catalog-control__checkbox" aria-hidden="true">
+                    <Check size={12} strokeWidth={3} />
+                  </span>
                   <span>{deal.name}</span>
                   <strong>{Number(deal.discountPercentage)}%</strong>
                   <em>{productCount}</em>
                 </label>
               );
             })}
-            {filters.dealId !== undefined && (
+            {filters.dealIds.length > 0 && (
               <button
                 type="button"
                 className="catalog-filters__clear-inline"
-                onClick={() => onChange({ dealId: undefined })}
+                onClick={() => onChange({ dealIds: [] })}
               >
-                Clear selected deal
+                Clear selected deals
               </button>
             )}
           </div>
@@ -438,15 +484,25 @@ const Shop = () => {
     () => parseCatalogFilters(searchParams),
     [searchParams],
   );
+  const sourceBanner = useMemo(
+    () => parseShopSourceBanner(searchParams),
+    [searchParams],
+  );
   const [searchInput, setSearchInput] = useState(filters.search);
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   useEffect(() => setSearchInput(filters.search), [filters.search]);
 
-  const updateFilters = (updates: Partial<CatalogFilters>) =>
-    setSearchParams(
-      catalogFiltersToSearchParams(updateCatalogFilters(filters, updates)),
+  const updateFilters = (updates: Partial<CatalogFilters>) => {
+    const nextParams = catalogFiltersToSearchParams(
+      updateCatalogFilters(filters, updates),
     );
+    if (sourceBanner) {
+      nextParams.set("sourceBannerId", String(sourceBanner.id));
+      nextParams.set("sourceBannerType", sourceBanner.type);
+    }
+    setSearchParams(nextParams);
+  };
   const resetFilters = () => setSearchParams(new URLSearchParams());
   const { data: categories = [] } = useQuery({
     queryKey: ["catalog-categories"],
@@ -477,11 +533,29 @@ const Shop = () => {
   });
   const deals = dealFilters?.deals ?? [];
   const dealProductCounts = dealFilters?.productCounts ?? {};
+  const sourceBannerQuery = useQuery({
+    queryKey: ["shop-source-banner", sourceBanner?.id],
+    queryFn: () => fetchShopSourceBanner(sourceBanner!.id),
+    enabled: Boolean(sourceBanner),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+  const staticSourceBanner = sourceBannerQuery.data && sourceBanner
+    && Boolean(sourceBannerQuery.data.desktopImage)
+    && isActiveShopSourceBanner(sourceBannerQuery.data, sourceBanner)
+    ? sourceBannerQuery.data
+    : undefined;
+  const showsSourceBannerSlot = Boolean(sourceBanner) && (
+    sourceBannerQuery.isLoading || Boolean(staticSourceBanner)
+  );
   const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["catalog", filters],
     queryFn: () => fetchCatalog(filters),
     placeholderData: (previous) => previous,
   });
+  const visibleSortOptions = filters.search
+    ? sortOptions
+    : sortOptions.filter((option) => option.value !== "relevance");
   const chips = [
     filters.search && {
       key: "search",
@@ -524,18 +598,16 @@ const Shop = () => {
       update: { minRating: undefined },
     },
     filters.hasDeal &&
-      filters.dealId === undefined && {
+      filters.dealIds.length === 0 && {
         key: "deal",
         label: "Deals only",
         update: { hasDeal: undefined },
       },
-    filters.dealId !== undefined && {
-      key: `deal-${filters.dealId}`,
-      label:
-        deals.find((deal) => deal.id === filters.dealId)?.name ??
-        `Deal ${filters.dealId}`,
-      update: { dealId: undefined },
-    },
+    ...filters.dealIds.map((id) => ({
+      key: `deal-${id}`,
+      label: deals.find((deal) => deal.id === id)?.name ?? `Deal ${id}`,
+      update: { dealIds: filters.dealIds.filter((dealId) => dealId !== id) },
+    })),
   ].filter(Boolean) as Array<{
     key: string;
     label: string;
@@ -543,14 +615,32 @@ const Shop = () => {
   }>;
   const submitSearch = (event: FormEvent) => {
     event.preventDefault();
-    updateFilters({ search: searchInput.trim() });
+    const search = normalizeSearchTerm(searchInput);
+    updateFilters({ search, sort: search ? "relevance" : "newest" });
   };
 
   return (
     <>
       <Navbar />
       <div className="catalog-showcase">
-        <ProductBannerSlider />
+        {showsSourceBannerSlot ? (
+          staticSourceBanner ? (
+            <div className="shop-source-banner">
+              <ResponsiveBanner
+                type="hero"
+                desktopImageUrl={staticSourceBanner.desktopImage ?? ""}
+                mobileImageUrl={staticSourceBanner.mobileImage}
+                altText={staticSourceBanner.name}
+                priority
+                className="shop-source-banner__media"
+              />
+            </div>
+          ) : (
+            <div className="shop-source-banner shop-source-banner--loading" aria-busy="true" />
+          )
+        ) : (
+          <ProductBannerSlider />
+        )}
         <CategorySlider />
       </div>
       <main className="catalog-page">
@@ -575,6 +665,7 @@ const Shop = () => {
                   onChange={(event) => setSearchInput(event.target.value)}
                   placeholder="Search products"
                   aria-label="Search products"
+                  maxLength={80}
                 />
                 <button type="submit">Search</button>
               </form>
@@ -590,7 +681,7 @@ const Shop = () => {
                     updateFilters({ sort: event.target.value as CatalogSort })
                   }
                 >
-                  {sortOptions.map((option) => (
+                  {visibleSortOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -667,6 +758,9 @@ const Shop = () => {
           <Dialog.Content className="catalog-sheet catalog-sheet--filter">
             <div className="catalog-sheet__header">
               <Dialog.Title>Filter products</Dialog.Title>
+              <Dialog.Description className="catalog-sheet__description">
+                Refine the products shown in the shop.
+              </Dialog.Description>
               <Dialog.Close asChild>
                 <button
                   className="catalog-sheet__close"
@@ -697,6 +791,9 @@ const Shop = () => {
           <Dialog.Content className="catalog-sheet catalog-sheet--sort">
             <div className="catalog-sheet__header">
               <Dialog.Title>Sort products</Dialog.Title>
+              <Dialog.Description className="catalog-sheet__description">
+                Choose how the products are ordered.
+              </Dialog.Description>
               <Dialog.Close asChild>
                 <button
                   className="catalog-sheet__close"
@@ -707,7 +804,7 @@ const Shop = () => {
               </Dialog.Close>
             </div>
             <div className="catalog-sheet__body catalog-sheet__body--sort">
-              {sortOptions.map((option) => (
+              {visibleSortOptions.map((option) => (
                 <button
                   key={option.value}
                   className={

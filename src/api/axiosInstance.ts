@@ -41,13 +41,9 @@ export const setupAxiosInterceptors = (
         config.headers.Authorization = `Bearer ${token}`;
         //("Axios interceptor - Authorization header set:", config.headers.Authorization);
       } else {
-        console.warn(
-          "Axios interceptor - No token available for request:",
-          config.url,
-        );
         if (config.headers) {
-          delete (config.headers as any).Authorization;
-          delete (config.headers as any).authorization;
+          Reflect.deleteProperty(config.headers, "Authorization");
+          Reflect.deleteProperty(config.headers, "authorization");
         }
       }
 

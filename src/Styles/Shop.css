@@ -22,6 +22,10 @@
   border-radius: inherit;
 }
 
+.shop-source-banner--loading {
+  background: #e7ebef;
+}
+
 /* The product banner is full-bleed edge-to-edge on phones, so the top
    padding here just shows as a gray strip above it. Remove it. */
 @media (max-width: 767px) {
@@ -1777,9 +1781,20 @@
   border-radius: 0;
 }
 .catalog-toolbar__result {
-  padding: 0 6px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  min-height: 38px;
+  padding: 0 11px;
+  border: 1px solid #fed0b4;
+  border-radius: 999px;
+  background: #fff7f2;
   font-weight: 600;
   color: #4b5563;
+}
+.catalog-toolbar__result strong {
+  color: #d95817;
+  font-size: 16px;
 }
 .catalog-toolbar__sort {
   min-height: 42px;
@@ -1845,13 +1860,66 @@
   background: #fff7f2;
   color: #9a3d0e;
 }
-.catalog-control input {
+.catalog-control input[type="checkbox"],
+.catalog-control input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
   flex: 0 0 16px;
   width: 16px;
   height: 16px;
   margin: 0;
-  accent-color: #f97316;
+  border: 2px solid #8b959f;
+  background: #fff;
   cursor: pointer;
+  display: grid;
+  place-content: center;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+.catalog-control input[type="checkbox"] {
+  border-radius: 4px;
+}
+.catalog-control input[type="radio"] {
+  border-radius: 50%;
+}
+.catalog-control input[type="checkbox"]::before,
+.catalog-control input[type="radio"]::before {
+  content: "";
+  display: block;
+  transform: scale(0);
+  transition: transform 0.14s ease;
+}
+.catalog-control input[type="checkbox"]::before {
+  width: 7px;
+  height: 4px;
+  border: solid #fff;
+  border-width: 0 0 2px 2px;
+  transform: rotate(-45deg) scale(0);
+}
+.catalog-control input[type="radio"]::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff7a2f;
+}
+.catalog-control input[type="checkbox"]:checked {
+  border-color: #ff7a2f;
+  background: #ff7a2f;
+}
+.catalog-control input[type="radio"]:checked {
+  border-color: #ff7a2f;
+}
+.catalog-control input[type="checkbox"]:checked::before {
+  transform: rotate(-45deg) scale(1);
+}
+.catalog-control input[type="radio"]:checked::before {
+  transform: scale(1);
+}
+.catalog-control input[type="checkbox"]:focus-visible,
+.catalog-control input[type="radio"]:focus-visible {
+  outline: 3px solid rgba(255, 122, 47, 0.22);
+  outline-offset: 2px;
 }
 .catalog-control span {
   overflow-wrap: anywhere;
@@ -1935,7 +2003,7 @@
   border-radius: 16px 16px 0 0;
 }
 .catalog-sheet__close {
-  border-radius: 50%;
+  border-radius: 20%;
   background: #f4f6f8;
 }
 .catalog-sheet__close:hover {
@@ -2745,7 +2813,7 @@
 
 .catalog-control--deal {
   display: grid !important;
-  grid-template-columns: 16px minmax(0, 1fr) auto auto;
+  grid-template-columns: 18px minmax(0, 1fr) auto auto;
   column-gap: 8px;
 }
 
@@ -2848,7 +2916,62 @@
   }
 }
 
-/* Radio controls: hard reset leaked global input styles. */
+/* Filter controls: keep legacy global input rules out of catalog UI. */
+.catalog-control input[type="checkbox"] {
+  all: unset !important;
+  position: absolute !important;
+  top: calc(50% - 9px) !important;
+  left: 7px !important;
+  z-index: 1 !important;
+  width: 18px !important;
+  height: 18px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  cursor: pointer;
+  transform: none !important;
+}
+
+.catalog-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.catalog-control__checkbox {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  place-items: center;
+  border: 1.5px solid #b8c1ca;
+  border-radius: 5px;
+  background: #fff;
+  color: transparent;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease;
+}
+
+.catalog-control__checkbox svg {
+  display: block;
+}
+
+.catalog-control input[type="checkbox"]:checked + .catalog-control__checkbox {
+  border-color: #f97316;
+  background: #f97316;
+  color: #fff;
+}
+
+.catalog-control
+  input[type="checkbox"]:focus-visible
+  + .catalog-control__checkbox {
+  outline: 3px solid rgba(249, 115, 22, 0.18) !important;
+  outline-offset: 2px;
+}
+
 .catalog-control input[type="radio"] {
   all: unset !important;
   box-sizing: border-box !important;
@@ -2887,6 +3010,17 @@
 }
 
 .catalog-control--deal {
-  grid-template-columns: 16px minmax(0, 1fr) auto auto !important;
+  grid-template-columns: 18px minmax(0, 1fr) auto auto !important;
   align-items: center;
+}
+.catalog-sheet__description {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

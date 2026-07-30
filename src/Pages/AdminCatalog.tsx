@@ -139,7 +139,7 @@ const AdminCatalog = () => {
 			// the search term to the backend (same param the admin products
 			// page and navbar search already use) so the picker can actually
 			// reach the full catalog instead of just its first page.
-			const params = new URLSearchParams({ limit: "100" });
+			const params = new URLSearchParams({ limit: "48" });
 			if (search?.trim()) params.set("search", search.trim());
 			const response = await fetch(
 				`${API_BASE_URL}/api/categories/all/products?${params.toString()}`,

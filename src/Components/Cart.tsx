@@ -19,7 +19,7 @@ import "../Styles/Cart.css";
 interface CartProps {
   cartOpen: boolean;
   toggleCart: (e?: React.MouseEvent) => void;
-  cartButtonRef: React.RefObject<HTMLAnchorElement>;
+  cartButtonRef: React.RefObject<HTMLElement>;
   stableCartItems: any[];
 }
 

@@ -87,6 +87,13 @@ export const getDiscountDisplay = ({
     }
   }
 
+  // Deal prices are persisted in finalPrice while product-level discount
+  // fields remain empty. Display their actual saving from the same price pair.
+  if (savingsAmount === 0 && base > final) {
+    savingsAmount = Math.round((base - final) * 100) / 100;
+    percentToShow = (savingsAmount / base) * 100;
+  }
+
   const hasDiscount = base > 0 && savingsAmount > 0;
 
   if (!hasDiscount) {
