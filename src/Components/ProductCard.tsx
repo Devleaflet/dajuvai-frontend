@@ -15,6 +15,8 @@ import { getProductPrimaryImage } from "../utils/getProductPrimaryImage";
 import { getDiscountDisplay } from "../utils/priceDisplay";
 import { toast } from "react-hot-toast";
 import { API_BASE_URL } from "../config";
+import AgeRestrictionModal from "./AgeRestrictionModal";
+import { getAgeDecision, saveAgeDecision } from "../utils/ageRestrictionSession";
 interface ProductCardProps {
   product: Product;
 }
@@ -34,9 +36,19 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
+  const [showAgeModal, setShowAgeModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<null | (() => void)>(null);
 
   const navigate = useNavigate();
   const { title, description, rating, ratingCount, id } = product;
+  const minimumAge = product.ageRestriction?.minimumAge ?? 18;
+  const requestAgeConfirmation = (action: () => void) => {
+    const decision = product.ageRestriction?.isRestricted ? getAgeDecision(minimumAge) : "accepted";
+    if (decision === "accepted") { action(); return; }
+    if (decision === "declined") return;
+    setPendingAction(() => action);
+    setShowAgeModal(true);
+  };
 
   // Gate on hasVariants, not just array presence — a product just converted
   // to non-variant can still have orphaned variant rows in the DB (kept
@@ -253,7 +265,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     }
 
     // Navigate first
-    navigate(`/product-page/${product.id}`);
+    requestAgeConfirmation(() => navigate(`/product-page/${product.id}`));
 
     // Then FORCE scroll to top on next tick (beats React Router restoration)
     setTimeout(() => {
@@ -420,7 +432,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   setAuthModalOpen(true);
                   return;
                 }
-                handleCartOnAdd(product, 1, variantId);
+                requestAgeConfirmation(() => handleCartOnAdd(product, 1, variantId));
               }}
             >
               <FaCartPlus
@@ -485,6 +497,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           setAuthModalOpen(false);
         }}
       />
+      {showAgeModal && <AgeRestrictionModal minimumAge={minimumAge} message={product.ageRestriction?.restrictionMessage ?? undefined} onConfirm={() => { saveAgeDecision(minimumAge, "accepted"); setShowAgeModal(false); pendingAction?.(); setPendingAction(null); }} onDecline={() => { saveAgeDecision(minimumAge, "declined"); setShowAgeModal(false); setPendingAction(null); }} />}
     </div>
   );
 };

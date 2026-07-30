@@ -445,7 +445,10 @@ const Navbar: React.FC = () => {
 		// Subcategories come straight from the MEGA_MENU placement data already
 		// loaded into `categories` - not a separate fetch - so the order here is
 		// always exactly what's arranged in the admin panel.
-		const subcategories: CategoryItem[] = category.items ?? [];
+		const subcategories: CategoryItem[] = (category.items ?? []).map((item) => ({
+			...item,
+			link: `/shop?categoryId=${category.id}&subcategoryId=${item.id}`,
+		}));
 
 		return (
 			<div className="navbar__dropdown-content">

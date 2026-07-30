@@ -168,7 +168,7 @@ const ProductList: React.FC<ProductListProps> = ({
                             } else {
                                 const val =
                                     typeof product.price === "string"
-                                        ? parseFloat(product.finalPrice)
+									? parseFloat(String(product.finalPrice))
                                         : Number(product.finalPrice);
                                 displayPrice = isNaN(val) ? null : val;
                             }

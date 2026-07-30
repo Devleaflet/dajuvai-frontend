@@ -22,6 +22,8 @@ import {
     calculatePricingPreview,
     normalizeDiscountType,
 } from "../../utils/productPricing";
+import { requiresVariantArchiveConfirmation } from "../../utils/variantArchive";
+import ArchiveVariantModal from "./ArchiveVariantModal";
 
 export enum InventoryStatus {
     AVAILABLE = "AVAILABLE",
@@ -84,6 +86,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
     // Variant state
     const [variants, setVariants] = useState<ProductVariant[]>([]);
+    const [variantIndexToArchive, setVariantIndexToArchive] = useState<number | null>(null);
     const [newAttribute, setNewAttribute] = useState<Attribute>({
         type: "",
         values: [{ value: "", nestedAttributes: [] }],
@@ -593,7 +596,21 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     };
 
     const removeVariant = (index: number) => {
+        const variant = variants[index];
+        if (
+            variant &&
+            requiresVariantArchiveConfirmation(variant)
+        ) {
+            setVariantIndexToArchive(index);
+            return;
+        }
         setVariants(variants.filter((_, i) => i !== index));
+    };
+
+    const confirmVariantArchive = () => {
+        if (variantIndexToArchive === null) return;
+        setVariants((current) => current.filter((_, index) => index !== variantIndexToArchive));
+        setVariantIndexToArchive(null);
     };
 
     const updateVariant = (
@@ -938,6 +955,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     };
 
     const handleClose = () => {
+        setVariantIndexToArchive(null);
         setFormData({
             name: "",
             description: "",
@@ -2160,6 +2178,16 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     </form>
                 </div>
             </div>
+            <ArchiveVariantModal
+                show={variantIndexToArchive !== null}
+                sku={
+                    variantIndexToArchive === null
+                        ? ""
+                        : variants[variantIndexToArchive]?.sku || "Selected variant"
+                }
+                onClose={() => setVariantIndexToArchive(null)}
+                onConfirm={confirmVariantArchive}
+            />
         </div>
     );
 };

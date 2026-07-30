@@ -586,7 +586,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.52);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -595,21 +595,56 @@
 
 .admin-categories__modal {
   background: white;
-  padding: 20px;
-  border-radius: 8px;
-  width: 400px;
-  max-width: 90%;
+  padding: 24px;
+  border-radius: 12px;
+  width: min(520px, calc(100vw - 32px));
+  max-height: min(680px, calc(100vh - 32px));
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.25);
+}
+
+.admin-categories__modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .admin-categories__modal h2 {
-  margin-top: 0;
+  margin: 0;
+  color: #111827;
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.admin-categories__modal-header p {
+  margin: 8px 0 0;
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.admin-categories__selection-count {
+  flex-shrink: 0;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #fff1e8;
+  color: #c2410c;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .admin-categories__modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
 }
 
 .admin-categories__modal-actions button {
@@ -644,21 +679,111 @@
 }
 
 .admin-categories__homepage-selection {
-  max-height: 300px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 330px;
   overflow-y: auto;
-  margin-bottom: 20px;
+  margin: 16px -4px 0;
+  padding: 4px;
 }
 
 .admin-categories__checkbox-label {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px;
+  gap: 11px;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: #fff;
+  color: #1f2937;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.admin-categories__checkbox-label input {
-  margin: 0;
+.admin-categories__checkbox-label:hover {
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.admin-categories__checkbox-label--selected {
+  background: #fff7ed;
+  border-color: #fdba74;
+  color: #9a3412;
+}
+
+.admin-categories__checkbox-label input[type="checkbox"] {
+  position: absolute;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  opacity: 0;
+}
+
+.admin-categories__checkbox-control {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  box-sizing: border-box;
+  border: 2px solid #cbd5e1;
+  border-radius: 5px;
+  background: #fff;
+}
+
+.admin-categories__checkbox-label input:checked + .admin-categories__checkbox-control {
+  border-color: #ff6b35;
+  background: #ff6b35;
+}
+
+.admin-categories__checkbox-label input:checked + .admin-categories__checkbox-control::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.admin-categories__checkbox-label input:focus-visible + .admin-categories__checkbox-control {
+  outline: 3px solid rgba(255, 107, 53, 0.25);
+  outline-offset: 2px;
+}
+
+.admin-categories__checkbox-label input:disabled ~ .admin-categories__checkbox-name {
+  color: #9ca3af;
+}
+
+.admin-categories__checkbox-label:has(input:disabled:not(:checked)) {
+  cursor: not-allowed;
+  background: #f9fafb;
+}
+
+.admin-categories__checkbox-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .admin-categories__modal {
+    padding: 20px;
+  }
+
+  .admin-categories__modal-header {
+    flex-direction: column;
+  }
+
+  .admin-categories__homepage-selection {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Change Image Button Styles */

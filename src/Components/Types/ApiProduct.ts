@@ -37,7 +37,7 @@ export const convertApiProductToDisplayProduct = (apiProduct: ApiProduct) => {
   } else {
     displayPrice = toNum(apiProduct.finalPrice ?? apiProduct.basePrice ?? 0);
     const baseNum = toNum(apiProduct.basePrice ?? 0);
-    if (apiProduct.discountAmount && apiProduct.discountAmount > 0 && baseNum > displayPrice) originalPrice = baseNum.toFixed(2);
+    if (Number(apiProduct.discountAmount) > 0 && baseNum > displayPrice) originalPrice = baseNum.toFixed(2);
   }
 
   return {

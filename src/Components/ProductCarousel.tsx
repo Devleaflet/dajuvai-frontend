@@ -13,7 +13,7 @@ import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
 
 interface ProductCarouselProps {
   title: string;
-  sectionId: number;
+	sectionId: string | number;
   products: Product[];
   scrollAmount?: number;
   showTitle?: boolean;

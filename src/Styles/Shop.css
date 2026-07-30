@@ -1978,6 +1978,13 @@
   background: #ff7a2f;
   color: #fff;
 }
+
+.catalog-filters__price-error {
+  margin: 7px 0 0;
+  color: #b42318;
+  font-size: 12px;
+  line-height: 1.35;
+}
 .catalog-chips {
   margin: 12px 0 16px;
   padding: 2px 0;

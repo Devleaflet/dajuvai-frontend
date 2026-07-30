@@ -8,6 +8,8 @@ import Navbar from "../Components/Navbar";
 import Footer from "../Components/Footer";
 import { Product as DisplayProduct } from "../Components/Types/Product";
 import { FiMail, FiMapPin, FiSearch } from "react-icons/fi";
+import AgeRestrictionModal from "../Components/AgeRestrictionModal";
+import { getAgeDecision, saveAgeDecision } from "../utils/ageRestrictionSession";
 
 interface ApiProduct {
 	id: number;
@@ -33,6 +35,7 @@ interface ApiProduct {
 		variantImages?: string[];
 		stock: number | null;
 	}>;
+	ageRestriction?: { isRestricted: boolean; minimumAge: number | null; };
 	subcategory: {
 		id: number;
 		name: string;
@@ -81,6 +84,9 @@ const VendorStore: React.FC = () => {
 	const [sortBy, setSortBy] = useState<
 		"relevance" | "price_asc" | "price_desc" | "name_asc" | "name_desc"
 	>("relevance");
+	const [showAgeModal, setShowAgeModal] = useState(false);
+	const [hideRestricted, setHideRestricted] = useState(false);
+	const [minimumAge, setMinimumAge] = useState(18);
 
 	useEffect(() => {
 		const fetchVendorProducts = async () => {
@@ -145,6 +151,7 @@ const VendorStore: React.FC = () => {
 								originalPrice,
 								discountAmount: discountAmount,
 								discountPercent: discountPercent,
+								discount: Number(product.discount ?? 0),
 								hasVariants: product.hasVariants,
 								deal: null,
 								// Map rating info from backend if present
@@ -186,11 +193,20 @@ const VendorStore: React.FC = () => {
 										? "OUT_OF_STOCK"
 										: product.status === "LOW_STOCK"
 											? "LOW_STOCK"
-											: "AVAILABLE",
+										: "AVAILABLE",
+								ageRestriction: product.ageRestriction,
 							};
 						}
 					);
 					setVendorProducts(transformedProducts);
+					const restrictedAges = transformedProducts.filter(p => p.ageRestriction?.isRestricted).map(p => p.ageRestriction?.minimumAge ?? 18);
+					if (restrictedAges.length) {
+						const age = Math.max(...restrictedAges);
+						setMinimumAge(age);
+						const decision = getAgeDecision(age);
+						setHideRestricted(decision === "declined");
+						setShowAgeModal(decision === null);
+					}
 					setTotalProducts(response.data.data.total);
 				}
 			} catch (error) {
@@ -209,7 +225,7 @@ const VendorStore: React.FC = () => {
 		}
 	};
 
-	const filteredProducts = vendorProducts.filter((p) => {
+	const filteredProducts = (hideRestricted ? vendorProducts.filter(p => !p.ageRestriction?.isRestricted) : vendorProducts).filter((p) => {
 		const q = searchTerm.trim().toLowerCase();
 		if (!q) return true;
 		const title = (p.title || p.name || "").toLowerCase();
@@ -390,6 +406,7 @@ const VendorStore: React.FC = () => {
 
 	return (
 		<>
+			{showAgeModal && <AgeRestrictionModal minimumAge={minimumAge} onConfirm={() => { saveAgeDecision(minimumAge, "accepted"); setHideRestricted(false); setShowAgeModal(false); }} onDecline={() => { saveAgeDecision(minimumAge, "declined"); setHideRestricted(true); setShowAgeModal(false); }} />}
 			<Navbar />
 			<div className="vendor-store">
 				<header className="vendor-store__header">
@@ -527,7 +544,7 @@ const VendorStore: React.FC = () => {
 							</div>
 						) : (
 							<div className="no-products">
-								<p>No products match your search.</p>
+								<p>{hideRestricted && vendorProducts.length > 0 ? "Age-restricted products are hidden until you confirm the age requirement." : "No products match your search."}</p>
 							</div>
 						)}
 

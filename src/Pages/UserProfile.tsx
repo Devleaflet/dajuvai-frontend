@@ -1126,7 +1126,7 @@ const UserProfile: React.FC = () => {
                                                             />
                                                             <div className="order-mobile-product__info">
                                                                 <span className="order-mobile-product__name">
-                                                                    {first?.name ||
+                                                                    {first?.productNameSnapshot || first?.product?.name ||
                                                                         "Product"}
                                                                     {order
                                                                         .orderItems

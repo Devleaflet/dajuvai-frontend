@@ -106,7 +106,13 @@ const sortOptions: Array<{ value: CatalogSort; label: string }> = [
 ];
 
 const toCardProduct = (raw: RawCatalogProduct): Product => {
-  const variant = raw.hasVariants ? raw.variants?.[0] : undefined;
+  const variant = raw.hasVariants
+    ? [...(raw.variants ?? [])].sort((left, right) => {
+        const leftPrice = Number(left.finalPrice ?? left.basePrice ?? Number.POSITIVE_INFINITY);
+        const rightPrice = Number(right.finalPrice ?? right.basePrice ?? Number.POSITIVE_INFINITY);
+        return leftPrice - rightPrice;
+      })[0]
+    : undefined;
   const finalPrice = Number(
     raw.effectivePrice ??
       raw.finalPrice ??
@@ -153,8 +159,14 @@ const fetchCatalog = async (
   if (!response.ok) throw new Error("Could not load products. Please retry.");
 
   const page = (await response.json()) as CatalogResponse;
-  const cacheKey = catalogFiltersToSearchParams({ ...filters, page: 1 }).toString();
-  if (!catalogPageCache.has(cacheKey) && catalogPageCache.size >= MAX_CATALOG_CACHE_KEYS) {
+  const cacheKey = catalogFiltersToSearchParams({
+    ...filters,
+    page: 1,
+  }).toString();
+  if (
+    !catalogPageCache.has(cacheKey) &&
+    catalogPageCache.size >= MAX_CATALOG_CACHE_KEYS
+  ) {
     catalogPageCache.delete(catalogPageCache.keys().next().value as string);
   }
   const pages = catalogPageCache.get(cacheKey) ?? new Map<number, Product[]>();
@@ -209,6 +221,7 @@ const FilterPanel = ({
 }: FilterPanelProps) => {
   const [minPrice, setMinPrice] = useState(filters.minPrice?.toString() ?? "");
   const [maxPrice, setMaxPrice] = useState(filters.maxPrice?.toString() ?? "");
+  const [priceError, setPriceError] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
   const [expandedCategories, setExpandedCategories] = useState<Set<number>>(
     () => new Set(filters.categoryIds),
@@ -265,8 +278,15 @@ const FilterPanel = ({
     if (
       (min !== undefined && (!Number.isFinite(min) || min < 0)) ||
       (max !== undefined && (!Number.isFinite(max) || max < 0))
-    )
+    ) {
+      setPriceError("Enter valid non-negative prices.");
       return;
+    }
+    if (min !== undefined && max !== undefined && min > max) {
+      setPriceError("Minimum price cannot exceed maximum price.");
+      return;
+    }
+    setPriceError("");
     onChange({ minPrice: min, maxPrice: max });
   };
   const toggleCategoryExpanded = (categoryId: number) => {
@@ -358,7 +378,10 @@ const FilterPanel = ({
                       toggleSubcategory(category.id, subcategory.id)
                     }
                   />
-                  <span className="catalog-control__checkbox" aria-hidden="true">
+                  <span
+                    className="catalog-control__checkbox"
+                    aria-hidden="true"
+                  >
                     <Check size={12} strokeWidth={3} />
                   </span>
                   <span>{subcategory.name}</span>
@@ -393,6 +416,7 @@ const FilterPanel = ({
         >
           Apply price
         </button>
+        {priceError && <p className="catalog-filters__price-error" role="alert">{priceError}</p>}
       </section>
       <section className="catalog-filters__section">
         <h3>Deals</h3>
@@ -428,7 +452,10 @@ const FilterPanel = ({
                     checked={filters.dealIds.includes(deal.id)}
                     onChange={() => toggleDeal(deal.id)}
                   />
-                  <span className="catalog-control__checkbox" aria-hidden="true">
+                  <span
+                    className="catalog-control__checkbox"
+                    aria-hidden="true"
+                  >
                     <Check size={12} strokeWidth={3} />
                   </span>
                   <span>{deal.name}</span>
@@ -540,14 +567,16 @@ const Shop = () => {
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
-  const staticSourceBanner = sourceBannerQuery.data && sourceBanner
-    && Boolean(sourceBannerQuery.data.desktopImage)
-    && isActiveShopSourceBanner(sourceBannerQuery.data, sourceBanner)
-    ? sourceBannerQuery.data
-    : undefined;
-  const showsSourceBannerSlot = Boolean(sourceBanner) && (
-    sourceBannerQuery.isLoading || Boolean(staticSourceBanner)
-  );
+  const staticSourceBanner =
+    sourceBannerQuery.data &&
+    sourceBanner &&
+    Boolean(sourceBannerQuery.data.desktopImage) &&
+    isActiveShopSourceBanner(sourceBannerQuery.data, sourceBanner)
+      ? sourceBannerQuery.data
+      : undefined;
+  const showsSourceBannerSlot =
+    Boolean(sourceBanner) &&
+    (sourceBannerQuery.isLoading || Boolean(staticSourceBanner));
   const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["catalog", filters],
     queryFn: () => fetchCatalog(filters),
@@ -636,7 +665,10 @@ const Shop = () => {
               />
             </div>
           ) : (
-            <div className="shop-source-banner shop-source-banner--loading" aria-busy="true" />
+            <div
+              className="shop-source-banner shop-source-banner--loading"
+              aria-busy="true"
+            />
           )
         ) : (
           <ProductBannerSlider />
@@ -669,12 +701,13 @@ const Shop = () => {
                 />
                 <button type="submit">Search</button>
               </form>
-              <div className="catalog-toolbar__result" aria-live="polite">
+              {/* products count */}
+              {/* <div className="catalog-toolbar__result" aria-live="polite">
                 <strong>{data?.meta.total ?? 0}</strong>
                 <span>products</span>
-              </div>
+              </div> */}
               <label className="catalog-toolbar__sort">
-                Sort{" "}
+                Sort By{" "}
                 <select
                   value={filters.sort}
                   onChange={(event) =>

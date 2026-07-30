@@ -497,7 +497,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 					role: response.data.data.role,
 					username: response.data.data.email.split("@")[0],
 					isVerified: true,
-					profilePicture: response.data.data.profilePicture,
+					profilePicture: (response.data.data as { profilePicture?: string }).profilePicture,
 				};
 
 				login(response.data.token, userData, response.data.refreshToken);
@@ -579,11 +579,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 		if (!validateForm()) {
 			toast.error("Please fix the errors in the form", {
 				position: "top-right",
-				autoClose: 5000,
-				hideProgressBar: false,
-				closeOnClick: true,
-				pauseOnHover: true,
-				draggable: true,
+				duration: 5000,
 			});
 			return;
 		}
@@ -608,7 +604,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 		if (!validateResetForm()) {
 			toast.error("Please fix the errors in the form", {
 				position: "top-right",
-				autoClose: 5000,
+				duration: 5000,
 			});
 			return;
 		}
@@ -640,7 +636,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 		if (!validateResetForm()) {
 			toast.error("Please fix the errors in the form", {
 				position: "top-right",
-				autoClose: 5000,
+				duration: 5000,
 			});
 			return;
 		}

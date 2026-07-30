@@ -24,6 +24,17 @@ interface HomepageSection {
 	products: Product[];
 }
 
+interface HomepageSectionPayload {
+	title: string;
+	isActive: boolean;
+	productSource: string;
+	productIds?: number[];
+	selectedDealId?: number;
+	selectedCategoryId?: number;
+	selectedSubcategoryId?: number;
+	sectionId?: number;
+}
+
 interface Category {
 	id: number;
 	name: string;
@@ -275,7 +286,7 @@ const AdminCatalog = () => {
 
 	const handleSaveHomepageSection = async () => {
 		try {
-			let payload = {
+			const payload: HomepageSectionPayload = {
 				title: modalTitle,
 				isActive: modalIsActive,
 				productSource: selectedProductSource,

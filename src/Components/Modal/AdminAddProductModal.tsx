@@ -233,7 +233,7 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
         discount: formData.discount || null,
         discountType: formData.discountType || null,
         size: formData.size || [],
-        status: formData.status || 'AVAILABLE',
+        status: formData.status === 'OUT_OF_STOCK' ? 'OUT_OF_STOCK' : 'AVAILABLE',
         productImages: formData.productImages,
         categoryId: formData.categoryId,
         subcategoryId: formData.subcategoryId,
@@ -242,6 +242,7 @@ const AdminAddProductModal: React.FC<AdminAddProductModalProps> = ({ show, onClo
         dealId: formData.dealId || null,
         inventory: formData.inventory || [],
         vendorId: String(selectedVendorId),
+        hasVariants: false,
       };
 
       //("AdminAddProductModal - Sending payload:", productData);

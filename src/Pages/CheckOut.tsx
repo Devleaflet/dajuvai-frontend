@@ -298,7 +298,9 @@ const Checkout: React.FC = () => {
 		handleDecreaseQuantity,
 		setCartItems,
 	} = useCart();
-	let cartItems: CartItem[] = contextCartItems;
+	// CartContext and checkout use compatible runtime shapes with separate legacy
+	// TypeScript declarations; normalize at this boundary before checkout logic.
+	let cartItems: CartItem[] = contextCartItems as unknown as CartItem[];
 
 	// State for managing Buy Now quantities
 	const [buyNowQuantities, setBuyNowQuantities] = useState<{
@@ -413,6 +415,8 @@ const Checkout: React.FC = () => {
 	if (checkoutSnapshotActive) {
 		cartItems = submittedCheckoutItems;
 	}
+	const hasAgeRestrictedItems = cartItems.some((item: any) => Boolean(item?.product?.ageRestriction?.isRestricted || item?.ageRestriction?.isRestricted));
+	const ageRestrictedAcknowledged = hasAgeRestrictedItems && termsAgreed;
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -777,6 +781,12 @@ const Checkout: React.FC = () => {
 			setIsPlacingOrder(false);
 			return;
 		}
+		if (hasAgeRestrictedItems && !ageRestrictedAcknowledged) {
+			setAlertMessage('Confirm age-restricted delivery requirement before placing this order.');
+			setShowAlert(true);
+			setIsPlacingOrder(false);
+			return;
+		}
 
 		if (cartItems.length === 0) {
 			setAlertMessage('Your cart is empty');
@@ -815,6 +825,7 @@ const Checkout: React.FC = () => {
 					phoneNumber: billingDetails.phoneNumber,
 					fullName: billingDetails.fullName,
 					idempotencyKey,
+					ageRestrictedAcknowledged,
 				};
 
 				if (!orderData.variantId) {
@@ -841,6 +852,7 @@ const Checkout: React.FC = () => {
 					items: orderItems,
 					promoCode: enteredPromoCode || undefined,
 					idempotencyKey,
+					ageRestrictedAcknowledged,
 				};
 			}
 
@@ -1028,6 +1040,7 @@ const Checkout: React.FC = () => {
 		return getDiscountDisplay({
 			basePrice: getItemOriginalPrice(item),
 			finalPrice: Number(item.price),
+			discount: item.variant?.discount ?? item.product?.discount ?? null,
 			discountAmount,
 			discountPercent,
 			discountType,
@@ -2019,7 +2032,7 @@ const Checkout: React.FC = () => {
 							described in our privacy policy.
 						</p>
 
-						{/* Updated Terms Checkbox - Removed onClick from label, rely on input's onChange */}
+						{/* One acknowledgement controls terms and age-restricted delivery. */}
 						<label
 							className="checkout-container__terms-checkbox"
 							htmlFor="terms-checkbox"
@@ -2047,7 +2060,9 @@ const Checkout: React.FC = () => {
 									>
 										terms and conditions
 									</button>{' '}
-									*
+									*{hasAgeRestrictedItems && (
+										<span className="checkout-container__age-note">Age-restricted delivery: eligible recipient must present valid identification. Unattended delivery is not available.</span>
+									)}
 								</span>
 							</span>
 						</label>
@@ -2058,11 +2073,10 @@ const Checkout: React.FC = () => {
 								{errors.terms}
 							</div>
 						)}
-
 						<button
 							className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''
 								}`}
-							disabled={!termsAgreed || isPlacingOrder}
+							disabled={!termsAgreed || (hasAgeRestrictedItems && !ageRestrictedAcknowledged) || isPlacingOrder}
 							onClick={handlePlaceOrder}
 						>
 							{isPlacingOrder ? (

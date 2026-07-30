@@ -32,7 +32,7 @@ export function Notifications() {
   const formatTime = (dateString) => {
     const now = new Date();
     const date = new Date(dateString);
-    const diff = now - date;
+		const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / 60000);
     if (minutes < 1) return 'Just now';
     if (minutes < 60) return `${minutes} mins ago`;

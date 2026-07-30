@@ -441,18 +441,12 @@ const AdminBannerWithTabs = () => {
 
   const transformBanner = (banner: Banner): TransformedBanner => {
     // Extract categoryId and subcategoryId from the first product in selectedProducts
-    let selectedCategory: number | null = banner.selectedCategory || null;
-    if (typeof selectedCategory === 'object' && selectedCategory !== null) {
-      selectedCategory = selectedCategory.id;
-    }
-    let selectedSubcategory: number | null = banner.selectedSubcategory || null;
-    if (typeof selectedSubcategory === 'object' && selectedSubcategory !== null) {
-      selectedSubcategory = selectedSubcategory.id;
-    }
-    let selectedDeal: number | null = banner.selectedDeal || banner.selectedDealId || null;
-    if (typeof selectedDeal === "object" && selectedDeal !== null) {
-      selectedDeal = selectedDeal.id;
-    }
+    const categoryValue = banner.selectedCategory;
+    let selectedCategory: number | null = typeof categoryValue === "number" ? categoryValue : categoryValue?.id ?? null;
+    const subcategoryValue = banner.selectedSubcategory;
+    let selectedSubcategory: number | null = typeof subcategoryValue === "number" ? subcategoryValue : subcategoryValue?.id ?? null;
+    const dealValue = banner.selectedDeal ?? banner.selectedDealId;
+    let selectedDeal: number | null = typeof dealValue === "number" ? dealValue : dealValue?.id ?? null;
 
     if (banner.productSource === "manual" && Array.isArray(banner.selectedProducts) && banner.selectedProducts.length > 0) {
       const firstProduct = banner.selectedProducts[0];

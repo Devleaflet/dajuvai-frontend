@@ -1,0 +1,9 @@
+.age-restriction-backdrop { position: fixed; inset: 0; z-index: 20000; display: grid; place-items: center; padding: 1rem; background: rgba(15, 23, 42, .68); }
+.age-restriction-dialog { box-sizing: border-box; width: min(100%, 34rem); min-height: 21rem; display: flex; flex-direction: column; justify-content: center; padding: 2.25rem; border-radius: 1.1rem; background: #fff; box-shadow: 0 24px 70px rgba(0,0,0,.35); }
+.age-restriction-dialog__eyebrow { color: #c2410c; font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.age-restriction-dialog h2 { margin: .5rem 0 .8rem; color: #111827; font-size: 1.65rem; }
+.age-restriction-dialog p { margin: 0; color: #4b5563; line-height: 1.65; }
+.age-restriction-dialog__actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
+.age-restriction-dialog button { border: 0; border-radius: .6rem; padding: .8rem 1rem; background: #ea580c; color: #fff; font-weight: 700; cursor: pointer; }
+.age-restriction-dialog__secondary { background: #e5e7eb !important; color: #1f2937 !important; }
+@media (max-width: 480px) { .age-restriction-dialog { min-height: 18rem; padding: 1.5rem; } .age-restriction-dialog__actions button { width: 100%; } }

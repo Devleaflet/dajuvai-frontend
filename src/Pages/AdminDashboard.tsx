@@ -619,7 +619,7 @@ export function AdminDashboard() {
 						x: {
 							ticks: {
 								callback: function (value, index) {
-									const label = this.getLabelForValue(value);
+									const label = String(this.getLabelForValue(Number(value)));
 									const maxLength = 15; // Adjust number of visible characters
 									return label.length > maxLength
 										? label.slice(0, maxLength) + '…'

@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "../config";
 import type { Vendor, VendorSignupRequest, VendorLoginRequest, ApiResponse, VendorUpdateRequest } from "../Components/Types/vendor";
+export type { VendorUpdateRequest } from "../Components/Types/vendor";
 
 export class VendorAuthService {
   private static async setAuthToken(token: string) {
@@ -61,7 +62,7 @@ export class VendorAuthService {
           success: true,
           vendor: {
             ...data.vendor,
-            district: data.vendor.district || { id: 0, name: data.vendor.district || "N/A" },
+            district: typeof data.vendor.district === "string" ? { id: 0, name: data.vendor.district } : data.vendor.district || { id: 0, name: "N/A" },
             status: data.vendor.isVerified ? "Active" : "Inactive",
             taxNumber: data.vendor.taxNumber || "N/A",
             taxDocuments: Array.isArray(data.vendor.taxDocuments) ? data.vendor.taxDocuments : data.vendor.taxDocuments ? [data.vendor.taxDocuments] : null,
@@ -172,7 +173,7 @@ export class VendorAuthService {
           success: true,
           vendor: {
             ...data.vendor,
-            district: data.vendor.district || { id: 0, name: data.vendor.district || "N/A" },
+            district: typeof data.vendor.district === "string" ? { id: 0, name: data.vendor.district } : data.vendor.district || { id: 0, name: "N/A" },
             status: data.vendor.isVerified ? "Active" : "Inactive",
             taxNumber: data.vendor.taxNumber || "N/A",
             taxDocuments: Array.isArray(data.vendor.taxDocuments) ? data.vendor.taxDocuments : data.vendor.taxDocuments ? [data.vendor.taxDocuments] : null,

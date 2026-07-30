@@ -31,6 +31,9 @@ interface Category {
     username: string;
   };
   subcategories?: Subcategory[];
+  isAgeRestricted?: boolean;
+  minimumAge?: number | null;
+  restrictionMessage?: string | null;
 }
 
 const CACHE_KEY = 'admin_categories';
@@ -54,11 +57,17 @@ const AdminCategory: React.FC = () => {
   const [newCategoryStatus, setNewCategoryStatus] = useState('Active');
   const [newCategoryImage, setNewCategoryImage] = useState<File | null>(null);
   const [newCategoryImagePreview, setNewCategoryImagePreview] = useState<string | null>(null);
+  const [newAgeRestricted, setNewAgeRestricted] = useState(false);
+  const [newMinimumAge, setNewMinimumAge] = useState(18);
+  const [newRestrictionMessage, setNewRestrictionMessage] = useState('');
   const [editCategoryName, setEditCategoryName] = useState('');
   const [editCategoryDescription, setEditCategoryDescription] = useState('');
   const [editCategoryStatus, setEditCategoryStatus] = useState('Active');
   const [editCategoryImage, setEditCategoryImage] = useState<File | null>(null);
   const [editCategoryImagePreview, setEditCategoryImagePreview] = useState<string | null>(null);
+  const [editAgeRestricted, setEditAgeRestricted] = useState(false);
+  const [editMinimumAge, setEditMinimumAge] = useState(18);
+  const [editRestrictionMessage, setEditRestrictionMessage] = useState('');
   const [newSubcategoryName, setNewSubcategoryName] = useState('');
   const [showEditSubcategoryModal, setShowEditSubcategoryModal] = useState<{ show: boolean; categoryId: number | null; subcategory: Subcategory | null }>({ show: false, categoryId: null, subcategory: null });
   const [showDeleteSubcategoryModal, setShowDeleteSubcategoryModal] = useState<{ show: boolean; categoryId: number | null; subcategory: Subcategory | null }>({ show: false, categoryId: null, subcategory: null });
@@ -160,6 +169,9 @@ const AdminCategory: React.FC = () => {
       formData.append('name', newCategoryName.trim());
       formData.append('description', newCategoryDescription.trim());
       formData.append('status', newCategoryStatus);
+      formData.append('isAgeRestricted', String(newAgeRestricted));
+      if (newAgeRestricted) formData.append('minimumAge', String(newMinimumAge));
+      if (newAgeRestricted && newRestrictionMessage.trim()) formData.append('restrictionMessage', newRestrictionMessage.trim());
       if (newCategoryImage) {
         formData.append('image', newCategoryImage);
       }
@@ -185,6 +197,7 @@ const AdminCategory: React.FC = () => {
         setNewCategoryStatus('Active');
         setNewCategoryImage(null);
         setNewCategoryImagePreview(null);
+        setNewAgeRestricted(false); setNewMinimumAge(18); setNewRestrictionMessage('');
         showToast('Category added successfully! 🎉', 'success');
       } else {
         showToast(data.message || 'Failed to add category', 'error');
@@ -198,12 +211,17 @@ const AdminCategory: React.FC = () => {
     e.preventDefault();
     if (!showEditModal.category) return;
     if (!editCategoryName.trim()) return showToast('Category name required', 'error');
+    if (editAgeRestricted && (!Number.isInteger(editMinimumAge) || editMinimumAge < 1)) return showToast('Minimum age must be a positive whole number', 'error');
+    if (!showEditModal.category.isAgeRestricted && editAgeRestricted && !window.confirm('Products in this category will require age confirmation. Continue?')) return;
 
     try {
       const formData = new FormData();
       formData.append('name', editCategoryName.trim());
       formData.append('description', editCategoryDescription.trim());
       formData.append('status', editCategoryStatus);
+      formData.append('isAgeRestricted', String(editAgeRestricted));
+      if (editAgeRestricted) formData.append('minimumAge', String(editMinimumAge));
+      if (editAgeRestricted && editRestrictionMessage.trim()) formData.append('restrictionMessage', editRestrictionMessage.trim());
       if (editCategoryImage) {
         formData.append('image', editCategoryImage);
       }
@@ -511,7 +529,7 @@ const AdminCategory: React.FC = () => {
                           <button
                             className="admin-category__edit-btn"
                             title="Edit"
-                            onClick={() => { setShowEditModal({ show: true, category }); setEditCategoryName(category.name); }}
+                            onClick={() => { setShowEditModal({ show: true, category }); setEditCategoryName(category.name); setEditAgeRestricted(Boolean(category.isAgeRestricted)); setEditMinimumAge(category.minimumAge || 18); setEditRestrictionMessage(category.restrictionMessage || ''); }}
                           >
                             <FiEdit2 />
                           </button>
@@ -616,6 +634,8 @@ const AdminCategory: React.FC = () => {
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
                 </select>
+                <label className="admin-category__age-toggle"><input type="checkbox" checked={newAgeRestricted} onChange={e => setNewAgeRestricted(e.target.checked)} /> Age-restricted category</label>
+                {newAgeRestricted && <><input type="number" min="1" value={newMinimumAge} onChange={e => setNewMinimumAge(Number(e.target.value))} placeholder="Minimum age" /><input type="text" value={newRestrictionMessage} onChange={e => setNewRestrictionMessage(e.target.value)} placeholder="Customer warning (optional)" /></>}
                 <div className="admin-category__image-upload">
                   <label className="admin-category__image-upload-label">
                     <input
@@ -684,6 +704,8 @@ const AdminCategory: React.FC = () => {
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
                 </select>
+                <label className="admin-category__age-toggle"><input type="checkbox" checked={editAgeRestricted} onChange={e => setEditAgeRestricted(e.target.checked)} /> Age-restricted category</label>
+                {editAgeRestricted && <><input type="number" min="1" value={editMinimumAge} onChange={e => setEditMinimumAge(Number(e.target.value))} placeholder="Minimum age" /><input type="text" value={editRestrictionMessage} onChange={e => setEditRestrictionMessage(e.target.value)} placeholder="Customer warning (optional)" /></>}
                 <div className="admin-category__image-upload">
                   <label className="admin-category__image-upload-label">
                     <input

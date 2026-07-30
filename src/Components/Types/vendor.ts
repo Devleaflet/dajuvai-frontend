@@ -72,6 +72,15 @@ export interface VendorSignupRequest {
 	businessRegNumber: string;
 	citizenshipDocuments?: string[] | null;
 	chequePhoto?: string;
+	bankDetails?: {
+		accountName?: string;
+		bankName?: string;
+		accountNumber?: string;
+		bankBranch?: string;
+		bankCode?: string;
+	};
+	businessAddress?: string;
+	profilePicture?: string;
 	paymentOptions?: PaymentOptionInput[];
 }
 
@@ -83,6 +92,7 @@ export interface VendorLoginRequest {
 export interface VendorUpdateRequest {
 	id: number;
 	businessName?: string;
+	email?: string;
 	phoneNumber?: string;
 	telePhone?: string;
 	isVerified?: boolean;

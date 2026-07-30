@@ -19,6 +19,8 @@ import "../Styles/ProductPage.css";
 import ScrollToTop from "../Components/ScrollToTop";
 import defaultProductImage from "../assets/logo.webp";
 import { getDiscountDisplay } from "../utils/priceDisplay";
+import AgeRestrictionModal from "../Components/AgeRestrictionModal";
+import { getAgeDecision, saveAgeDecision } from "../utils/ageRestrictionSession";
 
 const CACHE_KEY_REVIEWS = "productReviewsData";
 
@@ -87,6 +89,7 @@ const ProductPage = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [imageError, setImageError] = useState<boolean[]>([]);
   const [vendorAvatarError, setVendorAvatarError] = useState(false);
+  const [showAgeModal, setShowAgeModal] = useState(false);
   const [currentReviewPage, setCurrentReviewPage] = useState(1);
 
   const [isZoomActive, setIsZoomActive] = useState(false);
@@ -337,6 +340,7 @@ const ProductPage = () => {
                     stock: apiProduct.stock || defaultVariant?.stock || 0,
                     variants: allVariants,
                     hasVariants: apiProduct.hasVariants || false,
+                    ageRestriction: apiProduct.ageRestriction,
                     selectedVariant: defaultVariant,
                 },
                 vendorId: apiProduct.vendorId || null,
@@ -377,6 +381,16 @@ const ProductPage = () => {
   const productIsWishlisted = product
     ? hasWishlistItem(product.id, wishlistVariantId)
     : false;
+  const productMinimumAge = (product as any)?.ageRestriction?.minimumAge ?? 18;
+  const requireAgeConfirmation = (action: () => void) => {
+    if (!(product as any)?.ageRestriction?.isRestricted || getAgeDecision(productMinimumAge) === "accepted") { action(); return; }
+    if (getAgeDecision(productMinimumAge) === "declined") { navigate(-1); return; }
+    setShowAgeModal(true);
+  };
+
+  useEffect(() => {
+    if ((product as any)?.ageRestriction?.isRestricted && getAgeDecision(productMinimumAge) === null) setShowAgeModal(true);
+  }, [(product as any)?.ageRestriction?.isRestricted, productMinimumAge]);
 
   const effectiveCategoryId =
     categoryId ??
@@ -647,8 +661,7 @@ const ProductPage = () => {
       return;
     }
     if (!product) return;
-    const variantId = selectedVariant?.id;
-    handleCartOnAdd(product, quantity, variantId);
+    requireAgeConfirmation(() => handleCartOnAdd(product, quantity, selectedVariant?.id));
   };
 
   const handleAddToWishlist = async () => {
@@ -688,7 +701,7 @@ const ProductPage = () => {
       return;
     }
     if (!product) return;
-    navigate("/checkout", {
+    requireAgeConfirmation(() => navigate("/checkout", {
       state: {
         buyNow: true,
         products: [
@@ -713,7 +726,7 @@ const ProductPage = () => {
           },
         ],
       },
-    });
+    }));
   };
 
   const handleQuantityChange = (increment: boolean) => {
@@ -875,6 +888,7 @@ const ProductPage = () => {
 
     return (
         <div className="app">
+            {showAgeModal && (product as any)?.ageRestriction?.isRestricted && <AgeRestrictionModal minimumAge={productMinimumAge} message={(product as any)?.ageRestriction?.restrictionMessage ?? undefined} onConfirm={() => { saveAgeDecision(productMinimumAge, "accepted"); setShowAgeModal(false); }} onDecline={() => { saveAgeDecision(productMinimumAge, "declined"); setShowAgeModal(false); navigate(-1); }} />}
             <ScrollToTop />
             <Navbar />
             <div className="product-page-content">

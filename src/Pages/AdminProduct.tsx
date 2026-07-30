@@ -861,6 +861,7 @@ const AdminProduct: React.FC = () => {
         onDelete={handleDeleteProduct}
         productName={productToDelete?.name || "Product"}
         isLoading={isDeleting}
+        archiveProduct
       />
     </div>
   );
