@@ -77,6 +77,7 @@ export interface VendorOrderDetail {
   orderItems: OrderItem[];
   itemsSubtotal: number;
   discountAllocation: number;
+  appliedPromoCode: string | null;
   vendorPayable: number;
   ownShippingFee: number | null;
   ownShippingZone: "SAME_DISTRICT" | "CROSS_DISTRICT" | null;
@@ -432,6 +433,16 @@ const ViewModal: React.FC<ViewModalProps> = ({
                   </span>
                   <span className="order-summary-row__value">
                     - Rs. {orderDetail.discountAllocation.toFixed(2)}
+                  </span>
+                </div>
+              )}
+              {orderDetail.appliedPromoCode && (
+                <div className="order-summary-row">
+                  <span className="order-summary-row__label">
+                    Promo code ({orderDetail.appliedPromoCode})
+                  </span>
+                  <span className="order-summary-row__value">
+                    Included in discount
                   </span>
                 </div>
               )}

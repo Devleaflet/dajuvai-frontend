@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import ProductCard from "../Components/ProductCard";
@@ -9,7 +9,8 @@ import Footer from "../Components/Footer";
 import { Product as DisplayProduct } from "../Components/Types/Product";
 import { FiMail, FiMapPin, FiSearch } from "react-icons/fi";
 import AgeRestrictionModal from "../Components/AgeRestrictionModal";
-import { getAgeDecision, saveAgeDecision } from "../utils/ageRestrictionSession";
+import { saveAgeDecision, startAgeGateVisit } from "../utils/ageRestrictionSession";
+import { getVendorAgeGateState } from "../utils/ageRestrictionVisit";
 
 interface ApiProduct {
 	id: number;
@@ -87,6 +88,7 @@ const VendorStore: React.FC = () => {
 	const [showAgeModal, setShowAgeModal] = useState(false);
 	const [hideRestricted, setHideRestricted] = useState(false);
 	const [minimumAge, setMinimumAge] = useState(18);
+	const promptedVendorIdRef = useRef<string | undefined>(undefined);
 
 	useEffect(() => {
 		const fetchVendorProducts = async () => {
@@ -199,13 +201,13 @@ const VendorStore: React.FC = () => {
 						}
 					);
 					setVendorProducts(transformedProducts);
-					const restrictedAges = transformedProducts.filter(p => p.ageRestriction?.isRestricted).map(p => p.ageRestriction?.minimumAge ?? 18);
-					if (restrictedAges.length) {
-						const age = Math.max(...restrictedAges);
+					const { restricted, minimumAge: age } = getVendorAgeGateState(transformedProducts);
+					if (promptedVendorIdRef.current !== vendorId) {
+						promptedVendorIdRef.current = vendorId;
 						setMinimumAge(age);
-						const decision = getAgeDecision(age);
-						setHideRestricted(decision === "declined");
-						setShowAgeModal(decision === null);
+						setHideRestricted(false);
+						if (restricted) startAgeGateVisit(age);
+						setShowAgeModal(restricted);
 					}
 					setTotalProducts(response.data.data.total);
 				}

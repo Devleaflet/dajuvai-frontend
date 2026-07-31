@@ -20,7 +20,8 @@ import ScrollToTop from "../Components/ScrollToTop";
 import defaultProductImage from "../assets/logo.webp";
 import { getDiscountDisplay } from "../utils/priceDisplay";
 import AgeRestrictionModal from "../Components/AgeRestrictionModal";
-import { getAgeDecision, saveAgeDecision } from "../utils/ageRestrictionSession";
+import { getAgeDecision, saveAgeDecision, startAgeGateVisit } from "../utils/ageRestrictionSession";
+import { shouldPromptAgeGateOnMount } from "../utils/ageRestrictionVisit";
 
 const CACHE_KEY_REVIEWS = "productReviewsData";
 
@@ -389,7 +390,10 @@ const ProductPage = () => {
   };
 
   useEffect(() => {
-    if ((product as any)?.ageRestriction?.isRestricted && getAgeDecision(productMinimumAge) === null) setShowAgeModal(true);
+    if (shouldPromptAgeGateOnMount(Boolean((product as any)?.ageRestriction?.isRestricted))) {
+      startAgeGateVisit(productMinimumAge);
+      setShowAgeModal(true);
+    }
   }, [(product as any)?.ageRestriction?.isRestricted, productMinimumAge]);
 
   const effectiveCategoryId =

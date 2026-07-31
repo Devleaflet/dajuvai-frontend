@@ -76,6 +76,7 @@ export interface OrderDetail {
             shippingFee: number;
         }>;
     };
+    appliedPromoCode?: string | null;
     paymentMethod: string;
     status: string;
     createdAt: string;

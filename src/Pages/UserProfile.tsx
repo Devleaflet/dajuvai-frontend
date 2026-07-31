@@ -1294,6 +1294,11 @@ const UserProfile: React.FC = () => {
                                                         order.shippingFee,
                                                     ).toLocaleString()}
                                                 </div>
+                                                {order.appliedPromoCode && (
+                                                    <div className="order-total__promo">
+                                                        Promo: <strong>{order.appliedPromoCode}</strong>
+                                                    </div>
+                                                )}
                                                 <div className="order-total__delivery">
                                                     <small>
                                                         Delivery:{" "}
@@ -1426,6 +1431,11 @@ const UserProfile: React.FC = () => {
                                                 order.shippingFee,
                                             ).toLocaleString()}
                                         </div>
+                                        {order.appliedPromoCode && (
+                                            <div className="order-total__promo">
+                                                Promo: <strong>{order.appliedPromoCode}</strong>
+                                            </div>
+                                        )}
                                         <div className="order-total__delivery">
                                             <small>
                                                 Delivery:{" "}

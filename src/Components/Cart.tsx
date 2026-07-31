@@ -11,6 +11,7 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useUI } from "../context/UIContext";
+import { useAuth } from "../context/AuthContext";
 import Portal from "./Portal";
 import { getDiscountDisplay } from "../utils/priceDisplay";
 import defaultProductImage from "../assets/logo.webp";
@@ -524,6 +525,8 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
 
   const [errors, setErrors] = useState<ErrorState[]>([]);
   const [isProcessing, setIsProcessing] = useState<Set<string>>(new Set());
+
+  const { token } = useAuth();
 
   // Auto-close on navigation to checkout
   useEffect(() => {
