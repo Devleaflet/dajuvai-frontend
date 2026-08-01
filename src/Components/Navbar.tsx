@@ -32,6 +32,7 @@ import '../Styles/Navbar.css';
 import AuthModal from './AuthModal';
 import Cart from './Cart';
 import InlineNavbarSearch from './InlineNavbarSearch';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface Category {
 	id: number;
@@ -54,6 +55,8 @@ const Navbar: React.FC = () => {
 	const mobileProfileRef = useRef<HTMLDivElement>(null);
 	const { authState: vendorAuthState, logout: vendorLogout } = useVendorAuth();
 	const { cartOpen, setCartOpen, sideMenuOpen, setSideMenuOpen } = useUI();
+
+	useBodyScrollLock(sideMenuOpen);
 	const [searchQuery, setSearchQuery] = useState<string>('');
 	const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
 	const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
@@ -272,14 +275,10 @@ const Navbar: React.FC = () => {
 		if (sideMenuOpen) setSideMenuOpen(false);
 
 		if (newState) {
-			document.body.classList.add('no-scroll');
 			document.body.classList.add('cart-open');
-			document.body.style.overflow = 'hidden';
 		} else {
-			document.body.classList.remove('no-scroll');
 			document.body.classList.remove('cart-open');
 			document.body.classList.remove('navbar--menu-open');
-			document.body.style.overflow = '';
 		}
 	};
 
@@ -409,20 +408,7 @@ const Navbar: React.FC = () => {
 		setCartOpen(false);
 
 
-		const isOnShopPage = window.location.pathname === '/shop';
-
-		if (isOnShopPage) {
-			const newUrl = `/shop?categoryId=${categoryId}&subcategoryId=${subcategoryId}`;
-			window.history.pushState({}, '', newUrl);
-
-			window.dispatchEvent(
-				new CustomEvent('shopFiltersChanged', {
-					detail: { categoryId, subcategoryId },
-				})
-			);
-		} else {
-			navigate(`/shop?categoryId=${categoryId}&subcategoryId=${subcategoryId}`);
-		}
+		navigate(`/shop?categoryId=${categoryId}&subcategoryId=${subcategoryId}`);
 	};
 
 	const clearDropdownTimeout = () => {
@@ -555,10 +541,12 @@ const Navbar: React.FC = () => {
 
 	useEffect(() => {
 		const params = new URLSearchParams(location.search);
-		const categoryId = params.get('categoryId');
-		if (categoryId) {
-			setActiveDropdown(Number(categoryId));
-		}
+		const categoryId = params
+			.get('categoryId')
+			?.split(',')
+			.map(Number)
+			.find(Number.isFinite);
+		setActiveDropdown(categoryId ?? null);
 	}, [location.search]);
 
 	const handleFullLogout = async () => {
@@ -1291,9 +1279,7 @@ const Navbar: React.FC = () => {
 						setSideMenuOpen(false);
 						setCartOpen(false);
 						document.body.classList.remove('navbar--menu-open');
-						document.body.classList.remove('no-scroll');
 						document.body.classList.remove('cart-open');
-						document.body.style.overflow = '';
 					}}
 				></div>
 

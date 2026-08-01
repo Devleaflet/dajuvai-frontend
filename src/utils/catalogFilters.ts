@@ -1,4 +1,4 @@
-import { normalizeSearchTerm } from "./recentSearches";
+import { normalizeSearchTerm } from "./recentSearches.ts";
 
 export type CatalogSort =
   | "relevance"
@@ -90,6 +90,22 @@ export const toggleCatalogSubcategoryFilter = (
     : [...current.subcategoryIds, subcategoryId],
 });
 
+// A parent category represents its entire subtree. Selecting it must replace
+// any selected children from that parent, otherwise the API's OR taxonomy
+// semantics leave the URL and checkbox state ambiguous.
+export const selectCatalogCategoryFilter = (
+  current: CatalogFilters,
+  categoryId: number,
+  childIds: number[],
+): Pick<CatalogFilters, "categoryIds" | "subcategoryIds"> => ({
+  categoryIds: current.categoryIds.includes(categoryId)
+    ? current.categoryIds.filter((id) => id !== categoryId)
+    : [...current.categoryIds, categoryId],
+  subcategoryIds: current.subcategoryIds.filter(
+    (subcategoryId) => !childIds.includes(subcategoryId),
+  ),
+});
+
 export const catalogFiltersToSearchParams = (filters: CatalogFilters): URLSearchParams => {
   const params = new URLSearchParams();
   const search = filters.search.trim();
@@ -117,6 +133,35 @@ export interface CatalogCategoryForSearch {
     name: string;
   }>;
 }
+
+// When a parent category and one of its own subcategories are both selected,
+// the parent is redundant (the subcategory already narrows to a subset of it)
+// and the catalog API ORs category + subcategory ids, silently widening the
+// filter back to the whole parent category. Dropping the redundant parent keeps
+// the union of the selected facets exact.
+export const normalizeNestedCatalogFilters = <T extends { id: number }>(
+  filters: CatalogFilters,
+  categories: Array<T & CatalogCategoryForSearch>,
+): CatalogFilters => {
+  if (!filters.categoryIds.length || !filters.subcategoryIds.length) {
+    return filters;
+  }
+  const parentsWithSelectedChild = new Set<number>();
+  for (const category of categories) {
+    for (const subcategory of category.subcategories ?? []) {
+      if (filters.subcategoryIds.includes(subcategory.id)) {
+        parentsWithSelectedChild.add(category.id);
+      }
+    }
+  }
+  if (!parentsWithSelectedChild.size) return filters;
+  return {
+    ...filters,
+    categoryIds: filters.categoryIds.filter(
+      (id) => !parentsWithSelectedChild.has(id),
+    ),
+  };
+};
 
 export const filterCatalogCategories = <T extends CatalogCategoryForSearch>(
   categories: T[],

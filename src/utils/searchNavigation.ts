@@ -1,4 +1,4 @@
-import { normalizeSearchTerm } from "./recentSearches";
+import { normalizeSearchTerm } from "./recentSearches.ts";
 
 export const productSearchPath = (id: number): string => `/product-page/${id}`;
 

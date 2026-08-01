@@ -13,6 +13,10 @@ import { API_BASE_URL, FRONTEND_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { getDiscountDisplay } from '../utils/priceDisplay';
+import {
+	hasAgeRestrictedCheckoutItems,
+	isAgeRestrictedOrderAcknowledged,
+} from '../utils/ageRestrictionCheckout';
 
 interface PromoCode {
 	id: number;
@@ -344,6 +348,7 @@ const Checkout: React.FC = () => {
 				product: {
 					id: product.id,
 					name: product.name,
+					ageRestriction: product.ageRestriction,
 					vendorId: product.vendor?.id,
 					vendor: product.vendor
 						? {
@@ -415,8 +420,8 @@ const Checkout: React.FC = () => {
 	if (checkoutSnapshotActive) {
 		cartItems = submittedCheckoutItems;
 	}
-	const hasAgeRestrictedItems = cartItems.some((item: any) => Boolean(item?.product?.ageRestriction?.isRestricted || item?.ageRestriction?.isRestricted));
-	const ageRestrictedAcknowledged = hasAgeRestrictedItems && termsAgreed;
+	const hasAgeRestrictedItems = hasAgeRestrictedCheckoutItems(cartItems);
+	const ageRestrictedAcknowledged = isAgeRestrictedOrderAcknowledged(cartItems, termsAgreed);
 
 	useEffect(() => {
 		const fetchData = async () => {

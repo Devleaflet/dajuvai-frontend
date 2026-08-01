@@ -5,6 +5,7 @@ import { Sparkles } from "lucide-react";
 import "../Styles/SpecialOffers.css";
 import OffersSkeleton from "../skeleton/OffersSkeleton";
 import { API_BASE_URL } from "../config";
+import { getBannerShopPath } from "../utils/bannerNavigation";
 
 interface Offer {
   id: number;
@@ -18,6 +19,7 @@ interface Offer {
   productSource?: string;
   selectedCategory?: { id: number; name?: string } | null;
   selectedSubcategory?: { id: number; category?: { id: number } } | null;
+  selectedDeal?: { id: number } | null;
   externalLink?: string | null;
 }
 
@@ -48,6 +50,7 @@ const fetchSpecialDeals = async (): Promise<Offer[]> => {
       productSource: banner.productSource,
       selectedCategory: banner.selectedCategory,
       selectedSubcategory: banner.selectedSubcategory,
+      selectedDeal: banner.selectedDeal,
       externalLink: banner.externalLink,
     }));
 };
@@ -73,27 +76,11 @@ const SpecialOffers = () => {
   });
 
   const handleOfferClick = (offer: Offer) => {
-    if (offer.productSource === "category" && offer.selectedCategory) {
-      navigate(`/shop?categoryId=${offer.selectedCategory.id}`);
-    } else if (
-      offer.productSource === "subcategory" &&
-      offer.selectedSubcategory
-    ) {
-      const catId = offer.selectedSubcategory.category?.id;
-      if (catId) {
-        navigate(
-          `/shop?categoryId=${catId}&subcategoryId=${offer.selectedSubcategory.id}`,
-        );
-      } else {
-        navigate(`/shop?subcategoryId=${offer.selectedSubcategory.id}`);
-      }
-    } else if (offer.productSource === "manual") {
-      navigate(`/shop?bannerId=${offer.id}`);
-    } else if (offer.productSource === "external" && offer.externalLink) {
+    if (offer.productSource === "external" && offer.externalLink) {
       window.open(offer.externalLink, "_blank", "noopener,noreferrer");
-    } else {
-      navigate("/shop");
+      return;
     }
+    navigate(getBannerShopPath(offer));
   };
 
   if (isLoading) return <OffersSkeleton />;

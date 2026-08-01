@@ -16,7 +16,7 @@ import { getDiscountDisplay } from "../utils/priceDisplay";
 import { toast } from "react-hot-toast";
 import { API_BASE_URL } from "../config";
 import AgeRestrictionModal from "./AgeRestrictionModal";
-import { getAgeDecision, saveAgeDecision } from "../utils/ageRestrictionSession";
+import { getAgeDecision, saveAgeDecision, startAgeGateVisit } from "../utils/ageRestrictionSession";
 interface ProductCardProps {
   product: Product;
 }
@@ -42,10 +42,21 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const navigate = useNavigate();
   const { title, description, rating, ratingCount, id } = product;
   const minimumAge = product.ageRestriction?.minimumAge ?? 18;
+  // Re-prompt on every card mount for a restricted product, mirroring the
+  // product details page: startAgeGateVisit clears the stored session decision
+  // so a previous accept/decline never suppresses the next visit. The modal is
+  // only opened by the action handlers below, never automatically on mount.
+  useEffect(() => {
+    if (product.ageRestriction?.isRestricted) {
+      startAgeGateVisit(minimumAge);
+    }
+  }, [minimumAge, product.ageRestriction?.isRestricted]);
+  // Gates purchase actions only (never card navigation). A declined decision
+  // is never a hard stop — it just re-opens the modal so the user can still
+  // confirm later instead of silently doing nothing.
   const requestAgeConfirmation = (action: () => void) => {
     const decision = product.ageRestriction?.isRestricted ? getAgeDecision(minimumAge) : "accepted";
     if (decision === "accepted") { action(); return; }
-    if (decision === "declined") return;
     setPendingAction(() => action);
     setShowAgeModal(true);
   };
@@ -219,38 +230,56 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     }
     if (wishlistPending) return;
 
-    try {
-      if (isWishlisted) {
+    // Removing is never age-gated; only adding a restricted product is, and
+    // the prompt shows BEFORE the add (never a silent skip, never deferred to
+    // the wishlist page).
+    if (isWishlisted) {
+      try {
         const item = getWishlistItem(id, variantId);
         if (item?.id) {
           await removeWishlistItem(item.id);
           toast.success("Removed from wishlist");
         }
-      } else {
+      } catch (e: any) {
+        const status = e?.response?.status;
+        const msg: string =
+          e?.response?.data?.message ||
+          e?.response?.data?.error ||
+          e?.message ||
+          "";
+
+        if (status === 409 || /already/i.test(msg)) {
+          toast("Already present in the wishlist");
+        } else {
+          toast.error("Failed to remove from wishlist");
+          console.error("Wishlist operation failed:", e);
+        }
+      }
+      return;
+    }
+
+    requestAgeConfirmation(async () => {
+      try {
         const addedItem = await addWishlistItem(id, variantId);
         if (addedItem !== null) {
           toast.success("Added to wishlist");
         }
-      }
-    } catch (e: any) {
-      const status = e?.response?.status;
-      const msg: string =
-        e?.response?.data?.message ||
-        e?.response?.data?.error ||
-        e?.message ||
-        "";
+      } catch (e: any) {
+        const status = e?.response?.status;
+        const msg: string =
+          e?.response?.data?.message ||
+          e?.response?.data?.error ||
+          e?.message ||
+          "";
 
-      if (status === 409 || /already/i.test(msg)) {
-        toast("Already present in the wishlist");
-      } else {
-        toast.error(
-          isWishlisted
-            ? "Failed to remove from wishlist"
-            : "Failed to add to wishlist",
-        );
-        console.error("Wishlist operation failed:", e);
+        if (status === 409 || /already/i.test(msg)) {
+          toast("Already present in the wishlist");
+        } else {
+          toast.error("Failed to add to wishlist");
+          console.error("Wishlist operation failed:", e);
+        }
       }
-    }
+    });
   };
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -264,18 +293,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       return;
     }
 
-    // Navigate first
-    requestAgeConfirmation(() => navigate(`/product-page/${product.id}`));
-
-    // Then FORCE scroll to top on next tick (beats React Router restoration)
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-    }, 0);
-
-    // Extra insurance: also after a tiny delay
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-    }, 100);
+    // Opening the product is never gated by the age restriction — the modal
+    // shows on the product page itself. Declining it navigates the visitor
+    // back off the product page. Gate on the card only applies to add-to-cart.
+    navigate(`/product-page/${product.id}`);
   };
 
   // Price/discount always mirror the default (first in-stock) variant, so
@@ -352,7 +373,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       Number((product as any).stock || (product as any).piece || 0) <= 0;
 
   return (
-    <div onClick={handleCardClick} className="product-card__link-wrapper">
+    <>
+      <div onClick={handleCardClick} className="product-card__link-wrapper">
       <div
         className="product-card"
         onMouseEnter={() => setIsHovering(true)}
@@ -490,6 +512,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         </div>
       </div>
+      </div>
       <AuthModal
         isOpen={authModalOpen}
         onClose={(e?: React.MouseEvent) => {
@@ -498,7 +521,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         }}
       />
       {showAgeModal && <AgeRestrictionModal minimumAge={minimumAge} message={product.ageRestriction?.restrictionMessage ?? undefined} onConfirm={() => { saveAgeDecision(minimumAge, "accepted"); setShowAgeModal(false); pendingAction?.(); setPendingAction(null); }} onDecline={() => { saveAgeDecision(minimumAge, "declined"); setShowAgeModal(false); setPendingAction(null); }} />}
-    </div>
+    </>
   );
 };
 

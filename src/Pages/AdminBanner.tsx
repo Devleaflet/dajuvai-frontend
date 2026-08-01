@@ -56,6 +56,7 @@ interface TransformedBanner {
   updatedAt?: string;
   productSource?: string;
   selectedProducts?: number[];
+  selectedProductDetails?: Product[];
   selectedCategory?: number | null;
   selectedSubcategory?: number | null;
   selectedDeal?: number | null;
@@ -140,6 +141,19 @@ const createBannerAPI = (token: string | null) => ({
       console.error("Error fetching banners:", error);
       throw error;
     }
+  },
+
+  async getById(id: number): Promise<Banner> {
+    const headers: Record<string, string> = { Accept: "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const response = await fetch(`${API_BASE_URL}/api/banners/${id}`, { headers });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      throw new Error(formatApiError(errorData, response.status));
+    }
+    const result: ApiResponse<Banner> = await response.json();
+    if (!result.data) throw new Error("Banner details were not returned");
+    return result.data;
   },
 
   async create(bannerData: Record<string, any>): Promise<Banner> {
@@ -268,8 +282,15 @@ const createCategoryAPI = (token: string | null) => ({
       }
 
       const params = new URLSearchParams();
-      if (categoryId) params.append("categoryId", categoryId.toString());
-      if (subcategoryId) params.append("subcategoryId", subcategoryId.toString());
+      // A subcategory is always nested under the chosen category, so it is the
+      // narrower filter — sending both would make the catalog's taxonomy filter
+      // match the whole category (subcategory OR category), showing products
+      // from every subcategory instead of the selected one.
+      if (subcategoryId) {
+        params.append("subcategoryId", subcategoryId.toString());
+      } else if (categoryId) {
+        params.append("categoryId", categoryId.toString());
+      }
       if (dealId) params.append("dealId", dealId.toString());
 
       const response = await fetch(`${API_BASE_URL}/api/categories/all/products?${params.toString()}`, {
@@ -473,6 +494,12 @@ const AdminBannerWithTabs = () => {
             typeof product === "number" ? product : product.id
           )
         : [],
+      selectedProductDetails: Array.isArray(banner.selectedProducts)
+        ? banner.selectedProducts.filter(
+            (product): product is Exclude<typeof product, number> =>
+              typeof product !== "number",
+          ) as Product[]
+        : [],
       selectedCategory,
       selectedSubcategory,
       selectedDeal,
@@ -594,14 +621,13 @@ const AdminBannerWithTabs = () => {
     setShowCreateForm(true);
   };
 
-  const handleEditBanner = (bannerId: number) => {
+  const handleEditBanner = async (bannerId: number) => {
     try {
-      const banner = banners.find((b) => b.id === bannerId);
-      if (!banner) {
-        throw new Error("Banner not found");
-      }
-      //("Editing banner:", banner);
-      setEditingBanner(banner);
+      // List endpoint intentionally keeps product relations small. Edit must
+      // hydrate canonical details, otherwise cross-category IDs outside first
+      // catalog page degrade to "Product #id" and can be overwritten.
+      const banner = await bannerAPI.getById(bannerId);
+      setEditingBanner(transformBanner(banner));
       setShowCreateForm(true);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Failed to load banner for editing");
@@ -961,9 +987,7 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
     editingBanner?.endDate ? new Date(editingBanner.endDate).toISOString().split("T")[0] : ""
   );
   const [productSource, setProductSource] = useState(editingBanner?.productSource || "manual");
-  const [selectedProducts, setSelectedProducts] = useState<number[]>(
-    editingBanner?.selectedProducts || []
-  );
+  const [selectedProducts, setSelectedProducts] = useState<number[]>(editingBanner?.selectedProducts || []);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(editingBanner?.selectedCategory || null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(editingBanner?.selectedSubcategory || null);
   const [selectedDeal, setSelectedDeal] = useState<number | null>(editingBanner?.selectedDeal || null);
@@ -983,7 +1007,9 @@ const CreateBannerForm: React.FC<CreateBannerFormProps> = ({
   const [deals, setDeals] = useState<Deal[]>([]);
   const [fetching, setFetching] = useState(false);
 
-  const [selectedProductDetails, setSelectedProductDetails] = useState<Record<number, Product>>({});
+  const [selectedProductDetails, setSelectedProductDetails] = useState<Record<number, Product>>(
+    () => Object.fromEntries((editingBanner?.selectedProductDetails ?? []).map((product) => [product.id, product])),
+  );
 
   const handleProductSelect = (product: Product) => {
     const isSelected = selectedProducts.includes(product.id);

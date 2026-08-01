@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import TermsContent from '../TermsContent';
 import '../../Styles/TermsModal.css';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 interface TermsModalProps {
 	open: boolean;
@@ -11,11 +12,10 @@ interface TermsModalProps {
 const TermsModal: React.FC<TermsModalProps> = ({ open, onClose }) => {
 	const panelRef = useRef<HTMLDivElement>(null);
 
+	useBodyScrollLock(open);
+
 	useEffect(() => {
 		if (!open) return;
-
-		const previousOverflow = document.body.style.overflow;
-		document.body.style.overflow = 'hidden';
 
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === 'Escape') onClose();
@@ -25,7 +25,6 @@ const TermsModal: React.FC<TermsModalProps> = ({ open, onClose }) => {
 		panelRef.current?.focus();
 
 		return () => {
-			document.body.style.overflow = previousOverflow;
 			document.removeEventListener('keydown', handleKeyDown);
 		};
 	}, [open, onClose]);

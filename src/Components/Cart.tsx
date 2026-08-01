@@ -8,14 +8,16 @@ import {
   FaTrash,
   FaExclamationCircle,
 } from "react-icons/fa";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useUI } from "../context/UIContext";
-import { useAuth } from "../context/AuthContext";
 import Portal from "./Portal";
 import { getDiscountDisplay } from "../utils/priceDisplay";
 import defaultProductImage from "../assets/logo.webp";
 import "../Styles/Cart.css";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import { getSnapshotUnitDiscountAmount } from "../utils/cartStock";
+import { toast } from "react-hot-toast";
 
 interface CartProps {
   cartOpen: boolean;
@@ -131,8 +133,18 @@ const getCartPriceBreakdownView = (item: any): CartPriceBreakdownView | null => 
             ? Number(snapshot.lineBaseTotal) / quantity
             : item.price),
       ),
-      productDiscountAmount,
-      dealDiscountAmount,
+      productDiscountAmount: getSnapshotUnitDiscountAmount(
+        productDiscountAmount,
+        snapshot.lineTotal,
+        snapshot.unitPrice,
+        quantity,
+      ),
+      dealDiscountAmount: getSnapshotUnitDiscountAmount(
+        dealDiscountAmount,
+        snapshot.lineTotal,
+        snapshot.unitPrice,
+        quantity,
+      ),
       dealLabel: snapshot.dealDiscount?.label ?? null,
       dealPercent:
         snapshot.dealDiscount?.percent != null
@@ -163,10 +175,10 @@ const getCartPriceBreakdownView = (item: any): CartPriceBreakdownView | null => 
 
   if (!discountDisplay.hasDiscount && !hasDeal) return null;
 
-  const fallbackSavings = Math.max(0, (basePrice - Number(item?.price ?? 0)) * quantity);
-  const productDiscountAmount = hasDeal ? 0 : discountDisplay.savingsAmount * quantity;
+  const fallbackSavings = Math.max(0, basePrice - Number(item?.price ?? 0));
+  const productDiscountAmount = hasDeal ? 0 : discountDisplay.savingsAmount;
   const dealDiscountAmount = hasDeal
-    ? fallbackSavings || discountDisplay.savingsAmount * quantity
+    ? fallbackSavings || discountDisplay.savingsAmount
     : 0;
   const savingsTotal = productDiscountAmount + dealDiscountAmount;
 
@@ -516,17 +528,17 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
     handleDecreaseQuantity,
     updatingItems,
     cartItems,
+    refreshCart,
   } = useCart();
 
   const { setCartOpen } = useUI();
   const sideCartRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const navigate = useNavigate();
   const prevLocationRef = useRef(location.pathname);
 
   const [errors, setErrors] = useState<ErrorState[]>([]);
   const [isProcessing, setIsProcessing] = useState<Set<string>>(new Set());
-
-  const { token } = useAuth();
 
   // Auto-close on navigation to checkout
   useEffect(() => {
@@ -550,27 +562,13 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
     }
   }, [errors]);
 
-  // Body scroll lock — robust version that preserves scroll position
+  // Body scroll lock — delegates to the shared hook so every lock in the app
+  // uses one implementation. The .cart-open class only slides the drawer in.
+  useBodyScrollLock(cartOpen);
   useEffect(() => {
     if (cartOpen) {
-      const scrollY = window.scrollY;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.left = "0";
-      document.body.style.right = "0";
-      document.body.style.width = "100%";
       document.body.classList.add("cart-open");
-
-      return () => {
-        const storedScrollY = document.body.style.top;
-        document.body.style.position = "";
-        document.body.style.top = "";
-        document.body.style.left = "";
-        document.body.style.right = "";
-        document.body.style.width = "";
-        document.body.classList.remove("cart-open");
-        window.scrollTo(0, parseInt(storedScrollY || "0") * -1);
-      };
+      return () => document.body.classList.remove("cart-open");
     }
   }, [cartOpen]);
 
@@ -714,6 +712,25 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
     [toggleCart],
   );
 
+  const handleProceedToCheckout = useCallback(async () => {
+    try {
+      const latestItems = await refreshCart();
+      if (!latestItems.length) {
+        toast.error("Your cart changed because stock is no longer available.");
+        return;
+      }
+      if (latestItems.some((item) => Boolean(item.warningMessage))) {
+        toast.error("Please resolve the stock warning in your cart before checkout.");
+        return;
+      }
+
+      toggleCart();
+      navigate("/checkout");
+    } catch {
+      toast.error("Could not verify cart stock. Please try again.");
+    }
+  }, [navigate, refreshCart, toggleCart]);
+
   return (
     <Portal containerId="cart-portal-root">
       <div
@@ -824,16 +841,13 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
                       Proceed to Checkout
                     </button>
                   ) : (
-                    <Link
-                      to="/checkout"
+                    <button
+                      type="button"
                       className="cart__button cart__button--checkout"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleCart();
-                      }}
+                      onClick={handleProceedToCheckout}
                     >
                       Proceed to Checkout
-                    </Link>
+                    </button>
                   )}
 
                   <Link

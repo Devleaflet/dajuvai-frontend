@@ -8,6 +8,7 @@ import { FaInfoCircle } from "react-icons/fa";
 import "../Styles/AuthModal.css";
 import popup from "../assets/auth.jpg";
 import close from "../assets/close.png";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { Toaster, toast } from "react-hot-toast";
 import { getApiErrorMessage } from "../utils/apiError";
 
@@ -73,13 +74,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 	const modalRef = useRef<HTMLDivElement | null>(null);
 	const popupRef = useRef<HTMLDivElement | null>(null);
 
-	useEffect(() => {
-		if (isOpen) {
-			document.body.classList.add("auth-modal--open");
-		} else {
-			document.body.classList.remove("auth-modal--open");
-		}
-	}, [isOpen]);
+	useBodyScrollLock(isOpen);
 
 	useEffect(() => {
 		let timer: NodeJS.Timeout;

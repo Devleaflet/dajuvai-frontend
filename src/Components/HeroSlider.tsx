@@ -5,7 +5,10 @@ import '../Styles/HeroSlider.css';
 import SliderSkeleton from '../skeleton/SliderSkeleton';
 import ResponsiveBanner from './ResponsiveBanner';
 import { API_BASE_URL } from '../config';
-import { appendBannerSourceToShopLink } from '../utils/bannerNavigation';
+import {
+  appendBannerSourceToShopLink,
+  getBannerShopPath,
+} from '../utils/bannerNavigation';
 
 interface Slide {
   id: number;
@@ -18,6 +21,7 @@ interface Slide {
   productSource?: string;
   selectedCategory?: { id: number } | null;
   selectedSubcategory?: { id: number; category: { id: number } } | null;
+  selectedDeal?: { id: number } | null;
   externalLink?: string | null;
 }
 
@@ -53,6 +57,7 @@ const fetchHeroBanners = async (): Promise<Slide[]> => {
       productSource: banner.productSource,
       selectedCategory: banner.selectedCategory,
       selectedSubcategory: banner.selectedSubcategory,
+      selectedDeal: banner.selectedDeal,
       externalLink: banner.externalLink,
     }));
 };
@@ -277,25 +282,12 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
   };
 
   const getBannerShopUrl = (slide: Slide): string => {
-    const params = new URLSearchParams({
-      sourceBannerId: slide.id.toString(),
-      sourceBannerType: 'hero',
-    });
-
-    if (slide.productSource === 'category' && slide.selectedCategory?.id) {
-      params.set('categoryId', slide.selectedCategory.id.toString());
-    } else if (
-      slide.productSource === 'subcategory' &&
-      slide.selectedSubcategory?.id &&
-      slide.selectedSubcategory?.category?.id
-    ) {
-      params.set('categoryId', slide.selectedSubcategory.category.id.toString());
-      params.set('subcategoryId', slide.selectedSubcategory.id.toString());
-    } else if (slide.productSource === 'manual') {
-      params.set('bannerId', slide.id.toString());
-    }
-
-    return `/shop?${params.toString()}`;
+    return (
+      appendBannerSourceToShopLink(getBannerShopPath(slide), {
+        sourceBannerId: slide.id,
+        sourceBannerType: 'hero',
+      }) ?? getBannerShopPath(slide)
+    );
   };
 
   const handleImageClick = (slide: Slide): void => {
@@ -311,38 +303,7 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
       return;
     }
 
-    if (slide.productSource === 'category' && slide.selectedCategory?.id) {
-      //('Navigating to category:', slide.selectedCategory.id);
-      const url = getBannerShopUrl(slide);
-      try {
-        navigate(url);
-      } catch (error) {
-        console.error('Navigation failed:', error);
-        window.location.href = url;
-      }
-    } else if (
-      slide.productSource === 'subcategory' &&
-      slide.selectedSubcategory?.id &&
-      slide.selectedSubcategory?.category?.id
-    ) {
-
-      const url = getBannerShopUrl(slide);
-      try {
-        navigate(url);
-      } catch (error) {
-        console.error('Navigation failed:', error);
-        window.location.href = url;
-      }
-    } else if (slide.productSource === 'manual') {
-      //('Navigating to manual banner:', slide.id);
-      const url = getBannerShopUrl(slide);
-      try {
-        navigate(url);
-      } catch (error) {
-        console.error('Navigation failed:', error);
-        window.location.href = url;
-      }
-    } else if (slide.productSource === 'external' && slide.externalLink) {
+    if (slide.productSource === 'external' && slide.externalLink) {
       const url = appendBannerSourceToShopLink(slide.externalLink, {
         sourceBannerId: slide.id,
         sourceBannerType: 'hero',
@@ -363,24 +324,15 @@ const HeroSlider: React.FC<HeroSliderProps> = ({ onLoad }) => {
           console.error('Failed to open external link:', error);
         }
       }
-    } else {
-      console.warn(
-        'No valid navigation criteria met. Slide properties:',
-        {
-          productSource: slide.productSource,
-          hasSelectedCategory: !!slide.selectedCategory,
-          hasSelectedSubcategory: !!slide.selectedSubcategory,
-          hasExternalLink: !!slide.externalLink,
-          slideName: slide.name,
-        }
-      );
-      const url = getBannerShopUrl(slide);
-      try {
-        navigate(url);
-      } catch (error) {
-        console.error('Navigation failed:', error);
-        window.location.href = url;
-      }
+      return;
+    }
+
+    const url = getBannerShopUrl(slide);
+    try {
+      navigate(url);
+    } catch (error) {
+      console.error('Navigation failed:', error);
+      window.location.href = url;
     }
   };
 

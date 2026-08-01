@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import ProductCard from "./ProductCard";
@@ -26,11 +26,6 @@ const Catalog: React.FC = () => {
     refetchOnWindowFocus: false,
     enabled: !!sectionId, // Only fetch if sectionId is present
   });
-
-  // Scroll to top when the page loads
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
 
   if (isLoading) {
     return <PageLoader />;

@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import ProductCard from "../Components/ProductCard";
 import { Product } from "../Components/Types/Product";
 import { Deal } from "../Components/Types/Deal";
@@ -30,7 +30,9 @@ import {
   CatalogSort,
   catalogFiltersToSearchParams,
   filterCatalogCategories,
+  normalizeNestedCatalogFilters,
   parseCatalogFilters,
+  selectCatalogCategoryFilter,
   toggleCatalogSubcategoryFilter,
   updateCatalogFilters,
 } from "../utils/catalogFilters";
@@ -223,9 +225,17 @@ const FilterPanel = ({
   const [maxPrice, setMaxPrice] = useState(filters.maxPrice?.toString() ?? "");
   const [priceError, setPriceError] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
-  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(
-    () => new Set(filters.categoryIds),
-  );
+  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(() => {
+    const initiallyExpanded = new Set<number>(filters.categoryIds);
+    for (const category of categories) {
+      for (const subcategory of category.subcategories ?? []) {
+        if (filters.subcategoryIds.includes(subcategory.id)) {
+          initiallyExpanded.add(category.id);
+        }
+      }
+    }
+    return initiallyExpanded;
+  });
   useEffect(() => {
     setMinPrice(filters.minPrice?.toString() ?? "");
     setMaxPrice(filters.maxPrice?.toString() ?? "");
@@ -244,22 +254,17 @@ const FilterPanel = ({
 
   const toggleId = (key: "categoryIds" | "subcategoryIds", id: number) => {
     const selected = filters[key];
-    const next = selected.includes(id)
-      ? selected.filter((item) => item !== id)
-      : [...selected, id];
-    if (key === "categoryIds" && selected.includes(id)) {
+    if (key === "categoryIds") {
       const childIds =
         categories
           .find((category) => category.id === id)
           ?.subcategories?.map((item) => item.id) ?? [];
-      onChange({
-        categoryIds: next,
-        subcategoryIds: filters.subcategoryIds.filter(
-          (child) => !childIds.includes(child),
-        ),
-      });
+      onChange(selectCatalogCategoryFilter(filters, id, childIds));
       return;
     }
+    const next = selected.includes(id)
+      ? selected.filter((item) => item !== id)
+      : [...selected, id];
     onChange({ [key]: next });
   };
   const toggleSubcategory = (parentCategoryId: number, subcategoryId: number) =>
@@ -507,31 +512,8 @@ const FilterPanel = ({
 
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const filters = useMemo(
-    () => parseCatalogFilters(searchParams),
-    [searchParams],
-  );
-  const sourceBanner = useMemo(
-    () => parseShopSourceBanner(searchParams),
-    [searchParams],
-  );
-  const [searchInput, setSearchInput] = useState(filters.search);
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [sortOpen, setSortOpen] = useState(false);
-  useEffect(() => setSearchInput(filters.search), [filters.search]);
-
-  const updateFilters = (updates: Partial<CatalogFilters>) => {
-    const nextParams = catalogFiltersToSearchParams(
-      updateCatalogFilters(filters, updates),
-    );
-    if (sourceBanner) {
-      nextParams.set("sourceBannerId", String(sourceBanner.id));
-      nextParams.set("sourceBannerType", sourceBanner.type);
-    }
-    setSearchParams(nextParams);
-  };
-  const resetFilters = () => setSearchParams(new URLSearchParams());
-  const { data: categories = [] } = useQuery({
+  const location = useLocation();
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ["catalog-categories"],
     queryFn: async () => {
       const service = CategoryService.getInstance();
@@ -547,6 +529,39 @@ const Shop = () => {
     },
     staleTime: 5 * 60 * 1000,
   });
+  const filters = useMemo(
+    () =>
+      normalizeNestedCatalogFilters(
+        parseCatalogFilters(searchParams),
+        categories,
+      ),
+    [searchParams, categories],
+  );
+  const sourceBanner = useMemo(
+    () => parseShopSourceBanner(searchParams),
+    [searchParams],
+  );
+  const [searchInput, setSearchInput] = useState(filters.search);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  useEffect(() => setSearchInput(filters.search), [filters.search]);
+
+  const updateFilters = (
+    updates: Partial<CatalogFilters>,
+    options?: { replace?: boolean },
+  ) => {
+    const nextParams = catalogFiltersToSearchParams(
+      updateCatalogFilters(filters, updates),
+    );
+    if (sourceBanner) {
+      nextParams.set("sourceBannerId", String(sourceBanner.id));
+      nextParams.set("sourceBannerType", sourceBanner.type);
+    }
+    // Load-more pagination replaces the entry instead of pushing a new one, so
+    // ScrollManager doesn't treat it as a fresh page and jump back to the top.
+    setSearchParams(nextParams, { replace: options?.replace });
+  };
+  const resetFilters = () => setSearchParams(new URLSearchParams());
   const { data: dealFilters, isLoading: dealsLoading } = useQuery({
     queryKey: ["catalog-deals"],
     queryFn: async (): Promise<DealsFilterResponse> => {
@@ -574,14 +589,29 @@ const Shop = () => {
     isActiveShopSourceBanner(sourceBannerQuery.data, sourceBanner)
       ? sourceBannerQuery.data
       : undefined;
+  // A sidebar-sourced banner carries a small (section-sized) image that would
+  // look wrong stretched across the shop page, so it gets the full product
+  // banner slider instead of the static hero-style banner slot.
   const showsSourceBannerSlot =
-    Boolean(sourceBanner) &&
+    sourceBanner?.type === "hero" &&
     (sourceBannerQuery.isLoading || Boolean(staticSourceBanner));
   const { data, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: ["catalog", filters],
     queryFn: () => fetchCatalog(filters),
+    // Normalization needs the category tree to drop a parent category that is
+    // redundant with one of its own selected subcategories (the catalog API ORs
+    // category+subcategory ids). Waiting for categories prevents a first fetch
+    // with the un-normalized filter set.
+    enabled: !categoriesLoading,
     placeholderData: (previous) => previous,
   });
+  // A manual banner can keep same bannerId while admin replaces its products.
+  // Every click creates a new history key; refetch prevents React Query from
+  // rendering catalog data cached for the previous selection.
+  useEffect(() => {
+    if (filters.bannerId !== undefined) void refetch();
+  }, [filters.bannerId, location.key, refetch]);
+  const displayProducts = data?.products ?? [];
   const visibleSortOptions = filters.search
     ? sortOptions
     : sortOptions.filter((option) => option.value !== "relevance");
@@ -746,15 +776,15 @@ const Shop = () => {
             ) : (
               <>
                 <div className="catalog-grid">
-                  {isLoading
+                  {!data
                     ? Array.from({ length: 12 }, (_, index) => (
                         <ProductCardSkeleton key={index} count={1} />
                       ))
-                    : data?.products.map((product) => (
+                    : displayProducts.map((product) => (
                         <ProductCard key={product.id} product={product} />
                       ))}
                 </div>
-                {!isLoading && data?.products.length === 0 && (
+                {!isLoading && displayProducts.length === 0 && (
                   <div className="catalog-state">
                     <h2>No products found</h2>
                     <button onClick={resetFilters}>Clear filters</button>
@@ -764,7 +794,9 @@ const Shop = () => {
                   <div className="catalog-load-more">
                     <button
                       disabled={isFetching}
-                      onClick={() => updateFilters({ page: filters.page + 1 })}
+                      onClick={() =>
+                        updateFilters({ page: filters.page + 1 }, { replace: true })
+                      }
                     >
                       {isFetching ? "Loading..." : "Load more"}
                     </button>

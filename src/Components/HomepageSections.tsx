@@ -115,6 +115,7 @@ const HomepageSections: React.FC = () => {
               stock: product.stock,
               productImages,
               variants: (product as any).variants,
+              ageRestriction: (product as any).ageRestriction ?? null,
             } satisfies DisplayProduct;
           },
         );

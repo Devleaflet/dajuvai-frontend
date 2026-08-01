@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Truck, Undo2, ShieldCheck, Phone } from "lucide-react";
 
 import React from "react";
 import axiosInstance from "../api/axiosInstance";
+import { API_BASE_URL } from "../config";
 import AuthModal from "../Components/AuthModal";
 import Footer from "../Components/Footer";
 import Navbar from "../Components/Navbar";
@@ -16,9 +17,10 @@ import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { makeWishlistKey, useWishlist } from "../context/WishlistContext";
 import "../Styles/ProductPage.css";
-import ScrollToTop from "../Components/ScrollToTop";
 import defaultProductImage from "../assets/logo.webp";
 import { getDiscountDisplay } from "../utils/priceDisplay";
+import { getCartQuantityForSelection, getSelectableQuantityLimit } from "../utils/cartStock";
+import { io } from "socket.io-client";
 import AgeRestrictionModal from "../Components/AgeRestrictionModal";
 import { getAgeDecision, saveAgeDecision, startAgeGateVisit } from "../utils/ageRestrictionSession";
 import { shouldPromptAgeGateOnMount } from "../utils/ageRestrictionVisit";
@@ -91,6 +93,7 @@ const ProductPage = () => {
   const [imageError, setImageError] = useState<boolean[]>([]);
   const [vendorAvatarError, setVendorAvatarError] = useState(false);
   const [showAgeModal, setShowAgeModal] = useState(false);
+  const [pendingAgeAction, setPendingAgeAction] = useState<null | (() => void)>(null);
   const [currentReviewPage, setCurrentReviewPage] = useState(1);
 
   const [isZoomActive, setIsZoomActive] = useState(false);
@@ -133,17 +136,21 @@ const ProductPage = () => {
 
   const ZOOM_LEVEL = 3;
 
-  const { handleCartOnAdd } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { handleCartOnAdd, cartItems } = useCart();
+  const { isAuthenticated, token } = useAuth();
   const {
     addWishlistItem,
     isWishlisted: hasWishlistItem,
     pendingKeys,
   } = useWishlist();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const { data: productData, isLoading: isProductLoading } = useQuery({
+  const { data: productData, isLoading: isProductLoading, refetch: refetchProduct } = useQuery({
     queryKey: ["product", id],
+    refetchOnWindowFocus: "always",
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
     queryFn: async () => {
       if (!id || isNaN(Number(id))) throw new Error("Invalid product ID");
 
@@ -383,18 +390,25 @@ const ProductPage = () => {
     ? hasWishlistItem(product.id, wishlistVariantId)
     : false;
   const productMinimumAge = (product as any)?.ageRestriction?.minimumAge ?? 18;
+  // Gates purchase actions (add to cart / buy now) only. Opening the product
+  // is never blocked: the mount prompt below handles browsing, and declining
+  // that prompt takes the visitor back off the product page.
   const requireAgeConfirmation = (action: () => void) => {
     if (!(product as any)?.ageRestriction?.isRestricted || getAgeDecision(productMinimumAge) === "accepted") { action(); return; }
-    if (getAgeDecision(productMinimumAge) === "declined") { navigate(-1); return; }
+    setPendingAgeAction(() => action);
     setShowAgeModal(true);
   };
 
+  // Prompt on every page mount for a restricted product. startAgeGateVisit
+  // clears the session decision so a previous accept/decline never suppresses
+  // the next visit; keying on the product id re-prompts when hopping between
+  // restricted products that share the same minimum age.
   useEffect(() => {
     if (shouldPromptAgeGateOnMount(Boolean((product as any)?.ageRestriction?.isRestricted))) {
       startAgeGateVisit(productMinimumAge);
       setShowAgeModal(true);
     }
-  }, [(product as any)?.ageRestriction?.isRestricted, productMinimumAge]);
+  }, [id, (product as any)?.ageRestriction?.isRestricted, productMinimumAge]);
 
   const effectiveCategoryId =
     categoryId ??
@@ -605,6 +619,12 @@ const ProductPage = () => {
     return product?.stock || 0;
   };
 
+  const getAvailableToAdd = () =>
+    getSelectableQuantityLimit(
+      getCurrentStock(),
+      getCartQuantityForSelection(cartItems, product?.id, selectedVariant?.id),
+    );
+
   const getCurrentPrice = () => {
     if (selectedVariant) {
       return selectedVariant.finalPrice || 0;
@@ -665,7 +685,14 @@ const ProductPage = () => {
       return;
     }
     if (!product) return;
-    requireAgeConfirmation(() => handleCartOnAdd(product, quantity, selectedVariant?.id));
+    if (quantity > getAvailableToAdd()) {
+      toast.error("All available stock for this selection is already in your cart.");
+      return;
+    }
+    requireAgeConfirmation(async () => {
+      const added = await handleCartOnAdd(product, quantity, selectedVariant?.id);
+      if (!added) void refetchProduct();
+    });
   };
 
   const handleAddToWishlist = async () => {
@@ -679,24 +706,26 @@ const ProductPage = () => {
       return;
     }
 
-    try {
-      const addedItem = await addWishlistItem(product.id, wishlistVariantId);
-      if (addedItem !== null) {
-        toast.success("Added to wishlist");
+    requireAgeConfirmation(async () => {
+      try {
+        const addedItem = await addWishlistItem(product.id, wishlistVariantId);
+        if (addedItem !== null) {
+          toast.success("Added to wishlist");
+        }
+      } catch (e: any) {
+        const status = e?.response?.status;
+        const msg: string =
+          e?.response?.data?.message ||
+          e?.response?.data?.error ||
+          e?.message ||
+          "";
+        if (status === 409 || /already/i.test(msg)) {
+          toast("Already present in the wishlist");
+        } else {
+          toast.error("Failed to add to wishlist");
+        }
       }
-    } catch (e: any) {
-      const status = e?.response?.status;
-      const msg: string =
-        e?.response?.data?.message ||
-        e?.response?.data?.error ||
-        e?.message ||
-        "";
-      if (status === 409 || /already/i.test(msg)) {
-        toast("Already present in the wishlist");
-      } else {
-        toast.error("Failed to add to wishlist");
-      }
-    }
+    });
   };
 
   const handleBuyNow = () => {
@@ -735,7 +764,7 @@ const ProductPage = () => {
 
   const handleQuantityChange = (increment: boolean) => {
     if (!product) return;
-    const currentStock = getCurrentStock();
+    const currentStock = getAvailableToAdd();
     if (increment && quantity < currentStock) {
       setQuantity((prev) => prev + 1);
     } else if (!increment && quantity > 1) {
@@ -747,7 +776,7 @@ const ProductPage = () => {
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const value = e.target.value;
-    const currentStock = getCurrentStock();
+    const currentStock = getAvailableToAdd();
 
     if (value === "") {
       setQuantity(1);
@@ -781,6 +810,32 @@ const ProductPage = () => {
   useEffect(() => {
     setZoomPosition({ x: 50, y: 50 }); // Center the zoom initially
   }, [selectedImageIndex, selectedVariant]);
+
+  useEffect(() => {
+    const availableToAdd = getAvailableToAdd();
+    setQuantity((current) => Math.min(current, Math.max(1, availableToAdd)));
+  }, [cartItems, product, selectedVariant]);
+
+  useEffect(() => {
+    if (!token || !id) return;
+
+    const socket = io(API_BASE_URL, {
+      transports: ["websocket"],
+      withCredentials: true,
+      auth: { token },
+    });
+    const handleStockUpdate = (payload?: { productIds?: number[] }) => {
+      if (payload?.productIds?.includes(Number(id))) {
+        void refetchProduct();
+      }
+    };
+
+    socket.on("product:stockUpdated", handleStockUpdate);
+    return () => {
+      socket.off("product:stockUpdated", handleStockUpdate);
+      socket.disconnect();
+    };
+  }, [id, refetchProduct, token]);
 
   useEffect(() => {
     return () => {
@@ -892,8 +947,7 @@ const ProductPage = () => {
 
     return (
         <div className="app">
-            {showAgeModal && (product as any)?.ageRestriction?.isRestricted && <AgeRestrictionModal minimumAge={productMinimumAge} message={(product as any)?.ageRestriction?.restrictionMessage ?? undefined} onConfirm={() => { saveAgeDecision(productMinimumAge, "accepted"); setShowAgeModal(false); }} onDecline={() => { saveAgeDecision(productMinimumAge, "declined"); setShowAgeModal(false); navigate(-1); }} />}
-            <ScrollToTop />
+            {showAgeModal && (product as any)?.ageRestriction?.isRestricted && <AgeRestrictionModal minimumAge={productMinimumAge} message={(product as any)?.ageRestriction?.restrictionMessage ?? undefined} onConfirm={() => { saveAgeDecision(productMinimumAge, "accepted"); setShowAgeModal(false); const action = pendingAgeAction; setPendingAgeAction(null); action?.(); }}             onDecline={() => { saveAgeDecision(productMinimumAge, "declined"); setShowAgeModal(false); if (pendingAgeAction) { setPendingAgeAction(null); return; } if (location.key === "default") { navigate("/shop", { replace: true }); } else { navigate(-1); } }} />}
             <Navbar />
             <div className="product-page-content">
                 <main className="product-page">
@@ -1254,7 +1308,7 @@ const ProductPage = () => {
                     <button
                       className="product-quantity__button"
                       onClick={() => handleQuantityChange(false)}
-                      disabled={quantity <= 1 || getCurrentStock() <= 0}
+                      disabled={quantity <= 1 || getAvailableToAdd() <= 0}
                     >
                       -
                     </button>
@@ -1273,14 +1327,14 @@ const ProductPage = () => {
                         }
                       }}
                       min="1"
-                      max={getCurrentStock()}
-                      disabled={getCurrentStock() <= 0}
+                      max={getAvailableToAdd()}
+                      disabled={getAvailableToAdd() <= 0}
                     />
                     <button
                       className="product-quantity__button"
                       onClick={() => handleQuantityChange(true)}
                       disabled={
-                        quantity >= getCurrentStock() || getCurrentStock() <= 0
+                        quantity >= getAvailableToAdd() || getAvailableToAdd() <= 0
                       }
                     >
                       +
@@ -1292,15 +1346,24 @@ const ProductPage = () => {
                       Out of stock
                     </div>
                   )}
+                  {getCurrentStock() > 0 && getAvailableToAdd() <= 0 && (
+                    <div className="product-quantity__stock-message">
+                      All available stock is already in your cart.
+                    </div>
+                  )}
                 </div>
 
                 <div className="product-actions">
                   <button
                     className="product-actions__button product-actions__button--primary"
                     onClick={handleAddToCart}
-                    disabled={getCurrentStock() <= 0}
+                    disabled={getAvailableToAdd() <= 0}
                   >
-                    {getCurrentStock() > 0 ? "Add to Cart" : "Out of Stock"}
+                    {getCurrentStock() <= 0
+                      ? "Out of Stock"
+                      : getAvailableToAdd() <= 0
+                        ? "All in Cart"
+                        : "Add to Cart"}
                   </button>
 
                   {getCurrentStock() > 0 ? (

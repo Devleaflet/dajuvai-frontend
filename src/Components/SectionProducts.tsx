@@ -239,6 +239,7 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
       status: item.status === "UNAVAILABLE" ? "OUT_OF_STOCK" : "AVAILABLE",
       stock: item.stock || 0,
       deal: (item as any).deal || null,
+      ageRestriction: (item as any).ageRestriction ?? null,
     };
   } catch (error) {
     const isDev = Boolean((import.meta as any)?.env?.DEV);

@@ -4,6 +4,7 @@ import "../Styles/Sidebar.css";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../config";
 import logo from "../assets/logo.webp";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
   const [unapprovedCount, setUnapprovedCount] = useState(0);
@@ -37,12 +38,11 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
     setIsAvatarOpen(false);
   }, [location.pathname]);
 
+  useBodyScrollLock(isMobileOpen);
+
   useEffect(() => {
     setIsAvatarOpen(false);
     if (!isMobileOpen) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -53,7 +53,6 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMobileOpen]);

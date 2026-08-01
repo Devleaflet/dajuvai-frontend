@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import "../Styles/AgeRestrictionModal.css";
 import { getAgeConfirmationLabel } from "../utils/ageRestrictionCopy";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 export default function AgeRestrictionModal({
   minimumAge,
@@ -14,10 +15,9 @@ export default function AgeRestrictionModal({
   onDecline: () => void;
 }) {
   const confirmRef = useRef<HTMLButtonElement>(null);
+  useBodyScrollLock(true);
   useEffect(() => {
     const priorFocus = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     confirmRef.current?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onDecline();
@@ -25,7 +25,6 @@ export default function AgeRestrictionModal({
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = previousOverflow;
       priorFocus?.focus();
     };
   }, [onDecline]);

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import ResponsiveBanner from "./ResponsiveBanner";
 import { API_BASE_URL } from "../config";
-import { appendBannerSourceToShopLink } from "../utils/bannerNavigation";
+import { appendBannerSourceToShopLink, getBannerShopPath } from "../utils/bannerNavigation";
 
 interface SidebarBanner {
   id: number;
@@ -14,6 +14,7 @@ interface SidebarBanner {
   productSource?: string;
   selectedCategory?: { id: number; name?: string } | null;
   selectedSubcategory?: { id: number; category?: { id: number } } | null;
+  selectedDeal?: { id: number } | null;
   externalLink?: string | null;
 }
 
@@ -30,6 +31,7 @@ interface RawBannerResponse {
   productSource?: string;
   selectedCategory?: { id: number; name?: string } | null;
   selectedSubcategory?: { id: number; category?: { id: number } } | null;
+  selectedDeal?: { id: number } | null;
   externalLink?: string | null;
 }
 
@@ -59,6 +61,7 @@ const fetchSidebarBanners = async (): Promise<SidebarBanner[]> => {
       productSource: banner.productSource,
       selectedCategory: banner.selectedCategory,
       selectedSubcategory: banner.selectedSubcategory,
+      selectedDeal: banner.selectedDeal,
       externalLink: banner.externalLink,
     }));
 };
@@ -254,32 +257,14 @@ const SidebarBannerStrip: React.FC<SidebarBannerStripProps> = ({
   };
 
   const getBannerShopUrl = (banner: SidebarBanner) => {
-    const params = new URLSearchParams({
-      sourceBannerId: banner.id.toString(),
+    return appendBannerSourceToShopLink(getBannerShopPath(banner), {
+      sourceBannerId: banner.id,
       sourceBannerType: "sidebar",
-    });
-
-    if (banner.productSource === "category" && banner.selectedCategory) {
-      params.set("categoryId", banner.selectedCategory.id.toString());
-    } else if (banner.productSource === "subcategory" && banner.selectedSubcategory) {
-      const catId = banner.selectedSubcategory.category?.id;
-      if (catId) params.set("categoryId", catId.toString());
-      params.set("subcategoryId", banner.selectedSubcategory.id.toString());
-    } else if (banner.productSource === "manual") {
-      params.set("bannerId", banner.id.toString());
-    }
-
-    return `/shop?${params.toString()}`;
+    }) ?? getBannerShopPath(banner);
   };
 
   const handleImageClick = (banner: SidebarBanner) => {
-    if (banner.productSource === "category" && banner.selectedCategory) {
-      navigate(getBannerShopUrl(banner));
-    } else if (banner.productSource === "subcategory" && banner.selectedSubcategory) {
-      navigate(getBannerShopUrl(banner));
-    } else if (banner.productSource === "manual") {
-      navigate(getBannerShopUrl(banner));
-    } else if (banner.productSource === "external" && banner.externalLink) {
+    if (banner.productSource === "external" && banner.externalLink) {
       const url = appendBannerSourceToShopLink(banner.externalLink, {
         sourceBannerId: banner.id,
         sourceBannerType: "sidebar",
@@ -289,9 +274,7 @@ const SidebarBannerStrip: React.FC<SidebarBannerStripProps> = ({
       } else {
         window.open(banner.externalLink, "_blank", "noopener,noreferrer");
       }
-    } else {
-      navigate(getBannerShopUrl(banner));
-    }
+    } else navigate(getBannerShopUrl(banner));
   };
 
   const handleSliderClick = () => {

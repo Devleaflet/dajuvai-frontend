@@ -1,5 +1,6 @@
 .product-carousel {
-  width: 95%;
+  width: 85%;
+  /* 95% */
   margin: 0 auto;
   box-sizing: border-box;
   position: relative;
@@ -598,7 +599,7 @@
 
 @media (max-width: 1200px) {
   .product-carousel {
-    width: 95%;
+    width: 85%;
   }
 
   .product-card__wrapper {
@@ -659,6 +660,10 @@
 
   .product-card {
     min-height: 340px;
+  }
+
+  .product-carousel {
+    width: 95%;
   }
 
   .product-carousel__products {

@@ -478,11 +478,6 @@ select.auth-modal__input {
   cursor: not-allowed;
 }
 
-/* Body class when modal is open */
-body.auth-modal--open {
-  overflow: hidden;
-}
-
 /* Message styles */
 .auth-modal__message {
   padding: 10px 15px;

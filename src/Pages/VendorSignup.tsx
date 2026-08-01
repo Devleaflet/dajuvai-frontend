@@ -14,6 +14,7 @@ import {
   FaUniversity,
 } from "react-icons/fa";
 import { PaymentType, PaymentOptionInput } from "../Components/Types/vendor";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 interface VendorSignupProps {
   isOpen: boolean;
@@ -123,13 +124,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
   }, [isOpen, showVerification, isVerificationComplete]);
 
   // Handle modal click outside
-  useEffect(() => {
-    if (isOpen) {
-      document.body.classList.add("auth-modal--open");
-    } else {
-      document.body.classList.remove("auth-modal--open");
-    }
-  }, [isOpen]);
+  useBodyScrollLock(isOpen);
 
   // Handle countdown timer
   useEffect(() => {
