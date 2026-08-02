@@ -9,10 +9,10 @@ export interface Product {
   price: string | number;
   basePrice?: string | number;
   originalPrice?: string | number;
-  finalPrice: number;
-  discount: number;
-  discountAmount?: number;
-  discountPercent?: number;
+  finalPrice?: number;
+  discount?: number | string | null;
+  discountAmount?: number | string | null;
+  discountPercent?: number | string | null;
   rating: number;
   ratingCount: string | number;
   isBestSeller?: boolean;
@@ -24,7 +24,7 @@ export interface Product {
   brand?: any;
   keywords?: string | null;
   name?: string;
-  hasVariants: boolean;
+  hasVariants?: boolean;
   category?: any;
   subcategory?: { id: number; name: string; category?: any };
   vendor?: string;
@@ -37,12 +37,17 @@ export interface Product {
   memoryOptions?: string[];
   quantity?: number;
   productImages?: string[];
+  ageRestriction?: {
+    isRestricted: boolean;
+    minimumAge: number | null;
+    restrictionMessage?: string | null;
+  };
 
   // Additional fields for vendor products
   categoryId?: number;
   subcategoryId?: number;
   brand_id?: number | null;
-  deal: (Deal | { id: number; title: string }) | null;
+  deal?: (Deal | { id: number; title: string }) | null;
   dealId?: number | null;
   status?: 'AVAILABLE' | 'OUT_OF_STOCK' | 'LOW_STOCK';
   discountType?: "PERCENTAGE" | "FLAT" | "NONE" | null;
@@ -52,7 +57,7 @@ export interface Product {
     name?: string;
     price?: number | string;
     originalPrice?: number | string;
-    finalPrice: number;
+    finalPrice?: number;
     stock?: number;
     sku?: string;
     image?: string;

@@ -1,34 +1,22 @@
 import React from "react";
 import { Order } from "./Types/Order";
+import { getOrderStatusMeta } from "./orderStatus";
 
 // Define props interface
 interface OrderListProps {
     orders: Order[];
     isMobile: boolean;
     onView: (order: Order) => void;
+    /** Shows skeleton rows in place of data — used while a filter/sort/page
+     * change is refetching, so the table frame (header, toolbar) never
+     * unmounts, only the rows placeholder while new data loads. */
+    loading?: boolean;
 }
 
-// order.status here is one of: pending | confirmed | processing | shipped |
-// delayed | delivered | canceled (see VendorOrder.tsx's mapping from the
-// real backend OrderStatus enum). Badge color groups them by what the
-// vendor actually needs to know: awaiting confirmation, actively moving,
-// done, or a problem.
-const STATUS_BADGE_CLASS: Record<string, string> = {
-    pending: "on-sale",
-    confirmed: "in-progress",
-    processing: "in-progress",
-    shipped: "in-progress",
-    delayed: "in-progress",
-    delivered: "featured",
-    canceled: "out-of-stock",
-};
+const SKELETON_ROW_COUNT = 5;
+const TABLE_COLUMN_COUNT = 7;
 
-const formatStatusLabel = (status?: string): string => {
-    if (!status) return "Pending";
-    return status.charAt(0).toUpperCase() + status.slice(1);
-};
-
-const OrderList: React.FC<OrderListProps> = ({ orders, onView }) => {
+const OrderList: React.FC<OrderListProps> = ({ orders, onView, loading }) => {
     return (
         <div className="vendor-order__table-container">
             <table className="vendor-order__table">
@@ -44,7 +32,20 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onView }) => {
                     </tr>
                 </thead>
                 <tbody>
-                    {orders.map((order, index) => (
+                    {loading
+                        ? [...Array(SKELETON_ROW_COUNT)].map((_, rowIndex) => (
+                              <tr key={`skeleton-row-${rowIndex}`} className="dashboard__table-row">
+                                  {[...Array(TABLE_COLUMN_COUNT)].map((__, colIndex) => (
+                                      <td key={colIndex}>
+                                          <div
+                                              className="skeleton"
+                                              style={{ width: "80%", height: "16px" }}
+                                          />
+                                      </td>
+                                  ))}
+                              </tr>
+                          ))
+                        : orders.map((order, index) => (
                         <tr
                             key={`order-${order.id || index}-${order.orderId || order.createdAt || index}`}
                             className="dashboard__table-row"
@@ -81,21 +82,14 @@ const OrderList: React.FC<OrderListProps> = ({ orders, onView }) => {
                                     "unknown"}
                             </td>
                             <td>
-                                <span
-                                    className={`product-status ${
-                                        order.status === "delivered"
-                                            ? "featured"
-                                            : order.status === "pending"
-                                              ? "pending"
-                                              : order.status === "confirmed"
-                                                ? "on-sale"
-                                                : order.status === "canceled"
-                                                  ? "out-of-stock"
-                                                  : ""
-                                    }`}
-                                >
-                                    {order.status || "Pending"}
-                                </span>
+                                {(() => {
+                                    const meta = getOrderStatusMeta(order.status || "ORDER_PLACED");
+                                    return (
+                                        <span className={`status-badge ${meta.badgeClassName}`}>
+                                            {meta.label}
+                                        </span>
+                                    );
+                                })()}
                             </td>
                             <td className="action-buttons">
                                 <button

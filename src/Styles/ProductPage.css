@@ -770,7 +770,7 @@ html {
 
 .product-page__description-card {
   background: #fff;
-  padding: 1.5rem;
+  padding: 1.5rem 0.5rem;
   border-radius: 0.5rem;
   width: 100%;
   box-sizing: border-box;

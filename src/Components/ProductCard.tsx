@@ -15,6 +15,8 @@ import { getProductPrimaryImage } from "../utils/getProductPrimaryImage";
 import { getDiscountDisplay } from "../utils/priceDisplay";
 import { toast } from "react-hot-toast";
 import { API_BASE_URL } from "../config";
+import AgeRestrictionModal from "./AgeRestrictionModal";
+import { getAgeDecision, saveAgeDecision, startAgeGateVisit } from "../utils/ageRestrictionSession";
 interface ProductCardProps {
   product: Product;
 }
@@ -34,9 +36,30 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
+  const [showAgeModal, setShowAgeModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<null | (() => void)>(null);
 
   const navigate = useNavigate();
   const { title, description, rating, ratingCount, id } = product;
+  const minimumAge = product.ageRestriction?.minimumAge ?? 18;
+  // Re-prompt on every card mount for a restricted product, mirroring the
+  // product details page: startAgeGateVisit clears the stored session decision
+  // so a previous accept/decline never suppresses the next visit. The modal is
+  // only opened by the action handlers below, never automatically on mount.
+  useEffect(() => {
+    if (product.ageRestriction?.isRestricted) {
+      startAgeGateVisit(minimumAge);
+    }
+  }, [minimumAge, product.ageRestriction?.isRestricted]);
+  // Gates purchase actions only (never card navigation). A declined decision
+  // is never a hard stop — it just re-opens the modal so the user can still
+  // confirm later instead of silently doing nothing.
+  const requestAgeConfirmation = (action: () => void) => {
+    const decision = product.ageRestriction?.isRestricted ? getAgeDecision(minimumAge) : "accepted";
+    if (decision === "accepted") { action(); return; }
+    setPendingAction(() => action);
+    setShowAgeModal(true);
+  };
 
   // Gate on hasVariants, not just array presence — a product just converted
   // to non-variant can still have orphaned variant rows in the DB (kept
@@ -88,7 +111,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       // variantsArr is already id-sorted; just float the default variant
       // to the front so its photo leads (matching the price/discount shown).
       if (variantsArr.length > 0) {
-        const rest = variantsArr.filter((v: any) => v.id !== defaultVariant?.id);
+        const rest = variantsArr.filter(
+          (v: any) => v.id !== defaultVariant?.id,
+        );
         const orderedVariants = defaultVariant
           ? [defaultVariant, ...rest]
           : rest;
@@ -205,38 +230,56 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     }
     if (wishlistPending) return;
 
-    try {
-      if (isWishlisted) {
+    // Removing is never age-gated; only adding a restricted product is, and
+    // the prompt shows BEFORE the add (never a silent skip, never deferred to
+    // the wishlist page).
+    if (isWishlisted) {
+      try {
         const item = getWishlistItem(id, variantId);
         if (item?.id) {
           await removeWishlistItem(item.id);
           toast.success("Removed from wishlist");
         }
-      } else {
+      } catch (e: any) {
+        const status = e?.response?.status;
+        const msg: string =
+          e?.response?.data?.message ||
+          e?.response?.data?.error ||
+          e?.message ||
+          "";
+
+        if (status === 409 || /already/i.test(msg)) {
+          toast("Already present in the wishlist");
+        } else {
+          toast.error("Failed to remove from wishlist");
+          console.error("Wishlist operation failed:", e);
+        }
+      }
+      return;
+    }
+
+    requestAgeConfirmation(async () => {
+      try {
         const addedItem = await addWishlistItem(id, variantId);
         if (addedItem !== null) {
           toast.success("Added to wishlist");
         }
-      }
-    } catch (e: any) {
-      const status = e?.response?.status;
-      const msg: string =
-        e?.response?.data?.message ||
-        e?.response?.data?.error ||
-        e?.message ||
-        "";
+      } catch (e: any) {
+        const status = e?.response?.status;
+        const msg: string =
+          e?.response?.data?.message ||
+          e?.response?.data?.error ||
+          e?.message ||
+          "";
 
-      if (status === 409 || /already/i.test(msg)) {
-        toast("Already present in the wishlist");
-      } else {
-        toast.error(
-          isWishlisted
-            ? "Failed to remove from wishlist"
-            : "Failed to add to wishlist",
-        );
-        console.error("Wishlist operation failed:", e);
+        if (status === 409 || /already/i.test(msg)) {
+          toast("Already present in the wishlist");
+        } else {
+          toast.error("Failed to add to wishlist");
+          console.error("Wishlist operation failed:", e);
+        }
       }
-    }
+    });
   };
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -250,18 +293,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       return;
     }
 
-    // Navigate first
+    // Opening the product is never gated by the age restriction — the modal
+    // shows on the product page itself. Declining it navigates the visitor
+    // back off the product page. Gate on the card only applies to add-to-cart.
     navigate(`/product-page/${product.id}`);
-
-    // Then FORCE scroll to top on next tick (beats React Router restoration)
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-    }, 0);
-
-    // Extra insurance: also after a tiny delay
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-    }, 100);
   };
 
   // Price/discount always mirror the default (first in-stock) variant, so
@@ -278,16 +313,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         // non-variant products), so the badge must read the *variant's*
         // discount here — falling back to product.discount only if the
         // variant genuinely doesn't specify one.
-        discount: defaultVariant.discount !== undefined
+        discount:
+          defaultVariant.discount !== undefined
             ? defaultVariant.discount
             : product.discount,
-        discountAmount: defaultVariant.discountAmount !== undefined
+        discountAmount:
+          defaultVariant.discountAmount !== undefined
             ? defaultVariant.discountAmount
             : product.discountAmount,
-        discountPercent: defaultVariant.discountPercent !== undefined
+        discountPercent:
+          defaultVariant.discountPercent !== undefined
             ? defaultVariant.discountPercent
             : product.discountPercent,
-        discountType: defaultVariant.discountType !== undefined
+        discountType:
+          defaultVariant.discountType !== undefined
             ? defaultVariant.discountType
             : product.discountType,
       };
@@ -334,7 +373,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       Number((product as any).stock || (product as any).piece || 0) <= 0;
 
   return (
-    <div onClick={handleCardClick} className="product-card__link-wrapper">
+    <>
+      <div onClick={handleCardClick} className="product-card__link-wrapper">
       <div
         className="product-card"
         onMouseEnter={() => setIsHovering(true)}
@@ -414,10 +454,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   setAuthModalOpen(true);
                   return;
                 }
-                handleCartOnAdd(product, 1, variantId);
+                requestAgeConfirmation(() => handleCartOnAdd(product, 1, variantId));
               }}
             >
-              <FaCartPlus style={{ color: "#fff", width: "16px", height: "16px" }} />
+              <FaCartPlus
+                style={{ color: "#fff", width: "16px", height: "16px" }}
+              />
             </button>
           )}
         </div>
@@ -428,9 +470,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               {title}
             </h3>
             {isOutOfStock && (
-              <span
-                className="product-card__stock-badge product-card__stock-badge--out"
-              >
+              <span className="product-card__stock-badge product-card__stock-badge--out">
                 Out of stock
               </span>
             )}
@@ -472,6 +512,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         </div>
       </div>
+      </div>
       <AuthModal
         isOpen={authModalOpen}
         onClose={(e?: React.MouseEvent) => {
@@ -479,7 +520,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           setAuthModalOpen(false);
         }}
       />
-    </div>
+      {showAgeModal && <AgeRestrictionModal minimumAge={minimumAge} message={product.ageRestriction?.restrictionMessage ?? undefined} onConfirm={() => { saveAgeDecision(minimumAge, "accepted"); setShowAgeModal(false); pendingAction?.(); setPendingAction(null); }} onDecline={() => { saveAgeDecision(minimumAge, "declined"); setShowAgeModal(false); setPendingAction(null); }} />}
+    </>
   );
 };
 

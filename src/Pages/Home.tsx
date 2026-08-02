@@ -12,53 +12,53 @@ import SpecialOffers from "../Components/SpecialOffers";
 import CategoryCatalogSection from "../Components/CategoryCatalogSection";
 
 const Home = () => {
-	const [searchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
-	// Handle search parameter from URL (e.g., from banner clicks)
-	useEffect(() => {
-		const searchParam = searchParams.get("search");
-		if (searchParam) {
-			const decodedSearch = decodeURIComponent(searchParam);
-			//("🏠 Home page received search parameter:", decodedSearch);
+  // Handle search parameter from URL (e.g., from banner clicks)
+  useEffect(() => {
+    const searchParam = searchParams.get("search");
+    if (searchParam) {
+      const decodedSearch = decodeURIComponent(searchParam);
+      //("🏠 Home page received search parameter:", decodedSearch);
 
-			// Set the search query in the Navbar by dispatching a custom event
-			window.dispatchEvent(
-				new CustomEvent("setNavbarSearch", {
-					detail: { searchQuery: decodedSearch },
-				})
-			);
-		}
-	}, [searchParams]);
+      // Set the search query in the Navbar by dispatching a custom event
+      window.dispatchEvent(
+        new CustomEvent("setNavbarSearch", {
+          detail: { searchQuery: decodedSearch },
+        }),
+      );
+    }
+  }, [searchParams]);
 
-	// Optimize category fetching with React Query
-	const { isLoading: isCategoryLoading } = useQuery({
-		queryKey: ["cat"],
-		queryFn: fetchCategory,
-		staleTime: 5 * 60 * 1000, // 5 minutes
-		gcTime: 30 * 60 * 1000, // 30 minutes
-		refetchOnWindowFocus: false,
-		refetchOnMount: false,
-		refetchOnReconnect: false,
-	});
+  // Optimize category fetching with React Query
+  const { isLoading: isCategoryLoading } = useQuery({
+    queryKey: ["cat"],
+    queryFn: fetchCategory,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+  });
 
-	if (isCategoryLoading) {
-		return <PageLoader />;
-	}
+  if (isCategoryLoading) {
+    return <PageLoader />;
+  }
 
-	return (
-		<div style={{ zIndex: "0" }}>
-			<Navbar />
-			<div className="home-page-content">
-				<HeroSlider />
-				<CategorySlider />
-				<HomepageSections />
-				<SpecialOffers />
-				{/* <CategorySection maxItemsToShow={8} /> */}
-				<CategoryCatalogSection />
-			</div>
-			<Footer />
-		</div>
-	);
+  return (
+    <div style={{ zIndex: "0" }}>
+      <Navbar />
+      <div className="home-page-content">
+        <HeroSlider />
+        <CategorySlider />
+        <HomepageSections />
+        <SpecialOffers />
+        {/* <CategorySection maxItemsToShow={8} /> */}
+        <CategoryCatalogSection />
+      </div>
+      <Footer />
+    </div>
+  );
 };
 
 export default Home;

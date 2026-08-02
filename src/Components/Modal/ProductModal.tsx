@@ -38,7 +38,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ show, onClose, onSave, prod
       price: basePrice || 0,
       piece: stock || 0,
 
-      status,
+      status: status === "OUT_OF_STOCK" ? "OUT_OF_STOCK" : status === "LOW_STOCK" ? "LOW_STOCK" : "AVAILABLE",
       rating: product?.rating ?? 0,
       ratingCount: product?.ratingCount ?? 0,
       image: product?.image ?? '',

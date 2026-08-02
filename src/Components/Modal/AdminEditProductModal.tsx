@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
-import { fetchProductCategories, fetchProductSubcategories } from '../../api/products';
+import { fetchCategories as fetchProductCategories, fetchSubcategories as fetchProductSubcategories } from '../../api/categories';
 
 // Types
 type InventoryStatus = 'IN_STOCK' | 'OUT_OF_STOCK' | 'LOW_STOCK' | 'DISCONTINUED' | 'AVAILABLE' | 'UNAVAILABLE';

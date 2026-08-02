@@ -8,6 +8,9 @@ interface Category {
   date: string;
   image?: string;
   subCategories: unknown[];
+  isAgeRestricted?: boolean;
+  minimumAge?: number | null;
+  restrictionMessage?: string | null;
 }
 
 interface CategoryEditModalProps {
@@ -36,6 +39,9 @@ const CategoryEditModal: React.FC<CategoryEditModalProps> = ({
     }),
     image: "",
     subCategories: [],
+    isAgeRestricted: false,
+    minimumAge: 18,
+    restrictionMessage: "",
   });
   const [imageFile, setImageFile] = useState<File | undefined>(undefined);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -59,6 +65,9 @@ const CategoryEditModal: React.FC<CategoryEditModalProps> = ({
         }),
         image: "",
         subCategories: [],
+        isAgeRestricted: false,
+        minimumAge: 18,
+        restrictionMessage: "",
       });
       setImagePreview(null);
       setImageFile(undefined);
@@ -90,6 +99,12 @@ const CategoryEditModal: React.FC<CategoryEditModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (
+      formData.isAgeRestricted &&
+      (!Number.isInteger(formData.minimumAge) || (formData.minimumAge ?? 0) < 1)
+    ) {
+      return;
+    }
     if (formData.name) {
       onSave(formData as Category, imageFile);
     }
@@ -120,6 +135,64 @@ const CategoryEditModal: React.FC<CategoryEditModalProps> = ({
               placeholder="Enter category name"
             />
           </div>
+
+          <fieldset className="category-modal__restriction">
+            <legend>Age restriction</legend>
+            <label className="category-modal__switch">
+              <input
+                type="checkbox"
+                checked={Boolean(formData.isAgeRestricted)}
+                onChange={(event) =>
+                  setFormData((current) => ({
+                    ...current,
+                    isAgeRestricted: event.target.checked,
+                    minimumAge: current.minimumAge ?? 18,
+                  }))
+                }
+              />
+              <span className="category-modal__switch-control" aria-hidden="true" />
+              <span>
+                <strong>Age-restricted category</strong>
+                <small>Products assigned here require customer confirmation.</small>
+              </span>
+            </label>
+            {formData.isAgeRestricted && (
+              <div className="category-modal__restriction-fields">
+                <label>
+                  Minimum age
+                  <input
+                    type="number"
+                    min="1"
+                    max="130"
+                    step="1"
+                    value={formData.minimumAge ?? 18}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        minimumAge: Number(event.target.value),
+                      }))
+                    }
+                    required
+                  />
+                </label>
+                <label>
+                  Customer warning <span>(optional)</span>
+                  <input
+                    type="text"
+                    maxLength={500}
+                    value={formData.restrictionMessage ?? ""}
+                    onChange={(event) =>
+                      setFormData((current) => ({
+                        ...current,
+                        restrictionMessage: event.target.value,
+                      }))
+                    }
+                    placeholder="For customers 18 and over"
+                  />
+                </label>
+              </div>
+            )}
+          </fieldset>
 
           <div className="category-modal__form-group">
             <label htmlFor="image">Category Image</label>

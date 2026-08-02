@@ -55,7 +55,7 @@ import VendorTerms from "./Pages/VendorTerms";
 import EsewaPaymentFailure from "./Pages/EsewaPaymentFailure";
 import AdminProfile from "./Pages/AdminProfile";
 import { Notifications } from "./Pages/Notifications";
-import ForceScrollToTop from "./Components/ScrollToTop";
+import ScrollManager from "./Components/ScrollManager";
 import usePageTracking from "./Hook/usePageTracking";
 import AdminDelivery from "./Pages/AdminDelivery";
 import RiderDelivery from "./Pages/RiderDelivery";
@@ -119,7 +119,7 @@ function App() {
   return (
     <>
       <Toaster containerStyle={{ zIndex: 99999 }} />
-      <ForceScrollToTop />
+      <ScrollManager />
       <SiteGate>
         <Routes>
           <Route path="/" element={<Home />} />

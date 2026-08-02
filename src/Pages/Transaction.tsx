@@ -42,7 +42,7 @@ const TransactionSuccess: React.FC = () => {
 	const gatewayTxnId = searchParams.get("GatewayTxnId");
 
 	const cancelledRef = useRef(false);
-	const pollTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+	const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 	const [isCheckingNow, setIsCheckingNow] = useState(false);
 
 	const fetchOrder = useCallback(

@@ -1,4 +1,5 @@
 import React from 'react';
+import '../Styles/ProductCardSkeleton.css';
 
 const ProductCardSkeleton: React.FC<{ count: number }> = ({ count }) => {
   return (
@@ -6,15 +7,15 @@ const ProductCardSkeleton: React.FC<{ count: number }> = ({ count }) => {
       {Array(count).fill(null).map((_, index) => (
         <div key={index} className="product-card-skeleton-wrapper">
           <div className="product-card-skeleton">
-            {/* Image skeleton */}
-            <div className="skeleton-image shimmer" />
-            <div className="skeleton-content">
-              <div className="skeleton-title shimmer" />
-              <div className="skeleton-desc shimmer" />
-              <div className="skeleton-price shimmer" />
-              <div className="skeleton-rating shimmer" />
+            <div className="product-card-skeleton__media">
+              <div className="product-card-skeleton__image product-card-skeleton__shimmer" />
             </div>
-            <div className="skeleton-button shimmer" />
+            <div className="product-card-skeleton__content">
+              <div className="product-card-skeleton__line product-card-skeleton__line--title product-card-skeleton__shimmer" />
+              <div className="product-card-skeleton__line product-card-skeleton__line--description product-card-skeleton__shimmer" />
+              <div className="product-card-skeleton__line product-card-skeleton__line--rating product-card-skeleton__shimmer" />
+              <div className="product-card-skeleton__line product-card-skeleton__line--price product-card-skeleton__shimmer" />
+            </div>
           </div>
         </div>
       ))}

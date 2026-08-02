@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import { DetailedOrder, OrderService } from "../../services/orderService";
-import { getAvailableNextStatuses, getOrderStatusMeta } from "../orderStatus";
+import { getOrderStatusMeta } from "../orderStatus";
+import OrderStatusEditor from "../OrderStatusEditor";
 import "../../Styles/OrderModals.css";
 
 interface Order {
@@ -77,9 +78,6 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
     null,
   );
   const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[]>([]);
-  const [orderStatus, setOrderStatus] = useState("");
-  const [reason, setReason] = useState("");
-  const [note, setNote] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,8 +90,6 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
       setError(null);
       setDetailedOrder(null);
       setStatusHistory([]);
-      setReason("");
-      setNote("");
 
       try {
         const [orderDetails, history] = await Promise.all([
@@ -101,7 +97,6 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
           OrderService.getOrderStatusHistory(order.id, token).catch(() => []),
         ]);
         setDetailedOrder(orderDetails);
-        setOrderStatus(orderDetails.status || "");
         setStatusHistory(history);
       } catch (err) {
         const errorMessage =
@@ -117,14 +112,6 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
   }, [show, order, token]);
 
   const currentStatus = detailedOrder?.status || "";
-  const availableStatusOptions = useMemo(
-    () => (currentStatus ? getAvailableNextStatuses(currentStatus) : []),
-    [currentStatus],
-  );
-  const isEditable = availableStatusOptions.length > 0;
-  const selectedStatusMeta = orderStatus
-    ? getOrderStatusMeta(orderStatus)
-    : null;
   const itemCount =
     detailedOrder?.orderItems?.reduce(
       (total, item) => total + item.quantity,
@@ -137,14 +124,12 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
     detailedOrder?.orderedBy?.username ||
     `${order?.firstName || "Unknown"} ${order?.lastName || "User"}`;
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleStatusUpdate = async (
+    newStatus: string,
+    reason: string,
+    note: string,
+  ) => {
     if (!order || !detailedOrder || !token) return;
-
-    if (!orderStatus || orderStatus === detailedOrder.status) {
-      toast("Choose a different status before saving");
-      return;
-    }
 
     setIsSaving(true);
     setError(null);
@@ -152,18 +137,18 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
     try {
       const updatedOrder = await OrderService.updateOrderStatus(
         order.id,
-        orderStatus,
+        newStatus,
         token,
         {
           expectedCurrentStatus: detailedOrder.status,
-          reason: reason.trim() || undefined,
-          note: note.trim() || undefined,
+          reason,
+          note: note || undefined,
         },
       );
       setDetailedOrder((prev) =>
-        prev ? { ...prev, status: updatedOrder.status || orderStatus } : prev,
+        prev ? { ...prev, status: updatedOrder.status || newStatus } : prev,
       );
-      await onSave(order.id, updatedOrder.status || orderStatus);
+      await onSave(order.id, updatedOrder.status || newStatus);
       toast.success("Order status updated");
       onClose();
     } catch (err) {
@@ -253,11 +238,7 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
               <p>{error}</p>
             </div>
           ) : (
-            <form
-              id="order-edit-status-form"
-              className="order-edit-modal__form"
-              onSubmit={handleSubmit}
-            >
+            <div className="order-edit-modal__form">
               <section className="order-section">
                 <h3 className="order-section__title">Order summary</h3>
                 <div className="order-edit-modal__summary-grid">
@@ -326,66 +307,11 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
 
               <section className="order-section">
                 <h3 className="order-section__title">Status update</h3>
-                {!isEditable && (
-                  <div className="order-modal__info-banner">
-                    This order has no valid next status.
-                  </div>
-                )}
-
-                <div className="order-edit-modal__status-card">
-                  <label className="order-edit-modal__field">
-                    <span>New status</span>
-                    <select
-                      value={orderStatus}
-                      onChange={(event) => setOrderStatus(event.target.value)}
-                      disabled={!isEditable || isSaving}
-                    >
-                      <option value={currentStatus}>
-                        {currentStatus
-                          ? `${formatStatusLabel(currentStatus)} (current)`
-                          : "Current status"}
-                      </option>
-                      {availableStatusOptions.map((status) => (
-                        <option key={status.value} value={status.value}>
-                          {status.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  {selectedStatusMeta && (
-                    <div className="order-edit-modal__status-preview">
-                      <span
-                        className={`status-badge status-badge--${orderStatus.toLowerCase()}`}
-                      >
-                        {selectedStatusMeta.label}
-                      </span>
-                      <p>{selectedStatusMeta.description}</p>
-                    </div>
-                  )}
-
-                  <label className="order-edit-modal__field">
-                    <span>Reason</span>
-                    <input
-                      type="text"
-                      value={reason}
-                      onChange={(event) => setReason(event.target.value)}
-                      placeholder="Optional reason shown in internal history"
-                      disabled={!isEditable || isSaving}
-                    />
-                  </label>
-
-                  <label className="order-edit-modal__field">
-                    <span>Note</span>
-                    <textarea
-                      value={note}
-                      onChange={(event) => setNote(event.target.value)}
-                      placeholder="Optional note for this update"
-                      rows={3}
-                      disabled={!isEditable || isSaving}
-                    />
-                  </label>
-                </div>
+                <OrderStatusEditor
+                  currentStatus={currentStatus}
+                  onSubmit={handleStatusUpdate}
+                  isSaving={isSaving}
+                />
               </section>
 
               {statusHistory.length > 0 && (
@@ -428,7 +354,7 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
                   </div>
                 </section>
               )}
-            </form>
+            </div>
           )}
         </div>
 
@@ -440,19 +366,6 @@ const OrderEditModal: React.FC<OrderEditModalProps> = ({
             disabled={isSaving}
           >
             Cancel
-          </button>
-          <button
-            type="submit"
-            form="order-edit-status-form"
-            className="order-modal__button order-modal__button--primary"
-            disabled={
-              !isEditable ||
-              isSaving ||
-              !orderStatus ||
-              orderStatus === detailedOrder?.status
-            }
-          >
-            {isSaving ? "Updating..." : "Update status"}
           </button>
         </div>
       </div>

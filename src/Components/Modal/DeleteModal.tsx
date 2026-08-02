@@ -1,6 +1,7 @@
 
 import React from "react";
 import "../../Styles/DeleteModal.css";
+import { getProductRemovalConfirmation } from "../../utils/archiveConfirmation";
 
 interface DeleteModalProps {
   show: boolean;
@@ -8,6 +9,7 @@ interface DeleteModalProps {
   onDelete: () => void;
   productName: string;
   isLoading?: boolean;
+  archiveProduct?: boolean;
 }
 
 const DeleteModal: React.FC<DeleteModalProps> = ({
@@ -16,8 +18,10 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
   onDelete,
   productName,
   isLoading = false,
+  archiveProduct = false,
 }) => {
   if (!show) return null;
+  const confirmation = getProductRemovalConfirmation(archiveProduct);
 
   return (
     <div className="delete-modal">
@@ -34,13 +38,14 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
             <path d="M14 11V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
-        <h3 className="delete-modal__title">Delete Product</h3>
+        <h3 className="delete-modal__title">{confirmation.title}</h3>
         <p className="delete-modal__message">
-          Are you sure you want to delete{" "}
+          Are you sure you want to {confirmation.action.toLowerCase()}{" "}
           <strong className="delete-modal__product-name">"{productName}"</strong>?
           <br />
-          It will be archived and removed from your store, order history stays
-          intact, and you can restore it later from Archived Products.
+          {archiveProduct
+            ? "It will be archived and removed from your store, order history stays intact, and you can restore it later from Archived Products."
+            : "This action cannot be undone."}
         </p>
         <div className="delete-modal__actions">
           <button
@@ -58,10 +63,10 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
             {isLoading ? (
               <>
                 <span className="delete-modal__spinner" />
-                Deleting...
+                {confirmation.loadingAction}
               </>
             ) : (
-              "Delete"
+              confirmation.action
             )}
           </button>
         </div>

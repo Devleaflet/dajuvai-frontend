@@ -508,6 +508,7 @@ import { useAuth } from "../context/AuthContext";
 import "../Styles/AdminVendor.css";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import type { Vendor } from "./Types/vendor";
 
 interface AdminVendor {
   id: number;
@@ -1044,7 +1045,7 @@ const UnapprovedVendors: React.FC = () => {
           setShowViewModal(false);
           setSelectedVendor(null);
         }}
-        vendor={selectedVendor}
+        vendor={selectedVendor as unknown as Vendor}
       />
     </div>
   );

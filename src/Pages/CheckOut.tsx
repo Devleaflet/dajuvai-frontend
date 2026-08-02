@@ -1,6 +1,6 @@
 import CryptoJS from 'crypto-js';
 import React, { useEffect, useMemo, useState } from 'react';
-import { FaInfoCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaInfoCircle, FaReceipt, FaShoppingBag } from 'react-icons/fa';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import Footer from '../Components/Footer';
@@ -13,6 +13,10 @@ import { API_BASE_URL, FRONTEND_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { getDiscountDisplay } from '../utils/priceDisplay';
+import {
+	hasAgeRestrictedCheckoutItems,
+	isAgeRestrictedOrderAcknowledged,
+} from '../utils/ageRestrictionCheckout';
 
 interface PromoCode {
 	id: number;
@@ -36,6 +40,35 @@ interface VendorShippingLine {
 // total itself.
 interface CheckoutEstimate {
 	merchandiseSubtotal: number;
+	priceBreakdown?: {
+		actualPrice: number;
+		merchandiseSubtotal: number;
+		productDiscountTotal: number;
+		dealDiscountTotal: number;
+		promoDiscountTotal: number;
+		appliedPromoCode: string | null;
+		lineItems: Array<{
+			productId: number | null;
+			variantId: number | null;
+			name: string;
+			quantity: number;
+			basePrice: number;
+			unitPrice: number;
+			lineBaseTotal: number;
+			lineTotal: number;
+			productDiscount: {
+				label: string | null;
+				type: string | null;
+				amount: number;
+			};
+			dealDiscount: {
+				label: string | null;
+				percent: number | null;
+				amount: number;
+			};
+			savingsTotal: number;
+		}>;
+	};
 	vendorShippingBreakdown: VendorShippingLine[];
 	shippingTotal: number;
 	discountTotal: number;
@@ -110,6 +143,41 @@ interface PaymentMethodOption {
 	message?: string;
 }
 
+const cloneCheckoutItems = (items: CartItem[]): CartItem[] =>
+	items.map((item) => ({
+		...item,
+		variant: item.variant ? { ...item.variant } : item.variant,
+		selectedVariant: item.selectedVariant
+			? { ...item.selectedVariant }
+			: item.selectedVariant,
+		product: item.product
+			? {
+				...item.product,
+				vendor:
+					item.product.vendor && typeof item.product.vendor === 'object'
+						? {
+							...item.product.vendor,
+							district: item.product.vendor.district
+								? { ...item.product.vendor.district }
+								: undefined,
+						}
+						: item.product.vendor,
+			}
+			: item.product,
+	}));
+
+const cloneCheckoutEstimate = (
+	estimate: CheckoutEstimate | null
+): CheckoutEstimate | null =>
+	estimate
+		? {
+			...estimate,
+			vendorShippingBreakdown: estimate.vendorShippingBreakdown.map((line) => ({
+				...line,
+			})),
+		}
+		: null;
+
 const getPaymentReturnBaseUrl = () =>
 	(FRONTEND_URL || window.location.origin).replace(/\/+$/, '');
 
@@ -135,66 +203,77 @@ const OrderSuccessModal: React.FC<{
 }) => {
 		if (!open) return null;
 
+		const formattedPaymentMethod = paymentMethod.replace(/_/g, ' ');
+		const formattedPaymentStatus = paymentStatus || 'PENDING';
+
 		return (
 			<div className="checkout-success-modal-overlay">
-				<div className="checkout-success-modal">
+				<div
+					className="checkout-success-modal"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="checkout-success-title"
+				>
 					<div className="checkout-success-modal__content">
 						<div className="checkout-success-modal__header">
 							<div className="checkout-success-modal__icon-wrapper">
-								<div className="checkout-success-modal__icon">✓</div>
+								<FaCheckCircle className="checkout-success-modal__icon" />
 							</div>
-							{/* <button
-							className="checkout-success-modal__close"
-							onClick={onClose}
-						>
-							×
-						</button> */}
+							<div>
+								<p className="checkout-success-modal__eyebrow">
+									Order placed
+								</p>
+								<h2
+									id="checkout-success-title"
+									className="checkout-success-modal__title"
+								>
+									Order placed successfully
+								</h2>
+							</div>
 						</div>
-						<h2 className="checkout-success-modal__title">Order Confirmed!</h2>
 						<p className="checkout-success-modal__message">
-							Thank you for your purchase! Your order has been successfully placed
-							and is being processed. You'll receive a confirmation email with
-							your order details shortly.
+							We received your order and sent details to your email. You can
+							track progress from your order history.
 						</p>
-						<div className="checkout-success-modal__order-info">
+
+						<div className="checkout-success-modal__summary-grid">
 							{orderNumber && (
-								<div className="checkout-success-modal__info-item">
-									<span>Order Number:</span>
-									<span>{orderNumber}</span>
+								<div className="checkout-success-modal__summary-item checkout-success-modal__summary-item--wide">
+									<span>Order number</span>
+									<strong>{orderNumber}</strong>
 								</div>
 							)}
-							<div className="checkout-success-modal__info-item">
-								<span>Order Total:</span>
-								<span>Rs {totalAmount.toLocaleString()}</span>
+							<div className="checkout-success-modal__summary-item">
+								<span>Total</span>
+								<strong>Rs {totalAmount.toLocaleString()}</strong>
 							</div>
-							{typeof itemCount === 'number' && itemCount > 0 && (
-								<div className="checkout-success-modal__info-item">
-									<span>Items:</span>
-									<span>{itemCount}</span>
-								</div>
-							)}
-							<div className="checkout-success-modal__info-item">
-								<span>Payment Method:</span>
-								<span>{paymentMethod.replace(/_/g, ' ')}</span>
+							<div className="checkout-success-modal__summary-item">
+								<span>Items</span>
+								<strong>{typeof itemCount === 'number' ? itemCount : '-'}</strong>
 							</div>
-							{paymentStatus && (
-								<div className="checkout-success-modal__info-item">
-									<span>Payment Status:</span>
-									<span>{paymentStatus}</span>
-								</div>
-							)}
+							<div className="checkout-success-modal__summary-item checkout-success-modal__summary-item--wide">
+								<span>Payment</span>
+								<strong>{formattedPaymentMethod}</strong>
+							</div>
+							<div className="checkout-success-modal__summary-item checkout-success-modal__summary-item--wide">
+								<span>Status</span>
+								<strong>{formattedPaymentStatus}</strong>
+							</div>
 						</div>
+
 						<div className="checkout-success-modal__actions">
 							<button
 								className="checkout-success-modal__btn checkout-success-modal__btn--primary"
 								onClick={onViewOrder}
 							>
+								<FaReceipt aria-hidden="true" />
 								View Order Details
 							</button>
 							<button
 								className="checkout-success-modal__btn checkout-success-modal__btn--secondary"
 								onClick={onContinueShopping}
 							>
+								<FaShoppingBag aria-hidden="true" />
 								Continue Shopping
 							</button>
 						</div>
@@ -223,7 +302,9 @@ const Checkout: React.FC = () => {
 		handleDecreaseQuantity,
 		setCartItems,
 	} = useCart();
-	let cartItems: CartItem[] = contextCartItems;
+	// CartContext and checkout use compatible runtime shapes with separate legacy
+	// TypeScript declarations; normalize at this boundary before checkout logic.
+	let cartItems: CartItem[] = contextCartItems as unknown as CartItem[];
 
 	// State for managing Buy Now quantities
 	const [buyNowQuantities, setBuyNowQuantities] = useState<{
@@ -267,6 +348,7 @@ const Checkout: React.FC = () => {
 				product: {
 					id: product.id,
 					name: product.name,
+					ageRestriction: product.ageRestriction,
 					vendorId: product.vendor?.id,
 					vendor: product.vendor
 						? {
@@ -314,9 +396,14 @@ const Checkout: React.FC = () => {
 	const [isSavingBilling, setIsSavingBilling] = useState(false);
 	const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 	const [showAlert, setShowAlert] = useState(false);
+	const [showOrderSuccessModal, setShowOrderSuccessModal] = useState(false);
 	const [alertMessage, setAlertMessage] = useState('');
 	const [confirmedOrderSummary, setConfirmedOrderSummary] =
 		useState<ConfirmedOrderSummary | null>(null);
+	const [submittedCheckoutItems, setSubmittedCheckoutItems] =
+		useState<CartItem[] | null>(null);
+	const [submittedCheckoutEstimate, setSubmittedCheckoutEstimate] =
+		useState<CheckoutEstimate | null>(null);
 	const [termsModalOpen, setTermsModalOpen] = useState(false);
 	const [showPromoField, setShowPromoField] = useState(false);
 	const [enteredPromoCode, setEnteredPromoCode] = useState('');
@@ -326,6 +413,15 @@ const Checkout: React.FC = () => {
 	const [promoError, setPromoError] = useState('');
 	const [provinceData, setProvinceData] = useState<string[]>([]);
 	const [districtData, setDistrictData] = useState<string[]>([]);
+	const orderPlacedModalOpen = showOrderSuccessModal;
+	const checkoutSnapshotActive =
+		(isPlacingOrder || orderPlacedModalOpen) && submittedCheckoutItems;
+
+	if (checkoutSnapshotActive) {
+		cartItems = submittedCheckoutItems;
+	}
+	const hasAgeRestrictedItems = hasAgeRestrictedCheckoutItems(cartItems);
+	const ageRestrictedAcknowledged = isAgeRestrictedOrderAcknowledged(cartItems, termsAgreed);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -690,6 +786,12 @@ const Checkout: React.FC = () => {
 			setIsPlacingOrder(false);
 			return;
 		}
+		if (hasAgeRestrictedItems && !ageRestrictedAcknowledged) {
+			setAlertMessage('Confirm age-restricted delivery requirement before placing this order.');
+			setShowAlert(true);
+			setIsPlacingOrder(false);
+			return;
+		}
 
 		if (cartItems.length === 0) {
 			setAlertMessage('Your cart is empty');
@@ -698,6 +800,8 @@ const Checkout: React.FC = () => {
 			return;
 		}
 
+		setSubmittedCheckoutItems(cloneCheckoutItems(cartItems));
+		setSubmittedCheckoutEstimate(cloneCheckoutEstimate(checkoutEstimate));
 		setIsPlacingOrder(true);
 
 		const idempotencyKey = uuidv4();
@@ -726,6 +830,7 @@ const Checkout: React.FC = () => {
 					phoneNumber: billingDetails.phoneNumber,
 					fullName: billingDetails.fullName,
 					idempotencyKey,
+					ageRestrictedAcknowledged,
 				};
 
 				if (!orderData.variantId) {
@@ -752,6 +857,7 @@ const Checkout: React.FC = () => {
 					items: orderItems,
 					promoCode: enteredPromoCode || undefined,
 					idempotencyKey,
+					ageRestrictedAcknowledged,
 				};
 			}
 
@@ -779,15 +885,16 @@ const Checkout: React.FC = () => {
 						submittedSummary
 					);
 					setConfirmedOrderSummary(summary);
+					setSubmittedCheckoutItems(cloneCheckoutItems(cartItems));
+					setSubmittedCheckoutEstimate(cloneCheckoutEstimate(checkoutEstimate));
 					if (!location.state?.buyNow) {
 						setCartItems([]);
 					}
 
 					const deliveryTime = getOverallDeliveryTime();
-					setAlertMessage(
-						`Your order has been placed successfully! Expected delivery: ${deliveryTime}. Do you want to see full details?`
-					);
-					setShowAlert(true);
+					setIsPlacingOrder(false);
+					setAlertMessage(`Expected delivery: ${deliveryTime}.`);
+					setShowOrderSuccessModal(true);
 				} else if (selectedPaymentMethod === 'ESEWA') {
 					if (result.esewaRedirectUrl) {
 						//('Redirecting to eSewa:', result.esewaRedirectUrl.url);
@@ -824,12 +931,16 @@ const Checkout: React.FC = () => {
 					}
 				}, 1500);
 			} else {
+				setSubmittedCheckoutItems(null);
+				setSubmittedCheckoutEstimate(null);
 				setAlertMessage(
 					`Failed to place order: ${result.message || 'Unknown error'}`
 				);
 				setShowAlert(true);
 			}
 		} catch (error) {
+			setSubmittedCheckoutItems(null);
+			setSubmittedCheckoutEstimate(null);
 			console.error('Error placing order:', error);
 			setAlertMessage(
 				'An error occurred while placing your order. Please try again.'
@@ -934,11 +1045,20 @@ const Checkout: React.FC = () => {
 		return getDiscountDisplay({
 			basePrice: getItemOriginalPrice(item),
 			finalPrice: Number(item.price),
+			discount: item.variant?.discount ?? item.product?.discount ?? null,
 			discountAmount,
 			discountPercent,
 			discountType,
 		});
 	};
+
+	const getBackendLineBreakdown = (item: CartItem) =>
+		checkoutPriceBreakdown?.lineItems.find((line) => {
+			const sameProduct = line.productId === item.id || line.productId === item.product?.id;
+			const itemVariantId = item.variantId ?? item.variant?.id ?? null;
+			const sameVariant = (line.variantId ?? null) === itemVariantId;
+			return sameProduct && sameVariant;
+		});
 
 	// Groups items by vendor purely for display (product list/images) — money
 	// figures (subtotal, shipping fee, zone) always come from
@@ -970,6 +1090,10 @@ const Checkout: React.FC = () => {
 	const [checkoutEstimate, setCheckoutEstimate] = useState<CheckoutEstimate | null>(null);
 	const [estimateLoading, setEstimateLoading] = useState(false);
 	const [estimateError, setEstimateError] = useState('');
+	const displayCheckoutEstimate =
+		(isPlacingOrder || orderPlacedModalOpen) && submittedCheckoutEstimate
+			? submittedCheckoutEstimate
+			: checkoutEstimate;
 
 	useEffect(() => {
 		if (!token || cartItems.length === 0 || !billingDetails.district) {
@@ -1052,21 +1176,25 @@ const Checkout: React.FC = () => {
 		appliedPromoCode,
 	]);
 
-	const merchandiseSubtotal = checkoutEstimate?.merchandiseSubtotal ?? 0;
-	const totalShipping = checkoutEstimate?.shippingTotal ?? 0;
-	const discountAmount = checkoutEstimate?.discountTotal ?? 0;
-	const finalTotal = checkoutEstimate?.grandTotal ?? merchandiseSubtotal;
+	const merchandiseSubtotal = displayCheckoutEstimate?.merchandiseSubtotal ?? 0;
+	const totalShipping = displayCheckoutEstimate?.shippingTotal ?? 0;
+	const discountAmount = displayCheckoutEstimate?.discountTotal ?? 0;
+	const finalTotal = displayCheckoutEstimate?.grandTotal ?? merchandiseSubtotal;
 	const discountPercentage = appliedPromoCode?.discountPercentage ?? 0;
+	const checkoutPriceBreakdown = displayCheckoutEstimate?.priceBreakdown;
 
 	// The original (pre-product-discount) merchandise value — merchandiseSubtotal
 	// from the backend is already net of each item's own product/variant
 	// discount, so the gap between the two is the "Product Discount" line,
 	// distinct from the promo-code discount (discountAmount) applied on top.
-	const originalMerchandiseTotal = cartItems.reduce(
+	const originalMerchandiseTotal = checkoutPriceBreakdown?.actualPrice ?? cartItems.reduce(
 		(sum, item) => sum + getItemOriginalPrice(item) * getCurrentQuantity(item),
 		0,
 	);
-	const productDiscountTotal = Math.max(0, originalMerchandiseTotal - merchandiseSubtotal);
+	const productDiscountTotal =
+		checkoutPriceBreakdown?.productDiscountTotal ??
+		Math.max(0, originalMerchandiseTotal - merchandiseSubtotal);
+	const dealDiscountTotal = checkoutPriceBreakdown?.dealDiscountTotal ?? 0;
 
 	const toFiniteNumber = (value: unknown, fallback = 0): number => {
 		const numeric = Number(value);
@@ -1082,7 +1210,7 @@ const Checkout: React.FC = () => {
 		subtotal: merchandiseSubtotal,
 		shippingTotal: totalShipping,
 		discountTotal: discountAmount,
-		taxTotal: checkoutEstimate?.taxTotal ?? 0,
+		taxTotal: displayCheckoutEstimate?.taxTotal ?? 0,
 		grandTotal: finalTotal,
 		itemCount: cartItems.reduce(
 			(sum, item) => sum + getCurrentQuantity(item),
@@ -1229,17 +1357,17 @@ const Checkout: React.FC = () => {
 		<>
 			<Navbar />
 			{/* <AlertModal open={showAlert} message={alertMessage} onClose={() => setShowAlert(false)} /> */}
-			{showAlert && alertMessage.includes('Your order has been placed') ? (
+			{showOrderSuccessModal ? (
 				<OrderSuccessModal
-					open={showAlert}
-					onClose={() => setShowAlert(false)}
+					open={showOrderSuccessModal}
+					onClose={() => setShowOrderSuccessModal(false)}
 					onViewOrder={() => {
 						navigate('/user-profile', { state: { activeTab: 'orders' } });
-						setShowAlert(false);
+						setShowOrderSuccessModal(false);
 					}}
 					onContinueShopping={() => {
 						navigate('/shop');
-						setShowAlert(false);
+						setShowOrderSuccessModal(false);
 					}}
 					totalAmount={confirmedOrderSummary?.grandTotal ?? finalTotal}
 					paymentMethod={
@@ -1659,7 +1787,7 @@ const Checkout: React.FC = () => {
 							</h4>
 							{cartItems.length > 0 ? (
 								displayGroups.map((group) => {
-									const vendorShipping = checkoutEstimate?.vendorShippingBreakdown.find(
+									const vendorShipping = displayCheckoutEstimate?.vendorShippingBreakdown.find(
 										(vb) => vb.vendorId === group.vendorId
 									);
 									const itemsSubtotal = group.items.reduce(
@@ -1680,7 +1808,20 @@ const Checkout: React.FC = () => {
 												Location: {group.vendorDistrict}
 											</p>
 										</div>
-										{group.items.map((item) => (
+										{group.items.map((item) => {
+											const lineBreakdown = getBackendLineBreakdown(item);
+											const productDiscountAmount =
+												lineBreakdown?.productDiscount.amount ?? 0;
+											const dealDiscountAmount =
+												lineBreakdown?.dealDiscount.amount ?? 0;
+											const lineBaseTotal =
+												lineBreakdown?.lineBaseTotal ??
+												getItemOriginalPrice(item) * getCurrentQuantity(item);
+											const lineTotal =
+												lineBreakdown?.lineTotal ??
+												Number(item.price) * getCurrentQuantity(item);
+
+											return (
 											<div
 												key={item.id}
 												className="checkout-container__product-item"
@@ -1711,6 +1852,20 @@ const Checkout: React.FC = () => {
 															</small>
 														) : null;
 													})()}
+													{(productDiscountAmount > 0 || dealDiscountAmount > 0) && (
+														<div className="checkout-container__price-transparency">
+															{productDiscountAmount > 0 && (
+																<span className="checkout-container__price-chip checkout-container__price-chip--discount">
+																	Discount: -Rs {productDiscountAmount.toLocaleString()}
+																</span>
+															)}
+															{dealDiscountAmount > 0 && (
+																<span className="checkout-container__price-chip checkout-container__price-chip--deal">
+																	Deal{lineBreakdown?.dealDiscount.label ? `: ${lineBreakdown.dealDiscount.label}` : ''}: -Rs {dealDiscountAmount.toLocaleString()}
+																</span>
+															)}
+														</div>
+													)}
 													<div className="checkout-container__quantity-controls">
 														<button
 															className="checkout-container__quantity-controls-button"
@@ -1730,28 +1885,19 @@ const Checkout: React.FC = () => {
 												<span className="checkout-container__product-price">
 													<span className="checkout-container__product-price-current">
 														Rs{' '}
-														{(
-															Number(item.price) * getCurrentQuantity(item)
-														).toLocaleString()}
+														{lineTotal.toLocaleString()}
 													</span>
-													{getItemDiscountDisplay(item).hasDiscount && (
+													{lineBaseTotal > lineTotal && (
 														<>
 															<span className="checkout-container__product-price-original">
-																Rs{' '}
-																{(
-																	getItemOriginalPrice(item) * getCurrentQuantity(item)
-																).toLocaleString()}
+																Rs {lineBaseTotal.toLocaleString()}
 															</span>
-															{getItemDiscountDisplay(item).badgeLabel && (
-																<span className="checkout-container__product-price-badge">
-																	{getItemDiscountDisplay(item).badgeLabel}
-																</span>
-															)}
 														</>
 													)}
 												</span>
 											</div>
-										))}
+											);
+										})}
 										<div className="checkout-container__group-summary">
 											<div className="checkout-container__group-subtotal">
 												<span>Items subtotal ({group.vendorName}):</span>
@@ -1810,6 +1956,15 @@ const Checkout: React.FC = () => {
 									<span>Product Discount:</span>
 									<span className="checkout-container__discount-value">
 										- Rs {productDiscountTotal.toLocaleString()}
+									</span>
+								</div>
+							)}
+
+							{dealDiscountTotal > 0 && (
+								<div className="checkout-container__order-total">
+									<span>Deals:</span>
+									<span className="checkout-container__deal-value">
+										- Rs {dealDiscountTotal.toLocaleString()}
 									</span>
 								</div>
 							)}
@@ -1882,7 +2037,7 @@ const Checkout: React.FC = () => {
 							described in our privacy policy.
 						</p>
 
-						{/* Updated Terms Checkbox - Removed onClick from label, rely on input's onChange */}
+						{/* One acknowledgement controls terms and age-restricted delivery. */}
 						<label
 							className="checkout-container__terms-checkbox"
 							htmlFor="terms-checkbox"
@@ -1910,7 +2065,9 @@ const Checkout: React.FC = () => {
 									>
 										terms and conditions
 									</button>{' '}
-									*
+									*{hasAgeRestrictedItems && (
+										<span className="checkout-container__age-note">Age-restricted delivery: eligible recipient must present valid identification. Unattended delivery is not available.</span>
+									)}
 								</span>
 							</span>
 						</label>
@@ -1921,11 +2078,10 @@ const Checkout: React.FC = () => {
 								{errors.terms}
 							</div>
 						)}
-
 						<button
 							className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''
 								}`}
-							disabled={!termsAgreed || isPlacingOrder}
+							disabled={!termsAgreed || (hasAgeRestrictedItems && !ageRestrictedAcknowledged) || isPlacingOrder}
 							onClick={handlePlaceOrder}
 						>
 							{isPlacingOrder ? (

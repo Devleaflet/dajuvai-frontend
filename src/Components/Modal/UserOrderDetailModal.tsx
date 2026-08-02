@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { OrderService, DetailedOrder } from '../../services/orderService';
 import { useAuth } from '../../context/AuthContext';
+import { getOrderStatusMeta } from '../orderStatus';
 import '../../Styles/OrderModals.css';
 import defaultProductImage from '../../assets/logo.webp';
 
@@ -88,13 +89,22 @@ const UserOrderDetailModal: React.FC<UserOrderDetailModalProps> = ({
         (sum, item) => sum + Number(item.price) * item.quantity, 0
       ) || 0;
   const shippingFee = detailedOrder ? Number(detailedOrder.shippingFee) : 0;
+  const priceBreakdown = detailedOrder?.priceBreakdown;
+  const actualPrice = Number(priceBreakdown?.actualPrice ?? subtotal);
+  const productDiscountTotal = Number(priceBreakdown?.productDiscountTotal ?? 0);
+  const dealDiscountTotal = Number(priceBreakdown?.dealDiscountTotal ?? 0);
+  const promoDiscountTotal = Number(
+    priceBreakdown?.promoDiscountTotal ?? detailedOrder?.discountTotal ?? 0
+  );
 
   const getDeliveryEstimate = () => {
     const status = (detailedOrder?.status || '').toUpperCase();
     if (status === 'DELIVERED') return 'Delivered';
     if (status === 'CANCELLED') return 'Cancelled';
-    if (status === 'SHIPPED') return '1-2 days';
-    if (status === 'PROCESSING') return '2-3 days';
+    if (status === 'RETURNED') return 'Returned';
+    if (status === 'NOT_RECEIVED') return 'Delivery unsuccessful';
+    if (status === 'ASSIGNED_TO_RIDER') return '1-2 days';
+    if (status === 'ARRIVED_AT_WAREHOUSE' || status === 'PROCESSING') return '2-3 days';
     return '3-5 days';
   };
 
@@ -121,7 +131,7 @@ const UserOrderDetailModal: React.FC<UserOrderDetailModalProps> = ({
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
             <span className={`status-badge status-badge--${(detailedOrder?.status || '').toLowerCase()}`}>
-              {detailedOrder?.status || 'N/A'}
+              {detailedOrder?.status ? getOrderStatusMeta(detailedOrder.status).label : 'N/A'}
             </span>
             <span style={{ fontSize: 12, color: '#6b7280' }}>
               Est. delivery: {getDeliveryEstimate()}
@@ -176,6 +186,8 @@ const UserOrderDetailModal: React.FC<UserOrderDetailModalProps> = ({
                           const name = item.productNameSnapshot || item.product?.name || 'Unknown Product';
                           const sku = item.skuSnapshot || item.variant?.sku;
                           const attrs = item.variant?.attributes;
+                          const itemPriceBreakdown = item.priceBreakdown;
+                          const hasLineSavings = Number(itemPriceBreakdown?.savingsTotal ?? 0) > 0;
                           return (
                             <div key={item.id} className="vendor-card__item">
                               <img
@@ -200,6 +212,20 @@ const UserOrderDetailModal: React.FC<UserOrderDetailModalProps> = ({
                                         {key}: {val}
                                       </span>
                                     ))}
+                                  </div>
+                                )}
+                                {hasLineSavings && (
+                                  <div className="vendor-card__price-breakdown">
+                                    {Number(itemPriceBreakdown?.productDiscount.amount ?? 0) > 0 && (
+                                      <span className="vendor-card__price-pill vendor-card__price-pill--discount">
+                                        Discount: -Rs. {Number(itemPriceBreakdown?.productDiscount.amount ?? 0).toFixed(2)}
+                                      </span>
+                                    )}
+                                    {Number(itemPriceBreakdown?.dealDiscount.amount ?? 0) > 0 && (
+                                      <span className="vendor-card__price-pill vendor-card__price-pill--deal">
+                                        Deal{itemPriceBreakdown?.dealDiscount.label ? `: ${itemPriceBreakdown.dealDiscount.label}` : ''}: -Rs. {Number(itemPriceBreakdown?.dealDiscount.amount ?? 0).toFixed(2)}
+                                      </span>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -252,9 +278,33 @@ const UserOrderDetailModal: React.FC<UserOrderDetailModalProps> = ({
                 <h3 className="order-section__title">Order Summary</h3>
                 <div className="order-summary-box">
                   <div className="order-summary-row">
+                    <span className="order-summary-row__label">Actual price</span>
+                    <span className="order-summary-row__value">Rs. {actualPrice.toFixed(2)}</span>
+                  </div>
+                  {productDiscountTotal > 0 && (
+                    <div className="order-summary-row order-summary-row--savings">
+                      <span className="order-summary-row__label">Product discount</span>
+                      <span className="order-summary-row__value">- Rs. {productDiscountTotal.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {dealDiscountTotal > 0 && (
+                    <div className="order-summary-row order-summary-row--savings">
+                      <span className="order-summary-row__label">Deals</span>
+                      <span className="order-summary-row__value">- Rs. {dealDiscountTotal.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="order-summary-row">
                     <span className="order-summary-row__label">Subtotal ({detailedOrder.orderItems?.reduce((t, i) => t + i.quantity, 0) || 0} items)</span>
                     <span className="order-summary-row__value">Rs. {subtotal.toFixed(2)}</span>
                   </div>
+                  {promoDiscountTotal > 0 && (
+                    <div className="order-summary-row order-summary-row--savings">
+                      <span className="order-summary-row__label">
+                        Promo{priceBreakdown?.appliedPromoCode ? ` (${priceBreakdown.appliedPromoCode})` : ''}
+                      </span>
+                      <span className="order-summary-row__value">- Rs. {promoDiscountTotal.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="order-summary-row">
                     <span className="order-summary-row__label">Total shipping</span>
                     <span className="order-summary-row__value">Rs. {shippingFee.toFixed(2)}</span>

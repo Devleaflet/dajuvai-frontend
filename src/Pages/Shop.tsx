@@ -1,1641 +1,897 @@
+import * as Dialog from "@radix-ui/react-dialog";
 import { useQuery } from "@tanstack/react-query";
-import { toInteger } from "lodash";
-import { ChevronDown, ChevronUp, Search, Settings2 } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import ProductCard from "../Components/ProductCard";
-import { fetchReviewOf } from "../api/products";
-import CategorySlider from "../Components/CategorySlider";
+import { Product } from "../Components/Types/Product";
+import { Deal } from "../Components/Types/Deal";
 import Footer from "../Components/Footer";
 import Navbar from "../Components/Navbar";
-import PageLoader from "../Components/PageLoader";
-import { API_BASE_URL } from "../config";
-import { useAuth } from "../context/AuthContext";
-import { useUI } from "../context/UIContext";
-import CategoryService from "../services/categoryService";
-import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
-import "../Styles/Shop.css";
+import CategorySlider from "../Components/CategorySlider";
 import ProductBannerSlider from "../Components/ProductBannerSlider";
-import { Deal } from "../services/dealService";
-import { Product } from "../Components/Types/Product";
+import ResponsiveBanner from "../Components/ResponsiveBanner";
+import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
 import defaultProductImage from "../assets/logo.webp";
+import { API_BASE_URL } from "../config";
+import CategoryService, { Category } from "../services/categoryService";
+import { dealApiService } from "../services/apiDeals";
+import "../Styles/Shop.css";
+import {
+  CatalogFilters,
+  CatalogSort,
+  catalogFiltersToSearchParams,
+  filterCatalogCategories,
+  normalizeNestedCatalogFilters,
+  parseCatalogFilters,
+  selectCatalogCategoryFilter,
+  toggleCatalogSubcategoryFilter,
+  updateCatalogFilters,
+} from "../utils/catalogFilters";
+import { normalizeSearchTerm } from "../utils/recentSearches";
+import {
+  isActiveShopSourceBanner,
+  parseShopSourceBanner,
+  type ShopSourceBannerRecord,
+} from "../utils/shopSourceBanner";
 
-interface Category {
-    id: number;
+interface CatalogResponse {
+  data: RawCatalogProduct[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+  };
+}
+
+interface DealsFilterResponse {
+  deals: Deal[];
+  productCounts: Record<string, number>;
+}
+
+interface ShopSourceBannerResponse {
+  data: ShopSourceBannerRecord & {
     name: string;
-    subcategories: Subcategory[];
-}
-interface Subcategory {
-    id: number;
-    name: string;
-}
-interface ProductFilters {
-    categoryId?: number | undefined;
-    subcategoryId?: number | undefined;
-    brandId?: string | undefined;
-    dealId?: string | undefined;
-    bannerId?: string | undefined;
-    sort?: string | undefined;
-    page?: number | undefined;
-    limit?: number | undefined;
-    search?: string | undefined;
-}
-interface ApiProduct {
-    id: number;
-    name: string;
-    description: string;
-    basePrice: number | null;
-    finalPrice: number;
-    stock: number;
-    hasVariants: boolean;
-    discount: number | null;
-    discountAmount?: number | null;
-    discountPercent?: number | null;
-    discountType: "PERCENTAGE" | "FLAT" | "NONE" | null;
-    size: string[];
-    status: "AVAILABLE" | "OUT_OF_STOCK" | "LOW_STOCK" | "UNAVAILABLE";
-    productImages: string[];
-    inventory: {
-        sku: string;
-        quantity: number;
-        status: string;
-    }[];
-    vendorId: number;
-    brand_id: number | null;
-    dealId: number | null;
-    created_at: string;
-    updated_at: string;
-    categoryId: number;
-    variants?: Array<{
-        id?: number;
-        name?: string;
-        basePrice?: number | string;
-        finalPrice: number;
-        stock?: number;
-        sku?: string;
-        image?: string;
-        images?: string[];
-        attributes?: Record<string, any>;
-        discount?: number | string;
-        discountType?: "PERCENTAGE" | "FLAT" | "NONE";
-        discountAmount?: number | null;
-        discountPercent?: number | null;
-        calculatedPrice?: number;
-        [key: string]: any;
-    }>;
-    subcategory: {
-        id: number;
-        name: string;
-        image: string | null;
-        createdAt: string;
-        updatedAt: string;
-        category?: {
-            id: number;
-            name: string;
-        };
-    };
-    vendor: {
-        id: number;
-        businessName: string;
-        email: string;
-        phoneNumber: string;
-        districtId: number;
-        isVerified: boolean;
-        createdAt: string;
-        updatedAt: string;
-        district: {
-            id: number;
-            name: string;
-        };
-    };
-    brand: {
-        id: number;
-        name: string;
-    } | null;
-    deal: Deal;
+    desktopImage: string | null;
+    mobileImage: string | null;
+  };
 }
 
-const calculatePrice = (base: any, disc?: any, discType?: string): number => {
-    const baseNum = toNumber(base);
-    if (!disc || !discType) return baseNum;
-    const d = typeof disc === "string" ? parseFloat(disc) : Number(disc);
-    if (!isFinite(d)) return baseNum;
-    if (discType === "PERCENTAGE") return baseNum * (1 - d / 100);
-    if (discType === "FLAT") return baseNum - d;
-    return baseNum;
+interface RawVariant {
+  finalPrice?: number | string | null;
+  basePrice?: number | string | null;
+  images?: string[] | null;
+  image?: string | null;
+}
+
+interface RawCatalogProduct {
+  [key: string]: unknown;
+  id?: number | string;
+  name?: string;
+  description?: string | null;
+  hasVariants?: boolean;
+  variants?: RawVariant[];
+  effectivePrice?: number | string | null;
+  finalPrice?: number | string | null;
+  basePrice?: number | string | null;
+  discount?: number | string | null;
+  discountAmount?: number | string | null;
+  discountPercent?: number | string | null;
+  avgRating?: number | string | null;
+  reviewCount?: number | string | null;
+  count?: number | string | null;
+  productImages?: string[];
+  deal?: Product["deal"];
+  status?: string;
+}
+
+const PER_PAGE = 24;
+const catalogPageCache = new Map<string, Map<number, Product[]>>();
+const MAX_CATALOG_CACHE_KEYS = 20;
+const sortOptions: Array<{ value: CatalogSort; label: string }> = [
+  { value: "relevance", label: "Relevance" },
+  { value: "newest", label: "Newest" },
+  { value: "price_low_high", label: "Price: Low to high" },
+  { value: "price_high_low", label: "Price: High to low" },
+  { value: "discount_high_low", label: "Highest discount" },
+  { value: "best_selling", label: "Best selling" },
+];
+
+const toCardProduct = (raw: RawCatalogProduct): Product => {
+  const variant = raw.hasVariants
+    ? [...(raw.variants ?? [])].sort((left, right) => {
+        const leftPrice = Number(left.finalPrice ?? left.basePrice ?? Number.POSITIVE_INFINITY);
+        const rightPrice = Number(right.finalPrice ?? right.basePrice ?? Number.POSITIVE_INFINITY);
+        return leftPrice - rightPrice;
+      })[0]
+    : undefined;
+  const finalPrice = Number(
+    raw.effectivePrice ??
+      raw.finalPrice ??
+      variant?.finalPrice ??
+      raw.basePrice ??
+      0,
+  );
+  return {
+    ...raw,
+    id: Number(raw.id),
+    title: raw.name,
+    name: raw.name,
+    description: raw.description ?? "",
+    price: finalPrice,
+    basePrice: raw.basePrice ?? variant?.basePrice ?? finalPrice,
+    finalPrice,
+    discount: Number(raw.discount ?? 0),
+    discountAmount: Number(raw.discountAmount ?? 0),
+    discountPercent: Number(raw.discountPercent ?? 0),
+    rating: Number(raw.avgRating ?? 0),
+    ratingCount: String(raw.reviewCount ?? raw.count ?? 0),
+    image:
+      raw.productImages?.[0] ??
+      variant?.images?.[0] ??
+      variant?.image ??
+      defaultProductImage,
+    productImages: raw.productImages?.length
+      ? raw.productImages
+      : [defaultProductImage],
+    hasVariants: Boolean(raw.hasVariants),
+    deal: raw.deal ?? null,
+    status: raw.status === "UNAVAILABLE" ? "OUT_OF_STOCK" : raw.status,
+  } as Product;
 };
 
-const toNumber = (v: any): number => {
-    if (v === undefined || v === null) return 0;
-    const n = typeof v === "string" ? parseFloat(v) : Number(v);
-    return isFinite(n) ? n : 0;
+const fetchCatalog = async (
+  filters: CatalogFilters,
+): Promise<{ products: Product[]; meta: CatalogResponse["meta"] }> => {
+  const params = catalogFiltersToSearchParams(filters);
+  params.set("limit", String(PER_PAGE));
+  const response = await fetch(
+    `${API_BASE_URL}/api/categories/all/products?${params.toString()}`,
+  );
+  if (!response.ok) throw new Error("Could not load products. Please retry.");
+
+  const page = (await response.json()) as CatalogResponse;
+  const cacheKey = catalogFiltersToSearchParams({
+    ...filters,
+    page: 1,
+  }).toString();
+  if (
+    !catalogPageCache.has(cacheKey) &&
+    catalogPageCache.size >= MAX_CATALOG_CACHE_KEYS
+  ) {
+    catalogPageCache.delete(catalogPageCache.keys().next().value as string);
+  }
+  const pages = catalogPageCache.get(cacheKey) ?? new Map<number, Product[]>();
+  if (filters.page === 1) pages.clear();
+  pages.set(filters.page, (page.data ?? []).map(toCardProduct));
+  catalogPageCache.set(cacheKey, pages);
+
+  return {
+    products: [...pages.entries()]
+      .filter(([pageNumber]) => pageNumber <= filters.page)
+      .sort(([left], [right]) => left - right)
+      .flatMap(([, products]) => products),
+    meta: page.meta ?? {
+      total: 0,
+      page: 1,
+      limit: PER_PAGE,
+      totalPages: 0,
+      hasNextPage: false,
+    },
+  };
 };
 
-const applyDiscount = (
-    base: number,
-    discount?: number | null,
-    discountType?: string | null,
-): number => {
-    const d = toNumber(discount);
-    if (!d || d <= 0) return base;
-
-    const type = discountType || "PERCENTAGE";
-
-    if (type === "PERCENTAGE") return base * (1 - d / 100);
-    if (type === "FLAT") return base - d;
-
-    return base;
+const fetchShopSourceBanner = async (
+  id: number,
+): Promise<ShopSourceBannerResponse["data"]> => {
+  const response = await fetch(`${API_BASE_URL}/api/banners/${id}`);
+  if (!response.ok) throw new Error("Could not load source banner.");
+  const payload = (await response.json()) as ShopSourceBannerResponse;
+  return payload.data;
 };
 
-const applyDeal = (price: number, deal?: any): number => {
-    if (!deal || deal.status !== "ENABLED") return price;
+interface FilterPanelProps {
+  categories: Category[];
+  deals: Deal[];
+  dealProductCounts: Record<string, number>;
+  dealsLoading?: boolean;
+  filters: CatalogFilters;
+  onChange: (updates: Partial<CatalogFilters>) => void;
+  onReset: () => void;
+  compact?: boolean;
+}
 
-    const percent = toNumber(deal.discountPercentage);
-    if (!percent || percent <= 0) return price;
-
-    return price * (1 - percent / 100);
-};
-
-const apiRequest = async (
-    endpoint: string,
-    token: string | null | undefined = undefined,
-) => {
-    const url = endpoint.startsWith("http")
-        ? endpoint
-        : `${API_BASE_URL}${endpoint}`;
-    const response = await fetch(url, {
-        headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-            "Content-Type": "application/json",
-            Accept: "application/json",
-        },
-    });
-    if (!response.ok) {
-        throw new Error(
-            `API request failed: ${response.status} ${response.statusText}`,
-        );
-    }
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-        const textResponse = await response.text();
-        if (
-            textResponse.trim().startsWith("<!doctype html") ||
-            textResponse.trim().startsWith("<html")
-        ) {
-            throw new Error(
-                `API endpoint not found. The server returned HTML instead of JSON.`,
-            );
+const FilterPanel = ({
+  categories,
+  deals,
+  dealProductCounts,
+  dealsLoading,
+  filters,
+  onChange,
+  onReset,
+  compact,
+}: FilterPanelProps) => {
+  const [minPrice, setMinPrice] = useState(filters.minPrice?.toString() ?? "");
+  const [maxPrice, setMaxPrice] = useState(filters.maxPrice?.toString() ?? "");
+  const [priceError, setPriceError] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
+  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(() => {
+    const initiallyExpanded = new Set<number>(filters.categoryIds);
+    for (const category of categories) {
+      for (const subcategory of category.subcategories ?? []) {
+        if (filters.subcategoryIds.includes(subcategory.id)) {
+          initiallyExpanded.add(category.id);
         }
-        throw new Error(`Expected JSON response but received ${contentType}`);
+      }
     }
-    return await response.json();
-};
-const buildQueryParams = (filters: ProductFilters): string => {
-    const params = new URLSearchParams();
-    if (filters.categoryId !== undefined && filters.categoryId !== null) {
-        params.append("categoryId", filters.categoryId.toString());
-    }
-    if (filters.subcategoryId !== undefined && filters.subcategoryId !== null) {
-        params.append("subcategoryId", filters.subcategoryId.toString());
-    }
-    if (filters.dealId !== undefined && filters.dealId !== null) {
-        params.append("dealId", filters.dealId);
-    }
-    if (filters.bannerId !== undefined && filters.bannerId !== null) {
-        params.append("bannerId", filters.bannerId);
-    }
-    if (filters.sort !== undefined && filters.sort !== "all") {
-        params.append("sort", filters.sort);
-    }
-    if (filters.page !== undefined) {
-        params.append("page", filters.page.toString());
-    }
-    if (filters.limit !== undefined) {
-        params.append("limit", filters.limit.toString());
-    }
-    if (filters.search !== undefined) {
-        params.append("search", filters.search);
-    }
-    return params.toString();
-};
-const fetchProductsWithFilters = async (
-    filters: ProductFilters,
-    token: string | null | undefined = undefined,
-) => {
-    if (filters.bannerId) {
-        const bannerResponse = await apiRequest(
-            `/api/banners/${filters.bannerId}`,
-            token,
-        );
-        let selectedProducts = bannerResponse?.data?.selectedProducts || [];
-        // Client-side search if provided
-        if (filters.search) {
-            const query = filters.search.toLowerCase();
-            selectedProducts = selectedProducts.filter(
-                (item: ApiProduct) =>
-                    item.name.toLowerCase().includes(query) ||
-                    item.description.toLowerCase().includes(query) ||
-                    (item.subcategory?.category?.name || "")
-                        .toLowerCase()
-                        .includes(query),
-            );
-        }
-        // Client-side sort if provided
-        if (filters.sort && filters.sort !== "all") {
-            selectedProducts = [...selectedProducts].sort((a, b) => {
-                const priceA = toNumber(a.finalPrice) || calculatePrice(a.basePrice, a.discountAmount ?? a.discount, a.discountType);
-                const priceB = toNumber(b.finalPrice) || calculatePrice(b.basePrice, b.discountAmount ?? b.discount, b.discountType);
-                if (filters.sort === "low-to-high") return priceA - priceB;
-                if (filters.sort === "high-to-low") return priceB - priceA;
-                return 0;
-            });
-        }
-        // Client-side pagination
-        const totalItems = selectedProducts.length;
-        const page = filters.page || 1;
-        const limit = filters.limit || 40;
-        const start = (page - 1) * limit;
-        const paginatedProducts = selectedProducts.slice(start, start + limit);
-        return {
-            success: true,
-            data: paginatedProducts,
-            pagination: {
-                current_page: page,
-                total_pages: Math.ceil(totalItems / limit),
-                total_items: totalItems,
-            },
-        };
-    }
+    return initiallyExpanded;
+  });
+  useEffect(() => {
+    setMinPrice(filters.minPrice?.toString() ?? "");
+    setMaxPrice(filters.maxPrice?.toString() ?? "");
+  }, [filters.minPrice, filters.maxPrice]);
+  const visibleCategories = useMemo(
+    () => filterCatalogCategories(categories, categorySearch),
+    [categories, categorySearch],
+  );
 
-    const apiFilters = {
-        categoryId: filters.categoryId,
-        subcategoryId: filters.subcategoryId,
-        dealId: filters.dealId,
-        bannerId: filters.bannerId,
-        sort: filters.sort,
-        page: filters.page,
-        limit: filters.limit,
-        search: filters.search,
-    };
-
-    const queryParams = buildQueryParams(apiFilters);
-    const endpoint = `/api/categories/all/products${
-        queryParams ? `?${queryParams}` : ""
-    }`;
-
-    try {
-        const response = await apiRequest(endpoint, token);
-        return response;
-    } catch (error) {
-        console.error("❌ Error fetching products:", error);
-        console.error("❌ Request details:", {
-            endpoint,
-            fullUrl: `${API_BASE_URL}${endpoint}`,
-            filters: apiFilters,
-            queryParams,
-        });
-        throw error;
-    }
-};
-// Updated processProductWithReview function
-const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
-    const { averageRating, reviews } = await fetchReviewOf(item.id);
-
-    const processImageUrl = (imgUrl: string): string => {
-        if (!imgUrl) return "";
-        const trimmed = imgUrl.trim();
-        if (!trimmed) return "";
-        if (trimmed.startsWith("//")) return `https:${trimmed}`;
-        if (
-            trimmed.startsWith("http://") ||
-            trimmed.startsWith("https://") ||
-            trimmed.startsWith("/")
-        ) {
-            return trimmed;
-        }
-        const base = API_BASE_URL.replace(/\/?api\/?$/, "");
-        return `${base}/${trimmed}`.replace(/([^:]\/)\/+/g, "$1/");
-    };
-
-    const processedProductImages = (item.productImages || [])
-        .filter((img): img is string => !!img && typeof img === "string")
-        .map(processImageUrl);
-
-    // Gate on hasVariants, not just array presence — a product just
-    // converted to non-variant can still carry orphaned variant rows (kept
-    // only because they have real order history), which must never surface.
-    const processedVariants = (
-        item.hasVariants ? item.variants || [] : []
-    ).map((variant: any) => {
-        const rawImages = Array.isArray(variant.images)
-            ? variant.images
-            : Array.isArray(variant.variantImages)
-              ? variant.variantImages
-              : [];
-
-        const images = rawImages
-            .filter(
-                (img: any): img is string => !!img && typeof img === "string",
-            )
-            .map(processImageUrl);
-
-        return {
-            ...variant,
-            basePrice: toNumber(variant.basePrice ?? variant.price),
-            finalPrice: toNumber(
-                variant.finalPrice ?? variant.basePrice ?? variant.price,
-            ),
-            stock: Number(variant.stock || 0),
-            status:
-                variant.status ||
-                (Number(variant.stock || 0) <= 0
-                    ? "OUT_OF_STOCK"
-                    : "AVAILABLE"),
-            image: images[0],
-            images,
-        };
-    });
-
-    const displayImage =
-        processedProductImages[0] ||
-        processedVariants.flatMap((v) => v.images)[0];
-
-    const availableVariants = processedVariants.filter(
-        (v: any) => Number(v.stock || 0) > 0 && v.status !== "OUT_OF_STOCK",
+  useEffect(() => {
+    if (!categorySearch.trim()) return;
+    setExpandedCategories(
+      new Set(visibleCategories.map((category) => category.id)),
     );
-    const displayVariants =
-        availableVariants.length > 0 ? availableVariants : processedVariants;
-    const totalStock = item.hasVariants
-        ? processedVariants.reduce(
-              (sum: number, v: any) => sum + Number(v.stock || 0),
-              0,
-          )
-        : Number(item.stock || 0);
-    const effectiveStatus =
-        item.status === "UNAVAILABLE"
-            ? "OUT_OF_STOCK"
-            : item.status ||
-              (totalStock <= 0
-                  ? "OUT_OF_STOCK"
-                  : totalStock < 5
-                    ? "LOW_STOCK"
-                    : "AVAILABLE");
+  }, [categorySearch, visibleCategories]);
 
-    let basePrice = toNumber(item.basePrice);
-
-    if ((!basePrice || basePrice === 0) && displayVariants.length > 0) {
-        basePrice = toNumber(displayVariants[0].basePrice);
+  const toggleId = (key: "categoryIds" | "subcategoryIds", id: number) => {
+    const selected = filters[key];
+    if (key === "categoryIds") {
+      const childIds =
+        categories
+          .find((category) => category.id === id)
+          ?.subcategories?.map((item) => item.id) ?? [];
+      onChange(selectCatalogCategoryFilter(filters, id, childIds));
+      return;
     }
-
-    // Use backend-computed finalPrice as the source of truth for the effective price.
-    // applyDiscount is kept for legacy fallback when finalPrice is missing.
-    const backendFinalPrice = toNumber(item.finalPrice);
-    const afterProductDiscount = backendFinalPrice > 0
-        ? backendFinalPrice
-        : applyDiscount(basePrice, item.discountAmount ?? item.discount, item.discountType);
-
-    const finalPrice = applyDeal(afterProductDiscount, item.deal);
-
-    let discountPctNum = 0;
-    if (item.discountType === "PERCENTAGE" && item.discountPercent) {
-        discountPctNum = Math.round(Number(item.discountPercent));
-    } else if (item.discountType === "PERCENTAGE" && item.discount) {
-        discountPctNum = Math.round(parseFloat(`${item.discount}`));
-    } else if (basePrice > 0 && item.finalPrice < basePrice) {
-        discountPctNum = Math.max(
-            1,
-            Math.round(((basePrice - item.finalPrice) / basePrice) * 100),
-        );
-    } else if (item.discountType === "FLAT" && item.discountAmount && basePrice > 0) {
-        discountPctNum = Math.max(
-            1,
-            Math.round((Number(item.discountAmount) / basePrice) * 100),
-        );
-    } else if (item.discountType === "FLAT" && item.discount && basePrice > 0) {
-        discountPctNum = Math.max(
-            1,
-            Math.round((parseFloat(`${item.discount}`) / basePrice) * 100),
-        );
-    }
-    const discountPctStr = discountPctNum > 0 ? `${discountPctNum}%` : "0%";
-
-    // finalized items to be sent to other product card components
-    return {
-        id: item.id,
-        title: item.name,
-        description: item.description,
-        basePrice: basePrice,
-        finalPrice: toNumber(
-            item.finalPrice || displayVariants[0]?.finalPrice || finalPrice,
-        ),
-        stock: totalStock,
-        deal: item.deal,
-        dealId: item.dealId,
-        price: Math.max(finalPrice, 0).toString(),
-        discount: item.discount,
-        discountAmount: item.discountAmount ?? undefined,
-        discountPercent: item.discountPercent ?? undefined,
-        discountPercentage: discountPctStr,
-        discountType: item.discountType,
-        rating: Number(averageRating) || 0,
-        ratingCount: reviews?.length?.toString() || "0",
-        image: displayImage,
-        productImages:
-            processedProductImages.length > 0
-                ? processedProductImages
-                : processedVariants.flatMap((v) => v.images).length > 0
-                  ? processedVariants.flatMap((v) => v.images)
-                  : [defaultProductImage],
-        hasVariants: item.hasVariants,
-        variants: processedVariants,
-        category: item.subcategory?.category?.name || "Misc",
-        subcategory: item.subcategory,
-        brand_id: item.brand?.id || null,
-        status: effectiveStatus,
-    };
-};
-
-const createFallbackProduct = (item: ApiProduct): Product => ({
-    id: item.id,
-    title: item.name || "Unknown Product",
-    name: item.name || "Unknown Product",
-    description: item.description || "No description available",
-    basePrice: 0,
-    finalPrice: 0,
-    originalPrice: "0",
-    discount: item.discount ? item.discount : 0,
-    discountPercentage: item.discount ? `${item.discount}%` : "0%",
-    discountType: item.discountType || "NONE",
-    price: "0",
-    rating: 0,
-    ratingCount: "0",
-    isBestSeller: false,
-    freeDelivery: true,
-    image: defaultProductImage,
-    productImages: [defaultProductImage],
-    category: "Misc",
-    brand: "Unknown",
-    stock: Number(item.stock || 0),
-    status:
-        item.status === "UNAVAILABLE"
-            ? "OUT_OF_STOCK"
-            : item.status || "OUT_OF_STOCK",
-    hasVariants: Boolean(item.hasVariants),
-    variants: [],
-    deal: item.deal || null,
-    dealId: item.dealId,
-});
-
-// Rest of the Shop component (unchanged)
-const Shop: React.FC = () => {
-    const { token } = useAuth();
-    const { cartOpen } = useUI();
-    const PER_PAGE = 40;
-    const [currentPage, setCurrentPage] = useState(1);
-    const [searchParams, setSearchParams] = useSearchParams();
-    const [loading, setLoading] = useState<boolean>(true);
-    const [categorySearch, setCategorySearch] = useState<string>("");
-    const [subcategorySearch, setSubcategorySearch] = useState<string>("");
-    const [selectedCategory, setSelectedCategory] = useState<
-        number | undefined
-    >(undefined);
-    const [selectedSubcategory, setSelectedSubcategory] = useState<
-        number | undefined
-    >(undefined);
-    const [selectedBannerId, setSelectedBannerId] = useState<
-        string | undefined
-    >(undefined);
-    const [sortBy, setSortBy] = useState<string>("all");
-    const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-    const [searchQuery, setSearchQuery] = useState<string>("");
-    const [searchInputValue, setSearchInputValue] = useState<string>("");
-    const [showMoreCategories, setShowMoreCategories] =
-        useState<boolean>(false);
-    const [showMoreSubcategories, setShowMoreSubcategories] =
-        useState<boolean>(false);
-    const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] =
-        useState<boolean>(false);
-    const [isSubCategoryDropdownOpen, setIsSubCategoryDropdownOpen] =
-        useState<boolean>(false);
-    const currentFilters: ProductFilters = {
-        categoryId: selectedCategory,
-        subcategoryId: selectedSubcategory,
-        bannerId: selectedBannerId,
-        search: searchQuery.trim() || undefined,
-        sort: sortBy !== "all" ? sortBy : undefined,
-        page: currentPage,
-        limit: PER_PAGE,
-    };
-    const queryKey = ["products", currentFilters];
-    const hasActiveFilters = Boolean(
-        selectedCategory ||
-        selectedSubcategory ||
-        selectedBannerId ||
-        searchQuery.trim() ||
-        (sortBy && sortBy !== "all"),
+    const next = selected.includes(id)
+      ? selected.filter((item) => item !== id)
+      : [...selected, id];
+    onChange({ [key]: next });
+  };
+  const toggleSubcategory = (parentCategoryId: number, subcategoryId: number) =>
+    onChange(
+      toggleCatalogSubcategoryFilter(filters, parentCategoryId, subcategoryId),
     );
-    useEffect(() => {
-        const categoryIdParam = searchParams.get("categoryId");
-        const subcategoryIdParam = searchParams.get("subcategoryId");
-        const bannerIdParam = searchParams.get("bannerId");
-        const searchParam = searchParams.get("search");
-        const sortParam = searchParams.get("sort");
-        const pageParam = searchParams.get("page");
-
-        const newCategoryId = categoryIdParam
-            ? Number(categoryIdParam)
-            : undefined;
-        setSelectedCategory(newCategoryId);
-        const newSubcategoryId = subcategoryIdParam
-            ? Number(subcategoryIdParam)
-            : undefined;
-        setSelectedSubcategory(newSubcategoryId);
-        const newBannerId = bannerIdParam ? bannerIdParam : undefined;
-        setSelectedBannerId(newBannerId);
-        if (searchParam) {
-            setSearchQuery(searchParam);
-            setSearchInputValue(searchParam);
-        } else {
-            setSearchQuery("");
-            setSearchInputValue("");
-        }
-        setSortBy(sortParam || "all");
-        setCurrentPage(pageParam ? Number(pageParam) : 1);
-    }, [searchParams]);
-    useEffect(() => {
-        const handleShopFiltersChanged = (event: CustomEvent) => {
-            const { categoryId, subcategoryId, bannerId } = event.detail;
-            const newSearchParams = new URLSearchParams(searchParams);
-            if (categoryId) {
-                newSearchParams.set("categoryId", categoryId.toString());
-            } else {
-                newSearchParams.delete("categoryId");
-            }
-            if (subcategoryId) {
-                newSearchParams.set("subcategoryId", subcategoryId.toString());
-            } else {
-                newSearchParams.delete("subcategoryId");
-            }
-            if (bannerId) {
-                newSearchParams.set("bannerId", bannerId.toString());
-            } else {
-                newSearchParams.delete("bannerId");
-            }
-            newSearchParams.delete("search");
-            setSearchParams(newSearchParams);
-        };
-        window.addEventListener(
-            "shopFiltersChanged",
-            handleShopFiltersChanged as EventListener,
-        );
-        return () => {
-            window.removeEventListener(
-                "shopFiltersChanged",
-                handleShopFiltersChanged as EventListener,
-            );
-        };
-    }, [searchParams, setSearchParams]);
-
-    const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
-        queryKey: ["categories"],
-        queryFn: async () => {
-            try {
-                const response = await apiRequest("/api/categories", token);
-                if (Array.isArray(response)) return response;
-                if (response?.success && Array.isArray(response.data))
-                    return response.data;
-                if (response?.data)
-                    return Array.isArray(response.data) ? response.data : [];
-                return [];
-            } catch {
-                const categoryService = CategoryService.getInstance();
-                return await categoryService.getAllCategories(
-                    token || undefined,
-                );
-            }
-        },
-        staleTime: 5 * 60 * 1000,
-        gcTime: 10 * 60 * 1000,
-    });
-    const { data: subcategories = [], isLoading: isLoadingSubcategories } =
-        useQuery({
-            queryKey: ["subcategories", selectedCategory],
-            queryFn: async () => {
-                if (!selectedCategory) return [];
-                try {
-                    const response = await apiRequest(
-                        `/api/categories/${selectedCategory}/subcategories`,
-                        token,
-                    );
-                    if (response?.success && Array.isArray(response.data)) {
-                        return response.data
-                            .map((item: { id: number; name: string }) => ({
-                                id: item.id,
-                                name: item.name,
-                            }))
-                            .filter(
-                                (item: Subcategory) => item.id && item.name,
-                            );
-                    }
-                    return [];
-                } catch {
-                    return [];
-                }
-            },
-            enabled: !!selectedCategory,
-            staleTime: 5 * 60 * 1000,
-            gcTime: 10 * 60 * 1000,
-        });
-    const {
-        data,
-        isLoading: isLoadingProducts,
-        error: productsError,
-    } = useQuery({
-        queryKey: queryKey,
-        queryFn: async () => {
-            try {
-                const response = await fetchProductsWithFilters(
-                    currentFilters,
-                    token,
-                );
-                const productsArray: ApiProduct[] =
-                    response.data || response || [];
-
-                const paginationInfo = {
-                    current_page: (() => {
-                        const p = response?.meta?.page;
-                        if (
-                            p === undefined ||
-                            p === null ||
-                            Number.isNaN(Number(p))
-                        )
-                            return 1;
-                        return toInteger(p);
-                    })(),
-                    total_pages: response?.meta?.total
-                        ? Math.max(
-                              1,
-                              Math.ceil(Number(response.meta.total) / PER_PAGE),
-                          )
-                        : 1,
-                    total_items: response?.meta?.total ?? productsArray.length,
-                };
-
-                const processedProducts = await Promise.all(
-                    productsArray.map(async (item, index) => {
-                        try {
-                            const processed =
-                                await processProductWithReview(item);
-
-                            return processed;
-                        } catch (error) {
-                            console.error(
-                                `❌ Error processing product ${index + 1}:`,
-                                item.name,
-                                error,
-                            );
-                            return createFallbackProduct(item);
-                        }
-                    }),
-                );
-
-                return { products: processedProducts, meta: paginationInfo };
-            } catch (error) {
-                console.error("❌ Fatal error in products query:", error);
-
-                if (
-                    currentFilters.categoryId ||
-                    currentFilters.subcategoryId ||
-                    currentFilters.brandId ||
-                    currentFilters.dealId ||
-                    currentFilters.bannerId
-                ) {
-                    try {
-                        const fallbackFilters: ProductFilters = {
-                            page: currentFilters.page,
-                            limit: currentFilters.limit,
-                            sort: currentFilters.sort,
-                            search: currentFilters.search,
-                        };
-                        const fallbackResponse = await fetchProductsWithFilters(
-                            fallbackFilters,
-                            token,
-                        );
-                        let fallbackProductsArray: ApiProduct[] = [];
-                        if (
-                            fallbackResponse?.success &&
-                            Array.isArray(fallbackResponse.data)
-                        ) {
-                            fallbackProductsArray = fallbackResponse.data;
-                        } else if (Array.isArray(fallbackResponse)) {
-                            fallbackProductsArray = fallbackResponse;
-                        }
-
-                        const fallbackPagination =
-                            fallbackResponse.pagination || {
-                                current_page: currentFilters.page || 1,
-                                total_pages: 1,
-                                total_items: fallbackProductsArray.length,
-                            };
-                        const processedFallbackProducts = await Promise.all(
-                            fallbackProductsArray.map(async (item) => {
-                                try {
-                                    const processed =
-                                        await processProductWithReview(item);
-                                    return processed;
-                                } catch {
-                                    return createFallbackProduct(item);
-                                }
-                            }),
-                        );
-                        return {
-                            products: processedFallbackProducts,
-                            meta: fallbackPagination,
-                        };
-                    } catch (fallbackError) {
-                        console.error(
-                            "❌ Fallback also failed:",
-                            fallbackError,
-                        );
-                        if (
-                            currentFilters.categoryId &&
-                            currentFilters.subcategoryId
-                        ) {
-                            try {
-                                const secondFallbackFilters: ProductFilters = {
-                                    categoryId: currentFilters.categoryId,
-                                    page: currentFilters.page,
-                                    limit: currentFilters.limit,
-                                    sort: currentFilters.sort,
-                                    search: currentFilters.search,
-                                };
-                                const secondFallbackResponse =
-                                    await fetchProductsWithFilters(
-                                        secondFallbackFilters,
-                                        token,
-                                    );
-                                let secondFallbackProductsArray: ApiProduct[] =
-                                    [];
-                                if (
-                                    secondFallbackResponse?.success &&
-                                    Array.isArray(secondFallbackResponse.data)
-                                ) {
-                                    secondFallbackProductsArray =
-                                        secondFallbackResponse.data;
-                                } else if (
-                                    Array.isArray(secondFallbackResponse)
-                                ) {
-                                    secondFallbackProductsArray =
-                                        secondFallbackResponse;
-                                }
-
-                                const secondFallbackPagination =
-                                    secondFallbackResponse.pagination || {
-                                        current_page: currentFilters.page || 1,
-                                        total_pages: 1,
-                                        total_items:
-                                            secondFallbackProductsArray.length,
-                                    };
-                                const processedSecondFallbackProducts =
-                                    await Promise.all(
-                                        secondFallbackProductsArray.map(
-                                            async (item) => {
-                                                try {
-                                                    const processed =
-                                                        await processProductWithReview(
-                                                            item,
-                                                        );
-                                                    return processed;
-                                                } catch {
-                                                    return createFallbackProduct(
-                                                        item,
-                                                    );
-                                                }
-                                            },
-                                        ),
-                                    );
-                                return {
-                                    products: processedSecondFallbackProducts,
-                                    meta: secondFallbackPagination,
-                                };
-                            } catch (secondFallbackError) {
-                                console.error(secondFallbackError);
-                            }
-                        }
-                        throw error;
-                    }
-                } else {
-                    //('⚠️ No filters detected, not attempting fallback');
-                }
-                throw error;
-            }
-        },
-        staleTime: 5 * 60 * 1000,
-        gcTime: 10 * 60 * 1000,
-        refetchOnWindowFocus: false,
-        retry: (failureCount, error) => {
-            return failureCount < 2;
-        },
-        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    });
-    const productsData = data?.products || [];
-    console.log("----------Product data-------------");
-    console.log(productsData);
-    const pagination = data?.meta || {
-        current_page: 1,
-        total_pages: 1,
-        total_items: 0,
-    };
-    const handleCategoryChange = (categoryId: number | undefined): void => {
-        const newSearchParams = new URLSearchParams(searchParams);
-        if (categoryId) {
-            newSearchParams.set("categoryId", categoryId.toString());
-        } else {
-            newSearchParams.delete("categoryId");
-            setCategorySearch("");
-        }
-        newSearchParams.delete("subcategoryId");
-        newSearchParams.delete("bannerId");
-        setSubcategorySearch("");
-        setSelectedBannerId(undefined);
-        newSearchParams.delete("search");
-        newSearchParams.set("page", currentPage.toString());
-        setSearchParams(newSearchParams);
-        setCurrentPage(1);
-        if (window.innerWidth <= 992) {
-            setIsSidebarOpen(false);
-        }
-    };
-    const handleSubcategoryChange = (
-        subcategoryId: number | undefined,
-    ): void => {
-        const newSearchParams = new URLSearchParams(searchParams);
-        if (subcategoryId) {
-            newSearchParams.set("subcategoryId", subcategoryId.toString());
-        } else {
-            newSearchParams.delete("subcategoryId");
-            setSubcategorySearch("");
-        }
-        newSearchParams.delete("bannerId");
-        setSelectedBannerId(undefined);
-        newSearchParams.set("page", currentPage.toString());
-        setSearchParams(newSearchParams);
-        setCurrentPage(1);
-        if (window.innerWidth <= 992) {
-            setIsSidebarOpen(false);
-        }
-    };
-    const handleSortChange = (newSort: string | undefined): void => {
-        setSortBy(newSort || "all");
-
-        // Update searchParams to include the sort parameter while preserving other filters
-        const newSearchParams = new URLSearchParams(searchParams);
-        if (newSort && newSort !== "all") {
-            newSearchParams.set("sort", newSort);
-        } else {
-            newSearchParams.delete("sort");
-        }
-        newSearchParams.set("page", currentPage.toString());
-        setSearchParams(newSearchParams);
-        setCurrentPage(1);
-
-        if (window.innerWidth <= 992) {
-            setIsSidebarOpen(false);
-        }
-    };
-    const toggleSidebar = (): void => {
-        setIsSidebarOpen(!isSidebarOpen);
-    };
-    const clearAllFilters = (): void => {
-        setSortBy("all");
-        setSearchInputValue("");
-        setCategorySearch("");
-        setSubcategorySearch("");
-        setSelectedBannerId(undefined);
-        const newSearchParams = new URLSearchParams();
-        setSearchParams(newSearchParams);
-        setCurrentPage(1);
-        if (window.innerWidth <= 992) {
-            setIsSidebarOpen(false);
-        }
-    };
-    const handleSearchInputChange = (
-        e: React.ChangeEvent<HTMLInputElement>,
-    ) => {
-        setSearchInputValue(e.target.value);
-    };
-    const handleSearchSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const trimmedSearch = searchInputValue.trim();
-        const newSearchParams = new URLSearchParams(searchParams);
-        if (trimmedSearch) {
-            newSearchParams.set("search", trimmedSearch);
-        } else {
-            newSearchParams.delete("search");
-        }
-        newSearchParams.delete("categoryId");
-        newSearchParams.delete("subcategoryId");
-        newSearchParams.delete("bannerId");
-        setSelectedBannerId(undefined);
-        newSearchParams.set("page", currentPage.toString());
-        setSearchParams(newSearchParams);
-        setCurrentPage(1);
-        if (window.innerWidth <= 992) {
-            setIsSidebarOpen(false);
-        }
-    };
-    const handleClearSearch = () => {
-        setSearchInputValue("");
-        const newSearchParams = new URLSearchParams(searchParams);
-        newSearchParams.delete("search");
-        newSearchParams.set("page", currentPage.toString());
-        setSearchParams(newSearchParams);
-    };
-    const getCurrentCategoryName = (): string => {
-        if (selectedCategory === undefined) return "All Categories";
-        const category = categories.find(
-            (cat: Category) => cat.id === selectedCategory,
-        );
-        return category ? category.name : "Selected Category";
-    };
-    const getCurrentSubcategoryName = (): string | undefined => {
-        if (selectedSubcategory === undefined) return undefined;
-        const subcategory = subcategories.find(
-            (sub: Subcategory) => sub.id === selectedSubcategory,
-        );
-        return subcategory ? subcategory.name : "Selected Subcategory";
-    };
-    const getDisplayTitle = (): string => {
-        if (searchQuery.trim()) {
-            return `Search Results for "${searchQuery}"`;
-        }
-        if (selectedBannerId) {
-            return "Special Offer Products";
-        }
-        return getCurrentCategoryName();
-    };
-    // Loading state management
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setLoading(false);
-        }, 1000);
-        return () => clearTimeout(timer);
-    }, []);
-    if (loading) {
-        return <PageLoader />;
+  const toggleDeal = (dealId: number) => {
+    const dealIds = filters.dealIds.includes(dealId)
+      ? filters.dealIds.filter((id) => id !== dealId)
+      : [...filters.dealIds, dealId];
+    onChange({ dealIds, hasDeal: undefined });
+  };
+  const applyPrice = () => {
+    const min = minPrice.trim() === "" ? undefined : Number(minPrice);
+    const max = maxPrice.trim() === "" ? undefined : Number(maxPrice);
+    if (
+      (min !== undefined && (!Number.isFinite(min) || min < 0)) ||
+      (max !== undefined && (!Number.isFinite(max) || max < 0))
+    ) {
+      setPriceError("Enter valid non-negative prices.");
+      return;
     }
-    if (productsError) {
-        return (
-            <>
-                <Navbar />
-                <div className="shop-page-content">
-                    <div className="shop-error">
-                        <div className="error-message">
-                            <h2 className="error-title">
-                                Unable to Load Products
-                            </h2>
-                            <p className="error-text">
-                                {productsError instanceof Error
-                                    ? productsError.message
-                                    : "Unknown error occurred"}
-                            </p>
-                            <button
-                                onClick={() => window.location.reload()}
-                                className="error-refresh-button"
-                            >
-                                Refresh Page
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <Footer />
-            </>
-        );
+    if (min !== undefined && max !== undefined && min > max) {
+      setPriceError("Minimum price cannot exceed maximum price.");
+      return;
     }
-    return (
-        <>
-            <Navbar />
-            <div className="shop-page-content">
-                <ProductBannerSlider />
-                <CategorySlider />
-                <div className="shop-max-width-container">
-                    <div className="shop-container">
-                        <div className="shop-header">
-                            <div className="shop-header-title">
-                                <h2 className="shop-title">
-                                    {getDisplayTitle()}
-                                    {getCurrentSubcategoryName() && (
-                                        <span className="shop-subtitle">
-                                            {" > "}
-                                            {getCurrentSubcategoryName()}
-                                        </span>
-                                    )}
-                                </h2>
-                            </div>
-                            <div className="search-bar-container">
-                                <form
-                                    onSubmit={handleSearchSubmit}
-                                    className="search-form"
-                                >
-                                    <div
-                                        className={`search-input-container ${
-                                            searchInputValue
-                                                ? "has-clear-button"
-                                                : ""
-                                        }`}
-                                    >
-                                        <input
-                                            type="text"
-                                            value={searchInputValue}
-                                            onChange={handleSearchInputChange}
-                                            placeholder="Search for products, brands, or categories..."
-                                            className="search-input"
-                                        />
-                                        {searchInputValue && (
-                                            <button
-                                                type="button"
-                                                onClick={handleClearSearch}
-                                                className="search-clear-button"
-                                            >
-                                                ×
-                                            </button>
-                                        )}
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        className="search-button"
-                                    >
-                                        <span className="search-text">
-                                            Search
-                                        </span>
-                                        <Search
-                                            size={15}
-                                            color="white"
-                                            className="search-icon"
-                                        />
-                                    </button>
-                                </form>
-                            </div>
+    setPriceError("");
+    onChange({ minPrice: min, maxPrice: max });
+  };
+  const toggleCategoryExpanded = (categoryId: number) => {
+    setExpandedCategories((current) => {
+      const next = new Set(current);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  };
 
-                            <div className="product-count">
-                                <div className="product-count__badge">
-                                    {isLoadingProducts ? (
-                                        <div className="product-count__loading">
-                                            <div className="product-count__spinner"></div>
-                                            <span>Loading products...</span>
-                                        </div>
-                                    ) : (
-                                        <div className="product-count__result">
-                                            <span className="product-count__number">
-                                                {pagination.total_items}
-                                            </span>
-                                            <span className="product-count__label">
-                                                {pagination.total_items === 1
-                                                    ? "product"
-                                                    : "products"}{" "}
-                                                found
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="shop-content">
-                            <div className="shop">
-                                <button
-                                    className="filter-button"
-                                    onClick={toggleSidebar}
-                                    aria-label="Toggle filters"
-                                >
-                                    <span className="filter-icon">
-                                        <Settings2 />
-                                    </span>
-                                </button>
-                                <div
-                                    className={`filter-sidebar-overlay ${
-                                        isSidebarOpen ? "open" : ""
-                                    }`}
-                                    onClick={toggleSidebar}
-                                    aria-label="Close filters"
-                                />
-                                <div
-                                    className={`filter-sidebar ${isSidebarOpen ? "open" : ""}`}
-                                >
-                                    <div className="filter-sidebar__header">
-                                        <h3>Filter</h3>
-                                        <button
-                                            className="filter-sidebar__close"
-                                            onClick={toggleSidebar}
-                                            aria-label="Close filters"
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                    {hasActiveFilters && (
-                                        <div className="filter-sidebar__section">
-                                            <button
-                                                onClick={clearAllFilters}
-                                                className="sidebar-clear-all-button"
-                                            >
-                                                Clear All Filters
-                                            </button>
-                                        </div>
-                                    )}
-                                    {searchQuery.trim() && (
-                                        <div className="filter-sidebar__section">
-                                            <h4 className="filter-sidebar__section-title">
-                                                Search
-                                            </h4>
-                                            <div className="sidebar-search-display">
-                                                <strong>Searching for:</strong>{" "}
-                                                "{searchQuery}"
-                                            </div>
-                                        </div>
-                                    )}
-                                    <div className="filter-sidebar__section">
-                                        <h4 className="filter-sidebar__section-title">
-                                            Sort By
-                                        </h4>
-                                        <div className="filter-sidebar__radio-list">
-                                            {[
-                                                {
-                                                    value: "all",
-                                                    label: "Default",
-                                                },
-                                                {
-                                                    value: "low-to-high",
-                                                    label: "Price: Low to High",
-                                                },
-                                                {
-                                                    value: "high-to-low",
-                                                    label: "Price: High to Low",
-                                                },
-                                            ].map((option) => (
-                                                <div
-                                                    key={option.value}
-                                                    className="filter-sidebar__radio-item"
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        id={`sort-${option.value}`}
-                                                        name="sort"
-                                                        checked={
-                                                            sortBy ===
-                                                            option.value
-                                                        }
-                                                        onChange={() =>
-                                                            handleSortChange(
-                                                                option.value,
-                                                            )
-                                                        }
-                                                    />
-                                                    <label
-                                                        htmlFor={`sort-${option.value}`}
-                                                    >
-                                                        {option.label}
-                                                    </label>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="filter-sidebar__section">
-                                        <h4 className="filter-sidebar__section-title">
-                                            Categories
-                                            <button
-                                                className="dropdown-toggle"
-                                                onClick={() =>
-                                                    setIsCategoryDropdownOpen(
-                                                        !isCategoryDropdownOpen,
-                                                    )
-                                                }
-                                                aria-label="Toggle categories dropdown"
-                                            >
-                                                {isCategoryDropdownOpen ? (
-                                                    <ChevronUp size={18} />
-                                                ) : (
-                                                    <ChevronDown size={18} />
-                                                )}
-                                            </button>
-                                        </h4>
-                                        {isCategoryDropdownOpen && (
-                                            <div className="filter-sidebar__dropdown-content">
-                                                <div className="filter-sidebar__search-container filter-sidebar__search-container--categories">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Search categories..."
-                                                        value={categorySearch}
-                                                        onChange={(e) =>
-                                                            setCategorySearch(
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        onKeyDown={(e) => {
-                                                            if (
-                                                                e.key ===
-                                                                "Enter"
-                                                            ) {
-                                                                e.preventDefault();
-                                                                const match =
-                                                                    categories.find(
-                                                                        (
-                                                                            cat: Category,
-                                                                        ) =>
-                                                                            cat.name
-                                                                                .toLowerCase()
-                                                                                .includes(
-                                                                                    categorySearch.toLowerCase(),
-                                                                                ),
-                                                                    );
-                                                                if (match) {
-                                                                    handleCategoryChange(
-                                                                        match.id,
-                                                                    );
-                                                                }
-                                                            }
-                                                        }}
-                                                        className="filter-sidebar__search-input"
-                                                    />
-                                                </div>
-                                                <div className="filter-sidebar__checkbox-list">
-                                                    {isLoadingCategories ? (
-                                                        <p className="filter-sidebar__loading">
-                                                            Loading
-                                                            categories...
-                                                        </p>
-                                                    ) : (
-                                                        <>
-                                                            <div className="filter-sidebar__checkbox-item">
-                                                                <input
-                                                                    type="radio"
-                                                                    id="category-all"
-                                                                    name="category"
-                                                                    checked={
-                                                                        selectedCategory ===
-                                                                        undefined
-                                                                    }
-                                                                    onChange={() =>
-                                                                        handleCategoryChange(
-                                                                            undefined,
-                                                                        )
-                                                                    }
-                                                                />
-                                                                <label htmlFor="category-all">
-                                                                    All
-                                                                    Categories
-                                                                </label>
-                                                            </div>
-                                                            {categories
-                                                                .filter(
-                                                                    (
-                                                                        category: Category,
-                                                                    ) =>
-                                                                        category.name
-                                                                            .toLowerCase()
-                                                                            .includes(
-                                                                                categorySearch.toLowerCase(),
-                                                                            ),
-                                                                )
-                                                                .slice(
-                                                                    0,
-                                                                    selectedCategory ===
-                                                                        undefined
-                                                                        ? showMoreCategories
-                                                                            ? undefined
-                                                                            : 5
-                                                                        : undefined,
-                                                                )
-                                                                .map(
-                                                                    (
-                                                                        category: Category,
-                                                                    ) => (
-                                                                        <div
-                                                                            key={
-                                                                                category.id
-                                                                            }
-                                                                            className="filter-sidebar__category-group"
-                                                                        >
-                                                                            <div className="filter-sidebar__checkbox-item">
-                                                                                <input
-                                                                                    type="radio"
-                                                                                    id={`category-${category.id}`}
-                                                                                    name="category"
-                                                                                    checked={
-                                                                                        selectedCategory ===
-                                                                                        category.id
-                                                                                    }
-                                                                                    onChange={() =>
-                                                                                        handleCategoryChange(
-                                                                                            category.id,
-                                                                                        )
-                                                                                    }
-                                                                                />
-                                                                                <label
-                                                                                    htmlFor={`category-${category.id}`}
-                                                                                >
-                                                                                    {
-                                                                                        category.name
-                                                                                    }
-                                                                                </label>
-                                                                            </div>
-                                                                        </div>
-                                                                    ),
-                                                                )}
-                                                            {selectedCategory ===
-                                                                undefined &&
-                                                                categories.length >
-                                                                    5 && (
-                                                                    <button
-                                                                        onClick={() =>
-                                                                            setShowMoreCategories(
-                                                                                !showMoreCategories,
-                                                                            )
-                                                                        }
-                                                                        className="view-more-categories-button"
-                                                                    >
-                                                                        {showMoreCategories
-                                                                            ? "View Less"
-                                                                            : "View More"}
-                                                                    </button>
-                                                                )}
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                    {selectedCategory !== undefined && (
-                                        <div className="filter-sidebar__section">
-                                            <h4 className="filter-sidebar__section-title">
-                                                Subcategories
-                                                <button
-                                                    className="dropdown-toggle"
-                                                    onClick={() =>
-                                                        setIsSubCategoryDropdownOpen(
-                                                            !isSubCategoryDropdownOpen,
-                                                        )
-                                                    }
-                                                    aria-label="Toggle subcategories dropdown"
-                                                >
-                                                    {isSubCategoryDropdownOpen ? (
-                                                        <ChevronUp size={18} />
-                                                    ) : (
-                                                        <ChevronDown
-                                                            size={18}
-                                                        />
-                                                    )}
-                                                </button>
-                                            </h4>
-                                            {isSubCategoryDropdownOpen && (
-                                                <div className="filter-sidebar__dropdown-content">
-                                                    <div className="filter-sidebar__search-container">
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Search subcategories..."
-                                                            value={
-                                                                subcategorySearch
-                                                            }
-                                                            onChange={(e) =>
-                                                                setSubcategorySearch(
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            onKeyDown={(e) => {
-                                                                if (
-                                                                    e.key ===
-                                                                    "Enter"
-                                                                ) {
-                                                                    e.preventDefault();
-                                                                    const match =
-                                                                        subcategories.find(
-                                                                            (
-                                                                                sub: Subcategory,
-                                                                            ) =>
-                                                                                sub.name
-                                                                                    .toLowerCase()
-                                                                                    .includes(
-                                                                                        subcategorySearch.toLowerCase(),
-                                                                                    ),
-                                                                        );
-                                                                    if (match) {
-                                                                        handleSubcategoryChange(
-                                                                            match.id,
-                                                                        );
-                                                                    }
-                                                                }
-                                                            }}
-                                                            className="filter-sidebar__search-input"
-                                                        />
-                                                    </div>
-                                                    <div className="filter-sidebar__checkbox-list">
-                                                        {isLoadingSubcategories ? (
-                                                            <p className="filter-sidebar__loading">
-                                                                Loading
-                                                                subcategories...
-                                                            </p>
-                                                        ) : subcategories.length >
-                                                          0 ? (
-                                                            <>
-                                                                <div className="filter-sidebar__checkbox-item">
-                                                                    <input
-                                                                        type="radio"
-                                                                        id="subcategory-all"
-                                                                        name="subcategory"
-                                                                        checked={
-                                                                            selectedSubcategory ===
-                                                                            undefined
-                                                                        }
-                                                                        onChange={() =>
-                                                                            handleSubcategoryChange(
-                                                                                undefined,
-                                                                            )
-                                                                        }
-                                                                    />
-                                                                    <label htmlFor="subcategory-all">
-                                                                        All
-                                                                        Subcategories
-                                                                    </label>
-                                                                </div>
-                                                                {subcategories
-                                                                    .filter(
-                                                                        (
-                                                                            sub: Subcategory,
-                                                                        ) =>
-                                                                            sub.name
-                                                                                .toLowerCase()
-                                                                                .includes(
-                                                                                    subcategorySearch.toLowerCase(),
-                                                                                ),
-                                                                    )
-                                                                    .slice(
-                                                                        0,
-                                                                        showMoreSubcategories
-                                                                            ? undefined
-                                                                            : 5,
-                                                                    )
-                                                                    .map(
-                                                                        (
-                                                                            subcategory: Subcategory,
-                                                                        ) => (
-                                                                            <div
-                                                                                key={
-                                                                                    subcategory.id
-                                                                                }
-                                                                                className="filter-sidebar__checkbox-item"
-                                                                            >
-                                                                                <input
-                                                                                    type="radio"
-                                                                                    id={`subcategory-${subcategory.id}`}
-                                                                                    name="subcategory"
-                                                                                    checked={
-                                                                                        selectedSubcategory ===
-                                                                                        subcategory.id
-                                                                                    }
-                                                                                    onChange={() =>
-                                                                                        handleSubcategoryChange(
-                                                                                            subcategory.id,
-                                                                                        )
-                                                                                    }
-                                                                                />
-                                                                                <label
-                                                                                    htmlFor={`subcategory-${subcategory.id}`}
-                                                                                >
-                                                                                    {
-                                                                                        subcategory.name
-                                                                                    }
-                                                                                </label>
-                                                                            </div>
-                                                                        ),
-                                                                    )}
-                                                                {subcategories.length >
-                                                                    5 && (
-                                                                    <button
-                                                                        onClick={() =>
-                                                                            setShowMoreSubcategories(
-                                                                                !showMoreSubcategories,
-                                                                            )
-                                                                        }
-                                                                        className="view-more-subcategories-button"
-                                                                    >
-                                                                        {showMoreSubcategories
-                                                                            ? "View Less"
-                                                                            : "View More"}
-                                                                    </button>
-                                                                )}
-                                                            </>
-                                                        ) : (
-                                                            <p className="filter-sidebar__no-data">
-                                                                No subcategories
-                                                                available
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                                <div>
-                                    <div className="shop-products">
-                                        {isLoadingProducts ? (
-                                            Array(8)
-                                                .fill(null)
-                                                .map((_, index) => (
-                                                    <ProductCardSkeleton
-                                                        key={index}
-                                                        count={1}
-                                                    />
-                                                ))
-                                        ) : pagination.total_items > 0 ? (
-                                            productsData.map((product) => (
-                                                <div
-                                                    key={product.id}
-                                                    className="shop-product-card"
-                                                >
-                                                    <ProductCard
-                                                        product={product}
-                                                    />
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="shop-no-products">
-                                                <div className="shop-no-products-icon">
-                                                    📦
-                                                </div>
-                                                <h3 className="shop-no-products-title">
-                                                    No products found
-                                                </h3>
-                                                <p className="shop-no-products-text">
-                                                    {searchQuery.trim()
-                                                        ? `No products found matching "${searchQuery}". Try adjusting your search terms or browse categories.`
-                                                        : selectedBannerId
-                                                          ? "No products found for this special offer."
-                                                          : selectedCategory ===
-                                                              undefined
-                                                            ? "No products available at the moment."
-                                                            : `No products found in ${getCurrentCategoryName()}${
-                                                                  getCurrentSubcategoryName()
-                                                                      ? ` > ${getCurrentSubcategoryName()}`
-                                                                      : ""
-                                                              }.`}
-                                                </p>
-                                                {hasActiveFilters && (
-                                                    <button
-                                                        onClick={
-                                                            clearAllFilters
-                                                        }
-                                                        className="shop-no-products-clear-button"
-                                                    >
-                                                        Clear All Filters
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                    {pagination.total_pages > 1 && (
-                                        <div className="pagination-controls">
-                                            <button
-                                                className="pagination-button"
-                                                disabled={currentPage === 1}
-                                                onClick={() =>
-                                                    setCurrentPage((prev) =>
-                                                        Math.max(prev - 1, 1),
-                                                    )
-                                                }
-                                            >
-                                                Previous
-                                            </button>
-                                            <span className="pagination-info">
-                                                Page {pagination.current_page}{" "}
-                                                of {pagination.total_pages}
-                                            </span>
-                                            <button
-                                                className="pagination-button"
-                                                disabled={
-                                                    currentPage >=
-                                                    pagination.total_pages
-                                                }
-                                                onClick={() =>
-                                                    setCurrentPage((prev) =>
-                                                        Math.min(
-                                                            prev + 1,
-                                                            pagination.total_pages,
-                                                        ),
-                                                    )
-                                                }
-                                            >
-                                                Next
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  return (
+    <aside
+      className={`catalog-filters ${compact ? "catalog-filters--sheet" : ""}`}
+      aria-label="Product filters"
+    >
+      <div className="catalog-filters__heading">
+        <h2>Filters</h2>
+        <button type="button" onClick={onReset}>
+          Reset
+        </button>
+      </div>
+      <section className="catalog-filters__section">
+        <h3>Categories</h3>
+        <label className="catalog-filters__category-search">
+          <Search size={15} />
+          <input
+            value={categorySearch}
+            onChange={(event) => setCategorySearch(event.target.value)}
+            placeholder="Search categories"
+            aria-label="Search categories and subcategories"
+          />
+          {categorySearch && (
+            <button
+              type="button"
+              onClick={() => setCategorySearch("")}
+              aria-label="Clear category search"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </label>
+        {visibleCategories.length === 0 && (
+          <p className="catalog-filters__empty">No categories found</p>
+        )}
+        {visibleCategories.map((category) => (
+          <div className="catalog-filters__category" key={category.id}>
+            <div className="catalog-filters__category-row">
+              <label className="catalog-control catalog-control--category">
+                <input
+                  type="checkbox"
+                  checked={filters.categoryIds.includes(category.id)}
+                  onChange={() => toggleId("categoryIds", category.id)}
+                />
+                <span className="catalog-control__checkbox" aria-hidden="true">
+                  <Check size={12} strokeWidth={3} />
+                </span>
+                <span>{category.name}</span>
+              </label>
+              {category.subcategories?.length > 0 && (
+                <button
+                  type="button"
+                  className="catalog-filters__expander"
+                  onClick={() => toggleCategoryExpanded(category.id)}
+                  aria-label={`Show ${category.name} subcategories`}
+                  aria-expanded={expandedCategories.has(category.id)}
+                >
+                  {expandedCategories.has(category.id) ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
+                </button>
+              )}
             </div>
-            <Footer />
-        </>
-    );
+            {expandedCategories.has(category.id) &&
+              category.subcategories?.map((subcategory) => (
+                <label
+                  className="catalog-control catalog-control--subcategory"
+                  key={subcategory.id}
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters.subcategoryIds.includes(subcategory.id)}
+                    onChange={() =>
+                      toggleSubcategory(category.id, subcategory.id)
+                    }
+                  />
+                  <span
+                    className="catalog-control__checkbox"
+                    aria-hidden="true"
+                  >
+                    <Check size={12} strokeWidth={3} />
+                  </span>
+                  <span>{subcategory.name}</span>
+                </label>
+              ))}
+          </div>
+        ))}
+      </section>
+      <section className="catalog-filters__section">
+        <h3>Price</h3>
+        <div className="catalog-filters__price">
+          <input
+            inputMode="decimal"
+            aria-label="Minimum price"
+            placeholder="Min"
+            value={minPrice}
+            onChange={(event) => setMinPrice(event.target.value)}
+          />
+          <span>to</span>
+          <input
+            inputMode="decimal"
+            aria-label="Maximum price"
+            placeholder="Max"
+            value={maxPrice}
+            onChange={(event) => setMaxPrice(event.target.value)}
+          />
+        </div>
+        <button
+          type="button"
+          className="catalog-filters__apply-price"
+          onClick={applyPrice}
+        >
+          Apply price
+        </button>
+        {priceError && <p className="catalog-filters__price-error" role="alert">{priceError}</p>}
+      </section>
+      <section className="catalog-filters__section">
+        <h3>Deals</h3>
+        <label className="catalog-control">
+          <input
+            type="checkbox"
+            checked={filters.hasDeal === true && filters.dealIds.length === 0}
+            onChange={(event) =>
+              onChange({
+                hasDeal: event.target.checked ? true : undefined,
+                dealIds: [],
+              })
+            }
+          />
+          <span className="catalog-control__checkbox" aria-hidden="true">
+            <Check size={12} strokeWidth={3} />
+          </span>
+          <span>Deals only</span>
+        </label>
+        {dealsLoading ? (
+          <p className="catalog-filters__empty">Loading deals...</p>
+        ) : deals.length > 0 ? (
+          <div className="catalog-filters__deal-list">
+            {deals.map((deal) => {
+              const productCount = dealProductCounts[String(deal.id)] ?? 0;
+              return (
+                <label
+                  className="catalog-control catalog-control--deal"
+                  key={deal.id}
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters.dealIds.includes(deal.id)}
+                    onChange={() => toggleDeal(deal.id)}
+                  />
+                  <span
+                    className="catalog-control__checkbox"
+                    aria-hidden="true"
+                  >
+                    <Check size={12} strokeWidth={3} />
+                  </span>
+                  <span>{deal.name}</span>
+                  <strong>{Number(deal.discountPercentage)}%</strong>
+                  <em>{productCount}</em>
+                </label>
+              );
+            })}
+            {filters.dealIds.length > 0 && (
+              <button
+                type="button"
+                className="catalog-filters__clear-inline"
+                onClick={() => onChange({ dealIds: [] })}
+              >
+                Clear selected deals
+              </button>
+            )}
+          </div>
+        ) : (
+          <p className="catalog-filters__empty">No active deals</p>
+        )}
+      </section>
+      {/* <section className="catalog-filters__section">
+        <h3>Rating</h3>
+        {[4, 3, 2, 1].map((rating) => (
+          <label className="catalog-control" key={rating}>
+            <input
+              type="radio"
+              name={`rating-${compact ? "mobile" : "desktop"}`}
+              checked={filters.minRating === rating}
+              onChange={() => onChange({ minRating: rating })}
+            />
+            <Star size={14} fill="currentColor" /> <span>{rating} and up</span>
+          </label>
+        ))}
+        <label className="catalog-control">
+          <input
+            type="radio"
+            name={`rating-${compact ? "mobile" : "desktop"}`}
+            checked={filters.minRating === undefined}
+            onChange={() => onChange({ minRating: undefined })}
+          />
+          <span>All ratings</span>
+        </label>
+      </section> */}
+    </aside>
+  );
 };
+
+const Shop = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+    queryKey: ["catalog-categories"],
+    queryFn: async () => {
+      const service = CategoryService.getInstance();
+      const roots = await service.getAllCategories();
+      return Promise.all(
+        roots.map(async (category) => ({
+          ...category,
+          subcategories: category.subcategories?.length
+            ? category.subcategories
+            : await service.getSubcategories(category.id),
+        })),
+      );
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const filters = useMemo(
+    () =>
+      normalizeNestedCatalogFilters(
+        parseCatalogFilters(searchParams),
+        categories,
+      ),
+    [searchParams, categories],
+  );
+  const sourceBanner = useMemo(
+    () => parseShopSourceBanner(searchParams),
+    [searchParams],
+  );
+  const [searchInput, setSearchInput] = useState(filters.search);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  useEffect(() => setSearchInput(filters.search), [filters.search]);
+
+  const updateFilters = (
+    updates: Partial<CatalogFilters>,
+    options?: { replace?: boolean },
+  ) => {
+    const nextParams = catalogFiltersToSearchParams(
+      updateCatalogFilters(filters, updates),
+    );
+    if (sourceBanner) {
+      nextParams.set("sourceBannerId", String(sourceBanner.id));
+      nextParams.set("sourceBannerType", sourceBanner.type);
+    }
+    // Load-more pagination replaces the entry instead of pushing a new one, so
+    // ScrollManager doesn't treat it as a fresh page and jump back to the top.
+    setSearchParams(nextParams, { replace: options?.replace });
+  };
+  const resetFilters = () => setSearchParams(new URLSearchParams());
+  const { data: dealFilters, isLoading: dealsLoading } = useQuery({
+    queryKey: ["catalog-deals"],
+    queryFn: async (): Promise<DealsFilterResponse> => {
+      const response = await dealApiService.getAllDeals("ENABLED");
+      return {
+        deals: response.data?.deals ?? [],
+        productCounts: response.data?.productCounts ?? {},
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const deals = dealFilters?.deals ?? [];
+  const dealProductCounts = dealFilters?.productCounts ?? {};
+  const sourceBannerQuery = useQuery({
+    queryKey: ["shop-source-banner", sourceBanner?.id],
+    queryFn: () => fetchShopSourceBanner(sourceBanner!.id),
+    enabled: Boolean(sourceBanner),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+  const staticSourceBanner =
+    sourceBannerQuery.data &&
+    sourceBanner &&
+    Boolean(sourceBannerQuery.data.desktopImage) &&
+    isActiveShopSourceBanner(sourceBannerQuery.data, sourceBanner)
+      ? sourceBannerQuery.data
+      : undefined;
+  // A sidebar-sourced banner carries a small (section-sized) image that would
+  // look wrong stretched across the shop page, so it gets the full product
+  // banner slider instead of the static hero-style banner slot.
+  const showsSourceBannerSlot =
+    sourceBanner?.type === "hero" &&
+    (sourceBannerQuery.isLoading || Boolean(staticSourceBanner));
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
+    queryKey: ["catalog", filters],
+    queryFn: () => fetchCatalog(filters),
+    // Normalization needs the category tree to drop a parent category that is
+    // redundant with one of its own selected subcategories (the catalog API ORs
+    // category+subcategory ids). Waiting for categories prevents a first fetch
+    // with the un-normalized filter set.
+    enabled: !categoriesLoading,
+    placeholderData: (previous) => previous,
+  });
+  // A manual banner can keep same bannerId while admin replaces its products.
+  // Every click creates a new history key; refetch prevents React Query from
+  // rendering catalog data cached for the previous selection.
+  useEffect(() => {
+    if (filters.bannerId !== undefined) void refetch();
+  }, [filters.bannerId, location.key, refetch]);
+  const displayProducts = data?.products ?? [];
+  const visibleSortOptions = filters.search
+    ? sortOptions
+    : sortOptions.filter((option) => option.value !== "relevance");
+  const chips = [
+    filters.search && {
+      key: "search",
+      label: `Search: ${filters.search}`,
+      update: { search: "" },
+    },
+    ...filters.categoryIds.map((id) => ({
+      key: `category-${id}`,
+      label:
+        categories.find((category) => category.id === id)?.name ??
+        `Category ${id}`,
+      update: {
+        categoryIds: filters.categoryIds.filter((value) => value !== id),
+      },
+    })),
+    ...filters.subcategoryIds.map((id) => ({
+      key: `subcategory-${id}`,
+      label:
+        categories
+          .flatMap((category) => category.subcategories ?? [])
+          .find((subcategory) => subcategory.id === id)?.name ??
+        `Subcategory ${id}`,
+      update: {
+        subcategoryIds: filters.subcategoryIds.filter((value) => value !== id),
+      },
+    })),
+    filters.minPrice !== undefined && {
+      key: "min",
+      label: `Min Rs ${filters.minPrice}`,
+      update: { minPrice: undefined },
+    },
+    filters.maxPrice !== undefined && {
+      key: "max",
+      label: `Max Rs ${filters.maxPrice}`,
+      update: { maxPrice: undefined },
+    },
+    filters.minRating !== undefined && {
+      key: "rating",
+      label: `${filters.minRating}+ stars`,
+      update: { minRating: undefined },
+    },
+    filters.hasDeal &&
+      filters.dealIds.length === 0 && {
+        key: "deal",
+        label: "Deals only",
+        update: { hasDeal: undefined },
+      },
+    ...filters.dealIds.map((id) => ({
+      key: `deal-${id}`,
+      label: deals.find((deal) => deal.id === id)?.name ?? `Deal ${id}`,
+      update: { dealIds: filters.dealIds.filter((dealId) => dealId !== id) },
+    })),
+  ].filter(Boolean) as Array<{
+    key: string;
+    label: string;
+    update: Partial<CatalogFilters>;
+  }>;
+  const submitSearch = (event: FormEvent) => {
+    event.preventDefault();
+    const search = normalizeSearchTerm(searchInput);
+    updateFilters({ search, sort: search ? "relevance" : "newest" });
+  };
+
+  return (
+    <>
+      <Navbar />
+      <div className="catalog-showcase">
+        {showsSourceBannerSlot ? (
+          staticSourceBanner ? (
+            <div className="shop-source-banner">
+              <ResponsiveBanner
+                type="hero"
+                desktopImageUrl={staticSourceBanner.desktopImage ?? ""}
+                mobileImageUrl={staticSourceBanner.mobileImage}
+                altText={staticSourceBanner.name}
+                priority
+                className="shop-source-banner__media"
+              />
+            </div>
+          ) : (
+            <div
+              className="shop-source-banner shop-source-banner--loading"
+              aria-busy="true"
+            />
+          )
+        ) : (
+          <ProductBannerSlider />
+        )}
+        <CategorySlider />
+      </div>
+      <main className="catalog-page">
+        <div className="catalog-page__inner">
+          <div className="catalog-page__desktop-filters">
+            <FilterPanel
+              categories={categories}
+              deals={deals}
+              dealProductCounts={dealProductCounts}
+              dealsLoading={dealsLoading}
+              filters={filters}
+              onChange={updateFilters}
+              onReset={resetFilters}
+            />
+          </div>
+          <section className="catalog-page__content">
+            <header className="catalog-toolbar">
+              <form onSubmit={submitSearch} className="catalog-toolbar__search">
+                <Search size={18} />
+                <input
+                  value={searchInput}
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  placeholder="Search products"
+                  aria-label="Search products"
+                  maxLength={80}
+                />
+                <button type="submit">Search</button>
+              </form>
+              {/* products count */}
+              {/* <div className="catalog-toolbar__result" aria-live="polite">
+                <strong>{data?.meta.total ?? 0}</strong>
+                <span>products</span>
+              </div> */}
+              <label className="catalog-toolbar__sort">
+                Sort By{" "}
+                <select
+                  value={filters.sort}
+                  onChange={(event) =>
+                    updateFilters({ sort: event.target.value as CatalogSort })
+                  }
+                >
+                  {visibleSortOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </header>
+            {chips.length > 0 && (
+              <div className="catalog-chips">
+                {chips.map((chip) => (
+                  <button
+                    key={chip.key}
+                    onClick={() => updateFilters(chip.update)}
+                  >
+                    {chip.label}
+                    <X size={14} />
+                  </button>
+                ))}
+                <button className="catalog-chips__clear" onClick={resetFilters}>
+                  Clear all
+                </button>
+              </div>
+            )}
+            {isError ? (
+              <div className="catalog-state">
+                <h2>Products could not load</h2>
+                <button onClick={() => refetch()}>Retry</button>
+              </div>
+            ) : (
+              <>
+                <div className="catalog-grid">
+                  {!data
+                    ? Array.from({ length: 12 }, (_, index) => (
+                        <ProductCardSkeleton key={index} count={1} />
+                      ))
+                    : displayProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                      ))}
+                </div>
+                {!isLoading && displayProducts.length === 0 && (
+                  <div className="catalog-state">
+                    <h2>No products found</h2>
+                    <button onClick={resetFilters}>Clear filters</button>
+                  </div>
+                )}
+                {data?.meta.hasNextPage && (
+                  <div className="catalog-load-more">
+                    <button
+                      disabled={isFetching}
+                      onClick={() =>
+                        updateFilters({ page: filters.page + 1 }, { replace: true })
+                      }
+                    >
+                      {isFetching ? "Loading..." : "Load more"}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+        </div>
+      </main>
+      <div className="catalog-mobile-actions">
+        <button onClick={() => setSortOpen(true)}>
+          <SlidersHorizontal size={18} />
+          Sort
+        </button>
+        <button onClick={() => setFilterOpen(true)}>
+          <Filter size={18} />
+          Filter
+        </button>
+      </div>
+      <Dialog.Root open={filterOpen} onOpenChange={setFilterOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="catalog-sheet__overlay" />
+          <Dialog.Content className="catalog-sheet catalog-sheet--filter">
+            <div className="catalog-sheet__header">
+              <Dialog.Title>Filter products</Dialog.Title>
+              <Dialog.Description className="catalog-sheet__description">
+                Refine the products shown in the shop.
+              </Dialog.Description>
+              <Dialog.Close asChild>
+                <button
+                  className="catalog-sheet__close"
+                  aria-label="Close filters"
+                >
+                  <X />
+                </button>
+              </Dialog.Close>
+            </div>
+            <div className="catalog-sheet__body">
+              <FilterPanel
+                compact
+                categories={categories}
+                deals={deals}
+                dealProductCounts={dealProductCounts}
+                dealsLoading={dealsLoading}
+                filters={filters}
+                onChange={updateFilters}
+                onReset={resetFilters}
+              />
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+      <Dialog.Root open={sortOpen} onOpenChange={setSortOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="catalog-sheet__overlay" />
+          <Dialog.Content className="catalog-sheet catalog-sheet--sort">
+            <div className="catalog-sheet__header">
+              <Dialog.Title>Sort products</Dialog.Title>
+              <Dialog.Description className="catalog-sheet__description">
+                Choose how the products are ordered.
+              </Dialog.Description>
+              <Dialog.Close asChild>
+                <button
+                  className="catalog-sheet__close"
+                  aria-label="Close sorting"
+                >
+                  <X />
+                </button>
+              </Dialog.Close>
+            </div>
+            <div className="catalog-sheet__body catalog-sheet__body--sort">
+              {visibleSortOptions.map((option) => (
+                <button
+                  key={option.value}
+                  className={
+                    filters.sort === option.value
+                      ? "catalog-sort-option catalog-sort-option--active"
+                      : "catalog-sort-option"
+                  }
+                  onClick={() => {
+                    updateFilters({ sort: option.value });
+                    setSortOpen(false);
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+      <Footer />
+    </>
+  );
+};
+
 export default Shop;

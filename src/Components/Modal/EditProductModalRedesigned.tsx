@@ -22,6 +22,8 @@ import {
     calculatePricingPreview,
     normalizeDiscountType,
 } from "../../utils/productPricing";
+import { requiresVariantArchiveConfirmation } from "../../utils/variantArchive";
+import ArchiveVariantModal from "./ArchiveVariantModal";
 
 export enum InventoryStatus {
     AVAILABLE = "AVAILABLE",
@@ -84,6 +86,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
 
     // Variant state
     const [variants, setVariants] = useState<ProductVariant[]>([]);
+    const [variantIndexToArchive, setVariantIndexToArchive] = useState<number | null>(null);
     const [newAttribute, setNewAttribute] = useState<Attribute>({
         type: "",
         values: [{ value: "", nestedAttributes: [] }],
@@ -563,6 +566,33 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     };
 
     const handleInputChange = (field: keyof ProductFormData, value: any) => {
+        if (field === "dealId") {
+            setFormData((prev) =>
+                value
+                    ? {
+                          ...prev,
+                          dealId: value,
+                          discount: 0,
+                          discountAmount: 0,
+                          discountPercent: 0,
+                          discountType: "NONE",
+                      }
+                    : { ...prev, dealId: null },
+            );
+            if (value) {
+                setVariants((prev) =>
+                    prev.map((v) => ({
+                        ...v,
+                        discount: 0,
+                        discountAmount: 0,
+                        discountPercent: 0,
+                        discountType: "NONE",
+                    })),
+                );
+            }
+            return;
+        }
+
         if (field === "discountType" && (!value || value === "NONE")) {
             setFormData((prev) => ({
                 ...prev,
@@ -570,6 +600,69 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                 discountAmount: 0,
                 discountPercent: 0
             }));
+            return;
+        }
+        if (field === "discount" || field === "discountAmount" || field === "discountPercent" || field === "discountType") {
+            setFormData((prev) => {
+                const next = { ...prev, [field]: value };
+
+                const toNumber = (v: unknown): number => {
+                    if (v === null || v === undefined || v === "") return 0;
+                    const parsed = Number(v);
+                    return Number.isFinite(parsed) ? parsed : 0;
+                };
+
+                const hasType =
+                    next.discountType === "FLAT" ||
+                    next.discountType === "PERCENTAGE";
+
+                let discountType: "FLAT" | "PERCENTAGE" | "NONE";
+                if (field === "discountType") {
+                    discountType = hasType ? next.discountType : "NONE";
+                } else {
+                    discountType = hasType ? next.discountType : "FLAT";
+                }
+
+                let discountAmount = toNumber(next.discountAmount);
+                let discountPercent = toNumber(next.discountPercent);
+
+                if (field === "discountAmount") {
+                    discountAmount = toNumber(value);
+                    if (!hasType) discountType = "FLAT";
+                } else if (field === "discountPercent") {
+                    discountPercent = toNumber(value);
+                    if (!hasType) discountType = "PERCENTAGE";
+                } else if (field === "discount") {
+                    if (discountType === "PERCENTAGE") {
+                        discountPercent = toNumber(value);
+                    } else {
+                        discountAmount = toNumber(value);
+                    }
+                } else if (field === "discountType") {
+                    if (discountType === "PERCENTAGE") {
+                        if (discountPercent === 0)
+                            discountPercent = toNumber(next.discount);
+                    } else if (discountType === "FLAT") {
+                        if (discountAmount === 0)
+                            discountAmount = toNumber(next.discount);
+                    } else {
+                        discountAmount = 0;
+                        discountPercent = 0;
+                    }
+                }
+
+                return {
+                    ...next,
+                    discountAmount,
+                    discountPercent,
+                    discountType,
+                    discount:
+                        discountType === "PERCENTAGE"
+                            ? discountPercent
+                            : discountAmount,
+                    dealId: next.dealId ?? null,
+                };
+            });
             return;
         }
         setFormData((prev) => ({ ...prev, [field]: value }));
@@ -593,7 +686,21 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     };
 
     const removeVariant = (index: number) => {
+        const variant = variants[index];
+        if (
+            variant &&
+            requiresVariantArchiveConfirmation(variant)
+        ) {
+            setVariantIndexToArchive(index);
+            return;
+        }
         setVariants(variants.filter((_, i) => i !== index));
+    };
+
+    const confirmVariantArchive = () => {
+        if (variantIndexToArchive === null) return;
+        setVariants((current) => current.filter((_, index) => index !== variantIndexToArchive));
+        setVariantIndexToArchive(null);
     };
 
     const updateVariant = (
@@ -874,9 +981,15 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     status: variant.status || "AVAILABLE",
 
                     /* Deal overrides variant discount */
-                    discountAmount: Number(variant.discountAmount || 0),
-                    discountPercent: Number(variant.discountPercent || 0),
-                    discountType: normalizeDiscountType(variant.discountType),
+                    discountAmount: formData.dealId
+                        ? 0
+                        : Number(variant.discountAmount || 0),
+                    discountPercent: formData.dealId
+                        ? 0
+                        : Number(variant.discountPercent || 0),
+                    discountType: formData.dealId
+                        ? "NONE"
+                        : normalizeDiscountType(variant.discountType),
 
                     attributes: (variant.attributes || []).reduce(
                         (acc, attr) => {
@@ -938,6 +1051,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     };
 
     const handleClose = () => {
+        setVariantIndexToArchive(null);
         setFormData({
             name: "",
             description: "",
@@ -1361,6 +1475,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                                                 )
                                             }
                                             }
+                                            disabled={Boolean(formData.dealId)}
                                         />
                                     </div>
 
@@ -1379,6 +1494,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                                                     e.target.value,
                                                 )
                                             }
+                                            disabled={Boolean(formData.dealId)}
                                         >
                                             <option value="NONE">
                                                 No discount
@@ -1392,6 +1508,12 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                                         </select>
                                     </div>
                                 </div>
+                                {formData.dealId && (
+                                    <div className="label-hint" style={{ marginTop: "8px" }}>
+                                        Discount is disabled because a deal is applied to this
+                                        product. Remove the deal to enter a manual discount.
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -1763,6 +1885,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                                                                     updateVariant(index, "discountAmount", val);
                                                                 }
                                                             }}
+                                                            disabled={Boolean(formData.dealId)}
 
                                                         />
                                                     </div>
@@ -1785,6 +1908,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                                                                         .value,
                                                                 )
                                                             }
+                                                            disabled={Boolean(formData.dealId)}
                                                         >
                                                             <option value="NONE">
                                                                 No discount
@@ -1796,6 +1920,11 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                                                                 Fixed Amount
                                                             </option>
                                                         </select>
+                                                        {formData.dealId && (
+                                                            <div className="label-hint">
+                                                                Discount is disabled because a deal is applied.
+                                                            </div>
+                                                        )}
                                                     </div>
 
                                                     {/* Real-time calculated fields for variant */}
@@ -2160,6 +2289,16 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
                     </form>
                 </div>
             </div>
+            <ArchiveVariantModal
+                show={variantIndexToArchive !== null}
+                sku={
+                    variantIndexToArchive === null
+                        ? ""
+                        : variants[variantIndexToArchive]?.sku || "Selected variant"
+                }
+                onClose={() => setVariantIndexToArchive(null)}
+                onConfirm={confirmVariantArchive}
+            />
         </div>
     );
 };

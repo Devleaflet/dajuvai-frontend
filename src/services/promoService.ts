@@ -12,6 +12,8 @@ export interface PromoCode {
   discountPercentage: number;
   applyOn: string;
   isValid: boolean;
+  usageCount: number;
+  maxUsageCount: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -21,6 +23,7 @@ export interface CreatePromoCodeData {
   discountPercentage: number;
   applyOn: string;
   isValid: boolean;
+  maxUsageCount?: number;
 }
 
 export interface PromoCodeResponse {

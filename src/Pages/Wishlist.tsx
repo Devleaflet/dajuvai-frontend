@@ -1,7 +1,7 @@
 // ================================
 // WISHLIST COMPONENT — TSX FILE
 // ================================
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../Styles/Wishlist.css';
 import { FaTrash, FaShoppingCart, FaMinus, FaPlus, FaUser, FaHeart } from 'react-icons/fa';
 import Footer from '../Components/Footer';
@@ -9,12 +9,13 @@ import Navbar from '../Components/Navbar';
 import { Link } from "react-router-dom";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import ScrollToTop from '../Components/ScrollToTop';
 import AuthModal from '../Components/AuthModal';
 import { useAuth } from '../context/AuthContext';
 import defaultProductImage from "../assets/logo.webp";
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
+import AgeRestrictionModal from '../Components/AgeRestrictionModal';
+import { getAgeDecision, saveAgeDecision, startAgeGateVisit } from '../utils/ageRestrictionSession';
 import {
   moveManyToCart as moveWishlistItemsToCart,
   moveToCart as moveWishlistItemToCart,
@@ -36,6 +37,11 @@ interface Product {
   stock?: number | string;
   productImages?: string[];
   image?: string;
+  ageRestriction?: {
+    isRestricted: boolean;
+    minimumAge: number | null;
+    restrictionMessage?: string | null;
+  };
 }
 interface Variant {
   id: number;
@@ -134,6 +140,14 @@ const Wishlist: React.FC = () => {
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAgeModal, setShowAgeModal] = useState(false);
+  const [pendingMoveAction, setPendingMoveAction] = useState<null | (() => void)>(null);
+  const [pendingMoveAge, setPendingMoveAge] = useState(18);
+  const [pendingMoveMessage, setPendingMoveMessage] = useState<string | null>(null);
+  // Prompt at most once per page mount. The wishlist loads async, so we wait
+  // until restricted items actually arrive, then flag this mount as prompted
+  // — later context refreshes (move/remove) must not reopen the modal.
+  const ageGatePromptedRef = useRef(false);
   const { token, isAuthenticated, user } = useAuth();
   const isCustomer = isAuthenticated && user?.role === 'user';
   const { refreshCart } = useCart();
@@ -266,6 +280,23 @@ const Wishlist: React.FC = () => {
     if (item.variant?.status === 'OUT_OF_STOCK') return true;
     return getItemStock(item) <= 0;
   };
+  // Gates moving an item to the cart only — never opening the product (those
+  // links always navigate). A declined decision re-opens the modal so the user
+  // can still confirm later instead of silently doing nothing.
+  const requestMoveConfirmation = (item: WishlistItem, runAction: () => void) => {
+    const minimumAge = item.product?.ageRestriction?.minimumAge ?? 18;
+    const decision = item.product?.ageRestriction?.isRestricted
+      ? getAgeDecision(minimumAge)
+      : 'accepted';
+    if (decision === 'accepted') {
+      runAction();
+      return;
+    }
+    setPendingMoveAction(() => runAction);
+    setPendingMoveAge(minimumAge);
+    setPendingMoveMessage(item.product?.ageRestriction?.restrictionMessage ?? null);
+    setShowAgeModal(true);
+  };
   // ================================
   // API CALLS
   // ================================
@@ -361,6 +392,27 @@ const Wishlist: React.FC = () => {
     if (newQuantity < 1) return;
     setQuantities(prev => ({ ...prev, [id]: newQuantity }));
   };
+  const handleAddAllToCartClick = () => {
+    const availableItems = wishlistItems.filter(item => !isItemOutOfStock(item));
+    const restrictedItems = availableItems.filter(item => item.product?.ageRestriction?.isRestricted);
+    if (restrictedItems.length === 0) {
+      handleAddAllToCart();
+      return;
+    }
+    const minimumAge = restrictedItems.reduce(
+      (max, item) => Math.max(max, item.product?.ageRestriction?.minimumAge ?? 18),
+      18,
+    );
+    const decision = getAgeDecision(minimumAge);
+    if (decision === 'accepted') {
+      handleAddAllToCart();
+      return;
+    }
+    setPendingMoveAction(() => handleAddAllToCart);
+    setPendingMoveAge(minimumAge);
+    setPendingMoveMessage(restrictedItems[0]?.product?.ageRestriction?.restrictionMessage ?? null);
+    setShowAgeModal(true);
+  };
   const handleAddAllToCart = async () => {
     try {
       setActionLoading(prev => ({ ...prev, 'add_all': true }));
@@ -421,6 +473,26 @@ const Wishlist: React.FC = () => {
     refreshWishlist();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // Age gate on mount: if restricted items are displayed, prompt once per
+  // visit. Declining only closes the modal — the item/product links stay open.
+  useEffect(() => {
+    if (ageGatePromptedRef.current) return;
+    const restrictedItems = wishlistItems.filter(
+      item => item.product?.ageRestriction?.isRestricted,
+    );
+    if (restrictedItems.length === 0) return;
+    ageGatePromptedRef.current = true;
+    const minimumAge = restrictedItems.reduce(
+      (max, item) => Math.max(max, item.product?.ageRestriction?.minimumAge ?? 18),
+      18,
+    );
+    startAgeGateVisit(minimumAge);
+    setPendingMoveAge(minimumAge);
+    setPendingMoveMessage(
+      restrictedItems[0]?.product?.ageRestriction?.restrictionMessage ?? null,
+    );
+    setShowAgeModal(true);
+  }, [wishlistItems]);
   const totalPrice = wishlistItems.reduce((sum, item) => {
     const price = getItemPrice(item);
     return sum + price * getItemQuantity(item.id);
@@ -432,7 +504,6 @@ const Wishlist: React.FC = () => {
   // ================================
   return (
     <>
-      <ScrollToTop />
       <Navbar />
       <main className="wishlist__main-content">
         <div className="wishlist" role="main">
@@ -548,7 +619,7 @@ const Wishlist: React.FC = () => {
                         </button>
                         <button 
                           className="wishlist__action-btn wishlist__action-btn--cart"
-                          onClick={() => handleMoveToCart(item.id, getItemQuantity(item.id))}
+                          onClick={() => requestMoveConfirmation(item, () => handleMoveToCart(item.id, getItemQuantity(item.id)))}
                           aria-label={itemOutOfStock ? 'Out of stock' : 'Move to cart'}
                           title={itemOutOfStock ? 'Out of stock' : 'Move to cart'}
                           disabled={isBulkMoving || actionLoading[`cart_${item.id}`] || actionLoading[`remove_${item.id}`] || itemOutOfStock}
@@ -573,7 +644,7 @@ const Wishlist: React.FC = () => {
                   </div>
                   <button 
                     className="wishlist__add-all-btn"
-                    onClick={handleAddAllToCart}
+                    onClick={handleAddAllToCartClick}
                     disabled={isBulkMoving || wishlistItems.length === 0 || !hasCartableItems}
                     aria-label="Add all items to cart"
                   >
@@ -609,6 +680,23 @@ const Wishlist: React.FC = () => {
         isOpen={showAuthModal} 
         onClose={() => setShowAuthModal(false)} 
       />
+      {showAgeModal && (
+        <AgeRestrictionModal
+          minimumAge={pendingMoveAge}
+          message={pendingMoveMessage ?? undefined}
+          onConfirm={() => {
+            saveAgeDecision(pendingMoveAge, 'accepted');
+            setShowAgeModal(false);
+            pendingMoveAction?.();
+            setPendingMoveAction(null);
+          }}
+          onDecline={() => {
+            saveAgeDecision(pendingMoveAge, 'declined');
+            setShowAgeModal(false);
+            setPendingMoveAction(null);
+          }}
+        />
+      )}
     </>
   );
 };

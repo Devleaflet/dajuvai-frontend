@@ -5,6 +5,7 @@ import "../Styles/HomeBanner.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { getBannerShopPath, appendBannerSourceToShopLink } from "../utils/bannerNavigation";
 
 interface Banner {
   id: number;
@@ -17,6 +18,7 @@ interface Banner {
   productSource?: string;
   selectedCategory?: { id: number } | null;
   selectedSubcategory?: { id: number; category: { id: number } } | null;
+  selectedDeal?: { id: number } | null;
   externalLink?: string | null;
 }
 
@@ -107,19 +109,18 @@ const HomeBanner: React.FC = () => {
     //("Total banners:", banners.length);
 
     if (currentBanner) {
-      if (currentBanner.productSource === "category" && currentBanner.selectedCategory) {
-        navigate(`/shop?categoryId=${currentBanner.selectedCategory.id}`);
-      } else if (
-        currentBanner.productSource === "subcategory" &&
-        currentBanner.selectedSubcategory
-      ) {
-        navigate(
-          `/shop?categoryId=${currentBanner.selectedSubcategory.category.id}&subcategoryId=${currentBanner.selectedSubcategory.id}`
-        );
-      } else if (currentBanner.productSource === "manual") {
-        navigate(`/shop?bannerId=${currentBanner.id}`);
-      } else if (currentBanner.productSource === "external" && currentBanner.externalLink) {
-        navigate(currentBanner.externalLink);
+      if (currentBanner.productSource === "external" && currentBanner.externalLink) {
+        const shopLink = appendBannerSourceToShopLink(currentBanner.externalLink, {
+          sourceBannerId: currentBanner.id,
+          sourceBannerType: "hero",
+        });
+        if (shopLink) {
+          navigate(shopLink);
+        } else {
+          window.open(currentBanner.externalLink, "_blank", "noopener,noreferrer");
+        }
+      } else {
+        navigate(getBannerShopPath(currentBanner));
       }
     }
   };

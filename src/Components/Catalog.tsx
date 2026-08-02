@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import ProductCard from "./ProductCard";
@@ -7,7 +7,8 @@ import Footer from "./Footer";
 import PageLoader from "./PageLoader";
 import { fetchProductsBySection } from "../api/products";
 import "../Styles/Catalog.css";
-import type { Product } from "../Types/Product";
+import type { Product as ApiProduct } from "../api/products";
+import type { Product as DisplayProduct } from "./Types/Product";
 
 const Catalog: React.FC = () => {
   const { sectionId } = useParams<{ sectionId: string }>();
@@ -17,7 +18,7 @@ const Catalog: React.FC = () => {
     data: products,
     isLoading,
     error,
-  } = useQuery<Product[], Error>({
+  } = useQuery<ApiProduct[], Error>({
     queryKey: ["products", sectionId],
     queryFn: () => fetchProductsBySection(Number(sectionId)),
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -25,11 +26,6 @@ const Catalog: React.FC = () => {
     refetchOnWindowFocus: false,
     enabled: !!sectionId, // Only fetch if sectionId is present
   });
-
-  // Scroll to top when the page loads
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
 
   if (isLoading) {
     return <PageLoader />;
@@ -56,7 +52,7 @@ const Catalog: React.FC = () => {
         {products && products.length > 0 ? (
           <div className="catalog__products">
             {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard key={product.id} product={product as unknown as DisplayProduct} />
             ))}
           </div>
         ) : (

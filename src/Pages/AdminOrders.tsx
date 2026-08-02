@@ -31,6 +31,7 @@ interface DisplayOrder {
   totalPrice: string;
   status: string;
   paymentStatus: string;
+  appliedPromoCode?: string | null;
 }
 
 interface ModalOrder {
@@ -48,6 +49,7 @@ interface ModalOrder {
   state: string;
   vendorName: string;
   profileImage?: string;
+  appliedPromoCode?: string | null;
 }
 
 const AdminOrders: React.FC = () => {
@@ -269,6 +271,7 @@ const AdminOrders: React.FC = () => {
           totalPrice: `Rs. ${parseFloat(order.totalPrice).toFixed(2)}`,
           status: order.status || "N/A",
           paymentStatus: order.paymentStatus || "N/A",
+          appliedPromoCode: order.appliedPromoCode || null,
         }));
 
         setOrders(transformedOrders);
@@ -416,6 +419,7 @@ const AdminOrders: React.FC = () => {
           ? vendorNames.join(", ")
           : rawOrder.vendorName || "N/A",
       profileImage: undefined,
+      appliedPromoCode: rawOrder.appliedPromoCode || null,
     };
   };
 
@@ -566,8 +570,7 @@ const AdminOrders: React.FC = () => {
           </button>
         </div>
 
-        {!showOrderDetails ? (
-          <div className="admin-orders__list-container">
+        <div className="admin-orders__list-container">
             <div className="admin-orders__header">
               <h2>Order Management</h2>
             </div>
@@ -580,6 +583,7 @@ const AdminOrders: React.FC = () => {
                     <th>Email</th>
                     <th>Order Date</th>
                     <th>Total Price</th>
+                    <th>Promo Code</th>
                     <th>Status</th>
                     <th>Payment Status</th>
                     <th>Action</th>
@@ -588,7 +592,7 @@ const AdminOrders: React.FC = () => {
                 <tbody>
                   {isLoading ? (
                     <tr>
-                      <td colSpan={8}>
+                      <td colSpan={9}>
                         <div className="admin-orders__table-state">
                           <span className="admin-orders__table-spinner" />
                           Loading orders...
@@ -608,6 +612,9 @@ const AdminOrders: React.FC = () => {
                       <td className="admin-orders__email-cell">{order.email}</td>
                       <td>{order.orderDate}</td>
                       <td className="admin-orders__price-cell">{order.totalPrice}</td>
+                      <td className="admin-orders__promo-cell">
+                        {order.appliedPromoCode || "-"}
+                      </td>
                       <td>
                         <span
                           className={`status-badge ${statusMeta?.badgeClassName ?? ""}`}
@@ -649,7 +656,7 @@ const AdminOrders: React.FC = () => {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={8}>
+                      <td colSpan={9}>
                         <div className="admin-orders__table-state">
                           No orders found.
                         </div>
@@ -673,7 +680,6 @@ const AdminOrders: React.FC = () => {
               />
             </div>
           </div>
-        ) : null}
       </div>
 
       <OrderDetailModal

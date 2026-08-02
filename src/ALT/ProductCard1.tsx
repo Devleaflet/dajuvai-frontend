@@ -8,7 +8,7 @@
    - Recommend product 
    ========================================================================== */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { FaCartPlus } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -16,10 +16,12 @@ import { makeWishlistKey, useWishlist } from "../context/WishlistContext";
 import defaultProductImage from "../assets/logo.webp";
 import star from "../assets/star.png";
 import AuthModal from "../Components/AuthModal";
+import AgeRestrictionModal from "../Components/AgeRestrictionModal";
 import { Product } from "../Components/Types/Product";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useUI } from "../context/UIContext";
+import { getAgeDecision, saveAgeDecision, startAgeGateVisit } from "../utils/ageRestrictionSession";
 import { getProductPrimaryImage } from '../utils/getProductPrimaryImage';
 import { getDiscountDisplay } from "../utils/priceDisplay";
 import "../ALT/ProductCartd1.css";
@@ -41,6 +43,8 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 	const { cartOpen } = useUI();
 	const [authModalOpen, setAuthModalOpen] = useState(false);
 	const [imageError, setImageError] = useState(false);
+	const [showAgeModal, setShowAgeModal] = useState(false);
+	const [pendingAction, setPendingAction] = useState<null | (() => void)>(null);
 
 
 	const {
@@ -87,6 +91,31 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 		setImageError(true);
 	};
 
+	const minimumAge = product.ageRestriction?.minimumAge ?? 18;
+	// Re-prompt on every card mount for a restricted product, mirroring the
+	// product details page: startAgeGateVisit clears the stored session decision
+	// so a previous accept/decline never suppresses the next visit. The modal is
+	// only opened by the action handlers below, never automatically on mount.
+	useEffect(() => {
+		if (product.ageRestriction?.isRestricted) {
+			startAgeGateVisit(minimumAge);
+		}
+	}, [minimumAge, product.ageRestriction?.isRestricted]);
+	// Gates purchase actions only (never the card link). A declined decision
+	// is never a hard stop — it just re-opens the modal so the user can still
+	// confirm later instead of silently doing nothing.
+	const requestAgeConfirmation = (action: () => void) => {
+		const decision = product.ageRestriction?.isRestricted
+			? getAgeDecision(minimumAge)
+			: "accepted";
+		if (decision === "accepted") {
+			action();
+			return;
+		}
+		setPendingAction(() => action);
+		setShowAgeModal(true);
+	};
+
 
 	const handleWishlist = async () => {
 		if (!isAuthenticated) {
@@ -95,38 +124,56 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 		}
 		if (wishlistPending) return;
 
-		try {
-			if (isWishlisted) {
+		// Removing is never age-gated; only adding a restricted product is, and
+		// the prompt shows BEFORE the add (never a silent skip, never deferred
+		// to the wishlist page).
+		if (isWishlisted) {
+			try {
 				const item = getWishlistItem(id, wishlistVariantId);
 				if (item?.id) {
 					await removeWishlistItem(item.id);
 					toast.success("Removed from wishlist");
 				}
-			} else {
+			} catch (e: any) {
+				const status = e?.response?.status;
+				const msg: string =
+					e?.response?.data?.message ||
+					e?.response?.data?.error ||
+					e?.message ||
+					"";
+
+				if (status === 409 || /already/i.test(msg)) {
+					toast("Already present in the wishlist");
+				} else {
+					toast.error("Failed to remove from wishlist");
+					console.error("Wishlist operation failed:", e);
+				}
+			}
+			return;
+		}
+
+		requestAgeConfirmation(async () => {
+			try {
 				const addedItem = await addWishlistItem(id, wishlistVariantId);
 				if (addedItem !== null) {
 					toast.success("Added to wishlist");
 				}
-			}
-		} catch (e: any) {
-			const status = e?.response?.status;
-			const msg: string =
-				e?.response?.data?.message ||
-				e?.response?.data?.error ||
-				e?.message ||
-				"";
+			} catch (e: any) {
+				const status = e?.response?.status;
+				const msg: string =
+					e?.response?.data?.message ||
+					e?.response?.data?.error ||
+					e?.message ||
+					"";
 
-			if (status === 409 || /already/i.test(msg)) {
-				toast("Already present in the wishlist");
-			} else {
-				toast.error(
-					isWishlisted
-						? "Failed to remove from wishlist"
-						: "Failed to add to wishlist"
-				);
-				console.error("Wishlist operation failed:", e);
+				if (status === 409 || /already/i.test(msg)) {
+					toast("Already present in the wishlist");
+				} else {
+					toast.error("Failed to add to wishlist");
+					console.error("Wishlist operation failed:", e);
+				}
 			}
-		}
+		});
 	};
 
 
@@ -248,10 +295,12 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 								setAuthModalOpen(true);
 								return;
 							}
-							handleCartOnAdd(
-								product,
-								1,
-								product.hasVariants ? selectedCardVariant?.id : undefined
+							requestAgeConfirmation(() =>
+								handleCartOnAdd(
+									product,
+									1,
+									product.hasVariants ? selectedCardVariant?.id : undefined
+								)
 							);
 						}}
 					>
@@ -325,6 +374,23 @@ const Product1: React.FC<ProductCardProps> = ({ product }) => {
 				setAuthModalOpen(false);
 			}}
 		/>
+		{showAgeModal && (
+			<AgeRestrictionModal
+				minimumAge={minimumAge}
+				message={product.ageRestriction?.restrictionMessage ?? undefined}
+				onConfirm={() => {
+					saveAgeDecision(minimumAge, "accepted");
+					setShowAgeModal(false);
+					pendingAction?.();
+					setPendingAction(null);
+				}}
+				onDecline={() => {
+					saveAgeDecision(minimumAge, "declined");
+					setShowAgeModal(false);
+					setPendingAction(null);
+				}}
+			/>
+		)}
 		</>
 	);
 };

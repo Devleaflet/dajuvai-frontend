@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { OrderService, DetailedOrder } from "../../services/orderService";
 import { useAuth } from "../../context/AuthContext";
-import { toast } from "react-hot-toast";
-import { getAvailableNextStatuses, getOrderStatusMeta } from "../orderStatus";
+import { getOrderStatusMeta } from "../orderStatus";
 import "../../Styles/OrderModals.css";
 import defaultProductImage from "../../assets/logo.webp";
 
@@ -53,8 +52,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
     );
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [currentStatus, setCurrentStatus] = useState("");
-    const [isSaving, setIsSaving] = useState(false);
     const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[]>(
         [],
     );
@@ -70,7 +67,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                     token,
                 );
                 setDetailedOrder(orderDetails);
-                setCurrentStatus(orderDetails.status || "");
             } catch (err) {
                 setError(
                     err instanceof Error
@@ -94,42 +90,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         };
         fetchOrderDetails();
     }, [show, order, token]);
-
-    const availableNextStatuses = detailedOrder
-        ? getAvailableNextStatuses(detailedOrder.status)
-        : [];
-
-    const handleStatusSave = useCallback(async () => {
-        if (!detailedOrder || !token) return;
-        setIsSaving(true);
-        try {
-            await OrderService.updateOrderStatus(
-                detailedOrder.id,
-                currentStatus,
-                token,
-                {
-                    expectedCurrentStatus: detailedOrder.status,
-                },
-            );
-            setDetailedOrder((prev) =>
-                prev ? { ...prev, status: currentStatus } : prev,
-            );
-            onStatusUpdate?.(detailedOrder.id.toString(), currentStatus);
-            toast.success("Order status updated");
-            const history = await OrderService.getOrderStatusHistory(
-                detailedOrder.id,
-                token,
-            );
-            setStatusHistory(history);
-        } catch (err) {
-            toast.error(
-                err instanceof Error ? err.message : "Failed to update status",
-            );
-            setCurrentStatus(detailedOrder.status || currentStatus);
-        } finally {
-            setIsSaving(false);
-        }
-    }, [detailedOrder, currentStatus, token, onStatusUpdate]);
 
     if (!show || !order) return null;
 
@@ -233,7 +193,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                             className="order-modal__close-btn order-detail__close-btn"
                             onClick={onClose}
                             aria-label="Close order details"
-                            disabled={isSaving}
                         >
                             <svg
                                 width="20"
@@ -258,55 +217,6 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                                 />
                             </svg>
                         </button>
-
-                        {/* Inline status change — only ever offers transitions the
-                backend will actually accept from the order's current status. */}
-                        <div className="order-status-select">
-                            <select
-                                value={currentStatus}
-                                onChange={(e) =>
-                                    setCurrentStatus(e.target.value)
-                                }
-                                disabled={availableNextStatuses.length === 0}
-                            >
-                                {detailedOrder && (
-                                    <option value={detailedOrder.status}>
-                                        {
-                                            getOrderStatusMeta(
-                                                detailedOrder.status,
-                                            ).label
-                                        }{" "}
-                                        (current)
-                                    </option>
-                                )}
-                                {availableNextStatuses.map((s) => (
-                                    <option key={s.value} value={s.value}>
-                                        {s.label}
-                                    </option>
-                                ))}
-                            </select>
-                            <button
-                                className="order-status-select__save"
-                                onClick={handleStatusSave}
-                                disabled={
-                                    isSaving ||
-                                    currentStatus === detailedOrder?.status
-                                }
-                            >
-                                {isSaving ? "Saving..." : "Update"}
-                            </button>
-                            {availableNextStatuses.length === 0 && (
-                                <small
-                                    style={{
-                                        display: "block",
-                                        color: "#9ca3af",
-                                    }}
-                                >
-                                    This is a final status — no further
-                                    transitions available.
-                                </small>
-                            )}
-                        </div>
                     </div>
                 </div>
 

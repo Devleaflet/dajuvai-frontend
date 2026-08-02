@@ -446,7 +446,10 @@ const ProfilePage: React.FC = () => {
     if (!email) return showPopup("error", "No email address found");
     setLoading("forgot", true);
     try {
-      await axiosInstance.post("/api/auth/forgot-password", { email });
+      const endpoint = vendorDetails?.email
+        ? "/api/vendors/forgot-password"
+        : "/api/auth/forgot-password";
+      await axiosInstance.post(endpoint, { email });
       showPopup("success", "Reset email sent! Check your inbox.");
       setCredentialsMode("reset");
     } catch (err) {
@@ -466,7 +469,12 @@ const ProfilePage: React.FC = () => {
 
     setLoading("reset", true);
     try {
-      await axiosInstance.post("/api/auth/reset-password", {
+      const email = vendorDetails?.email || formState.email;
+      const endpoint = vendorDetails?.email
+        ? "/api/vendors/reset-password"
+        : "/api/auth/reset-password";
+      await axiosInstance.post(endpoint, {
+        email,
         newPass: formState.newPassword,
         confirmPass: formState.confirmPassword,
         token: formState.token,

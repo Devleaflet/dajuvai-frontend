@@ -80,7 +80,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 
 	// Carousel drag handlers
 	const handleMouseDown = useCallback(
-		(e: React.MouseEvent, categoryId: string) => {
+		(e: React.MouseEvent, categoryId: string | number) => {
 			const carousel = carouselRefs.current[categoryId];
 			if (!carousel) return;
 
@@ -96,7 +96,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 	);
 
 	const handleMouseMove = useCallback(
-		(e: React.MouseEvent, categoryId: string) => {
+	(e: React.MouseEvent, categoryId: string | number) => {
 			if (!isDragging[categoryId]) return;
 
 			e.preventDefault();
@@ -110,7 +110,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 		[isDragging, startX, scrollLeft]
 	);
 
-	const handleMouseUp = useCallback((categoryId: string) => {
+	const handleMouseUp = useCallback((categoryId: string | number) => {
 		setIsDragging((prev) => ({ ...prev, [categoryId]: false }));
 		const carousel = carouselRefs.current[categoryId];
 		if (carousel) {
@@ -118,7 +118,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 		}
 	}, []);
 
-	const handleMouseLeave = useCallback((categoryId: string) => {
+	const handleMouseLeave = useCallback((categoryId: string | number) => {
 		setIsDragging((prev) => ({ ...prev, [categoryId]: false }));
 		const carousel = carouselRefs.current[categoryId];
 		if (carousel) {
@@ -128,7 +128,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 
 	// Touch support
 	const handleTouchStart = useCallback(
-		(e: React.TouchEvent, categoryId: string) => {
+		(e: React.TouchEvent, categoryId: string | number) => {
 			const carousel = carouselRefs.current[categoryId];
 			if (!carousel) return;
 
@@ -143,7 +143,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 	);
 
 	const handleTouchMove = useCallback(
-		(e: React.TouchEvent, categoryId: string) => {
+		(e: React.TouchEvent, categoryId: string | number) => {
 			if (!isDragging[categoryId]) return;
 
 			const carousel = carouselRefs.current[categoryId];
@@ -156,13 +156,13 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 		[isDragging, startX, scrollLeft]
 	);
 
-	const handleTouchEnd = useCallback((categoryId: string) => {
+	const handleTouchEnd = useCallback((categoryId: string | number) => {
 		setIsDragging((prev) => ({ ...prev, [categoryId]: false }));
 	}, []);
 
 	// Keyboard navigation
 	const handleKeyDown = useCallback(
-		(e: React.KeyboardEvent, categoryId: string) => {
+		(e: React.KeyboardEvent, categoryId: string | number) => {
 			if (e.key === "ArrowLeft") {
 				scrollCarousel(categoryId, "left");
 			} else if (e.key === "ArrowRight") {
@@ -174,7 +174,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 
 	// Prevent click when dragging
 	const handleItemClick = useCallback(
-		(mainCategoryId: string, itemId: string, e: React.MouseEvent) => {
+		(mainCategoryId: string | number, itemId: string | number, e: React.MouseEvent) => {
 			if (isDragging[mainCategoryId]) {
 				e.preventDefault();
 				return;
@@ -185,7 +185,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 	);
 
 	// Enhanced category click handler
-	const handleCategoryClick = (mainCategoryId: string, itemId: string) => {
+	const handleCategoryClick = (mainCategoryId: string | number, itemId: string | number) => {
 		const newUrl = `/shop?categoryId=${mainCategoryId}&subcategoryId=${itemId}`;
 
 		if (location.pathname === "/shop") {
@@ -204,13 +204,13 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 		}
 	};
 
-	const handleViewAllClick = (categoryId: string) => {
+	const handleViewAllClick = (categoryId: string | number) => {
 		const newUrl = `/shop?categoryId=${categoryId}`;
 		navigate(newUrl);
 	};
 
 	// Navigation arrows
-	const scrollCarousel = (categoryId: string, direction: "left" | "right") => {
+	const scrollCarousel = (categoryId: string | number, direction: "left" | "right") => {
 		const carousel = carouselRefs.current[categoryId];
 		if (!carousel) return;
 
@@ -303,7 +303,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 						</button>
 
 						<div
-							ref={(el) => (carouselRefs.current[maincategory.id] = el)}
+							ref={(el) => { carouselRefs.current[maincategory.id] = el; }}
 							className="category-section__subcategories category-section__subcategories--carousel"
 							onMouseDown={(e) => handleMouseDown(e, maincategory.id)}
 							onMouseMove={(e) => handleMouseMove(e, maincategory.id)}

@@ -467,7 +467,8 @@
   color: #065f46;
 }
 
-.status-badge--pending {
+.status-badge--pending,
+.status-badge--order_placed {
   background-color: #fff7ed;
   color: #9a3412;
 }

@@ -25,6 +25,7 @@ import { normalizeDiscountType } from "../utils/productPricing";
 import * as XLSX from "xlsx";
 import VendorHeader from "../Components/VendorHeader";
 import VendorDashboardService from "../services/vendorDashboardService";
+import { normalizeInventoryAlertCounts } from "../utils/vendorStockAlerts";
 
 const ProductListSkeleton: React.FC = () => {
     return (
@@ -121,6 +122,8 @@ const VendorProduct: React.FC = () => {
     );
     const [lowStockBannerDismissed, setLowStockBannerDismissed] =
         useState<boolean>(false);
+    const [outOfStockBannerDismissed, setOutOfStockBannerDismissed] =
+        useState<boolean>(false);
     const [isExporting, setIsExporting] = useState<boolean>(false);
 
     // --- Derive all filter state from URL search params ---
@@ -181,6 +184,9 @@ const VendorProduct: React.FC = () => {
             // refetched after a delete/archive.
             queryClient.invalidateQueries({
                 queryKey: ["vendor-products", authState.vendor?.id],
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["vendor-dashboard-stats", authState.vendor?.id],
             });
             toast.success("Product deleted successfully!");
             setShowDeleteDialog(false);
@@ -365,6 +371,7 @@ const VendorProduct: React.FC = () => {
     const handleProductSubmit = (success: boolean, errorMessage?: string) => {
         if (success) {
             queryClient.invalidateQueries({ queryKey: ["vendor-products"] });
+            queryClient.invalidateQueries({ queryKey: ["vendor-dashboard-stats", authState.vendor?.id] });
             toast.success("Product added successfully!");
             setShowAddModal(false);
         } else {
@@ -648,26 +655,29 @@ const VendorProduct: React.FC = () => {
             await queryClient.invalidateQueries({
                 queryKey: ["vendor-products"],
             });
+            await queryClient.invalidateQueries({
+                queryKey: ["vendor-dashboard-stats", authState.vendor?.id],
+            });
         } finally {
             setShowEditModal(false);
             setEditingProduct(null);
         }
     };
 
-    const { data: vendorStats } = useQuery({
-        queryKey: ["vendor-stats", authState.vendor?.id],
+    const { data: stockAlerts = { lowStockCount: 0, outOfStockCount: 0 } } = useQuery({
+        queryKey: ["vendor-dashboard-stats", authState.vendor?.id],
         enabled: !!authState.vendor?.id && !!authState.token,
-        queryFn: () =>
-            VendorDashboardService.getInstance().getVendorStats(
+        queryFn: async () => {
+            const stats = await VendorDashboardService.getInstance().getVendorStats(
                 authState.token!,
-            ),
+            );
+            return normalizeInventoryAlertCounts(stats);
+        },
+        staleTime: 30_000,
     });
 
     const products: Product[] = productData?.products || [];
     const totalProducts = productData?.serverTotal || productData?.total || 0;
-    const lowStockCount = products.filter(
-        (p) => p.status === "LOW_STOCK",
-    ).length;
     const finalProducts = products;
     const finalTotal = totalProducts;
 
@@ -863,7 +873,16 @@ const VendorProduct: React.FC = () => {
                         />
                     ) : (
                     <>
-                    {!lowStockBannerDismissed && lowStockCount > 0 && (
+                    {!outOfStockBannerDismissed && stockAlerts.outOfStockCount > 0 && (
+                        <div className="low-stock-banner low-stock-banner--out" role="alert">
+                            <span className="low-stock-banner__icon">!</span>
+                            <p className="low-stock-banner__msg">
+                                <strong>{stockAlerts.outOfStockCount}</strong> product{stockAlerts.outOfStockCount > 1 ? "s are" : " is"} out of stock. Customers cannot purchase these products.
+                            </p>
+                            <button className="low-stock-banner__close" onClick={() => setOutOfStockBannerDismissed(true)} aria-label="Dismiss out-of-stock warning">×</button>
+                        </div>
+                    )}
+                    {!lowStockBannerDismissed && stockAlerts.lowStockCount > 0 && (
                         <div className="low-stock-banner">
                             <span className="low-stock-banner__icon">
                                 <svg
@@ -901,8 +920,8 @@ const VendorProduct: React.FC = () => {
                                 </svg>
                             </span>
                             <p className="low-stock-banner__msg">
-                                You have <strong>{lowStockCount}</strong>{" "}
-                                product{lowStockCount > 1 ? "s" : ""} with low
+                                You have <strong>{stockAlerts.lowStockCount}</strong>{" "}
+                                product{stockAlerts.lowStockCount > 1 ? "s" : ""} with low
                                 stock. Consider restocking soon.
                             </p>
                             <button
@@ -954,6 +973,7 @@ const VendorProduct: React.FC = () => {
                         onDelete={confirmDeleteProduct}
                         productName={productToDelete?.name || "Product"}
                         isLoading={deleteProductMutation.isPending}
+                        archiveProduct
                     />
                     {loading ? (
                         <ProductListSkeleton />

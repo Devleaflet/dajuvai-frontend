@@ -8,18 +8,21 @@ import {
   FaTrash,
   FaExclamationCircle,
 } from "react-icons/fa";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useUI } from "../context/UIContext";
 import Portal from "./Portal";
 import { getDiscountDisplay } from "../utils/priceDisplay";
 import defaultProductImage from "../assets/logo.webp";
 import "../Styles/Cart.css";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import { getSnapshotUnitDiscountAmount } from "../utils/cartStock";
+import { toast } from "react-hot-toast";
 
 interface CartProps {
   cartOpen: boolean;
   toggleCart: (e?: React.MouseEvent) => void;
-  cartButtonRef: React.RefObject<HTMLAnchorElement>;
+  cartButtonRef: React.RefObject<HTMLElement>;
   stableCartItems: any[];
 }
 
@@ -28,6 +31,22 @@ interface ErrorState {
   message: string;
   type: "delete" | "quantity" | "stock";
 }
+
+interface CartPriceBreakdownView {
+  baseUnitPrice: number;
+  productDiscountAmount: number;
+  dealDiscountAmount: number;
+  dealLabel: string | null;
+  dealPercent: number | null;
+  productDiscountType: string | null;
+  savingsTotal: number;
+}
+
+const formatCartMoney = (value: number | string | null | undefined): string =>
+  Number(value ?? 0).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
 const formatAttributes = (attrs: any): string => {
   if (!attrs) return "";
@@ -99,6 +118,83 @@ const getCartItemStockLimit = (item: any): number | null => {
   return Number.isFinite(parsedStock) && parsedStock >= 0 ? parsedStock : null;
 };
 
+const getCartPriceBreakdownView = (item: any): CartPriceBreakdownView | null => {
+  const quantity = Number(item?.quantity ?? 0) || 1;
+  const snapshot = item?.priceBreakdown;
+  const snapshotSavings = Number(snapshot?.savingsTotal ?? 0);
+
+  if (snapshot && snapshotSavings > 0) {
+    const productDiscountAmount = Number(snapshot.productDiscount?.amount ?? 0);
+    const dealDiscountAmount = Number(snapshot.dealDiscount?.amount ?? 0);
+    return {
+      baseUnitPrice: Number(
+        snapshot.basePrice ??
+          (Number(snapshot.lineBaseTotal ?? 0) > 0
+            ? Number(snapshot.lineBaseTotal) / quantity
+            : item.price),
+      ),
+      productDiscountAmount: getSnapshotUnitDiscountAmount(
+        productDiscountAmount,
+        snapshot.lineTotal,
+        snapshot.unitPrice,
+        quantity,
+      ),
+      dealDiscountAmount: getSnapshotUnitDiscountAmount(
+        dealDiscountAmount,
+        snapshot.lineTotal,
+        snapshot.unitPrice,
+        quantity,
+      ),
+      dealLabel: snapshot.dealDiscount?.label ?? null,
+      dealPercent:
+        snapshot.dealDiscount?.percent != null
+          ? Number(snapshot.dealDiscount.percent)
+          : null,
+      productDiscountType: snapshot.productDiscount?.type ?? null,
+      savingsTotal: productDiscountAmount + dealDiscountAmount,
+    };
+  }
+
+  const product = item?.product ?? {};
+  const source = item?.variant ?? product;
+  const basePrice = Number(source?.basePrice ?? product?.basePrice ?? item?.price);
+  const deal = product?.deal;
+  const hasDeal =
+    deal &&
+    String(deal.status ?? "ENABLED").toUpperCase() !== "DISABLED" &&
+    Number(deal.discountPercentage ?? 0) > 0;
+
+  const discountDisplay = getDiscountDisplay({
+    basePrice,
+    finalPrice: item?.price,
+    discount: source?.discount ?? null,
+    discountAmount: source?.discountAmount,
+    discountPercent: source?.discountPercent,
+    discountType: source?.discountType,
+  });
+
+  if (!discountDisplay.hasDiscount && !hasDeal) return null;
+
+  const fallbackSavings = Math.max(0, basePrice - Number(item?.price ?? 0));
+  const productDiscountAmount = hasDeal ? 0 : discountDisplay.savingsAmount;
+  const dealDiscountAmount = hasDeal
+    ? fallbackSavings || discountDisplay.savingsAmount
+    : 0;
+  const savingsTotal = productDiscountAmount + dealDiscountAmount;
+
+  if (savingsTotal <= 0) return null;
+
+  return {
+    baseUnitPrice: basePrice,
+    productDiscountAmount,
+    dealDiscountAmount,
+    dealLabel: deal?.name ?? null,
+    dealPercent: hasDeal ? Number(deal.discountPercentage) || null : null,
+    productDiscountType: source?.discountType ?? null,
+    savingsTotal,
+  };
+};
+
 interface CartItemRowProps {
   item: any;
   isUpdating: boolean;
@@ -125,6 +221,7 @@ const CartItemRow = React.memo(
     const itemId = numericItemId ? String(numericItemId) : "invalid";
     const variantLabel = getCartVariantLabel(item);
     const stockLimit = getCartItemStockLimit(item);
+    const priceBreakdown = getCartPriceBreakdownView(item);
 
     const [localQuantity, setLocalQuantity] = useState(item.quantity);
     const [isLocalUpdating, setIsLocalUpdating] = useState(false);
@@ -332,40 +429,25 @@ const CartItemRow = React.memo(
               <span className="cart__item-price-current">
                 Rs. {item.price.toLocaleString("en-IN")}
               </span>
-              {(() => {
-                const basePrice = Number(
-                  item.variant?.basePrice ?? item.product?.basePrice ?? item.price,
-                );
-                const discountAmount = item.variant
-                  ? item.variant?.discountAmount
-                  : item.product?.discountAmount;
-                const discountPercent = item.variant
-                  ? item.variant?.discountPercent
-                  : item.product?.discountPercent;
-                const discountType = item.variant
-                  ? item.variant?.discountType
-                  : item.product?.discountType;
-                const discountDisplay = getDiscountDisplay({
-                  basePrice,
-                  finalPrice: item.price,
-                  discountAmount,
-                  discountPercent,
-                  discountType,
-                });
-                if (!discountDisplay.hasDiscount) return null;
-                return (
-                  <>
-                    <span className="cart__item-price-original">
-                      Rs. {basePrice.toLocaleString("en-IN")}
-                    </span>
-                    {discountDisplay.badgeLabel && (
-                      <span className="cart__item-price-badge">
-                        {discountDisplay.badgeLabel}
+              {priceBreakdown && (
+                <>
+                  <span className="cart__item-price-original">
+                    Rs. {formatCartMoney(priceBreakdown.baseUnitPrice)}
+                  </span>
+                  <div className="cart__item-price-breakdown">
+                    {priceBreakdown.productDiscountAmount > 0 && (
+                      <span className="cart__item-price-pill cart__item-price-pill--discount">
+                        Discount: -Rs. {formatCartMoney(priceBreakdown.productDiscountAmount)}
                       </span>
                     )}
-                  </>
-                );
-              })()}
+                    {priceBreakdown.dealDiscountAmount > 0 && (
+                      <span className="cart__item-price-pill cart__item-price-pill--deal">
+                        Deal{priceBreakdown.dealLabel ? `: ${priceBreakdown.dealLabel}` : priceBreakdown.dealPercent ? `: ${priceBreakdown.dealPercent}%` : ""}: -Rs. {formatCartMoney(priceBreakdown.dealDiscountAmount)}
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="cart__item-controls">
@@ -427,8 +509,12 @@ const CartItemRow = React.memo(
     return (
       prevProps.item.quantity === nextProps.item.quantity &&
       prevProps.item.price === nextProps.item.price &&
+      prevProps.item.priceBreakdown === nextProps.item.priceBreakdown &&
       prevProps.item.name === nextProps.item.name &&
       prevProps.item.image === nextProps.item.image &&
+      prevProps.item.product?.deal?.id === nextProps.item.product?.deal?.id &&
+      prevProps.item.product?.discount === nextProps.item.product?.discount &&
+      prevProps.item.variant?.discount === nextProps.item.variant?.discount &&
       prevProps.isUpdating === nextProps.isUpdating &&
       prevProps.itemError === nextProps.itemError
     );
@@ -442,11 +528,13 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
     handleDecreaseQuantity,
     updatingItems,
     cartItems,
+    refreshCart,
   } = useCart();
 
   const { setCartOpen } = useUI();
   const sideCartRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const navigate = useNavigate();
   const prevLocationRef = useRef(location.pathname);
 
   const [errors, setErrors] = useState<ErrorState[]>([]);
@@ -474,27 +562,13 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
     }
   }, [errors]);
 
-  // Body scroll lock — robust version that preserves scroll position
+  // Body scroll lock — delegates to the shared hook so every lock in the app
+  // uses one implementation. The .cart-open class only slides the drawer in.
+  useBodyScrollLock(cartOpen);
   useEffect(() => {
     if (cartOpen) {
-      const scrollY = window.scrollY;
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.left = "0";
-      document.body.style.right = "0";
-      document.body.style.width = "100%";
       document.body.classList.add("cart-open");
-
-      return () => {
-        const storedScrollY = document.body.style.top;
-        document.body.style.position = "";
-        document.body.style.top = "";
-        document.body.style.left = "";
-        document.body.style.right = "";
-        document.body.style.width = "";
-        document.body.classList.remove("cart-open");
-        window.scrollTo(0, parseInt(storedScrollY || "0") * -1);
-      };
+      return () => document.body.classList.remove("cart-open");
     }
   }, [cartOpen]);
 
@@ -638,6 +712,25 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
     [toggleCart],
   );
 
+  const handleProceedToCheckout = useCallback(async () => {
+    try {
+      const latestItems = await refreshCart();
+      if (!latestItems.length) {
+        toast.error("Your cart changed because stock is no longer available.");
+        return;
+      }
+      if (latestItems.some((item) => Boolean(item.warningMessage))) {
+        toast.error("Please resolve the stock warning in your cart before checkout.");
+        return;
+      }
+
+      toggleCart();
+      navigate("/checkout");
+    } catch {
+      toast.error("Could not verify cart stock. Please try again.");
+    }
+  }, [navigate, refreshCart, toggleCart]);
+
   return (
     <Portal containerId="cart-portal-root">
       <div
@@ -748,16 +841,13 @@ const Cart: React.FC<CartProps> = ({ cartOpen, toggleCart, cartButtonRef }) => {
                       Proceed to Checkout
                     </button>
                   ) : (
-                    <Link
-                      to="/checkout"
+                    <button
+                      type="button"
                       className="cart__button cart__button--checkout"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleCart();
-                      }}
+                      onClick={handleProceedToCheckout}
                     >
                       Proceed to Checkout
-                    </Link>
+                    </button>
                   )}
 
                   <Link

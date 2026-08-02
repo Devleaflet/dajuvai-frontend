@@ -10,7 +10,6 @@ import {
 	FaHeart,
 	FaHome,
 	FaInfoCircle,
-	FaSearch,
 	FaShoppingBag,
 	FaShoppingCart,
 	FaSignOutAlt,
@@ -19,7 +18,6 @@ import {
 } from 'react-icons/fa';
 import { FaFacebook, FaInstagram, FaTiktok, FaWhatsapp, FaYoutube } from 'react-icons/fa6';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import axiosInstance from '../api/axiosInstance';
 import { fetchPlacementCategories, PLACEMENTS } from '../api/placements';
 import logo from '../assets/logo.webp';
 import nepal from '../assets/nepal.gif';
@@ -33,6 +31,8 @@ import VendorLogin from '../Pages/VendorLogin';
 import '../Styles/Navbar.css';
 import AuthModal from './AuthModal';
 import Cart from './Cart';
+import InlineNavbarSearch from './InlineNavbarSearch';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface Category {
 	id: number;
@@ -55,9 +55,9 @@ const Navbar: React.FC = () => {
 	const mobileProfileRef = useRef<HTMLDivElement>(null);
 	const { authState: vendorAuthState, logout: vendorLogout } = useVendorAuth();
 	const { cartOpen, setCartOpen, sideMenuOpen, setSideMenuOpen } = useUI();
+
+	useBodyScrollLock(sideMenuOpen);
 	const [searchQuery, setSearchQuery] = useState<string>('');
-	const [searchResults, setSearchResults] = useState<any[]>([]);
-	const [showSearchDropdown, setShowSearchDropdown] = useState<boolean>(false);
 	const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
 	const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
 	const [vendorAuthModalOpen, setVendorAuthModalOpen] =
@@ -79,11 +79,15 @@ const Navbar: React.FC = () => {
 
 	const sideMenuRef = useRef<HTMLDivElement>(null);
 	const hamburgerRef = useRef<HTMLButtonElement>(null);
-	const cartButtonRef = useRef<any>(null);
+	const cartButtonRef = useRef<HTMLButtonElement>(null);
 	const profileRef = useRef<HTMLDivElement>(null);
 	const dropdownTriggerRef = useRef<HTMLDivElement>(null);
-	const searchRef = useRef<HTMLDivElement>(null);
+	const searchTriggerRef = useRef<HTMLInputElement>(null);
 	const moreDropdownRef = useRef<HTMLDivElement>(null);
+	const focusSearch = useCallback((query = '') => {
+		setSearchQuery(query);
+		requestAnimationFrame(() => searchTriggerRef.current?.focus());
+	}, []);
 
 	const { cartItems, cartCount } = useCart();
 
@@ -250,7 +254,7 @@ const Navbar: React.FC = () => {
 		return <FaUser />;
 	};
 
-	const toggleSideMenu = (e?: React.MouseEvent): void => {
+	const toggleSideMenu = useCallback((e?: React.MouseEvent): void => {
 		e?.preventDefault();
 		e?.stopPropagation();
 		const newState = !sideMenuOpen;
@@ -261,7 +265,7 @@ const Navbar: React.FC = () => {
 		} else {
 			document.body.classList.remove('navbar--menu-open');
 		}
-	};
+	}, [cartOpen, setCartOpen, setSideMenuOpen, sideMenuOpen]);
 
 	const toggleCart = (e?: React.MouseEvent): void => {
 		e?.preventDefault();
@@ -271,14 +275,10 @@ const Navbar: React.FC = () => {
 		if (sideMenuOpen) setSideMenuOpen(false);
 
 		if (newState) {
-			document.body.classList.add('no-scroll');
 			document.body.classList.add('cart-open');
-			document.body.style.overflow = 'hidden';
 		} else {
-			document.body.classList.remove('no-scroll');
 			document.body.classList.remove('cart-open');
 			document.body.classList.remove('navbar--menu-open');
-			document.body.style.overflow = '';
 		}
 	};
 
@@ -324,41 +324,28 @@ const Navbar: React.FC = () => {
 		return () => {
 			document.removeEventListener('click', handleClickOutside);
 		};
-	}, [sideMenuOpen]);
+	}, [sideMenuOpen, toggleSideMenu]);
 
 	useEffect(() => {
-		let prevScrollPos = window.pageYOffset;
 		const searchRow = document.querySelector('.navbar__search-row');
-
-		if (window.pageYOffset > 10) {
-			searchRow?.classList.add('hidden');
-		}
+		// Keep the search row always visible on every breakpoint. Previously it
+		// toggled .hidden on scroll for mobile (<=1099px), which made the bar
+		// vanish/reappear on every small scroll and felt janky. Removing the
+		// hide-on-scroll behaviour keeps it pinned and smooth.
+		searchRow?.classList.remove('hidden');
 
 		const handleScroll = (): void => {
-			const currentScrollPos = window.pageYOffset;
 			// The dropdown's position is only ever computed relative to the
 			// search input at open time — once the page scrolls, that anchor is
 			// stale, so close it rather than let it float disconnected from the
 			// field it was opened from.
-			setShowSearchDropdown(false);
-			if (window.innerWidth <= 1099) {
-				if (currentScrollPos <= 10 || prevScrollPos - currentScrollPos > 500) {
-					searchRow?.classList.remove('hidden');
-				} else {
-					searchRow?.classList.add('hidden');
-				}
-			} else {
-				searchRow?.classList.remove('hidden');
-			}
-			prevScrollPos = currentScrollPos;
+			void searchRow;
 		};
 
-		window.addEventListener('scroll', handleScroll);
-		window.addEventListener('resize', handleScroll);
+		window.addEventListener('scroll', handleScroll, { passive: true });
 
 		return () => {
 			window.removeEventListener('scroll', handleScroll);
-			window.removeEventListener('resize', handleScroll);
 		};
 	}, []);
 
@@ -387,92 +374,27 @@ const Navbar: React.FC = () => {
 	const location = useLocation();
 
 	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (
-				searchRef.current &&
-				!searchRef.current.contains(event.target as Node)
-			) {
-				setShowSearchDropdown(false);
-			}
-		};
-
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => document.removeEventListener('mousedown', handleClickOutside);
-	}, []);
-
-	const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
-
-	const handleSearch = useCallback(async (query: string) => {
-		if (!query.trim()) {
-			setSearchResults([]);
-			setShowSearchDropdown(false);
-			return;
-		}
-		try {
-			const response = await fetch(
-				`${API_BASE_URL}/api/categories/all/products?search=${encodeURIComponent(query.trim())}`
-			);
-			if (!response.ok) throw new Error('Search failed');
-			const data = await response.json();
-			const results = (data.success ? data.data : []).slice(0, 5).map((product: { id: number; name: string; productImages?: string[]; variants?: { variantImages?: string[] }[] }) => ({
-				id: product.id,
-				name: product.name,
-				image:
-					product.productImages?.[0] ||
-					product.variants?.find((v) => v?.variantImages?.[0])?.variantImages?.[0] ||
-					logo,
-			}));
-			setSearchResults(results);
-			setShowSearchDropdown(results.length > 0);
-		} catch (error) {
-			console.error('Search error:', error);
-			setSearchResults([]);
-			setShowSearchDropdown(false);
-		}
-	}, []);
-
-	useEffect(() => {
 		const handleSetNavbarSearch = (event: CustomEvent) => {
-			const { searchQuery: query } = event.detail;
-			setSearchQuery(query);
-			if (query) handleSearch(query);
+			focusSearch(event.detail?.searchQuery ?? '');
 		};
 
 		window.addEventListener('setNavbarSearch', handleSetNavbarSearch as EventListener);
 		return () => window.removeEventListener('setNavbarSearch', handleSetNavbarSearch as EventListener);
-	}, [handleSearch]);
+	}, [focusSearch]);
 
-	const handleSearchSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-		handleSearch(searchQuery);
-	};
-
-	const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const value = e.target.value;
-		setSearchQuery(value);
-
-		if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-
-		if (value.trim()) {
-			searchDebounceRef.current = setTimeout(() => handleSearch(value), 300);
-		} else {
-			setSearchResults([]);
-			setShowSearchDropdown(false);
-		}
-	};
-
-	const handleSearchResultClick = (productId: number) => {
-		setShowSearchDropdown(false);
-		setSearchQuery('');
-		navigate(`/product-page/${productId}`);
-	};
-
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-		if (e.key === 'Escape') {
-			setShowSearchDropdown(false);
-		}
-	};
+	useEffect(() => {
+		const openGlobalSearch = (event: KeyboardEvent) => {
+			const target = event.target as HTMLElement | null;
+			const isEditing = target?.matches('input, textarea, select, [contenteditable="true"]');
+			if (isEditing) return;
+			if ((event.key === 'k' && (event.ctrlKey || event.metaKey)) || event.key === '/') {
+				event.preventDefault();
+				focusSearch();
+			}
+		};
+		window.addEventListener('keydown', openGlobalSearch);
+		return () => window.removeEventListener('keydown', openGlobalSearch);
+	}, [focusSearch]);
 
 	const handleSubcategoryClick = (
 		categoryId: number,
@@ -486,20 +408,7 @@ const Navbar: React.FC = () => {
 		setCartOpen(false);
 
 
-		const isOnShopPage = window.location.pathname === '/shop';
-
-		if (isOnShopPage) {
-			const newUrl = `/shop?categoryId=${categoryId}&subcategoryId=${subcategoryId}`;
-			window.history.pushState({}, '', newUrl);
-
-			window.dispatchEvent(
-				new CustomEvent('shopFiltersChanged', {
-					detail: { categoryId, subcategoryId },
-				})
-			);
-		} else {
-			navigate(`/shop?categoryId=${categoryId}&subcategoryId=${subcategoryId}`);
-		}
+		navigate(`/shop?categoryId=${categoryId}&subcategoryId=${subcategoryId}`);
 	};
 
 	const clearDropdownTimeout = () => {
@@ -516,13 +425,16 @@ const Navbar: React.FC = () => {
 		}, 150); // 150ms delay
 	};
 
-	const renderCategoryDropdown = (category: any) => {
+	const renderCategoryDropdown = (category: Category) => {
 		if (activeDropdown !== category.id) return null;
 
 		// Subcategories come straight from the MEGA_MENU placement data already
 		// loaded into `categories` - not a separate fetch - so the order here is
 		// always exactly what's arranged in the admin panel.
-		const subcategories: CategoryItem[] = category.items ?? [];
+		const subcategories: CategoryItem[] = (category.items ?? []).map((item) => ({
+			...item,
+			link: `/shop?categoryId=${category.id}&subcategoryId=${item.id}`,
+		}));
 
 		return (
 			<div className="navbar__dropdown-content">
@@ -629,10 +541,12 @@ const Navbar: React.FC = () => {
 
 	useEffect(() => {
 		const params = new URLSearchParams(location.search);
-		const categoryId = params.get('categoryId');
-		if (categoryId) {
-			setActiveDropdown(Number(categoryId));
-		}
+		const categoryId = params
+			.get('categoryId')
+			?.split(',')
+			.map(Number)
+			.find(Number.isFinite);
+		setActiveDropdown(categoryId ?? null);
 	}, [location.search]);
 
 	const handleFullLogout = async () => {
@@ -916,26 +830,34 @@ const Navbar: React.FC = () => {
 					)}
 
 					<div className="navbar__search-row">
-						<div
-							className="navbar__search"
-							ref={searchRef}
-						>
-							<form
-								onSubmit={handleSearchSubmit}
-								className="navbar__search-form"
-							>
+						<InlineNavbarSearch
+							query={searchQuery}
+							onQueryChange={setSearchQuery}
+							inputRef={searchTriggerRef}
+						/>
+						{/*
 								<input
+									ref={searchTriggerRef}
 									type="text"
 									placeholder="Search products..."
 									value={searchQuery}
-									onChange={handleSearchInputChange}
-									onKeyDown={handleKeyDown}
+									onChange={(event) => setSearchQuery(event.target.value)}
+									onKeyDown={(event) => {
+										if (event.key === 'Enter') {
+											event.preventDefault();
+											void searchQuery;
+										}
+									}}
 									onFocus={() => {
+										if (skipSearchTriggerFocusRef.current) {
+											skipSearchTriggerFocusRef.current = false;
+											return;
+										}
 										// Scroll dismisses the dropdown, but the query and its
 										// results are still sitting in state — re-clicking the
 										// field should bring the same list straight back instead
 										// of forcing the user to retype to see it again.
-										if (searchResults.length > 0) setShowSearchDropdown(true);
+										void searchQuery;
 									}}
 									className="navbar__search-input"
 									autoComplete="off"
@@ -949,35 +871,8 @@ const Navbar: React.FC = () => {
 								>
 									<FaSearch />
 								</button>
-							</form>
-
-							{showSearchDropdown && searchResults.length > 0 && (
-								<div className="navbar__search-dropdown">
-									{searchResults.map((result) => (
-										<div
-											key={result.id}
-											className="navbar__search-result"
-											onClick={() => handleSearchResultClick(result.id)}
-										>
-											<img
-												src={result.image}
-												alt={result.name}
-												className="navbar__search-result-image"
-												onError={(e) => {
-													(e.target as HTMLImageElement).src = logo;
-												}}
-											/>
-											<div className="navbar__search-result-info">
-												<h4 className="navbar__search-result-title">
-													{result.name}
-												</h4>
-											</div>
-										</div>
-									))}
-								</div>
-							)}
+							</form>*/}
 						</div>
-					</div>
 
 					<div className="navbar__desktop-links">
 						<div className="navbar__links">
@@ -1384,9 +1279,7 @@ const Navbar: React.FC = () => {
 						setSideMenuOpen(false);
 						setCartOpen(false);
 						document.body.classList.remove('navbar--menu-open');
-						document.body.classList.remove('no-scroll');
 						document.body.classList.remove('cart-open');
-						document.body.style.overflow = '';
 					}}
 				></div>
 
@@ -1403,21 +1296,20 @@ const Navbar: React.FC = () => {
 							className="navbar__categories"
 							ref={categoriesRef}
 						>
-							{categories.map((category: any) => (
+							{categories.map((category) => (
 								<div
 									key={category.id}
-									ref={(el) => (categoryRefs.current[category.id] = el)}
+									ref={(el) => {
+										categoryRefs.current[category.id] = el;
+									}}
 									className={`navbar__category${activeDropdown === category.id ? ' active' : ''
 										}`}
 									onMouseEnter={() => {
 										clearDropdownTimeout();
 										setActiveDropdown(category.id);
 										const element = categoryRefs.current[category.id];
-										const sliderContainer = categoriesRef.current;
-										if (element && sliderContainer) {
+										if (element) {
 											const rect = element.getBoundingClientRect();
-											const sliderRect =
-												sliderContainer.getBoundingClientRect();
 
 											const adjustedLeft = rect.left + window.scrollX;
 											const adjustedTop = rect.bottom + window.scrollY;
@@ -1564,7 +1456,6 @@ const Navbar: React.FC = () => {
 				isOpen={vendorAuthModalOpen}
 				onClose={() => setVendorAuthModalOpen(false)}
 			/>
-
 			{activeDropdown && dropdownPosition && (
 				<div
 					className="navbar__dropdown-portal"

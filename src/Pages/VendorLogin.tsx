@@ -9,6 +9,7 @@ import "../Styles/AuthModal.css";
 import close from "../assets/close.png";
 import { Toaster, toast } from "react-hot-toast";
 import popup from "../assets/auth.jpg";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 
 interface VendorLoginProps {
@@ -45,13 +46,7 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
   const modalRef = useRef<HTMLDivElement | null>(null);
 
   // Handle modal click outside
-  useEffect(() => {
-    if (isOpen) {
-      document.body.classList.add("auth-modal--open");
-    } else {
-      document.body.classList.remove("auth-modal--open");
-    }
-  }, [isOpen, onClose]);
+  useBodyScrollLock(isOpen);
 
   // Handle countdown timer
   useEffect(() => {
@@ -257,7 +252,12 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
       setIsLoading(true);
       setError("");
       setSuccess("");
-      const result = await VendorAuthService.resetPassword(newPassword, confirmPassword, resetToken);
+      const result = await VendorAuthService.resetPassword(
+        forgotPasswordEmail.trim(),
+        newPassword,
+        confirmPassword,
+        resetToken,
+      );
       if (result.success) {
         toast.success("Password reset successfully! Please login.");
         setShowResetPassword(false);

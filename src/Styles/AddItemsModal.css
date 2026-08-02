@@ -80,12 +80,26 @@
 }
 
 .aim-search input {
-  border: none;
-  outline: none;
-  padding: 9px 0;
-  width: 100%;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  box-sizing: border-box !important;
+  min-width: 0;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 9px 0 !important;
+  width: 100% !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
   font-size: 14px;
   color: #111827;
+}
+
+.aim-search input::-webkit-search-decoration,
+.aim-search input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
 }
 
 .aim-body {

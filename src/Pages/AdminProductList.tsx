@@ -28,7 +28,7 @@ const AdminProductList: React.FC = () => {
       // Note: This assumes the product object has categoryId and subcategoryId
       // If not, you'll need to fetch the product details first
       const numericId = Number(productId);
-      return deleteProduct(numericId, 0, 0); // Using 0 as placeholder for category/subcategory
+      return deleteProduct(numericId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });

@@ -8,7 +8,9 @@ import { FaInfoCircle } from "react-icons/fa";
 import "../Styles/AuthModal.css";
 import popup from "../assets/auth.jpg";
 import close from "../assets/close.png";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { Toaster, toast } from "react-hot-toast";
+import { getApiErrorMessage } from "../utils/apiError";
 
 interface AuthModalProps {
 	isOpen: boolean;
@@ -72,13 +74,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 	const modalRef = useRef<HTMLDivElement | null>(null);
 	const popupRef = useRef<HTMLDivElement | null>(null);
 
-	useEffect(() => {
-		if (isOpen) {
-			document.body.classList.add("auth-modal--open");
-		} else {
-			document.body.classList.remove("auth-modal--open");
-		}
-	}, [isOpen]);
+	useBodyScrollLock(isOpen);
 
 	useEffect(() => {
 		let timer: NodeJS.Timeout;
@@ -496,7 +492,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 					role: response.data.data.role,
 					username: response.data.data.email.split("@")[0],
 					isVerified: true,
-					profilePicture: response.data.data.profilePicture,
+					profilePicture: (response.data.data as { profilePicture?: string }).profilePicture,
 				};
 
 				login(response.data.token, userData, response.data.refreshToken);
@@ -578,11 +574,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 		if (!validateForm()) {
 			toast.error("Please fix the errors in the form", {
 				position: "top-right",
-				autoClose: 5000,
-				hideProgressBar: false,
-				closeOnClick: true,
-				pauseOnHover: true,
-				draggable: true,
+				duration: 5000,
 			});
 			return;
 		}
@@ -607,18 +599,25 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 		if (!validateResetForm()) {
 			toast.error("Please fix the errors in the form", {
 				position: "top-right",
-				autoClose: 5000,
+				duration: 5000,
 			});
 			return;
 		}
 
 		setIsLoading(true);
 		try {
-			await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email });
+			await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, {
+				email: email.trim(),
+			});
 			setSuccess("Password reset email sent! Check your inbox.");
 			setForgotMode("reset");
-		} catch {
-			setError("Failed to send reset email. Please try again.");
+		} catch (error) {
+			setError(
+				getApiErrorMessage(
+					error,
+					"Failed to send reset email. Please try again."
+				)
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -632,7 +631,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 		if (!validateResetForm()) {
 			toast.error("Please fix the errors in the form", {
 				position: "top-right",
-				autoClose: 5000,
+				duration: 5000,
 			});
 			return;
 		}
@@ -640,6 +639,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 		setIsLoading(true);
 		try {
 			await axios.post(`${API_BASE_URL}/api/auth/reset-password`, {
+				email: email.trim(),
 				newPass: newPassword,
 				confirmPass: confirmNewPassword,
 				token: resetToken,
@@ -649,9 +649,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 			setResetToken("");
 			setNewPassword("");
 			setConfirmNewPassword("");
-		} catch {
+		} catch (error) {
 			setError(
-				"Failed to reset password. Please check your token and try again."
+				getApiErrorMessage(
+					error,
+					"Failed to reset password. Please check your token and try again."
+				)
 			);
 		} finally {
 			setIsLoading(false);

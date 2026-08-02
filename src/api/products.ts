@@ -1,6 +1,7 @@
 import axios from "axios";
 import axiosInstance from "./axiosInstance";
 import { API_BASE_URL } from "../config";
+import type { Product as AdminListProduct } from "../Components/Types/EditProductTypes";
 
 interface RawProduct {
 	id: number;
@@ -628,6 +629,36 @@ export const deleteProduct = async (productId: number, token?: string) => {
 		}
 		throw error;
 	}
+};
+
+export const fetchAllProducts = async (
+	page = 1,
+	limit = 10,
+	search = "",
+): Promise<{ products: AdminListProduct[]; total: number; hasMore: boolean }> => {
+	const response = await axiosInstance.get<{
+		success: boolean;
+		data?: unknown[];
+		meta?: { total?: number; hasNextPage?: boolean };
+	}>("/api/categories/all/products", {
+		params: { page, limit, ...(search.trim() ? { search: search.trim() } : {}) },
+	});
+	const rows = Array.isArray(response.data.data) ? response.data.data : [];
+	const products = rows.map((row) => {
+		const product = row as Record<string, any>;
+		return {
+			...product,
+			id: String(product.id),
+			name: String(product.name ?? product.title ?? ""),
+			images: Array.isArray(product.productImages) ? product.productImages : [],
+			status: product.status ?? "AVAILABLE",
+		} as AdminListProduct;
+	});
+	return {
+		products,
+		total: Number(response.data.meta?.total ?? products.length),
+		hasMore: Boolean(response.data.meta?.hasNextPage),
+	};
 };
 
 export const restoreProduct = async (productId: number, token?: string) => {

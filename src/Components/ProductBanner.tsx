@@ -4,7 +4,9 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import '../Styles/HeroSlider.css';
 import SliderSkeleton from '../skeleton/SliderSkeleton';
+import ResponsiveBanner from './ResponsiveBanner';
 import { API_BASE_URL } from '../config';
+import { getBannerShopPath } from '../utils/bannerNavigation';
 
 interface Slide {
   id: number;
@@ -17,6 +19,7 @@ interface Slide {
   productSource?: string;
   selectedCategory?: { id: number } | null;
   selectedSubcategory?: { id: number; category: { id: number } } | null;
+  selectedDeal?: { id: number } | null;
   externalLink?: string | null;
 }
 
@@ -47,6 +50,7 @@ const fetchProductBanners = async (): Promise<Slide[]> => {
       productSource: banner.productSource,
       selectedCategory: banner.selectedCategory,
       selectedSubcategory: banner.selectedSubcategory,
+      selectedDeal: banner.selectedDeal,
       externalLink: banner.externalLink,
     }));
 };
@@ -233,58 +237,15 @@ const ProductBanner: React.FC = () => {
       return;
     }
 
-    if (slide.productSource === 'category' && slide.selectedCategory?.id) {
+    if (slide.productSource === 'external' && slide.externalLink) {
+      window.open(slide.externalLink, '_blank');
+    } else {
       //('Navigating to category:', slide.selectedCategory.id);
       try {
-        navigate(`/shop?categoryId=${slide.selectedCategory.id}`);
+        navigate(getBannerShopPath(slide));
       } catch (error) {
         console.error('Navigation failed:', error);
-        window.location.href = `/shop?categoryId=${slide.selectedCategory.id}`;
-      }
-    } else if (
-      slide.productSource === 'subcategory' &&
-      slide.selectedSubcategory?.id &&
-      slide.selectedSubcategory?.category?.id
-    ) {
-      try {
-        navigate(
-          `/shop?categoryId=${slide.selectedSubcategory.category.id}&subcategoryId=${slide.selectedSubcategory.id}`
-        );
-      } catch (error) {
-        console.error('Navigation failed:', error);
-        window.location.href = `/shop?categoryId=${slide.selectedSubcategory.category.id}&subcategoryId=${slide.selectedSubcategory.id}`;
-      }
-    } else if (slide.productSource === 'manual') {
-      //('Navigating to manual banner:', slide.id);
-      try {
-        navigate(`/shop?bannerId=${slide.id}`);
-      } catch (error) {
-        console.error('Navigation failed:', error);
-        window.location.href = `/shop?bannerId=${slide.id}`;
-      }
-    } else if (slide.productSource === 'external' && slide.externalLink) {
-      //('Opening external link:', slide.externalLink);
-      try {
-        window.open(slide.externalLink, '_blank');
-      } catch (error) {
-        console.error('Failed to open external link:', error);
-      }
-    } else {
-      console.warn(
-        'No valid navigation criteria met. Slide properties:',
-        {
-          productSource: slide.productSource,
-          hasSelectedCategory: !!slide.selectedCategory,
-          hasSelectedSubcategory: !!slide.selectedSubcategory,
-          hasExternalLink: !!slide.externalLink,
-          slideName: slide.name,
-        }
-      );
-      try {
-        navigate('/shop');
-      } catch (error) {
-        console.error('Navigation failed:', error);
-        window.location.href = '/shop';
+        window.location.href = getBannerShopPath(slide);
       }
     }
   };
@@ -314,15 +275,15 @@ const ProductBanner: React.FC = () => {
           transition: isDragging ? 'none' : 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
-        {slides.map((slide) => (
+        {slides.map((slide, idx) => (
           <div key={slide.id} className="hero-slider__slide">
-            <img
-              src={window.innerWidth < 768 ? slide.mobileImage || slide.desktopImage : slide.desktopImage}
-              alt={slide.name}
+            <ResponsiveBanner
+              type="hero"
+              desktopImageUrl={slide.desktopImage ?? ''}
+              mobileImageUrl={slide.mobileImage}
+              altText={slide.name}
+              priority={idx === 0}
               className="hero-slider__image"
-              loading="lazy"
-              draggable={false}
-              onDragStart={(e) => e.preventDefault()}
             />
           </div>
         ))}

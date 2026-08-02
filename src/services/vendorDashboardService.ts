@@ -37,6 +37,7 @@ class VendorDashboardService {
             limit?: number;
             status?: string;
             sort?: string;
+            search?: string;
         } = {}
     ) {
         const realToken = token || localStorage.getItem("vendorToken");
@@ -45,6 +46,7 @@ class VendorDashboardService {
         if (params.limit) queryParams.append("limit", params.limit.toString());
         if (params.status) queryParams.append("status", params.status);
         if (params.sort) queryParams.append("sort", params.sort);
+        if (params.search) queryParams.append("search", params.search);
 
         const url = `${this.baseUrl}/order/vendor/orders${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
         const response = await fetch(url, {
@@ -55,6 +57,30 @@ class VendorDashboardService {
             },
         });
         if (!response.ok) throw new Error("Failed to fetch orders");
+        return response.json();
+    }
+
+    /** Every order matching the given filters, unpaginated — for CSV/Excel
+     * export, so the exported file isn't limited to the current page. */
+    async exportVendorOrders(
+        token: string,
+        params: { status?: string; sort?: string; search?: string } = {},
+    ) {
+        const realToken = token || localStorage.getItem("vendorToken");
+        const queryParams = new URLSearchParams();
+        if (params.status) queryParams.append("status", params.status);
+        if (params.sort) queryParams.append("sort", params.sort);
+        if (params.search) queryParams.append("search", params.search);
+
+        const url = `${this.baseUrl}/order/vendor/orders/export${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+        const response = await fetch(url, {
+            headers: {
+                Authorization: `Bearer ${realToken}`,
+                "Content-Type": "application/json",
+                accept: "application/json",
+            },
+        });
+        if (!response.ok) throw new Error("Failed to export orders");
         return response.json();
     }
     async getVendorOrderDetail(token: string, orderId: number) {
@@ -73,32 +99,37 @@ class VendorDashboardService {
         return response.json();
     }
 
-    /** Updates only this vendor's own fulfillment stage
-     * (OrderVendorShipping.status) — never the parent order's overall status. */
-    async updateVendorOrderStatus(
+    /** Read-only status timeline for a vendor's own order — vendors can
+     * see why a status changed but never change it themselves. */
+    async getOrderStatusHistory(
         token: string,
         orderId: number,
-        status: "PROCESSING" | "SHIPPED" | "CANCELLED",
-        reason?: string,
-    ) {
+    ): Promise<
+        Array<{
+            id: number;
+            previousStatus: string | null;
+            newStatus: string;
+            changedByRole: string;
+            reason: string | null;
+            note: string | null;
+            createdAt: string;
+        }>
+    > {
         const realToken = token || localStorage.getItem("vendorToken");
         const response = await fetch(
-            `${this.baseUrl}/order/vendor/${orderId}/status`,
+            `${this.baseUrl}/order/vendor/${orderId}/status-history`,
             {
-                method: "PUT",
                 headers: {
                     Authorization: `Bearer ${realToken}`,
-                    "Content-Type": "application/json",
                     accept: "application/json",
                 },
-                body: JSON.stringify({ status, reason }),
             },
         );
         const data = await response.json();
         if (!response.ok || !data.success) {
-            throw new Error(data.message || "Failed to update order status");
+            throw new Error(data.message || "Failed to load status history");
         }
-        return data;
+        return data.data;
     }
 
     async getVendorStats(token: string) {

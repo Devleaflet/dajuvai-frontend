@@ -14,6 +14,8 @@ import SubcategoriesViewModal from "../Components/Modal/SubcategoriesViewModal";
 import "../Styles/AdminCategories.css";
 import placeholder from "../assets/earphones.png";
 import { Plus } from "lucide-react";
+import { toCategoryRestrictionPayload } from "../utils/categoryRestriction";
+import { canToggleHomepageCategory } from "../utils/homepageCategorySelection";
 
 interface SubCategory {
   id: string;
@@ -28,6 +30,9 @@ interface Category {
   date: string;
   image?: string;
   subCategories: SubCategory[];
+  isAgeRestricted?: boolean;
+  minimumAge?: number | null;
+  restrictionMessage?: string | null;
 }
 
 interface ApiErrorResponse {
@@ -250,6 +255,9 @@ const AdminCategories: React.FC = () => {
               date: new Date(category.createdAt).toLocaleDateString(),
               image: category.image || undefined,
               subCategories,
+              isAgeRestricted: Boolean(category.isAgeRestricted),
+              minimumAge: category.minimumAge ?? null,
+              restrictionMessage: category.restrictionMessage ?? null,
             };
           }),
         );
@@ -329,9 +337,10 @@ const AdminCategories: React.FC = () => {
 
   const handleHomepageCategoryChange = (categoryId: string) => {
     setHomepageCategories((prev) => {
-      if (prev.includes(categoryId)) {
+      const isSelected = prev.includes(categoryId);
+      if (isSelected) {
         return prev.filter((id) => id !== categoryId);
-      } else if (prev.length < 5) {
+      } else if (canToggleHomepageCategory(prev, isSelected)) {
         return [...prev, categoryId];
       } else {
         setError("You can only select up to 5 categories");
@@ -403,6 +412,9 @@ const AdminCategories: React.FC = () => {
       if (isAddingCategory) {
         const formData = new FormData();
         formData.append("name", updatedCategory.name);
+        Object.entries(toCategoryRestrictionPayload(updatedCategory)).forEach(
+          ([key, value]) => formData.append(key, value),
+        );
         if (imageFile) {
           formData.append("image", imageFile);
         }
@@ -425,6 +437,9 @@ const AdminCategories: React.FC = () => {
           date: new Date().toLocaleDateString(),
           image: response.data.data.image || undefined,
           subCategories: [],
+          isAgeRestricted: Boolean(response.data.data.isAgeRestricted),
+          minimumAge: response.data.data.minimumAge ?? null,
+          restrictionMessage: response.data.data.restrictionMessage ?? null,
         };
 
         const updatedCategories = [...categories, newCategory];
@@ -437,6 +452,9 @@ const AdminCategories: React.FC = () => {
       } else if (updatedCategory.id) {
         const formData = new FormData();
         formData.append("name", updatedCategory.name);
+        Object.entries(toCategoryRestrictionPayload(updatedCategory)).forEach(
+          ([key, value]) => formData.append(key, value),
+        );
         if (imageFile) {
           formData.append("image", imageFile);
         }
@@ -464,6 +482,9 @@ const AdminCategories: React.FC = () => {
               name: sub.name,
               image: sub.image || undefined,
             })) || updatedCategory.subCategories,
+          isAgeRestricted: Boolean(response.data.data.isAgeRestricted),
+          minimumAge: response.data.data.minimumAge ?? null,
+          restrictionMessage: response.data.data.restrictionMessage ?? null,
         };
 
         const updatedCategories = categories.map((category) =>
@@ -1330,23 +1351,40 @@ const AdminCategories: React.FC = () => {
 
           {showHomepageModal && (
             <div className="admin-categories__modal-overlay">
-              <div className="admin-categories__modal">
-                <h2>Manage Homepage Categories</h2>
-                <p>Select up to 5 categories to display on the homepage:</p>
+              <div
+                className="admin-categories__modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="homepage-categories-title"
+              >
+                <div className="admin-categories__modal-header">
+                  <div>
+                    <h2 id="homepage-categories-title">Manage Homepage Categories</h2>
+                    <p>Select up to 5 categories to display on homepage.</p>
+                  </div>
+                  <span className="admin-categories__selection-count">
+                    {homepageCategories.length} of 5 selected
+                  </span>
+                </div>
                 <div className="admin-categories__homepage-selection">
                   {categories.map((category) => (
-                    <label
-                      key={category.id}
-                      className="admin-categories__checkbox-label"
-                    >
+                    <label key={category.id} className={`admin-categories__checkbox-label ${homepageCategories.includes(category.id) ? "admin-categories__checkbox-label--selected" : ""}`}>
                       <input
                         type="checkbox"
                         checked={homepageCategories.includes(category.id)}
+                        disabled={
+                          isLoading ||
+                          !canToggleHomepageCategory(
+                            homepageCategories,
+                            homepageCategories.includes(category.id),
+                          )
+                        }
                         onChange={() =>
                           handleHomepageCategoryChange(category.id)
                         }
                       />
-                      {category.name}
+                      <span className="admin-categories__checkbox-control" aria-hidden="true" />
+                      <span className="admin-categories__checkbox-name">{category.name}</span>
                     </label>
                   ))}
                 </div>

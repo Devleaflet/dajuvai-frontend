@@ -77,6 +77,7 @@ const VendorProfile: React.FC = () => {
     setResetMsg(null);
     try {
       const res = await VendorAuthService.resetPassword(
+        forgotEmail,
         newPass,
         confirmPass,
         resetToken,

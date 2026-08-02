@@ -1,5 +1,6 @@
 .product-carousel {
-  width: 92%;
+  width: 85%;
+  /* 95% */
   margin: 0 auto;
   box-sizing: border-box;
   position: relative;
@@ -23,7 +24,7 @@
 .product-carousel__title {
   font-size: 24px;
   font-weight: bold;
-  padding-left: 10px;
+  /* padding-left: 10px; */
 }
 
 .product-carousel__container {
@@ -62,91 +63,60 @@
   display: none;
 }
 
-/* Enhanced Scroll Buttons with Orange Theme */
 .product-carousel__scroll-button {
   position: absolute;
-  width: 50px;
-  height: 50px;
+  top: 50%;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  font-size: 32px;
+  font-size: 25px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transform: translateY(-50%);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
   pointer-events: auto;
   z-index: 10;
-  border: none;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  background: rgba(255, 255, 255, 0.96);
+  color: #2f3137;
   outline: none;
 }
 
-/* Left Button - Subtle Orange */
 .product-carousel__scroll-button--left {
-  left: -25px;
-  background: linear-gradient(135deg, #ffb347, #ff8c00);
-  color: white;
+  left: -18px;
 }
 
-/* Right Button - Vibrant Orange (Enhanced as requested) */
 .product-carousel__scroll-button--right {
-  right: -25px;
-  background: linear-gradient(135deg, #ff6b00, #e05a00);
-  color: white;
-  box-shadow: 0 4px 20px rgba(255, 107, 0, 0.4);
-  transform: scale(1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  right: -18px;
 }
 
-/* Hover effects for both buttons */
 .product-carousel__scroll-button:hover {
-  transform: scale(1.15);
-  box-shadow: 0 6px 25px rgba(255, 107, 0, 0.5);
+  background-color: #fff7ed;
+  border-color: rgba(255, 107, 0, 0.35);
+  color: #ff6b00;
+  transform: translateY(-50%) scale(1.04);
+  box-shadow: 0 14px 30px rgba(255, 107, 0, 0.18);
 }
 
-/* Active state */
 .product-carousel__scroll-button:active {
-  transform: scale(0.95);
-  box-shadow: 0 2px 10px rgba(255, 107, 0, 0.3);
+  transform: translateY(-50%) scale(0.98);
 }
 
-/* Add pulse animation on hover for right button */
-.product-carousel__scroll-button--right:hover {
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 4px 20px rgba(255, 107, 0, 0.4);
-  }
-  50% {
-    box-shadow: 0 4px 30px rgba(255, 107, 0, 0.6);
-  }
-  100% {
-    box-shadow: 0 4px 20px rgba(255, 107, 0, 0.4);
-  }
-}
-
-/* Add icon hover effect */
 .product-carousel__scroll-button svg {
-  transition: all 0.3s ease;
+  display: block;
+  stroke-width: 1.8;
 }
 
-.product-carousel__scroll-button:hover svg {
-  transform: translateX(2px);
-}
-
-.product-carousel__scroll-button--left:hover svg {
-  transform: translateX(-2px);
-}
-
-.product-carousel__scroll-button--right:hover svg {
-  transform: translateX(4px);
-}
-
-/* Focus styles for accessibility */
-.product-carousel__scroll-button:focus {
-  outline: 3px solid rgba(255, 107, 0, 0.5);
+.product-carousel__scroll-button:focus-visible {
+  outline: 3px solid rgba(255, 107, 0, 0.24);
   outline-offset: 3px;
 }
 
@@ -160,7 +130,7 @@
    was the actual cause of uneven card heights in the same carousel row). */
 .product-card__wrapper {
   flex: 0 0 auto;
-  width: 255px;
+  width: 260px;
   pointer-events: auto;
 }
 
@@ -179,6 +149,8 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   position: relative;
   height: 100%;
+  padding: 10px 10px 0;
+  box-sizing: border-box;
   transition: box-shadow 0.25s ease;
   pointer-events: auto;
 }
@@ -229,9 +201,9 @@
 
 .product-card__image {
   position: relative;
-  aspect-ratio: 1 / 1.05;
+  aspect-ratio: 1 / 1;
   background: #f7f7f8;
-  border-radius: 14px 14px 0 0;
+  border-radius: 10px 10px 8px 8px;
   overflow: hidden;
   display: flex;
   justify-content: center;
@@ -242,7 +214,8 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  padding: 14px;
+  padding: 8px;
+  border-radius: 12px;
   box-sizing: border-box;
   pointer-events: none;
   user-select: none;
@@ -251,7 +224,7 @@
 }
 
 .product-card:hover .product-card__image img {
-  transform: scale(1.04);
+  transform: scale(1.02);
 }
 
 .product-card__image-skeleton {
@@ -376,14 +349,14 @@
   justify-content: center;
   border: none;
   cursor: pointer;
-  box-shadow: 0 3px 10px rgba(234, 95, 10, 0.45);
+  box-shadow: 0 2px 6px rgba(234, 95, 10, 0.75);
   transition:
     transform 0.2s ease,
     background 0.2s ease;
 }
 
 .product-card__cart-button:hover {
-  background: #d65200;
+  background: #ec5d04;
   transform: scale(1.06);
 }
 
@@ -441,7 +414,7 @@
   flex-direction: column;
   flex: 1;
   gap: 6px;
-  padding: 18px 14px 14px;
+  padding: 16px 4px 14px;
 }
 
 .product-card__title-row {
@@ -607,32 +580,33 @@
   height: 100%;
 }
 
-.skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+.product-carousel__products > .product-card-skeleton-wrapper {
+  flex: 0 0 auto;
+  width: 270px;
+  height: 100%;
+}
+
+.product-carousel__products
+  > .product-card-skeleton-wrapper
+  .product-card-skeleton {
+  height: 100%;
+  min-height: 370px;
 }
 
 .product-carousel__products {
   min-height: 370px;
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-
-  100% {
-    background-position: 200% 0;
-  }
-}
-
 @media (max-width: 1200px) {
   .product-carousel {
-    width: 95%;
+    width: 85%;
   }
 
   .product-card__wrapper {
+    width: 240px;
+  }
+
+  .product-carousel__products > .product-card-skeleton-wrapper {
     width: 240px;
   }
 
@@ -662,6 +636,10 @@
     width: 220px;
   }
 
+  .product-carousel__products > .product-card-skeleton-wrapper {
+    width: 220px;
+  }
+
   .product-card {
     min-height: 360px;
   }
@@ -676,8 +654,16 @@
     width: 200px;
   }
 
+  .product-carousel__products > .product-card-skeleton-wrapper {
+    width: 200px;
+  }
+
   .product-card {
     min-height: 340px;
+  }
+
+  .product-carousel {
+    width: 95%;
   }
 
   .product-carousel__products {
@@ -715,13 +701,17 @@
     width: calc((100% - 10px) / 1.97);
   }
 
+  .product-carousel__products > .product-card-skeleton-wrapper {
+    width: calc((100% - 10px) / 1.97);
+  }
+
   .product-card {
     min-height: 330px;
     border-radius: 10px;
   }
 
   .product-card__image {
-    border-radius: 10px 10px 0 0;
+    border-radius: 10px 10px 8px 8px;
   }
 
   .product-card__image img {
@@ -787,10 +777,11 @@
 
 @media (max-width: 480px) {
   .product-card__wrapper {
-    /* Same fix as the 576px breakpoint above: relative width so 2 full
-       cards always fit this viewport instead of a fixed px value that only
-       happened to fit on some phone widths. */
-    width: calc((100% - 10px) / 1.93);
+    width: calc((100% - 10px) / 1.96);
+  }
+
+  .product-carousel__products > .product-card-skeleton-wrapper {
+    width: calc((100% - 10px) / 1.96);
   }
 
   .product-card {

@@ -16,6 +16,59 @@
   animation: fadeIn 0.2s ease-out;
 }
 
+.vendor-card__price-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.vendor-card__price-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.vendor-card__price-pill--discount {
+  color: #24713a;
+  background: #ecfdf3;
+  border: 1px solid #bbf7d0;
+}
+
+.vendor-card__price-pill--deal {
+  color: #0e7490;
+  background: #ecfeff;
+  border: 1px solid #a5f3fc;
+}
+
+.order-summary-row--savings .order-summary-row__value {
+  color: #15803d;
+  font-weight: 700;
+}
+
+.order-modal__item-price-original {
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: line-through;
+}
+
+@media (max-width: 720px) {
+  .order-detail-modal {
+    width: min(100vw - 24px, 700px);
+    max-height: calc(100vh - 24px);
+  }
+
+  .vendor-card__item-pricing {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -38,12 +91,23 @@
   padding: 10px;
 }
 
+/* `.modal-overlay` is a shared classname reused by several unrelated
+   modals across the app (Cart, AuthModal, TermsModal, etc.), and at
+   least one of those stylesheets sets its `display` to `grid` instead
+   of this file's `flex` — whichever loads last in the bundle wins. On
+   a `grid` overlay, an auto-sized track shrinks to the item's content
+   width regardless of `width: 100%` (the percentage resolves against
+   the track, which is sized *by* the item — a shrink-to-fit loop), so
+   these two modals get an explicit non-percentage width instead of
+   depending on the parent's layout mode to stretch them. */
 .order-modal.order-detail-modal {
-  max-width: min(960px, calc(100vw - 32px)) !important;
+  width: min(1100px, calc(100vw - 32px));
+  max-width: min(1100px, calc(100vw - 32px)) !important;
 }
 
 .order-modal.order-edit-modal {
-  max-width: min(680px, calc(100vw - 32px)) !important;
+  width: min(900px, calc(100vw - 32px));
+  max-width: min(900px, calc(100vw - 32px)) !important;
 }
 
 .order-detail-modal,
@@ -301,6 +365,7 @@
 /* ========== SECTION HEADER ========== */
 .order-section {
   margin-bottom: 24px;
+  margin-top: 24px;
 }
 .order-section__title {
   font-size: 14px;
@@ -364,7 +429,8 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
-.status-badge--pending {
+.status-badge--pending,
+.status-badge--order_placed {
   background: #fef3c7;
   color: #92400e;
 }
@@ -451,195 +517,214 @@
 .order-status-select__save:hover {
   background: #e55a2b;
 }
-  .order-status-select__save:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+.order-status-select__save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
-  /* ========== EDIT STATUS MODAL ========== */
-  .order-edit-modal--modern {
-    max-width: min(860px, calc(100vw - 32px)) !important;
-  }
+/* ========== EDIT STATUS MODAL ========== */
+.order-edit-modal--modern {
+  max-width: min(980px, calc(100vw - 32px)) !important;
+}
 
-  .order-edit-modal__hero {
-    align-items: flex-start;
-  }
+.order-edit-modal__hero {
+  align-items: flex-start;
+}
 
-  .order-edit-modal__eyebrow {
-    margin: 0 0 6px;
-    color: #f97316;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
+.order-edit-modal__eyebrow {
+  margin: 0 0 6px;
+  color: #f97316;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 
-  .order-edit-modal__form {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
+.order-edit-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 
-  .order-edit-modal__summary-grid {
-    display: grid;
-    grid-template-columns: minmax(240px, 0.9fr) minmax(280px, 1.1fr);
-    gap: 16px;
-    margin-bottom: 16px;
-  }
+.order-edit-modal__summary-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.9fr) minmax(280px, 1.1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
 
-  .order-edit-modal__customer-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px;
-    border: 1px solid #e5e7eb;
-    border-radius: 7px;
-    background: #fff;
-  }
+.order-edit-modal__customer-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  background: #fff;
+}
 
-  .order-edit-modal__customer-card .order-modal__profile {
-    margin-right: 0;
-    flex-shrink: 0;
-  }
+.order-edit-modal__customer-card .order-modal__profile {
+  margin-right: 0;
+  flex-shrink: 0;
+}
 
-  .order-edit-modal__customer-card h3 {
-    margin: 0 0 4px;
-    color: #111827;
-    font-size: 16px;
-    font-weight: 750;
-  }
+.order-edit-modal__customer-card h3 {
+  margin: 0 0 4px;
+  color: #111827;
+  font-size: 16px;
+  font-weight: 750;
+}
 
-  .order-edit-modal__customer-card p {
-    margin: 0;
-    color: #64748b;
-    font-size: 13px;
-    word-break: break-word;
-  }
+.order-edit-modal__customer-card p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  word-break: break-word;
+}
 
-  .order-edit-modal__quick-facts {
-    padding: 14px;
-    border: 1px solid #e5e7eb;
-    border-radius: 7px;
-    background: #f8fafc;
-  }
+.order-edit-modal__quick-facts {
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  background: #f8fafc;
+}
 
-  .order-edit-modal__address {
-    padding: 14px;
-    border: 1px solid #e5e7eb;
-    border-radius: 7px;
-    background: #fff;
-  }
+.order-edit-modal__address {
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  background: #fff;
+}
 
-  .order-edit-modal__status-card {
-    display: grid;
-    grid-template-columns: minmax(220px, 0.85fr) minmax(220px, 1fr);
-    gap: 14px;
-    padding: 16px;
-    border: 1px solid #e5e7eb;
-    border-radius: 7px;
-    background: #fff;
-  }
+.order-edit-modal__status-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.85fr) minmax(220px, 1fr);
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  background: #fff;
+}
 
-  .order-edit-modal__field {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-  }
+/* Shared status-change control (OrderStatusEditor) — was previously
+     unstyled at its own root, so its fields/preview/button had no spacing
+     between them at all. */
+.order-status-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+}
 
-  .order-edit-modal__field span {
-    color: #475569;
-    font-size: 12px;
-    font-weight: 750;
-  }
+.order-status-editor .order-modal__button--primary {
+  align-self: flex-start;
+  padding: 10px 22px;
+  border-radius: 8px;
+}
 
-  .order-edit-modal__field select,
-  .order-edit-modal__field input,
-  .order-edit-modal__field textarea {
-    width: 100%;
-    border: 1px solid #d8e0ea;
-    border-radius: 7px;
-    background: #fff;
-    color: #111827;
-    font: inherit;
-    font-size: 14px;
-    outline: none;
-  }
+.order-edit-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
 
-  .order-edit-modal__field select,
-  .order-edit-modal__field input {
-    height: 42px;
-    padding: 0 12px;
-  }
+.order-edit-modal__field span {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 750;
+}
 
-  .order-edit-modal__field textarea {
-    min-height: 86px;
-    padding: 10px 12px;
-    resize: vertical;
-  }
+.order-edit-modal__field select,
+.order-edit-modal__field input,
+.order-edit-modal__field textarea {
+  width: 100%;
+  border: 1px solid #d8e0ea;
+  border-radius: 7px;
+  background: #fff;
+  color: #111827;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
 
-  .order-edit-modal__field select:focus,
-  .order-edit-modal__field input:focus,
-  .order-edit-modal__field textarea:focus {
-    border-color: #fb923c;
-    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
-  }
+.order-edit-modal__field select,
+.order-edit-modal__field input {
+  height: 42px;
+  padding: 0 12px;
+}
 
-  .order-edit-modal__status-preview {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 12px;
-    border: 1px solid #f1f5f9;
-    border-radius: 7px;
-    background: #f8fafc;
-  }
+.order-edit-modal__field textarea {
+  min-height: 86px;
+  padding: 10px 12px;
+  resize: vertical;
+}
 
-  .order-edit-modal__status-preview p {
-    margin: 0;
-    color: #64748b;
-    font-size: 13px;
-  }
+.order-edit-modal__field select:focus,
+.order-edit-modal__field input:focus,
+.order-edit-modal__field textarea:focus {
+  border-color: #fb923c;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+}
 
-  .order-modal__info-banner {
-    margin-bottom: 12px;
-    padding: 12px 14px;
-    border: 1px solid #e5e7eb;
-    border-radius: 7px;
-    background: #f8fafc;
-    color: #64748b;
-    font-size: 13px;
-    font-weight: 650;
-  }
+.order-edit-modal__status-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #f1f5f9;
+  border-radius: 7px;
+  background: #f8fafc;
+}
 
-  .order-edit-modal__timeline {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
+.order-edit-modal__status-preview p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+}
 
-  .order-edit-modal__timeline-row {
-    display: grid;
-    grid-template-columns: 120px 1fr;
-    gap: 12px;
-    align-items: center;
-    padding: 12px;
-    border: 1px solid #e5e7eb;
-    border-radius: 7px;
-    background: #fff;
-  }
+.order-modal__info-banner {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 650;
+}
 
-  .order-edit-modal__timeline-row p {
-    margin: 0 0 2px;
-    color: #111827;
-    font-size: 13px;
-    font-weight: 650;
-  }
+.order-edit-modal__timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
-  .order-edit-modal__timeline-row small {
-    color: #64748b;
-    font-size: 12px;
-  }
+.order-edit-modal__timeline-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.order-edit-modal__timeline-row p {
+  margin: 0 0 2px;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.order-edit-modal__timeline-row small {
+  color: #64748b;
+  font-size: 12px;
+}
 
 /* ========== INFO GRID ========== */
 .order-info-grid {
@@ -675,7 +760,7 @@
   margin-bottom: 16px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .modal-overlay {
     align-items: stretch;
     padding: 10px;
@@ -683,9 +768,13 @@
 
   .order-modal.order-detail-modal,
   .order-modal.order-edit-modal {
-    width: 100%;
+    width: 100% !important;
     max-width: none !important;
     max-height: calc(100vh - 20px);
+  }
+
+  .order-status-editor {
+    padding: 14px;
   }
 
   .order-detail__header,
@@ -705,16 +794,16 @@
     text-align: left;
   }
 
-    .order-info-grid,
-    .order-modal__details-grid {
-      grid-template-columns: 1fr;
-    }
+  .order-info-grid,
+  .order-modal__details-grid {
+    grid-template-columns: 1fr;
+  }
 
-    .order-edit-modal__summary-grid,
-    .order-edit-modal__status-card,
-    .order-edit-modal__timeline-row {
-      grid-template-columns: 1fr;
-    }
+  .order-edit-modal__summary-grid,
+  .order-edit-modal__status-card,
+  .order-edit-modal__timeline-row {
+    grid-template-columns: 1fr;
+  }
 
   .order-info-grid__item--full,
   .order-modal__detail-item--full {

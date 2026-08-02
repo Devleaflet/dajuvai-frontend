@@ -120,12 +120,12 @@ const cartReducer = (state: CartItem[], action: ActionType): CartItem[] => {
 interface CartContextType {
   cartItems: CartItem[];
   cartCount: number;
-  handleCartOnAdd: (product: Product, quantity?: number, variantId?: number) => void;
+  handleCartOnAdd: (product: Product, quantity?: number, variantId?: number) => Promise<boolean>;
   handleCartItemOnDelete: (cartItem: CartItem) => void;
   handleIncreaseQuantity: (cartItemId: number, quantity?: number) => Promise<void>;
   handleDecreaseQuantity: (cartItemId: number, quantity?: number) => Promise<void>;
   setCartItems: (items: CartItem[]) => void;
-  refreshCart: () => Promise<void>;
+  refreshCart: () => Promise<CartItem[]>;
   deletingItems: Set<number>; // cart item IDs being deleted
   addingItems: Set<number>; // product IDs being added
   updatingItems: Set<number>; // cart item IDs being updated
@@ -282,13 +282,13 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (!isCustomer) {
       //("User not authenticated, cannot add to cart");
-      return;
+      return false;
     }
 
     // Prevent multiple clicks using product ID
     if (addingItems.has(product.id)) {
       //("Item is already being added, product ID:", product.id);
-      return;
+      return false;
     }
 
     //("Adding product ID to addingItems set:", product.id);
@@ -313,6 +313,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
       //("Cart refreshed successfully");
 
       toast.success("Item added to cart successfully!");
+      return true;
       //("=== handleCartOnAdd SUCCESS ===");
     } catch (error: any) {
       console.error("=== handleCartOnAdd ERROR ===");
@@ -335,6 +336,8 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
       } else {
         toast.error(message)
       }
+      await refreshCart().catch(() => undefined);
+      return false;
     } finally {
       //("Removing product ID from addingItems set:", product.id);
       // Remove item from adding set
@@ -556,14 +559,14 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const refreshCart = async () => {
+  const refreshCart = async (): Promise<CartItem[]> => {
     //("=== refreshCart START ===");
     //("Is authenticated:", auth.isAuthenticated);
 
     if (!isCustomer) {
       //("User not authenticated, clearing cart");
       setCartItems([]);
-      return;
+      return [];
     }
 
     try {
@@ -576,6 +579,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
       //("Setting cart items in state...");
       setCartItems(items);
+      return items;
       //("Cart items set successfully");
       //("=== refreshCart SUCCESS ===");
     } catch (error) {
@@ -588,6 +592,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
         console.error("Error response:", error?.response?.data);
         console.error("Error status:", error?.response?.status);
       }
+      throw error;
     }
   };
 
@@ -620,7 +625,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
         window.clearTimeout(refreshDebounceRef.current);
       }
       refreshDebounceRef.current = window.setTimeout(() => {
-        refreshCart();
+        void refreshCart().catch(() => undefined);
         refreshDebounceRef.current = null;
       }, 300);
     };
@@ -636,6 +641,10 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
 
     socket.on("cart:update", handleCartUpdate);
     socket.on("cart:count", handleCartUpdate);
+    // Stock belongs to the catalog, not to a single shopper's cart. Refresh
+    // when any completed order changes it so stale cart limits never survive
+    // until the next navigation.
+    socket.on("product:stockUpdated", debouncedRefreshCart);
 
     socket.on("connect_error", (err) => {
       console.error("Socket connect error:", err);
@@ -644,6 +653,7 @@ const CartContextProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       socket.off("cart:update", handleCartUpdate);
       socket.off("cart:count", handleCartUpdate);
+      socket.off("product:stockUpdated", debouncedRefreshCart);
       if (refreshDebounceRef.current) {
         window.clearTimeout(refreshDebounceRef.current);
         refreshDebounceRef.current = null;

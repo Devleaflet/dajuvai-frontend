@@ -3,7 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import '../Styles/HeroSlider.css';
 import SliderSkeleton from '../skeleton/SliderSkeleton';
+import ResponsiveBanner from './ResponsiveBanner';
 import { API_BASE_URL } from '../config';
+import { getBannerShopPath } from '../utils/bannerNavigation';
 
 interface Slide {
   id: number;
@@ -16,6 +18,7 @@ interface Slide {
   productSource?: string;
   selectedCategory?: { id: number } | null;
   selectedSubcategory?: { id: number; category: { id: number } } | null;
+  selectedDeal?: { id: number } | null;
   externalLink?: string | null;
 }
 
@@ -52,6 +55,7 @@ const fetchProductBanners = async (): Promise<Slide[]> => {
       productSource: banner.productSource,
       selectedCategory: banner.selectedCategory,
       selectedSubcategory: banner.selectedSubcategory,
+      selectedDeal: banner.selectedDeal,
       externalLink: banner.externalLink,
     }));
 };
@@ -155,29 +159,11 @@ const ProductBannerSlider: React.FC<ProductBannerSliderProps> = ({ onLoad }) => 
   const handleBannerClick = (slide: Slide) => {
     if (!slide) return navigate('/shop');
 
-    if (slide.productSource === 'category' && slide.selectedCategory?.id) {
-      return navigate(`/shop?categoryId=${slide.selectedCategory.id}`);
-    }
-
-    if (
-      slide.productSource === 'subcategory' &&
-      slide.selectedSubcategory?.id &&
-      slide.selectedSubcategory.category?.id
-    ) {
-      return navigate(
-        `/shop?categoryId=${slide.selectedSubcategory.category.id}&subcategoryId=${slide.selectedSubcategory.id}`
-      );
-    }
-
-    if (slide.productSource === 'manual') {
-      return navigate(`/shop?bannerId=${slide.id}`);
-    }
-
     if (slide.productSource === 'external' && slide.externalLink) {
       return window.open(slide.externalLink, '_blank');
     }
 
-    navigate('/shop');
+    navigate(getBannerShopPath(slide));
   };
 
   const clearAutoSlide = () => {
@@ -246,14 +232,15 @@ const ProductBannerSlider: React.FC<ProductBannerSliderProps> = ({ onLoad }) => 
           transition: isDragging ? 'none' : 'transform 0.5s ease',
         }}
       >
-        {slides.map((slide) => (
+        {slides.map((slide, idx) => (
           <div key={slide.id} className="hero-slider__slide">
-            <img
-              src={window.innerWidth < 768 ? slide.mobileImage || slide.desktopImage : slide.desktopImage}
-              alt={slide.name}
+            <ResponsiveBanner
+              type="hero"
+              desktopImageUrl={slide.desktopImage ?? ''}
+              mobileImageUrl={slide.mobileImage}
+              altText={slide.name}
+              priority={idx === 0}
               className="hero-slider__image"
-              loading="lazy"
-              draggable={false}
             />
           </div>
         ))}

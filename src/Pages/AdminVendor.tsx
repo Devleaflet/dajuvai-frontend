@@ -2045,8 +2045,8 @@ const AdminVendor: React.FC = () => {
                                                                         ? vendor
                                                                               .district
                                                                               .name
-                                                                        : vendor.district ||
-                                                                          "N/A"}
+                                                                        : String(vendor.district ||
+                                                                          "N/A")}
                                                                 </td>
                                                                 <td className="admin-vendors__status-column">
                                                                     {

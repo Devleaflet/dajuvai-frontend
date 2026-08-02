@@ -34,6 +34,7 @@ const AdminPromo: React.FC = () => {
     discountPercentage: 0,
     applyOn: "LINE_TOTAL",
     isValid: true,
+    maxUsageCount: 0,
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -92,10 +93,10 @@ const AdminPromo: React.FC = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "discountPercentage" 
-        ? Number(value) 
-        : name === "isValid" 
-        ? value === "true" 
+      [name]: name === "discountPercentage" || name === "maxUsageCount"
+        ? Number(value)
+        : name === "isValid"
+        ? value === "true"
         : value,
     }));
   };
@@ -117,6 +118,11 @@ const AdminPromo: React.FC = () => {
         return;
       }
 
+      if (formData.maxUsageCount && formData.maxUsageCount < 0) {
+        toast.error("Max usage count must be 0 or greater");
+        return;
+      }
+
       const response = await PromoService.getInstance().createPromoCode(
         formData,
         token
@@ -128,7 +134,8 @@ const AdminPromo: React.FC = () => {
           promoCode: "", 
           discountPercentage: 0, 
           applyOn: "LINE_TOTAL", 
-          isValid: true 
+          isValid: true,
+          maxUsageCount: 0,
         });
         setShowAddModal(false);
         // Clear cache and refetch
@@ -234,6 +241,7 @@ const AdminPromo: React.FC = () => {
                   <th>Promo Code</th>
                   <th>Discount %</th>
                   <th>Apply On</th>
+                  <th>Usage</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -241,6 +249,9 @@ const AdminPromo: React.FC = () => {
               <tbody>
                 {[...Array(5)].map((_, index) => (
                   <tr key={index}>
+                    <td>
+                      <div className="admin-promo__skeleton"></div>
+                    </td>
                     <td>
                       <div className="admin-promo__skeleton"></div>
                     </td>
@@ -306,6 +317,7 @@ const AdminPromo: React.FC = () => {
                 <th>Promo Code</th>
                 <th>Discount %</th>
                 <th>Apply On</th>
+                <th>Usage</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -324,6 +336,11 @@ const AdminPromo: React.FC = () => {
                   </td>
                   <td>
                     <span className="admin-promo__apply-on">{promo.applyOn}</span>
+                  </td>
+                  <td>
+                    <span className="admin-promo__usage">
+                      {promo.usageCount ?? 0}{promo.maxUsageCount > 0 ? ` / ${promo.maxUsageCount}` : ""}
+                    </span>
                   </td>
                   <td>
                     <span className={`admin-promo__status ${promo.isValid ? 'admin-promo__status--valid' : 'admin-promo__status--invalid'}`}>
@@ -434,6 +451,19 @@ const AdminPromo: React.FC = () => {
                   <option value="SHIPPING">Shipping</option>
                 </select>
                 <small>Select where the discount should be applied</small>
+              </div>
+              <div className="admin-promo__form-group">
+                <label htmlFor="maxUsageCount">Max Usage Count</label>
+                <input
+                  type="number"
+                  id="maxUsageCount"
+                  name="maxUsageCount"
+                  value={formData.maxUsageCount}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 100"
+                  min="0"
+                />
+                <small>0 = unlimited usage</small>
               </div>
               <div className="admin-promo__form-group">
                 <label htmlFor="isValid">Status *</label>

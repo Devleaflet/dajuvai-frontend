@@ -60,6 +60,23 @@ interface DetailedOrderItem {
     skuSnapshot?: string | null;
     imageSnapshot?: string | null;
     unitPriceSnapshot?: number | null;
+    priceBreakdown?: {
+        basePrice: number;
+        unitPrice: number;
+        lineBaseTotal: number;
+        lineTotal: number;
+        productDiscount: {
+            label: string | null;
+            type: string | null;
+            amount: number;
+        };
+        dealDiscount: {
+            label: string | null;
+            percent: number | null;
+            amount: number;
+        };
+        savingsTotal: number;
+    };
     product: Product;
     vendor?: {
         id: number;
@@ -103,6 +120,14 @@ export interface DetailedOrder {
     shippingAddress: ShippingAddress;
     orderedBy: DetailedOrderedBy;
     orderItems: DetailedOrderItem[];
+    priceBreakdown?: {
+        actualPrice: number;
+        merchandiseSubtotal: number;
+        productDiscountTotal: number;
+        dealDiscountTotal: number;
+        promoDiscountTotal: number;
+        appliedPromoCode: string | null;
+    };
     // Immutable per-vendor shipping snapshot from the backend — always render
     // this directly, never recompute a same/cross-district guess in the UI.
     vendorShippingBreakdown?: {
@@ -384,9 +409,9 @@ export const OrderService = {
         token: string,
         options: {
             expectedCurrentStatus?: string;
-            reason?: string;
+            reason: string;
             note?: string;
-        } = {},
+        },
     ): Promise<any> => {
         if (!token) {
             throw new Error("No authentication token provided");

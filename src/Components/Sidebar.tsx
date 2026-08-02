@@ -5,6 +5,7 @@ import { useVendorAuth } from "../context/VendorAuthContext";
 import axiosInstance from "../api/axiosInstance";
 import { API_BASE_URL } from "../config";
 import logo from "../assets/logo.webp";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -42,12 +43,11 @@ export function Sidebar({ ...props }: SidebarProps) {
     setIsAvatarOpen(false);
   }, [location.pathname]);
 
+  useBodyScrollLock(isMobileOpen);
+
   useEffect(() => {
     setIsAvatarOpen(false);
     if (!isMobileOpen) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -58,7 +58,6 @@ export function Sidebar({ ...props }: SidebarProps) {
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMobileOpen]);

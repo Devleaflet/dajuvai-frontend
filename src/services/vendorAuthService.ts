@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "../config";
 import type { Vendor, VendorSignupRequest, VendorLoginRequest, ApiResponse, VendorUpdateRequest } from "../Components/Types/vendor";
+export type { VendorUpdateRequest } from "../Components/Types/vendor";
 
 export class VendorAuthService {
   private static async setAuthToken(token: string) {
@@ -61,7 +62,7 @@ export class VendorAuthService {
           success: true,
           vendor: {
             ...data.vendor,
-            district: data.vendor.district || { id: 0, name: data.vendor.district || "N/A" },
+            district: typeof data.vendor.district === "string" ? { id: 0, name: data.vendor.district } : data.vendor.district || { id: 0, name: "N/A" },
             status: data.vendor.isVerified ? "Active" : "Inactive",
             taxNumber: data.vendor.taxNumber || "N/A",
             taxDocuments: Array.isArray(data.vendor.taxDocuments) ? data.vendor.taxDocuments : data.vendor.taxDocuments ? [data.vendor.taxDocuments] : null,
@@ -172,7 +173,7 @@ export class VendorAuthService {
           success: true,
           vendor: {
             ...data.vendor,
-            district: data.vendor.district || { id: 0, name: data.vendor.district || "N/A" },
+            district: typeof data.vendor.district === "string" ? { id: 0, name: data.vendor.district } : data.vendor.district || { id: 0, name: "N/A" },
             status: data.vendor.isVerified ? "Active" : "Inactive",
             taxNumber: data.vendor.taxNumber || "N/A",
             taxDocuments: Array.isArray(data.vendor.taxDocuments) ? data.vendor.taxDocuments : data.vendor.taxDocuments ? [data.vendor.taxDocuments] : null,
@@ -447,7 +448,7 @@ export class VendorAuthService {
 
   static async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+      const response = await fetch(`${API_BASE_URL}/api/vendors/forgot-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -466,15 +467,15 @@ export class VendorAuthService {
     }
   }
 
-  static async resetPassword(newPass: string, confirmPass: string, token: string): Promise<{ success: boolean; message: string }> {
+  static async resetPassword(email: string, newPass: string, confirmPass: string, token: string): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+      const response = await fetch(`${API_BASE_URL}/api/vendors/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
-        body: JSON.stringify({ newPass, confirmPass, token }),
+        body: JSON.stringify({ email, newPass, confirmPass, token }),
       });
       const data = await response.json();
       if (response.ok) {
