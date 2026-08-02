@@ -77,6 +77,7 @@ export interface OrderDetail {
         }>;
     };
     appliedPromoCode?: string | null;
+    promoApplyOn?: "LINE_TOTAL" | "SHIPPING" | null;
     paymentMethod: string;
     status: string;
     createdAt: string;

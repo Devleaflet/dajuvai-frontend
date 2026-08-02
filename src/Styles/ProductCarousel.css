@@ -444,21 +444,6 @@
   margin-bottom: 5px;
 }
 
-.product-card__stock-badge {
-  flex-shrink: 0;
-  background: #ea5f0a;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-
-.product-card__stock-badge--out {
-  background: #9e9e9e;
-}
-
 .product-card__description {
   font-size: 12.5px;
   color: #757575;
@@ -647,26 +632,59 @@
   .product-carousel__products {
     min-height: 370px;
   }
+
+  .product-carousel__products .product-card {
+    min-height: 330px;
+  }
+
+  .product-carousel__products .product-card__image {
+    aspect-ratio: 1 / 1;
+  }
+
+  .product-carousel__products .product-card__info {
+    gap: 4px;
+    padding: 12px 10px 12px;
+  }
+
+  .product-carousel__products .product-card__title {
+    font-size: 13.5px;
+  }
+
+  .product-carousel__products .product-card__description {
+    font-size: 12px;
+  }
+
+  .product-carousel__products .product-card__current-price {
+    font-size: 16px;
+  }
+
+  .product-carousel__products .product-card__original-price {
+    font-size: 12.5px;
+  }
+
+  .product-carousel__products .product-card__discount {
+    font-size: 12px;
+  }
+
+  .product-carousel__products {
+    min-height: 340px;
+  }
 }
 
 @media (max-width: 768px) {
-  .product-card__wrapper {
-    width: 200px;
-  }
-
-  .product-carousel__products > .product-card-skeleton-wrapper {
-    width: 200px;
-  }
-
   .product-card {
     min-height: 340px;
   }
 
   .product-carousel {
-    width: 95%;
+    width: calc(100% - 24px);
+    box-sizing: border-box;
+    padding-inline: 0;
   }
 
   .product-carousel__products {
+    gap: 12px;
+    padding: 0 0 20px;
     min-height: 360px;
   }
 
@@ -692,17 +710,16 @@
 
 @media (max-width: 576px) {
   .product-card__wrapper {
-    /* Fixed pixel widths here (185px/168px below) left the 2nd card cut off
-       on common phone widths (e.g. 390-430px) — 2 cards + the gap didn't
-       actually fit the visible scroll area at those sizes. Size relative to
-       the carousel's own content width instead, so exactly 2 cards + 1 gap
-       always fit fully on screen, on any phone width, with the 3rd peeking
-       just enough to hint there's more to scroll. */
-    width: calc((100% - 10px) / 1.97);
+    /* Exactly two full cards fit on any phone width (360-430px), with a
+       sliver of the 3rd peeking to hint there's more to scroll. Sizing is
+       relative to the carousel's own content width so it stays correct on
+       every phone width. Once the fluid width exceeds the 208px desktop
+       card the card stops growing and the visible count steps up instead. */
+    width: min(208px, calc((100% - 10px) / 2.02));
   }
 
   .product-carousel__products > .product-card-skeleton-wrapper {
-    width: calc((100% - 10px) / 1.97);
+    width: min(208px, calc((100% - 10px) / 2.02));
   }
 
   .product-card {
@@ -734,11 +751,13 @@
   }
 
   .product-carousel {
-    padding: 10px;
+    width: calc(100% - 16px);
+    padding-inline: 0;
   }
 
   .product-carousel__products {
     gap: 10px;
+    padding: 0 0 16px;
     min-height: 340px;
   }
 
@@ -773,17 +792,68 @@
   .product-card__discount {
     font-size: 12px;
   }
+
+  /* Phones: keep the two-per-row sizing but trim the card so nothing gets cut
+     off — tighter padding and fonts, single-line description. */
+  .product-carousel__products .product-card {
+    min-height: 285px;
+  }
+
+  .product-carousel__products
+    > .product-card-skeleton-wrapper
+    .product-card-skeleton {
+    min-height: 285px;
+  }
+
+  .product-carousel__products .product-card__image img {
+    padding: 8px;
+  }
+
+  .product-carousel__products .product-card__info {
+    gap: 3px;
+    padding: 10px 8px;
+  }
+
+  .product-carousel__products .product-card__title {
+    font-size: 12px;
+  }
+
+  .product-carousel__products .product-card__description {
+    font-size: 11px;
+    -webkit-line-clamp: 1;
+  }
+
+  .product-carousel__products .product-card__rating-score,
+  .product-carousel__products .product-card__rating-count {
+    font-size: 10.5px;
+  }
+
+  .product-carousel__products .product-card__rating-star img {
+    height: 11px;
+  }
+
+  .product-carousel__products .product-card__current-price {
+    font-size: 14.5px;
+  }
+
+  .product-carousel__products .product-card__original-price {
+    font-size: 11px;
+  }
+
+  .product-carousel__products .product-card__discount {
+    font-size: 11px;
+  }
+
+  .product-carousel__products .product-card__price-details {
+    gap: 5px;
+  }
+
+  .product-carousel__products {
+    min-height: 295px;
+  }
 }
 
 @media (max-width: 480px) {
-  .product-card__wrapper {
-    width: calc((100% - 10px) / 1.96);
-  }
-
-  .product-carousel__products > .product-card-skeleton-wrapper {
-    width: calc((100% - 10px) / 1.96);
-  }
-
   .product-card {
     min-height: 318px;
   }
@@ -812,6 +882,178 @@
   .product-card__cart-button {
     width: 34px;
     height: 34px;
+  }
+
+  .product-carousel__products .product-card {
+    min-height: 270px;
+  }
+
+  .product-carousel__products {
+    min-height: 280px;
+  }
+}
+
+/* Homepage carousel overrides: one final ordered cascade resolves the older
+   breakpoint rules above without affecting product grids on Shop or Catalog. */
+@media (max-width: 1199px) {
+  .product-card__wrapper,
+  .product-carousel__products > .product-card-skeleton-wrapper {
+    width: 232px;
+  }
+
+  .product-carousel__products .product-card,
+  .product-carousel__products
+    > .product-card-skeleton-wrapper
+    .product-card-skeleton {
+    min-height: 344px;
+  }
+
+  .product-carousel__products {
+    min-height: 354px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .product-carousel {
+    width: 85%;
+  }
+
+  .product-carousel__products .product-card__info {
+    gap: 4px;
+    padding: 12px 8px;
+  }
+
+  .product-carousel__products .product-card__title {
+    font-size: 13.5px;
+  }
+
+  .product-carousel__products .product-card__description {
+    font-size: 12px;
+  }
+
+  .product-carousel__products .product-card__current-price {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 991px) {
+  .product-card__wrapper,
+  .product-carousel__products > .product-card-skeleton-wrapper {
+    width: 208px;
+  }
+
+  .product-carousel__products .product-card,
+  .product-carousel__products
+    > .product-card-skeleton-wrapper
+    .product-card-skeleton {
+    min-height: 314px;
+  }
+
+  .product-carousel__products {
+    min-height: 324px;
+  }
+}
+
+@media (max-width: 767px) {
+  .product-carousel {
+    width: calc(100% - 32px);
+    padding-inline: 0;
+  }
+
+  .product-carousel__products {
+    gap: 10px;
+    padding: 0 0 16px;
+    min-height: 292px;
+  }
+
+  .product-carousel__scroll-button {
+    display: none;
+  }
+
+  .product-carousel__title {
+    font-size: 20px;
+  }
+
+  .product-card__wrapper,
+  .product-carousel__products > .product-card-skeleton-wrapper {
+    /* Cap the fluid two-per-row sizing at the 208px desktop card so cards
+       keep a consistent size between phones and desktop and the visible
+       count increases with screen width instead of the cards themselves. */
+    width: min(208px, calc((100% - 10px) / 2.08));
+  }
+
+  .product-carousel__products .product-card,
+  .product-carousel__products
+    > .product-card-skeleton-wrapper
+    .product-card-skeleton {
+    min-height: 282px;
+  }
+
+  .product-carousel__products .product-card__info {
+    gap: 3px;
+    padding: 10px 8px;
+  }
+
+  .product-carousel__products .product-card__title {
+    font-size: 12px;
+    line-height: 1.3;
+  }
+
+  .product-carousel__products .product-card__description {
+    font-size: 11px;
+    line-height: 1.3;
+    -webkit-line-clamp: 1;
+  }
+
+  .product-carousel__products .product-card__rating-score,
+  .product-carousel__products .product-card__rating-count {
+    font-size: 10.5px;
+  }
+
+  .product-carousel__products .product-card__rating-star img {
+    height: 11px;
+  }
+
+  .product-carousel__products .product-card__current-price {
+    font-size: 14.5px;
+  }
+
+  .product-carousel__products .product-card__original-price,
+  .product-carousel__products .product-card__discount {
+    font-size: 11px;
+  }
+
+  .product-carousel__products .product-card__price-details {
+    gap: 5px;
+  }
+
+  .product-card__image img {
+    padding: 8px;
+  }
+
+  .product-card__wishlist-button {
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .product-card__wishlist-button svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-carousel__products .product-card,
+  .product-carousel__products
+    > .product-card-skeleton-wrapper
+    .product-card-skeleton {
+    min-height: 270px;
+  }
+
+  .product-carousel__products {
+    min-height: 280px;
   }
 }
 

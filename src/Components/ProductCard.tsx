@@ -469,11 +469,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <h3 className="product-card__title" title={title}>
               {title}
             </h3>
-            {isOutOfStock && (
-              <span className="product-card__stock-badge product-card__stock-badge--out">
-                Out of stock
-              </span>
-            )}
           </div>
 
           <p className="product-card__description">{description}</p>

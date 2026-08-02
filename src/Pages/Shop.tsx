@@ -340,60 +340,62 @@ const FilterPanel = ({
         {visibleCategories.length === 0 && (
           <p className="catalog-filters__empty">No categories found</p>
         )}
-        {visibleCategories.map((category) => (
-          <div className="catalog-filters__category" key={category.id}>
-            <div className="catalog-filters__category-row">
-              <label className="catalog-control catalog-control--category">
-                <input
-                  type="checkbox"
-                  checked={filters.categoryIds.includes(category.id)}
-                  onChange={() => toggleId("categoryIds", category.id)}
-                />
-                <span className="catalog-control__checkbox" aria-hidden="true">
-                  <Check size={12} strokeWidth={3} />
-                </span>
-                <span>{category.name}</span>
-              </label>
-              {category.subcategories?.length > 0 && (
-                <button
-                  type="button"
-                  className="catalog-filters__expander"
-                  onClick={() => toggleCategoryExpanded(category.id)}
-                  aria-label={`Show ${category.name} subcategories`}
-                  aria-expanded={expandedCategories.has(category.id)}
-                >
-                  {expandedCategories.has(category.id) ? (
-                    <ChevronUp size={16} />
-                  ) : (
-                    <ChevronDown size={16} />
-                  )}
-                </button>
-              )}
-            </div>
-            {expandedCategories.has(category.id) &&
-              category.subcategories?.map((subcategory) => (
-                <label
-                  className="catalog-control catalog-control--subcategory"
-                  key={subcategory.id}
-                >
+        <div className="catalog-filters__category-list">
+          {visibleCategories.map((category) => (
+            <div className="catalog-filters__category" key={category.id}>
+              <div className="catalog-filters__category-row">
+                <label className="catalog-control catalog-control--category">
                   <input
                     type="checkbox"
-                    checked={filters.subcategoryIds.includes(subcategory.id)}
-                    onChange={() =>
-                      toggleSubcategory(category.id, subcategory.id)
-                    }
+                    checked={filters.categoryIds.includes(category.id)}
+                    onChange={() => toggleId("categoryIds", category.id)}
                   />
-                  <span
-                    className="catalog-control__checkbox"
-                    aria-hidden="true"
-                  >
+                  <span className="catalog-control__checkbox" aria-hidden="true">
                     <Check size={12} strokeWidth={3} />
                   </span>
-                  <span>{subcategory.name}</span>
+                  <span>{category.name}</span>
                 </label>
-              ))}
-          </div>
-        ))}
+                {category.subcategories?.length > 0 && (
+                  <button
+                    type="button"
+                    className="catalog-filters__expander"
+                    onClick={() => toggleCategoryExpanded(category.id)}
+                    aria-label={`Show ${category.name} subcategories`}
+                    aria-expanded={expandedCategories.has(category.id)}
+                  >
+                    {expandedCategories.has(category.id) ? (
+                      <ChevronUp size={16} />
+                    ) : (
+                      <ChevronDown size={16} />
+                    )}
+                  </button>
+                )}
+              </div>
+              {expandedCategories.has(category.id) &&
+                category.subcategories?.map((subcategory) => (
+                  <label
+                    className="catalog-control catalog-control--subcategory"
+                    key={subcategory.id}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={filters.subcategoryIds.includes(subcategory.id)}
+                      onChange={() =>
+                        toggleSubcategory(category.id, subcategory.id)
+                      }
+                    />
+                    <span
+                      className="catalog-control__checkbox"
+                      aria-hidden="true"
+                    >
+                      <Check size={12} strokeWidth={3} />
+                    </span>
+                    <span>{subcategory.name}</span>
+                  </label>
+                ))}
+            </div>
+          ))}
+        </div>
       </section>
       <section className="catalog-filters__section">
         <h3>Price</h3>

@@ -1399,6 +1399,27 @@
   .navbar__logo-img {
     height: 70px;
   }
+
+  /* Fold / compact phones (≈344px): keep the search bar and mobile controls
+     from crowding the narrow screen. */
+  .navbar__search-input {
+    padding: 8px 40px 8px 10px;
+    font-size: 12.5px;
+  }
+
+  .navbar__search-button {
+    width: 38px;
+    right: 1px;
+    top: 1px;
+  }
+
+  .navbar__side-menu {
+    width: 88%;
+  }
+
+  .navbar__mobile-icons {
+    gap: 4px;
+  }
 }
 
 .navbar__cart-count {

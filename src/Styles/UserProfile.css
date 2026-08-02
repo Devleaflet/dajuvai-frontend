@@ -679,6 +679,11 @@ margin-bottom: 24px;
   color: green;
 }
 
+.order-total__promo {
+  font-size: 14px;
+  color: green;
+}
+
 .order-total__delivery {
   font-size: 11px;
   color: #28a745;
@@ -1144,6 +1149,10 @@ margin-bottom: 24px;
 
   .order-total__shipping {
     font-size: 11px;
+  }
+
+  .order-total__promo {
+    font-size: 12px;
   }
 
   .order-total__delivery {

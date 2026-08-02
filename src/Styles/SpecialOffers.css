@@ -229,3 +229,23 @@
     border-radius: 10px;
   }
 }
+
+/* Fold / compact phones (≈344px): single-column cards already fit; tighten
+   the section padding and heading so nothing overflows the narrow screen. */
+@media (max-width: 360px) {
+  .special-offers-section {
+    padding: 8px;
+  }
+
+  .special-offers-title {
+    font-size: 18px;
+  }
+
+  .special-offers-container {
+    padding: 14px 0;
+  }
+
+  .special-offers-grid {
+    gap: 10px;
+  }
+}

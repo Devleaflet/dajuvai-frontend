@@ -15,11 +15,26 @@
   background: #f5f5f5;
 }
 
-.shop-source-banner .responsive-banner,
-.shop-source-banner .responsive-banner__image {
+.shop-source-banner .shop-source-banner__media,
+.shop-source-banner .shop-source-banner__media picture,
+.shop-source-banner .shop-source-banner__media .responsive-banner__image {
   width: 100%;
   height: 100%;
   border-radius: inherit;
+}
+
+/* Static source banners use the same parent-owned hero viewport as sliders.
+   Matching uploads stay natural; any other source ratio fills by cropping
+   outer edges instead of leaving empty side or top bands. */
+.shop-source-banner .shop-source-banner__media {
+  max-width: none;
+  margin: 0;
+  aspect-ratio: auto;
+  overflow: hidden;
+}
+
+.shop-source-banner .shop-source-banner__media .responsive-banner__image {
+  object-fit: cover;
 }
 
 .shop-source-banner--loading {
@@ -1837,6 +1852,29 @@
 .catalog-filters__category {
   margin: 2px 0;
 }
+/* Cap the category list at ~10 collapsed rows (~38px each) and scroll past
+   that instead of letting the sidebar keep growing as more categories are
+   added. */
+.catalog-filters__category-list {
+  max-height: 400px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #c9ced4 transparent;
+}
+.catalog-filters__category-list::-webkit-scrollbar {
+  width: 6px;
+}
+.catalog-filters__category-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.catalog-filters__category-list::-webkit-scrollbar-thumb {
+  background-color: #c9ced4;
+  border-radius: 3px;
+}
+.catalog-filters__category-list::-webkit-scrollbar-thumb:hover {
+  background-color: #a8b0b8;
+}
 .catalog-filters__category-row {
   display: flex;
   align-items: center;
@@ -2445,23 +2483,23 @@
    tracks fixed prevents wide screens from stretching a card into empty space. */
 .catalog-grid {
   grid-template-columns: repeat(auto-fill, minmax(220px, 270px));
-  grid-auto-rows: 440px;
+  grid-auto-rows: auto;
   justify-content: start;
   gap: 16px;
 }
 
 .catalog-grid .product-card {
   display: grid;
-  grid-template-rows: 270px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .catalog-grid .product-card__media,
 .catalog-grid .product-card__image {
-  height: 100%;
+  height: auto;
 }
 
 .catalog-grid .product-card__image {
-  aspect-ratio: auto;
+  aspect-ratio: 1 / 1;
 }
 
 .catalog-grid .product-card__info {
@@ -2473,34 +2511,81 @@
 @media (max-width: 1200px) {
   .catalog-grid {
     grid-template-columns: repeat(auto-fill, minmax(210px, 240px));
-    grid-auto-rows: 420px;
+    grid-auto-rows: auto;
   }
 
   .catalog-grid .product-card {
-    grid-template-rows: 240px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
   }
 }
 
 @media (max-width: 1100px) {
   .catalog-grid {
     grid-template-columns: repeat(auto-fill, minmax(220px, 270px));
-    grid-auto-rows: 440px;
+    grid-auto-rows: auto;
   }
 
   .catalog-grid .product-card {
-    grid-template-rows: 270px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
   }
 }
 
 @media (max-width: 600px) {
   .catalog-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-auto-rows: 360px;
+    grid-auto-rows: auto;
     gap: 10px;
   }
 
   .catalog-grid .product-card {
-    grid-template-rows: minmax(0, 1fr) 168px;
+    grid-template-rows: auto auto;
+    min-height: 0;
+  }
+
+  /* Compact mobile cards, matching the home page carousel: near-square
+     image, tight info block, smaller fonts. */
+  .catalog-grid .product-card__image img {
+    padding: 8px;
+  }
+
+  .catalog-grid .product-card__info {
+    min-height: 0;
+    padding: 10px 8px;
+    gap: 3px;
+  }
+
+  .catalog-grid .product-card__title {
+    font-size: 12px;
+  }
+
+  .catalog-grid .product-card__description {
+    font-size: 11px;
+    -webkit-line-clamp: 1;
+  }
+
+  .catalog-grid .product-card__rating-score,
+  .catalog-grid .product-card__rating-count {
+    font-size: 10.5px;
+  }
+
+  .catalog-grid .product-card__rating-star img {
+    height: 11px;
+  }
+
+  .catalog-grid .product-card__current-price {
+    font-size: 14.5px;
+  }
+
+  .catalog-grid .product-card__original-price {
+    font-size: 11px;
+  }
+
+  .catalog-grid .product-card__discount {
+    font-size: 11px;
+  }
+
+  .catalog-grid .product-card__price-details {
+    gap: 5px;
   }
 }
 
@@ -2510,18 +2595,29 @@
 @media (min-width: 601px) {
   .catalog-grid {
     grid-template-columns: repeat(auto-fill, minmax(205px, 1fr));
-    grid-auto-rows: 410px;
+    grid-auto-rows: auto;
     justify-content: stretch;
   }
 
   .catalog-grid .product-card {
-    grid-template-rows: 220px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
   }
 }
 
 @media (min-width: 1101px) and (max-width: 1280px) {
   .catalog-grid {
     grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+  }
+}
+
+/* Between phone and desktop, keep cards at the fixed 205px width (the same
+   min used by the desktop tiers) and step the column count up as the screen
+   widens, instead of stretching the cards to fill the row. */
+@media (min-width: 601px) and (max-width: 767px) {
+  .catalog-grid {
+    grid-template-columns: repeat(auto-fill, 205px);
+    grid-auto-rows: auto;
+    justify-content: center;
   }
 }
 
@@ -2552,7 +2648,7 @@
 
 .catalog-grid .product-card-skeleton {
   display: grid;
-  grid-template-rows: 220px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   height: 100%;
   min-height: 0;
   padding: 10px;
@@ -2561,7 +2657,8 @@
 }
 
 .catalog-grid .product-card-skeleton__media {
-  height: 220px;
+  aspect-ratio: 1 / 1;
+  height: auto;
 }
 .catalog-grid .product-card-skeleton__image {
   height: 100%;
@@ -2594,10 +2691,64 @@
 
 @media (max-width: 600px) {
   .catalog-grid .product-card-skeleton {
-    grid-template-rows: minmax(0, 1fr) 168px;
+    grid-template-rows: auto auto;
   }
   .catalog-grid .product-card-skeleton__media {
     height: auto;
+  }
+}
+
+/* Fold / compact phones (≈344px): tighten the two-column catalog so cards,
+   square 1:1 images, and info stay readable without horizontal overflow. */
+@media (max-width: 360px) {
+  .catalog-grid {
+    gap: 8px;
+  }
+
+  .catalog-grid .product-card {
+    padding: 8px 8px 0;
+  }
+
+  .catalog-grid .product-card__image img {
+    padding: 6px;
+  }
+
+  .catalog-grid .product-card__info {
+    padding: 8px 6px;
+    gap: 2px;
+  }
+
+  .catalog-grid .product-card__title {
+    font-size: 11.5px;
+  }
+
+  .catalog-grid .product-card__description {
+    font-size: 10.5px;
+  }
+
+  .catalog-grid .product-card__rating-score,
+  .catalog-grid .product-card__rating-count {
+    font-size: 10px;
+  }
+
+  .catalog-grid .product-card__rating-star img {
+    height: 10px;
+  }
+
+  .catalog-grid .product-card__current-price {
+    font-size: 13.5px;
+  }
+
+  .catalog-grid .product-card__original-price {
+    font-size: 10.5px;
+  }
+
+  .catalog-grid .product-card__discount {
+    font-size: 10.5px;
+  }
+
+  .catalog-grid .product-card__price-details {
+    gap: 4px;
   }
 }
 

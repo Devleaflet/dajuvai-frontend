@@ -32,6 +32,7 @@ interface DisplayOrder {
   status: string;
   paymentStatus: string;
   appliedPromoCode?: string | null;
+  promoApplyOn?: "LINE_TOTAL" | "SHIPPING" | null;
 }
 
 interface ModalOrder {
@@ -50,6 +51,7 @@ interface ModalOrder {
   vendorName: string;
   profileImage?: string;
   appliedPromoCode?: string | null;
+  promoApplyOn?: "LINE_TOTAL" | "SHIPPING" | null;
 }
 
 const AdminOrders: React.FC = () => {
@@ -272,6 +274,7 @@ const AdminOrders: React.FC = () => {
           status: order.status || "N/A",
           paymentStatus: order.paymentStatus || "N/A",
           appliedPromoCode: order.appliedPromoCode || null,
+          promoApplyOn: order.promoApplyOn || null,
         }));
 
         setOrders(transformedOrders);
@@ -420,6 +423,7 @@ const AdminOrders: React.FC = () => {
           : rawOrder.vendorName || "N/A",
       profileImage: undefined,
       appliedPromoCode: rawOrder.appliedPromoCode || null,
+      promoApplyOn: rawOrder.promoApplyOn || displayOrder.promoApplyOn || null,
     };
   };
 
@@ -614,6 +618,9 @@ const AdminOrders: React.FC = () => {
                       <td className="admin-orders__price-cell">{order.totalPrice}</td>
                       <td className="admin-orders__promo-cell">
                         {order.appliedPromoCode || "-"}
+                        {order.appliedPromoCode &&
+                          order.promoApplyOn === "SHIPPING" &&
+                          " (shipping)"}
                       </td>
                       <td>
                         <span

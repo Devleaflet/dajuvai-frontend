@@ -96,6 +96,15 @@ const UserOrderDetailModal: React.FC<UserOrderDetailModalProps> = ({
   const promoDiscountTotal = Number(
     priceBreakdown?.promoDiscountTotal ?? detailedOrder?.discountTotal ?? 0
   );
+  const promoApplyOn = priceBreakdown?.promoApplyOn ?? null;
+  const promoLineTotalDiscount = Number(
+    priceBreakdown?.promoLineTotalDiscount ??
+      (promoApplyOn === 'SHIPPING' ? 0 : promoDiscountTotal)
+  );
+  const promoShippingDiscount = Number(
+    priceBreakdown?.promoShippingDiscount ??
+      (promoApplyOn === 'SHIPPING' ? promoDiscountTotal : 0)
+  );
 
   const getDeliveryEstimate = () => {
     const status = (detailedOrder?.status || '').toUpperCase();
@@ -297,18 +306,26 @@ const UserOrderDetailModal: React.FC<UserOrderDetailModalProps> = ({
                     <span className="order-summary-row__label">Subtotal ({detailedOrder.orderItems?.reduce((t, i) => t + i.quantity, 0) || 0} items)</span>
                     <span className="order-summary-row__value">Rs. {subtotal.toFixed(2)}</span>
                   </div>
-                  {promoDiscountTotal > 0 && (
+                  {promoLineTotalDiscount > 0 && (
                     <div className="order-summary-row order-summary-row--savings">
                       <span className="order-summary-row__label">
-                        Promo{priceBreakdown?.appliedPromoCode ? ` (${priceBreakdown.appliedPromoCode})` : ''}
+                        Promo{priceBreakdown?.appliedPromoCode ? ` (${priceBreakdown.appliedPromoCode})` : ''} — line total
                       </span>
-                      <span className="order-summary-row__value">- Rs. {promoDiscountTotal.toFixed(2)}</span>
+                      <span className="order-summary-row__value">- Rs. {promoLineTotalDiscount.toFixed(2)}</span>
                     </div>
                   )}
                   <div className="order-summary-row">
                     <span className="order-summary-row__label">Total shipping</span>
                     <span className="order-summary-row__value">Rs. {shippingFee.toFixed(2)}</span>
                   </div>
+                  {promoShippingDiscount > 0 && (
+                    <div className="order-summary-row order-summary-row--savings">
+                      <span className="order-summary-row__label">
+                        Promo{priceBreakdown?.appliedPromoCode ? ` (${priceBreakdown.appliedPromoCode})` : ''} — shipping
+                      </span>
+                      <span className="order-summary-row__value">- Rs. {promoShippingDiscount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="order-summary-row order-summary-row--total">
                     <span className="order-summary-row__label">Total</span>
                     <span className="order-summary-row__value">
