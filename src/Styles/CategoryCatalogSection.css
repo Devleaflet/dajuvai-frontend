@@ -317,36 +317,55 @@
 }
 
 @media (max-width: 480px) {
-	.category-section__header {
-		align-items: flex-start;
-		gap: 0.5rem;
-	}
+  .category-section__header {
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
 
-	.category-section__view-all {
-		align-self: flex-end;
-		width: auto;
-		padding: 0.4rem 0.8rem;
-	}
+  .category-section__view-all {
+    align-self: flex-end;
+    width: auto;
+    padding: 0.4rem 0.8rem;
+  }
 
-	.category-section__subcategory-item {
-		width: 130px;
-		min-width: 130px;
-		flex: 0 0 130px;
-		height: 180px;
-	}
+  .category-section__subcategory-item {
+    width: 130px;
+    min-width: 130px;
+    flex: 0 0 130px;
+    height: 180px;
+  }
 
-	.category-section__subcategory-image-container {
-		height: 70%; /* Maintain proportional height */
-	}
+  .category-section__subcategory-image-container {
+    height: 70%; /* Maintain proportional height */
+  }
 
-	.category-section__subcategory-name {
-		max-width: 110px;
-		font-size: smaller;
-	}
+  .category-section__subcategory-name {
+    max-width: 110px;
+    font-size: smaller;
+  }
+}
+
+/* Fold / compact phones (≈344px): trim section padding so the horizontal
+   category strip reads edge-to-edge without crowding. */
+@media (max-width: 360px) {
+  .category-section {
+    padding: 1rem 0.5rem;
+  }
+
+  .category-section__subcategory-item {
+    width: 120px;
+    min-width: 120px;
+    flex: 0 0 120px;
+    height: 168px;
+  }
+
+  .category-section__view-all {
+    padding: 0.35rem 0.65rem;
+  }
 }
 
 @media (hover: none) and (pointer: coarse) {
-	.category-section__subcategories {
-		cursor: default;
-	}
+  .category-section__subcategories {
+    cursor: default;
+  }
 }

@@ -944,6 +944,38 @@ Fbottom {
 	}
 }
 
+/* Fold / compact phones (≈344px): the 480px layout already collapses the
+   footer; this just tightens remaining gutters and gaps for narrow screens. */
+@media (max-width: 360px) {
+	.footer__container {
+		padding: 0 6px;
+	}
+
+	.footer__bottom {
+		margin: 12px auto 0;
+		padding: 10px 6px;
+	}
+
+	.footer__top-links {
+		gap: 8px 10px;
+	}
+
+	.footer__services-section,
+	.footer__contact-section,
+	.footer__payment-section {
+		padding: 12px 8px;
+		min-height: 150px;
+	}
+
+	.footer__heading {
+		font-size: 18px;
+	}
+
+	.footer__description {
+		font-size: 13px;
+	}
+}
+
 /* Prevent zoom out issues */
 @media (max-width: 1440px) {
 	.footer__max-width-container {

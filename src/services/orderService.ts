@@ -111,6 +111,8 @@ export interface DetailedOrder {
     merchandiseSubtotal?: number | string;
     discountTotal?: number | string;
     taxTotal?: number | string;
+    appliedPromoCode?: string | null;
+    promoApplyOn?: "LINE_TOTAL" | "SHIPPING" | null;
     status: string;
     deliveryStatus?: string;
     paymentStatus: string;
@@ -126,6 +128,9 @@ export interface DetailedOrder {
         productDiscountTotal: number;
         dealDiscountTotal: number;
         promoDiscountTotal: number;
+        promoApplyOn?: "LINE_TOTAL" | "SHIPPING" | null;
+        promoLineTotalDiscount?: number;
+        promoShippingDiscount?: number;
         appliedPromoCode: string | null;
     };
     // Immutable per-vendor shipping snapshot from the backend — always render

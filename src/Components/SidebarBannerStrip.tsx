@@ -190,7 +190,9 @@ const SidebarBannerStrip: React.FC<SidebarBannerStripProps> = ({
     pointerIdRef.current = e.pointerId;
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {}
+    } catch {
+      // Pointer capture can fail when the pointer leaves before capture starts.
+    }
     setIsDragging(true);
   };
 
@@ -220,7 +222,9 @@ const SidebarBannerStrip: React.FC<SidebarBannerStripProps> = ({
 
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch {}
+    } catch {
+      // Release is best-effort; the browser may already have released capture.
+    }
 
     const dx = dragXRef.current;
     const v = velocityRef.current;
@@ -340,7 +344,7 @@ const SidebarBannerStrip: React.FC<SidebarBannerStripProps> = ({
                   mobileImageUrl={banner.mobileImage}
                   altText={banner.name}
                   priority={idx === 0}
-                  className="sidebar-slider__image"
+                  className="sidebar-slider__banner"
                   onError={() =>
                     setBrokenImageIds((prev) => new Set(prev).add(banner.id))
                   }

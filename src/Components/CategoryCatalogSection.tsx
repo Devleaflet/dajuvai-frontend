@@ -269,11 +269,11 @@ const CategoryCatalogSection: React.FC = () => {
 								{category?.category.subcategories ? (
 									category.category.subcategories.map((item) => (
 										<a
+											key={item.id}
 											href={`/shop?categoryId=${catId}&subcategoryId=${item.id}`}
 											className="no-underline"
 										>
 											<div
-												key={item.id}
 												className="category-section__subcategory-item"
 											>
 												<div className="category-section__subcategory-image-container">

@@ -78,6 +78,7 @@ export interface VendorOrderDetail {
   itemsSubtotal: number;
   discountAllocation: number;
   appliedPromoCode: string | null;
+  promoApplyOn: "LINE_TOTAL" | "SHIPPING" | null;
   vendorPayable: number;
   ownShippingFee: number | null;
   ownShippingZone: "SAME_DISTRICT" | "CROSS_DISTRICT" | null;
@@ -429,20 +430,13 @@ const ViewModal: React.FC<ViewModalProps> = ({
               {orderDetail.discountAllocation > 0 && (
                 <div className="order-summary-row">
                   <span className="order-summary-row__label">
-                    Discount allocation
+                    {orderDetail.appliedPromoCode &&
+                    orderDetail.promoApplyOn !== "SHIPPING"
+                      ? `Promo (${orderDetail.appliedPromoCode}) — line total`
+                      : "Discount allocation"}
                   </span>
                   <span className="order-summary-row__value">
                     - Rs. {orderDetail.discountAllocation.toFixed(2)}
-                  </span>
-                </div>
-              )}
-              {orderDetail.appliedPromoCode && (
-                <div className="order-summary-row">
-                  <span className="order-summary-row__label">
-                    Promo code ({orderDetail.appliedPromoCode})
-                  </span>
-                  <span className="order-summary-row__value">
-                    Included in discount
                   </span>
                 </div>
               )}

@@ -12,7 +12,6 @@ import logo from '../assets/logo.webp';
 import { API_BASE_URL, FRONTEND_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { getDiscountDisplay } from '../utils/priceDisplay';
 import {
 	hasAgeRestrictedCheckoutItems,
 	isAgeRestrictedOrderAcknowledged,
@@ -301,6 +300,7 @@ const Checkout: React.FC = () => {
 		handleIncreaseQuantity,
 		handleDecreaseQuantity,
 		setCartItems,
+		refreshCart,
 	} = useCart();
 	// CartContext and checkout use compatible runtime shapes with separate legacy
 	// TypeScript declarations; normalize at this boundary before checkout logic.
@@ -381,7 +381,6 @@ const Checkout: React.FC = () => {
 	});
 
 	const { user, token } = useAuth();
-	const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
 	const [termsAgreed, setTermsAgreed] = useState(false);
 	const [selectedPaymentMethod, setSelectedPaymentMethod] =
 		useState('CASH_ON_DELIVERY');
@@ -656,7 +655,7 @@ const Checkout: React.FC = () => {
 					'Content-Type': 'application/json',
 					Authorization: `Bearer ${token}`,
 				},
-				body: JSON.stringify({ promoCode: enteredPromoCode }),
+				body: JSON.stringify({ promoCode: enteredPromoCode.trim() }),
 			});
 
 			const result = await response.json();
@@ -829,6 +828,7 @@ const Checkout: React.FC = () => {
 					paymentMethod: selectedPaymentMethod,
 					phoneNumber: billingDetails.phoneNumber,
 					fullName: billingDetails.fullName,
+					promoCode: appliedPromoCode?.promoCode || undefined,
 					idempotencyKey,
 					ageRestrictedAcknowledged,
 				};
@@ -855,7 +855,7 @@ const Checkout: React.FC = () => {
 					paymentMethod: selectedPaymentMethod,
 					phoneNumber: billingDetails.phoneNumber,
 					items: orderItems,
-					promoCode: enteredPromoCode || undefined,
+					promoCode: appliedPromoCode?.promoCode || undefined,
 					idempotencyKey,
 					ageRestrictedAcknowledged,
 				};
@@ -933,9 +933,28 @@ const Checkout: React.FC = () => {
 			} else {
 				setSubmittedCheckoutItems(null);
 				setSubmittedCheckoutEstimate(null);
-				setAlertMessage(
-					`Failed to place order: ${result.message || 'Unknown error'}`
-				);
+
+				const isInsufficientStock =
+					result?.errorCode === 'INSUFFICIENT_STOCK' ||
+					(typeof result?.message === 'string' &&
+						/insufficient stock|out of stock|not enough stock|only .* available/i.test(
+							result.message
+						));
+
+				if (isInsufficientStock) {
+					setAlertMessage(
+						"We're sorry, but one of the items in your order is no longer " +
+							'available in the quantity you selected — its stock was bought by ' +
+							"another customer while you were checking out. We've updated your " +
+							"cart to show what's still available. Please review your items and " +
+							'place your order again.'
+					);
+					void refreshCart().catch(() => undefined);
+				} else {
+					setAlertMessage(
+						`Failed to place order: ${result.message || 'Unknown error'}`
+					);
+				}
 				setShowAlert(true);
 			}
 		} catch (error) {
@@ -1036,20 +1055,6 @@ const Checkout: React.FC = () => {
 		const base = item.variant?.basePrice ?? item.product?.basePrice;
 		const parsed = Number(base);
 		return Number.isFinite(parsed) && parsed > 0 ? parsed : Number(item.price);
-	};
-
-	const getItemDiscountDisplay = (item: CartItem) => {
-		const discountAmount = item.variant?.discountAmount ?? item.product?.discountAmount;
-		const discountPercent = item.variant?.discountPercent ?? item.product?.discountPercent;
-		const discountType = item.variant?.discountType ?? item.product?.discountType;
-		return getDiscountDisplay({
-			basePrice: getItemOriginalPrice(item),
-			finalPrice: Number(item.price),
-			discount: item.variant?.discount ?? item.product?.discount ?? null,
-			discountAmount,
-			discountPercent,
-			discountType,
-		});
 	};
 
 	const getBackendLineBreakdown = (item: CartItem) =>
@@ -1939,7 +1944,23 @@ const Checkout: React.FC = () => {
 									);
 								})
 							) : (
-								<p>No items in cart.</p>
+								<div className="checkout-container__empty-cart">
+									<p className="checkout-container__empty-cart-title">
+										Your cart is empty
+									</p>
+									<p className="checkout-container__empty-cart-text">
+										The items you selected are no longer in your cart —
+										they may have just gone out of stock. Browse the
+										shop to find something you'll love.
+									</p>
+									<button
+										type="button"
+										className="checkout-container__empty-cart-button"
+										onClick={() => navigate('/shop')}
+									>
+										Continue shopping
+									</button>
+								</div>
 							)}
 
 							{estimateError && (
@@ -2079,9 +2100,9 @@ const Checkout: React.FC = () => {
 							</div>
 						)}
 						<button
-							className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder ? '--disabled' : ''
+							className={`checkout-container__place-order-btn${!termsAgreed || isPlacingOrder || cartItems.length === 0 ? '--disabled' : ''
 								}`}
-							disabled={!termsAgreed || (hasAgeRestrictedItems && !ageRestrictedAcknowledged) || isPlacingOrder}
+							disabled={!termsAgreed || (hasAgeRestrictedItems && !ageRestrictedAcknowledged) || isPlacingOrder || cartItems.length === 0}
 							onClick={handlePlaceOrder}
 						>
 							{isPlacingOrder ? (

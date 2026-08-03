@@ -158,6 +158,29 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                   0,
               ) || 0;
     const shippingFee = detailedOrder ? Number(detailedOrder.shippingFee) : 0;
+    const priceBreakdown = detailedOrder?.priceBreakdown;
+    const productDiscountTotal = Number(
+        priceBreakdown?.productDiscountTotal ?? 0,
+    );
+    const dealDiscountTotal = Number(priceBreakdown?.dealDiscountTotal ?? 0);
+    const promoDiscountTotal = Number(
+        priceBreakdown?.promoDiscountTotal ??
+            detailedOrder?.discountTotal ??
+            0,
+    );
+    const promoApplyOn = priceBreakdown?.promoApplyOn ?? null;
+    const promoLineTotalDiscount = Number(
+        priceBreakdown?.promoLineTotalDiscount ??
+            (promoApplyOn === "SHIPPING" ? 0 : promoDiscountTotal),
+    );
+    const promoShippingDiscount = Number(
+        priceBreakdown?.promoShippingDiscount ??
+            (promoApplyOn === "SHIPPING" ? promoDiscountTotal : 0),
+    );
+    const appliedPromoCode =
+        detailedOrder?.appliedPromoCode ??
+        priceBreakdown?.appliedPromoCode ??
+        null;
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -333,6 +356,19 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                                         <span className="order-info-grid__value">
                                             {detailedOrder.paymentMethod ||
                                                 "N/A"}
+                                        </span>
+                                    </div>
+                                    <div className="order-info-grid__item">
+                                        <span className="order-info-grid__label">
+                                            Promo Code
+                                        </span>
+                                        <span className="order-info-grid__value">
+                                            {appliedPromoCode || "None"}
+                                            {appliedPromoCode
+                                                ? promoApplyOn === "SHIPPING"
+                                                    ? " (shipping)"
+                                                    : " (line total)"
+                                                : ""}
                                         </span>
                                     </div>
                                     <div className="order-info-grid__item">
@@ -580,6 +616,47 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                                             Rs. {subtotal.toFixed(2)}
                                         </span>
                                     </div>
+                                    {promoLineTotalDiscount > 0 && (
+                                        <div className="order-summary-row order-summary-row--savings">
+                                            <span className="order-summary-row__label">
+                                                Promo
+                                                {appliedPromoCode
+                                                    ? ` (${appliedPromoCode})`
+                                                    : ""}{" "}
+                                                — line total
+                                            </span>
+                                            <span className="order-summary-row__value">
+                                                - Rs.{" "}
+                                                {promoLineTotalDiscount.toFixed(
+                                                    2,
+                                                )}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {productDiscountTotal > 0 && (
+                                        <div className="order-summary-row order-summary-row--savings">
+                                            <span className="order-summary-row__label">
+                                                Product discount
+                                            </span>
+                                            <span className="order-summary-row__value">
+                                                - Rs.{" "}
+                                                {productDiscountTotal.toFixed(
+                                                    2,
+                                                )}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {dealDiscountTotal > 0 && (
+                                        <div className="order-summary-row order-summary-row--savings">
+                                            <span className="order-summary-row__label">
+                                                Deal discount
+                                            </span>
+                                            <span className="order-summary-row__value">
+                                                - Rs.{" "}
+                                                {dealDiscountTotal.toFixed(2)}
+                                            </span>
+                                        </div>
+                                    )}
                                     <div className="order-summary-row">
                                         <span className="order-summary-row__label">
                                             Total shipping ({vendors.length}{" "}
@@ -590,21 +667,23 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                                             Rs. {shippingFee.toFixed(2)}
                                         </span>
                                     </div>
-                                    {detailedOrder &&
-                                        Number(detailedOrder.discountTotal) >
-                                            0 && (
-                                            <div className="order-summary-row">
-                                                <span className="order-summary-row__label">
-                                                    Discount
-                                                </span>
-                                                <span className="order-summary-row__value">
-                                                    - Rs.{" "}
-                                                    {Number(
-                                                        detailedOrder.discountTotal,
-                                                    ).toFixed(2)}
-                                                </span>
-                                            </div>
-                                        )}
+                                    {promoShippingDiscount > 0 && (
+                                        <div className="order-summary-row order-summary-row--savings">
+                                            <span className="order-summary-row__label">
+                                                Promo
+                                                {appliedPromoCode
+                                                    ? ` (${appliedPromoCode})`
+                                                    : ""}{" "}
+                                                — shipping
+                                            </span>
+                                            <span className="order-summary-row__value">
+                                                - Rs.{" "}
+                                                {promoShippingDiscount.toFixed(
+                                                    2,
+                                                )}
+                                            </span>
+                                        </div>
+                                    )}
                                     <div className="order-summary-row order-summary-row--total">
                                         <span className="order-summary-row__label">
                                             Total

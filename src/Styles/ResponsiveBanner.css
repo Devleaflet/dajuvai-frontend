@@ -3,38 +3,39 @@
   height: 100%;
   display: block;
   overflow: hidden;
+  background: #f5f5f5;
+}
+
+.responsive-banner picture {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .responsive-banner__image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
   user-select: none;
   -webkit-user-select: none;
   -webkit-user-drag: none;
 }
 
-.responsive-banner--section {
+.responsive-banner--section,
+.sidebar-slider {
   width: 85%;
-  aspect-ratio: 16 / 2;
   max-width: 1800px;
   margin: 20px auto;
-  border-radius: 36px;
-  background: #f5f5f5;
+  border-radius: 28px;
+}
+
+.responsive-banner--section {
+  aspect-ratio: 8 / 1;
 }
 
 .responsive-banner--clickable {
   cursor: pointer;
-}
-
-@media (max-width: 767px) {
-  .responsive-banner--section {
-    width: 100%;
-    aspect-ratio: 3 / 1;
-    margin: 12px auto;
-    border-radius: 0;
-  }
 }
 
 .sidebar-banner-strip {
@@ -47,11 +48,7 @@
 
 .sidebar-slider {
   position: relative;
-  width: 90%;
-  max-width: 1800px;
   overflow: hidden;
-  margin: 20px auto;
-  border-radius: 36px;
   user-select: none;
   -webkit-user-select: none;
   touch-action: pan-y;
@@ -63,28 +60,51 @@
 
 .sidebar-slider__track {
   display: flex;
-  aspect-ratio: 16 / 2;
+  aspect-ratio: 8 / 1;
+  border-radius: inherit;
   will-change: transform;
   transition: transform 0.45s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .sidebar-slider__slide {
   width: 100%;
+  height: 100%;
   flex-shrink: 0;
   position: relative;
+  border-radius: inherit;
 }
 
 .sidebar-slider__image-container {
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
 }
 
-.sidebar-slider__image {
+.sidebar-slider__banner,
+.sidebar-slider__banner picture,
+.sidebar-slider__banner .responsive-banner__image {
   width: 100%;
   height: 100%;
+}
+
+/* A slider slide owns its ratio. The nested section banner must only fill
+   that viewport, otherwise its own aspect ratio creates an empty band. */
+/* Higher specificity than `.responsive-banner--section` prevents the nested
+   component from reapplying its own width, margin, or ratio inside a slide. */
+.sidebar-slider .sidebar-slider__banner {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  margin: 0;
+  aspect-ratio: auto;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.sidebar-slider__banner .responsive-banner__image {
   object-fit: cover;
-  border-radius: 36px;
   user-select: none;
   -webkit-user-drag: none;
 }
@@ -115,19 +135,36 @@
   background-color: #ffffff;
 }
 
+/* Shared tablet and compact-laptop geometry keeps every banner aligned to
+   its product carousel while preserving the complete banner creative. */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .responsive-banner--section,
+  .sidebar-slider {
+    width: calc(100% - 48px);
+    border-radius: 22px;
+  }
+
+  .responsive-banner--section {
+    aspect-ratio: 16 / 4.5;
+  }
+
+  /* Keep the same fluent strip ratio as desktop; only width and corners adapt
+     through tablet sizes. */
+  .sidebar-slider__track { aspect-ratio: 8 / 1; }
+}
+
+/* One mobile block intentionally covers both single and slider banners. */
 @media (max-width: 767px) {
+  .responsive-banner--section,
   .sidebar-slider {
     width: 100%;
     margin: 12px auto;
     border-radius: 0;
   }
 
+  .responsive-banner--section,
   .sidebar-slider__track {
     aspect-ratio: 3 / 1;
-  }
-
-  .sidebar-slider__image {
-    border-radius: 0;
   }
 
   .sidebar-slider__indicators {
@@ -138,6 +175,25 @@
   .sidebar-slider__indicator {
     width: 0.375rem;
     height: 0.375rem;
+  }
+}
+
+/* Fold / compact phones (≈344px): banners stay full-bleed; only the
+   surrounding rhythm tightens so the strip doesn't add a heavy gap. */
+@media (max-width: 360px) {
+  .responsive-banner--section,
+  .sidebar-slider {
+    margin: 8px auto;
+  }
+
+  .sidebar-slider__indicators {
+    bottom: 0.375rem;
+    gap: 0.3125rem;
+  }
+
+  .sidebar-slider__indicator {
+    width: 0.3125rem;
+    height: 0.3125rem;
   }
 }
 

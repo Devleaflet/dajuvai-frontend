@@ -306,3 +306,17 @@
     min-height: 280px;
   }
 }
+
+/* Fold / compact phones (≈344px): keep the loading row two cards wide and
+   tight so the skeleton matches the carousel's ≤360px card geometry. */
+@media (max-width: 360px) {
+  .homepage-section-skeleton__card {
+    flex-basis: calc((100% - 8px) / 1.92);
+  }
+
+  .homepage-section-skeleton__row {
+    gap: 8px;
+    min-height: 268px;
+    padding: 0 8px 12px;
+  }
+}
