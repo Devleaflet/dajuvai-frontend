@@ -15,13 +15,28 @@ import VendorRevenueBySubCategory from "./VendorDashboard/RevenueBySubcategory";
 import commissionApi, { CommissionDocument } from "../api/commission";
 import { useCommissionFile } from "../Hook/useCommissionFile";
 import { API_BASE_URL } from "../config";
+import { Boxes, CircleDollarSign, Clock3, ShoppingCart } from "lucide-react";
 
-interface DashboardProps {
-  version?: string;
+interface LowStockProduct {
+  productId: number;
+  productName: string;
+  stock: number;
+  status?: string;
+  variantStatus?: string;
 }
 
+interface LowStockApiRow {
+  productId?: number | string;
+  productid?: number | string;
+  productName?: string | null;
+  productname?: string | null;
+  stock?: number | string | null;
+  status?: string;
+  variantStatus?: string;
+  variantstatus?: string;
+}
 
-export function Dashboard({ version = "123456" }: DashboardProps) {
+export function Dashboard() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [days, setDays] = useState<number>(10); // State for days selector
   const [showAllLowStock, setShowAllLowStock] = useState<boolean>(false); // State for showing more data
@@ -61,35 +76,19 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
     queryKey: ["vendor-total-sales", authState.token, days],
     queryFn: async () => {
       if (!authState.token) throw new Error("No authentication token available");
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - days + 1);
-
-      const salesPromises = [];
-      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-        const formattedDate = d.toISOString().split('T')[0];
-        salesPromises.push(
-          axiosInstance.get("/api/vendor/dashboard/total-sales", {
-            headers: { Authorization: `Bearer ${authState.token}` },
-            params: { startDate: formattedDate, endDate: formattedDate },
+      const response = await axiosInstance.get("/api/vendor/dashboard/sales-trend", {
+        headers: { Authorization: `Bearer ${authState.token}` },
+        params: { days },
+      });
+      const points = Array.isArray(response.data?.data) ? response.data.data : [];
+      return {
+        labels: points.map((point: { date: string }) =>
+          new Date(`${point.date}T00:00:00`).toLocaleDateString('en-IN', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
           })
-        );
-      }
-      const salesResults = await Promise.all(salesPromises);
-      const labels: string[] = [];
-      const totals: number[] = [];
-      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-        const formattedDate = d.toLocaleDateString('en-IN', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        });
-        labels.push(formattedDate);
-        const result = salesResults.shift();
-        totals.push(result?.data?.totalSales || 0);
-      }
-
-      return { labels, totals };
+        ),
+        totals: points.map((point: { totalSales: number }) => Number(point.totalSales) || 0),
+      };
     },
     enabled: !!authState.token,
     staleTime: 5 * 60 * 1000,
@@ -106,7 +105,7 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
     queryFn: async () => {
       if (!authState.token) throw new Error("No authentication token available");
       // Fetch all pages of data
-      let allData: any[] = [];
+      let allData: LowStockProduct[] = [];
       let currentPage = 1;
       let totalPages = 1;
 
@@ -116,9 +115,18 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
           params: { page: currentPage },
         });
 
-        const responseData = response.data;
-        allData = [...allData, ...responseData.data];
-        totalPages = responseData.totalPage;
+        const responseData = response.data ?? {};
+        const pageData: LowStockProduct[] = Array.isArray(responseData.data)
+          ? responseData.data.map((item: LowStockApiRow) => ({
+              productId: Number(item.productId ?? item.productid),
+              productName: String(item.productName ?? item.productname ?? ""),
+              stock: Number(item.stock) || 0,
+              status: item.status,
+              variantStatus: item.variantStatus ?? item.variantstatus,
+            }))
+          : [];
+        allData = [...allData, ...pageData];
+        totalPages = Number(responseData.totalPage) || currentPage;
         currentPage++;
       } while (currentPage <= totalPages);
 
@@ -216,16 +224,6 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
               pointRadius: 4,
               pointBackgroundColor: "#F97316",
               tension: 0.4,
-            },
-            {
-              label: "Sales Trend",
-              data: salesData.totals.map(total => total * 0.5),
-              backgroundColor: "transparent",
-              borderWidth: 2,
-              borderDash: [5, 5],
-              pointRadius: 0,
-              tension: 0.4,
-              borderColor: "rgba(249, 115, 22, 0.5)",
             },
           ],
         },
@@ -349,7 +347,30 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
     );
   }
   if (statsError || salesError || lowStockError) {
-    return <div>Error: {statsErrorObj?.message || salesErrorObj?.message || lowStockErrorObj?.message}</div>;
+    const dashboardError = statsErrorObj?.message || salesErrorObj?.message || lowStockErrorObj?.message || "Dashboard data unavailable";
+    return (
+      <div className="vendor-dash-container">
+        <Sidebar />
+        <div className={`dashboard ${isMobile ? "dashboard--mobile" : ""}`}>
+          <VendorHeader title="Dashboard" showSearch={false} />
+          <main className="dashboard__main" style={{ paddingBottom: isMobile ? `${docketHeight + 24}px` : "24px" }}>
+            <section className="section-card dashboard-error-state" role="alert">
+              <h2>Dashboard unavailable</h2>
+              <p>{dashboardError}</p>
+              <button type="button" className="view-more-button" onClick={() => {
+                void Promise.all([
+                  queryClient.invalidateQueries({ queryKey: ["vendor-stats"] }),
+                  queryClient.invalidateQueries({ queryKey: ["vendor-total-sales"] }),
+                  queryClient.invalidateQueries({ queryKey: ["vendor-low-stock"] }),
+                ]);
+              }}>
+                Try again
+              </button>
+            </section>
+          </main>
+        </div>
+      </div>
+    );
   }
 
   const displayedData = getDisplayedLowStockData();
@@ -467,10 +488,6 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
                     <div className="legend-item__color legend-item__color--revenue"></div>
                     <span className="legend-item__label">Total Sales</span>
                   </div>
-                  <div className="legend-item">
-                    <div className="legend-item__color legend-item__color--order"></div>
-                    <span className="legend-item__label">Sales Trend</span>
-                  </div>
                 </div>
                 <div className="revenue-analytics__chart">
                   <canvas id="sales-chart"></canvas>
@@ -485,15 +502,21 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
               </div>
             </div>
             <div className="dashboard__column">
-              <VendorRevenueByCategory />
+              <section className="section-card dashboard-chart-card">
+                <VendorRevenueByCategory />
+              </section>
             </div>
           </div>
           <div className="dashboard__two-columns">
             <div className="dashboard__column">
-              <TopProducts />
+              <section className="section-card dashboard-chart-card">
+                <TopProducts />
+              </section>
             </div>
             <div className="dashboard__column">
-              <VendorRevenueBySubCategory />
+              <section className="section-card dashboard-chart-card">
+                <VendorRevenueBySubCategory />
+              </section>
 
             </div>
           </div>
@@ -525,9 +548,9 @@ export function Dashboard({ version = "123456" }: DashboardProps) {
                       </thead>
                       <tbody>
                         {displayedData.map((item) => (
-                          <tr key={item.productid}>
-                            <td>{item.productid}</td>
-                            <td>{item.productname}</td>
+                          <tr key={item.productId}>
+                            <td>{item.productId}</td>
+                            <td>{item.productName}</td>
                             <td>{item.stock}</td>
                             <td>{item.variantStatus || item.status}</td>
                           </tr>
@@ -559,11 +582,15 @@ interface StatsCardProps {
 }
 
 function StatsCard({ title, value, iconType, change, trend, timeframe }: StatsCardProps) {
-  return (
+	const icons = { products: Boxes, orders: ShoppingCart, sales: CircleDollarSign, pending: Clock3 };
+	const Icon = icons[iconType as keyof typeof icons] ?? Boxes;
+	return (
     <div className="stats-card">
       <div className="stats-card__header">
         <h3 className="stats-card__title">{title}</h3>
-        <div className={`stats-card__icon stats-card__icon--${iconType}`}></div>
+		<div className={`stats-card__icon stats-card__icon--${iconType}`}>
+			<Icon size={19} strokeWidth={2.2} aria-hidden="true" />
+		</div>
       </div>
       <div className="stats-card__content">
         <div className="stats-card__value">{value}</div>

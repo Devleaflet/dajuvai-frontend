@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import TermsContent from '../TermsContent';
 import '../../Styles/TermsModal.css';
@@ -11,6 +11,7 @@ interface TermsModalProps {
 
 const TermsModal: React.FC<TermsModalProps> = ({ open, onClose }) => {
 	const panelRef = useRef<HTMLDivElement>(null);
+	const titleId = useId();
 
 	useBodyScrollLock(open);
 
@@ -40,14 +41,14 @@ const TermsModal: React.FC<TermsModalProps> = ({ open, onClose }) => {
 				className="terms-modal"
 				role="dialog"
 				aria-modal="true"
-				aria-labelledby="terms-modal-title"
+				aria-labelledby={titleId}
 				tabIndex={-1}
 				ref={panelRef}
 				onClick={(e) => e.stopPropagation()}
 			>
 				<div className="terms-modal__header">
 					<h2
-						id="terms-modal-title"
+						id={titleId}
 						className="terms-modal__title"
 					>
 						Terms and Conditions

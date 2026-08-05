@@ -1,90 +1,151 @@
-import React, { useEffect, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { API_BASE_URL } from '../../config';
-import { useVendorAuth } from '../../context/VendorAuthContext';
+import React, { useEffect, useState } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
+import { API_BASE_URL } from "../../config";
+import { useVendorAuth } from "../../context/VendorAuthContext";
 
 interface RevenueData {
-    category: string;
-    revenue: string;
+  category: string;
+  revenue: string;
 }
 
 const VendorRevenueByCategory = () => {
-    const [data, setData] = useState<RevenueData[]>([]);
-    const { authState } = useVendorAuth();
-    const { token, isAuthenticated } = authState;
+  const [data, setData] = useState<RevenueData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const { authState } = useVendorAuth();
+  const { token, isAuthenticated } = authState;
 
-    if (!isAuthenticated) {
-        //("User is not authenticated")
-    } else {
-        //("--------Token---------", token)
+  useEffect(() => {
+    if (!isAuthenticated || !token) {
+      setLoading(false);
+      setData([]);
+      return;
     }
+    let cancelled = false;
+    setLoading(true);
+    setError(false);
+    fetch(
+      `${API_BASE_URL}/api/vendor/dashboard/analytics/revenue-by-category`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    )
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((res) => {
+        if (cancelled) return;
+        setData(
+          Array.isArray(res.data)
+            ? res.data.map((item: RevenueData) => ({
+                category: item.category || "Uncategorized",
+                revenue: String(Number(item.revenue) || 0),
+              }))
+            : [],
+        );
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError(true);
+          setData([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, token]);
 
-    useEffect(() => {
-        fetch(`${API_BASE_URL}/api/vendor/dashboard/analytics/revenue-by-category`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        })
-            .then((res) => res.json())
-            .then((res) => {
-                //('API Response:', res);
-                if (Array.isArray(res.data) && res.data.length > 0) {
-                    setData(res.data);
-                } else {
-                    setData([]);
-                }
-            })
-            .catch((err) => {
-                console.error(err);
-                setData([]);
-            });
-    }, []);
-
-    return (
-        <div style={styles.container}>
-            <h1 style={styles.title}>Revenue by Category</h1>
-            {data.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400}>
-                    <BarChart
-                        data={data.map(d => ({ ...d, revenue: parseFloat(d.revenue) }))}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                    >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="category" />
-                        <YAxis />
-                        <Tooltip formatter={(value: number) => `Rs. ${value.toLocaleString()}`} />
-                        <Bar dataKey="revenue" fill="#10B981" radius={[10, 10, 0, 0]} />
-                    </BarChart>
-                </ResponsiveContainer>
-            ) : (
-                <div style={styles.noData}>No data available</div>
-            )}
-        </div>
-    );
+  return (
+    <div style={styles.container}>
+      <h2 style={styles.title}>Revenue by Category</h2>
+      {loading ? (
+        <div style={styles.noData}>Loading revenue…</div>
+      ) : error ? (
+        <div style={styles.noData}>Revenue unavailable</div>
+      ) : data.length > 0 ? (
+        <ResponsiveContainer
+          width="100%"
+          height={Math.max(280, data.length * 38)}
+        >
+          <BarChart
+            data={data.map((d) => ({ ...d, revenue: parseFloat(d.revenue) }))}
+            layout="vertical"
+            margin={{ top: 8, right: 20, left: 8, bottom: 8 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              horizontal={false}
+              stroke="#e5eaf1"
+            />
+            <XAxis
+              type="number"
+              tick={{ fill: "#64748b", fontSize: 11 }}
+              tickFormatter={(value) =>
+                `Rs ${Number(value).toLocaleString("en-IN")}`
+              }
+            />
+            <YAxis
+              type="category"
+              dataKey="category"
+              width={128}
+              tick={{ fill: "#334155", fontSize: 11 }}
+            />
+            <Tooltip
+              formatter={(value: number) =>
+                `Rs. ${Number(value).toLocaleString("en-IN")}`
+              }
+            />
+            <Bar
+              dataKey="revenue"
+              fill="#10B981"
+              radius={[0, 6, 6, 0]}
+              barSize={18}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      ) : (
+        <div style={styles.noData}>No data available</div>
+      )}
+    </div>
+  );
 };
 
 const styles: { [key: string]: React.CSSProperties } = {
-    container: {
-        padding: '16px 20px',
-        backgroundColor: '#FAFAFA',
-        borderRadius: '12px',
-        boxShadow: '0 1px 6px rgba(0,0,0,0.08)',
-        maxWidth: '780px',
-        margin: '40px auto',
-    },
-    title: {
-        fontSize: '18px',
-        fontWeight: 600,
-        marginBottom: '16px',
-        color: '#1F2937',
-        textAlign: 'center',
-    },
-    noData: {
-        textAlign: 'center',
-        color: '#9CA3AF',
-        fontSize: '14px',
-        padding: '40px 0',
-    },
+  container: {
+    padding: 0,
+    backgroundColor: "transparent",
+    borderRadius: 0,
+    boxShadow: "none",
+    width: "100%",
+    margin: 0,
+  },
+  title: {
+    fontSize: "16px",
+    fontWeight: 600,
+    marginBottom: "16px",
+    color: "#1F2937",
+    textAlign: "left",
+  },
+  noData: {
+    textAlign: "center",
+    color: "#9CA3AF",
+    fontSize: "13px",
+    padding: "40px 0",
+  },
 };
 
 export default VendorRevenueByCategory;

@@ -1299,11 +1299,8 @@
     top: 0;
     z-index: 100;
     background-color: #ffffff;
-    /* Own GPU layer, same reasoning as .sidebar__mobile-bar in Sidebar.css:
-       stabilizes this sticky bar against iOS Safari's overscroll/rubber-band
-       rendering glitches. */
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    /* Keep sticky layer untransformed: iOS Safari can repaint transformed
+       sticky layers when keyboard opens, flashing dropdown. */
   }
 
   .navbar__search-row {
@@ -2190,6 +2187,12 @@ body.cart-open .cart {
   background: transparent;
   box-shadow: none;
   transform: none;
+  /* Keep every iOS viewport, including iPad landscape, above Safari's
+     auto-zoom threshold. */
+  font-size: 16px;
+  line-height: 1.25;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 .navbar .navbar__search-form .navbar__search-input:focus {

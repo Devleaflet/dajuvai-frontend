@@ -15,6 +15,7 @@ import {
 } from "react-icons/fa";
 import { PaymentType, PaymentOptionInput } from "../Components/Types/vendor";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import VendorTermsModal from "../Components/Modal/VendorTermsModal";
 
 interface VendorSignupProps {
   isOpen: boolean;
@@ -50,6 +51,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
   const [taxDocuments, setTaxDocuments] = useState<File[]>([]);
   const [citizenshipDocuments, setCitizenshipDocuments] = useState<File[]>([]);
   const [acceptTerms, setAcceptTerms] = useState<boolean>(false);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
   const [acceptListingFee, setAcceptListingFee] = useState<boolean>(false);
 
   // New Payment Options state
@@ -145,6 +147,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     if (!isOpen) {
       //("Modal closed, resetting form...");
       setEmail("");
+      setTermsModalOpen(false);
       setPassword("");
       setConfirmPassword("");
       setBusinessName("");
@@ -1290,6 +1293,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
+    <>
     <div className={`auth-modal${isOpen ? " auth-modal--open" : ""}`}>
       <Toaster position="top-center" />
       <div className="auth-modal__overlay"></div>
@@ -1671,9 +1675,18 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                         style={{ background: "transparent", cursor: "pointer" }}
                       >
                         I accept the{" "}
-                        <Link to="/vendor/terms" target="_blank">
+                        <button
+                          type="button"
+                          className="auth-modal__link-button"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            setTermsModalOpen(true);
+                          }}
+                          style={{ padding: 0 }}
+                        >
                           terms and conditions
-                        </Link>
+                        </button>
                       </label>
                     </div>
                   </>
@@ -2409,6 +2422,11 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
         )}
       </div>
     </div>
+    <VendorTermsModal
+      open={termsModalOpen}
+      onClose={() => setTermsModalOpen(false)}
+    />
+    </>
   );
 };
 

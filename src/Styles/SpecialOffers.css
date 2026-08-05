@@ -197,6 +197,7 @@
 
 @media (max-width: 576px) {
   .special-offers-section {
+    width: 95%;
     padding: 10px;
   }
 

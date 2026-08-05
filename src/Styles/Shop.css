@@ -3182,3 +3182,110 @@
   white-space: nowrap;
   border: 0;
 }
+
+/* Search no-results fallback */
+.catalog-no-results {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin: 4px 0 28px;
+  padding: clamp(28px, 5vw, 48px) clamp(18px, 4vw, 40px);
+  border: 1px solid #f0d9c8;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #fffaf6 0%, #fff 72%);
+  text-align: center;
+}
+
+.catalog-no-results__icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  margin-bottom: 2px;
+  border-radius: 16px;
+  background: #fff0e7;
+  color: #e66a21;
+}
+
+.catalog-no-results h2,
+.catalog-fallback__heading h2 {
+  margin: 0;
+  color: #1f2937;
+  font-size: clamp(18px, 2vw, 23px);
+  line-height: 1.3;
+}
+
+.catalog-no-results p,
+.catalog-fallback__heading p {
+  max-width: 560px;
+  margin: 0;
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.catalog-no-results button {
+  min-height: 42px;
+  margin-top: 5px;
+  padding: 0 18px;
+  border: 1px solid #f97316;
+  border-radius: 9px;
+  background: #f97316;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.catalog-no-results button:hover,
+.catalog-no-results button:focus-visible {
+  border-color: #ea580c;
+  background: #ea580c;
+}
+
+.catalog-fallback {
+  min-width: 0;
+}
+
+.catalog-fallback__heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 16px;
+}
+
+.catalog-fallback__heading p {
+  margin-top: 3px;
+}
+
+.catalog-fallback__heading > span {
+  flex: 0 0 auto;
+  color: #667085;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.catalog-state--compact {
+  min-height: 180px;
+  margin-top: 8px;
+  border-radius: 12px;
+}
+
+@media (max-width: 600px) {
+  .catalog-no-results {
+    margin-bottom: 24px;
+    border-radius: 14px;
+  }
+
+  .catalog-fallback__heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 13px;
+  }
+
+  .catalog-fallback__heading > span {
+    font-size: 12px;
+  }
+}

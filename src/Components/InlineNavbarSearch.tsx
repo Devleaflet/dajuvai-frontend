@@ -152,8 +152,22 @@ export default function InlineNavbarSearch({
   const showRecents = open && !normalizedQuery;
   const noProducts = results && results.products.length === 0;
 
+  const openSearch = () => {
+    setOpen(true);
+    setRecents((previous) => {
+      const next = getRecentSearches();
+      return previous.length === next.length && previous.every((item, index) => item === next[index])
+        ? previous
+        : next;
+    });
+  };
+
   return (
-    <div className="navbar__search" ref={rootRef}>
+    <div
+      className="navbar__search"
+      ref={rootRef}
+      onPointerDown={(event) => event.stopPropagation()}
+    >
       <form
         className="navbar__search-form"
         onSubmit={(event) => {
@@ -170,10 +184,8 @@ export default function InlineNavbarSearch({
           maxLength={80}
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          onFocus={() => {
-            setOpen(true);
-            setRecents(getRecentSearches());
-          }}
+          onPointerDown={openSearch}
+          onFocus={openSearch}
           onKeyDown={handleKeyDown}
           className="navbar__search-input"
           role="combobox"

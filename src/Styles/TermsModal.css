@@ -69,6 +69,21 @@
 	overscroll-behavior: contain;
 }
 
+.terms-modal__body--vendor {
+	padding: 18px;
+}
+
+.terms-modal__body--vendor .agreement {
+	max-width: none;
+	margin: 0;
+	padding: 24px;
+}
+
+.terms-modal__body--vendor .agreement::before,
+.terms-modal__body--vendor .agreement::after {
+	display: none;
+}
+
 .terms-modal__body .tnc-section {
 	margin-bottom: 16px;
 }

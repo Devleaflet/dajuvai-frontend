@@ -1,13 +1,22 @@
 import React from 'react';
 import "../Styles/VendorTerms.css"
 
-const VendorTerms = () => {
+export interface VendorTermsProps {
+    embedded?: boolean;
+    onClose?: () => void;
+}
+
+const VendorTerms: React.FC<VendorTermsProps> = ({ embedded = false, onClose }) => {
     const handleGoBack = () => {
+        if (onClose) {
+            onClose();
+            return;
+        }
         window.history.back();
     };
 
     return (
-        <div className="agreement">
+        <div className={`agreement${embedded ? " agreement--embedded" : ""}`}>
             <div className="agreement__header">
                 <h1 className="agreement__title">Vendor Registration Agreement</h1>
                 <h2 className="agreement__subtitle">(Terms and Conditions)</h2>
