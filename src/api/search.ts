@@ -21,18 +21,72 @@ export interface SearchScopeSuggestion {
   image?: string | null;
 }
 
+export interface SearchResolvedFilters {
+  categoryIds: number[];
+  subcategoryIds: number[];
+  brandNames: string[];
+  keyword: string | null;
+}
+
 export interface SearchSuggestions {
   query: string;
+  normalizedQuery?: string;
+  resolvedFilters?: SearchResolvedFilters;
   products: SearchProductSuggestion[];
   categories: SearchScopeSuggestion[];
+  subcategories?: SearchScopeSuggestion[];
   brands: SearchScopeSuggestion[];
   totalProducts: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
 }
 
 export async function fetchSearchSuggestions(query: string, signal?: AbortSignal): Promise<SearchSuggestions> {
   const response = await axiosInstance.get<{ success: boolean; data: SearchSuggestions }>(
-    "/api/search/suggestions",
-    { params: { q: query }, signal },
+    "/api/search/catalog",
+    { params: { q: query, mode: "suggest", limit: 8 }, signal },
+  );
+  return response.data.data;
+}
+
+export async function fetchSearchCatalog(
+  query: string,
+  signal?: AbortSignal,
+  options?: {
+    page?: number;
+    limit?: number;
+    sort?: string;
+    categoryIds?: number[];
+    subcategoryIds?: number[];
+    minPrice?: number;
+    maxPrice?: number;
+    minRating?: number;
+    hasDeal?: boolean;
+    dealIds?: number[];
+    bannerId?: number;
+  },
+): Promise<SearchSuggestions> {
+  const response = await axiosInstance.get<{ success: boolean; data: SearchSuggestions }>(
+    "/api/search/catalog",
+    {
+      params: {
+        q: query,
+        mode: "catalog",
+        page: options?.page ?? 1,
+        limit: options?.limit ?? 40,
+        sort: options?.sort ?? "relevance",
+        categoryIds: options?.categoryIds?.length ? options.categoryIds.join(",") : undefined,
+        subcategoryIds: options?.subcategoryIds?.length ? options.subcategoryIds.join(",") : undefined,
+        minPrice: options?.minPrice,
+        maxPrice: options?.maxPrice,
+        minRating: options?.minRating,
+        hasDeal: options?.hasDeal,
+        dealIds: options?.dealIds?.length ? options.dealIds.join(",") : undefined,
+        bannerId: options?.bannerId,
+      },
+      signal,
+    },
   );
   return response.data.data;
 }

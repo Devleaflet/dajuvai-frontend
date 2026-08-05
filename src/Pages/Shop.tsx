@@ -22,6 +22,7 @@ import ResponsiveBanner from "../Components/ResponsiveBanner";
 import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
 import defaultProductImage from "../assets/logo.webp";
 import { API_BASE_URL } from "../config";
+import { fetchSearchCatalog } from "../api/search";
 import CategoryService, { Category } from "../services/categoryService";
 import { dealApiService } from "../services/apiDeals";
 import "../Styles/Shop.css";
@@ -155,12 +156,60 @@ const fetchCatalog = async (
 ): Promise<{ products: Product[]; meta: CatalogResponse["meta"] }> => {
   const params = catalogFiltersToSearchParams(filters);
   params.set("limit", String(PER_PAGE));
-  const response = await fetch(
-    `${API_BASE_URL}/api/categories/all/products?${params.toString()}`,
-  );
-  if (!response.ok) throw new Error("Could not load products. Please retry.");
+  let rawProducts: RawCatalogProduct[];
+  let meta: CatalogResponse["meta"];
 
-  const page = (await response.json()) as CatalogResponse;
+  if (filters.search.trim()) {
+    const searchPage = await fetchSearchCatalog(filters.search, undefined, {
+      page: filters.page,
+      limit: PER_PAGE,
+      sort: ["relevance", "newest", "price_low_high", "price_high_low"].includes(
+        filters.sort,
+      )
+        ? filters.sort
+        : "relevance",
+      categoryIds: filters.categoryIds,
+      subcategoryIds: filters.subcategoryIds,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+      minRating: filters.minRating,
+      hasDeal: filters.hasDeal,
+      dealIds: filters.dealIds,
+      bannerId: filters.bannerId,
+    });
+    rawProducts = searchPage.products.map((product) => ({
+      id: product.id,
+      name: product.name,
+      effectivePrice: product.effectivePrice,
+      basePrice: product.originalPrice,
+      discountPercent: product.discountPercentage,
+      avgRating: product.averageRating,
+      reviewCount: product.totalReviews,
+      productImages: product.thumbnailUrl ? [product.thumbnailUrl] : [],
+      status: product.inStock ? "AVAILABLE" : "OUT_OF_STOCK",
+    }));
+    meta = {
+      total: searchPage.totalProducts,
+      page: searchPage.page ?? filters.page,
+      limit: searchPage.limit ?? PER_PAGE,
+      totalPages: searchPage.totalPages ?? 0,
+      hasNextPage: (searchPage.page ?? filters.page) < (searchPage.totalPages ?? 0),
+    };
+  } else {
+    const response = await fetch(
+      `${API_BASE_URL}/api/categories/all/products?${params.toString()}`,
+    );
+    if (!response.ok) throw new Error("Could not load products. Please retry.");
+    const page = (await response.json()) as CatalogResponse;
+    rawProducts = page.data ?? [];
+    meta = page.meta ?? {
+      total: 0,
+      page: 1,
+      limit: PER_PAGE,
+      totalPages: 0,
+      hasNextPage: false,
+    };
+  }
   const cacheKey = catalogFiltersToSearchParams({
     ...filters,
     page: 1,
@@ -173,7 +222,7 @@ const fetchCatalog = async (
   }
   const pages = catalogPageCache.get(cacheKey) ?? new Map<number, Product[]>();
   if (filters.page === 1) pages.clear();
-  pages.set(filters.page, (page.data ?? []).map(toCardProduct));
+  pages.set(filters.page, rawProducts.map(toCardProduct));
   catalogPageCache.set(cacheKey, pages);
 
   return {
@@ -181,13 +230,7 @@ const fetchCatalog = async (
       .filter(([pageNumber]) => pageNumber <= filters.page)
       .sort(([left], [right]) => left - right)
       .flatMap(([, products]) => products),
-    meta: page.meta ?? {
-      total: 0,
-      page: 1,
-      limit: PER_PAGE,
-      totalPages: 0,
-      hasNextPage: false,
-    },
+    meta,
   };
 };
 
@@ -563,6 +606,7 @@ const Shop = () => {
     // ScrollManager doesn't treat it as a fresh page and jump back to the top.
     setSearchParams(nextParams, { replace: options?.replace });
   };
+
   const resetFilters = () => setSearchParams(new URLSearchParams());
   const { data: dealFilters, isLoading: dealsLoading } = useQuery({
     queryKey: ["catalog-deals"],
