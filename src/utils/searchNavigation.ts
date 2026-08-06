@@ -15,4 +15,7 @@ export const shopSearchPath = (query: string): string => {
 };
 
 export const shopCategorySearchPath = (categoryId: number): string =>
-  `/shop?${new URLSearchParams({ categoryId: String(categoryId), page: "1" }).toString()}`;
+  `/shop?${new URLSearchParams({ categoryId: String(categoryId), sort: "relevance", page: "1" }).toString()}`;
+
+export const shopSubcategorySearchPath = (subcategoryId: number): string =>
+  `/shop?${new URLSearchParams({ subcategoryId: String(subcategoryId), sort: "relevance", page: "1" }).toString()}`;

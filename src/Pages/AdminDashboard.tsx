@@ -1,4 +1,5 @@
 import { Chart } from 'chart.js/auto';
+import { BarChart3, Boxes, CircleDollarSign, ShoppingCart, Store, Truck, Users } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import axiosInstance from '../api/axiosInstance';
 import RevenueByCategory from '../Components/AdminDashboard/CategoryRevenue';
@@ -62,10 +63,21 @@ interface StatsCardProps {
 	timeframe: string;
 }
 
+function getApiErrorMessage(error: unknown, fallback: string): string {
+	if (typeof error === 'object' && error !== null && 'response' in error) {
+		const response = (error as { response?: { data?: { message?: unknown } } }).response;
+		if (typeof response?.data?.message === 'string') return response.data.message;
+	}
+	return fallback;
+}
+
 function StatsCard({ title, value, iconType }: StatsCardProps) {
+	const icons = { sales: CircleDollarSign, orders: ShoppingCart, customers: Users, vendors: Store, products: Boxes, shipping: Truck };
+	const Icon = icons[iconType as keyof typeof icons] ?? BarChart3;
 	return (
 		<div className="stat-card">
-			<div className="stat-icon">
+			<div className="stat-icon" style={{ fontSize: 0 }}>
+				<Icon size={20} strokeWidth={2.2} aria-hidden="true" />
 				{iconType === 'sales' && '💰'}
 				{iconType === 'orders' && '📦'}
 				{iconType === 'customers' && '👥'}
@@ -82,6 +94,7 @@ function StatsCard({ title, value, iconType }: StatsCardProps) {
 
 export function AdminDashboard() {
 	const { token } = useAuth();
+	const cacheScope = token ? token.slice(-16) : 'anonymous';
 	const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 	const [stats, setStats] = useState<StatData | null>(null);
 	const [revenue, setRevenue] = useState<RevenueData[]>([]);
@@ -113,6 +126,7 @@ export function AdminDashboard() {
 	const revenueChartRef = useRef<Chart | null>(null);
 	const vendorChartRef = useRef<Chart | null>(null);
 	const topProductsChartRef = useRef<Chart | null>(null);
+	const todaysSalesChartRef = useRef<Chart | null>(null);
 
 
 	useEffect(() => {
@@ -126,7 +140,8 @@ export function AdminDashboard() {
 
 	const fetchStats = async () => {
 		setStatsLoading(true);
-		const cachedStats = localStorage.getItem(STATS_CACHE_KEY);
+		const scopedStatsKey = `${STATS_CACHE_KEY}_${cacheScope}`;
+		const cachedStats = localStorage.getItem(scopedStatsKey);
 		if (cachedStats) {
 			try {
 				const { data, timestamp } = JSON.parse(cachedStats);
@@ -135,7 +150,7 @@ export function AdminDashboard() {
 					setStatsLoading(false);
 					return;
 				}
-			} catch (error) {
+				} catch {
 				//(error);
 			}
 		}
@@ -152,14 +167,14 @@ export function AdminDashboard() {
 			if (response.data && response.data.success) {
 				setStats(response.data.data);
 				localStorage.setItem(
-					STATS_CACHE_KEY,
+					scopedStatsKey,
 					JSON.stringify({ data: response.data.data, timestamp: Date.now() })
 				);
 			} else {
 				setError(response.data.message || 'Failed to fetch dashboard stats');
 			}
-		} catch (err) {
-			setError(err.response?.data?.message || 'Error fetching dashboard stats');
+			} catch (err: unknown) {
+				setError(getApiErrorMessage(err, 'Error fetching dashboard stats'));
 		} finally {
 			setStatsLoading(false);
 		}
@@ -167,7 +182,8 @@ export function AdminDashboard() {
 
 	const fetchRevenue = async () => {
 		setRevenueLoading(true);
-		const cachedRevenue = localStorage.getItem(`${REVENUE_CACHE_KEY}_${days}`);
+		const revenueCacheKey = `${REVENUE_CACHE_KEY}_${cacheScope}_${days}`;
+		const cachedRevenue = localStorage.getItem(revenueCacheKey);
 		if (cachedRevenue) {
 			try {
 				const { data, timestamp } = JSON.parse(cachedRevenue);
@@ -176,7 +192,7 @@ export function AdminDashboard() {
 					setRevenueLoading(false);
 					return;
 				}
-			} catch (error) {
+				} catch {
 				//(error);
 			}
 		}
@@ -191,21 +207,21 @@ export function AdminDashboard() {
 			if (response.data) {
 				setRevenue(response.data);
 				localStorage.setItem(
-					`${REVENUE_CACHE_KEY}_${days}`,
+					revenueCacheKey,
 					JSON.stringify({ data: response.data, timestamp: Date.now() })
 				);
 			} else {
 				setError('Failed to fetch revenue data');
 			}
-		} catch (err) {
-			setError(err.response?.data?.message || 'Error fetching revenue data');
+			} catch (err: unknown) {
+				setError(getApiErrorMessage(err, 'Error fetching revenue data'));
 		} finally {
 			setRevenueLoading(false);
 		}
 	};
 
 	const getVendorsCacheKey = () =>
-		`${VENDORS_CACHE_KEY}_${vendorsStartDate || 'all'}_${vendorsEndDate || 'all'
+		`${VENDORS_CACHE_KEY}_${cacheScope}_${vendorsStartDate || 'all'}_${vendorsEndDate || 'all'
 		}_${vendorsPage}`;
 
 	const fetchVendorsSales = async () => {
@@ -219,11 +235,11 @@ export function AdminDashboard() {
 					setVendorsPaginated(data);
 					setVendorsSales(data.data || []);
 					setVendorsLoading(false);
-					return;
+						return;
+					}
+				} catch {
+					localStorage.removeItem(cacheKey);
 				}
-			} catch (err) {
-				//(err);
-			}
 		}
 
 		try {
@@ -242,15 +258,15 @@ export function AdminDashboard() {
 					JSON.stringify({ data: paginatedData, timestamp: Date.now() })
 				);
 			}
-		} catch (err) {
-			console.error('Error fetching vendors sales:', err);
+				} catch (err: unknown) {
+				console.error('Error fetching vendors sales:', err);
 		} finally {
 			setVendorsLoading(false);
 		}
 	};
 
 	const getTopProductsCacheKey = () =>
-		`${TOP_PRODUCTS_CACHE_KEY}_${topProductsStartDate || 'all'}_${topProductsEndDate || 'all'
+		`${TOP_PRODUCTS_CACHE_KEY}_${cacheScope}_${topProductsStartDate || 'all'}_${topProductsEndDate || 'all'
 		}_${topProductsPage}`;
 
 	const fetchTopProducts = async () => {
@@ -266,7 +282,7 @@ export function AdminDashboard() {
 					setTopProductsLoading(false);
 					return;
 				}
-			} catch (err) {
+				} catch {
 				//(err);
 			}
 		}
@@ -305,7 +321,9 @@ export function AdminDashboard() {
 				}
 			);
 			if (response.data && response.data.success) {
-				setTodaysSales(response.data.data.totalSales || 0);
+				const data = response.data.data;
+				setTodaysSales(Number(data.totalSales) || 0);
+				setTodaysSalesData(Array.isArray(data.hourlySales) ? data.hourlySales : []);
 			}
 		} catch (err) {
 			console.error("Error fetching today's sales:", err);
@@ -313,25 +331,6 @@ export function AdminDashboard() {
 			setTodaysLoading(false);
 		}
 	};
-
-	useEffect(() => {
-		if (todaysSales > 0) {
-			const hours = Array.from(
-				{ length: 24 },
-				(_, i) => `${i.toString().padStart(2, '0')}:00`
-			);
-			let remaining = todaysSales;
-			const values: number[] = [];
-			for (let i = 0; i < 23; i++) {
-				const rand = Math.random() * (remaining * 0.6) + todaysSales * 0.01;
-				const clamped = Math.max(0, Math.min(rand, remaining));
-				values.push(clamped);
-				remaining -= clamped;
-			}
-			values.push(remaining);
-			setTodaysSalesData(hours.map((h, i) => ({ label: h, value: values[i] })));
-		}
-	}, [todaysSales]);
 
 	useEffect(() => {
 		if (!token) {
@@ -386,16 +385,6 @@ export function AdminDashboard() {
 							pointBackgroundColor: '#F97316',
 							tension: 0.4,
 						},
-						{
-							label: 'Order',
-							data: revenue.map((item) => parseFloat(item.revenue) * 0.5),
-							backgroundColor: 'transparent',
-							borderWidth: 2,
-							borderDash: [5, 5],
-							pointRadius: 0,
-							tension: 0.4,
-							borderColor: 'rgba(249, 115, 22, 0.5)',
-						},
 					],
 				},
 				options: {
@@ -445,6 +434,32 @@ export function AdminDashboard() {
 			}
 		};
 	}, [revenue]);
+
+	useEffect(() => {
+		const ctx = document.getElementById('todays-sales-chart') as HTMLCanvasElement;
+		if (!ctx || !todaysSalesData.length) return;
+		todaysSalesChartRef.current?.destroy();
+		todaysSalesChartRef.current = new Chart(ctx, {
+			type: 'bar',
+			data: {
+				labels: todaysSalesData.map((item) => item.label),
+				datasets: [{
+					label: 'Paid sales',
+					data: todaysSalesData.map((item) => Number(item.value) || 0),
+					backgroundColor: 'rgba(249, 115, 22, 0.72)',
+					borderRadius: 5,
+					barPercentage: 0.72,
+				}],
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => `Rs. ${Number(context.parsed.y).toLocaleString('en-IN')}` } } },
+				scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { callback: (value) => `Rs. ${Number(value).toLocaleString('en-IN')}` } } },
+			},
+		});
+		return () => todaysSalesChartRef.current?.destroy();
+	}, [todaysSalesData]);
 
 	useEffect(() => {
 		const ctx = document.getElementById('vendor-chart') as HTMLCanvasElement;
@@ -512,65 +527,6 @@ export function AdminDashboard() {
 			if (topProductsChartRef.current) {
 				topProductsChartRef.current.destroy();
 			}
-			const colors = [
-				'#3B82F6',
-				'#10B981',
-				'#F59E0B',
-				'#EF4444',
-				'#8B5CF6',
-				'#EC4899',
-				'#14B8A6',
-			];
-			const chart = new Chart(ctx, {
-				type: 'bar',
-				data: {
-					labels: topProducts.map((p) => p.productName),
-					datasets: [
-						{
-							label: 'Total Sales',
-							data: topProducts.map((p) => p.totalSales),
-							backgroundColor: topProducts.map(
-								(_, i) => colors[i % colors.length]
-							),
-							borderColor: '#374151',
-							borderWidth: 1,
-						},
-					],
-				},
-				options: {
-					responsive: true,
-					maintainAspectRatio: false,
-					plugins: {
-						legend: { display: false },
-					},
-					scales: {
-						y: {
-							beginAtZero: true,
-							ticks: {
-								callback: (value: number) =>
-									`Rs. ${value.toLocaleString('en-IN')}`,
-							},
-						},
-					},
-				},
-			});
-			topProductsChartRef.current = chart;
-		}
-		return () => {
-			if (topProductsChartRef.current) {
-				topProductsChartRef.current.destroy();
-			}
-		};
-	}, [topProducts]);
-
-	useEffect(() => {
-		const ctx = document.getElementById(
-			'top-products-chart'
-		) as HTMLCanvasElement;
-		if (ctx && topProducts.length > 0) {
-			if (topProductsChartRef.current) {
-				topProductsChartRef.current.destroy();
-			}
 
 			const colors = [
 				'#3B82F6',
@@ -618,7 +574,7 @@ export function AdminDashboard() {
 					scales: {
 						x: {
 							ticks: {
-								callback: function (value, index) {
+					callback: function (value) {
 									const label = String(this.getLabelForValue(Number(value)));
 									const maxLength = 15; // Adjust number of visible characters
 									return label.length > maxLength
@@ -693,7 +649,7 @@ export function AdminDashboard() {
 	};
 
 	const renderPagination = (
-		paginated: PaginatedData<any> | null,
+			paginated: PaginatedData<unknown> | null,
 		currentPage: number,
 		onPageChange: (page: number) => void
 	) => {
@@ -781,16 +737,25 @@ export function AdminDashboard() {
 							paddingBottom: isMobile ? `${docketHeight + 24}px` : '24px',
 						}}
 					>
-						<div
-							style={{
-								color: 'red',
-								fontWeight: 500,
-								textAlign: 'center',
-								padding: '2rem',
-							}}
-						>
-							{error}
-						</div>
+						<section className="section-card dashboard-error-state" role="alert">
+							<h2>Dashboard unavailable</h2>
+							<p>{error}</p>
+							<button
+								type="button"
+								className="pagination-btn"
+								onClick={() => {
+									void Promise.all([
+										fetchStats(),
+										fetchRevenue(),
+										fetchVendorsSales(),
+										fetchTopProducts(),
+										fetchTodaysSales(),
+									]).then(() => setError(null));
+								}}
+							>
+								Try again
+							</button>
+						</section>
 					</main>
 				</div>
 			</div>
@@ -878,7 +843,7 @@ export function AdminDashboard() {
 									value={`Rs. ${Number(
 										stats.totalShippingRevenue
 									).toLocaleString('en-IN')}`}
-									iconType="sales"
+									iconType="shipping"
 									change={0}
 									trend="up"
 									timeframe=""
@@ -893,10 +858,6 @@ export function AdminDashboard() {
 									<div className="legend-item">
 										<div className="legend-item__color legend-item__color--revenue"></div>
 										<span className="legend-item__label">Revenue</span>
-									</div>
-									<div className="legend-item">
-										<div className="legend-item__color legend-item__color--order"></div>
-										<span className="legend-item__label">Order</span>
 									</div>
 								</div>
 								<div className="revenue-analytics__chart">
@@ -928,19 +889,21 @@ export function AdminDashboard() {
 								className="section-card todays-sales-section"
 								style={{ height: '100%' }}
 							>
-								<h2>Today's Sales</h2>
+								<div className="section-card__heading-row">
+									<h2>Today's Sales</h2>
+									<strong className="dashboard-total-pill">
+										Rs. {Number(todaysSales).toLocaleString('en-IN')}
+									</strong>
+								</div>
 								<div className="chart-container">
 									{todaysLoading ? (
 										renderChartSkeleton()
 									) : todaysSalesData.length > 0 ? (
 										<canvas id="todays-sales-chart"></canvas>
-									) : (
-										<div
-											className="dashboard-no-data"
-											style={{ height: '350px' }}
-										>
-											<p>No data available</p>
-										</div>
+										) : (
+											<div className="dashboard-no-data">
+												<p>No data available</p>
+											</div>
 									)}
 								</div>
 							</div>
@@ -951,8 +914,8 @@ export function AdminDashboard() {
 							{renderDateFilters(
 								vendorsStartDate,
 								vendorsEndDate,
-								(e) => setVendorsStartDate(e.target.value),
-								(e) => setVendorsEndDate(e.target.value),
+					(e) => { setVendorsStartDate(e.target.value); setVendorsPage(1); },
+					(e) => { setVendorsEndDate(e.target.value); setVendorsPage(1); },
 								'Vendors Sales Amount Filters'
 							)}
 							<h2>Vendors Sales Amount</h2>
@@ -979,8 +942,8 @@ export function AdminDashboard() {
 							{renderDateFilters(
 								topProductsStartDate,
 								topProductsEndDate,
-								(e) => setTopProductsStartDate(e.target.value),
-								(e) => setTopProductsEndDate(e.target.value),
+					(e) => { setTopProductsStartDate(e.target.value); setTopProductsPage(1); },
+					(e) => { setTopProductsEndDate(e.target.value); setTopProductsPage(1); },
 								'Top Products Filters'
 							)}
 							<h2>Top Selling Products</h2>

@@ -16,6 +16,7 @@ import {
 import {
   productSearchPath,
   shopCategorySearchPath,
+  shopSubcategorySearchPath,
   shopSearchPath,
 } from "../utils/searchNavigation";
 import {
@@ -91,43 +92,6 @@ export default function InlineNavbarSearch({
     setActiveIndex(-1);
   }, [query]);
 
-  useEffect(() => {
-    const viewport = window.visualViewport;
-    if (!viewport) return;
-
-    let previousHeight = viewport.height;
-    let keyboardWasVisible = false;
-    const closeAfterKeyboardDismissal = () => {
-      if (!window.matchMedia("(max-width: 768px)").matches) return;
-
-      const nextHeight = viewport.height;
-      if (nextHeight < previousHeight - 80) keyboardWasVisible = true;
-      if (keyboardWasVisible && nextHeight > previousHeight + 80) {
-        keyboardWasVisible = false;
-        setOpen(false);
-        setActiveIndex(-1);
-        inputRef.current?.blur();
-      }
-      previousHeight = nextHeight;
-    };
-
-    viewport.addEventListener("resize", closeAfterKeyboardDismissal);
-    return () =>
-      viewport.removeEventListener("resize", closeAfterKeyboardDismissal);
-  }, [inputRef]);
-
-  useEffect(() => {
-    const closeOnPageScroll = () => {
-      if (!window.matchMedia("(max-width: 768px)").matches) return;
-      setOpen(false);
-      setActiveIndex(-1);
-      inputRef.current?.blur();
-    };
-
-    window.addEventListener("scroll", closeOnPageScroll, { passive: true });
-    return () => window.removeEventListener("scroll", closeOnPageScroll);
-  }, [inputRef]);
-
   const finish = (path: string, search: string) => {
     if (search.trim()) saveRecentSearch(search);
     setRecents(getRecentSearches());
@@ -145,6 +109,10 @@ export default function InlineNavbarSearch({
       finish(shopCategorySearchPath(option.entityId), query);
       return;
     }
+    if (option.type === "subcategory" && option.entityId) {
+      finish(shopSubcategorySearchPath(option.entityId), query);
+      return;
+    }
     finish(
       shopSearchPath(option.type === "brand" ? option.name : query),
       option.type === "brand" ? option.name : query,
@@ -152,8 +120,8 @@ export default function InlineNavbarSearch({
   };
 
   const submit = () => {
-    if (normalizedQuery.length >= 2)
-      finish(shopSearchPath(normalizedQuery), normalizedQuery);
+    if (normalizedQuery.length < 2) return;
+    finish(shopSearchPath(normalizedQuery), normalizedQuery);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -176,7 +144,7 @@ export default function InlineNavbarSearch({
     if (event.key === "Enter") {
       event.preventDefault();
       if (activeIndex >= 0) runOption(options[activeIndex]);
-      else submit();
+          else void submit();
     }
   };
 
@@ -184,13 +152,27 @@ export default function InlineNavbarSearch({
   const showRecents = open && !normalizedQuery;
   const noProducts = results && results.products.length === 0;
 
+  const openSearch = () => {
+    setOpen(true);
+    setRecents((previous) => {
+      const next = getRecentSearches();
+      return previous.length === next.length && previous.every((item, index) => item === next[index])
+        ? previous
+        : next;
+    });
+  };
+
   return (
-    <div className="navbar__search" ref={rootRef}>
+    <div
+      className="navbar__search"
+      ref={rootRef}
+      onPointerDown={(event) => event.stopPropagation()}
+    >
       <form
         className="navbar__search-form"
         onSubmit={(event) => {
           event.preventDefault();
-          submit();
+          void submit();
         }}
       >
         <Search className="navbar__search-icon" size={18} aria-hidden="true" />
@@ -202,10 +184,8 @@ export default function InlineNavbarSearch({
           maxLength={80}
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          onFocus={() => {
-            setOpen(true);
-            setRecents(getRecentSearches());
-          }}
+          onPointerDown={openSearch}
+          onFocus={openSearch}
           onKeyDown={handleKeyDown}
           className="navbar__search-input"
           role="combobox"
@@ -342,6 +322,16 @@ export default function InlineNavbarSearch({
                 }
               />
               <ScopeResults
+                title="Subcategories"
+                type="subcategory"
+                items={results.subcategories ?? []}
+                options={options}
+                activeIndex={activeIndex}
+                onSelect={(item) =>
+                  finish(shopSubcategorySearchPath(item.id), query)
+                }
+              />
+              <ScopeResults
                 title="Brands"
                 type="brand"
                 items={results.brands}
@@ -442,7 +432,7 @@ function ScopeResults({
   onSelect,
 }: {
   title: string;
-  type: "category" | "brand";
+  type: "category" | "subcategory" | "brand";
   items: SearchScopeSuggestion[];
   options: InlineSearchOption[];
   activeIndex: number;
@@ -471,7 +461,7 @@ function ScopeResults({
               className={`navbar__search-scope navbar__search-scope--${type}`}
               onClick={() => onSelect(item)}
             >
-              {type === "category" ? (
+              {type === "category" || type === "subcategory" ? (
                 <span className="navbar__search-scope-image" aria-hidden="true">
                   {item.image ? (
                     <img src={item.image} alt="" />

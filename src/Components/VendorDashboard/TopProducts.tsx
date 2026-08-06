@@ -13,13 +13,7 @@ interface TopProductData {
 
 const TopProducts = () => {
     const { authState } = useVendorAuth();
-    const { token, isAuthenticated } = authState;
-
-    if (!isAuthenticated) {
-        //("User is not authenticated")
-    } else {
-        //("--------Token---------", token)
-    }
+    const { token } = authState;
 
     const fetchTopProducts = async (): Promise<TopProductData[]> => {
         const response = await axiosInstance.get(
@@ -30,13 +24,20 @@ const TopProducts = () => {
                 },
             }
         );
-        return response.data || [];
+        const rows = Array.isArray(response.data) ? response.data : [];
+        return rows.map((row) => ({
+            productId: Number(row.productId),
+            productName: String(row.productName || 'Unnamed product'),
+            totalquantity: Number(row.totalquantity) || 0,
+            totalSales: Number(row.totalSales) || 0,
+        }));
     };
 
     const { data, isLoading, isError } = useQuery({
         queryKey: ['topProducts', authState?.token],
         queryFn: fetchTopProducts,
         enabled: !!authState?.token,
+        staleTime: 5 * 60 * 1000,
     });
 
     return (
@@ -65,7 +66,7 @@ const TopProducts = () => {
                             dataKey="productName"
                             tickLine={false}
                             axisLine={false}
-                            width={200}
+                            width={145}
                             tick={{ fill: '#333', fontSize: 13 }}
                         />
                         <Tooltip
@@ -95,19 +96,19 @@ const TopProducts = () => {
 
 const styles: { [key: string]: React.CSSProperties } = {
     container: {
-        padding: '16px 20px',
-        backgroundColor: '#FAFAFA',
-        borderRadius: '12px',
-        boxShadow: '0 1px 6px rgba(0,0,0,0.08)',
-        maxWidth: '780px',
-        margin: '40px auto',
+        padding: 0,
+        backgroundColor: 'transparent',
+        borderRadius: 0,
+        boxShadow: 'none',
+        width: '100%',
+        margin: 0,
     },
     title: {
         fontSize: '18px',
         fontWeight: 600,
         marginBottom: '16px',
         color: '#1F2937',
-        textAlign: 'center',
+        textAlign: 'left',
     },
     noData: {
         textAlign: 'center',

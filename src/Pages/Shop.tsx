@@ -6,6 +6,7 @@ import {
   ChevronUp,
   Filter,
   Search,
+  SearchX,
   SlidersHorizontal,
   X,
 } from "lucide-react";
@@ -22,6 +23,7 @@ import ResponsiveBanner from "../Components/ResponsiveBanner";
 import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
 import defaultProductImage from "../assets/logo.webp";
 import { API_BASE_URL } from "../config";
+import { fetchSearchCatalog } from "../api/search";
 import CategoryService, { Category } from "../services/categoryService";
 import { dealApiService } from "../services/apiDeals";
 import "../Styles/Shop.css";
@@ -110,8 +112,12 @@ const sortOptions: Array<{ value: CatalogSort; label: string }> = [
 const toCardProduct = (raw: RawCatalogProduct): Product => {
   const variant = raw.hasVariants
     ? [...(raw.variants ?? [])].sort((left, right) => {
-        const leftPrice = Number(left.finalPrice ?? left.basePrice ?? Number.POSITIVE_INFINITY);
-        const rightPrice = Number(right.finalPrice ?? right.basePrice ?? Number.POSITIVE_INFINITY);
+        const leftPrice = Number(
+          left.finalPrice ?? left.basePrice ?? Number.POSITIVE_INFINITY,
+        );
+        const rightPrice = Number(
+          right.finalPrice ?? right.basePrice ?? Number.POSITIVE_INFINITY,
+        );
         return leftPrice - rightPrice;
       })[0]
     : undefined;
@@ -155,12 +161,66 @@ const fetchCatalog = async (
 ): Promise<{ products: Product[]; meta: CatalogResponse["meta"] }> => {
   const params = catalogFiltersToSearchParams(filters);
   params.set("limit", String(PER_PAGE));
-  const response = await fetch(
-    `${API_BASE_URL}/api/categories/all/products?${params.toString()}`,
-  );
-  if (!response.ok) throw new Error("Could not load products. Please retry.");
+  let rawProducts: RawCatalogProduct[];
+  let meta: CatalogResponse["meta"];
 
-  const page = (await response.json()) as CatalogResponse;
+  if (filters.search.trim()) {
+    const searchPage = await fetchSearchCatalog(filters.search, undefined, {
+      page: filters.page,
+      limit: PER_PAGE,
+      sort: [
+        "relevance",
+        "newest",
+        "price_low_high",
+        "price_high_low",
+        "discount_high_low",
+        "best_selling",
+      ].includes(filters.sort)
+        ? filters.sort
+        : "relevance",
+      categoryIds: filters.categoryIds,
+      subcategoryIds: filters.subcategoryIds,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+      minRating: filters.minRating,
+      hasDeal: filters.hasDeal,
+      dealIds: filters.dealIds,
+      bannerId: filters.bannerId,
+    });
+    rawProducts = searchPage.products.map((product) => ({
+      id: product.id,
+      name: product.name,
+      effectivePrice: product.effectivePrice,
+      basePrice: product.originalPrice,
+      discountPercent: product.discountPercentage,
+      avgRating: product.averageRating,
+      reviewCount: product.totalReviews,
+      productImages: product.thumbnailUrl ? [product.thumbnailUrl] : [],
+      status: product.inStock ? "AVAILABLE" : "OUT_OF_STOCK",
+    }));
+    meta = {
+      total: searchPage.totalProducts,
+      page: searchPage.page ?? filters.page,
+      limit: searchPage.limit ?? PER_PAGE,
+      totalPages: searchPage.totalPages ?? 0,
+      hasNextPage:
+        (searchPage.page ?? filters.page) < (searchPage.totalPages ?? 0),
+    };
+  } else {
+    const response = await fetch(
+      `${API_BASE_URL}/api/categories/all/products?${params.toString()}`,
+    );
+    if (!response.ok) throw new Error("Could not load products. Please retry.");
+    const page = (await response.json()) as CatalogResponse;
+    rawProducts = page.data ?? [];
+    meta = page.meta ?? {
+      total: 0,
+      page: 1,
+      limit: PER_PAGE,
+      totalPages: 0,
+      hasNextPage: false,
+    };
+  }
   const cacheKey = catalogFiltersToSearchParams({
     ...filters,
     page: 1,
@@ -173,7 +233,7 @@ const fetchCatalog = async (
   }
   const pages = catalogPageCache.get(cacheKey) ?? new Map<number, Product[]>();
   if (filters.page === 1) pages.clear();
-  pages.set(filters.page, (page.data ?? []).map(toCardProduct));
+  pages.set(filters.page, rawProducts.map(toCardProduct));
   catalogPageCache.set(cacheKey, pages);
 
   return {
@@ -181,13 +241,7 @@ const fetchCatalog = async (
       .filter(([pageNumber]) => pageNumber <= filters.page)
       .sort(([left], [right]) => left - right)
       .flatMap(([, products]) => products),
-    meta: page.meta ?? {
-      total: 0,
-      page: 1,
-      limit: PER_PAGE,
-      totalPages: 0,
-      hasNextPage: false,
-    },
+    meta,
   };
 };
 
@@ -225,17 +279,19 @@ const FilterPanel = ({
   const [maxPrice, setMaxPrice] = useState(filters.maxPrice?.toString() ?? "");
   const [priceError, setPriceError] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
-  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(() => {
-    const initiallyExpanded = new Set<number>(filters.categoryIds);
-    for (const category of categories) {
-      for (const subcategory of category.subcategories ?? []) {
-        if (filters.subcategoryIds.includes(subcategory.id)) {
-          initiallyExpanded.add(category.id);
+  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(
+    () => {
+      const initiallyExpanded = new Set<number>(filters.categoryIds);
+      for (const category of categories) {
+        for (const subcategory of category.subcategories ?? []) {
+          if (filters.subcategoryIds.includes(subcategory.id)) {
+            initiallyExpanded.add(category.id);
+          }
         }
       }
-    }
-    return initiallyExpanded;
-  });
+      return initiallyExpanded;
+    },
+  );
   useEffect(() => {
     setMinPrice(filters.minPrice?.toString() ?? "");
     setMaxPrice(filters.maxPrice?.toString() ?? "");
@@ -350,7 +406,10 @@ const FilterPanel = ({
                     checked={filters.categoryIds.includes(category.id)}
                     onChange={() => toggleId("categoryIds", category.id)}
                   />
-                  <span className="catalog-control__checkbox" aria-hidden="true">
+                  <span
+                    className="catalog-control__checkbox"
+                    aria-hidden="true"
+                  >
                     <Check size={12} strokeWidth={3} />
                   </span>
                   <span>{category.name}</span>
@@ -423,7 +482,11 @@ const FilterPanel = ({
         >
           Apply price
         </button>
-        {priceError && <p className="catalog-filters__price-error" role="alert">{priceError}</p>}
+        {priceError && (
+          <p className="catalog-filters__price-error" role="alert">
+            {priceError}
+          </p>
+        )}
       </section>
       <section className="catalog-filters__section">
         <h3>Deals</h3>
@@ -563,6 +626,7 @@ const Shop = () => {
     // ScrollManager doesn't treat it as a fresh page and jump back to the top.
     setSearchParams(nextParams, { replace: options?.replace });
   };
+
   const resetFilters = () => setSearchParams(new URLSearchParams());
   const { data: dealFilters, isLoading: dealsLoading } = useQuery({
     queryKey: ["catalog-deals"],
@@ -614,9 +678,50 @@ const Shop = () => {
     if (filters.bannerId !== undefined) void refetch();
   }, [filters.bannerId, location.key, refetch]);
   const displayProducts = data?.products ?? [];
-  const visibleSortOptions = filters.search
-    ? sortOptions
-    : sortOptions.filter((option) => option.value !== "relevance");
+  const noResultsFallbackFilters = useMemo<CatalogFilters>(
+    () => ({
+      ...filters,
+      // Keep the selected shop facets and sort/page controls, but remove the
+      // unmatched text term so the fallback is the normal catalog query.
+      search: "",
+      sort: filters.sort === "relevance" ? "newest" : filters.sort,
+    }),
+    [filters],
+  );
+  // Do not fetch the fallback while the searched catalog is still loading. The
+  // catalog query keeps previous data as a placeholder, so `isFetching` is
+  // required to avoid briefly showing unrelated products during a new search.
+  const hasNoSearchResults = Boolean(
+    filters.search.trim() &&
+    data &&
+    !isFetching &&
+    displayProducts.length === 0,
+  );
+  const {
+    data: noResultsFallbackData,
+    isLoading: noResultsFallbackLoading,
+    isError: noResultsFallbackError,
+    refetch: refetchNoResultsFallback,
+  } = useQuery({
+    queryKey: ["catalog-no-results-fallback", noResultsFallbackFilters],
+    queryFn: () => fetchCatalog(noResultsFallbackFilters),
+    enabled: hasNoSearchResults,
+    staleTime: 60 * 1000,
+    retry: 1,
+  });
+  const noResultsFallbackProducts = noResultsFallbackData?.products ?? [];
+  const visibleSortOptions =
+    filters.search && !hasNoSearchResults
+      ? sortOptions
+      : sortOptions.filter((option) => option.value !== "relevance");
+  const selectedSort =
+    hasNoSearchResults && filters.sort === "relevance"
+      ? "newest"
+      : filters.sort;
+  const selectedSortLabel =
+    sortOptions
+      .find((option) => option.value === selectedSort)
+      ?.label.toLowerCase() ?? "newest";
   const chips = [
     filters.search && {
       key: "search",
@@ -741,7 +846,7 @@ const Shop = () => {
               <label className="catalog-toolbar__sort">
                 Sort By{" "}
                 <select
-                  value={filters.sort}
+                  value={selectedSort}
                   onChange={(event) =>
                     updateFilters({ sort: event.target.value as CatalogSort })
                   }
@@ -775,10 +880,92 @@ const Shop = () => {
                 <h2>Products could not load</h2>
                 <button onClick={() => refetch()}>Retry</button>
               </div>
+            ) : hasNoSearchResults ? (
+              <>
+                <div
+                  className="catalog-no-results"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div className="catalog-no-results__icon" aria-hidden="true">
+                    <SearchX size={26} strokeWidth={1.8} />
+                  </div>
+                  <h2>No exact matches for “{filters.search}”</h2>
+                  <p>
+                    We couldn’t find a product matching that search. Browse all
+                    catalog products below using filters and sorting.
+                  </p>
+                  <button type="button" onClick={resetFilters}>
+                    Browse all products
+                  </button>
+                </div>
+                <section className="catalog-fallback" aria-label="All products">
+                  <div className="catalog-fallback__heading">
+                    <div>
+                      <h2>All products</h2>
+                      <p>
+                        Browse the full catalog, sorted by {selectedSortLabel}
+                      </p>
+                    </div>
+                    {noResultsFallbackData?.meta.total !== undefined && (
+                      <span>
+                        {noResultsFallbackData.meta.total.toLocaleString()}{" "}
+                        products
+                      </span>
+                    )}
+                  </div>
+                  {noResultsFallbackError ? (
+                    <div className="catalog-state catalog-state--compact">
+                      <h2>Latest products could not load</h2>
+                      <button
+                        type="button"
+                        onClick={() => refetchNoResultsFallback()}
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="catalog-grid">
+                      {noResultsFallbackLoading
+                        ? Array.from({ length: 8 }, (_, index) => (
+                            <ProductCardSkeleton key={index} count={1} />
+                          ))
+                        : noResultsFallbackProducts.map((product) => (
+                            <ProductCard key={product.id} product={product} />
+                          ))}
+                    </div>
+                  )}
+                  {noResultsFallbackData?.meta.hasNextPage && (
+                    <div className="catalog-load-more">
+                      <button
+                        type="button"
+                        disabled={noResultsFallbackLoading || isFetching}
+                        onClick={() =>
+                          updateFilters(
+                            { page: filters.page + 1 },
+                            { replace: true },
+                          )
+                        }
+                      >
+                        {noResultsFallbackLoading || isFetching
+                          ? "Loading..."
+                          : "Load more"}
+                      </button>
+                    </div>
+                  )}
+                  {!noResultsFallbackLoading &&
+                    !noResultsFallbackError &&
+                    noResultsFallbackProducts.length === 0 && (
+                      <div className="catalog-state catalog-state--compact">
+                        <h2>No products are available right now</h2>
+                      </div>
+                    )}
+                </section>
+              </>
             ) : (
               <>
                 <div className="catalog-grid">
-                  {!data
+                  {!data || (isFetching && displayProducts.length === 0)
                     ? Array.from({ length: 12 }, (_, index) => (
                         <ProductCardSkeleton key={index} count={1} />
                       ))
@@ -786,7 +973,7 @@ const Shop = () => {
                         <ProductCard key={product.id} product={product} />
                       ))}
                 </div>
-                {!isLoading && displayProducts.length === 0 && (
+                {!isLoading && !isFetching && displayProducts.length === 0 && (
                   <div className="catalog-state">
                     <h2>No products found</h2>
                     <button onClick={resetFilters}>Clear filters</button>
@@ -797,7 +984,10 @@ const Shop = () => {
                     <button
                       disabled={isFetching}
                       onClick={() =>
-                        updateFilters({ page: filters.page + 1 }, { replace: true })
+                        updateFilters(
+                          { page: filters.page + 1 },
+                          { replace: true },
+                        )
                       }
                     >
                       {isFetching ? "Loading..." : "Load more"}
@@ -875,7 +1065,7 @@ const Shop = () => {
                 <button
                   key={option.value}
                   className={
-                    filters.sort === option.value
+                    selectedSort === option.value
                       ? "catalog-sort-option catalog-sort-option--active"
                       : "catalog-sort-option"
                   }

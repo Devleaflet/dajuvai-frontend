@@ -10,50 +10,60 @@ interface RevenueData {
 
 const VendorRevenueBySubCategory = () => {
     const [data, setData] = useState<RevenueData[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
     const { authState } = useVendorAuth();
     const { token, isAuthenticated } = authState;
 
-    if (!isAuthenticated) {
-        //("User is not authenticated")
-    } else {
-        //("--------Token---------", token)
-    }
-
     useEffect(() => {
+        if (!isAuthenticated || !token) {
+            setLoading(false);
+            setData([]);
+            return;
+        }
+        let cancelled = false;
+        setLoading(true);
+        setError(false);
         fetch(`${API_BASE_URL}/api/vendor/dashboard/analytics/revenue-by-sub-category`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
         })
-            .then((res) => res.json())
-            .then((res) => {
-                //('API Response:', res);
-                if (Array.isArray(res.data) && res.data.length > 0) {
-                    setData(res.data);
-                } else {
-                    setData([]);
-                }
+            .then(async (response) => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return response.json();
             })
-            .catch((err) => {
-                console.error(err);
-                setData([]);
+            .then((res) => {
+                if (cancelled) return;
+                setData(Array.isArray(res.data) ? res.data.map((item: RevenueData) => ({
+                    subcategory: item.subcategory || 'Uncategorized',
+                    revenue: String(Number(item.revenue) || 0),
+                })) : []);
+            })
+            .catch(() => {
+                if (!cancelled) { setError(true); setData([]); }
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
             });
-    }, []);
+        return () => { cancelled = true; };
+    }, [isAuthenticated, token]);
 
     return (
         <div style={styles.container}>
-            <h1 style={styles.title}>Revenue by Sub Category</h1>
-            {data.length > 0 ? (
-                <ResponsiveContainer width="100%" height={400}>
+            <h2 style={styles.title}>Revenue by Subcategory</h2>
+            {loading ? <div style={styles.noData}>Loading revenue…</div> : error ? <div style={styles.noData}>Revenue unavailable</div> : data.length > 0 ? (
+                <ResponsiveContainer width="100%" height={Math.max(280, data.length * 38)}>
                     <BarChart
                         data={data.map(d => ({ ...d, revenue: parseFloat(d.revenue) }))}
-                        margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        layout="vertical"
+                        margin={{ top: 8, right: 20, left: 8, bottom: 8 }}
                     >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="subcategory" />
-                        <YAxis />
-                        <Tooltip formatter={(value: number) => `Rs. ${value.toLocaleString()}`} />
-                        <Bar dataKey="revenue" fill="#F97316" radius={[10, 10, 0, 0]} />
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5eaf1" />
+                        <XAxis type="number" tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={(value) => `Rs ${Number(value).toLocaleString('en-IN')}`} />
+                        <YAxis type="category" dataKey="subcategory" width={128} tick={{ fill: '#334155', fontSize: 11 }} />
+                        <Tooltip formatter={(value: number) => `Rs. ${Number(value).toLocaleString('en-IN')}`} />
+                        <Bar dataKey="revenue" fill="#F97316" radius={[0, 6, 6, 0]} barSize={18} />
                     </BarChart>
                 </ResponsiveContainer>
             ) : (
@@ -65,24 +75,24 @@ const VendorRevenueBySubCategory = () => {
 
 const styles: { [key: string]: React.CSSProperties } = {
     container: {
-        padding: '16px 20px',
-        backgroundColor: '#FAFAFA',
-        borderRadius: '12px',
-        boxShadow: '0 1px 6px rgba(0,0,0,0.08)',
-        maxWidth: '780px',
-        margin: '40px auto',
+        padding: 0,
+        backgroundColor: 'transparent',
+        borderRadius: 0,
+        boxShadow: 'none',
+        width: '100%',
+        margin: 0,
     },
     title: {
-        fontSize: '18px',
+        fontSize: '16px',
         fontWeight: 600,
         marginBottom: '16px',
         color: '#1F2937',
-        textAlign: 'center',
+        textAlign: 'left',
     },
     noData: {
         textAlign: 'center',
         color: '#9CA3AF',
-        fontSize: '14px',
+        fontSize: '13px',
         padding: '40px 0',
     },
 };

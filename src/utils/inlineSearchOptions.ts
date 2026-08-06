@@ -1,6 +1,6 @@
 export type InlineSearchOption = {
   id: string;
-  type: "product" | "category" | "brand" | "all";
+  type: "product" | "category" | "subcategory" | "brand" | "all";
   entityId?: number;
   name: string;
   label: string;
@@ -14,6 +14,7 @@ export const buildInlineSearchOptions = (
   results: {
     products: SearchProducts;
     categories: SearchScopes;
+    subcategories?: SearchScopes;
     brands: SearchScopes;
   },
   query: string,
@@ -31,6 +32,13 @@ export const buildInlineSearchOptions = (
     entityId: category.id,
     name: category.name,
     label: category.name,
+  })),
+  ...(results.subcategories ?? []).map((subcategory) => ({
+    id: `subcategory-${subcategory.id}`,
+    type: "subcategory" as const,
+    entityId: subcategory.id,
+    name: subcategory.name,
+    label: subcategory.name,
   })),
   ...results.brands.map((brand) => ({
     id: `brand-${brand.id}`,

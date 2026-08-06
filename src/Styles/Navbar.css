@@ -98,7 +98,7 @@
 .navbar__top-link {
   margin-left: 14px;
   font-weight: bolder;
-  font-size: 14px;
+  font-size: 16px;
   text-decoration: none;
   color: #000;
   font-weight: 500;
@@ -277,6 +277,19 @@
 .navbar__search-results-scroll {
   min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .navbar__search-input {
+    /* iOS Safari zooms focused text inputs below 16px. */
+    font-size: 16px;
+  }
+
+  .navbar__search-results {
+    /* Stable viewport unit prevents keyboard resize flicker. */
+    max-height: min(420px, calc(100svh - 120px));
+  }
 }
 
 .navbar__search-results-footer {
@@ -537,9 +550,9 @@
   .navbar__search-row { width: 100%; }
   .navbar__search { max-width: none; }
   .navbar__search-form { min-height: 48px; }
-  .navbar__search-input { height: 46px; font-size: 14px; }
+  .navbar__search-input { height: 46px; font-size: 16px; }
   .navbar__search-button { width: 40px; height: 40px; }
-  .navbar__search-results { max-height: min(500px, calc(100dvh - 170px)); }
+  .navbar__search-results { max-height: min(420px, calc(100svh - 170px)); }
 }
 
 @media (max-width: 420px) {
@@ -1286,11 +1299,8 @@
     top: 0;
     z-index: 100;
     background-color: #ffffff;
-    /* Own GPU layer, same reasoning as .sidebar__mobile-bar in Sidebar.css:
-       stabilizes this sticky bar against iOS Safari's overscroll/rubber-band
-       rendering glitches. */
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
+    /* Keep sticky layer untransformed: iOS Safari can repaint transformed
+       sticky layers when keyboard opens, flashing dropdown. */
   }
 
   .navbar__search-row {
@@ -2177,6 +2187,12 @@ body.cart-open .cart {
   background: transparent;
   box-shadow: none;
   transform: none;
+  /* Keep every iOS viewport, including iPad landscape, above Safari's
+     auto-zoom threshold. */
+  font-size: 16px;
+  line-height: 1.25;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 .navbar .navbar__search-form .navbar__search-input:focus {
@@ -2222,7 +2238,9 @@ body.cart-open .cart {
 
   .navbar .navbar__search-form .navbar__search-input {
     height: 46px;
-    font-size: 14px;
+    /* Safari zooms focused text inputs below 16px. Specificity wins over
+       older navbar rules at 576px and 360px too. */
+    font-size: 16px !important;
   }
 
   .navbar .navbar__search-form .navbar__search-button {

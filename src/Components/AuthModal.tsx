@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import axios from "axios";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../config";
 import { FaInfoCircle } from "react-icons/fa";
@@ -11,6 +11,7 @@ import close from "../assets/close.png";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { Toaster, toast } from "react-hot-toast";
 import { getApiErrorMessage } from "../utils/apiError";
+import TermsModal from "./Modal/TermsModal";
 
 interface AuthModalProps {
 	isOpen: boolean;
@@ -43,6 +44,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const [termsAgreed, setTermsAgreed] = useState<boolean>(false);
+	const [termsModalOpen, setTermsModalOpen] = useState(false);
 	const [email, setEmail] = useState<string>("");
 	const [password, setPassword] = useState<string>("");
 	const [confirmPassword, setConfirmPassword] = useState<string>("");
@@ -113,6 +115,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 			setConfirmNewPassword("");
 			setShowPassword(false);
 			setShowConfirmPassword(false);
+			setTermsModalOpen(false);
 			setErrors({});
 			setTouched({});
 		}
@@ -672,6 +675,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 	if (!isOpen) return null;
 
 	return createPortal(
+		<>
 		<div className={`auth-modal${isOpen ? " auth-modal--open" : ""}`}>
 			<Toaster position="top-center" />
 			<div className="auth-modal__overlay"></div>
@@ -1095,16 +1099,22 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 										/>
 										<label htmlFor="signupcheckbox">
 											I have read and agree to the website{" "}
-											<Link
-												to="/terms"
-												rel="noopener noreferrer"
-												style={{
-													color: "#ff7e5f",
-													textDecoration: "underline",
-												}}
-											>
-												terms and conditions
-											</Link>{" "}
+							<button
+								type="button"
+								className="auth-modal__link-button"
+								onClick={(event) => {
+									event.preventDefault();
+									event.stopPropagation();
+									setTermsModalOpen(true);
+								}}
+								style={{
+									color: "#ff7e5f",
+									textDecoration: "underline",
+									padding: 0,
+								}}
+							>
+								terms and conditions
+							</button>{" "}
 											*
 										</label>
 									</div>
@@ -1385,7 +1395,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 					</div>
 				</div>
 			)}
-		</div>,
+		</div>
+		<TermsModal
+			open={termsModalOpen}
+			onClose={() => setTermsModalOpen(false)}
+		/>
+		</>,
 		document.body
 	);
 };
