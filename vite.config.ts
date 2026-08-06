@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import checker from 'vite-plugin-checker';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import checker from "vite-plugin-checker";
 
 export default defineConfig({
   plugins: [
@@ -11,8 +11,9 @@ export default defineConfig({
   ],
   server: {
     allowedHosts: [
-      'dajubhai.zokchen.com.np',
-      'dajuvai.com',
+      "dajubhai.zokchen.com.np",
+      "lens-boneless-able.ngrok-free.dev",
+      "dajuvai.com",
     ],
   },
 });
