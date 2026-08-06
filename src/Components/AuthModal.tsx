@@ -553,13 +553,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 		// on those instead of the app. Stash the actual page the user came from instead.
 		sessionStorage.setItem("postLoginRedirect", `${location.pathname}${location.search}`);
 
-		const callbackUrl = `${window.location.origin}/auth/google/callback`;
-		const redirectUrl = `${API_BASE_URL}/api/auth/google?redirect_uri=${encodeURIComponent(
-			callbackUrl
-		)}`;
-
-		//("Redirecting to backend Google OAuth:", redirectUrl);
-		window.location.href = redirectUrl;
+		// The backend Passport strategy owns the OAuth callback URL. Do not send a
+		// second, frontend-generated redirect_uri: it is ignored by the backend and
+		// makes configuration/debugging ambiguous (and can trigger Google 400s when
+		// it is not registered for the selected OAuth client).
+		window.location.href = `${API_BASE_URL}/api/auth/google`;
 	};
 
 	const handleSubmit = async (

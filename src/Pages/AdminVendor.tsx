@@ -6,6 +6,7 @@ import VendorEditModal from "../Components/Modal/VendorEditModal";
 import VendorViewModal from "../Components/Modal/VendorViewModal";
 import { API_BASE_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
+import { usePermission } from "../hooks/usePermission";
 import {
     Vendor,
     District,
@@ -1076,6 +1077,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
 const AdminVendor: React.FC = () => {
     const { token, isAuthenticated } = useAuth();
+    const { can } = usePermission();
     const navigate = useNavigate();
     const [isMobile, setIsMobile] = useState(() =>
         typeof window !== "undefined" ? window.innerWidth < 768 : false,
@@ -1786,7 +1788,7 @@ const AdminVendor: React.FC = () => {
                                                             </td>
                                                             <td className="admin-vendors__actions-column">
                                                                 <div className="admin-vendors__actions">
-                                                                    <button
+                                                                    {can("vendor", "create_edit") && (<button
                                                                         onClick={() =>
                                                                             handleApproveClick(
                                                                                 vendor.id,
@@ -1802,12 +1804,14 @@ const AdminVendor: React.FC = () => {
                                                                         {/* <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
 																<polyline points="20 6 9 17 4 12"></polyline>
 															</svg> */}
-                                                                        {approvingVendorId ===
-                                                                        vendor.id
-                                                                            ? "..."
-                                                                            : "Approve"}
-                                                                    </button>
-                                                                    <button
+                                                                            {approvingVendorId ===
+                                                                            vendor.id
+                                                                                ? "..."
+                                                                                : "Approve"}
+                                                                        </button>
+                                                                    )}
+                                                                    
+                                                                    {can("vendor", "delete") && (<button
                                                                         onClick={() =>
                                                                             handleRejectClick(
                                                                                 vendor.id,
@@ -1820,8 +1824,9 @@ const AdminVendor: React.FC = () => {
 																<line x1="18" y1="6" x2="6" y2="18"></line>
 																<line x1="6" y1="6" x2="18" y2="18"></line>
 															</svg> */}
-                                                                        Reject
-                                                                    </button>
+                                                                            Reject
+                                                                        </button>
+                                                                        )}
                                                                 </div>
                                                             </td>
                                                         </tr>
@@ -2068,16 +2073,18 @@ const AdminVendor: React.FC = () => {
                                                                 </td>
                                                                 <td className="admin-vendors__actions-column">
                                                                     <div className="admin-vendors__actions">
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                handleEditVendor(
-                                                                                    vendor,
-                                                                                )
-                                                                            }
-                                                                            className="admin-vendors__action-btn admin-vendors__action-btn--edit"
-                                                                        >
-                                                                            Edit
-                                                                        </button>
+                                                                        {can("vendor", "create_edit") && (
+                                                                            <button
+                                                                                onClick={() =>
+                                                                                    handleEditVendor(
+                                                                                        vendor,
+                                                                                    )
+                                                                                }
+                                                                                className="admin-vendors__action-btn admin-vendors__action-btn--edit"
+                                                                            >
+                                                                                Edit
+                                                                            </button>
+                                                                        )}
                                                                         <button
                                                                             onClick={() => {
                                                                                 setSelectedVendor(
@@ -2091,7 +2098,7 @@ const AdminVendor: React.FC = () => {
                                                                         >
                                                                             View
                                                                         </button>
-                                                                        {!vendor.isApproved && (
+                                                                        {!vendor.isApproved && can("vendor", "create_edit") && (
                                                                             <button
                                                                                 onClick={() =>
                                                                                     handleApproveClick(
@@ -2110,28 +2117,32 @@ const AdminVendor: React.FC = () => {
                                                                                     : "Approve"}
                                                                             </button>
                                                                         )}
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                handleChangePasswordClick(
-                                                                                    vendor.id,
-                                                                                )
-                                                                            }
-                                                                            className="admin-vendors__action-btn admin-vendors__action-btn--edit"
-                                                                            title="Change Password"
-                                                                        >
-                                                                            Change
-                                                                            Password
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() =>
-                                                                                handleDeleteClick(
-                                                                                    vendor.id,
-                                                                                )
-                                                                            }
-                                                                            className="admin-vendors__action-btn admin-vendors__action-btn--delete"
-                                                                        >
-                                                                            Delete
-                                                                        </button>
+                                                                        {can("vendor", "create_edit") && (
+                                                                            <button
+                                                                                onClick={() =>
+                                                                                    handleChangePasswordClick(
+                                                                                        vendor.id,
+                                                                                    )
+                                                                                }
+                                                                                className="admin-vendors__action-btn admin-vendors__action-btn--edit"
+                                                                                title="Change Password"
+                                                                            >
+                                                                                Change
+                                                                                Password
+                                                                            </button>
+                                                                        )}
+                                                                        {can("vendor", "delete") && (
+                                                                            <button
+                                                                                onClick={() =>
+                                                                                    handleDeleteClick(
+                                                                                        vendor.id,
+                                                                                    )
+                                                                                }
+                                                                                className="admin-vendors__action-btn admin-vendors__action-btn--delete"
+                                                                            >
+                                                                                Delete
+                                                                            </button>
+                                                                        )}
                                                                     </div>
                                                                 </td>
                                                             </tr>

@@ -7,6 +7,7 @@ import { AdminSidebar } from "../Components/AdminSidebar";
 import Header from "../Components/Header";
 import { API_BASE_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
+import { usePermission } from "../hooks/usePermission";
 
 interface Product {
 	id: number;
@@ -56,6 +57,7 @@ interface Deal {
 
 const AdminCatalog = () => {
 	const { token } = useAuth();
+	const { can } = usePermission();
 	const [homepageSections, setHomepageSections] = useState<HomepageSection[]>(
 		[]
 	);
@@ -546,13 +548,15 @@ const AdminCatalog = () => {
 										className="admin-catalog__search-input"
 									/>
 								</div>
-								<button
-									onClick={() => openHomepageModal()}
-									className="admin-catalog__add-button"
-								>
-									<Plus className="admin-catalog__button-icon" />
-									Add Section
-								</button>
+								{can("catalog", "create_edit") && (
+									<button
+										onClick={() => openHomepageModal()}
+										className="admin-catalog__add-button"
+									>
+										<Plus className="admin-catalog__button-icon" />
+										Add Section
+									</button>
+								)}
 							</div>
 						</div>
 
@@ -637,18 +641,22 @@ const AdminCatalog = () => {
 												</td>
 												<td className="admin-catalog__table-cell">
 													<div className="admin-catalog__actions">
-														<button
-															onClick={() => openHomepageModal(section)}
-															className="admin-catalog__action-button admin-catalog__action-button--edit"
-														>
-															<Edit className="admin-catalog__action-icon" />
-														</button>
-														<button
-															onClick={() => openDeleteConfirmation(section.id)}
-															className="admin-catalog__action-button admin-catalog__action-button--delete"
-														>
-															<Trash2 className="admin-catalog__action-icon" />
-														</button>
+														{can("catalog", "create_edit") && (
+															<button
+																onClick={() => openHomepageModal(section)}
+																className="admin-catalog__action-button admin-catalog__action-button--edit"
+															>
+																<Edit className="admin-catalog__action-icon" />
+															</button>
+														)}
+														{can("catalog", "delete") && (
+															<button
+																onClick={() => openDeleteConfirmation(section.id)}
+																className="admin-catalog__action-button admin-catalog__action-button--delete"
+															>
+																<Trash2 className="admin-catalog__action-icon" />
+															</button>
+														)}
 													</div>
 												</td>
 											</tr>

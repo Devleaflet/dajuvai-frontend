@@ -4,6 +4,7 @@ import { fetchArchivedProducts, restoreProduct } from "../api/products";
 import ArchivedProductDetailModal from "./Modal/ArchivedProductDetailModal";
 import ConfirmDialog from "./Modal/ConfirmDialog";
 import "../Styles/ArchivedProductsTab.css";
+import { usePermission } from "../hooks/usePermission";
 
 interface ArchivedProductsTabProps {
     token?: string;
@@ -33,6 +34,7 @@ const ArchivedProductsTab: React.FC<ArchivedProductsTabProps> = ({
     isAdmin = false,
     onRestored,
 }) => {
+    const { can } = usePermission();
     const [items, setItems] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
@@ -228,7 +230,7 @@ const ArchivedProductsTab: React.FC<ArchivedProductsTabProps> = ({
                                         >
                                             View
                                         </button>
-                                        {item.isProductArchived && (
+                                        {item.isProductArchived && can("product","create_edit") && (
                                             <button
                                                 className="archived-tab__restore-btn"
                                                 disabled={restoringId === item.id}

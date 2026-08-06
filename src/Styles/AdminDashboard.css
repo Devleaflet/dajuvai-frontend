@@ -425,18 +425,18 @@
 
 .vendor-dash-container .dashboard__two-columns,
 .vendor-dash-container .dashboard-sections {
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 1rem;
-	margin-top: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 .vendor-dash-container .dashboard__column {
-	min-width: 0;
-	display: flex;
+  min-width: 0;
+  display: flex;
 }
 
 .vendor-dash-container .dashboard__column > .section-card {
-	width: 100%;
+  width: 100%;
 }
 
 .vendor-dash-container .section-card {
@@ -585,5 +585,152 @@
   .vendor-dash-container * {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+  }
+}
+
+/* Responsive KPI guardrails. Values stay readable instead of disappearing
+   behind ellipsis when cards become narrow. */
+.vendor-dash-container .dashboard__stats,
+.vendor-dash-container .dashboard__stats > * {
+  min-width: 0;
+}
+
+.vendor-dash-container .stat-card {
+  box-sizing: border-box;
+  min-width: 0;
+  align-items: flex-start;
+}
+
+.vendor-dash-container .stat-content {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.vendor-dash-container .stat-title {
+  font-size: clamp(0.66rem, 0.7vw, 0.72rem);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.vendor-dash-container .stat-value {
+  font-size: clamp(1rem, 1.15vw, 1.35rem);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.15;
+}
+
+.vendor-dash-container .dashboard__title {
+  font-size: clamp(1rem, 1.05vw, 1.15rem);
+}
+
+.vendor-dash-container .section-card h2,
+.vendor-dash-container .section-card h3 {
+  font-size: clamp(0.92rem, 1vw, 1.1rem);
+}
+
+@media (max-width: 1100px) {
+  .vendor-dash-container .dashboard__main {
+    padding-inline: clamp(0.75rem, 2.4vw, 1.5rem);
+  }
+
+  .vendor-dash-container .dashboard__stats {
+    grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .vendor-dash-container .dashboard__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .vendor-dash-container .stat-card {
+    gap: 0.7rem;
+    padding: 0.9rem;
+  }
+
+  .vendor-dash-container .stat-icon {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+
+  .vendor-dash-container .stat-title {
+    font-size: 0.7rem;
+  }
+
+  .vendor-dash-container .stat-value {
+    font-size: clamp(0.95rem, 3.8vw, 1.2rem);
+  }
+}
+
+@media (max-width: 380px) {
+  .vendor-dash-container .dashboard__stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Final zoom-safe KPI scale. Seven admin cards must share wide dashboard
+   rows at 125% browser zoom; cards may wrap only at genuine narrow widths. */
+.vendor-dash-container .dashboard__stats {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: clamp(0.55rem, 0.8vw, 0.9rem);
+}
+
+.vendor-dash-container .stat-card {
+  min-height: 92px;
+  padding: clamp(0.7rem, 1vw, 0.95rem);
+  gap: clamp(0.55rem, 0.8vw, 0.8rem);
+}
+
+.vendor-dash-container .stat-icon {
+  width: clamp(32px, 2.2vw, 38px);
+  height: clamp(32px, 2.2vw, 38px);
+  flex-basis: clamp(32px, 2.2vw, 38px);
+}
+
+.vendor-dash-container .stat-title {
+  font-size: clamp(0.6rem, 0.62vw, 0.68rem);
+}
+
+.vendor-dash-container .stat-value {
+  font-size: clamp(0.9rem, 1.02vw, 1.25rem);
+  letter-spacing: -0.025em;
+}
+
+@media (max-width: 1100px) and (min-width: 768px) {
+  .vendor-dash-container .dashboard__stats {
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .vendor-dash-container .dashboard__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vendor-dash-container .stat-card {
+    min-height: 88px;
+    padding: 0.7rem;
+  }
+
+  .vendor-dash-container .stat-icon {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+  }
+
+  .vendor-dash-container .stat-value {
+    font-size: clamp(0.9rem, 3.4vw, 1.1rem);
+  }
+}
+
+@media (max-width: 380px) {
+  .vendor-dash-container .dashboard__stats {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

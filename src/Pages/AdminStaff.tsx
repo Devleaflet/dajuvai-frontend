@@ -4,12 +4,95 @@ import Header from '../Components/Header';
 import { AdminSidebar } from '../Components/AdminSidebar';
 import { useDocketHeight } from '../Hook/UseDockerHeight';
 import { useAuth } from '../context/AuthContext';
-import staffApi, { StaffUser, StaffRegistrationData, ApiResponse } from '../api/staff';
+import staffApi, {
+  StaffUser,
+  StaffRegistrationData,
+  ApiResponse,
+  PermissionLevel,
+  MODULE_NAMES,
+  ModuleName,
+  StaffPermissions,
+} from '../api/staff';
 import '../Styles/AdminStaff.css';
 import '../Styles/AdminCustomers.css';
+import { Ban, Eye, Edit, Trash2, ShoppingBag, Truck, BookOpen, Megaphone, Tag, Users, Image, LayoutGrid, UserRound, Box } from 'lucide-react';
 
-interface StaffFormData extends Omit<StaffRegistrationData, 'confirmPassword'> {
-  confirmPassword: string;
+const MODULE_LABELS: Record<ModuleName, string> = {
+  arrangement: 'Arrangement',
+  banner: 'Banners',
+  catalog: 'Catalog',
+  customer: 'Customers',
+  deal: 'Deals',
+  delivery: 'Delivery',
+  order: 'Orders',
+  product: 'Products',
+  promo: 'Promo Codes',
+  vendor: 'Vendors',
+  category: 'Category'
+};
+
+const MODULE_ICONS: Record<ModuleName, any> = {
+  arrangement: LayoutGrid,
+  banner: Image,
+  catalog: BookOpen,
+  customer: UserRound,
+  deal: Tag,
+  delivery: Truck,
+  order: ShoppingBag,
+  product: Box,
+  promo: Megaphone,
+  vendor: Users,
+  category: Tag
+};
+
+const MODULE_COLORS: Record<ModuleName, string> = {
+  arrangement: '#6366f1',
+  banner: '#14b8a6',
+  catalog: '#8b5cf6',
+  customer: '#06b6d4',
+  deal: '#f59e0b',
+  delivery: '#22c55e',
+  order: '#f97316',
+  product: '#84cc16',
+  promo: '#ec4899',
+  vendor: '#3b82f6',
+  category: '#6366f1'
+};
+
+// Permission tier options
+const PERMISSION_TIERS: { value: PermissionLevel | null; label: string; icon: any }[] = [
+  { value: null, label: 'None', icon: Ban },
+  { value: PermissionLevel.VIEW, label: 'View', icon: Eye },
+  { value: PermissionLevel.CREATE_EDIT, label: 'Create & Edit', icon: Edit },
+  { value: PermissionLevel.DELETE, label: 'Delete', icon: Trash2 },
+];
+
+
+/**
+ * Returns true if a tier is exactly selected. (Cascade logic removed for independent selections)
+ */
+const isTierImplied = (tierValue: PermissionLevel | null, selected: PermissionLevel | null): boolean => {
+  return tierValue === selected;
+};
+
+/**
+ * Applies exactly the clicked level.
+ */
+const applyPermissionCascade = (
+  current: PermissionLevel | null,
+  clicked: PermissionLevel | null,
+): PermissionLevel | null => {
+  // If the clicked level is already exactly the selected level, deselect
+  if (current === clicked) return null;
+  return clicked;
+};
+
+
+interface StaffFormData {
+  email: string;
+  password: string;
+  phoneNumber: string;
+  fullName: string;
 }
 
 const AdminStaff: React.FC = () => {
@@ -19,35 +102,53 @@ const AdminStaff: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState<StaffFormData>({
-    username: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    phoneNumber: '',
+    fullName: '',
   });
-  const [formErrors, setFormErrors] = useState<Partial<StaffFormData>>({});
+
+  // permissions state for create form: null means "no permission"
+  const [permissions, setPermissions] = useState<Record<ModuleName, PermissionLevel | null>>(() => {
+    const init = {} as Record<ModuleName, PermissionLevel | null>;
+    MODULE_NAMES.forEach((m) => { init[m] = null; });
+    return init;
+  });
+  const [formErrors, setFormErrors] = useState<Partial<StaffFormData & { permissions: string }>>({});
   const [submitting, setSubmitting] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState<StaffUser | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Edit state
   const [staffToEdit, setStaffToEdit] = useState<StaffUser | null>(null);
   const [editFormData, setEditFormData] = useState({
-    username: '',
     email: '',
     fullName: '',
     phoneNumber: '',
     password: '',
     confirmPassword: '',
   });
+  const [editPermissions, setEditPermissions] = useState<Record<ModuleName, PermissionLevel | null>>(() => {
+    const init = {} as Record<ModuleName, PermissionLevel | null>;
+    MODULE_NAMES.forEach((m) => { init[m] = null; });
+    return init;
+  });
   type EditFieldErrors = Partial<Record<keyof typeof editFormData, string>>;
   const [editFormErrors, setEditFormErrors] = useState<EditFieldErrors>({});
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  // View state
+  const [staffToView, setStaffToView] = useState<StaffUser | null>(null);
+
   const docketHeight = useDocketHeight();
+
+  const [filteredStaffList, setFilteredStaffList] = useState<StaffUser[]>([]);
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -63,31 +164,25 @@ const AdminStaff: React.FC = () => {
       return;
     }
     setFilteredStaffList(
-      staffList.filter(
-        (staff) =>
-          staff.username.toLowerCase().includes(term) ||
-          staff.email.toLowerCase().includes(term)
+      staffList.filter((staff) =>
+          staff.email.toLowerCase().includes(term) ||
+          (staff.fullName || '').toLowerCase().includes(term)
       )
     );
   }, [staffList, searchTerm]);
-
-  const [filteredStaffList, setFilteredStaffList] = useState<StaffUser[]>([]);
 
   const fetchStaffList = async () => {
     setLoading(true);
     try {
       const response = await staffApi.getStaffList();
       if (response.success && response.data) {
-        // Handle both response formats: direct array or { staff: StaffUser[] }
         let staffData: StaffUser[] = [];
-        
         if (Array.isArray(response.data)) {
           staffData = response.data;
         } else if (typeof response.data === 'object' && response.data !== null) {
           const data = response.data as { staff?: StaffUser[] };
           staffData = data.staff || [];
         }
-        
         setStaffList(staffData);
       } else if ('message' in response) {
         toast.error(response.message || 'Failed to load staff list');
@@ -100,14 +195,16 @@ const AdminStaff: React.FC = () => {
     }
   };
 
-  const validateForm = (): boolean => {
-    const errors: Partial<StaffFormData> = {};
+  const resetAddForm = () => {
+    setFormData({ email: '', password: '', phoneNumber: '', fullName: '' });
+    const reset = {} as Record<ModuleName, PermissionLevel | null>;
+    MODULE_NAMES.forEach((m) => { reset[m] = null; });
+    setPermissions(reset);
+    setFormErrors({});
+  };
 
-    if (!formData.username.trim()) {
-      errors.username = 'Username is required';
-    } else if (formData.username.length < 3) {
-      errors.username = 'Username must be at least 3 characters';
-    }
+  const validateForm = (): boolean => {
+    const errors: Partial<StaffFormData & { permissions: string }> = {};
 
     if (!formData.email.trim()) {
       errors.email = 'Email is required';
@@ -121,10 +218,10 @@ const AdminStaff: React.FC = () => {
       errors.password = 'Password must be at least 8 characters';
     }
 
-    if (!formData.confirmPassword) {
-      errors.confirmPassword = 'Please confirm your password';
-    } else if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
+    if (!formData.phoneNumber.trim()) {
+      errors.phoneNumber = 'Phone number is required';
+    } else if (!/^\d{10}$/.test(formData.phoneNumber.trim())) {
+      errors.phoneNumber = 'Phone number must be exactly 10 digits';
     }
 
     setFormErrors(errors);
@@ -133,65 +230,57 @@ const AdminStaff: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear error for this field when user starts typing
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (formErrors[name as keyof StaffFormData]) {
-      setFormErrors(prev => ({
-        ...prev,
-        [name]: undefined
-      }));
+      setFormErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
+  const handlePermissionChange = (module: ModuleName, clicked: PermissionLevel | null) => {
+    setPermissions((prev) => ({
+      ...prev,
+      [module]: applyPermissionCascade(prev[module], clicked),
+    }));
+  };
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setSubmitting(true);
     try {
-      // Include confirmPassword and normalize fields as per API spec
-      const staffData = {
-        username: formData.username.trim(),
+      // Build permissions payload — omit modules with null (no permission)
+      const permsPayload: StaffPermissions = {};
+      MODULE_NAMES.forEach((m) => {
+        if (permissions[m] !== null) {
+          permsPayload[m] = permissions[m] as PermissionLevel;
+        }
+      });
+
+      const staffData: StaffRegistrationData = {
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
-        confirmPassword: formData.confirmPassword
+        phoneNumber: formData.phoneNumber.trim(),
+        fullName: formData.fullName.trim() || undefined,
+        permissions: permsPayload,
       };
-      //('Submitting staff data:', staffData);
-      
+
       const response = await staffApi.registerStaff(staffData);
-      //('Registration response:', response);
 
       if (response.success) {
         toast.success('Staff user registered successfully!');
-        setFormData({
-          username: '',
-          email: '',
-          password: '',
-          confirmPassword: ''
-        });
+        resetAddForm();
         setShowAddForm(false);
-        fetchStaffList(); // Refresh the staff list
+        fetchStaffList();
       } else {
-        // Clear previous errors
         setFormErrors({});
-        
-        // Type guard to check if response is ErrorResponse
         if ('statusCode' in response) {
-          // Specific conflict handling
           if (response.statusCode === 409) {
             setFormErrors({ email: 'Email is already in use' });
           } else if (response.errors) {
-            // Normalize errors from array or object shape
-            const allowedFields = ['username', 'email', 'password', 'confirmPassword'];
+            const allowedFields = ['username', 'email', 'password', 'phoneNumber', 'fullName'];
             const newErrors: Partial<StaffFormData> = {};
-
             if (Array.isArray(response.errors)) {
               response.errors.forEach((err) => {
                 if (err.field && allowedFields.includes(err.field)) {
@@ -208,20 +297,16 @@ const AdminStaff: React.FC = () => {
                 }
               });
             }
-
             if (Object.keys(newErrors).length > 0) {
               setFormErrors(newErrors);
               return;
             }
           }
-          
           if (response.message) {
             toast.error(response.message);
             return;
           }
         }
-        
-        // Fallback error
         toast.error('Failed to register staff user. Please try again.');
       }
     } catch (error) {
@@ -238,14 +323,12 @@ const AdminStaff: React.FC = () => {
 
   const handleConfirmDelete = async () => {
     if (!staffToDelete) return;
-    
     setIsDeleting(true);
     try {
       const response = await staffApi.deleteStaff(staffToDelete.id);
-      
       if (response.success) {
         toast.success('Staff user deleted successfully');
-        fetchStaffList(); // Refresh the staff list
+        fetchStaffList();
       } else if (response.message) {
         toast.error(response.message);
       }
@@ -262,16 +345,27 @@ const AdminStaff: React.FC = () => {
     setStaffToDelete(null);
   };
 
+  const handleViewClick = (staff: StaffUser) => {
+    setStaffToView(staff);
+  };
+
   const handleEditClick = (staff: StaffUser) => {
     setStaffToEdit(staff);
     setEditFormData({
-      username: staff.username,
       email: staff.email,
       fullName: staff.fullName || '',
       phoneNumber: staff.phoneNumber || '',
       password: '',
       confirmPassword: '',
     });
+
+    // Load existing permissions from staff object
+    const loaded = {} as Record<ModuleName, PermissionLevel | null>;
+    MODULE_NAMES.forEach((m) => {
+      const raw = staff.permissions?.[m];
+      loaded[m] = raw != null ? (raw as PermissionLevel) : null;
+    });
+    setEditPermissions(loaded);
     setEditFormErrors({});
   };
 
@@ -283,13 +377,16 @@ const AdminStaff: React.FC = () => {
     }
   };
 
+  const handleEditPermissionChange = (module: ModuleName, clicked: PermissionLevel | null) => {
+    setEditPermissions((prev) => ({
+      ...prev,
+      [module]: applyPermissionCascade(prev[module], clicked),
+    }));
+  };
+
+
   const validateEditForm = (): boolean => {
     const errors: EditFieldErrors = {};
-    if (!editFormData.username.trim()) {
-      errors.username = 'Username is required';
-    } else if (editFormData.username.length < 3) {
-      errors.username = 'Username must be at least 3 characters';
-    }
     if (!editFormData.email.trim()) {
       errors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editFormData.email)) {
@@ -298,12 +395,15 @@ const AdminStaff: React.FC = () => {
     if (editFormData.phoneNumber && !/^[0-9]{7,15}$/.test(editFormData.phoneNumber)) {
       errors.phoneNumber = 'Phone number must be 7-15 digits';
     }
-    // Password is optional on edit — only validate if admin is actually changing it
     if (editFormData.password || editFormData.confirmPassword) {
       if (editFormData.password.length < 8) {
         errors.password = 'Password must be at least 8 characters';
-      } else if (!/[A-Z]/.test(editFormData.password) || !/[a-z]/.test(editFormData.password) ||
-        !/[0-9]/.test(editFormData.password) || !/[^A-Za-z0-9]/.test(editFormData.password)) {
+      } else if (
+        !/[A-Z]/.test(editFormData.password) ||
+        !/[a-z]/.test(editFormData.password) ||
+        !/[0-9]/.test(editFormData.password) ||
+        !/[^A-Za-z0-9]/.test(editFormData.password)
+      ) {
         errors.password = 'Must include upper, lower, number, and special character';
       }
       if (editFormData.password !== editFormData.confirmPassword) {
@@ -321,34 +421,29 @@ const AdminStaff: React.FC = () => {
 
   const handleSaveEdit = async () => {
     if (!staffToEdit || !validateEditForm()) return;
-
     setIsSavingEdit(true);
     try {
+      // Build permissions payload
+      const permsPayload: StaffPermissions = {};
+      MODULE_NAMES.forEach((m) => {
+        if (editPermissions[m] !== null) {
+          permsPayload[m] = editPermissions[m] as PermissionLevel;
+        }
+      });
+
       const payload: Parameters<typeof staffApi.updateStaff>[1] = {
-        username: editFormData.username.trim(),
         email: editFormData.email.trim().toLowerCase(),
         fullName: editFormData.fullName.trim() || undefined,
         phoneNumber: editFormData.phoneNumber.trim() || undefined,
+        permissions: permsPayload,
       };
-      // Only send password fields if the admin actually typed a new password
       if (editFormData.password) {
         payload.password = editFormData.password;
         payload.confirmPassword = editFormData.confirmPassword;
       }
-
       const response = await staffApi.updateStaff(staffToEdit.id, payload);
-
       if (response.success) {
         toast.success('Staff user updated successfully');
-        // Merge the saved values straight from the response so re-opening the edit
-        // dialog immediately reflects them, rather than depending on a second
-        // unawaited fetch landing before the user clicks Edit again.
-        if (response.data) {
-          const saved = response.data;
-          setStaffList((prev) =>
-            prev.map((s) => (s.id === staffToEdit.id ? { ...s, ...saved } : s))
-          );
-        }
         setStaffToEdit(null);
         fetchStaffList();
       } else if ('statusCode' in response && response.statusCode === 409) {
@@ -356,7 +451,7 @@ const AdminStaff: React.FC = () => {
       } else if (Array.isArray(response.errors)) {
         const newErrors: EditFieldErrors = {};
         const allowedFields: (keyof typeof editFormData)[] = [
-          'username', 'email', 'fullName', 'phoneNumber', 'password', 'confirmPassword',
+          'email', 'fullName', 'phoneNumber', 'password', 'confirmPassword',
         ];
         response.errors.forEach((err) => {
           if (err.field && allowedFields.includes(err.field as keyof typeof editFormData)) {
@@ -375,148 +470,85 @@ const AdminStaff: React.FC = () => {
     }
   };
 
+  /** Renders the permission pills for a module row (used in create & edit forms) */
+  const renderPermissionPills = (
+    module: ModuleName,
+    selectedLevel: PermissionLevel | null,
+    onChange: (module: ModuleName, tier: PermissionLevel | null) => void,
+  ) => (
+    <>
+      {PERMISSION_TIERS.map((tier) => {
+        const isExact = selectedLevel === tier.value;
+        const Icon = tier.icon;
+        return (
+          <div key={tier.label} style={{ display: 'flex', justifyContent: 'center' }}>
+            <button
+              type="button"
+              className={`admin-staff__perm-btn ${isExact ? 'active' : ''}`}
+              onClick={() => onChange(module, tier.value)}
+              title={`${MODULE_LABELS[module]}: ${tier.label}`}
+            >
+              <Icon size={16} className="admin-staff__perm-icon" />
+              <span>{tier.label}</span>
+            </button>
+          </div>
+        );
+      })}
+    </>
+  );
+
+  /** Renders the permission grid header row */
+  const renderPermissionHeader = (onSetAll: (level: PermissionLevel | null) => void) => (
+    <div className="admin-staff__perm-row admin-staff__perm-header">
+      <span className="admin-staff__perm-module-name">MODULE</span>
+      <button type="button" className="admin-staff__set-all-btn" onClick={() => onSetAll(null)}>
+        SET ALL NONE
+      </button>
+      <button type="button" className="admin-staff__set-all-btn" onClick={() => onSetAll(PermissionLevel.VIEW)}>
+        SET ALL VIEW
+      </button>
+      <button type="button" className="admin-staff__set-all-btn" onClick={() => onSetAll(PermissionLevel.CREATE_EDIT)}>
+        <span style={{ textAlign: 'center', lineHeight: '1.2' }}>SET ALL<br />CREATE & EDIT</span>
+      </button>
+      <button type="button" className="admin-staff__set-all-btn" onClick={() => onSetAll(PermissionLevel.DELETE)}>
+        SET ALL DELETE
+      </button>
+    </div>
+  );
+
+
+
   return (
     <div className="">
-     
-      <div className="admin-content" style={{display:'flex',height:'100vh'}}>
+      <div className="admin-content" style={{ display: 'flex', height: '100vh' }}>
         <AdminSidebar />
-        
         <main className="admin-main" style={{ minHeight: docketHeight, overflow: 'auto', flex: 1, minWidth: 0 }}>
           <div className="admin-categories__content">
-             <Header
-          title="Staff Management"
-          showSearch
-          onSearch={setSearchTerm}
-        />
+            <Header title="Staff Management" showSearch onSearch={setSearchTerm} />
+
             <div className="admin-staff__header">
               <div className="admin-staff__title-section">
                 <h1 className="admin-staff__title">Staff Management</h1>
                 <p className="admin-staff__subtitle">
-                  Manage staff users and their access to the admin panel
+                  Manage staff users and their module-level permissions
                 </p>
               </div>
               <button
                 className="admin-staff__add-btn"
-                onClick={() => setShowAddForm(!showAddForm)}
+                onClick={() => {
+                  resetAddForm();
+                  setShowAddForm(true);
+                }}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 Add New Staff
               </button>
             </div>
 
-            {showAddForm && (
-              <div className="admin-staff__form-container">
-                <div className="admin-staff__form-header">
-                  <h2>Register New Staff User</h2>
-                  <button
-                    className="admin-staff__close-btn"
-                    onClick={() => setShowAddForm(false)}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </button>
-                </div>
-                
-                <form onSubmit={handleSubmit} className="admin-staff__form">
-                  <div className="admin-staff__form-row">
-                    <div className="admin-staff__form-group">
-                      <label htmlFor="username" className="admin-staff__label">
-                        Username *
-                      </label>
-                      <input
-                        type="text"
-                        id="username"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleInputChange}
-                        className={`admin-staff__input ${formErrors.username ? 'admin-staff__input--error' : ''}`}
-                        placeholder="Enter username"
-                      />
-                      {formErrors.username && (
-                        <span className="admin-staff__error">{formErrors.username}</span>
-                      )}
-                    </div>
 
-                    <div className="admin-staff__form-group">
-                      <label htmlFor="email" className="admin-staff__label">
-                        Email *
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className={`admin-staff__input ${formErrors.email ? 'admin-staff__input--error' : ''}`}
-                        placeholder="Enter email address"
-                      />
-                      {formErrors.email && (
-                        <span className="admin-staff__error">{formErrors.email}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="admin-staff__form-row">
-                    <div className="admin-staff__form-group">
-                      <label htmlFor="password" className="admin-staff__label">
-                        Password *
-                      </label>
-                      <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className={`admin-staff__input ${formErrors.password ? 'admin-staff__input--error' : ''}`}
-                        placeholder="Enter password"
-                      />
-                      {formErrors.password && (
-                        <span className="admin-staff__error">{formErrors.password}</span>
-                      )}
-                    </div>
-
-                    <div className="admin-staff__form-group">
-                      <label htmlFor="confirmPassword" className="admin-staff__label">
-                        Confirm Password *
-                      </label>
-                      <input
-                        type="password"
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        className={`admin-staff__input ${formErrors.confirmPassword ? 'admin-staff__input--error' : ''}`}
-                        placeholder="Confirm password"
-                      />
-                      {formErrors.confirmPassword && (
-                        <span className="admin-staff__error">{formErrors.confirmPassword}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="admin-staff__form-actions">
-                    <button
-                      type="button"
-                      className="admin-staff__btn admin-staff__btn--secondary"
-                      onClick={() => setShowAddForm(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="admin-staff__btn admin-staff__btn--primary"
-                      disabled={submitting}
-                    >
-                      {submitting ? 'Registering...' : 'Register Staff'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
+            {/* ──────── Staff List ──────── */}
             <div className="admin-staff__list">
               <div className="admin-staff__list-header">
                 <h3>Staff Users</h3>
@@ -529,7 +561,7 @@ const AdminStaff: React.FC = () => {
                     <thead>
                       <tr>
                         <th>ID</th>
-                        <th>Username</th>
+                        <th>Full Name</th>
                         <th>Email</th>
                         <th>Created At</th>
                         <th>Actions</th>
@@ -539,22 +571,27 @@ const AdminStaff: React.FC = () => {
                       {filteredStaffList.map((staff) => (
                         <tr key={staff.id}>
                           <td>{staff.id}</td>
-                          <td>{staff.username}</td>
+                          <td>{staff.fullName || '—'}</td>
                           <td>{staff.email}</td>
                           <td>
-                            {staff.createdAt 
+                            {staff.createdAt
                               ? new Date(staff.createdAt).toLocaleDateString()
-                              : 'N/A'
-                            }
+                              : 'N/A'}
                           </td>
                           <td>
+                            <button
+                              className="admin-staff__action-btn admin-staff__action-btn--view"
+                              onClick={() => handleViewClick(staff)}
+                            >
+                              View
+                            </button>
                             <button
                               className="admin-staff__action-btn admin-staff__action-btn--edit"
                               onClick={() => handleEditClick(staff)}
                             >
                               Edit
                             </button>
-                            <button 
+                            <button
                               className="admin-staff__action-btn admin-staff__action-btn--delete"
                               onClick={() => handleDeleteClick(staff)}
                             >
@@ -570,12 +607,16 @@ const AdminStaff: React.FC = () => {
                 <div className="admin-staff__empty">
                   <div className="admin-staff__empty-icon">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
                   <h4>{staffList.length === 0 ? 'No Staff Users' : 'No Results Found'}</h4>
-                  <p>{staffList.length === 0 ? 'No staff users have been registered yet. Click "Add New Staff" to get started.' : 'No staff users match your current search criteria. Try adjusting your search terms.'}</p>
+                  <p>
+                    {staffList.length === 0
+                      ? 'No staff users have been registered yet. Click "Add New Staff" to get started.'
+                      : 'No staff users match your current search criteria. Try adjusting your search terms.'}
+                  </p>
                 </div>
               )}
             </div>
@@ -583,25 +624,154 @@ const AdminStaff: React.FC = () => {
         </main>
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {/* ──────── Create Staff Modal ──────── */}
+      {showAddForm && (
+        <div className="admin-staff__dialog-overlay" onClick={() => { setShowAddForm(false); resetAddForm(); }}>
+          <div className="admin-staff__dialog admin-staff__dialog--wide" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-staff__dialog-titlebar">
+              <h3>Register New Staff User</h3>
+              <button
+                className="admin-staff__close-btn"
+                onClick={() => { setShowAddForm(false); resetAddForm(); }}
+                disabled={submitting}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="admin-staff__form">
+
+              {/* ── Basic Info ── */}
+              <div className="admin-staff__section-title">Account Details</div>
+
+              <div className="admin-staff__form-row">
+                <div className="admin-staff__form-group">
+                  <label htmlFor="fullName" className="admin-staff__label">Full Name*</label>
+                  <input
+                    type="text"
+                    id="fullName"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleInputChange}
+                    className="admin-staff__input"
+                    placeholder="Enter full name"
+                  />
+                </div>
+
+                <div className="admin-staff__form-group">
+                  <label htmlFor="phoneNumber" className="admin-staff__label">Phone Number *</label>
+                  <input
+                    type="tel"
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleInputChange}
+                    className={`admin-staff__input ${formErrors.phoneNumber ? 'admin-staff__input--error' : ''}`}
+                    placeholder="10-digit phone number"
+                    maxLength={10}
+                  />
+                  {formErrors.phoneNumber && <span className="admin-staff__error">{formErrors.phoneNumber}</span>}
+                </div>
+              </div>
+
+              <div className="admin-staff__form-row">
+                <div className="admin-staff__form-group">
+                  <label htmlFor="email" className="admin-staff__label">Email *</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    autoComplete="off"
+                    className={`admin-staff__input ${formErrors.email ? 'admin-staff__input--error' : ''}`}
+                    placeholder="Enter email address"
+                  />
+                  {formErrors.email && <span className="admin-staff__error">{formErrors.email}</span>}
+                </div>
+
+                <div className="admin-staff__form-group">
+                  <label htmlFor="password" className="admin-staff__label">Password *</label>
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    autoComplete="new-password"
+                    className={`admin-staff__input ${formErrors.password ? 'admin-staff__input--error' : ''}`}
+                    placeholder="Enter password (min. 8 chars)"
+                  />
+                  {formErrors.password && <span className="admin-staff__error">{formErrors.password}</span>}
+                </div>
+              </div>
+
+              {/* ── Permissions ── */}
+              <div className="admin-staff__section-title" style={{ marginTop: '1.5rem' }}>
+                Module Permissions
+                <span className="admin-staff__section-hint">Select what each staff member can do per module</span>
+              </div>
+
+              <div className="admin-staff__permissions-grid">
+                {renderPermissionHeader((level) => {
+                  const updated = {} as Record<ModuleName, PermissionLevel | null>;
+                  MODULE_NAMES.forEach((m) => { updated[m] = level; });
+                  setPermissions(updated);
+                })}
+                {MODULE_NAMES.map((module) => {
+                  const Icon = MODULE_ICONS[module];
+                  return (
+                    <div key={module} className="admin-staff__perm-row">
+                      <span className="admin-staff__perm-module-name">
+                        <div className="admin-staff__perm-module-icon-wrapper" style={{ background: '#f3f4f6', color: '#4b5563' }}>
+                          <Icon size={18} />
+                        </div>
+                        {MODULE_LABELS[module]}
+                      </span>
+                      {renderPermissionPills(module, permissions[module], handlePermissionChange)}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="admin-staff__dialog-actions">
+                <button
+                  type="button"
+                  className="admin-staff__btn admin-staff__btn--secondary"
+                  onClick={() => { setShowAddForm(false); resetAddForm(); }}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="admin-staff__btn admin-staff__btn--primary"
+                  disabled={submitting}
+                >
+                  {submitting ? 'Registering...' : 'Register Staff'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ──────── Delete Confirmation Dialog ──────── */}
       {staffToDelete && (
         <div className="admin-staff__dialog-overlay">
           <div className="admin-staff__dialog">
             <h3>Delete Staff User</h3>
-            <p>Are you sure you want to delete the staff user <strong>{staffToDelete.username}</strong> ({staffToDelete.email})? This action cannot be undone.</p>
+            <p>
+              Are you sure you want to delete <strong>{staffToDelete.fullName || staffToDelete.email}</strong>?
+              This action cannot be undone.
+            </p>
             <div className="admin-staff__dialog-actions">
-              <button 
-                className="admin-staff__btn admin-staff__btn--secondary"
-                onClick={handleCancelDelete}
-                disabled={isDeleting}
-              >
+              <button className="admin-staff__btn admin-staff__btn--secondary" onClick={handleCancelDelete} disabled={isDeleting}>
                 Cancel
               </button>
-              <button 
-                className="admin-staff__btn admin-staff__btn--danger"
-                onClick={handleConfirmDelete}
-                disabled={isDeleting}
-              >
+              <button className="admin-staff__btn admin-staff__btn--danger" onClick={handleConfirmDelete} disabled={isDeleting}>
                 {isDeleting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
@@ -609,124 +779,211 @@ const AdminStaff: React.FC = () => {
         </div>
       )}
 
-      {/* Edit Staff Dialog */}
+      {/* ──────── View Staff Dialog ──────── */}
+      {staffToView && (
+        <div className="admin-staff__dialog-overlay" onClick={() => setStaffToView(null)}>
+          <div className="admin-staff__dialog admin-staff__dialog--wide" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-staff__dialog-titlebar">
+              <h3>Staff Details</h3>
+              <button className="admin-staff__close-btn" onClick={() => setStaffToView(null)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="admin-staff__view-grid">
+              <div className="admin-staff__view-field">
+                <span className="admin-staff__view-label">Full Name</span>
+                <span className="admin-staff__view-value">{staffToView.fullName || '—'}</span>
+              </div>
+              <div className="admin-staff__view-field">
+                <span className="admin-staff__view-label">Email</span>
+                <span className="admin-staff__view-value">{staffToView.email}</span>
+              </div>
+              <div className="admin-staff__view-field">
+                <span className="admin-staff__view-label">Phone</span>
+                <span className="admin-staff__view-value">{staffToView.phoneNumber || '—'}</span>
+              </div>
+              <div className="admin-staff__view-field">
+                <span className="admin-staff__view-label">Created At</span>
+                <span className="admin-staff__view-value">
+                  {staffToView.createdAt ? new Date(staffToView.createdAt).toLocaleString() : 'N/A'}
+                </span>
+              </div>
+            </div>
+
+            <div className="admin-staff__section-title" style={{ marginTop: '1.25rem' }}>
+              Module Permissions
+            </div>
+
+            <div className="admin-staff__permissions-grid admin-staff__permissions-grid--readonly">
+              <div className="admin-staff__perm-row admin-staff__perm-header">
+                <span className="admin-staff__perm-module-name">MODULE</span>
+                <span className="admin-staff__set-all-btn" style={{ cursor: 'default' }}>NONE</span>
+                <span className="admin-staff__set-all-btn" style={{ cursor: 'default' }}>VIEW</span>
+                <span className="admin-staff__set-all-btn" style={{ cursor: 'default' }}>CREATE & EDIT</span>
+                <span className="admin-staff__set-all-btn" style={{ cursor: 'default' }}>DELETE</span>
+              </div>
+              {MODULE_NAMES.map((module) => {
+                const level = staffToView.permissions?.[module] as PermissionLevel | undefined;
+                const Icon = MODULE_ICONS[module];
+                return (
+                  <div key={module} className="admin-staff__perm-row">
+                    <span className="admin-staff__perm-module-name">
+                      <div className="admin-staff__perm-module-icon-wrapper" style={{ background: '#f3f4f6', color: '#4b5563' }}>
+                        <Icon size={18} />
+                      </div>
+                      {MODULE_LABELS[module]}
+                    </span>
+                    {PERMISSION_TIERS.map((tier) => {
+                      const isExact = (level == null && tier.value === null) || level === tier.value;
+                      const TierIcon = tier.icon;
+                      return (
+                        <div key={tier.label} style={{ display: 'flex', justifyContent: 'center' }}>
+                          <div className={`admin-staff__perm-btn ${isExact ? 'active' : ''}`} style={{ opacity: isExact ? 1 : 0.4 }}>
+                            <TierIcon size={16} className="admin-staff__perm-icon" />
+                            <span>{tier.label}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="admin-staff__dialog-actions" style={{ marginTop: '1.25rem' }}>
+              <button className="admin-staff__btn admin-staff__btn--secondary" onClick={() => setStaffToView(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ──────── Edit Staff Dialog ──────── */}
       {staffToEdit && (
         <div className="admin-staff__dialog-overlay">
-          <div className="admin-staff__dialog">
-            <h3>Edit Staff User</h3>
-            <div className="admin-staff__form-group">
-              <label htmlFor="editUsername" className="admin-staff__label">
-                Username *
-              </label>
-              <input
-                type="text"
-                id="editUsername"
-                name="username"
-                value={editFormData.username}
-                onChange={handleEditInputChange}
-                className={`admin-staff__input ${editFormErrors.username ? 'admin-staff__input--error' : ''}`}
-              />
-              {editFormErrors.username && (
-                <span className="admin-staff__error">{editFormErrors.username}</span>
-              )}
+          <div className="admin-staff__dialog admin-staff__dialog--wide">
+            <div className="admin-staff__dialog-titlebar">
+              <h3>Edit Staff User</h3>
+              <button className="admin-staff__close-btn" onClick={handleCancelEdit} disabled={isSavingEdit}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
             </div>
-            <div className="admin-staff__form-group">
-              <label htmlFor="editEmail" className="admin-staff__label">
-                Email *
-              </label>
-              <input
-                type="email"
-                id="editEmail"
-                name="email"
-                value={editFormData.email}
-                onChange={handleEditInputChange}
-                className={`admin-staff__input ${editFormErrors.email ? 'admin-staff__input--error' : ''}`}
-              />
-              {editFormErrors.email && (
-                <span className="admin-staff__error">{editFormErrors.email}</span>
-              )}
-            </div>
-            <div className="admin-staff__form-group">
-              <label htmlFor="editFullName" className="admin-staff__label">
-                Full Name
-              </label>
-              <input
-                type="text"
-                id="editFullName"
-                name="fullName"
-                value={editFormData.fullName}
-                onChange={handleEditInputChange}
-                className={`admin-staff__input ${editFormErrors.fullName ? 'admin-staff__input--error' : ''}`}
-              />
-              {editFormErrors.fullName && (
-                <span className="admin-staff__error">{editFormErrors.fullName}</span>
-              )}
-            </div>
-            <div className="admin-staff__form-group">
-              <label htmlFor="editPhoneNumber" className="admin-staff__label">
-                Phone Number
-              </label>
-              <input
-                type="text"
-                id="editPhoneNumber"
-                name="phoneNumber"
-                value={editFormData.phoneNumber}
-                onChange={handleEditInputChange}
-                className={`admin-staff__input ${editFormErrors.phoneNumber ? 'admin-staff__input--error' : ''}`}
-                placeholder="Digits only"
-              />
-              {editFormErrors.phoneNumber && (
-                <span className="admin-staff__error">{editFormErrors.phoneNumber}</span>
-              )}
-            </div>
+
+            {/* Profile fields */}
             <div className="admin-staff__form-row">
               <div className="admin-staff__form-group">
-                <label htmlFor="editPassword" className="admin-staff__label">
-                  New Password
-                </label>
+                <label htmlFor="editFullName" className="admin-staff__label">Full Name</label>
+                <input
+                  type="text"
+                  id="editFullName"
+                  name="fullName"
+                  value={editFormData.fullName}
+                  onChange={handleEditInputChange}
+                  className={`admin-staff__input ${editFormErrors.fullName ? 'admin-staff__input--error' : ''}`}
+                />
+                {editFormErrors.fullName && <span className="admin-staff__error">{editFormErrors.fullName}</span>}
+              </div>
+
+              <div className="admin-staff__form-group">
+                <label htmlFor="editEmail" className="admin-staff__label">Email *</label>
+                <input
+                  type="email"
+                  id="editEmail"
+                  name="email"
+                  value={editFormData.email}
+                  onChange={handleEditInputChange}
+                  autoComplete="off"
+                  className={`admin-staff__input ${editFormErrors.email ? 'admin-staff__input--error' : ''}`}
+                />
+                {editFormErrors.email && <span className="admin-staff__error">{editFormErrors.email}</span>}
+              </div>
+            </div>
+
+            <div className="admin-staff__form-row">
+              <div className="admin-staff__form-group">
+                <label htmlFor="editPhoneNumber" className="admin-staff__label">Phone Number</label>
+                <input
+                  type="text"
+                  id="editPhoneNumber"
+                  name="phoneNumber"
+                  value={editFormData.phoneNumber}
+                  onChange={handleEditInputChange}
+                  className={`admin-staff__input ${editFormErrors.phoneNumber ? 'admin-staff__input--error' : ''}`}
+                  placeholder="Digits only"
+                />
+                {editFormErrors.phoneNumber && <span className="admin-staff__error">{editFormErrors.phoneNumber}</span>}
+              </div>
+            </div>
+
+            <div className="admin-staff__form-row">
+              <div className="admin-staff__form-group">
+                <label htmlFor="editPassword" className="admin-staff__label">New Password</label>
                 <input
                   type="password"
                   id="editPassword"
                   name="password"
                   value={editFormData.password}
                   onChange={handleEditInputChange}
+                  autoComplete="new-password"
                   className={`admin-staff__input ${editFormErrors.password ? 'admin-staff__input--error' : ''}`}
-                  placeholder="Leave blank to keep current password"
+                  placeholder="Leave blank to keep current"
                 />
-                {editFormErrors.password && (
-                  <span className="admin-staff__error">{editFormErrors.password}</span>
-                )}
+                {editFormErrors.password && <span className="admin-staff__error">{editFormErrors.password}</span>}
               </div>
               <div className="admin-staff__form-group">
-                <label htmlFor="editConfirmPassword" className="admin-staff__label">
-                  Confirm New Password
-                </label>
+                <label htmlFor="editConfirmPassword" className="admin-staff__label">Confirm New Password</label>
                 <input
                   type="password"
                   id="editConfirmPassword"
                   name="confirmPassword"
                   value={editFormData.confirmPassword}
                   onChange={handleEditInputChange}
+                  autoComplete="new-password"
                   className={`admin-staff__input ${editFormErrors.confirmPassword ? 'admin-staff__input--error' : ''}`}
                 />
-                {editFormErrors.confirmPassword && (
-                  <span className="admin-staff__error">{editFormErrors.confirmPassword}</span>
-                )}
+                {editFormErrors.confirmPassword && <span className="admin-staff__error">{editFormErrors.confirmPassword}</span>}
               </div>
             </div>
+
+            {/* Permissions */}
+            <div className="admin-staff__section-title" style={{ marginTop: '1.25rem' }}>
+              Module Permissions
+              <span className="admin-staff__section-hint">Click a pill to set permission; implied tiers are also highlighted</span>
+            </div>
+
+            <div className="admin-staff__permissions-grid">
+              {renderPermissionHeader((level) => {
+                const updated = {} as Record<ModuleName, PermissionLevel | null>;
+                MODULE_NAMES.forEach((m) => { updated[m] = level; });
+                setEditPermissions(updated);
+              })}
+              {MODULE_NAMES.map((module) => {
+                const Icon = MODULE_ICONS[module];
+                return (
+                  <div key={module} className="admin-staff__perm-row">
+                    <span className="admin-staff__perm-module-name">
+                      <div className="admin-staff__perm-module-icon-wrapper" style={{ background: '#f3f4f6', color: '#4b5563' }}>
+                        <Icon size={18} />
+                      </div>
+                      {MODULE_LABELS[module]}
+                    </span>
+                    {renderPermissionPills(module, editPermissions[module], handleEditPermissionChange)}
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="admin-staff__dialog-actions">
-              <button
-                className="admin-staff__btn admin-staff__btn--secondary"
-                onClick={handleCancelEdit}
-                disabled={isSavingEdit}
-              >
+              <button className="admin-staff__btn admin-staff__btn--secondary" onClick={handleCancelEdit} disabled={isSavingEdit}>
                 Cancel
               </button>
-              <button
-                className="admin-staff__btn admin-staff__btn--primary"
-                onClick={handleSaveEdit}
-                disabled={isSavingEdit}
-              >
+              <button className="admin-staff__btn admin-staff__btn--primary" onClick={handleSaveEdit} disabled={isSavingEdit}>
                 {isSavingEdit ? 'Saving...' : 'Save Changes'}
               </button>
             </div>

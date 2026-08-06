@@ -2,31 +2,46 @@
 
 import axiosInstance from './axiosInstance';
 
+// PermissionLevel mirrors the backend enum
+export enum PermissionLevel {
+  VIEW = 1,
+  CREATE_EDIT = 2,
+  DELETE = 3,
+}
+
+// All available modules a staff member can have permissions for
+export type ModuleName = 'arrangement' | 'banner' | 'catalog' | 'category' | 'customer' | 'deal' | 'delivery' | 'order' | 'product' | 'promo' | 'vendor';
+
+export const MODULE_NAMES: ModuleName[] = ['arrangement', 'banner', 'catalog', 'category', 'customer', 'deal', 'delivery', 'order', 'product', 'promo', 'vendor'];
+
+export type StaffPermissions = Partial<Record<ModuleName, PermissionLevel>>;
+
 // Types
 export interface StaffUser {
   id: number;
-  username: string;
   email: string;
   fullName?: string;
   phoneNumber?: string;
   role?: string;
   createdAt?: string;
+  permissions?: Record<string, number>;
 }
 
 export interface StaffRegistrationData {
-  username: string;
   email: string;
   password: string;
-  confirmPassword: string;
+  phoneNumber: string;
+  fullName?: string;
+  permissions: StaffPermissions;
 }
 
 export interface StaffUpdateData {
-  username?: string;
   email?: string;
   fullName?: string;
   phoneNumber?: string;
   password?: string;
   confirmPassword?: string;
+  permissions?: StaffPermissions;
 }
 
 // Generic API response matching our backend style
@@ -45,12 +60,12 @@ const staffApi = {
   // Register a new staff user
   async registerStaff(staffData: StaffRegistrationData): Promise<ApiResponse<{ user: StaffUser }>> {
     try {
-      // Ensure all fields are properly formatted
       const requestData = {
-        username: staffData.username.trim(),
         email: staffData.email.trim().toLowerCase(),
         password: staffData.password,
-        confirmPassword: staffData.confirmPassword
+        phoneNumber: staffData.phoneNumber.trim(),
+        fullName: staffData.fullName?.trim() || undefined,
+        permissions: staffData.permissions,
       };
       
       const response = await axiosInstance.post('/api/auth/signup/staff', requestData, {
@@ -60,8 +75,6 @@ const staffApi = {
         },
         validateStatus: (status) => status < 500 // do not throw for < 500
       });
-      
-      //'API Response:', response.data);
       
       // Successful response (201 Created)
       if (response.status === 201) {
@@ -79,20 +92,7 @@ const staffApi = {
       };
       
     } catch (error: any) {
-      console.error('Unexpected error in registerStaff:', {
-        name: error.name,
-        message: error.message,
-        response: error.response ? {
-          status: error.response.status,
-          data: error.response.data,
-          headers: error.response.headers
-        } : 'No response',
-        config: {
-          url: error.config?.url,
-          method: error.config?.method,
-          data: error.config?.data
-        }
-      });
+      console.error('Unexpected error in registerStaff:', error);
       return {
         success: false,
         message: error.response?.data?.message || error.message || 'Network error',
@@ -101,29 +101,18 @@ const staffApi = {
     }
   },
   
-  // Get all staff users
+  // Get all staff users (includes permissions)
   async getStaffList(): Promise<ApiResponse<StaffUser[]>> {
     try {
-      //'Fetching staff list...');
       const response = await axiosInstance.get('/api/auth/staff');
-      //'Staff list response:', response.data);
-      // API documentation shows { success: true, data: StaffUser[] }
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching staff list:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message,
-        config: error.config
-      });
+      console.error('Error fetching staff list:', error);
       
-      // Return empty array if endpoint doesn't exist yet or returns 404
       if (error.response?.status === 404) {
-        //'Staff endpoint not found, returning empty list');
         return { success: true, data: [] };
       }
       
-      // Return error response if available
       if (error.response?.data) {
         return {
           success: false,
@@ -132,7 +121,6 @@ const staffApi = {
         };
       }
       
-      // Return generic error
       return {
         success: false,
         message: error.message || 'Failed to fetch staff list'
@@ -140,7 +128,31 @@ const staffApi = {
     }
   },
 
-  // Update a staff user's username/email
+  // Get permissions for a specific staff user
+  async getStaffPermissions(id: number): Promise<ApiResponse<Record<string, number>>> {
+    try {
+      const response = await axiosInstance.get(`/api/auth/staff/${id}/permissions`, {
+        validateStatus: (status) => status < 500,
+      });
+      if (response.status === 200) {
+        return { success: true, data: response.data.data };
+      }
+      return {
+        success: false,
+        ...(typeof response.data === 'object' ? response.data : { message: String(response.data) }),
+        statusCode: response.status,
+      };
+    } catch (error: any) {
+      console.error('Error fetching staff permissions:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to fetch staff permissions',
+        statusCode: error.response?.status,
+      };
+    }
+  },
+
+  // Update a staff user's profile and/or permissions
   async updateStaff(id: number, data: StaffUpdateData): Promise<ApiResponse<StaffUser>> {
     try {
       const response = await axiosInstance.put(`/api/auth/staff/${id}`, data, {

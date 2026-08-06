@@ -6,6 +6,7 @@ import "../Styles/AdminBanner.css";
 import DeleteModal from "../Components/Modal/DeleteModal";
 import { API_BASE_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
+import { usePermission } from "../hooks/usePermission";
 import Header from "../Components/Header";
 import toast from "react-hot-toast";
 
@@ -424,6 +425,7 @@ const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 const AdminBannerWithTabs = () => {
   const { token, isAuthenticated } = useAuth();
+  const { can } = usePermission();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -790,9 +792,11 @@ const AdminBannerWithTabs = () => {
                 <h1 className="admin-banner__title">Ad Banner Management</h1>
                 <p className="admin-banner__description">Create and manage promotional banners</p>
               </div>
-              <button className="admin-banner__create-button" onClick={handleCreateBanner}>
-                <span className="admin-banner__create-icon">+</span> Create New Banner
-              </button>
+              {can("banner", "create_edit") && (
+                <button className="admin-banner__create-button" onClick={handleCreateBanner}>
+                  <span className="admin-banner__create-icon">+</span> Create New Banner
+                </button>
+              )}
             </div>
 
             <div className="admin-banner__tabs">
@@ -872,20 +876,24 @@ const AdminBannerWithTabs = () => {
                         <td>{banner.createdBy}</td>
                         <td>
                           <div className="admin-banner__actions">
-                            <button
-                              className="admin-banner__action-button admin-banner__action-button--edit"
-                              onClick={() => handleEditBanner(banner.id)}
-                              title="Edit banner"
-                            >
-                              <Edit size={18} />
-                            </button>
-                            <button
-                              className="admin-banner__action-button admin-banner__action-button--delete"
-                              onClick={() => handleDeleteClick(banner)}
-                              title="Delete banner"
-                            >
-                              <X size={18} />
-                            </button>
+                            {can("banner", "create_edit") && (
+                              <button
+                                className="admin-banner__action-button admin-banner__action-button--edit"
+                                onClick={() => handleEditBanner(banner.id)}
+                                title="Edit banner"
+                              >
+                                <Edit size={18} />
+                              </button>
+                            )}
+                            {can("banner", "delete") && (
+                              <button
+                                className="admin-banner__action-button admin-banner__action-button--delete"
+                                onClick={() => handleDeleteClick(banner)}
+                                title="Delete banner"
+                              >
+                                <X size={18} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

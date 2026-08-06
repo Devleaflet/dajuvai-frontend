@@ -20,6 +20,7 @@ export interface UserData {
     provider?: string;
     products?: unknown[];
     profilePicture?: string;
+    permissions?: Record<string, string>;
 }
 
 
@@ -157,6 +158,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                                         : "User"),
                                 isVerified: true,
                                 profilePicture: data.data.profilePicture || parsedUser?.profilePicture,
+                                permissions: data.data.permissions || parsedUser?.permissions,
                             };
                             setUser(updatedUser);
                             localStorage.setItem(

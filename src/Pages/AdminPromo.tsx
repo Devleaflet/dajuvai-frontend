@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { AdminSidebar } from "../Components/AdminSidebar";
 import Header from "../Components/Header";
 import { useAuth } from "../context/AuthContext";
+import { usePermission } from "../hooks/usePermission";
 import { FiEdit2, FiTrash2, FiPlus, FiSearch } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -18,6 +19,7 @@ const PAGE_SIZE = 10;
 
 const AdminPromo: React.FC = () => {
   const { token, isAuthenticated } = useAuth();
+  const { can } = usePermission();
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -292,13 +294,15 @@ const AdminPromo: React.FC = () => {
               Create and manage promotional codes
             </p>
           </div>
-          <button
-            className="admin-promo__add-button"
-            onClick={() => setShowAddModal(true)}
-          >
-            <FiPlus />
-            Add Promo Code
-          </button>
+          {can("promo", "create_edit") && (
+            <button
+              className="admin-promo__add-button"
+              onClick={() => setShowAddModal(true)}
+            >
+              <FiPlus />
+              Add Promo Code
+            </button>
+          )}
         </div>
 
 
@@ -349,16 +353,18 @@ const AdminPromo: React.FC = () => {
                   </td>
                   <td>
                     <div className="admin-promo__actions">
-                                             <button
-                         className="admin-promo__action-button admin-promo__action-button--delete"
-                         onClick={() => {
-                           //("Delete button clicked for promo:", promo);
-                           setShowDeleteModal({ show: true, promoCode: promo });
-                         }}
-                         title="Delete promo code"
-                       >
-                         <FiTrash2 />
-                       </button>
+                      {can("promo", "delete") && (
+                         <button
+                           className="admin-promo__action-button admin-promo__action-button--delete"
+                           onClick={() => {
+                             //("Delete button clicked for promo:", promo);
+                             setShowDeleteModal({ show: true, promoCode: promo });
+                           }}
+                           title="Delete promo code"
+                         >
+                           <FiTrash2 />
+                         </button>
+                      )}
                     </div>
                   </td>
                 </tr>

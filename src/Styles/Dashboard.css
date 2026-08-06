@@ -196,7 +196,6 @@
   }
 }
 
-
 .payment-warning-banner__cta:hover {
   background: #d97706;
 }
@@ -422,7 +421,11 @@
 .sales-chart {
   height: 100%;
   width: 100%;
-  background: linear-gradient(to bottom, rgba(219, 234, 254, 0.2), rgba(219, 234, 254, 0.8));
+  background: linear-gradient(
+    to bottom,
+    rgba(219, 234, 254, 0.2),
+    rgba(219, 234, 254, 0.8)
+  );
   border-radius: 8px;
 }
 
@@ -516,7 +519,7 @@
 }
 
 .legend-item__color--revenue {
-  background-color: #F97316;
+  background-color: #f97316;
 }
 
 .legend-item__color--order {
@@ -528,7 +531,7 @@
 .legend-item__label {
   font-size: 14px;
   font-weight: 500;
-  color: #4B5563;
+  color: #4b5563;
 }
 
 .revenue-analytics__chart-container {
@@ -559,13 +562,13 @@
 
 .revenue-analytics__label {
   font-size: 12px;
-  color: #6B7280;
+  color: #6b7280;
 }
 
 .revenue-analytics__value {
   font-size: 20px;
   font-weight: 700;
-  color: #1F2937;
+  color: #1f2937;
 }
 
 .days-selector {
@@ -573,7 +576,7 @@
   align-items: center;
   gap: 8px;
   padding: 4px 12px;
-  background-color: #F97316;
+  background-color: #f97316;
   color: #ffffff;
   border-radius: 4px;
   font-size: 14px;
@@ -622,7 +625,7 @@
   border: none;
   font-size: 14px;
   font-weight: 500;
-  color: #F97316;
+  color: #f97316;
   cursor: pointer;
   width: 100%;
 }
@@ -663,7 +666,7 @@
 
 .view-more-button {
   padding: 8px 16px;
-  background-color: #F97316;
+  background-color: #f97316;
   color: #ffffff;
   border: none;
   border-radius: 4px;
@@ -738,7 +741,9 @@
   padding: 10px 22px;
   text-align: left;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .dashboard__dropdown-item:hover {
@@ -863,7 +868,7 @@
 
 .view-more-button {
   padding: 8px 16px;
-  background-color: #F97316;
+  background-color: #f97316;
   color: #ffffff;
   border: none;
   border-radius: 4px;
@@ -901,7 +906,10 @@
 .stats-card {
   border: 1px solid #e5e7eb;
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
 }
 
 .stats-card:hover {
@@ -924,17 +932,17 @@
 }
 
 .vendor-dash-container > .dashboard {
-	min-width: 0;
-	background: #f5f7fb;
-	flex: 1 1 auto;
+  min-width: 0;
+  background: #f5f7fb;
+  flex: 1 1 auto;
 }
 
 .vendor-dash-container .dashboard__main {
-	box-sizing: border-box;
-	width: 100%;
-	max-width: none;
-	margin: 0 auto;
-	padding: clamp(1rem, 2.2vw, 2rem) clamp(1rem, 3vw, 2.75rem) 2.5rem;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin: 0 auto;
+  padding: clamp(1rem, 2.2vw, 2rem) clamp(1rem, 3vw, 2.75rem) 2.5rem;
 }
 
 .vendor-dash-container .dashboard__stats {
@@ -970,28 +978,28 @@
 }
 
 .vendor-dash-container .dashboard__two-columns {
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 1rem;
-	margin-top: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 .vendor-dash-container .dashboard__column {
-	min-width: 0;
-	display: flex;
+  min-width: 0;
+  display: flex;
 }
 
 .vendor-dash-container .dashboard-chart-card {
-	box-sizing: border-box;
-	width: 100%;
-	min-width: 0;
-	min-height: 340px;
-	display: flex;
-	flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 340px;
+  display: flex;
+  flex-direction: column;
 }
 
 .vendor-dash-container .dashboard-chart-card > * {
-	width: 100%;
-	min-width: 0;
+  width: 100%;
+  min-width: 0;
 }
 
 .vendor-dash-container .section-card {
@@ -1107,14 +1115,14 @@
     font-size: 1.12rem;
   }
 
-	.vendor-dash-container .section-card {
-		padding: 0.9rem;
-		border-radius: 14px;
-	}
+  .vendor-dash-container .section-card {
+    padding: 0.9rem;
+    border-radius: 14px;
+  }
 
-	.vendor-dash-container .dashboard-chart-card {
-		min-height: 300px;
-	}
+  .vendor-dash-container .dashboard-chart-card {
+    min-height: 300px;
+  }
 
   .vendor-dash-container .revenue-analytics__chart,
   .vendor-dash-container .chart-container {
@@ -1127,5 +1135,152 @@
   .vendor-dash-container * {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+  }
+}
+
+/* Responsive KPI guardrails. Long totals wrap cleanly instead of being
+   clipped when vendor cards share compact tablet/mobile columns. */
+.vendor-dash-container .dashboard__stats,
+.vendor-dash-container .dashboard__stats > * {
+  min-width: 0;
+}
+
+.vendor-dash-container .stats-card {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.vendor-dash-container .stats-card__header,
+.vendor-dash-container .stats-card__content {
+  min-width: 0;
+}
+
+.vendor-dash-container .stats-card__title {
+  font-size: clamp(0.66rem, 0.7vw, 0.72rem);
+  min-width: 0;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.vendor-dash-container .stats-card__value {
+  font-size: clamp(1rem, 1.15vw, 1.35rem);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.15;
+}
+
+.vendor-dash-container .dashboard__title {
+  font-size: clamp(1rem, 1.05vw, 1.15rem);
+}
+
+.vendor-dash-container .section-card h2,
+.vendor-dash-container .section-card h3 {
+  font-size: clamp(0.92rem, 1vw, 1.1rem);
+}
+
+@media (max-width: 1100px) {
+  .vendor-dash-container .dashboard__main {
+    padding-inline: clamp(0.75rem, 2.4vw, 1.5rem);
+  }
+
+  .vendor-dash-container .dashboard__stats {
+    grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .vendor-dash-container .dashboard__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .vendor-dash-container .stats-card {
+    gap: 0.7rem;
+    padding: 0.9rem;
+  }
+
+  .vendor-dash-container .stats-card__icon {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+
+  .vendor-dash-container .stats-card__title {
+    font-size: 0.7rem;
+  }
+
+  .vendor-dash-container .stats-card__value {
+    font-size: clamp(0.95rem, 3.8vw, 1.2rem);
+  }
+}
+
+@media (max-width: 380px) {
+  .vendor-dash-container .dashboard__stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Final zoom-safe KPI scale for vendor dashboard. Keep compact cards readable
+   while allowing every KPI to share wide rows at browser zoom levels. */
+.vendor-dash-container .dashboard__stats {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: clamp(0.55rem, 0.8vw, 0.9rem);
+}
+
+.vendor-dash-container .stats-card {
+  min-height: 92px;
+  padding: clamp(0.7rem, 1vw, 0.95rem);
+  gap: clamp(0.55rem, 0.8vw, 0.8rem);
+}
+
+.vendor-dash-container .stats-card__icon {
+  width: clamp(32px, 2.2vw, 38px);
+  height: clamp(32px, 2.2vw, 38px);
+  flex-basis: clamp(32px, 2.2vw, 38px);
+}
+
+.vendor-dash-container .stats-card__title {
+  font-size: clamp(0.6rem, 0.62vw, 0.68rem);
+}
+
+.vendor-dash-container .stats-card__value {
+  font-size: clamp(0.9rem, 1.02vw, 1.25rem);
+  letter-spacing: -0.025em;
+}
+
+@media (max-width: 1100px) and (min-width: 768px) {
+  .vendor-dash-container .dashboard__stats {
+    grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .vendor-dash-container .dashboard__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vendor-dash-container .stats-card {
+    min-height: 88px;
+    padding: 0.7rem;
+  }
+
+  .vendor-dash-container .stats-card__icon {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+  }
+
+  .vendor-dash-container .stats-card__value {
+    font-size: clamp(0.9rem, 3.4vw, 1.1rem);
+  }
+}
+
+@media (max-width: 380px) {
+  .vendor-dash-container .dashboard__stats {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

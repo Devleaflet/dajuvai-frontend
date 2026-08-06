@@ -3,6 +3,7 @@ import { AdminSidebar } from '../Components/AdminSidebar';
 import Header from '../Components/Header';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
+import { usePermission } from '../hooks/usePermission';
 import { FiPlus, FiEdit2, FiTrash2, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -42,6 +43,7 @@ const PAGE_SIZE = 20;
 
 const AdminCategory: React.FC = () => {
   const { token, isAuthenticated } = useAuth();
+  const { can } = usePermission();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -483,9 +485,11 @@ const AdminCategory: React.FC = () => {
         <Header onSearch={() => {}} showSearch={false} />
         <div className="admin-category__header-row">
           <h1 className="admin-category__title">Category Management</h1>
-          <button className="admin-category__add-btn" onClick={() => setShowAddModal(true)}>
-            <FiPlus style={{ marginRight: 8, verticalAlign: 'middle' }} /> Add Category
-          </button>
+          {can("category", "create_edit") && (
+            <button className="admin-category__add-btn" onClick={() => setShowAddModal(true)}>
+              <FiPlus style={{ marginRight: 8, verticalAlign: 'middle' }} /> Add Category
+            </button>
+          )}
         </div>
         <div className="admin-category__search-row">
           <input
@@ -526,27 +530,33 @@ const AdminCategory: React.FC = () => {
                           </button>
                         </td>
                         <td>
-                          <button
-                            className="admin-category__edit-btn"
-                            title="Edit"
-                            onClick={() => { setShowEditModal({ show: true, category }); setEditCategoryName(category.name); setEditAgeRestricted(Boolean(category.isAgeRestricted)); setEditMinimumAge(category.minimumAge || 18); setEditRestrictionMessage(category.restrictionMessage || ''); }}
-                          >
-                            <FiEdit2 />
-                          </button>
-                          <button
-                            className="admin-category__delete-btn"
-                            title="Delete"
-                            onClick={() => setShowDeleteModal({ show: true, category })}
-                          >
-                            <FiTrash2 />
-                          </button>
-                          <button
-                            className="admin-category__add-sub-btn"
-                            title="Add Subcategory"
-                            onClick={() => setShowSubcategoryModal({ show: true, categoryId: category.id })}
-                          >
-                            <FiPlus />
-                          </button>
+                          {can("category", "create_edit") && (
+                            <button
+                              className="admin-category__edit-btn"
+                              title="Edit"
+                              onClick={() => { setShowEditModal({ show: true, category }); setEditCategoryName(category.name); setEditAgeRestricted(Boolean(category.isAgeRestricted)); setEditMinimumAge(category.minimumAge || 18); setEditRestrictionMessage(category.restrictionMessage || ''); }}
+                            >
+                              <FiEdit2 />
+                            </button>
+                          )}
+                          {can("category", "delete") && (
+                            <button
+                              className="admin-category__delete-btn"
+                              title="Delete"
+                              onClick={() => setShowDeleteModal({ show: true, category })}
+                            >
+                              <FiTrash2 />
+                            </button>
+                          )}
+                          {can("category", "create_edit") && (
+                            <button
+                              className="admin-category__add-sub-btn"
+                              title="Add Subcategory"
+                              onClick={() => setShowSubcategoryModal({ show: true, categoryId: category.id })}
+                            >
+                              <FiPlus />
+                            </button>
+                          )}
                         </td>
                       </tr>
                       {expandedCategories.has(category.id) && category.subcategories?.map((subcategory) => (
@@ -554,25 +564,29 @@ const AdminCategory: React.FC = () => {
                           <td>{subcategory.id}</td>
                           <td colSpan={2}>{subcategory.name}</td>
                           <td>
-                            <button
-                              className="admin-category__edit-btn"
-                              title="Edit"
-                              onClick={() => {
-                                setShowEditSubcategoryModal({ show: true, categoryId: category.id, subcategory });
-                                setEditSubcategoryName(subcategory.name);
-                              }}
-                            >
-                              <FiEdit2 />
-                            </button>
-                            <button
-                              className="admin-category__delete-btn"
-                              title="Delete"
-                              onClick={() => {
-                                setShowDeleteSubcategoryModal({ show: true, categoryId: category.id, subcategory });
-                              }}
-                            >
-                              <FiTrash2 />
-                            </button>
+                            {can("category", "create_edit") && (
+                              <button
+                                className="admin-category__edit-btn"
+                                title="Edit"
+                                onClick={() => {
+                                  setShowEditSubcategoryModal({ show: true, categoryId: category.id, subcategory });
+                                  setEditSubcategoryName(subcategory.name);
+                                }}
+                              >
+                                <FiEdit2 />
+                              </button>
+                            )}
+                            {can("category", "delete") && (
+                              <button
+                                className="admin-category__delete-btn"
+                                title="Delete"
+                                onClick={() => {
+                                  setShowDeleteSubcategoryModal({ show: true, categoryId: category.id, subcategory });
+                                }}
+                              >
+                                <FiTrash2 />
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}
