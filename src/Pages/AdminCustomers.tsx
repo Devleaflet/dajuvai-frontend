@@ -6,6 +6,7 @@ import Header from "../Components/Header";
 import Pagination from "../Components/Pagination";
 import { API_BASE_URL } from "../config";
 import { useAuth } from "../context/AuthContext";
+import { usePermission } from "../hooks/usePermission";
 import "../Styles/AdminOrders.css";
 import "../Styles/AdminCustomers.css";
 
@@ -106,6 +107,7 @@ const timeAgo = (dateStr: string): string => {
 
 const AdminCustomers: React.FC = () => {
   const { token, isAuthenticated } = useAuth();
+  const { can } = usePermission();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -267,6 +269,19 @@ const AdminCustomers: React.FC = () => {
         <div className="admin-orders__content">
           <div className="admin-orders__error">
             Please log in to access user management.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!can("customer", "view")) {
+    return (
+      <div className="admin-orders">
+        <AdminSidebar />
+        <div className="admin-orders__content">
+          <div className="admin-orders__error">
+            You do not have permission to view customers.
           </div>
         </div>
       </div>

@@ -60,6 +60,7 @@ import usePageTracking from "./Hook/usePageTracking";
 import AdminDelivery from "./Pages/AdminDelivery";
 import RiderDelivery from "./Pages/RiderDelivery";
 import SiteGate from "./Components/SiteProtection/PasswordProtectedRoute";
+import { PermissionRoute } from "./hooks/usePermission";
 
 // Admin route guards
 // Allows both admin and staff to access admin area
@@ -89,7 +90,7 @@ const RiderRoute = ({ children }: { children: ReactElement }) => {
 
   if (isLoading) return <div>Loading...</div>;
   if (!isAuthenticated || !user) return <Navigate to="/" replace />;
-  if (user.role !== "rider" && user.role !== "admin" && user.role !== "staff")
+  if (user.role !== "rider" && user.role !== "admin")
     return <Navigate to="/" replace />;
   return children;
 };
@@ -391,7 +392,9 @@ function App() {
             path="/admin-products"
             element={
               <AdminOrStaffRoute>
-                <AdminProduct />
+                <PermissionRoute module="product" permission="view">
+                  <AdminProduct />
+                </PermissionRoute>
               </AdminOrStaffRoute>
             }
           />
@@ -407,7 +410,9 @@ function App() {
             path="/admin-orders"
             element={
               <AdminOrStaffRoute>
-                <OrdersList />
+                <PermissionRoute module="order" permission="view">
+                  <OrdersList />
+                </PermissionRoute>
               </AdminOrStaffRoute>
             }
           />
@@ -415,7 +420,9 @@ function App() {
             path="/admin-customers"
             element={
               <AdminOrStaffRoute>
-                <AdminCustomers />
+                <PermissionRoute module="customer" permission="view">
+                  <AdminCustomers />
+                </PermissionRoute>
               </AdminOrStaffRoute>
             }
           />
@@ -423,7 +430,9 @@ function App() {
             path="/admin-categories"
             element={
               <AdminOrStaffRoute>
-                <AdminCategories />
+                <PermissionRoute module="category" permission="view">
+                  <AdminCategories />
+                </PermissionRoute>
               </AdminOrStaffRoute>
             }
           />
@@ -431,7 +440,9 @@ function App() {
             path="/admin-merchandising"
             element={
               <AdminOrStaffRoute>
-                <AdminMerchandising />
+                <PermissionRoute module="arrangement" permission="view">
+                  <AdminMerchandising />
+                </PermissionRoute>
               </AdminOrStaffRoute>
             }
           />
@@ -439,7 +450,9 @@ function App() {
             path="/admin-vendors"
             element={
               <AdminOrStaffRoute>
-                <AdminVendors />
+                <PermissionRoute module="vendor" permission="view">
+                  <AdminVendors />
+                </PermissionRoute>
               </AdminOrStaffRoute>
             }
           />
@@ -455,7 +468,9 @@ function App() {
             path="/admin-banner"
             element={
               <AdminOrStaffRoute>
-                <AdminBannerWithTabs />
+                <PermissionRoute module="banner" permission="view">
+                  <AdminBannerWithTabs />
+                </PermissionRoute>
               </AdminOrStaffRoute>
             }
           />
@@ -463,7 +478,9 @@ function App() {
             path="/admin-catalog"
             element={
               <AdminOrStaffRoute>
-                <AdminCatalog />
+                <PermissionRoute module="catalog" permission="view">
+                  <AdminCatalog />
+                </PermissionRoute>
               </AdminOrStaffRoute>
             }
           />
@@ -479,7 +496,9 @@ function App() {
             path="/admin-deals"
             element={
               <AdminOrStaffRoute>
-                <DealAdmin />
+                <PermissionRoute module="deal" permission="view">
+                  <DealAdmin />
+                </PermissionRoute>
               </AdminOrStaffRoute>
             }
           />
@@ -487,7 +506,9 @@ function App() {
             path="/admin-promo"
             element={
               <AdminOrStaffRoute>
-                <AdminPromo />
+                <PermissionRoute module="promo" permission="view">
+                  <AdminPromo />
+                </PermissionRoute>
               </AdminOrStaffRoute>
             }
           />
@@ -502,9 +523,9 @@ function App() {
           <Route
             path="/admin/commission"
             element={
-              <AdminOrStaffRoute>
+              <AdminOnlyRoute>
                 <AdminCommission />
-              </AdminOrStaffRoute>
+              </AdminOnlyRoute>
             }
           />
           <Route
@@ -518,17 +539,19 @@ function App() {
           <Route
             path="/admin-delivery"
             element={
-              // <AdminOrStaffRoute>
-              <AdminDelivery />
-              // </AdminOrStaffRoute>
+              <AdminOrStaffRoute>
+                <PermissionRoute module="delivery" permission="view">
+                  <AdminDelivery />
+                </PermissionRoute>
+              </AdminOrStaffRoute>
             }
           />
           <Route
             path="/rider-delivery"
             element={
-              // <RiderRoute>
-              <RiderDelivery />
-              // </RiderRoute>
+              <RiderRoute>
+                <RiderDelivery />
+              </RiderRoute>
             }
           />
 

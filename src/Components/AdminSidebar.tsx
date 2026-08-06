@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../Styles/Sidebar.css";
 import { useAuth } from "../context/AuthContext";
+import { usePermission } from "../hooks/usePermission";
 import { API_BASE_URL } from "../config";
 import logo from "../assets/logo.webp";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
@@ -12,6 +13,7 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
   const [isAvatarOpen, setIsAvatarOpen] = useState(false);
   const avatarDropdownRef = useRef<HTMLDivElement>(null);
   const { user, token, logout } = useAuth();
+  const { can } = usePermission();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -237,77 +239,95 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
             Dashboard
           </NavItem>
 
-          <NavItem
-            to="/admin-catalog"
-            active={location.pathname === "/admin-catalog"}
-            icon={<CatalogIcon />}
-          >
-            Catalog
-          </NavItem>
+          {can("catalog", "view") && (
+            <NavItem
+              to="/admin-catalog"
+              active={location.pathname === "/admin-catalog"}
+              icon={<CatalogIcon />}
+            >
+              Catalog
+            </NavItem>
+          )}
 
-          <NavItem
-            to="/admin-products"
-            active={location.pathname === "/admin-products"}
-            icon={<ProductsIcon />}
-          >
-            Products
-          </NavItem>
+          {can("product", "view") && (
+            <NavItem
+              to="/admin-products"
+              active={location.pathname === "/admin-products"}
+              icon={<ProductsIcon />}
+            >
+              Products
+            </NavItem>
+          )}
 
-          <NavItem
-            to="/admin-categories"
-            active={location.pathname === "/admin-categories"}
-            icon={<CategoriesIcon />}
-          >
-            Categories
-          </NavItem>
+          {can("category", "view") && (
+            <NavItem
+              to="/admin-categories"
+              active={location.pathname === "/admin-categories"}
+              icon={<CategoriesIcon />}
+            >
+              Categories
+            </NavItem>
+          )}
 
-          <NavItem
-            to="/admin-merchandising"
-            active={location.pathname === "/admin-merchandising"}
-            icon={<ArrangementIcon />}
-          >
-            Arrangements
-          </NavItem>
+          {can("arrangement", "view") && (
+            <NavItem
+              to="/admin-merchandising"
+              active={location.pathname === "/admin-merchandising"}
+              icon={<ArrangementIcon />}
+            >
+              Arrangements
+            </NavItem>
+          )}
 
-          <NavItem
-            to="/admin-deals"
-            active={location.pathname === "/admin-deals"}
-            icon={<DealsIcon />}
-          >
-            Deals
-          </NavItem>
+          {can("deal", "view") && (
+            <NavItem
+              to="/admin-deals"
+              active={location.pathname === "/admin-deals"}
+              icon={<DealsIcon />}
+            >
+              Deals
+            </NavItem>
+          )}
 
-          <NavItem
-            to="/admin-promo"
-            active={location.pathname === "/admin-promo"}
-            icon={<PromoIcon />}
-          >
-            Promo Codes
-          </NavItem>
+          {can("promo", "view") && (
+            <NavItem
+              to="/admin-promo"
+              active={location.pathname === "/admin-promo"}
+              icon={<PromoIcon />}
+            >
+              Promo Codes
+            </NavItem>
+          )}
 
-          <NavItem
-            to="/admin-banner"
-            active={location.pathname === "/admin-banner"}
-            icon={<BannerIcon />}
-          >
-            Banners
-          </NavItem>
+          {can("banner", "view") && (
+            <NavItem
+              to="/admin-banner"
+              active={location.pathname === "/admin-banner"}
+              icon={<BannerIcon />}
+            >
+              Banners
+            </NavItem>
+          )}
 
-          <NavItem
-            to="/admin-orders"
-            active={location.pathname === "/admin-orders"}
-            icon={<OrdersIcon />}
-          >
-            Orders
-          </NavItem>
+          {can("order", "view") && (
+            <NavItem
+              to="/admin-orders"
+              active={location.pathname === "/admin-orders"}
+              icon={<OrdersIcon />}
+            >
+              Orders
+            </NavItem>
+          )}
 
-          <NavItem
-            to="/admin-delivery"
-            active={location.pathname === "/admin-delivery"}
-            icon={<DeliveryIcon />}
-          >
-            Delivery
-          </NavItem>
+          {can("delivery", "view") && (
+            <NavItem
+              to="/admin-delivery"
+              active={location.pathname === "/admin-delivery"}
+              icon={<DeliveryIcon />}
+            >
+              Delivery
+            </NavItem>
+          )}
 
           <NavItem
             to="/admin-notifications"
@@ -317,30 +337,36 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
             Notifications
           </NavItem>
 
-          <NavItem
-            to="/admin-customers"
-            active={location.pathname === "/admin-customers"}
-            icon={<CustomersIcon />}
-          >
-            Customers
-          </NavItem>
+          {can("customer", "view") && (
+            <NavItem
+              to="/admin-customers"
+              active={location.pathname === "/admin-customers"}
+              icon={<CustomersIcon />}
+            >
+              Customers
+            </NavItem>
+          )}
 
-          <NavItem
-            to="/admin-vendors"
-            active={location.pathname === "/admin-vendors"}
-            badge={unapprovedCount}
-            icon={<VendorsIcon />}
-          >
-            Vendors
-          </NavItem>
+          {can("vendor", "view") && (
+            <NavItem
+              to="/admin-vendors"
+              active={location.pathname === "/admin-vendors"}
+              badge={unapprovedCount}
+              icon={<VendorsIcon />}
+            >
+              Vendors
+            </NavItem>
+          )}
 
-          <NavItem
-            to="/admin/district"
-            active={location.pathname === "/admin/district"}
-            icon={<DistrictIcon />}
-          >
-            Districts
-          </NavItem>
+          {can("delivery", "view") && (
+            <NavItem
+              to="/admin/district"
+              active={location.pathname === "/admin/district"}
+              icon={<DistrictIcon />}
+            >
+              Districts
+            </NavItem>
+          )}
 
           {user?.role === "admin" && (
             <NavItem
@@ -351,15 +377,17 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
               Staff
             </NavItem>
           )}
-
-          <NavItem
-            to="/admin/commission"
-            active={location.pathname === "/admin/commission"}
-            icon={<CommissionIcon />}
-          >
-            Commission Doc
-          </NavItem>
-
+          
+          {user?.role === "admin" && (
+            <NavItem
+              to="/admin/commission"
+              active={location.pathname === "/admin/commission"}
+              icon={<CommissionIcon />}
+            >
+              Commission Doc
+            </NavItem>
+          )}
+          
           <NavItem
             to="/admin-profile"
             active={location.pathname === "/admin-profile"}

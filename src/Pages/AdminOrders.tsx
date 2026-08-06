@@ -9,6 +9,7 @@ import "../Styles/AdminOrders.css";
 import "../Styles/OrderModals.css";
 import { OrderService } from "../services/orderService";
 import { useAuth } from "../context/AuthContext";
+import { usePermission } from "../hooks/usePermission";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { ORDER_STATUS_OPTIONS as ALL_ORDER_STATUSES } from "../Components/orderStatus";
@@ -56,6 +57,7 @@ interface ModalOrder {
 
 const AdminOrders: React.FC = () => {
   const { logout, token, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { can } = usePermission();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [orders, setOrders] = useState<DisplayOrder[]>([]);
@@ -646,17 +648,19 @@ const AdminOrders: React.FC = () => {
                             <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
                           </svg>
                         </button>
-                        <button
-                          className="admin-orders__action-btn admin-orders__edit-btn"
-                          onClick={() => editOrder(order)}
-                          aria-label="Edit order"
-                          title="Edit order"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </button>
+                        {can("order", "create_edit") && (
+                          <button
+                            className="admin-orders__action-btn admin-orders__edit-btn"
+                            onClick={() => editOrder(order)}
+                            aria-label="Edit order"
+                            title="Edit order"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </button>
+                        )}
                       </td>
                     </tr>
                       );

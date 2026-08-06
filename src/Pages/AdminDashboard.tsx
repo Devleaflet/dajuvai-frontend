@@ -10,6 +10,7 @@ import Skeleton from '../Components/Skeleton/Skeleton';
 import { useAuth } from '../context/AuthContext';
 import '../Styles/AdminDashboard.css';
 import { useDocketHeight } from './../Hook/UseDockerHeight';
+import { usePermission } from '../hooks/usePermission';
 
 const STATS_CACHE_KEY = 'admin_dashboard_stats';
 const REVENUE_CACHE_KEY = 'admin_dashboard_revenue';
@@ -112,7 +113,6 @@ export function AdminDashboard() {
 	const revenueChartRef = useRef<Chart | null>(null);
 	const vendorChartRef = useRef<Chart | null>(null);
 	const topProductsChartRef = useRef<Chart | null>(null);
-
 
 
 	useEffect(() => {

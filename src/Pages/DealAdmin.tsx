@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { AdminSidebar } from "../Components/AdminSidebar";
 import Header from "../Components/Header";
 import { useAuth } from "../context/AuthContext";
+import { usePermission } from "../hooks/usePermission";
 import { FiEdit2, FiTrash2, FiPlus, FiSearch, FiFilter } from "react-icons/fi";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -19,6 +20,7 @@ const PAGE_SIZE = 20;
 
 const DealAdmin: React.FC = () => {
   const { token, isAuthenticated } = useAuth();
+  const { can } = usePermission();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -290,13 +292,15 @@ const DealAdmin: React.FC = () => {
                 Manage your deals and discounts
               </p>
             </div>
-            <button
-              className="deal-admin__add-btn"
-              onClick={() => setShowAddModal(true)}
-            >
-              <FiPlus className="deal-admin__btn-icon" />
-              <span>Add New Deal</span>
-            </button>
+            {can("deal", "create_edit") && (
+              <button
+                className="deal-admin__add-btn"
+                onClick={() => setShowAddModal(true)}
+              >
+                <FiPlus className="deal-admin__btn-icon" />
+                <span>Add New Deal</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -380,30 +384,34 @@ const DealAdmin: React.FC = () => {
                             </td>
                             <td>
                               <div className="deal-admin__actions">
-                                <button
-                                  className="deal-admin__action-btn deal-admin__edit-btn"
-                                  title="Edit Deal"
-                                  onClick={() => {
-                                    setShowEditModal({ show: true, deal });
-                                    setFormData({
-                                      name: deal.name,
-                                      discountPercentage:
-                                        deal.discountPercentage,
-                                      status: deal.status,
-                                    });
-                                  }}
-                                >
-                                  <FiEdit2 />
-                                </button>
-                                <button
-                                  className="deal-admin__action-btn deal-admin__delete-btn"
-                                  title="Delete Deal"
-                                  onClick={() =>
-                                    setShowDeleteModal({ show: true, deal })
-                                  }
-                                >
-                                  <FiTrash2 />
-                                </button>
+                                {can("deal", "create_edit") && (
+                                  <button
+                                    className="deal-admin__action-btn deal-admin__edit-btn"
+                                    title="Edit Deal"
+                                    onClick={() => {
+                                      setShowEditModal({ show: true, deal });
+                                      setFormData({
+                                        name: deal.name,
+                                        discountPercentage:
+                                          deal.discountPercentage,
+                                        status: deal.status,
+                                      });
+                                    }}
+                                  >
+                                    <FiEdit2 />
+                                  </button>
+                                )}
+                                {can("deal", "delete") && (
+                                  <button
+                                    className="deal-admin__action-btn deal-admin__delete-btn"
+                                    title="Delete Deal"
+                                    onClick={() =>
+                                      setShowDeleteModal({ show: true, deal })
+                                    }
+                                  >
+                                    <FiTrash2 />
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>

@@ -15,6 +15,7 @@ import {
 import { AdminSidebar } from "../Components/AdminSidebar";
 import Header from "../Components/Header";
 import AddItemsModal from "../Components/AddItemsModal";
+import { usePermission } from "../hooks/usePermission";
 import {
   fetchPlacementItems,
   addItems as apiAddItems,
@@ -115,6 +116,7 @@ function CategoryGridArrangement({
   onDirtyChange: (dirty: boolean) => void;
 }) {
   const queryClient = useQueryClient();
+  const { can } = usePermission();
   const [state, dispatch] = useReducer(cgReducer, {
     items: [],
     isDirty: false,
@@ -227,13 +229,15 @@ function CategoryGridArrangement({
             Order items as they appear in the homepage slider.
           </p>
         </div>
-        <button
-          type="button"
-          className="merch__add"
-          onClick={() => setShowAddModal(true)}
-        >
-          <Plus size={16} /> Add Items
-        </button>
+        {can("arrangement", "create_edit") && (
+          <button
+            type="button"
+            className="merch__add"
+            onClick={() => setShowAddModal(true)}
+          >
+            <Plus size={16} /> Add Items
+          </button>
+        )}
       </div>
 
       <div className="merch__panel">
@@ -246,57 +250,58 @@ function CategoryGridArrangement({
           <ul className="merch__list">
             {state.items.map((row, index) => (
               <li key={row.itemId} className="merch-row">
-                <div className="merch-row__order">
-                  <button
-                    type="button"
-                    className="merch-icon-btn"
-                    title="Move to top"
-                    disabled={index === 0}
-                    onClick={() =>
-                      dispatch({ type: "MOVE", itemId: row.itemId, to: "top" })
-                    }
-                  >
-                    <ChevronsUp size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    className="merch-icon-btn"
-                    title="Move up"
-                    disabled={index === 0}
-                    onClick={() =>
-                      dispatch({ type: "MOVE", itemId: row.itemId, to: "up" })
-                    }
-                  >
-                    <ChevronUp size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    className="merch-icon-btn"
-                    title="Move down"
-                    disabled={index === state.items.length - 1}
-                    onClick={() =>
-                      dispatch({ type: "MOVE", itemId: row.itemId, to: "down" })
-                    }
-                  >
-                    <ChevronDown size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    className="merch-icon-btn"
-                    title="Move to bottom"
-                    disabled={index === state.items.length - 1}
-                    onClick={() =>
-                      dispatch({
-                        type: "MOVE",
-                        itemId: row.itemId,
-                        to: "bottom",
-                      })
-                    }
-                  >
-                    <ChevronsDown size={16} />
-                  </button>
-                </div>
-
+                {can("arrangement","create_edit") && (
+                  <div className="merch-row__order">
+                    <button
+                      type="button"
+                      className="merch-icon-btn"
+                      title="Move to top"
+                      disabled={index === 0}
+                      onClick={() =>
+                        dispatch({ type: "MOVE", itemId: row.itemId, to: "top" })
+                      }
+                    >
+                      <ChevronsUp size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      className="merch-icon-btn"
+                      title="Move up"
+                      disabled={index === 0}
+                      onClick={() =>
+                        dispatch({ type: "MOVE", itemId: row.itemId, to: "up" })
+                      }
+                    >
+                      <ChevronUp size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      className="merch-icon-btn"
+                      title="Move down"
+                      disabled={index === state.items.length - 1}
+                      onClick={() =>
+                        dispatch({ type: "MOVE", itemId: row.itemId, to: "down" })
+                      }
+                    >
+                      <ChevronDown size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      className="merch-icon-btn"
+                      title="Move to bottom"
+                      disabled={index === state.items.length - 1}
+                      onClick={() =>
+                        dispatch({
+                          type: "MOVE",
+                          itemId: row.itemId,
+                          to: "bottom",
+                        })
+                      }
+                    >
+                      <ChevronsDown size={16} />
+                    </button>
+                  </div>
+                )}
                 {row.image ? (
                   <img
                     className="merch-row__thumb"
@@ -320,29 +325,31 @@ function CategoryGridArrangement({
                   )}
                 </div>
 
-                <div className="merch-row__flags">
-                  <button
-                    type="button"
-                    className={`merch-flag merch-flag--visible ${row.visible ? "merch-flag--on" : ""}`}
-                    title={
-                      row.visible
-                        ? "Visible - click to hide"
-                        : "Hidden - click to show"
-                    }
-                    onClick={() => toggleVisible(row)}
-                  >
-                    {row.visible ? <Eye size={16} /> : <EyeOff size={16} />}
-                    <span>{row.visible ? "Visible" : "Hidden"}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="merch-icon-btn merch-icon-btn--danger"
-                    title="Remove from this placement"
-                    onClick={() => remove(row.itemId)}
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
+                {can("arrangement","create_edit") && (
+                  <div className="merch-row__flags">
+                    <button
+                      type="button"
+                      className={`merch-flag merch-flag--visible ${row.visible ? "merch-flag--on" : ""}`}
+                      title={
+                        row.visible
+                          ? "Visible - click to hide"
+                          : "Hidden - click to show"
+                      }
+                      onClick={() => toggleVisible(row)}
+                    >
+                      {row.visible ? <Eye size={16} /> : <EyeOff size={16} />}
+                      <span>{row.visible ? "Visible" : "Hidden"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="merch-icon-btn merch-icon-btn--danger"
+                      title="Remove from this placement"
+                      onClick={() => remove(row.itemId)}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -502,6 +509,7 @@ function MegaMenuArrangement({
   onDirtyChange: (dirty: boolean) => void;
 }) {
   const queryClient = useQueryClient();
+  const { can } = usePermission();
   const [state, dispatch] = useReducer(mmReducer, {
     categories: [],
     isDirty: false,
@@ -653,13 +661,15 @@ function MegaMenuArrangement({
             Arrange categories and their subcategories.
           </p>
         </div>
-        <button
-          type="button"
-          className="merch__add"
-          onClick={() => setAddCategoryOpen(true)}
-        >
-          <Plus size={16} /> Add Category
-        </button>
+        {can("arrangement", "create_edit") && (
+          <button
+            type="button"
+            className="merch__add"
+            onClick={() => setAddCategoryOpen(true)}
+          >
+            <Plus size={16} /> Add Category
+          </button>
+        )}
       </div>
 
       <div className="merch__panel">
@@ -690,70 +700,71 @@ function MegaMenuArrangement({
                       }
                     />
                   </button>
-
-                  <div className="merch-row__order">
-                    <button
-                      type="button"
-                      className="merch-icon-btn"
-                      title="Move to top"
-                      disabled={index === 0}
-                      onClick={() =>
-                        dispatch({
-                          type: "MOVE_CATEGORY",
-                          itemId: cat.itemId,
-                          to: "top",
-                        })
-                      }
-                    >
-                      <ChevronsUp size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      className="merch-icon-btn"
-                      title="Move up"
-                      disabled={index === 0}
-                      onClick={() =>
-                        dispatch({
-                          type: "MOVE_CATEGORY",
-                          itemId: cat.itemId,
-                          to: "up",
-                        })
-                      }
-                    >
-                      <ChevronUp size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      className="merch-icon-btn"
-                      title="Move down"
-                      disabled={index === state.categories.length - 1}
-                      onClick={() =>
-                        dispatch({
-                          type: "MOVE_CATEGORY",
-                          itemId: cat.itemId,
-                          to: "down",
-                        })
-                      }
-                    >
-                      <ChevronDown size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      className="merch-icon-btn"
-                      title="Move to bottom"
-                      disabled={index === state.categories.length - 1}
-                      onClick={() =>
-                        dispatch({
-                          type: "MOVE_CATEGORY",
-                          itemId: cat.itemId,
-                          to: "bottom",
-                        })
-                      }
-                    >
-                      <ChevronsDown size={16} />
-                    </button>
-                  </div>
-
+                  {
+                    can("arrangement","create_edit") && (
+                    <div className="merch-row__order">
+                      <button
+                        type="button"
+                        className="merch-icon-btn"
+                        title="Move to top"
+                        disabled={index === 0}
+                        onClick={() =>
+                          dispatch({
+                            type: "MOVE_CATEGORY",
+                            itemId: cat.itemId,
+                            to: "top",
+                          })
+                        }
+                      >
+                        <ChevronsUp size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        className="merch-icon-btn"
+                        title="Move up"
+                        disabled={index === 0}
+                        onClick={() =>
+                          dispatch({
+                            type: "MOVE_CATEGORY",
+                            itemId: cat.itemId,
+                            to: "up",
+                          })
+                        }
+                      >
+                        <ChevronUp size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        className="merch-icon-btn"
+                        title="Move down"
+                        disabled={index === state.categories.length - 1}
+                        onClick={() =>
+                          dispatch({
+                            type: "MOVE_CATEGORY",
+                            itemId: cat.itemId,
+                            to: "down",
+                          })
+                        }
+                      >
+                        <ChevronDown size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        className="merch-icon-btn"
+                        title="Move to bottom"
+                        disabled={index === state.categories.length - 1}
+                        onClick={() =>
+                          dispatch({
+                            type: "MOVE_CATEGORY",
+                            itemId: cat.itemId,
+                            to: "bottom",
+                          })
+                        }
+                      >
+                        <ChevronsDown size={16} />
+                      </button>
+                    </div>
+                  )}
                   {cat.image ? (
                     <img
                       className="merch-row__thumb"
@@ -774,42 +785,46 @@ function MegaMenuArrangement({
                     </span>
                   </div>
 
-                  <div className="merch-row__flags">
-                    <button
-                      type="button"
-                      className={`merch-flag merch-flag--visible ${cat.visible ? "merch-flag--on" : ""}`}
-                      title={
-                        cat.visible
-                          ? "Visible - click to hide"
-                          : "Hidden - click to show"
-                      }
-                      onClick={() => toggleCategoryVisible(cat)}
-                    >
-                      {cat.visible ? <Eye size={16} /> : <EyeOff size={16} />}
-                      <span>{cat.visible ? "Visible" : "Hidden"}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="merch-icon-btn merch-icon-btn--danger"
-                      title="Remove from this placement"
-                      onClick={() => removeCategory(cat.itemId)}
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
+                  {can("arrangement","create_edit") && (
+                    <div className="merch-row__flags">
+                        <button
+                          type="button"
+                          className={`merch-flag merch-flag--visible ${cat.visible ? "merch-flag--on" : ""}`}
+                          title={
+                            cat.visible
+                              ? "Visible - click to hide"
+                              : "Hidden - click to show"
+                          }
+                          onClick={() => toggleCategoryVisible(cat)}
+                        >
+                          {cat.visible ? <Eye size={16} /> : <EyeOff size={16} />}
+                          <span>{cat.visible ? "Visible" : "Hidden"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="merch-icon-btn merch-icon-btn--danger"
+                          title="Remove from this placement"
+                          onClick={() => removeCategory(cat.itemId)}
+                        >
+                          <X size={16} />
+                        </button>
+                    </div>
+                  )}
                 </div>
 
                 {cat.expanded && (
                   <div className="mm-subpanel">
                     <div className="mm-subpanel__head">
                       <span>Subcategories of {cat.name}</span>
-                      <button
-                        type="button"
-                        className="merch-row__add"
-                        onClick={() => setAddSubcategoryFor(cat.entityId)}
-                      >
-                        <Plus size={14} /> Add Subcategory
-                      </button>
+                      {can("arrangement", "create_edit") && (
+                        <button
+                          type="button"
+                          className="merch-row__add"
+                          onClick={() => setAddSubcategoryFor(cat.entityId)}
+                        >
+                          <Plus size={14} /> Add Subcategory
+                        </button>
+                      )}
                     </div>
 
                     {cat.subcategories.length === 0 ? (
@@ -826,85 +841,88 @@ function MegaMenuArrangement({
                             key={sub.itemId}
                             className="merch-row merch-row--nested"
                           >
-                            <div className="merch-row__order">
-                              <button
-                                type="button"
-                                className="merch-icon-btn"
-                                title="Move to top"
-                                disabled={subIndex === 0}
-                                onClick={() =>
-                                  dispatch({
-                                    type: "MOVE_SUB",
-                                    categoryItemId: cat.itemId,
-                                    itemId: sub.itemId,
-                                    to: "top",
-                                  })
-                                }
-                              >
-                                <ChevronsUp size={14} />
-                              </button>
-                              <button
-                                type="button"
-                                className="merch-icon-btn"
-                                title="Move up"
-                                disabled={subIndex === 0}
-                                onClick={() =>
-                                  dispatch({
-                                    type: "MOVE_SUB",
-                                    categoryItemId: cat.itemId,
-                                    itemId: sub.itemId,
-                                    to: "up",
-                                  })
-                                }
-                              >
-                                <ChevronUp size={14} />
-                              </button>
-                              <button
-                                type="button"
-                                className="merch-icon-btn"
-                                title="Move down"
-                                disabled={
-                                  subIndex === cat.subcategories.length - 1
-                                }
-                                onClick={() =>
-                                  dispatch({
-                                    type: "MOVE_SUB",
-                                    categoryItemId: cat.itemId,
-                                    itemId: sub.itemId,
-                                    to: "down",
-                                  })
-                                }
-                              >
-                                <ChevronDown size={14} />
-                              </button>
-                              <button
-                                type="button"
-                                className="merch-icon-btn"
-                                title="Move to bottom"
-                                disabled={
-                                  subIndex === cat.subcategories.length - 1
-                                }
-                                onClick={() =>
-                                  dispatch({
-                                    type: "MOVE_SUB",
-                                    categoryItemId: cat.itemId,
-                                    itemId: sub.itemId,
-                                    to: "bottom",
-                                  })
-                                }
-                              >
-                                <ChevronsDown size={14} />
-                              </button>
-                            </div>
-
+                            { 
+                              can("arrangement","create_edit") && (
+                              <div className="merch-row__order">
+                                <button
+                                  type="button"
+                                  className="merch-icon-btn"
+                                  title="Move to top"
+                                  disabled={subIndex === 0}
+                                  onClick={() =>
+                                    dispatch({
+                                      type: "MOVE_SUB",
+                                      categoryItemId: cat.itemId,
+                                      itemId: sub.itemId,
+                                      to: "top",
+                                    })
+                                  }
+                                >
+                                  <ChevronsUp size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="merch-icon-btn"
+                                  title="Move up"
+                                  disabled={subIndex === 0}
+                                  onClick={() =>
+                                    dispatch({
+                                      type: "MOVE_SUB",
+                                      categoryItemId: cat.itemId,
+                                      itemId: sub.itemId,
+                                      to: "up",
+                                    })
+                                  }
+                                >
+                                  <ChevronUp size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="merch-icon-btn"
+                                  title="Move down"
+                                  disabled={
+                                    subIndex === cat.subcategories.length - 1
+                                  }
+                                  onClick={() =>
+                                    dispatch({
+                                      type: "MOVE_SUB",
+                                      categoryItemId: cat.itemId,
+                                      itemId: sub.itemId,
+                                      to: "down",
+                                    })
+                                  }
+                                >
+                                  <ChevronDown size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="merch-icon-btn"
+                                  title="Move to bottom"
+                                  disabled={
+                                    subIndex === cat.subcategories.length - 1
+                                  }
+                                  onClick={() =>
+                                    dispatch({
+                                      type: "MOVE_SUB",
+                                      categoryItemId: cat.itemId,
+                                      itemId: sub.itemId,
+                                      to: "bottom",
+                                    })
+                                  }
+                                >
+                                  <ChevronsDown size={14} />
+                                </button>
+                              </div>
+                            )}
                             <div className="merch-row__label">
                               <span className="merch-row__name">
                                 {subIndex + 1}. {sub.name}
                               </span>
                             </div>
 
+                            {can("arrangement","create_edit") && (
                             <div className="merch-row__flags">
-                              <button
+                                  <button
                                 type="button"
                                 className={`merch-flag merch-flag--visible ${sub.visible ? "merch-flag--on" : ""}`}
                                 title={
@@ -921,18 +939,19 @@ function MegaMenuArrangement({
                                 ) : (
                                   <EyeOff size={14} />
                                 )}
-                              </button>
-                              <button
-                                type="button"
-                                className="merch-icon-btn merch-icon-btn--danger"
-                                title="Remove from this placement"
-                                onClick={() =>
-                                  removeSub(cat.itemId, sub.itemId)
-                                }
-                              >
-                                <X size={14} />
-                              </button>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="merch-icon-btn merch-icon-btn--danger"
+                                  title="Remove from this placement"
+                                  onClick={() =>
+                                    removeSub(cat.itemId, sub.itemId)
+                                  }
+                                >
+                                  <X size={14} />
+                                </button>
                             </div>
+                              )}
                           </li>
                         ))}
                       </ul>
