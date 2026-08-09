@@ -5,11 +5,14 @@
 // =============================================================================
 
 export enum OrderStatus {
+    ORDER_PLACED = "ORDER_PLACED",
     CONFIRMED = "CONFIRMED",
-    PENDING = "PENDING",
+    PROCESSING = "PROCESSING",
+    ARRIVED_AT_WAREHOUSE = "ARRIVED_AT_WAREHOUSE",
     DELAYED = "DELAYED",
-    SHIPPED = "SHIPPED",
+    ASSIGNED_TO_RIDER = "ASSIGNED_TO_RIDER",
     DELIVERED = "DELIVERED",
+    NOT_RECEIVED = "NOT_RECEIVED",
     CANCELLED = "CANCELLED",
     RETURNED = "RETURNED",
 }
@@ -27,31 +30,13 @@ export enum PaymentMethod {
     NPX = "NPX",
 }
 
-export enum DeliveryStatus {
-    ORDER_PROCESSING = "order_processing",
-    AT_WAREHOUSE = "at_warehouse",
-    READY_FOR_DELIVERY = "ready_for_delivery",
-    RIDER_ASSIGNED = "rider_assigned",
-    OUT_FOR_DELIVERY = "out_for_delivery",
-    DELIVERED = "delivered",
-    DELIVERY_FAILED = "delivery_failed",
-    RETURNED_WAREHOUSE = "returned_warehouse",
-}
-
 export enum AssignmentStatus {
     ASSIGNED = "assigned",
     PICKED_UP = "picked_up",
     DELIVERED = "delivered",
     FAILED = "failed",
-}
-
-export enum OrderItemStatus {
-    PENDING = "PENDING",
-    CONFIRMED = "CONFIRMED",
-    PROCESSING = "PROCESSING",
-    SHIPPED = "SHIPPED",
-    OUT_FOR_DELIVERY = "OUT_FOR_DELIVERY",
-    DELIVERED = "DELIVERED",
+    NONE = "none",
+    REASSIGNED = "reassigned"
 }
 
 export enum AuthProvider {
@@ -148,7 +133,8 @@ export interface Variant {
 
 export interface Vendor {
     id: number;
-    name: string;
+    businessName: string;
+    phoneNumber?: string;
 }
 
 export interface OrderItem {
@@ -163,12 +149,12 @@ export interface OrderItem {
     vendor?: Vendor;
     variantId?: string;
     variant?: Variant;
-    collectedAtWarehouse: boolean;
     createdAt: string;
 }
 
 export interface Order {
     id: number;
+    orderNumber?: string;
     orderedById: number;
     orderedBy?: User;
     totalPrice: number | string;
@@ -178,13 +164,14 @@ export interface Order {
     paymentStatus: PaymentStatus;
     paymentMethod: PaymentMethod;
     status: OrderStatus;
-    deliveryStatus: DeliveryStatus;
     shippingAddress?: Address;
     appliedPromoCode?: string;
     phoneNumber?: string;
     instrumentName?: string;
     mTransactionId?: string;
     orderItems?: OrderItem[];
+    assignedRider?: Rider | null;
+    assignmentStatus?: AssignmentStatus | null;
     createdAt: string;
     updatedAt: string;
 }
@@ -201,6 +188,12 @@ export interface DeliveryAssignment {
     failureReason?: string;
     createdAt: string;
     updatedAt: string;
+}
+
+export interface BulkAssignResult {
+    orderId: number;
+    success: boolean;
+    error?: string;
 }
 
 // =============================================================================
@@ -220,22 +213,6 @@ export interface PaginatedResponse<T> {
     message?: string;
 }
 
-export interface GetWarehouseOrderQueueResponse {
-    success: boolean;
-    data: {
-        orders: Order[];
-        total: number;
-        pagination: Pagination;
-    };
-}
-
-export interface GetAllAssignmentsResponse {
-    success: boolean;
-    data: DeliveryAssignment[];
-    total: number;
-    pagination: Pagination;
-}
-
 // Generic single-item wrapper
 export interface ApiResponse<T> {
     success: boolean;
@@ -253,30 +230,35 @@ export interface ApiMessageResponse {
 // UI Helpers
 // =============================================================================
 
-export const DELIVERY_STATUS_LABELS: Record<string, string> = {
-    [DeliveryStatus.ORDER_PROCESSING]: "Processing",
-    [DeliveryStatus.AT_WAREHOUSE]: "At Warehouse",
-    [DeliveryStatus.READY_FOR_DELIVERY]: "Ready for Delivery",
-    [DeliveryStatus.RIDER_ASSIGNED]: "Assigned",
-    [DeliveryStatus.OUT_FOR_DELIVERY]: "Out for Delivery",
-    [DeliveryStatus.DELIVERED]: "Delivered",
-    [DeliveryStatus.DELIVERY_FAILED]: "Failed",
-    [DeliveryStatus.RETURNED_WAREHOUSE]: "Returned to Warehouse",
+export const ORDER_STATUS_LABELS: Record<string, string> = {
+    [OrderStatus.ORDER_PLACED]: "Order Placed",
+    [OrderStatus.CONFIRMED]: "Confirmed",
+    [OrderStatus.PROCESSING]: "Processing",
+    [OrderStatus.ARRIVED_AT_WAREHOUSE]: "At Warehouse",
+    [OrderStatus.DELAYED]: "Delayed",
+    [OrderStatus.ASSIGNED_TO_RIDER]: "Rider Assigned",
+    [OrderStatus.DELIVERED]: "Delivered",
+    [OrderStatus.NOT_RECEIVED]: "Not Received",
+    [OrderStatus.CANCELLED]: "Cancelled",
+    [OrderStatus.RETURNED]: "Returned",
     // Assignment Statuses
     [AssignmentStatus.ASSIGNED]: "Assigned",
     [AssignmentStatus.PICKED_UP]: "Picked Up",
+    [AssignmentStatus.DELIVERED]: "Delivered",
     [AssignmentStatus.FAILED]: "Failed",
 };
 
-export const DELIVERY_STATUS_COLORS: Record<string, string> = {
-    [DeliveryStatus.ORDER_PROCESSING]: "#f59e0b",
-    [DeliveryStatus.AT_WAREHOUSE]: "#8b5cf6",
-    [DeliveryStatus.READY_FOR_DELIVERY]: "#3b82f6",
-    [DeliveryStatus.RIDER_ASSIGNED]: "#06b6d4",
-    [DeliveryStatus.OUT_FOR_DELIVERY]: "#10b981",
-    [DeliveryStatus.DELIVERED]: "#22c55e",
-    [DeliveryStatus.DELIVERY_FAILED]: "#ef4444",
-    [DeliveryStatus.RETURNED_WAREHOUSE]: "#6366f1",
+export const ORDER_STATUS_COLORS: Record<string, string> = {
+    [OrderStatus.ORDER_PLACED]: "#6b7280",
+    [OrderStatus.CONFIRMED]: "#3b82f6",
+    [OrderStatus.PROCESSING]: "#f59e0b",
+    [OrderStatus.ARRIVED_AT_WAREHOUSE]: "#8b5cf6",
+    [OrderStatus.DELAYED]: "#d97706",
+    [OrderStatus.ASSIGNED_TO_RIDER]: "#06b6d4",
+    [OrderStatus.DELIVERED]: "#22c55e",
+    [OrderStatus.NOT_RECEIVED]: "#ef4444",
+    [OrderStatus.CANCELLED]: "#ef4444",
+    [OrderStatus.RETURNED]: "#6366f1",
     // Assignment Statuses
     [AssignmentStatus.ASSIGNED]: "#06b6d4",
     [AssignmentStatus.PICKED_UP]: "#3b82f6",

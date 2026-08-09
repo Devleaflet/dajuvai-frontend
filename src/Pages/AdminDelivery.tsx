@@ -4,27 +4,23 @@ import Header from "../Components/Header";
 import { useAuth } from "../context/AuthContext";
 import "../Styles/AdminDelivery.css";
 
-import ProcessingTab from "../Components/AdminDelivery/ProcessingTab";
-import WarehouseQueueTab from "../Components/AdminDelivery/WarehouseQueueTab";
+import AllOrdersTab from "../Components/AdminDelivery/AllOrdersTab";
 import AssignmentsTab from "../Components/AdminDelivery/AssignmentsTab";
 import RidersTab from "../Components/AdminDelivery/RidersTab";
 import FailedRecoveryTab from "../Components/AdminDelivery/FailedRecoveryTab";
 
-
-type Tab = "processing" | "queue" | "assignments" | "riders" | "failed";
+type Tab = "allOrders" | "assignments" | "riders" | "failed";
 
 const TAB_LABELS: { key: Tab; label: string }[] = [
-    { key: "processing", label: "🔄 Processing Orders" },
-    { key: "queue", label: "📦 Warehouse Queue" },
-    { key: "assignments", label: "📋 All Assignments" },
-    { key: "riders", label: "🏍️ Riders" },
-    { key: "failed", label: "⚠️ Failed Recovery" },
+    { key: "allOrders", label: "All Orders" },
+    { key: "assignments", label: "All Assignments" },
+    { key: "riders", label: "Riders" },
+    { key: "failed", label: "Failed Recovery" },
 ];
-
 
 const AdminDelivery: React.FC = () => {
     const { token, isAuthenticated, isLoading: authLoading } = useAuth();
-    const [activeTab, setActiveTab] = useState<Tab>("processing");
+    const [activeTab, setActiveTab] = useState<Tab>("allOrders");
 
     if (authLoading) {
         return (
@@ -55,10 +51,8 @@ const AdminDelivery: React.FC = () => {
 
     const renderTab = () => {
         switch (activeTab) {
-            case "processing":
-                return <ProcessingTab />;
-            case "queue":
-                return <WarehouseQueueTab />;
+            case "allOrders":
+                return <AllOrdersTab />;
             case "assignments":
                 return <AssignmentsTab />;
             case "riders":

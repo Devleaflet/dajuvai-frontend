@@ -105,8 +105,23 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
             .join(", ");
     };
 
-    const getInitials = (fn: string, ln: string) =>
-        `${(fn || "").charAt(0)}${(ln || "").charAt(0)}`.toUpperCase() || "U";
+    const getUserInitials = () => {
+        const name =
+            detailedOrder?.orderedBy?.fullName ||
+            detailedOrder?.orderedBy?.username ||
+            (order as any)?.customerName ||
+            (order as any)?.orderedBy?.username ||
+            (order as any)?.orderedBy?.fullName ||
+            `${(order as any)?.firstName || ""} ${(order as any)?.lastName || ""}`.trim();
+
+        if (!name) return "U";
+
+        const parts = name.trim().split(/\s+/).filter(Boolean);
+        if (parts.length === 1) {
+            return parts[0].substring(0, 2).toUpperCase();
+        }
+        return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    };
 
     const getVendorShipping = (vendorId: number) =>
         detailedOrder?.vendorShippingBreakdown?.find(
@@ -196,7 +211,20 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                             {detailedOrder?.orderNumber || `#${order.id}`}
                         </h2>
                         <p className="order-detail__order-date">
-                            {order.date || "N/A"}
+                            {detailedOrder?.createdAt
+                                ? new Date(detailedOrder.createdAt).toLocaleDateString("en-US", {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                  })
+                                : (order as any).date ||
+                                  ((order as any).createdAt
+                                      ? new Date((order as any).createdAt).toLocaleDateString("en-US", {
+                                            year: "numeric",
+                                            month: "short",
+                                            day: "numeric",
+                                        })
+                                      : "N/A")}
                         </p>
                     </div>
                     <div className="order-detail__status-panel">
@@ -298,10 +326,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
                                                 color: "#666",
                                             }}
                                         >
-                                            {getInitials(
-                                                order.firstName,
-                                                order.lastName,
-                                            )}
+                                            {getUserInitials()}
                                         </div>
                                     </div>
                                     <div>

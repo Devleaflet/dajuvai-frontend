@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "react-hot-toast";
+import OrderDetailModal from "../Modal/OrderDetailModal";
 import {
-    getFailedOrders,
+    getFailedDeliveries,
     resetFailedOrder,
 } from "../../services/deliveryService";
-import type { DeliveryAssignment } from "../../types/delivery";
+import type { DeliveryAssignment, Order } from "../../types/delivery";
 
 export default function FailedRecoveryTab() {
     const [failedAssignments, setFailedAssignments] = useState<
@@ -12,11 +13,12 @@ export default function FailedRecoveryTab() {
     >([]);
     const [loading, setLoading] = useState(true);
     const [resetting, setResetting] = useState<number | null>(null);
+    const [viewingOrder, setViewingOrder] = useState<Order | null>(null);
 
     const load = useCallback(async () => {
         try {
             setLoading(true);
-            const data = await getFailedOrders();
+            const data = await getFailedDeliveries();
             setFailedAssignments(data);
         } catch (e) {
             toast.error(
@@ -90,8 +92,8 @@ export default function FailedRecoveryTab() {
                         <tbody>
                             {failedAssignments.map((a) => (
                                 <tr key={a.id}>
-                                    <td>#{a.orderId}</td>
-                                    <td>{a.rider?.fullName ?? "N/A"}</td>
+                                    <td>#{a.order?.orderNumber || a.orderId}</td>
+                                    <td>{a.rider?.fullName ?? a.rider?.name ?? "N/A"}</td>
                                     <td
                                         style={{
                                             color: "#b91c1c",
@@ -113,17 +115,29 @@ export default function FailedRecoveryTab() {
                                             : "N/A"}
                                     </td>
                                     <td>
-                                        <button
-                                            className="admin-delivery__btn admin-delivery__btn--warning admin-delivery__btn--sm"
-                                            onClick={() =>
-                                                handleReset(a.orderId)
-                                            }
-                                            disabled={resetting === a.orderId}
-                                        >
-                                            {resetting === a.orderId
-                                                ? "Resetting..."
-                                                : "🔄 Reset to Warehouse"}
-                                        </button>
+                                        <div style={{ display: "flex", gap: "0.5rem" }}>
+                                            <button
+                                                className="admin-delivery__btn admin-delivery__btn--ghost admin-delivery__btn--sm"
+                                                onClick={() =>
+                                                    setViewingOrder(
+                                                        a.order ?? ({ id: a.orderId } as Order),
+                                                    )
+                                                }
+                                            >
+                                                View Detail
+                                            </button>
+                                            <button
+                                                className="admin-delivery__btn admin-delivery__btn--warning admin-delivery__btn--sm"
+                                                onClick={() =>
+                                                    handleReset(a.orderId)
+                                                }
+                                                disabled={resetting === a.orderId}
+                                            >
+                                                {resetting === a.orderId
+                                                    ? "Resetting..."
+                                                    : "🔄 Reset to Warehouse"}
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -131,6 +145,19 @@ export default function FailedRecoveryTab() {
                     </table>
                 </div>
             )}
+
+            {/* Order Detail Modal */}
+            {viewingOrder && (
+                <OrderDetailModal
+                    show={Boolean(viewingOrder)}
+                    onClose={() => setViewingOrder(null)}
+                    order={viewingOrder as any}
+                    onStatusUpdate={() => {
+                        load();
+                    }}
+                />
+            )}
         </>
     );
 }
+

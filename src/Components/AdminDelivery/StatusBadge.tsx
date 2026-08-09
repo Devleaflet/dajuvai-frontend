@@ -1,9 +1,9 @@
 import React from "react";
-import { DELIVERY_STATUS_LABELS, DELIVERY_STATUS_COLORS } from "../../types/delivery";
+import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "../../types/delivery";
 
 export default function StatusBadge({ status }: { status: string }) {
-    const color = DELIVERY_STATUS_COLORS[status] ?? "#6b7280";
-    const label = DELIVERY_STATUS_LABELS[status] ?? status;
+    const color = ORDER_STATUS_COLORS[status] ?? "#6b7280";
+    const label = ORDER_STATUS_LABELS[status] ?? status;
     return (
         <span className="admin-delivery__badge" style={{ background: color }}>
             {label}

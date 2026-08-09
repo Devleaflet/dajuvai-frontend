@@ -11,6 +11,9 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
   const [unapprovedCount, setUnapprovedCount] = useState(0);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isAvatarOpen, setIsAvatarOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+  );
   const avatarDropdownRef = useRef<HTMLDivElement>(null);
   const { user, token, logout } = useAuth();
   const { can } = usePermission();
@@ -39,6 +42,13 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
     setIsMobileOpen(false);
     setIsAvatarOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const handler = (e: MediaQueryListEvent) => setIsMobileViewport(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   useBodyScrollLock(isMobileOpen);
 
@@ -206,7 +216,7 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
       <div
         id="admin-sidebar-panel"
         className="sidebar__panel"
-        aria-hidden={!isMobileOpen}
+        aria-hidden={isMobileViewport && !isMobileOpen}
       >
         <div className="sidebar__header">
           <div className="sidebar__header-inner">

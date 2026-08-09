@@ -12,6 +12,9 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 export function Sidebar({ ...props }: SidebarProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isAvatarOpen, setIsAvatarOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+  );
   const [unreadCount, setUnreadCount] = useState(0);
   const avatarDropdownRef = useRef<HTMLDivElement>(null);
   const { authState, logout } = useVendorAuth();
@@ -42,6 +45,13 @@ export function Sidebar({ ...props }: SidebarProps) {
     setIsMobileOpen(false);
     setIsAvatarOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const handler = (e: MediaQueryListEvent) => setIsMobileViewport(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   useBodyScrollLock(isMobileOpen);
 
@@ -187,7 +197,7 @@ export function Sidebar({ ...props }: SidebarProps) {
       <div
         id="vendor-sidebar-panel"
         className="sidebar__panel"
-        aria-hidden={!isMobileOpen}
+        aria-hidden={isMobileViewport && !isMobileOpen}
       >
         <div className="sidebar__header">
           <div className="sidebar__header-inner">

@@ -57,14 +57,25 @@ const OrderStatusEditor: React.FC<OrderStatusEditorProps> = ({
                     }
                     disabled={disabled || isSaving}
                 >
-                    {ALL_ORDER_STATUSES.map((value) => (
-                        <option key={value} value={value}>
-                            {getOrderStatusMeta(value).label}
-                            {value === currentStatus.toUpperCase()
-                                ? " (current)"
-                                : ""}
-                        </option>
-                    ))}
+                    {ALL_ORDER_STATUSES.map((value) => {
+                        const isAssignedToRider = value === "ASSIGNED_TO_RIDER";
+                        const isAtWarehouse = currentStatus.toUpperCase() === "ARRIVED_AT_WAREHOUSE";
+                        const isRiderAssignDisabled = isAssignedToRider && !isAtWarehouse;
+                        return (
+                            <option
+                                key={value}
+                                value={value}
+                                disabled={isRiderAssignDisabled}
+                            >
+                                {getOrderStatusMeta(value).label}
+                                {value === currentStatus.toUpperCase()
+                                    ? " (current)"
+                                    : isRiderAssignDisabled
+                                    ? " (Only allowed for orders at warehouse)"
+                                    : ""}
+                            </option>
+                        );
+                    })}
                 </select>
             </label>
 

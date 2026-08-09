@@ -1,13 +1,14 @@
 import axiosInstance from "../api/axiosInstance";
-import type {
-    Rider,
-    Order,
-    DeliveryAssignment,
-    ApiResponse,
-    ApiMessageResponse,
-    CreateRiderPayload,
-    OrderItem,
-    PaginatedResponse,
+import {
+    type Rider,
+    type Order,
+    type DeliveryAssignment,
+    type ApiResponse,
+    type ApiMessageResponse,
+    type CreateRiderPayload,
+    type PaginatedResponse,
+    type BulkAssignResult,
+    OrderStatus,
 } from "../types/delivery";
 
 // ─── Riders ────────────────────────────────────────────────────────────────
@@ -75,60 +76,28 @@ export const resetRiderPassword = async (
     return res.data.message;
 };
 
-// ─── Processing Orders ───────────────────────────────────────────────────────
+// ─── All Orders (AT_WAREHOUSE) ─────────────────────────────────────────────
 
-export const getProcessingOrders = async (): Promise<Order[]> => {
-    const res = await axiosInstance.get<ApiResponse<Order[]>>(
-        "/api/admin/delivery/orders/processing",
-    );
-    if (!res.data.success)
-        throw new Error(
-            res.data.message || "Failed to fetch processing orders",
-        );
-    return res.data.data;
-};
-
-export const getProcessingOrder = async (orderId: number): Promise<Order> => {
-    const res = await axiosInstance.get<ApiResponse<Order>>(
-        `/api/admin/delivery/orders/${orderId}/processing`,
-    );
-    if (!res.data.success)
-        throw new Error(res.data.message || "Failed to fetch order");
-    return res.data.data;
-};
-
-export const collectItem = async (orderItemId: number): Promise<OrderItem> => {
-    const res = await axiosInstance.put<ApiResponse<OrderItem>>(
-        `/api/admin/delivery/orders/orderItems/${orderItemId}/collect-items`,
-    );
-    if (!res.data.success)
-        throw new Error(res.data.message || "Failed to collect item");
-
-    return res.data.data;
-};
-
-export const markAtWarehouse = async (orderId: number): Promise<Order> => {
-    const res = await axiosInstance.patch<ApiResponse<Order>>(
-        `/api/admin/delivery/orders/${orderId}/returned-warehouse`,
-    );
-    if (!res.data.success)
-        throw new Error(
-            res.data.message || "Failed to mark order at warehouse",
-        );
-    return res.data.data;
-};
-
-// ─── Warehouse Queue ─────────────────────────────────────────────────────────
-
-export const getWarehouseQueue = async (
+export const getAtWarehouseOrders = async (
     page = 1,
-    limit = 10,
+    limit = 20,
+    search?: string,
+    sort: "newest" | "oldest" = "newest",
+    statuses?: string[],
 ): Promise<PaginatedResponse<Order>> => {
     const res = await axiosInstance.get<PaginatedResponse<Order>>(
-        "/api/admin/delivery/warehouse-order-queue",
-        { params: { page, limit } },
+        "/api/admin/delivery/orders/at-warehouse",
+        {
+            params: {
+                page,
+                limit,
+                search,
+                sort,
+                statuses: statuses && statuses.length > 0 ? statuses.join(",") : undefined,
+            },
+        },
     );
-    if (!res.data.success) throw new Error("Failed to fetch warehouse queue");
+    if (!res.data.success) throw new Error("Failed to fetch warehouse orders");
     return res.data;
 };
 
@@ -142,6 +111,19 @@ export const assignRider = async (
     );
     if (!res.data.success)
         throw new Error(res.data.message || "Failed to assign rider");
+    return res.data.data;
+};
+
+export const bulkAssignRiders = async (
+    orderIds: number[],
+    riderId: number,
+): Promise<BulkAssignResult[]> => {
+    const res = await axiosInstance.post<ApiResponse<BulkAssignResult[]>>(
+        "/api/admin/delivery/orders/bulk-assign",
+        { orderIds, riderId },
+    );
+    if (!res.data.success)
+        throw new Error(res.data.message || "Failed to bulk assign riders");
     return res.data.data;
 };
 
@@ -229,9 +211,6 @@ export const resetFailedOrder = async (orderId: number): Promise<Order> => {
 
 // ─── Failed Orders ──────────────────────────────────────────────────────────
 
-// NO BACKEND ENDPOINT FOR FAILED ORDER - FILTER THROUGH NORMAL ENDPOINT
-// NO PAGINATION - FETCH 100
-
 export const getFailedOrders = async (): Promise<DeliveryAssignment[]> => {
     const res = await axiosInstance.get<PaginatedResponse<DeliveryAssignment>>(
         "/api/admin/delivery/assignments",
@@ -240,4 +219,16 @@ export const getFailedOrders = async (): Promise<DeliveryAssignment[]> => {
     if (!res.data.success) throw new Error("Failed to fetch assignments");
     const all = res.data.data ?? [];
     return all.filter((a) => a.assignmentStatus === "failed");
+};
+
+export const getFailedDeliveries = async (): Promise<DeliveryAssignment[]> => {
+  const res = await axiosInstance.get<
+    ApiResponse<DeliveryAssignment[]>
+  >("/api/admin/delivery/orders/failed-deliveries");
+
+  if (!res.data.success) {
+    throw new Error(res.data.message || "Failed to fetch failed deliveries");
+  }
+
+  return res.data.data;
 };
