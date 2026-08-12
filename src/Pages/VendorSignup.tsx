@@ -1294,976 +1294,959 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
 
   return (
     <>
-    <div className={`auth-modal${isOpen ? " auth-modal--open" : ""}`}>
-      <Toaster position="top-center" />
-      <div className="auth-modal__overlay"></div>
-      <div
-        className="auth-modal__content"
-        ref={modalRef}
-        style={{ maxWidth: "700px" }}
-      >
-        <button className="auth-modal__close" onClick={onClose}>
-          <img src={close} alt="Close" />
-        </button>
+      <div className={`auth-modal${isOpen ? " auth-modal--open" : ""}`}>
+        <Toaster position="top-center" />
+        <div className="auth-modal__overlay"></div>
+        <div
+          className="auth-modal__content"
+          ref={modalRef}
+          style={{ maxWidth: "700px" }}
+        >
+          <button className="auth-modal__close" onClick={onClose}>
+            <img src={close} alt="Close" />
+          </button>
 
-        <div className="auth-modal__header">
-          <img
-            src={popup}
-            alt="Scrolling background"
-            className="auth-modal__background"
-          />
-        </div>
-
-        <div className="auth-modal__title">
-          {isVerificationComplete
-            ? "Account Verification Complete"
-            : showVerification
-              ? "Verify Your Email"
-              : "Vendor Sign Up"}
-        </div>
-
-        {error && (
-          <div className="auth-modal__message auth-modal__message--error">
-            {error}
+          <div className="auth-modal__header">
+            <img
+              src={popup}
+              alt="Scrolling background"
+              className="auth-modal__background"
+            />
           </div>
-        )}
-        {success && (
-          <div className="auth-modal__message auth-modal__message--success">
-            {success}
-          </div>
-        )}
 
-        {!showVerification && !isVerificationComplete && (
-          <div style={{ marginBottom: "15px" }}>
-            <div className="auth-modal__step-indicator">
-              Step {currentStep} of 4
+          <div className="auth-modal__title">
+            {isVerificationComplete
+              ? "Account Verification Complete"
+              : showVerification
+                ? "Verify Your Email"
+                : "Vendor Sign Up"}
+          </div>
+
+          {error && (
+            <div className="auth-modal__message auth-modal__message--error">
+              {error}
             </div>
-            {currentStep === 1 && (
-              <>
-                <div className="auth-modal__step-title">
-                  Basic Business Information
-                </div>
-                <div className="auth-modal__step-desc">
-                  Tell us about your business to get started. These details will
-                  be visible to customers.
-                </div>
-              </>
-            )}
-            {currentStep === 2 && (
-              <>
-                <div className="auth-modal__step-title">
-                  Registration & Security
-                </div>
-                <div className="auth-modal__step-desc">
-                  Enter your legal business identifiers and set up your account
-                  credentials.
-                </div>
-              </>
-            )}
-            {currentStep === 3 && (
-              <>
-                <div className="auth-modal__step-title">
-                  Document Verification
-                </div>
-                <div className="auth-modal__step-desc">
-                  Upload copies of your business registration and tax documents
-                  for identity verification.
-                </div>
-              </>
-            )}
-            {currentStep === 4 && (
-              <>
-                <div className="auth-modal__step-title">Payment Settlement</div>
-                <div className="auth-modal__step-desc">
-                  Tell us where to send your earnings, or skip this step and set
-                  it up later from your vendor dashboard.
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {isVerificationComplete ? (
-          <div className="auth-modal__verification-complete">
-            <div className="auth-modal__success-message">
-              <h3>Email Verified Successfully!</h3>
-              <p>
-                Your account has been verified. An admin needs to approve your
-                account.
-              </p>
-              <p>
-                <strong>
-                  You will receive an email notification after your account gets
-                  approved.
-                </strong>
-              </p>
-              <p>
-                This process may take 24-48 hours. Our verification team will
-                review your application. If you have any questions, please
-                contact us at <strong>support@dajuvai.com</strong>.
-              </p>
+          )}
+          {success && (
+            <div className="auth-modal__message auth-modal__message--success">
+              {success}
             </div>
-            <button
-              type="button"
-              className="auth-modal__submit"
-              onClick={onClose}
+          )}
+
+          {!showVerification && !isVerificationComplete && (
+            <div style={{ marginBottom: "15px" }}>
+              <div className="auth-modal__step-indicator">
+                Step {currentStep} of 4
+              </div>
+              {currentStep === 1 && (
+                <>
+                  <div className="auth-modal__step-title">
+                    Basic Business Information
+                  </div>
+                  <div className="auth-modal__step-desc">
+                    Tell us about your business to get started. These details
+                    will be visible to customers.
+                  </div>
+                </>
+              )}
+              {currentStep === 2 && (
+                <>
+                  <div className="auth-modal__step-title">
+                    Registration & Security
+                  </div>
+                  <div className="auth-modal__step-desc">
+                    Enter your legal business identifiers and set up your
+                    account credentials.
+                  </div>
+                </>
+              )}
+              {currentStep === 3 && (
+                <>
+                  <div className="auth-modal__step-title">
+                    Document Verification
+                  </div>
+                  <div className="auth-modal__step-desc">
+                    Upload copies of your business registration and tax
+                    documents for identity verification.
+                  </div>
+                </>
+              )}
+              {currentStep === 4 && (
+                <>
+                  <div className="auth-modal__step-title">
+                    Payment Settlement
+                  </div>
+                  <div className="auth-modal__step-desc">
+                    Tell us where to send your earnings, or skip this step and
+                    set it up later from your vendor dashboard.
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {isVerificationComplete ? (
+            <div className="auth-modal__verification-complete">
+              <div className="auth-modal__success-message">
+                <h3>Email Verified Successfully!</h3>
+                <p>
+                  Your account has been verified. An admin needs to approve your
+                  account.
+                </p>
+                <p>
+                  <strong>
+                    You will receive an email notification after your account
+                    gets approved.
+                  </strong>
+                </p>
+                <p>
+                  This process may take 24-48 hours. Our verification team will
+                  review your application. If you have any questions, please
+                  contact us at <strong>support@dajuvai.com</strong>.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="auth-modal__submit"
+                onClick={onClose}
+              >
+                Close
+              </button>
+            </div>
+          ) : (
+            <form
+              className="auth-modal__form"
+              onSubmit={handleSubmit}
+              noValidate
             >
-              Close
-            </button>
-          </div>
-        ) : (
-          <form className="auth-modal__form" onSubmit={handleSubmit} noValidate>
-            {showVerification ? (
-              <>
-                <div className="auth-modal__verification-info">
-                  <p>We've sent a verification code to</p>
-                  <strong>{pendingVerificationEmail}</strong>
-                  <p>Please enter the 6-digit code below:</p>
-                </div>
-                <div className="auth-modal__form-group">
-                  <input
-                    type="text"
-                    className={`auth-modal__input auth-modal__input--verification ${
-                      errors.verificationToken && touched.verificationToken
-                        ? "error"
-                        : ""
-                    }`}
-                    placeholder="______"
-                    name="verificationToken"
-                    value={verificationToken}
-                    onChange={(e) => {
-                      const value = e.target.value
-                        .replace(/\D/g, "")
-                        .slice(0, 6);
-                      setVerificationToken(value);
-                      if (touched.verificationToken) {
-                        const error = validateField("verificationToken", value);
-                        setErrors((prev) => ({
-                          ...prev,
-                          verificationToken: error,
-                        }));
-                      }
-                    }}
-                    onBlur={handleBlur}
-                    required
-                    disabled={isLoading}
-                    maxLength={6}
-                    inputMode="numeric"
-                    pattern="\d{6}"
-                    style={{ width: "200px", textAlign: "center" }}
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="auth-modal__submit"
-                  disabled={
-                    isLoading ||
-                    verificationToken.length !== 6 ||
-                    !/^\d{6}$/.test(verificationToken)
-                  }
-                >
-                  {isLoading ? "Verifying..." : "VERIFY EMAIL"}
-                </button>
-                <div className="auth-modal__verification-actions">
+              {showVerification ? (
+                <>
+                  <div className="auth-modal__verification-info">
+                    <p>We've sent a verification code to</p>
+                    <strong>{pendingVerificationEmail}</strong>
+                    <p>Please enter the 6-digit code below:</p>
+                  </div>
+                  <div className="auth-modal__form-group">
+                    <input
+                      type="text"
+                      className={`auth-modal__input auth-modal__input--verification ${
+                        errors.verificationToken && touched.verificationToken
+                          ? "error"
+                          : ""
+                      }`}
+                      placeholder="______"
+                      name="verificationToken"
+                      value={verificationToken}
+                      onChange={(e) => {
+                        const value = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 6);
+                        setVerificationToken(value);
+                        if (touched.verificationToken) {
+                          const error = validateField(
+                            "verificationToken",
+                            value,
+                          );
+                          setErrors((prev) => ({
+                            ...prev,
+                            verificationToken: error,
+                          }));
+                        }
+                      }}
+                      onBlur={handleBlur}
+                      required
+                      disabled={isLoading}
+                      maxLength={6}
+                      inputMode="numeric"
+                      pattern="\d{6}"
+                      style={{ width: "200px", textAlign: "center" }}
+                    />
+                  </div>
                   <button
-                    type="button"
-                    className="auth-modal__link-button"
-                    onClick={handleResendVerification}
-                    disabled={isLoading || countdown > 0}
+                    type="submit"
+                    className="auth-modal__submit"
+                    disabled={
+                      isLoading ||
+                      verificationToken.length !== 6 ||
+                      !/^\d{6}$/.test(verificationToken)
+                    }
                   >
-                    Resend Verification Code
-                    {countdown > 0 && (
-                      <span className="auth-modal__countdown">
-                        {" "}
-                        ({Math.floor(countdown / 60)}:
-                        {String(countdown % 60).padStart(2, "0")})
-                      </span>
-                    )}
+                    {isLoading ? "Verifying..." : "VERIFY EMAIL"}
                   </button>
-                </div>
-              </>
-            ) : (
-              <>
-                {currentStep === 1 && (
-                  <>
-                    <div className="auth-modal__form-group auth-modal__form-group--grid">
-                      <div>
-                        <label className="auth-modal__label">
-                          Business Name *
-                        </label>
-                        <input
-                          type="text"
-                          className={`auth-modal__input ${
-                            errors.businessName && touched.businessName
-                              ? "error"
-                              : ""
-                          }`}
-                          placeholder="Enter business name"
-                          name="businessName"
-                          value={businessName}
-                          onChange={handleInputChange}
-                          onBlur={handleBlur}
-                          required
-                          disabled={isLoading}
-                          style={{
-                            background: "transparent",
-                            border: "1px solid #ddd",
-                            borderRadius: "4px",
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label className="auth-modal__label">
-                          Phone Number *
-                        </label>
-                        <div
-                          className={`auth-modal__phone-prefix-field ${
-                            errors.phoneNumber && touched.phoneNumber
-                              ? "error"
-                              : ""
-                          }`}
-                        >
-                          <span className="auth-modal__phone-prefix">
-                            +977
-                          </span>
+                  <div className="auth-modal__verification-actions">
+                    <button
+                      type="button"
+                      className="auth-modal__link-button"
+                      onClick={handleResendVerification}
+                      disabled={isLoading || countdown > 0}
+                    >
+                      Resend Verification Code
+                      {countdown > 0 && (
+                        <span className="auth-modal__countdown">
+                          {" "}
+                          ({Math.floor(countdown / 60)}:
+                          {String(countdown % 60).padStart(2, "0")})
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {currentStep === 1 && (
+                    <>
+                      <div className="auth-modal__form-group auth-modal__form-group--grid">
+                        <div>
+                          <label className="auth-modal__label">
+                            Business Name *
+                          </label>
                           <input
                             type="text"
-                            className="auth-modal__input auth-modal__input--prefixed"
-                            placeholder="9812345678"
-                            name="phoneNumber"
-                            value={phoneNumber}
+                            className={`auth-modal__input ${
+                              errors.businessName && touched.businessName
+                                ? "error"
+                                : ""
+                            }`}
+                            placeholder="Enter business name"
+                            name="businessName"
+                            value={businessName}
                             onChange={handleInputChange}
                             onBlur={handleBlur}
                             required
                             disabled={isLoading}
-                            inputMode="numeric"
-                            maxLength={10}
+                            style={{
+                              background: "transparent",
+                              border: "1px solid #ddd",
+                              borderRadius: "4px",
+                            }}
                           />
                         </div>
-                        {errors.phoneNumber && touched.phoneNumber && (
-                          <div className="auth-modal__field-error">
-                            {errors.phoneNumber}
+                        <div>
+                          <label className="auth-modal__label">
+                            Phone Number *
+                          </label>
+                          <div
+                            className={`auth-modal__phone-prefix-field ${
+                              errors.phoneNumber && touched.phoneNumber
+                                ? "error"
+                                : ""
+                            }`}
+                          >
+                            <span className="auth-modal__phone-prefix">
+                              +977
+                            </span>
+                            <input
+                              type="text"
+                              className="auth-modal__input auth-modal__input--prefixed"
+                              placeholder="9812345678"
+                              name="phoneNumber"
+                              value={phoneNumber}
+                              onChange={handleInputChange}
+                              onBlur={handleBlur}
+                              required
+                              disabled={isLoading}
+                              inputMode="numeric"
+                              maxLength={10}
+                            />
                           </div>
-                        )}
+                          {errors.phoneNumber && touched.phoneNumber && (
+                            <div className="auth-modal__field-error">
+                              {errors.phoneNumber}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="auth-modal__form-group auth-modal__form-group--grid">
-                      <div>
-                        <label className="auth-modal__label">
-                          Telephone Number
-                        </label>
-                        <input
-                          type="text"
-                          className={`auth-modal__input ${
-                            errors.telePhone && touched.telePhone ? "error" : ""
-                          }`}
-                          placeholder="Enter telephone number"
-                          name="telePhone"
-                          value={telePhone}
-                          onChange={handleInputChange}
-                          onBlur={handleBlur}
-                          disabled={isLoading}
-                          style={{
-                            background: "transparent",
-                            border: "1px solid #ddd",
-                            borderRadius: "4px",
-                            width: "100%",
-                            boxSizing: "border-box",
-                          }}
-                        />
-                        {errors.telePhone && touched.telePhone && (
-                          <div className="auth-modal__field-error">
-                            {errors.telePhone}
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <label className="auth-modal__label">
-                          Province *
-                        </label>
-                        <select
-                          className="auth-modal__input"
-                          name="province"
-                          value={province}
-                          onChange={handleInputChange}
-                          onBlur={handleBlur}
-                          aria-invalid={Boolean(errors.province && touched.province)}
-                          required
-                          disabled={isLoading || provinceData.length === 0}
-                          style={{
-                            backgroundColor: "transparent",
-                            border: "1px solid #ddd",
-                            borderRadius: "4px",
-                            width: "100%",
-                            boxSizing: "border-box",
-                          }}
-                        >
-                          <option value="">Select Province</option>
-                          {provinceData.map((p) => (
-                            <option key={p} value={p}>
-                              {p}
-                            </option>
-                          ))}
-                        </select>
-                        <span className="auth-modal__helper-text">
-                          Select the province where your business is registered.
-                        </span>
-                      </div>
-                    </div>
-                    <div className="auth-modal__form-group auth-modal__form-group--grid">
-                      <div>
-                        <label className="auth-modal__label">District *</label>
-                        <select
-                          className={`auth-modal__input ${
-                            errors.district && touched.district ? "error" : ""
-                          }`}
-                          name="district"
-                          value={district}
-                          onChange={handleInputChange}
-                          onBlur={handleBlur}
-                          required
-                          disabled={isLoading || districtData.length === 0}
-                          style={{
-                            backgroundColor: "transparent",
-                            border: "1px solid #ddd",
-                            borderRadius: "4px",
-                            width: "100%",
-                          }}
-                        >
-                          <option value="">Select District</option>
-                          {districtData.map((d) => (
-                            <option key={d} value={d}>
-                              {d}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div></div>
-                    </div>
-                    <div className=" auth-modal__checkbox">
-                      <input
-                        id="acceptTerms"
-                        type="checkbox"
-                        name="acceptTerms"
-                        checked={acceptTerms}
-                        onChange={(e) => {
-                          setAcceptTerms(e.target.checked);
-                          setTouched((prev) => ({
-                            ...prev,
-                            acceptTerms: true,
-                          }));
-                          const error = validateField(
-                            "acceptTerms",
-                            e.target.checked,
-                          );
-                          setErrors((prev) => ({
-                            ...prev,
-                            acceptTerms: error,
-                          }));
-                        }}
-                        disabled={isLoading}
-                        style={{
-                          background: "transparent",
-                          border: "1px solid #ddd",
-                          height: "fit-content",
-                          width: "fit-content",
-                        }}
-                      />
-                      <label
-                        htmlFor="acceptTerms"
-                        className=""
-                        style={{ background: "transparent", cursor: "pointer" }}
-                      >
-                        I accept the{" "}
-                        <button
-                          type="button"
-                          className="auth-modal__link-button"
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            setTermsModalOpen(true);
-                          }}
-                          style={{ padding: 0 }}
-                        >
-                          terms and conditions
-                        </button>
-                      </label>
-                    </div>
-                  </>
-                )}
-
-                {currentStep === 2 && (
-                  <>
-                    <div className="auth-modal__form-group auth-modal__form-group--grid">
-                      <div>
-                        <label className="auth-modal__label">
-                          Business Registration Number *
-                          <FaInfoCircle
-                            className="auth-modal__info-icon"
-                            title="Enter the official registration number from your business license."
+                      <div className="auth-modal__form-group auth-modal__form-group--grid">
+                        <div>
+                          <label className="auth-modal__label">
+                            Telephone Number
+                          </label>
+                          <input
+                            type="text"
+                            className={`auth-modal__input ${
+                              errors.telePhone && touched.telePhone
+                                ? "error"
+                                : ""
+                            }`}
+                            placeholder="Enter telephone number"
+                            name="telePhone"
+                            value={telePhone}
+                            onChange={handleInputChange}
+                            onBlur={handleBlur}
+                            disabled={isLoading}
+                            style={{
+                              background: "transparent",
+                              border: "1px solid #ddd",
+                              borderRadius: "4px",
+                              width: "100%",
+                              boxSizing: "border-box",
+                            }}
                           />
-                        </label>
+                          {errors.telePhone && touched.telePhone && (
+                            <div className="auth-modal__field-error">
+                              {errors.telePhone}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="auth-modal__label">
+                            Province *
+                          </label>
+                          <select
+                            className="auth-modal__input"
+                            name="province"
+                            value={province}
+                            onChange={handleInputChange}
+                            onBlur={handleBlur}
+                            aria-invalid={Boolean(
+                              errors.province && touched.province,
+                            )}
+                            required
+                            disabled={isLoading || provinceData.length === 0}
+                            style={{
+                              backgroundColor: "transparent",
+                              border: "1px solid #ddd",
+                              borderRadius: "4px",
+                              width: "100%",
+                              boxSizing: "border-box",
+                            }}
+                          >
+                            <option value="">Select Province</option>
+                            {provinceData.map((p) => (
+                              <option key={p} value={p}>
+                                {p}
+                              </option>
+                            ))}
+                          </select>
+                          <span className="auth-modal__helper-text">
+                            Select the province where your business is
+                            registered.
+                          </span>
+                        </div>
+                      </div>
+                      <div className="auth-modal__form-group auth-modal__form-group--grid">
+                        <div>
+                          <label className="auth-modal__label">
+                            District *
+                          </label>
+                          <select
+                            className={`auth-modal__input ${
+                              errors.district && touched.district ? "error" : ""
+                            }`}
+                            name="district"
+                            value={district}
+                            onChange={handleInputChange}
+                            onBlur={handleBlur}
+                            required
+                            disabled={isLoading || districtData.length === 0}
+                            style={{
+                              backgroundColor: "transparent",
+                              border: "1px solid #ddd",
+                              borderRadius: "4px",
+                              width: "100%",
+                            }}
+                          >
+                            <option value="">Select District</option>
+                            {districtData.map((d) => (
+                              <option key={d} value={d}>
+                                {d}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div></div>
+                      </div>
+                      <div className=" auth-modal__checkbox">
                         <input
-                          type="text"
-                          className={`auth-modal__input ${
-                            errors.businessRegNumber &&
-                            touched.businessRegNumber
-                              ? "error"
-                              : ""
-                          }`}
-                          placeholder="Enter business registration number"
-                          name="businessRegNumber"
-                          value={businessRegNumber}
-                          onChange={handleInputChange}
-                          onBlur={handleBlur}
-                          required
+                          id="acceptTerms"
+                          type="checkbox"
+                          name="acceptTerms"
+                          checked={acceptTerms}
+                          onChange={(e) => {
+                            setAcceptTerms(e.target.checked);
+                            setTouched((prev) => ({
+                              ...prev,
+                              acceptTerms: true,
+                            }));
+                            const error = validateField(
+                              "acceptTerms",
+                              e.target.checked,
+                            );
+                            setErrors((prev) => ({
+                              ...prev,
+                              acceptTerms: error,
+                            }));
+                          }}
                           disabled={isLoading}
                           style={{
                             background: "transparent",
                             border: "1px solid #ddd",
-                            borderRadius: "4px",
+                            height: "fit-content",
+                            width: "fit-content",
                           }}
                         />
+                        <label
+                          htmlFor="acceptTerms"
+                          className=""
+                          style={{
+                            background: "transparent",
+                            cursor: "pointer",
+                          }}
+                        >
+                          I accept the{" "}
+                          <button
+                            type="button"
+                            className="auth-modal__link-button"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setTermsModalOpen(true);
+                            }}
+                            style={{ padding: 0 }}
+                          >
+                            terms and conditions
+                          </button>
+                        </label>
                       </div>
-                      <div>
+                    </>
+                  )}
+
+                  {currentStep === 2 && (
+                    <>
+                      <div className="auth-modal__form-group auth-modal__form-group--grid">
+                        <div>
+                          <label className="auth-modal__label">
+                            Business Registration Number *
+                            <FaInfoCircle
+                              className="auth-modal__info-icon"
+                              title="Enter the official registration number from your business license."
+                            />
+                          </label>
+                          <input
+                            type="text"
+                            className={`auth-modal__input ${
+                              errors.businessRegNumber &&
+                              touched.businessRegNumber
+                                ? "error"
+                                : ""
+                            }`}
+                            placeholder="Enter business registration number"
+                            name="businessRegNumber"
+                            value={businessRegNumber}
+                            onChange={handleInputChange}
+                            onBlur={handleBlur}
+                            required
+                            disabled={isLoading}
+                            style={{
+                              background: "transparent",
+                              border: "1px solid #ddd",
+                              borderRadius: "4px",
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="auth-modal__label">
+                            Vat/Pan Number *{" "}
+                            <span style={{ fontSize: "9px" }}>
+                              (9 digits required)
+                            </span>
+                            <FaInfoCircle
+                              className="auth-modal__info-icon"
+                              title="9-digit permanent account number issued by the tax office."
+                            />
+                          </label>
+                          <input
+                            type="text"
+                            className={`auth-modal__input ${
+                              errors.taxNumber && touched.taxNumber
+                                ? "error"
+                                : ""
+                            }`}
+                            placeholder="Enter pan/vat number"
+                            name="taxNumber"
+                            value={taxNumber}
+                            onChange={handleInputChange}
+                            onBlur={handleBlur}
+                            required
+                            disabled={isLoading}
+                            style={{
+                              background: "transparent",
+                              border: "1px solid #ddd",
+                              borderRadius: "4px",
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="auth-modal__form-group auth-modal__form-group--grid">
+                        <div>
+                          <label className="auth-modal__label">Email *</label>
+                          <input
+                            type="email"
+                            className={`auth-modal__input ${
+                              errors.email && touched.email ? "error" : ""
+                            }`}
+                            placeholder="Enter email"
+                            name="email"
+                            value={email}
+                            onChange={handleInputChange}
+                            onBlur={handleBlur}
+                            required
+                            disabled={isLoading}
+                            style={{
+                              background: "transparent",
+                              border: "1px solid #ddd",
+                              borderRadius: "4px",
+                            }}
+                          />
+                        </div>
+                        <div style={{ position: "relative" }}>
+                          <label className="auth-modal__label">
+                            Password *
+                          </label>
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            className={`auth-modal__input ${
+                              errors.password && touched.password ? "error" : ""
+                            }`}
+                            placeholder="Enter password"
+                            name="password"
+                            value={password}
+                            onChange={handleInputChange}
+                            onBlur={handleBlur}
+                            required
+                            disabled={isLoading}
+                            style={{
+                              background: "transparent",
+                              border: "1px solid #ddd",
+                              borderRadius: "4px",
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={togglePasswordVisibility}
+                            style={{
+                              position: "absolute",
+                              right: "-5px",
+                              top: "50px",
+                              marginRight: "15px",
+                              transform: "translateY(-70%)",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: "0",
+                              fontSize: "16px",
+                            }}
+                            aria-label={
+                              showPassword ? "Hide password" : "Show password"
+                            }
+                          >
+                            {showPassword ? (
+                              <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="#888"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <ellipse cx="12" cy="12" rx="10" ry="7" />
+                                <circle cx="12" cy="12" r="3.5" />
+                              </svg>
+                            ) : (
+                              <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="#888"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M1 1l22 22" />
+                                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" />
+                                <path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <div
+                        className="auth-modal__form-group"
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr",
+                          gap: "20px",
+                          width: "100%",
+                        }}
+                      >
+                        <div style={{ position: "relative" }}>
+                          <label className="auth-modal__label">
+                            Confirm Password *
+                          </label>
+                          <input
+                            type={showConfirmPassword ? "text" : "password"}
+                            className={`auth-modal__input ${
+                              errors.confirmPassword && touched.confirmPassword
+                                ? "error"
+                                : ""
+                            }`}
+                            placeholder="Confirm password"
+                            name="confirmPassword"
+                            value={confirmPassword}
+                            onChange={handleInputChange}
+                            onBlur={handleBlur}
+                            required
+                            disabled={isLoading}
+                            style={{
+                              background: "transparent",
+                              border: "1px solid #ddd",
+                              borderRadius: "4px",
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={toggleConfirmPasswordVisibility}
+                            style={{
+                              position: "absolute",
+                              right: "10px",
+                              top: "50px",
+                              transform: "translateY(-70%)",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: "0",
+                              fontSize: "16px",
+                            }}
+                            aria-label={
+                              showConfirmPassword
+                                ? "Hide password"
+                                : "Show password"
+                            }
+                          >
+                            {showConfirmPassword ? (
+                              <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="#888"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <ellipse cx="12" cy="12" rx="10" ry="7" />
+                                <circle cx="12" cy="12" r="3.5" />
+                              </svg>
+                            ) : (
+                              <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="#888"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M1 1l22 22" />
+                                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" />
+                                <path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {currentStep === 3 && (
+                    <>
+                      <div
+                        className="auth-modal__form-group"
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr",
+                          gap: "20px",
+                          width: "100%",
+                        }}
+                      >
+                        <div>
+                          <label className="auth-modal__label">
+                            Business & PAN/VAT Document(s) *
+                            <FaInfoCircle
+                              className="auth-modal__info-icon"
+                              title="Required: Upload clear photos or PDFs of your Business Registration and VAT/PAN certificates."
+                            />
+                          </label>
+                          <span
+                            className="auth-modal__helper-text"
+                            style={{ marginBottom: "8px" }}
+                          >
+                            Accepted: JPG, PNG, PDF. Max 5MB per file.
+                          </span>
+                          <div className="auth-modal__file-upload">
+                            <label
+                              htmlFor="taxDocument"
+                              className="auth-modal__file-label"
+                            >
+                              Choose File(s)
+                            </label>
+                            <input
+                              id="taxDocument"
+                              type="file"
+                              className="auth-modal__file-input"
+                              accept="image/jpeg,image/png,application/pdf"
+                              onChange={(e) => handleFileChange(e, "tax")}
+                              multiple
+                              disabled={isLoading}
+                              name="taxDocument"
+                            />
+                          </div>
+                          {taxDocuments.length > 0 && (
+                            <div
+                              className="auth-modal__file-list"
+                              style={{
+                                marginTop: "15px",
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: "10px",
+                              }}
+                            >
+                              {taxDocuments.map((doc, index) =>
+                                renderFilePreview(doc, index, "tax"),
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div
+                        className="auth-modal__form-group"
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr",
+                          gap: "20px",
+                          width: "100%",
+                        }}
+                      >
+                        <div>
+                          <label className="auth-modal__label">
+                            Ownership Citizenship Document(s) (Optional)
+                            <FaInfoCircle
+                              className="auth-modal__info-icon"
+                              title="Optional: Providing citizenship documents can help speed up the verification process."
+                            />
+                          </label>
+                          <span
+                            className="auth-modal__helper-text"
+                            style={{ marginBottom: "8px" }}
+                          >
+                            Front and back views preferred for IDs.
+                          </span>
+                          <div className="auth-modal__file-upload">
+                            <label
+                              htmlFor="citizenshipDocument"
+                              className="auth-modal__file-label"
+                            >
+                              Choose File(s)
+                            </label>
+                            <input
+                              id="citizenshipDocument"
+                              type="file"
+                              className="auth-modal__file-input"
+                              accept="image/jpeg,image/png,application/pdf"
+                              onChange={(e) =>
+                                handleFileChange(e, "citizenship")
+                              }
+                              multiple
+                              disabled={isLoading}
+                            />
+                          </div>
+                          {citizenshipDocuments.length > 0 && (
+                            <div
+                              className="auth-modal__file-list"
+                              style={{
+                                marginTop: "15px",
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: "10px",
+                              }}
+                            >
+                              {citizenshipDocuments.map((doc, index) =>
+                                renderFilePreview(doc, index, "citizenship"),
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {currentStep === 4 && (
+                    <>
+                      <div className="auth-modal__payment-section">
                         <label className="auth-modal__label">
-                          Vat/Pan Number *{" "}
-                          <span style={{ fontSize: "9px" }}>
-                            (9 digits required)
+                          Payment Options{" "}
+                          <span className="auth-modal__optional-tag">
+                            (Optional)
                           </span>
                           <FaInfoCircle
                             className="auth-modal__info-icon"
-                            title="9-digit permanent account number issued by the tax office."
-                          />
-                        </label>
-                        <input
-                          type="text"
-                          className={`auth-modal__input ${
-                            errors.taxNumber && touched.taxNumber ? "error" : ""
-                          }`}
-                          placeholder="Enter pan/vat number"
-                          name="taxNumber"
-                          value={taxNumber}
-                          onChange={handleInputChange}
-                          onBlur={handleBlur}
-                          required
-                          disabled={isLoading}
-                          style={{
-                            background: "transparent",
-                            border: "1px solid #ddd",
-                            borderRadius: "4px",
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="auth-modal__form-group auth-modal__form-group--grid">
-                      <div>
-                        <label className="auth-modal__label">Email *</label>
-                        <input
-                          type="email"
-                          className={`auth-modal__input ${
-                            errors.email && touched.email ? "error" : ""
-                          }`}
-                          placeholder="Enter email"
-                          name="email"
-                          value={email}
-                          onChange={handleInputChange}
-                          onBlur={handleBlur}
-                          required
-                          disabled={isLoading}
-                          style={{
-                            background: "transparent",
-                            border: "1px solid #ddd",
-                            borderRadius: "4px",
-                          }}
-                        />
-                      </div>
-                      <div style={{ position: "relative" }}>
-                        <label className="auth-modal__label">Password *</label>
-                        <input
-                          type={showPassword ? "text" : "password"}
-                          className={`auth-modal__input ${
-                            errors.password && touched.password ? "error" : ""
-                          }`}
-                          placeholder="Enter password"
-                          name="password"
-                          value={password}
-                          onChange={handleInputChange}
-                          onBlur={handleBlur}
-                          required
-                          disabled={isLoading}
-                          style={{
-                            background: "transparent",
-                            border: "1px solid #ddd",
-                            borderRadius: "4px",
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={togglePasswordVisibility}
-                          style={{
-                            position: "absolute",
-                            right: "-5px",
-                            top: "50px",
-                            marginRight: "15px",
-                            transform: "translateY(-70%)",
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            padding: "0",
-                            fontSize: "16px",
-                          }}
-                          aria-label={
-                            showPassword ? "Hide password" : "Show password"
-                          }
-                        >
-                          {showPassword ? (
-                            <svg
-                              width="20"
-                              height="20"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="#888"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <ellipse cx="12" cy="12" rx="10" ry="7" />
-                              <circle cx="12" cy="12" r="3.5" />
-                            </svg>
-                          ) : (
-                            <svg
-                              width="20"
-                              height="20"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="#888"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M1 1l22 22" />
-                              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" />
-                              <path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" />
-                            </svg>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                    <div
-                      className="auth-modal__form-group"
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr",
-                        gap: "20px",
-                        width: "100%",
-                      }}
-                    >
-                      <div style={{ position: "relative" }}>
-                        <label className="auth-modal__label">
-                          Confirm Password *
-                        </label>
-                        <input
-                          type={showConfirmPassword ? "text" : "password"}
-                          className={`auth-modal__input ${
-                            errors.confirmPassword && touched.confirmPassword
-                              ? "error"
-                              : ""
-                          }`}
-                          placeholder="Confirm password"
-                          name="confirmPassword"
-                          value={confirmPassword}
-                          onChange={handleInputChange}
-                          onBlur={handleBlur}
-                          required
-                          disabled={isLoading}
-                          style={{
-                            background: "transparent",
-                            border: "1px solid #ddd",
-                            borderRadius: "4px",
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={toggleConfirmPasswordVisibility}
-                          style={{
-                            position: "absolute",
-                            right: "10px",
-                            top: "50px",
-                            transform: "translateY(-70%)",
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            padding: "0",
-                            fontSize: "16px",
-                          }}
-                          aria-label={
-                            showConfirmPassword
-                              ? "Hide password"
-                              : "Show password"
-                          }
-                        >
-                          {showConfirmPassword ? (
-                            <svg
-                              width="20"
-                              height="20"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="#888"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <ellipse cx="12" cy="12" rx="10" ry="7" />
-                              <circle cx="12" cy="12" r="3.5" />
-                            </svg>
-                          ) : (
-                            <svg
-                              width="20"
-                              height="20"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="#888"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M1 1l22 22" />
-                              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C7 19 2.73 15.11 1 12c.74-1.32 1.81-2.87 3.11-4.19M9.53 9.53A3.5 3.5 0 0 1 12 8.5c1.93 0 3.5 1.57 3.5 3.5 0 .47-.09.92-.26 1.33" />
-                              <path d="M14.47 14.47A3.5 3.5 0 0 1 12 15.5c-1.93 0-3.5-1.57-3.5-3.5 0-.47.09-.92.26-1.33" />
-                            </svg>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {currentStep === 3 && (
-                  <>
-                    <div
-                      className="auth-modal__form-group"
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr",
-                        gap: "20px",
-                        width: "100%",
-                      }}
-                    >
-                      <div>
-                        <label className="auth-modal__label">
-                          Business & PAN/VAT Document(s) *
-                          <FaInfoCircle
-                            className="auth-modal__info-icon"
-                            title="Required: Upload clear photos or PDFs of your Business Registration and VAT/PAN certificates."
+                            title="We use these details to settle your sales earnings. You can add this now or later from your vendor dashboard."
                           />
                         </label>
                         <span
                           className="auth-modal__helper-text"
-                          style={{ marginBottom: "8px" }}
+                          style={{ marginBottom: "15px" }}
                         >
-                          Accepted: JPG, PNG, PDF. Max 5MB per file.
+                          Add a payout method now, or skip and set it up later —
+                          it won't hold up your registration.
                         </span>
-                        <div className="auth-modal__file-upload">
-                          <label
-                            htmlFor="taxDocument"
-                            className="auth-modal__file-label"
-                          >
-                            Choose File(s)
-                          </label>
-                          <input
-                            id="taxDocument"
-                            type="file"
-                            className="auth-modal__file-input"
-                            accept="image/jpeg,image/png,application/pdf"
-                            onChange={(e) => handleFileChange(e, "tax")}
-                            multiple
-                            disabled={isLoading}
-                            name="taxDocument"
-                          />
-                        </div>
-                        {taxDocuments.length > 0 && (
-                          <div
-                            className="auth-modal__file-list"
-                            style={{
-                              marginTop: "15px",
-                              display: "flex",
-                              flexWrap: "wrap",
-                              gap: "10px",
-                            }}
-                          >
-                            {taxDocuments.map((doc, index) =>
-                              renderFilePreview(doc, index, "tax"),
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div
-                      className="auth-modal__form-group"
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr",
-                        gap: "20px",
-                        width: "100%",
-                      }}
-                    >
-                      <div>
-                        <label className="auth-modal__label">
-                          Ownership Citizenship Document(s) (Optional)
-                          <FaInfoCircle
-                            className="auth-modal__info-icon"
-                            title="Optional: Providing citizenship documents can help speed up the verification process."
-                          />
-                        </label>
-                        <span
-                          className="auth-modal__helper-text"
-                          style={{ marginBottom: "8px" }}
-                        >
-                          Front and back views preferred for IDs.
-                        </span>
-                        <div className="auth-modal__file-upload">
-                          <label
-                            htmlFor="citizenshipDocument"
-                            className="auth-modal__file-label"
-                          >
-                            Choose File(s)
-                          </label>
-                          <input
-                            id="citizenshipDocument"
-                            type="file"
-                            className="auth-modal__file-input"
-                            accept="image/jpeg,image/png,application/pdf"
-                            onChange={(e) => handleFileChange(e, "citizenship")}
-                            multiple
-                            disabled={isLoading}
-                          />
-                        </div>
-                        {citizenshipDocuments.length > 0 && (
-                          <div
-                            className="auth-modal__file-list"
-                            style={{
-                              marginTop: "15px",
-                              display: "flex",
-                              flexWrap: "wrap",
-                              gap: "10px",
-                            }}
-                          >
-                            {citizenshipDocuments.map((doc, index) =>
-                              renderFilePreview(doc, index, "citizenship"),
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
 
-                {currentStep === 4 && (
-                  <>
-                    <div className="auth-modal__payment-section">
-                      <label className="auth-modal__label">
-                        Payment Options{" "}
-                        <span className="auth-modal__optional-tag">
-                          (Optional)
-                        </span>
-                        <FaInfoCircle
-                          className="auth-modal__info-icon"
-                          title="We use these details to settle your sales earnings. You can add this now or later from your vendor dashboard."
-                        />
-                      </label>
-                      <span
-                        className="auth-modal__helper-text"
-                        style={{ marginBottom: "15px" }}
-                      >
-                        Add a payout method now, or skip and set it up later —
-                        it won't hold up your registration.
-                      </span>
-
-                      {paymentOptions.length > 0 && (
-                        <div className="auth-modal__payment-section">
-                          {paymentOptions.map((option, index) => (
-                            <div
-                              key={index}
-                              className="auth-modal__payment-item"
-                            >
-                              <div className="auth-modal__payment-item-info">
-                                {["ESEWA", "KHALTI"].includes(
-                                  option.paymentType,
-                                ) ? (
-                                  <FaWallet color="#4caf50" />
-                                ) : (
-                                  <FaUniversity color="#2196f3" />
-                                )}
-                                <div>
-                                  <div className="auth-modal__payment-item-type">
-                                    {option.paymentType}
-                                  </div>
-                                  <div className="auth-modal__payment-item-detail">
-                                    {option.details.accountName} -{" "}
-                                    {option.details.walletNumber ||
-                                      option.details.accountNumber}
+                        {paymentOptions.length > 0 && (
+                          <div className="auth-modal__payment-section">
+                            {paymentOptions.map((option, index) => (
+                              <div
+                                key={index}
+                                className="auth-modal__payment-item"
+                              >
+                                <div className="auth-modal__payment-item-info">
+                                  {["ESEWA", "KHALTI"].includes(
+                                    option.paymentType,
+                                  ) ? (
+                                    <FaWallet color="#4caf50" />
+                                  ) : (
+                                    <FaUniversity color="#2196f3" />
+                                  )}
+                                  <div>
+                                    <div className="auth-modal__payment-item-type">
+                                      {option.paymentType}
+                                    </div>
+                                    <div className="auth-modal__payment-item-detail">
+                                      {option.details.accountName} -{" "}
+                                      {option.details.walletNumber ||
+                                        option.details.accountNumber}
+                                    </div>
                                   </div>
                                 </div>
+                                <button
+                                  type="button"
+                                  onClick={() => removePaymentOption(index)}
+                                  className="auth-modal__payment-item-remove"
+                                >
+                                  <FaTrash />
+                                </button>
                               </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {paymentSectionMode === "choice" &&
+                          paymentOptions.length === 0 && (
+                            <div className="auth-modal__payment-choice">
                               <button
                                 type="button"
-                                onClick={() => removePaymentOption(index)}
-                                className="auth-modal__payment-item-remove"
+                                className="auth-modal__payment-choice-btn auth-modal__payment-choice-btn--primary"
+                                onClick={() => setPaymentSectionMode("form")}
                               >
-                                <FaTrash />
+                                <FaPlus fontSize="12px" /> Choose a Payment
+                                Method
+                              </button>
+                              <button
+                                type="button"
+                                className="auth-modal__payment-choice-btn auth-modal__payment-choice-btn--skip"
+                                onClick={() => setPaymentSectionMode("skipped")}
+                              >
+                                Skip, Set Up Later
                               </button>
                             </div>
-                          ))}
-                        </div>
-                      )}
+                          )}
 
-                      {paymentSectionMode === "choice" &&
-                        paymentOptions.length === 0 && (
-                          <div className="auth-modal__payment-choice">
-                            <button
-                              type="button"
-                              className="auth-modal__payment-choice-btn auth-modal__payment-choice-btn--primary"
-                              onClick={() => setPaymentSectionMode("form")}
-                            >
-                              <FaPlus fontSize="12px" /> Choose a Payment Method
-                            </button>
-                            <button
-                              type="button"
-                              className="auth-modal__payment-choice-btn auth-modal__payment-choice-btn--skip"
-                              onClick={() => setPaymentSectionMode("skipped")}
-                            >
-                              Skip, Set Up Later
-                            </button>
-                          </div>
-                        )}
+                        {paymentSectionMode === "skipped" &&
+                          paymentOptions.length === 0 && (
+                            <div className="auth-modal__payment-skipped">
+                              <p>
+                                No problem — you can add a payout method anytime
+                                from your vendor dashboard once your account is
+                                approved.
+                              </p>
+                              <button
+                                type="button"
+                                className="auth-modal__link-button"
+                                onClick={() => setPaymentSectionMode("form")}
+                              >
+                                Add one now instead
+                              </button>
+                            </div>
+                          )}
 
-                      {paymentSectionMode === "skipped" &&
-                        paymentOptions.length === 0 && (
-                          <div className="auth-modal__payment-skipped">
-                            <p>
-                              No problem — you can add a payout method anytime
-                              from your vendor dashboard once your account is
-                              approved.
-                            </p>
-                            <button
-                              type="button"
-                              className="auth-modal__link-button"
-                              onClick={() => setPaymentSectionMode("form")}
-                            >
-                              Add one now instead
-                            </button>
-                          </div>
-                        )}
-
-                      {(paymentSectionMode === "form" ||
-                        paymentOptions.length > 0) && (
-                        <div className="auth-modal__add-payment">
-                          <div className="auth-modal__form-group">
-                            <label className="auth-modal__label">
-                              Choose Method Type
-                            </label>
-                            <select
-                              className="auth-modal__input"
-                              value={currentPaymentType}
-                              onChange={(e) =>
-                                setCurrentPaymentType(
-                                  e.target.value as PaymentType,
-                                )
-                              }
-                              style={{
-                                background: "transparent",
-                                border: "1px solid #ddd",
-                                borderRadius: "4px",
-                              }}
-                            >
-                              <option value="">Select a method...</option>
-                              <option value="ESEWA">eSewa</option>
-                              <option value="KHALTI">Khalti</option>
-                              <option value="BANK">Bank</option>
-                            </select>
-
-                            {currentPaymentType && (
-                              <div className="auth-modal__payment-type-note">
-                                <div className="auth-modal__payment-type-note-title">
-                                  {["ESEWA", "KHALTI"].includes(
-                                    currentPaymentType,
+                        {(paymentSectionMode === "form" ||
+                          paymentOptions.length > 0) && (
+                          <div className="auth-modal__add-payment">
+                            <div className="auth-modal__form-group">
+                              <label className="auth-modal__label">
+                                Choose Method Type
+                              </label>
+                              <select
+                                className="auth-modal__input"
+                                value={currentPaymentType}
+                                onChange={(e) =>
+                                  setCurrentPaymentType(
+                                    e.target.value as PaymentType,
                                   )
-                                    ? "Digital Wallet (Instant Settlement)"
-                                    : "Bank Transfer (Standard Settlement)"}
-                                </div>
-                                <p className="auth-modal__payment-type-note-text">
-                                  {["ESEWA", "KHALTI"].includes(
-                                    currentPaymentType,
-                                  )
-                                    ? "Use this for fast, automated payments. Recommended for local vendors with frequent payouts."
-                                    : "Funds will be transferred directly to your bank account. Suitable for larger, bulk settlements."}
-                                </p>
-                              </div>
-                            )}
-                          </div>
+                                }
+                                style={{
+                                  background: "transparent",
+                                  border: "1px solid #ddd",
+                                  borderRadius: "4px",
+                                }}
+                              >
+                                <option value="">Select a method...</option>
+                                <option value="ESEWA">eSewa</option>
+                                <option value="KHALTI">Khalti</option>
+                                <option value="BANK">Bank</option>
+                              </select>
 
-                          {currentPaymentType &&
-                            (["ESEWA", "KHALTI"].includes(
-                              currentPaymentType,
-                            ) ? (
-                              <div className="auth-modal__form-group auth-modal__form-group--grid">
-                                <div>
-                                  <label className="auth-modal__label">
-                                    Wallet Number *
-                                  </label>
-                                  <input
-                                    type="text"
-                                    className="auth-modal__input"
-                                    name="walletNumber"
-                                    value={walletNumber}
-                                    onChange={(e) =>
-                                      setWalletNumber(e.target.value)
-                                    }
-                                    placeholder="Enter wallet number"
-                                    style={{
-                                      background: "transparent",
-                                      border: "1px solid #ddd",
-                                      borderRadius: "4px",
-                                    }}
-                                  />
+                              {currentPaymentType && (
+                                <div className="auth-modal__payment-type-note">
+                                  <div className="auth-modal__payment-type-note-title">
+                                    {["ESEWA", "KHALTI"].includes(
+                                      currentPaymentType,
+                                    )
+                                      ? "Digital Wallet (Instant Settlement)"
+                                      : "Bank Transfer (Standard Settlement)"}
+                                  </div>
+                                  <p className="auth-modal__payment-type-note-text">
+                                    {["ESEWA", "KHALTI"].includes(
+                                      currentPaymentType,
+                                    )
+                                      ? "Use this for fast, automated payments. Recommended for local vendors with frequent payouts."
+                                      : "Funds will be transferred directly to your bank account. Suitable for larger, bulk settlements."}
+                                  </p>
                                 </div>
-                                <div>
-                                  <label className="auth-modal__label">
-                                    Account Holder Name *
-                                  </label>
-                                  <input
-                                    type="text"
-                                    className="auth-modal__input"
-                                    name="accountName"
-                                    value={accountName}
-                                    onChange={(e) =>
-                                      setAccountName(e.target.value)
-                                    }
-                                    placeholder="Enter name"
-                                    style={{
-                                      background: "transparent",
-                                      border: "1px solid #ddd",
-                                      borderRadius: "4px",
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            ) : (
-                              <>
+                              )}
+                            </div>
+
+                            {currentPaymentType &&
+                              (["ESEWA", "KHALTI"].includes(
+                                currentPaymentType,
+                              ) ? (
                                 <div className="auth-modal__form-group auth-modal__form-group--grid">
                                   <div>
                                     <label className="auth-modal__label">
-                                      Bank Name *
+                                      Wallet Number *
                                     </label>
                                     <input
                                       type="text"
                                       className="auth-modal__input"
-                                      value={bankName}
+                                      name="walletNumber"
+                                      value={walletNumber}
                                       onChange={(e) =>
-                                        setBankName(e.target.value)
+                                        setWalletNumber(e.target.value)
                                       }
-                                      placeholder="Enter bank name"
+                                      placeholder="Enter wallet number"
                                       style={{
                                         background: "transparent",
                                         border: "1px solid #ddd",
@@ -2278,6 +2261,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                                     <input
                                       type="text"
                                       className="auth-modal__input"
+                                      name="accountName"
                                       value={accountName}
                                       onChange={(e) =>
                                         setAccountName(e.target.value)
@@ -2291,141 +2275,186 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
                                     />
                                   </div>
                                 </div>
-                                <div className="auth-modal__form-group auth-modal__form-group--grid">
-                                  <div>
-                                    <label className="auth-modal__label">
-                                      Account Number *
-                                    </label>
-                                    <input
-                                      type="text"
-                                      className="auth-modal__input"
-                                      value={accountNumber}
-                                      onChange={(e) =>
-                                        setAccountNumber(e.target.value)
-                                      }
-                                      placeholder="Enter account number"
-                                      style={{
-                                        background: "transparent",
-                                        border: "1px solid #ddd",
-                                        borderRadius: "4px",
-                                      }}
-                                    />
+                              ) : (
+                                <>
+                                  <div className="auth-modal__form-group auth-modal__form-group--grid">
+                                    <div>
+                                      <label className="auth-modal__label">
+                                        Bank Name *
+                                      </label>
+                                      <input
+                                        type="text"
+                                        className="auth-modal__input"
+                                        value={bankName}
+                                        onChange={(e) =>
+                                          setBankName(e.target.value)
+                                        }
+                                        placeholder="Enter bank name"
+                                        style={{
+                                          background: "transparent",
+                                          border: "1px solid #ddd",
+                                          borderRadius: "4px",
+                                        }}
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="auth-modal__label">
+                                        Account Holder Name *
+                                      </label>
+                                      <input
+                                        type="text"
+                                        className="auth-modal__input"
+                                        value={accountName}
+                                        onChange={(e) =>
+                                          setAccountName(e.target.value)
+                                        }
+                                        placeholder="Enter name"
+                                        style={{
+                                          background: "transparent",
+                                          border: "1px solid #ddd",
+                                          borderRadius: "4px",
+                                        }}
+                                      />
+                                    </div>
                                   </div>
-                                  <div>
-                                    <label className="auth-modal__label">
-                                      Bank Branch *
-                                    </label>
-                                    <input
-                                      type="text"
-                                      className="auth-modal__input"
-                                      value={bankBranch}
-                                      onChange={(e) =>
-                                        setBankBranch(e.target.value)
-                                      }
-                                      placeholder="Enter branch"
-                                      style={{
-                                        background: "transparent",
-                                        border: "1px solid #ddd",
-                                        borderRadius: "4px",
-                                      }}
-                                    />
+                                  <div className="auth-modal__form-group auth-modal__form-group--grid">
+                                    <div>
+                                      <label className="auth-modal__label">
+                                        Account Number *
+                                      </label>
+                                      <input
+                                        type="text"
+                                        className="auth-modal__input"
+                                        value={accountNumber}
+                                        onChange={(e) =>
+                                          setAccountNumber(e.target.value)
+                                        }
+                                        placeholder="Enter account number"
+                                        style={{
+                                          background: "transparent",
+                                          border: "1px solid #ddd",
+                                          borderRadius: "4px",
+                                        }}
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="auth-modal__label">
+                                        Bank Branch *
+                                      </label>
+                                      <input
+                                        type="text"
+                                        className="auth-modal__input"
+                                        value={bankBranch}
+                                        onChange={(e) =>
+                                          setBankBranch(e.target.value)
+                                        }
+                                        placeholder="Enter branch"
+                                        style={{
+                                          background: "transparent",
+                                          border: "1px solid #ddd",
+                                          borderRadius: "4px",
+                                        }}
+                                      />
+                                    </div>
                                   </div>
-                                </div>
-                              </>
-                            ))}
+                                </>
+                              ))}
 
-                          <button
-                            type="button"
-                            className="auth-modal__add-payment-submit"
-                            onClick={handleAddPaymentOption}
-                          >
-                            <FaPlus fontSize="12px" /> Add Payment Method
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                            <button
+                              type="button"
+                              className="auth-modal__add-payment-submit"
+                              onClick={handleAddPaymentOption}
+                            >
+                              <FaPlus fontSize="12px" /> Add Payment Method
+                            </button>
+                          </div>
+                        )}
+                      </div>
 
-                    <div className="auth-modal__checkbox">
-                      <input
-                        id="acceptListingFee"
-                        type="checkbox"
-                        name="acceptListingFee"
-                        checked={acceptListingFee}
-                        onChange={(e) => {
-                          setAcceptListingFee(e.target.checked);
-                          setTouched((prev) => ({
-                            ...prev,
-                            acceptListingFee: true,
-                          }));
-                          const error = validateField(
-                            "acceptListingFee",
-                            e.target.checked,
-                          );
-                          setErrors((prev) => ({
-                            ...prev,
-                            acceptListingFee: error,
-                          }));
-                        }}
-                        disabled={isLoading}
-                        style={{
-                          background: "transparent",
-                          border: "1px solid #ddd",
-                          height: "fit-content",
-                          width: "fit-content",
-                        }}
-                      />
-                      <label
-                        htmlFor="acceptListingFee"
-                        className=""
-                        style={{ background: "transparent", cursor: "pointer" }}
-                      >
-                        I accept the listing fee (
-                        <Link
-                          to="/commission-list"
-                          target="_blank"
-                          className="auth-modal__link"
+                      <div className="auth-modal__checkbox">
+                        <input
+                          id="acceptListingFee"
+                          type="checkbox"
+                          name="acceptListingFee"
+                          checked={acceptListingFee}
+                          onChange={(e) => {
+                            setAcceptListingFee(e.target.checked);
+                            setTouched((prev) => ({
+                              ...prev,
+                              acceptListingFee: true,
+                            }));
+                            const error = validateField(
+                              "acceptListingFee",
+                              e.target.checked,
+                            );
+                            setErrors((prev) => ({
+                              ...prev,
+                              acceptListingFee: error,
+                            }));
+                          }}
+                          disabled={isLoading}
+                          style={{
+                            background: "transparent",
+                            border: "1px solid #ddd",
+                            height: "fit-content",
+                            width: "fit-content",
+                          }}
+                        />
+                        <label
+                          htmlFor="acceptListingFee"
+                          className=""
+                          style={{
+                            background: "transparent",
+                            cursor: "pointer",
+                          }}
                         >
-                          View Commission List
-                        </Link>
-                        )
-                      </label>
-                    </div>
-                  </>
-                )}
+                          I accept the listing fee (
+                          <Link
+                            to="/commission-list"
+                            target="_blank"
+                            className="auth-modal__link"
+                          >
+                            View Commission List
+                          </Link>
+                          )
+                        </label>
+                      </div>
+                    </>
+                  )}
 
-                <div className="auth-modal__step-buttons">
-                  {currentStep > 1 && (
+                  <div className="auth-modal__step-buttons">
+                    {currentStep > 1 && (
+                      <button
+                        type="button"
+                        className="auth-modal__back-button-improved"
+                        onClick={handleBack}
+                        disabled={isLoading}
+                      >
+                        Back
+                      </button>
+                    )}
                     <button
-                      type="button"
-                      className="auth-modal__back-button-improved"
-                      onClick={handleBack}
+                      type="submit"
+                      className="auth-modal__submit"
                       disabled={isLoading}
                     >
-                      Back
+                      {isLoading
+                        ? "Loading..."
+                        : currentStep === 4
+                          ? "Submit Registration"
+                          : "Next"}
                     </button>
-                  )}
-                  <button
-                    type="submit"
-                    className="auth-modal__submit"
-                    disabled={isLoading}
-                  >
-                    {isLoading
-                      ? "Loading..."
-                      : currentStep === 4
-                        ? "Submit Registration"
-                        : "Next"}
-                  </button>
-                </div>
-              </>
-            )}
-          </form>
-        )}
+                  </div>
+                </>
+              )}
+            </form>
+          )}
+        </div>
       </div>
-    </div>
-    <VendorTermsModal
-      open={termsModalOpen}
-      onClose={() => setTermsModalOpen(false)}
-    />
+      <VendorTermsModal
+        open={termsModalOpen}
+        onClose={() => setTermsModalOpen(false)}
+      />
     </>
   );
 };

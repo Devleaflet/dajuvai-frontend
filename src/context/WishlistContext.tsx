@@ -142,17 +142,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         variantId === null || variantId === undefined || variantId === ''
           ? null
           : Number(variantId);
-      const optimisticItem = {
-        id: -Date.now(),
-        productId,
-        variantId: normalizedVariantId,
-        __optimistic: true,
-      };
-
       setPending(key, true);
-      setWishlist((current) =>
-        current.some((item) => itemKey(item) === key) ? current : [optimisticItem, ...current],
-      );
 
       try {
         const savedItem = await addToWishlist(
@@ -163,7 +153,6 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         await refreshWishlist();
         return savedItem ?? null;
       } catch (err) {
-        setWishlist((current) => current.filter((item) => item.id !== optimisticItem.id));
         throw err;
       } finally {
         setPending(key, false);

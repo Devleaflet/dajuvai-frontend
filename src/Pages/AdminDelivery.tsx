@@ -12,78 +12,78 @@ import FailedRecoveryTab from "../Components/AdminDelivery/FailedRecoveryTab";
 type Tab = "allOrders" | "assignments" | "riders" | "failed";
 
 const TAB_LABELS: { key: Tab; label: string }[] = [
-    { key: "allOrders", label: "All Orders" },
-    { key: "assignments", label: "All Assignments" },
-    { key: "riders", label: "Riders" },
-    { key: "failed", label: "Failed Recovery" },
+  { key: "allOrders", label: "All Orders" },
+  { key: "assignments", label: "All Assignments" },
+  { key: "riders", label: "Riders" },
+  { key: "failed", label: "Failed Recovery" },
 ];
 
 const AdminDelivery: React.FC = () => {
-    const { token, isAuthenticated, isLoading: authLoading } = useAuth();
-    const [activeTab, setActiveTab] = useState<Tab>("allOrders");
+  const { token, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [activeTab, setActiveTab] = useState<Tab>("allOrders");
 
-    if (authLoading) {
-        return (
-            <div className="admin-delivery">
-                <AdminSidebar />
-                <div className="admin-delivery__content">
-                    <div className="admin-delivery__loading">
-                        <div className="admin-delivery__spinner" />
-                        Loading...
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (!isAuthenticated || !token) {
-        return (
-            <div className="admin-delivery">
-                <AdminSidebar />
-                <div className="admin-delivery__content">
-                    <div className="admin-delivery__loading">
-                        Please log in to access delivery management.
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    const renderTab = () => {
-        switch (activeTab) {
-            case "allOrders":
-                return <AllOrdersTab />;
-            case "assignments":
-                return <AssignmentsTab />;
-            case "riders":
-                return <RidersTab />;
-            case "failed":
-                return <FailedRecoveryTab />;
-        }
-    };
-
+  if (authLoading) {
     return (
-        <div className="admin-delivery">
-            <AdminSidebar />
-            <div className="admin-delivery__content">
-                <Header title="Delivery Management" showSearch={false} />
-                <div className="admin-delivery__body">
-                    <div className="admin-delivery__tabs">
-                        {TAB_LABELS.map(({ key, label }) => (
-                            <button
-                                key={key}
-                                className={`admin-delivery__tab${activeTab === key ? " admin-delivery__tab--active" : ""}`}
-                                onClick={() => setActiveTab(key)}
-                            >
-                                {label}
-                            </button>
-                        ))}
-                    </div>
-                    {renderTab()}
-                </div>
-            </div>
+      <div className="admin-delivery">
+        <AdminSidebar />
+        <div className="admin-delivery__content">
+          <div className="admin-delivery__loading">
+            <div className="admin-delivery__spinner" />
+            Loading...
+          </div>
         </div>
+      </div>
     );
+  }
+
+  if (!isAuthenticated || !token) {
+    return (
+      <div className="admin-delivery">
+        <AdminSidebar />
+        <div className="admin-delivery__content">
+          <div className="admin-delivery__loading">
+            Please log in to access delivery management.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const renderTab = () => {
+    switch (activeTab) {
+      case "allOrders":
+        return <AllOrdersTab />;
+      case "assignments":
+        return <AssignmentsTab />;
+      case "riders":
+        return <RidersTab />;
+      case "failed":
+        return <FailedRecoveryTab />;
+    }
+  };
+
+  return (
+    <div className="admin-delivery">
+      <AdminSidebar />
+      <div className="admin-delivery__content">
+        <Header title="Delivery Management" showSearch={false} />
+        <div className="admin-delivery__body">
+          <div className="admin-delivery__tabs">
+            {TAB_LABELS.map(({ key, label }) => (
+              <button
+                key={key}
+                className={`admin-delivery__tab${activeTab === key ? " admin-delivery__tab--active" : ""}`}
+                onClick={() => setActiveTab(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {renderTab()}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default AdminDelivery;
