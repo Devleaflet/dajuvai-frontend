@@ -8,9 +8,11 @@ import {
     uploadDocument,
 } from "../../services/deliveryService";
 import type { Rider } from "../../types/delivery";
-import { set } from "lodash";
+import { usePermission } from "../../hooks/usePermission";
 
 export default function RidersTab() {
+    const { can } = usePermission();
+    const canEdit = can("delivery", "create_edit");
     const [riders, setRiders] = useState<Rider[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedRider, setSelectedRider] = useState<Rider | null>(null);
@@ -187,7 +189,7 @@ export default function RidersTab() {
                             </div>
                         </div>
                     )}
-                    <div>
+                    {canEdit && <div>
                         <div>Reset Rider Password</div>
                         <input
                             value={changedPassword}
@@ -222,7 +224,7 @@ export default function RidersTab() {
                         >
                             Change
                         </button>
-                    </div>
+                    </div>}
                 </div>
             </div>
         );
@@ -234,12 +236,12 @@ export default function RidersTab() {
                 <h3 className="admin-delivery__section-title">
                     Riders ({riders.length})
                 </h3>
-                <button
+                {canEdit && <button
                     className="admin-delivery__btn admin-delivery__btn--primary"
                     onClick={() => setShowForm(!showForm)}
                 >
                     {showForm ? "✕ Cancel" : "+ New Rider"}
-                </button>
+                </button>}
             </div>
 
             {showForm && (

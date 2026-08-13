@@ -411,9 +411,8 @@
 .admin-page-header__search-input:focus {
   border-color: #fb923c;
   background: #fff;
-  box-shadow:
-    0 0 0 3px rgba(249, 115, 22, 0.12),
-    0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: none;
+  transform: none;
 }
 
 .admin-page-header__filters {
@@ -596,6 +595,8 @@
   .admin-page-header__select {
     height: 46px;
   }
+  .admin-page-header__search { width: 100%; min-width: 0; }
+  .admin-page-header__search-input { min-width: 0; font-size: 14px; }
 }
 
 @media (max-width: 380px) {

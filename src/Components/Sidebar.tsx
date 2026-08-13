@@ -102,11 +102,11 @@ export function Sidebar({ ...props }: SidebarProps) {
     const fetchUnreadCount = async () => {
       try {
         const response = await axiosInstance.get("/api/notification", {
+          params: { page: 1, limit: 1 },
           headers: { Authorization: `Bearer ${authState.token}` },
         });
         if (response.data?.success) {
-          const count = response.data.data.filter((n: { isRead: boolean }) => !n.isRead).length;
-          setUnreadCount(count);
+          setUnreadCount(Number(response.data.unreadTotal ?? 0));
         }
       } catch {
         // silently ignore — badge simply won't show

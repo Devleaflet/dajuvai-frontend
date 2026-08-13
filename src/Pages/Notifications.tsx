@@ -1,206 +1,248 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../Styles/Notifications.css";
 import { AdminSidebar } from "../Components/AdminSidebar";
-import { Sidebar, Sidebar as VendorSidebar } from "../Components/Sidebar";
+import { Sidebar } from "../Components/Sidebar";
 import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/AuthContext";
 import Header from "../Components/Header";
 import VendorHeader from "../Components/VendorHeader";
 
+type FeedNotification = {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  createdAt: string;
+  isRead: boolean;
+};
+
+type NotificationPage = {
+  success?: boolean;
+  data: FeedNotification[];
+  total: number;
+  unreadTotal: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+const PAGE_SIZE = 10;
+
 export function Notifications() {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 1000);
-  const {token} = useAuth()
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 1000);
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
+  const { token } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const isVendor = location.pathname === "/vendor-notifications";
+  const [notifications, setNotifications] = useState<FeedNotification[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [unreadTotal, setUnreadTotal] = useState(0);
+  const [activeTab, setActiveTab] = useState<"all" | "unread">("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [markingAll, setMarkingAll] = useState(false);
 
-  const [notifications, setNotifications] = useState([]);
-  const [activeTab, setActiveTab] = useState("All");
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isMarkingAll, setIsMarkingAll] = useState(false);
+  const visible = notifications;
 
-  const formatTime = (dateString) => {
-    const now = new Date();
-    const date = new Date(dateString);
-		const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes} mins ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    const days = Math.floor(hours / 24);
-    return `${days} day${days > 1 ? 's' : ''} ago`;
-  };
-
-  const getTypeForIcon = (apiType) => {
-    switch (apiType) {
-      case "ORDER_PLACED": return "order";
-      case "VENDOR_APPROVED": return "vendor";
-      default: return "system";
-    }
-  };
-
-  useEffect(() => {
-    const unread = notifications.filter(n => !n.read).length;
-    setUnreadCount(unread);
-  }, [notifications]);
-
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const response = await axiosInstance.get("/api/notification", {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        if (response.data && response.data.success) {
-          const mappedNotifications = response.data.data.map(item => ({
-            id: item.id,
-            type: getTypeForIcon(item.type),
-            title: `${item.title}: ${item.message}`,
-            time: formatTime(item.createdAt),
-            read: item.isRead
-          }));
-          setNotifications(mappedNotifications);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    fetchNotifications();
-  }, [token]);
-
-  const markAsRead = async (id) => {
+  const load = async () => {
+    setLoading(true);
+    setError("");
     try {
-      await axiosInstance.patch(`/api/notification/${id}`, { isRead: true }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const markAllAsRead = async () => {
-    const unread = notifications.filter(n => !n.read);
-    if (!unread.length) return;
-    setIsMarkingAll(true);
-    try {
-      await Promise.allSettled(
-        unread.map(n =>
-          axiosInstance.patch(`/api/notification/${n.id}`, { isRead: true }, {
-            headers: { Authorization: `Bearer ${token}` }
-          })
-        )
+      const response = await axiosInstance.get<NotificationPage>(
+        "/api/notification",
+        {
+          params: {
+            page,
+            limit: PAGE_SIZE,
+            unreadOnly: activeTab === "unread",
+          },
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        },
       );
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    } catch (error) {
-      console.error(error);
+      if (!response.data?.success)
+        throw new Error("Notification request failed");
+      setNotifications(response.data.data ?? []);
+      setTotal(Number(response.data.total ?? 0));
+      setUnreadTotal(Number(response.data.unreadTotal ?? 0));
+      setTotalPages(Math.max(1, Number(response.data.totalPages ?? 1)));
+    } catch (requestError: any) {
+      setError(
+        requestError?.response?.data?.message ||
+          "Could not load notifications.",
+      );
     } finally {
-      setIsMarkingAll(false);
+      setLoading(false);
     }
   };
 
-  const handleNotificationClick = async (notification) => {
-    if (!notification.read) {
-      await markAsRead(notification.id);
-    }
-    if (notification.type === 'order') {
-      const match = notification.title.match(/#(\d+)/);
-      if (match) {
-        const orderId = match[1];
-        const path = isVendor ? `/vendor-orders?orderId=${orderId}` : `/admin-orders?orderId=${orderId}`;
-        navigate(path);
-      }
+  useEffect(() => {
+    void load();
+  }, [token, page, activeTab]);
+
+  const markRead = async (notification: FeedNotification) => {
+    if (notification.isRead) return;
+    try {
+      await axiosInstance.patch(`/api/notification/${notification.id}`, {
+        isRead: true,
+      });
+      setNotifications((items) =>
+        items.map((item) =>
+          item.id === notification.id ? { ...item, isRead: true } : item,
+        ),
+      );
+      setUnreadTotal((value) => Math.max(0, value - 1));
+    } catch {
+      setError("Could not mark notification as read.");
     }
   };
 
-  const filteredNotifications = activeTab === "Unread" 
-    ? notifications.filter(n => !n.read) 
-    : notifications;
+  const openNotification = async (notification: FeedNotification) => {
+    await markRead(notification);
+    if (!notification.type.startsWith("ORDER")) return;
+    const orderId = `${notification.title} ${notification.message}`.match(
+      /#(\d+)/,
+    )?.[1];
+    if (orderId)
+      navigate(
+        isVendor
+          ? `/vendor-orders?orderId=${orderId}`
+          : `/admin-orders?orderId=${orderId}`,
+      );
+  };
 
-  const getIcon = (type) => {
-    switch (type) {
-      case "order": return "🛒";
-      case "vendor": return "🏪";
-      case "system": return "⚙️";
-      default: return "📝";
+  const markAllRead = async () => {
+    if (!unreadTotal) return;
+    setMarkingAll(true);
+    try {
+      await axiosInstance.patch("/api/notification/read-all");
+      setNotifications((items) =>
+        items.map((item) => ({ ...item, isRead: true })),
+      );
+      setUnreadTotal(0);
+    } catch {
+      setError("Some notifications could not be marked as read.");
+      void load();
+    } finally {
+      setMarkingAll(false);
     }
   };
 
   return (
     <div className="admin-layout">
       {isVendor ? <Sidebar /> : <AdminSidebar />}
-      <div style={{flex:1}}>
-        {!isVendor? <Header
-        showSearch = {false}
-        title="Notification"/>: 
-        <VendorHeader
-        title="Notification"
-        />}
-        <div className={`notifications-main ${isMobile ? "notifications-main--mobile" : ""}`}>
-          <div className="notifications-container">
-            <div className="notifications-header">
+      <main className="notifications-page">
+        {isVendor ? (
+          <VendorHeader title="Notifications" />
+        ) : (
+          <Header showSearch={false} title="Notifications" />
+        )}
+        <section className="notifications-panel" aria-label="Notifications">
+          <header className="notifications-panel__header">
+            <div>
               <h1>Notifications</h1>
-              <div className="notifications-header__right">
-                <span className="unread-badge">({unreadCount} Unread)</span>
-                {unreadCount > 0 && (
-                  <button
-                    className="mark-all-btn"
-                    onClick={markAllAsRead}
-                    disabled={isMarkingAll}
-                  >
-                    {isMarkingAll ? "Marking..." : "Mark all as read"}
-                  </button>
-                )}
-              </div>
+              <p>Updates for your account and orders.</p>
             </div>
-            <div className="tabs">
+            <div className="notifications-panel__actions">
+              <span className="unread-badge">{unreadTotal} unread</span>
               <button
-                className={`tab ${activeTab === "All" ? "active" : ""}`}
-                onClick={() => setActiveTab("All")}
+                className="mark-all-btn"
+                disabled={!unreadTotal || markingAll}
+                onClick={markAllRead}
               >
-                All
-              </button>
-              <button
-                className={`tab ${activeTab === "Unread" ? "active" : ""}`}
-                onClick={() => setActiveTab("Unread")}
-              >
-                Unread
+                {markingAll ? "Marking…" : "Mark all read"}
               </button>
             </div>
+          </header>
+          <div className="tabs" role="tablist" aria-label="Notification filter">
+            <button
+              className={`tab ${activeTab === "all" ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab("all");
+                setPage(1);
+              }}
+            >
+              All
+            </button>
+            <button
+              className={`tab ${activeTab === "unread" ? "active" : ""}`}
+              onClick={() => {
+                setActiveTab("unread");
+                setPage(1);
+              }}
+            >
+              Unread ({unreadTotal})
+            </button>
+          </div>
+          {error && (
+            <div className="notifications-error" role="alert">
+              {error}
+              <button onClick={load}>Retry</button>
+            </div>
+          )}
+
+          {loading ? (
+            <p className="notifications-empty">Loading notifications…</p>
+          ) : visible.length === 0 ? (
+            <p className="notifications-empty">
+              {activeTab === "unread"
+                ? "You are all caught up."
+                : "No notifications yet."}
+            </p>
+          ) : (
             <div className="notifications-list">
-              {filteredNotifications.map((notification) => (
-                <div
+              {visible.map((notification) => (
+                <button
                   key={notification.id}
-                  className={`notification-item ${notification.read ? "read" : "unread"}`}
-                  onClick={() => handleNotificationClick(notification)}
+                  className={`notification-item ${notification.isRead ? "read" : "unread"}`}
+                  onClick={() => void openNotification(notification)}
                 >
-                  <div className="notification-icon">
-                    {getIcon(notification.type)}
-                  </div>
-                  <div className="notification-content">
-                    <p className="notification-title">{notification.title}</p>
-                    <span className="notification-time">{notification.time}</span>
-                  </div>
-                </div>
+                  <span className="notification-icon" aria-hidden>
+                    {notification.type.startsWith("ORDER") ? "🛒" : "🔔"}
+                  </span>
+                  <span className="notification-content">
+                    <strong>{notification.title}</strong>
+                    <span>{notification.message}</span>
+                    <time>
+                      {new Date(notification.createdAt).toLocaleString()}
+                    </time>
+                  </span>
+                  {!notification.isRead && (
+                    <span className="notification-new">New</span>
+                  )}
+                </button>
               ))}
             </div>
-          </div>
-        </div>
-      </div>
+          )}
+          <footer className="notifications-pagination">
+            <span>
+              {total
+                ? `Showing ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, total)} of ${total}`
+                : "No notifications"}
+            </span>
+            <div>
+              <button
+                type="button"
+                onClick={() => setPage((value) => value - 1)}
+                disabled={page <= 1 || loading}
+              >
+                Previous
+              </button>
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage((value) => value + 1)}
+                disabled={page >= totalPages || loading}
+              >
+                Next
+              </button>
+            </div>
+          </footer>
+        </section>
+      </main>
     </div>
   );
 }

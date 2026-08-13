@@ -15,10 +15,11 @@ import staffApi, {
 } from '../api/staff';
 import '../Styles/AdminStaff.css';
 import '../Styles/AdminCustomers.css';
-import { Ban, Eye, Edit, Trash2, ShoppingBag, Truck, BookOpen, Megaphone, Tag, Users, Image, LayoutGrid, UserRound, Box } from 'lucide-react';
+import { Ban, Eye, Edit, Trash2, ShoppingBag, Truck, BookOpen, Megaphone, Tag, Users, Image, LayoutGrid, UserRound, Box, ClipboardList } from 'lucide-react';
 
 const MODULE_LABELS: Record<ModuleName, string> = {
   arrangement: 'Arrangement',
+  audit: 'Audit Logs',
   banner: 'Banners',
   catalog: 'Catalog',
   customer: 'Customers',
@@ -33,6 +34,7 @@ const MODULE_LABELS: Record<ModuleName, string> = {
 
 const MODULE_ICONS: Record<ModuleName, any> = {
   arrangement: LayoutGrid,
+  audit: ClipboardList,
   banner: Image,
   catalog: BookOpen,
   customer: UserRound,
@@ -47,6 +49,7 @@ const MODULE_ICONS: Record<ModuleName, any> = {
 
 const MODULE_COLORS: Record<ModuleName, string> = {
   arrangement: '#6366f1',
+  audit: '#475569',
   banner: '#14b8a6',
   catalog: '#8b5cf6',
   customer: '#06b6d4',

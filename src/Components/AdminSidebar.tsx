@@ -347,6 +347,16 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
             Notifications
           </NavItem>
 
+          {can("audit", "view") && (
+            <NavItem
+              to="/admin/audit-logs"
+              active={location.pathname === "/admin/audit-logs"}
+              icon={<OrdersIcon />}
+            >
+              Audit Logs
+            </NavItem>
+          )}
+
           {can("customer", "view") && (
             <NavItem
               to="/admin-customers"

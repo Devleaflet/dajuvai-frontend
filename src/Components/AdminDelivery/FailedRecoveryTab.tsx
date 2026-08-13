@@ -6,8 +6,11 @@ import {
     resetFailedOrder,
 } from "../../services/deliveryService";
 import type { DeliveryAssignment, Order } from "../../types/delivery";
+import { usePermission } from "../../hooks/usePermission";
 
 export default function FailedRecoveryTab() {
+    const { can } = usePermission();
+    const canEdit = can("delivery", "create_edit");
     const [failedAssignments, setFailedAssignments] = useState<
         DeliveryAssignment[]
     >([]);
@@ -126,7 +129,7 @@ export default function FailedRecoveryTab() {
                                             >
                                                 View Detail
                                             </button>
-                                            <button
+                                            {canEdit && <button
                                                 className="admin-delivery__btn admin-delivery__btn--warning admin-delivery__btn--sm"
                                                 onClick={() =>
                                                     handleReset(a.orderId)
@@ -136,7 +139,7 @@ export default function FailedRecoveryTab() {
                                                 {resetting === a.orderId
                                                     ? "Resetting..."
                                                     : "🔄 Reset to Warehouse"}
-                                            </button>
+                                            </button>}
                                         </div>
                                     </td>
                                 </tr>
@@ -160,4 +163,3 @@ export default function FailedRecoveryTab() {
         </>
     );
 }
-

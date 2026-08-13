@@ -6,8 +6,11 @@ import OrderDetailModal from "../Modal/OrderDetailModal";
 import { getAllAssignments, resetFailedOrder } from "../../services/deliveryService";
 import type { DeliveryAssignment, Order } from "../../types/delivery";
 import { OrderStatus } from "../../types/delivery";
+import { usePermission } from "../../hooks/usePermission";
 
 export default function AssignmentsTab() {
+    const { can } = usePermission();
+    const canEdit = can("delivery", "create_edit");
     const [assignments, setAssignments] = useState<DeliveryAssignment[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -146,7 +149,7 @@ export default function AssignmentsTab() {
                                                 >
                                                     View Detail
                                                 </button>
-                                                {isLatestAssignment &&
+                                                {canEdit && isLatestAssignment &&
                                                     a.order?.status !== OrderStatus.ARRIVED_AT_WAREHOUSE &&
                                                     a.order?.status !== OrderStatus.DELIVERED && (
                                                     <button
@@ -193,4 +196,3 @@ export default function AssignmentsTab() {
         </>
     );
 }
-

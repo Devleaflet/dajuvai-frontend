@@ -25,19 +25,20 @@ const OrderStatusEditor: React.FC<OrderStatusEditorProps> = ({
     disabled,
     isSaving,
 }) => {
-    const [status, setStatus] = useState<OrderStatusValue>(
-        currentStatus.toUpperCase() as OrderStatusValue,
+    const current = currentStatus.toUpperCase() as OrderStatusValue;
+    const [status, setStatus] = useState<OrderStatusValue | "">(
+        current === "ASSIGNED_TO_RIDER" ? "" : current,
     );
     const [reason, setReason] = useState("");
     const [reasonError, setReasonError] = useState("");
     const [note, setNote] = useState("");
 
-    const selectedMeta = getOrderStatusMeta(status);
-    const unchanged = status === currentStatus.toUpperCase();
+    const selectedMeta = getOrderStatusMeta(status || current);
+    const unchanged = !status || status === current;
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        if (unchanged) return;
+        if (unchanged || !status) return;
         if (!reason.trim()) {
             setReasonError("Reason is required");
             return;
@@ -57,21 +58,16 @@ const OrderStatusEditor: React.FC<OrderStatusEditorProps> = ({
                     }
                     disabled={disabled || isSaving}
                 >
-                    {ALL_ORDER_STATUSES.map((value) => {
-                        const isAssignedToRider = value === "ASSIGNED_TO_RIDER";
-                        const isAtWarehouse = currentStatus.toUpperCase() === "ARRIVED_AT_WAREHOUSE";
-                        const isRiderAssignDisabled = isAssignedToRider && !isAtWarehouse;
+                    {current === "ASSIGNED_TO_RIDER" && <option value="" disabled>Select next status</option>}
+                    {ALL_ORDER_STATUSES.filter((value) => value !== "ASSIGNED_TO_RIDER").map((value) => {
                         return (
                             <option
                                 key={value}
                                 value={value}
-                                disabled={isRiderAssignDisabled}
                             >
                                 {getOrderStatusMeta(value).label}
-                                {value === currentStatus.toUpperCase()
+                                {value === current
                                     ? " (current)"
-                                    : isRiderAssignDisabled
-                                    ? " (Only allowed for orders at warehouse)"
                                     : ""}
                             </option>
                         );

@@ -10,9 +10,9 @@ export enum PermissionLevel {
 }
 
 // All available modules a staff member can have permissions for
-export type ModuleName = 'arrangement' | 'banner' | 'catalog' | 'category' | 'customer' | 'deal' | 'delivery' | 'order' | 'product' | 'promo' | 'vendor';
+export type ModuleName = 'arrangement' | 'audit' | 'banner' | 'catalog' | 'category' | 'customer' | 'deal' | 'delivery' | 'order' | 'product' | 'promo' | 'vendor';
 
-export const MODULE_NAMES: ModuleName[] = ['arrangement', 'banner', 'catalog', 'category', 'customer', 'deal', 'delivery', 'order', 'product', 'promo', 'vendor'];
+export const MODULE_NAMES: ModuleName[] = ['arrangement', 'audit', 'banner', 'catalog', 'category', 'customer', 'deal', 'delivery', 'order', 'product', 'promo', 'vendor'];
 
 export type StaffPermissions = Partial<Record<ModuleName, PermissionLevel>>;
 

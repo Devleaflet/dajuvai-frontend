@@ -11,6 +11,7 @@ import {
 } from "../../services/deliveryService";
 import type { Order, Rider, BulkAssignResult } from "../../types/delivery";
 import { OrderStatus, ORDER_STATUS_LABELS } from "../../types/delivery";
+import { usePermission } from "../../hooks/usePermission";
 
 // All order statuses from "arrived at warehouse" → "returned"
 const DELIVERY_STATUSES: OrderStatus[] = [
@@ -32,6 +33,8 @@ const STATUS_BUTTON_COLORS: Record<string, { bg: string; color: string; activeBg
 };
 
 export default function AllOrdersTab() {
+    const { can } = usePermission();
+    const canEdit = can("delivery", "create_edit");
     const [orders, setOrders] = useState<Order[]>([]);
     const [riders, setRiders] = useState<Rider[]>([]);
     const [loading, setLoading] = useState(true);
@@ -296,7 +299,7 @@ export default function AllOrdersTab() {
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
-                    {selectedOrderIds.length > 0 && (
+                    {canEdit && selectedOrderIds.length > 0 && (
                         <div className="admin-delivery__bulk-inline">
                             <span>
                                 <strong>{selectedOrderIds.length}</strong> selected
@@ -347,13 +350,13 @@ export default function AllOrdersTab() {
                     <table className="admin-delivery__table">
                         <thead>
                             <tr>
-                                <th style={{ width: "40px", textAlign: "center" }}>
+                                {canEdit && <th style={{ width: "40px", textAlign: "center" }}>
                                     <input
                                         type="checkbox"
                                         checked={isAllSelected}
                                         onChange={handleSelectAll}
                                     />
-                                </th>
+                                </th>}
                                 <th>Order Number</th>
                                 <th>Customer</th>
                                 <th>Vendor(s)</th>
@@ -371,7 +374,7 @@ export default function AllOrdersTab() {
                                         key={order.id}
                                         className={isSelected ? "admin-delivery__tr--selected" : ""}
                                     >
-                                        <td style={{ textAlign: "center" }}>
+                                        {canEdit && <td style={{ textAlign: "center" }}>
                                             <input
                                                 type="checkbox"
                                                 checked={isSelected}
@@ -383,7 +386,7 @@ export default function AllOrdersTab() {
                                                 }
                                                 onChange={() => handleSelectOne(order.id)}
                                             />
-                                        </td>
+                                        </td>}
                                         <td>
                                             <strong>
                                                 {order.orderNumber || `#${order.id}`}
@@ -440,7 +443,7 @@ export default function AllOrdersTab() {
                                                 >
                                                     View Detail
                                                 </button>
-                                                {order.status === OrderStatus.ARRIVED_AT_WAREHOUSE && (
+                                                {canEdit && order.status === OrderStatus.ARRIVED_AT_WAREHOUSE && (
                                                     <button
                                                         className="admin-delivery__btn admin-delivery__btn--primary admin-delivery__btn--sm"
                                                         onClick={() => openSingleAssignModal(order.id)}

@@ -516,6 +516,12 @@ const ProfilePage: React.FC = () => {
       });
       logout();
     } catch (err) {
+      const apiError = err as any;
+      if (apiError?.response?.data?.errorCode === "INVALID_CURRENT_PASSWORD") {
+        setDeletePassword("");
+        showPopup("error", "Current password is incorrect");
+        return;
+      }
       handleError(err, "Failed to schedule account deletion");
     } finally {
       setLoading("deleteAccount", false);

@@ -71,7 +71,12 @@ export const setupAxiosInterceptors = (
 
       // If we get a 401 and there's a stored token, it's invalid — clear it
       // so the user is prompted to log in again instead of silently failing
-      if (error.response?.status === 401) {
+      // A current-password confirmation is not a session authentication
+      // failure. Keep the vendor signed in even if an older API deployment
+      // returns this known error as 401.
+      const isCredentialConfirmationError =
+        error.response?.data?.errorCode === "INVALID_CURRENT_PASSWORD";
+      if (error.response?.status === 401 && !isCredentialConfirmationError) {
         const url = error.config?.url ?? "";
         const isVendorRequest =
           url.startsWith("/api/vendor") || url.startsWith("/api/vendors");

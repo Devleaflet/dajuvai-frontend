@@ -55,6 +55,7 @@ import VendorTerms from "./Pages/VendorTerms";
 import EsewaPaymentFailure from "./Pages/EsewaPaymentFailure";
 import AdminProfile from "./Pages/AdminProfile";
 import { Notifications } from "./Pages/Notifications";
+import AdminAuditLogs from "./Pages/AdminAuditLogs";
 import ScrollManager from "./Components/ScrollManager";
 import usePageTracking from "./Hook/usePageTracking";
 import AdminDelivery from "./Pages/AdminDelivery";
@@ -403,6 +404,16 @@ function App() {
             element={
               <AdminOrStaffRoute>
                 <Notifications />
+              </AdminOrStaffRoute>
+            }
+          />
+          <Route
+            path="/admin/audit-logs"
+            element={
+              <AdminOrStaffRoute>
+                <PermissionRoute module="audit" permission="view">
+                  <AdminAuditLogs />
+                </PermissionRoute>
               </AdminOrStaffRoute>
             }
           />
