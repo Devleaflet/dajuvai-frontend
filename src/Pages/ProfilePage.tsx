@@ -74,7 +74,7 @@ const getAvatarColor = (name: string): string => {
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const { authState, login } = useVendorAuth();
+  const { authState, login, logout } = useVendorAuth();
   const vendorId = authState.vendor?.id;
 
   const [activeTab, setActiveTab] = useState<Tab>("details");
@@ -88,6 +88,8 @@ const ProfilePage: React.FC = () => {
   const [formState, setFormState] = useState<FormState>({ email: "" });
   const [credentialsMode, setCredentialsMode] =
     useState<CredentialsMode>("idle");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
   const [popup, setPopup] = useState<{
     type: "success" | "error";
@@ -170,7 +172,7 @@ const ProfilePage: React.FC = () => {
         ...v,
         businessName: v.businessName || "",
         phoneNumber: v.phoneNumber || "",
-        telePhone: v.telePhone === "-" ? "" : (v.telePhone || ""),
+        telePhone: v.telePhone === "-" ? "" : v.telePhone || "",
         businessAddress: v.district?.name || v.businessAddress || "",
         taxNumber: v.taxNumber || "",
         businessRegNumber: v.businessRegNumber || "",
@@ -494,6 +496,32 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!vendorDetails?.email)
+      return showPopup("error", "Vendor email is unavailable");
+    if (!deletePassword)
+      return showPopup("error", "Enter your current password");
+    if (deleteConfirmation !== "DELETE") {
+      return showPopup("error", "Type DELETE exactly to confirm");
+    }
+
+    setLoading("deleteAccount", true);
+    try {
+      await axiosInstance.delete("/api/vendors/me", {
+        data: {
+          email: vendorDetails.email,
+          password: deletePassword,
+          confirmation: deleteConfirmation,
+        },
+      });
+      logout();
+    } catch (err) {
+      handleError(err, "Failed to schedule account deletion");
+    } finally {
+      setLoading("deleteAccount", false);
+    }
+  };
+
   const setVendorField = (field: keyof VendorProfile, value: string) =>
     setVendorDetails((prev) => (prev ? { ...prev, [field]: value } : prev));
 
@@ -605,12 +633,20 @@ const ProfilePage: React.FC = () => {
             {isEditing ? (
               <input
                 className="vendor-profile-form__input"
-                value={vendorDetails.telePhone === "-" ? "" : (vendorDetails.telePhone || "")}
+                value={
+                  vendorDetails.telePhone === "-"
+                    ? ""
+                    : vendorDetails.telePhone || ""
+                }
                 onChange={(e) => setVendorField("telePhone", e.target.value)}
                 placeholder="e.g. 056-XXXXXXX"
               />
             ) : (
-              <Display value={vendorDetails.telePhone === "-" ? "" : vendorDetails.telePhone} />
+              <Display
+                value={
+                  vendorDetails.telePhone === "-" ? "" : vendorDetails.telePhone
+                }
+              />
             )}
           </Field>
         </div>
@@ -631,7 +667,9 @@ const ProfilePage: React.FC = () => {
             )}
           </Field>
           <Field label="Province">
-            <Display value={getProvinceForDistrict(vendorDetails.businessAddress)} />
+            <Display
+              value={getProvinceForDistrict(vendorDetails.businessAddress)}
+            />
           </Field>
         </div>
 
@@ -1057,6 +1095,65 @@ const ProfilePage: React.FC = () => {
             </div>
           </div>
         )}
+
+        <section
+          style={{
+            marginTop: 32,
+            padding: 20,
+            border: "1px solid #fecaca",
+            borderRadius: 10,
+            background: "#fff7f7",
+          }}
+        >
+          <h3 style={{ color: "#b91c1c", marginTop: 0 }}>
+            Delete vendor account
+          </h3>
+          <p>
+            Your store will be paused immediately. You can reactivate it with
+            your email and password within 30 days. After that, sensitive
+            account data is permanently anonymized.
+          </p>
+          <div
+            style={{
+              marginTop: 16,
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+            }}
+          >
+            <div className="vendor-profile-form__group">
+              <label>Current password</label>
+              <input
+                type="password"
+                className="vendor-profile-form__input"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
+            <div className="vendor-profile-form__group">
+              <label>Type DELETE to confirm</label>
+              <input
+                type="text"
+                className="vendor-profile-form__input"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                placeholder="DELETE"
+                autoComplete="off"
+              />
+            </div>
+            <button
+              className="vendor-btn vendor-btn--danger"
+              onClick={handleDeleteAccount}
+              disabled={isLoading.deleteAccount}
+              type="button"
+            >
+              {isLoading.deleteAccount
+                ? "Scheduling deletion…"
+                : "Schedule account deletion"}
+            </button>
+          </div>
+        </section>
       </div>
     );
   };

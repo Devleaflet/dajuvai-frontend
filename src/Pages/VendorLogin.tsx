@@ -29,6 +29,8 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
   const [success, setSuccess] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showVerification, setShowVerification] = useState<boolean>(false);
+  const [showReactivation, setShowReactivation] = useState<boolean>(false);
+  const [showCustomerLogin, setShowCustomerLogin] = useState<boolean>(false);
   const [verificationToken, setVerificationToken] = useState<string>("");
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string>("");
   const [countdown, setCountdown] = useState<number>(0);
@@ -67,6 +69,8 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
       setError("");
       setSuccess("");
       setShowVerification(false);
+      setShowReactivation(false);
+      setShowCustomerLogin(false);
       setVerificationToken("");
       setPendingVerificationEmail("");
       setCountdown(0);
@@ -90,7 +94,7 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
       const vendorService = VendorService.getInstance();
       const response = await vendorService.login(userData);
       if (response.success && response.token && response.vendor) {
-        vendorLogin(response.token, response.vendor);
+        vendorLogin(response.token, response.vendor as any);
         //("----------token-------", response.token)
         navigate("/dashboard");
         onClose();
@@ -109,6 +113,15 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
           setCountdown(120);
           setError("Please verify your email first. We've sent you a verification code.");
           toast.error("Please verify your email first");
+        } else if (err.response?.data?.errorCode === "VENDOR_DELETION_PENDING") {
+          setShowReactivation(true);
+          setShowCustomerLogin(false);
+          setError(err.response.data.message || "This account is scheduled for deletion.");
+          toast.error("Account scheduled for deletion. Reactivate it to continue.");
+        } else if (err.response?.data?.errorCode === "EMAIL_REGISTERED_AS_CUSTOMER") {
+          setShowCustomerLogin(true);
+          setShowReactivation(false);
+          setError(err.response.data.message || "This email belongs to a customer account.");
         } else if (err.response?.status === 403 && err.response?.data?.message === "Vendor not approved") {
           toast.error("Your account is pending approval. Please wait for admin approval.");
           setError("Your account is pending approval. Please wait for admin approval.");
@@ -124,6 +137,30 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleReactivate = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+      const response = await VendorAuthService.reactivate({ email: email.trim(), password });
+      if (response.success && response.token && response.vendor) {
+        vendorLogin(response.token, response.vendor as any);
+        toast.success("Vendor account reactivated");
+        navigate("/dashboard");
+        onClose();
+      } else {
+        setError(response.message || "Reactivation failed");
+        toast.error(response.message || "Reactivation failed");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const openCustomerLogin = () => {
+    onClose();
+    window.dispatchEvent(new CustomEvent("openCustomerAuthModal"));
   };
 
   const handleVerifyEmail = async () => {
@@ -293,6 +330,15 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
       return;
     }
 
+    if (showReactivation) {
+      await handleReactivate();
+      return;
+    }
+
+    if (showCustomerLogin) {
+      return;
+    }
+
     if (showForgotPassword) {
       await handleForgotPasswordRequest();
       return;
@@ -341,7 +387,52 @@ const VendorLogin: React.FC<VendorLoginProps> = ({ isOpen, onClose }) => {
         {success && <div className="auth-modal__message auth-modal__message--success">{success}</div>}
 
         <form className="auth-modal__form" onSubmit={handleSubmit}>
-          {showVerification ? (
+          {showCustomerLogin ? (
+            <>
+              <div className="auth-modal__verification-info">
+                <p>{error || "This email belongs to a customer account."}</p>
+                <p>Use Customer Login to access that account, or choose another email for a vendor account.</p>
+              </div>
+              <button type="button" className="auth-modal__submit" onClick={openCustomerLogin}>
+                OPEN CUSTOMER LOGIN
+              </button>
+              <div className="auth-modal__verification-actions">
+                <button
+                  type="button"
+                  className="auth-modal__link-button"
+                  onClick={() => { setShowCustomerLogin(false); setError(""); }}
+                >
+                  Back to Vendor Login
+                </button>
+              </div>
+            </>
+          ) : showReactivation ? (
+            <>
+              <div className="auth-modal__verification-info">
+                <p>{error || "Your vendor account is scheduled for deletion."}</p>
+                <p>Reactivate within the 30-day grace period using your current credentials.</p>
+              </div>
+              <button type="submit" className="auth-modal__submit" disabled={isLoading}>
+                {isLoading ? "Reactivating..." : "REACTIVATE ACCOUNT"}
+              </button>
+              <div className="auth-modal__verification-actions">
+                <button
+                  type="button"
+                  className="auth-modal__link-button"
+                  onClick={() => { setShowReactivation(false); setError(""); }}
+                >
+                  Back to Login
+                </button>
+                <button
+                  type="button"
+                  className="auth-modal__link-button"
+                  onClick={() => { setShowReactivation(false); setShowForgotPassword(true); setForgotPasswordEmail(email); setError(""); }}
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            </>
+          ) : showVerification ? (
             <>
               <div className="auth-modal__verification-info">
                 <p>We've sent a verification code to</p>

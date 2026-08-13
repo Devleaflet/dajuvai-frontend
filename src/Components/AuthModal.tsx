@@ -337,7 +337,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 			setUsername("");
 			setErrors({});
 			setTouched({});
-		} catch (err) {
+			} catch (err) {
 			if (axios.isAxiosError(err)) {
 				console.error("Signup error details:", {
 					status: err.response?.status,

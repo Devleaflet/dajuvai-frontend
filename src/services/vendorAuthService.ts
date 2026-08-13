@@ -86,7 +86,8 @@ export class VendorAuthService {
         if (response.status === 409) {
           return {
             success: false,
-            message: "A vendor with this email already exists. Please use a different email address.",
+            errorCode: data.errorCode,
+            message: data.message || "A vendor account with this email already exists. Use Vendor Login or Forgot Password.",
           };
         }
         if (response.status === 400 && data.message?.includes("District")) {
@@ -197,7 +198,8 @@ export class VendorAuthService {
         if (response.status === 409) {
           return {
             success: false,
-            message: "A vendor with this email already exists. Please use a different email address.",
+            errorCode: data.errorCode,
+            message: data.message || "A vendor account with this email already exists. Use Vendor Login or Forgot Password.",
           };
         }
         if (response.status === 400 && data.message?.includes("District")) {
@@ -261,6 +263,26 @@ export class VendorAuthService {
       return {
         success: false,
         message: error instanceof Error ? error.message : "Network error during login",
+      };
+    }
+  }
+
+  static async reactivate(credentials: VendorLoginRequest): Promise<ApiResponse<Vendor>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/vendors/reactivate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(credentials),
+      });
+      const data: ApiResponse<Vendor> = await response.json();
+      if (response.ok && data.success && data.token) {
+        await this.setAuthToken(data.token);
+      }
+      return data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : "Network error during reactivation",
       };
     }
   }

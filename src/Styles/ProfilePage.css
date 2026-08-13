@@ -78,7 +78,9 @@
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
 }
 
 .vendor-profile-sidebar__button:active {
@@ -137,7 +139,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
 }
 
 .vendor-profile-form__group--half {
@@ -166,7 +168,9 @@
   font-size: 0.875rem;
   color: #1a1a1a;
   background-color: #ffffff;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
   width: 100%;
   box-sizing: border-box;
 }
@@ -276,7 +280,10 @@
   cursor: pointer;
   color: #fff;
   z-index: 3;
-  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
   box-shadow: 0 2px 6px rgba(249, 115, 22, 0.45);
 }
 
@@ -370,7 +377,9 @@
   text-align: center;
   cursor: pointer;
   background-color: #f9fafb;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
   margin-bottom: 10px;
   font-size: 0.875rem;
   color: #6b7280;
@@ -461,7 +470,9 @@
   background: #f9fafb;
   border: 1.5px solid #e5e7eb;
   border-radius: 10px;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .payment-list__item:hover {
@@ -513,7 +524,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
   flex-shrink: 0;
 }
 
@@ -567,14 +580,17 @@
   gap: 8px;
   width: 100%;
   padding: 11px;
-  background: #0F9D58;
+  background: #0f9d58;
   color: #fff;
   border: none;
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.1s ease;
   margin-top: 4px;
 }
 
@@ -651,7 +667,10 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.1s ease;
 }
 
 .vendor-btn-edit--primary:hover:not(:disabled) {
@@ -682,7 +701,10 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.1s ease;
 }
 
 .vendor-btn-edit--secondary:hover {
@@ -696,13 +718,17 @@
 
 /* ── Credential buttons ────────────────────────────────────────────────── */
 .vendor-btn {
+  width: fit-content;
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.1s ease;
 }
 
 .vendor-btn:active {
@@ -728,6 +754,16 @@
   background-color: #f3f4f6;
   color: #374151;
   border: 1.5px solid #e5e7eb;
+}
+
+.vendor-btn--danger {
+  background: #b91c1c;
+  color: #fff;
+  border: 1px solid #991b1b;
+}
+
+.vendor-btn--danger:hover:not(:disabled) {
+  background: #991b1b;
 }
 
 .vendor-btn--secondary:hover {
@@ -779,7 +815,9 @@
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .vendor-profile-form__help.active,
@@ -919,7 +957,9 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .vendor-popup-close-btn:hover {

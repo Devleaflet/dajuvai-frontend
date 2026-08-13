@@ -115,6 +115,7 @@ export interface VendorUpdateRequest {
 
 export interface ApiResponse<T> {
 	success: boolean;
+	errorCode?: string;
 	data?: T;
 	vendor?: T;
 	message?: string;

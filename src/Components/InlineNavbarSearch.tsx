@@ -1,6 +1,7 @@
 import { FolderTree, LoaderCircle, Search, Tag, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import appLogo from "../assets/logo.webp";
 import {
   useSearchSuggestions,
   type SearchProductSuggestion,
@@ -403,11 +404,7 @@ function ProductResults({
             onClick={() => onSelect(product)}
           >
             <span className="navbar__search-product-image">
-              {product.thumbnailUrl ? (
-                <img src={product.thumbnailUrl} alt="" />
-              ) : (
-                <Search size={18} />
-              )}
+              <SearchResultImage image={product.thumbnailUrl} type="product" />
             </span>
             <span className="navbar__search-product-copy">
               <strong>{highlight(product.name, query)}</strong>
@@ -463,11 +460,7 @@ function ScopeResults({
             >
               {type === "category" || type === "subcategory" ? (
                 <span className="navbar__search-scope-image" aria-hidden="true">
-                  {item.image ? (
-                    <img src={item.image} alt="" />
-                  ) : (
-                    <FolderTree size={15} />
-                  )}
+                  <SearchResultImage image={item.image} type="scope" />
                 </span>
               ) : (
                 <Tag size={14} aria-hidden="true" />
@@ -478,5 +471,44 @@ function ScopeResults({
         })}
       </div>
     </section>
+  );
+}
+
+function SearchResultImage({
+  image,
+  type,
+}: {
+  image?: string | null;
+  type: "product" | "scope";
+}) {
+  const [source, setSource] = useState(image?.trim() || appLogo);
+  const [useIcon, setUseIcon] = useState(false);
+
+  useEffect(() => {
+    setSource(image?.trim() || appLogo);
+    setUseIcon(false);
+  }, [image]);
+
+  if (useIcon) {
+    return type === "product" ? (
+      <Search size={18} aria-hidden="true" />
+    ) : (
+      <FolderTree size={15} aria-hidden="true" />
+    );
+  }
+
+  return (
+    <img
+      src={source}
+      alt=""
+      className={source === appLogo ? "navbar__search-fallback-image" : undefined}
+      onError={() => {
+        if (source !== appLogo) {
+          setSource(appLogo);
+          return;
+        }
+        setUseIcon(true);
+      }}
+    />
   );
 }

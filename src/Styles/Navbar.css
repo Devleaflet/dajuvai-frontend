@@ -374,6 +374,12 @@
   object-fit: cover;
 }
 
+.navbar__search-product-image img.navbar__search-fallback-image,
+.navbar__search-scope-image img.navbar__search-fallback-image {
+  object-fit: contain;
+  padding: 4px;
+}
+
 .navbar__search-product-copy {
   display: grid;
   min-width: 0;

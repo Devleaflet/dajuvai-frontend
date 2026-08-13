@@ -77,6 +77,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const [accountConflictCode, setAccountConflictCode] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
   const [showVerification, setShowVerification] = useState<boolean>(false);
   const [verificationToken, setVerificationToken] = useState<string>("");
@@ -170,6 +171,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
       setDistrictData([]);
       setProvinceData([]);
       setError("");
+      setAccountConflictCode("");
       setSuccess("");
       setShowVerification(false);
       setIsVerificationComplete(false);
@@ -962,6 +964,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     try {
       setIsLoading(true);
       setError("");
+      setAccountConflictCode("");
       const response = await axios.post<SignupResponse>(
         `${API_BASE_URL}/api/vendors/request/register-v2`,
         userData,
@@ -1001,6 +1004,7 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     } catch (err) {
       console.error("Signup error:", err);
       if (axios.isAxiosError(err)) {
+        setAccountConflictCode(err.response?.data?.errorCode || "");
         if (err.response?.status === 400 && err.response?.data?.errors) {
           const serverErrors = err.response.data.errors;
           const newErrors: Record<string, string> = {};
@@ -1290,6 +1294,16 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
     //("Toggled confirm password visibility:", !showConfirmPassword);
   };
 
+  const openVendorLogin = () => {
+    onClose();
+    window.dispatchEvent(new CustomEvent("openVendorAuthModal"));
+  };
+
+  const openCustomerLogin = () => {
+    onClose();
+    window.dispatchEvent(new CustomEvent("openCustomerAuthModal"));
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -1325,6 +1339,39 @@ const VendorSignup: React.FC<VendorSignupProps> = ({ isOpen, onClose }) => {
           {error && (
             <div className="auth-modal__message auth-modal__message--error">
               {error}
+            </div>
+          )}
+          {accountConflictCode === "VENDOR_DELETION_PENDING" && (
+            <div className="auth-modal__verification-actions">
+              <button
+                type="button"
+                className="auth-modal__link-button"
+                onClick={openVendorLogin}
+              >
+                Open Vendor Login to Reactivate
+              </button>
+            </div>
+          )}
+          {accountConflictCode === "VENDOR_ACCOUNT_EXISTS" && (
+            <div className="auth-modal__verification-actions">
+              <button
+                type="button"
+                className="auth-modal__link-button"
+                onClick={openVendorLogin}
+              >
+                Open Vendor Login / Forgot Password
+              </button>
+            </div>
+          )}
+          {accountConflictCode === "EMAIL_REGISTERED_AS_CUSTOMER" && (
+            <div className="auth-modal__verification-actions">
+              <button
+                type="button"
+                className="auth-modal__link-button"
+                onClick={openCustomerLogin}
+              >
+                Open Customer Login
+              </button>
             </div>
           )}
           {success && (

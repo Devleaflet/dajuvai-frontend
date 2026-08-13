@@ -377,9 +377,23 @@ const Navbar: React.FC = () => {
 		const handleSetNavbarSearch = (event: CustomEvent) => {
 			focusSearch(event.detail?.searchQuery ?? '');
 		};
+		const openVendorAuthModal = () => {
+			setAuthModalOpen(false);
+			setVendorAuthModalOpen(true);
+		};
+		const openCustomerAuthModal = () => {
+			setVendorAuthModalOpen(false);
+			setAuthModalOpen(true);
+		};
 
 		window.addEventListener('setNavbarSearch', handleSetNavbarSearch as EventListener);
-		return () => window.removeEventListener('setNavbarSearch', handleSetNavbarSearch as EventListener);
+		window.addEventListener('openVendorAuthModal', openVendorAuthModal);
+		window.addEventListener('openCustomerAuthModal', openCustomerAuthModal);
+		return () => {
+			window.removeEventListener('setNavbarSearch', handleSetNavbarSearch as EventListener);
+			window.removeEventListener('openVendorAuthModal', openVendorAuthModal);
+			window.removeEventListener('openCustomerAuthModal', openCustomerAuthModal);
+		};
 	}, [focusSearch]);
 
 	useEffect(() => {
