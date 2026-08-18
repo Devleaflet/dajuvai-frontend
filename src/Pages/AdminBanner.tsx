@@ -369,7 +369,9 @@ const createImageAPI = (token: string | null) => ({
       const formData = new FormData();
       formData.append("image", image);
 
-      const response = await fetch(`${API_BASE_URL}/api/image`, {
+      // The image endpoint requires an explicit, validated Cloudinary folder.
+      // Keep banner assets isolated from product/profile uploads.
+      const response = await fetch(`${API_BASE_URL}/api/image?folder=banners`, {
         method: "POST",
         headers,
         body: formData,
