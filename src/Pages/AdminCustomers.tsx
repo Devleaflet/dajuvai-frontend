@@ -21,6 +21,8 @@ interface User {
   profilePicture?: string;
   createdAt: string;
   updatedAt: string;
+  deletionStatus?: "ACTIVE" | "PENDING_DELETION" | "DELETED";
+  deletionScheduledFor?: string | null;
 }
 
 // ApiResponse interface
@@ -35,7 +37,7 @@ interface ApiResponse<T> {
 const SkeletonRow: React.FC = () => {
   return (
     <tr>
-      {[...Array(8)].map((_, index) => (
+      {[...Array(9)].map((_, index) => (
         <td key={index}>
           <div className="skeleton skeleton-text"></div>
         </td>
@@ -89,6 +91,19 @@ const PROVIDER_OPTIONS = [
   { value: "google", label: "Google" },
 ];
 
+const DELETION_STATUS_OPTIONS = [
+  { value: "all", label: "All Account Statuses" },
+  { value: "ACTIVE", label: "Active" },
+  { value: "PENDING_DELETION", label: "Pending deletion" },
+  { value: "DELETED", label: "Deleted" },
+];
+
+const getDeletionStatusLabel = (status?: User["deletionStatus"]): string => {
+  if (status === "PENDING_DELETION") return "Pending deletion";
+  if (status === "DELETED") return "Deleted";
+  return "Active";
+};
+
 const timeAgo = (dateStr: string): string => {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
@@ -120,6 +135,7 @@ const AdminCustomers: React.FC = () => {
   } | null>(null);
   const [roleFilter, setRoleFilter] = useState("all");
   const [providerFilter, setProviderFilter] = useState("all");
+  const [deletionStatusFilter, setDeletionStatusFilter] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -144,7 +160,11 @@ const AdminCustomers: React.FC = () => {
           (user.username ?? "").toLowerCase().includes(query) ||
           (user.email ?? "").toLowerCase().includes(query) ||
           user.id.toString().includes(query) ||
-          (user.role ?? "").toLowerCase().includes(query),
+          (user.role ?? "").toLowerCase().includes(query) ||
+          (user.provider ?? "local").toLowerCase().includes(query) ||
+          getDeletionStatusLabel(user.deletionStatus)
+            .toLowerCase()
+            .includes(query),
       );
     }
 
@@ -161,6 +181,13 @@ const AdminCustomers: React.FC = () => {
         (user) =>
           (user.provider ?? "local").toLowerCase() ===
           providerFilter.toLowerCase(),
+      );
+    }
+
+    // Apply account deletion status filter
+    if (deletionStatusFilter !== "all") {
+      filtered = filtered.filter(
+        (user) => (user.deletionStatus ?? "ACTIVE") === deletionStatusFilter,
       );
     }
 
@@ -189,7 +216,15 @@ const AdminCustomers: React.FC = () => {
 
     setFilteredUsers(filtered);
     setCurrentPage(1);
-  }, [users, searchQuery, roleFilter, providerFilter, startDate, endDate]);
+  }, [
+    users,
+    searchQuery,
+    roleFilter,
+    providerFilter,
+    deletionStatusFilter,
+    startDate,
+    endDate,
+  ]);
 
   const loadUsers = useCallback(async () => {
     try {
@@ -339,6 +374,22 @@ const AdminCustomers: React.FC = () => {
           </div>
 
           <div className="admin-orders__filter-group">
+            <label htmlFor="deletionStatusFilter">Account Status:</label>
+            <select
+              id="deletionStatusFilter"
+              value={deletionStatusFilter}
+              onChange={(e) => setDeletionStatusFilter(e.target.value)}
+              className="admin-orders__filter-select"
+            >
+              {DELETION_STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="admin-orders__filter-group">
             <label htmlFor="startDate">From Date:</label>
             <input
               type="date"
@@ -364,6 +415,7 @@ const AdminCustomers: React.FC = () => {
             onClick={() => {
               setRoleFilter("all");
               setProviderFilter("all");
+              setDeletionStatusFilter("all");
               setStartDate("");
               setEndDate("");
               setSearchQuery("");
@@ -425,6 +477,14 @@ const AdminCustomers: React.FC = () => {
                       (sortConfig.direction === "asc" ? "↑" : "↓")}
                   </th>
                   <th
+                    onClick={() => handleSort("deletionStatus")}
+                    className="sortable"
+                  >
+                    Account Status{" "}
+                    {sortConfig?.key === "deletionStatus" &&
+                      (sortConfig.direction === "asc" ? "↑" : "↓")}
+                  </th>
+                  <th
                     onClick={() => handleSort("createdAt")}
                     className="sortable"
                   >
@@ -451,6 +511,9 @@ const AdminCustomers: React.FC = () => {
                   currentUsers.map((user) => {
                     const provider = (user.provider ?? "local").toLowerCase();
                     const isGoogle = provider === "google";
+                    const deletionStatus = user.deletionStatus ?? "ACTIVE";
+                    const isPendingDeletion =
+                      deletionStatus === "PENDING_DELETION";
                     return (
                       <tr key={user.id} className="admin-orders__table-row">
                         <td>{user.id}</td>
@@ -521,6 +584,37 @@ const AdminCustomers: React.FC = () => {
                             {user.isVerified ? "✔ Verified" : "✘ Unverified"}
                           </span>
                         </td>
+                        <td>
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              flexDirection: "column",
+                              alignItems: "flex-start",
+                              gap: "0.15rem",
+                              padding: "0.2rem 0.6rem",
+                              borderRadius: "999px",
+                              fontSize: "0.78rem",
+                              fontWeight: 500,
+                              background: isPendingDeletion
+                                ? "#fff4e5"
+                                : deletionStatus === "DELETED"
+                                  ? "#f3f4f6"
+                                  : "#e6f4ea",
+                              color: isPendingDeletion
+                                ? "#9a6700"
+                                : deletionStatus === "DELETED"
+                                  ? "#4b5563"
+                                  : "#1e7e34",
+                            }}
+                          >
+                            <span>{getDeletionStatusLabel(deletionStatus)}</span>
+                            {isPendingDeletion && user.deletionScheduledFor && (
+                              <small style={{ fontWeight: 400 }}>
+                                Until {new Date(user.deletionScheduledFor).toLocaleDateString()}
+                              </small>
+                            )}
+                          </span>
+                        </td>
                         <td>{timeAgo(user.createdAt)}</td>
                         <td>{timeAgo(user.updatedAt)}</td>
                       </tr>
@@ -528,7 +622,7 @@ const AdminCustomers: React.FC = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={8} className="admin-orders__no-data">
+                    <td colSpan={9} className="admin-orders__no-data">
                       No users found
                     </td>
                   </tr>

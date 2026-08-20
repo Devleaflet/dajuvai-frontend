@@ -53,6 +53,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string>("");
 	const [success, setSuccess] = useState<string>("");
+	// Set when login fails because the account is scheduled for deletion —
+	// the user can reactivate it in place with the same credentials.
+	const [reactivationPending, setReactivationPending] = useState<{
+		email: string;
+		password: string;
+	} | null>(null);
 	const [verificationToken, setVerificationToken] = useState<string>("");
 	const [showVerification, setShowVerification] = useState<boolean>(false);
 	const [pendingVerificationEmail, setPendingVerificationEmail] =
@@ -95,6 +101,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 		setSuccess("");
 		setErrors({});
 		setTouched({});
+		setReactivationPending(null);
 	}, [isLoginMode]);
 
 	useEffect(() => {
@@ -116,6 +123,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 			setShowPassword(false);
 			setShowConfirmPassword(false);
 			setTermsModalOpen(false);
+			setReactivationPending(null);
 			setErrors({});
 			setTouched({});
 		}
@@ -530,6 +538,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 					setError(
 						"Please verify your email first. We've sent you a verification code."
 					);
+				} else if (
+					err.response?.status === 409 &&
+					err.response?.data?.errorCode === "USER_DELETION_PENDING"
+				) {
+					// Account is in the 30-day deletion grace period — offer
+					// one-click reactivation with the same credentials.
+					setReactivationPending(userData);
+					setError(
+						err.response?.data?.message ||
+							"This account is scheduled for deletion. Reactivate it to continue."
+					);
 				} else {
 					const errorMessage =
 						err.response?.data?.message ||
@@ -541,6 +560,78 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 			} else {
 				setError("An unexpected error occurred");
 				console.error("Unexpected error:", err);
+			}
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	/**
+	 * Reactivate an account that is still inside its 30-day deletion grace
+	 * period. Uses the dedicated reactivate endpoint, which clears the
+	 * deletion timestamps and issues fresh session tokens.
+	 */
+	const handleReactivateAccount = async () => {
+		if (!reactivationPending) return;
+		try {
+			setIsLoading(true);
+			setError("");
+			setSuccess("");
+
+			const response = await axios.post<LoginResponse>(
+				`${API_BASE_URL}/api/auth/reactivate`,
+				reactivationPending,
+				{
+					headers: {
+						"Content-Type": "application/json",
+					},
+					withCredentials: true,
+				}
+			);
+
+			if (response.data.success && response.data.token) {
+				const userData = {
+					id: response.data.data.userId,
+					email: response.data.data.email,
+					role: response.data.data.role,
+					username: response.data.data.email.split("@")[0],
+					isVerified: true,
+					profilePicture: (response.data.data as { profilePicture?: string }).profilePicture,
+				};
+
+				login(response.data.token, userData, response.data.refreshToken);
+
+				if (response.data.data.userId) {
+					try {
+						await fetchUserData(response.data.data.userId);
+					} catch {
+						// Non-fatal if this fails; continue navigation
+					}
+				}
+
+				setReactivationPending(null);
+				const role = response.data.data.role;
+				if (role === "admin" || role === "staff") {
+					navigate("/admin-dashboard");
+				} else {
+					navigate(`${location.pathname}${location.search}`);
+				}
+
+				onClose();
+			}
+		} catch (err) {
+			if (axios.isAxiosError(err)) {
+				setError(
+					err.response?.data?.message ||
+						err.response?.data?.error ||
+						"Failed to reactivate account"
+				);
+				// Grace period elapsed — the account can no longer be reactivated.
+				if (err.response?.status === 410) {
+					setReactivationPending(null);
+				}
+			} else {
+				setError("An unexpected error occurred");
 			}
 		} finally {
 			setIsLoading(false);
@@ -733,6 +824,23 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 				{success && (
 					<div className="auth-modal__message auth-modal__message--success">
 						{success}
+					</div>
+				)}
+
+				{reactivationPending && (
+					<div className="auth-modal__reactivation">
+						<p className="auth-modal__reactivation-text">
+							This account is scheduled for deletion, but it can still be
+							restored during its 30-day grace period.
+						</p>
+						<button
+							type="button"
+							className="auth-modal__submit auth-modal__reactivation-button"
+							onClick={handleReactivateAccount}
+							disabled={isLoading}
+						>
+							{isLoading ? "Reactivating..." : "Reactivate Account"}
+						</button>
 					</div>
 				)}
 
