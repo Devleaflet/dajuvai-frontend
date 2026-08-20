@@ -30,12 +30,13 @@ const PaymentSuccess: React.FC = () => {
 		const searchParams = new URLSearchParams(normalized);
 
 		const oid = searchParams.get("oid");
+		const did = searchParams.get("did");
 		const tokenParam = searchParams.get("data");
 
 		if (oid) setOrderId(parseInt(oid));
 
 		const verifyAndFetch = async () => {
-			if (!tokenParam || !oid) {
+			if (!tokenParam || (!oid && !did)) {
 				setPaymentStatus("failed");
 				setLoading(false);
 				return;
@@ -48,7 +49,12 @@ const PaymentSuccess: React.FC = () => {
 						"Content-Type": "application/json",
 						Authorization: `Bearer ${token}`,
 					},
-					body: JSON.stringify({ token: tokenParam, orderId: parseInt(oid) }),
+					// Draft-based checkouts pass `did`; legacy orders pass `oid`.
+					body: JSON.stringify({
+						token: tokenParam,
+						...(oid ? { orderId: parseInt(oid) } : {}),
+						...(did ? { draftId: parseInt(did) } : {}),
+					}),
 					credentials: "include",
 				});
 
@@ -56,10 +62,15 @@ const PaymentSuccess: React.FC = () => {
 
 				if (result.success) {
 					setPaymentStatus("success");
+					// The backend returns the real order id once the draft
+					// materializes — prefer it over the URL param.
+					const resolvedOrderId = result.data?.orderId ?? (oid ? parseInt(oid) : null);
+					if (resolvedOrderId) setOrderId(resolvedOrderId);
 					// Fetch order details for display
 					try {
+						if (!resolvedOrderId) throw new Error("no order id");
 						const orderResponse = await fetch(
-							`${API_BASE_URL}/api/order/customer/order/${oid}`,
+							`${API_BASE_URL}/api/order/customer/order/${resolvedOrderId}`,
 							{
 								method: "GET",
 								headers: {

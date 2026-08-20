@@ -2,6 +2,7 @@
 import axios from "axios";
 import React, { useEffect, useState, useRef } from "react";
 import Popup from "reactjs-popup";
+import { cloudinaryUrl } from "../utils/cloudinaryImage";
 import "reactjs-popup/dist/index.css";
 import axiosInstance from "../api/axiosInstance";
 import { API_BASE_URL } from "../config";
@@ -717,7 +718,7 @@ const AdminProfile: React.FC = () => {
                         >
                           {showProfilePicture ? (
                             <img
-                              src={resolvedProfilePicture}
+                              src={cloudinaryUrl(resolvedProfilePicture, "avatar")}
                               alt={adminDetails.username || "Admin"}
                               style={{
                                 width: "100%",

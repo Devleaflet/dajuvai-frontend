@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "../Styles/Sidebar.css";
+import { cloudinaryUrl } from "../utils/cloudinaryImage";
 import { useAuth } from "../context/AuthContext";
 import { usePermission } from "../hooks/usePermission";
 import { API_BASE_URL } from "../config";
@@ -163,7 +164,7 @@ export function AdminSidebar({ ...props }: React.HTMLAttributes<HTMLElement>) {
               onClick={() => setIsAvatarOpen(prev => !prev)}
             >
               {profilePicture ? (
-                <img src={profilePicture} alt="" className="sidebar__mobile-avatar-img" />
+                <img src={cloudinaryUrl(profilePicture, "avatarSm")} alt="" className="sidebar__mobile-avatar-img" />
               ) : (
                 <span className="sidebar__mobile-avatar-text">{initials}</span>
               )}

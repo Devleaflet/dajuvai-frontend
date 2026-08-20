@@ -19,6 +19,7 @@ import ProductBanner from "../Components/ProductBanner";
 import ProductCardSkeleton from "../skeleton/ProductCardSkeleton";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE_URL } from "../config";
+import { cloudinaryUrl } from "../utils/cloudinaryImage";
 import { fetchReviewOf } from "../api/products";
 import CategoryService from "../services/categoryService";
 import { dealApiService } from "../services/apiDeals";
@@ -140,18 +141,18 @@ const processProductWithReview = async (item: ApiProduct): Promise<Product> => {
       if (!imgUrl) return "";
       const trimmed = imgUrl.trim();
       if (!trimmed) return "";
-      if (trimmed.startsWith("//")) return `https:${trimmed}`;
+      if (trimmed.startsWith("//")) return cloudinaryUrl(`https:${trimmed}`, "card");
       if (
         trimmed.startsWith("http://") ||
         trimmed.startsWith("https://") ||
         trimmed.startsWith("/")
       ) {
-        return trimmed;
+        return cloudinaryUrl(trimmed, "card");
       }
       const base = API_BASE_URL.replace(/\/?api\/?$/, "");
       const needsSlash = !trimmed.startsWith("/");
       const url = `${base}${needsSlash ? "/" : ""}${trimmed}`;
-      return url.replace(/([^:]\/)\/+/g, "$1/");
+      return cloudinaryUrl(url.replace(/([^:]\/)\/+/g, "$1/"), "card");
     };
 
     const processedProductImages = (item.productImages || [])

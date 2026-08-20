@@ -7,6 +7,7 @@ import { Truck, Undo2, ShieldCheck, Phone } from "lucide-react";
 import React from "react";
 import axiosInstance from "../api/axiosInstance";
 import { API_BASE_URL } from "../config";
+import { cloudinaryUrl } from "../utils/cloudinaryImage";
 import AuthModal from "../Components/AuthModal";
 import Footer from "../Components/Footer";
 import Navbar from "../Components/Navbar";
@@ -965,7 +966,7 @@ const ProductPage = () => {
                                     >
                                         {currentImage ? (
                                             <img
-                                                src={currentImage}
+                                                src={cloudinaryUrl(currentImage, "detail")}
                                                 alt={product.name}
                                                 onError={() =>
                                                     handleImageError(
@@ -973,12 +974,14 @@ const ProductPage = () => {
                                                     )
                                                 }
                                                 onLoad={handleImageLoad}
+                                                decoding="async"
                                                 draggable={false}
                                             />
                                         ) : (
                                             <img
                                                 src={defaultProductImage}
                                                 alt={product.name}
+                                                decoding="async"
                                                 draggable={false}
                                             />
                                         )}
@@ -1026,15 +1029,19 @@ const ProductPage = () => {
                         >
                           {image && !imageError[index] ? (
                             <img
-                              src={image}
+                              src={cloudinaryUrl(image, "thumbnail")}
                               alt={`Product view ${index + 1}`}
                               onError={() => handleImageError(index)}
+                              loading="lazy"
+                              decoding="async"
                               draggable={false}
                             />
                           ) : (
                             <img
                               src={defaultProductImage}
                               alt={`Product view ${index + 1}`}
+                              loading="lazy"
+                              decoding="async"
                               draggable={false}
                             />
                           )}
@@ -1421,8 +1428,10 @@ const ProductPage = () => {
                       {(product.vendor as any)?.profilePicture &&
                       !vendorAvatarError ? (
                         <img
-                          src={(product.vendor as any).profilePicture}
+                          src={cloudinaryUrl((product.vendor as any).profilePicture, "avatarSm")}
                           alt={product.vendor?.businessName || "Vendor"}
+                          loading="lazy"
+                          decoding="async"
                           onError={() => setVendorAvatarError(true)}
                         />
                       ) : (

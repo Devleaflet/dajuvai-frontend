@@ -1,5 +1,6 @@
 import type React from "react";
 import "../Styles/ResponsiveBanner.css";
+import { cloudinaryUrl } from "../utils/cloudinaryImage";
 
 export type ResponsiveBannerProps = {
   type: "hero" | "section";
@@ -25,10 +26,13 @@ const ResponsiveBanner: React.FC<ResponsiveBannerProps> = ({
   const picture = (
     <picture>
       {mobileImageUrl && (
-        <source media="(max-width: 767px)" srcSet={mobileImageUrl} />
+        <source
+          media="(max-width: 767px)"
+          srcSet={cloudinaryUrl(mobileImageUrl, "detail")}
+        />
       )}
       <img
-        src={desktopImageUrl}
+        src={cloudinaryUrl(desktopImageUrl, "banner")}
         alt={altText}
         className="responsive-banner__image"
         loading={priority ? "eager" : "lazy"}

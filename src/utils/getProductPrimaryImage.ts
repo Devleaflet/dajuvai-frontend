@@ -1,22 +1,25 @@
 import { API_BASE_URL } from "../config";
+import { cloudinaryUrl } from "./cloudinaryImage";
 
-// Normalize/complete image URLs against API_BASE_URL, similar to components
+// Normalize/complete image URLs against API_BASE_URL, similar to components,
+// and apply the Cloudinary "card" delivery preset so every caller fetches a
+// right-sized image instead of the full-resolution original.
 const processImageUrl = (imgUrl: string): string => {
   if (!imgUrl) return "";
   const trimmed = imgUrl.trim();
   if (!trimmed) return "";
-  if (trimmed.startsWith("//")) return `https:${trimmed}`;
+  if (trimmed.startsWith("//")) return cloudinaryUrl(`https:${trimmed}`, "card");
   if (
     trimmed.startsWith("http://") ||
     trimmed.startsWith("https://") ||
     trimmed.startsWith("/")
   ) {
-    return trimmed;
+    return cloudinaryUrl(trimmed, "card");
   }
   const base = API_BASE_URL.replace(/\/?api\/?$/, "");
   const needsSlash = !trimmed.startsWith("/");
   const url = `${base}${needsSlash ? "/" : ""}${trimmed}`;
-  return url.replace(/([^:]\/)\/+/, "$1/");
+  return cloudinaryUrl(url.replace(/([^:]\/)\/+/, "$1/"), "card");
 };
 
 // Returns the primary image URL for a product using variant-first logic.

@@ -923,7 +923,11 @@ const Checkout: React.FC = () => {
 						navigate('/order-page', {
 							state: {
 								orderDetails: {
-									orderId: result.data?.id || null,
+									// Online payments create a checkout draft —
+									// the order materializes only after the gateway
+									// confirms success.
+									draftId: result.data?.draftId || result.data?.id || null,
+									orderNumber: result.data?.orderNumber || null,
 									totalAmount: finalTotal,
 								},
 							},

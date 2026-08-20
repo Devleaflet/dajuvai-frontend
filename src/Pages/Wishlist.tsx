@@ -3,6 +3,7 @@
 // ================================
 import React, { useState, useEffect, useRef } from 'react';
 import '../Styles/Wishlist.css';
+import { cloudinaryUrl } from '../utils/cloudinaryImage';
 import { FaTrash, FaShoppingCart, FaMinus, FaPlus, FaUser, FaHeart } from 'react-icons/fa';
 import Footer from '../Components/Footer';
 import Navbar from '../Components/Navbar';
@@ -543,8 +544,8 @@ const Wishlist: React.FC = () => {
                     <div key={item.id} className="wishlist__item" data-testid={`wishlist-item-${item.id}`}>
                       <div className="wishlist__item-image">
                         <Link to={productLink} aria-label={`View ${item.product.name}`}>
-                          <img 
-                            src={getItemImage(item)}
+                          <img
+                            src={cloudinaryUrl(getItemImage(item), "thumbnail")}
                             alt={item.product.name}
                             onError={e => { e.currentTarget.src = defaultProductImage; }}
                             loading="lazy"

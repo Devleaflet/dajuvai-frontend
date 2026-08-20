@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Popup from "reactjs-popup";
+import { cloudinaryUrl } from "../utils/cloudinaryImage";
 import "reactjs-popup/dist/index.css";
 import { useVendorAuth } from "../context/VendorAuthContext";
 import { Sidebar } from "../Components/Sidebar";
@@ -561,7 +562,7 @@ const ProfilePage: React.FC = () => {
             >
               {vendorDetails.profilePicture ? (
                 <img
-                  src={vendorDetails.profilePicture}
+                  src={cloudinaryUrl(vendorDetails.profilePicture, "avatar")}
                   alt="Profile"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = "none";
@@ -1261,7 +1262,7 @@ const ProfilePage: React.FC = () => {
                     >
                       {vendorDetails?.profilePicture ? (
                         <img
-                          src={vendorDetails.profilePicture}
+                          src={cloudinaryUrl(vendorDetails.profilePicture, "avatar")}
                           alt="Profile"
                           style={{
                             width: "100%",

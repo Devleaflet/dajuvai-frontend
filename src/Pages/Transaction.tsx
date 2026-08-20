@@ -7,6 +7,7 @@ import { API_BASE_URL } from "../config";
 
 interface Order {
 	id: number;
+	orderNumber?: string | null;
 	totalPrice: string | number;
 	shippingFee: string | number;
 	paymentStatus: string;
@@ -59,7 +60,14 @@ const TransactionSuccess: React.FC = () => {
 							"Content-Type": "application/json",
 							Authorization: `Bearer ${token}`,
 						},
-						body: JSON.stringify({ mTransactionId: merchantTxnId }),
+						body: JSON.stringify({
+							mTransactionId: merchantTxnId,
+							// The gateway redirect back to this page means the
+							// payment round-trip finished; a still-pending draft
+							// is therefore a cancellation/timeout, not an
+							// in-flight payment.
+							returnedFromGateway: Boolean(gatewayTxnId),
+						}),
 					}
 				);
 
@@ -101,7 +109,7 @@ const TransactionSuccess: React.FC = () => {
 				}
 			}
 		},
-		[merchantTxnId, token]
+		[merchantTxnId, gatewayTxnId, token]
 	);
 
 	useEffect(() => {

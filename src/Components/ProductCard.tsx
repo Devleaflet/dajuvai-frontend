@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import AuthModal from "./AuthModal";
 import defaultProductImage from "../assets/logo.webp";
 import { getProductPrimaryImage } from "../utils/getProductPrimaryImage";
+import { cloudinaryUrl } from "../utils/cloudinaryImage";
 import { getDiscountDisplay } from "../utils/priceDisplay";
 import { toast } from "react-hot-toast";
 import { API_BASE_URL } from "../config";
@@ -82,23 +83,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const isWishlisted = hasWishlistItem(id, variantId);
   const wishlistPending = pendingKeys.has(makeWishlistKey(id, variantId));
 
-  // Process image URL helper (same as in getProductPrimaryImage)
+  // Process image URL helper (same as in getProductPrimaryImage), with
+  // Cloudinary delivery transforms applied so cards fetch right-sized images.
   const processImageUrl = (imgUrl: string): string => {
     if (!imgUrl) return "";
     const trimmed = imgUrl.trim();
     if (!trimmed) return "";
-    if (trimmed.startsWith("//")) return `https:${trimmed}`;
+    if (trimmed.startsWith("//")) return cloudinaryUrl(`https:${trimmed}`, "card");
     if (
       trimmed.startsWith("http://") ||
       trimmed.startsWith("https://") ||
       trimmed.startsWith("/")
     ) {
-      return trimmed;
+      return cloudinaryUrl(trimmed, "card");
     }
     const base = API_BASE_URL.replace(/\/?api\/?$/, "");
     const needsSlash = !trimmed.startsWith("/");
     const url = `${base}${needsSlash ? "/" : ""}${trimmed}`;
-    return url.replace(/([^:]\/)\/+/, "$1/");
+    return cloudinaryUrl(url.replace(/([^:]\/)\/+/, "$1/"), "card");
   };
 
   // All variant images, so the hover auto-slider previews every variant —
@@ -387,6 +389,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               alt={title || "Product image"}
               onError={handleImageError}
               loading="lazy"
+              decoding="async"
             />
 
             {productImages.length > 1 && (

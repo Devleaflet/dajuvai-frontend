@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../config";
+import { cloudinaryUrl } from "../utils/cloudinaryImage";
 import "../Styles/HomeBanner.css";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ToastContainer } from "react-toastify";
@@ -201,9 +202,10 @@ const HomeBanner: React.FC = () => {
             </>
           )}
           <img
-            src={banners[currentIndex].image}
+            src={cloudinaryUrl(banners[currentIndex].image, "banner")}
             alt={banners[currentIndex].name}
             className="home-banner__image"
+            decoding="async"
             style={{ cursor: "pointer", width: "100%", height: "auto" }}
             draggable={false}
             onDragStart={handleDragStart}

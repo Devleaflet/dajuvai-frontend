@@ -7,6 +7,7 @@ export type PaymentStatus = "success" | "pending" | "failed" | "cancelled";
 
 interface OrderData {
   id: number;
+  orderNumber?: string | null;
   totalPrice: string | number;
   shippingFee: string | number;
   paymentStatus: string;
@@ -98,6 +99,10 @@ const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
   const navigate = useNavigate();
   const config = STATUS_CONFIG[status];
 
+  // Deferred-order drafts have no numeric order id yet — show the human
+  // readable order number instead of "#0".
+  const orderLabel = orderData?.orderNumber || `#${orderData?.id ?? 0}`;
+
   const handleDownloadPDF = () => {
     if (!orderData) return;
     const doc = new jsPDF();
@@ -106,7 +111,7 @@ const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
     doc.text("Payment & Order Bill", 105, y, { align: "center" });
     y += 10;
     doc.setFontSize(12);
-    doc.text(`Order ID: #${orderData.id}`, 10, (y += 10));
+    doc.text(`Order ID: ${orderLabel}`, 10, (y += 10));
     doc.text(`Order Date: ${formatDate(orderData.createdAt)}`, 10, (y += 10));
     doc.text(
       `Payment Method: ${orderData.paymentMethod.replace("_", " ")}`,
@@ -141,7 +146,7 @@ const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
       10,
       (y += 10),
     );
-    doc.save(`Order_Bill_${orderData.id}.pdf`);
+    doc.save(`Order_Bill_${orderData.orderNumber || orderData.id}.pdf`);
   };
 
   if (loading) {
@@ -208,7 +213,7 @@ const PaymentStatusCard: React.FC<PaymentStatusCardProps> = ({
             <div className="psc-section__grid">
               <div className="psc-section__item">
                 <span className="psc-section__label">Order ID</span>
-                <span className="psc-section__value">#{orderData.id}</span>
+                <span className="psc-section__value">{orderLabel}</span>
               </div>
               <div className="psc-section__item">
                 <span className="psc-section__label">Order Date</span>

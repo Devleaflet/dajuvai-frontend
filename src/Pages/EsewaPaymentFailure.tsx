@@ -25,9 +25,10 @@ const EsewaPaymentFailure: React.FC = () => {
 	useEffect(() => {
 		const searchParams = new URLSearchParams(window.location.search);
 		const orderId = searchParams.get("oid");
+		const draftId = searchParams.get("did");
 
 		const handleFailure = async () => {
-			if (!orderId) {
+			if (!orderId && !draftId) {
 				setLoading(false);
 				return;
 			}
@@ -39,7 +40,11 @@ const EsewaPaymentFailure: React.FC = () => {
 						"Content-Type": "application/json",
 						Authorization: `Bearer ${token}`,
 					},
-					body: JSON.stringify({ orderId: parseInt(orderId) }),
+					// Draft-based checkouts pass `did`; legacy orders pass `oid`.
+					body: JSON.stringify({
+						...(orderId ? { orderId: parseInt(orderId) } : {}),
+						...(draftId ? { draftId: parseInt(draftId) } : {}),
+					}),
 					credentials: "include",
 				});
 
@@ -47,8 +52,10 @@ const EsewaPaymentFailure: React.FC = () => {
 
 				if (result.success) {
 					setPaymentStatus("cancelled");
-					// Fetch order details to display
+					// Fetch order details to display — only meaningful for
+					// legacy orders; cancelled drafts never created an order.
 					try {
+						if (!orderId) throw new Error("no order id");
 						const orderResponse = await fetch(
 							`${API_BASE_URL}/api/order/customer/order/${orderId}`,
 							{

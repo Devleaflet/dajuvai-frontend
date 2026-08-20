@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../Styles/CategorySection.css";
+import { cloudinaryUrl } from "../utils/cloudinaryImage";
 import { useCategory } from "../context/Category";
 import { fetchCategoryCatalog } from "../api/categoryCatalog";
 import { useQuery } from "@tanstack/react-query";
@@ -337,7 +338,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
 									>
 										<div className="category-section__subcategory-image-container">
 											<img
-												src={item.image}
+												src={cloudinaryUrl(item.image, "card")}
 												alt={item.name}
 												className="category-section__subcategory-image"
 												loading="lazy"

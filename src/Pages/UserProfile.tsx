@@ -1,5 +1,6 @@
 // UserProfile.tsx
 import axios from "axios";
+import { cloudinaryUrl } from "../utils/cloudinaryImage";
 import React, {
   useCallback,
   useEffect,
@@ -113,12 +114,19 @@ const UserProfile: React.FC = () => {
     number | string | null
   >(null);
 
+  // Account deletion (danger zone) state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const {
     user,
     isLoading: isAuthLoading,
     login,
+    logout,
     token,
     fetchUserData,
   } = useAuth();
@@ -142,6 +150,61 @@ const UserProfile: React.FC = () => {
   const showPopup = (type: "success" | "error", content: string) => {
     setPopup({ type, content });
     setTimeout(() => setPopup(null), 3000);
+  };
+
+  /**
+   * Request account self-deletion. Email/password accounts must re-enter
+   * their password; Google accounts confirm with the typed DELETE phrase
+   * only (backend validates the active session). The account enters a
+   * 30-day grace period and can be reactivated by logging in again.
+   */
+  const handleRequestAccountDeletion = async () => {
+    if (!userDetails?.email) {
+      showPopup("error", "Unable to determine your account email.");
+      return;
+    }
+    if (deleteConfirmText !== "DELETE") {
+      showPopup("error", 'Please type "DELETE" to confirm.');
+      return;
+    }
+    if (!isGoogleRegisteredUser() && !deletePassword) {
+      showPopup("error", "Please enter your password to confirm deletion.");
+      return;
+    }
+
+    setIsDeletingAccount(true);
+    try {
+      const response = await axiosInstance.delete("/api/auth/me", {
+        data: {
+          email: userDetails.email,
+          confirmation: "DELETE",
+          ...(!isGoogleRegisteredUser() ? { password: deletePassword } : {}),
+        },
+      });
+
+      const scheduledFor = response.data?.deletionScheduledFor;
+      setShowDeleteModal(false);
+      setDeleteConfirmText("");
+      setDeletePassword("");
+      showPopup(
+        "success",
+        `Your account is scheduled for deletion${
+          scheduledFor
+            ? ` on ${new Date(scheduledFor).toLocaleDateString()}`
+            : ""
+        }. Log in again within 30 days to reactivate it.`,
+      );
+      // Give the user a moment to read the popup, then end the session.
+      setTimeout(() => logout(), 2500);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to request account deletion. Please try again.";
+      showPopup("error", message);
+    } finally {
+      setIsDeletingAccount(false);
+    }
   };
 
   const validateUsername = (u: string) =>
@@ -820,6 +883,28 @@ const UserProfile: React.FC = () => {
             Edit Profile
           </button>
         )}
+
+        {/* Danger zone — account self-deletion */}
+        <div className="danger-zone">
+          <div className="danger-zone__info">
+            <h3>Delete Account</h3>
+            <p>
+              Permanently delete your account and personal data. Your account
+              will be scheduled for deletion and fully removed after a 30-day
+              grace period. You can reactivate it by logging in before then.
+            </p>
+          </div>
+          <button
+            className="danger-zone__button"
+            onClick={() => {
+              setDeleteConfirmText("");
+              setDeletePassword("");
+              setShowDeleteModal(true);
+            }}
+          >
+            Delete Account
+          </button>
+        </div>
       </div>
     );
   };
@@ -991,7 +1076,10 @@ const UserProfile: React.FC = () => {
                           return (
                             <div className="order-mobile-product">
                               <img
-                                src={imgSrc || defaultProductImage}
+                                src={
+                                  cloudinaryUrl(imgSrc, "thumbnail") ||
+                                  defaultProductImage
+                                }
                                 alt={
                                   first.productNameSnapshot ||
                                   first.product?.name ||
@@ -1068,7 +1156,10 @@ const UserProfile: React.FC = () => {
                             return (
                               <div key={item.id} className="order-product">
                                 <img
-                                  src={imgSrc || defaultProductImage}
+                                  src={
+                                    cloudinaryUrl(imgSrc, "thumbnail") ||
+                                    defaultProductImage
+                                  }
                                   alt={name}
                                   className="order-product__image"
                                   onError={(e) => {
@@ -1162,7 +1253,10 @@ const UserProfile: React.FC = () => {
                         return (
                           <div key={item.id} className="order-product">
                             <img
-                              src={imgSrc || defaultProductImage}
+                              src={
+                                cloudinaryUrl(imgSrc, "thumbnail") ||
+                                defaultProductImage
+                              }
                               alt={name}
                               className="order-product__image"
                               onError={(e) => {
@@ -1233,6 +1327,103 @@ const UserProfile: React.FC = () => {
   return (
     <>
       <Navbar />
+      {/* Account deletion confirmation modal */}
+      <Popup
+        open={showDeleteModal}
+        closeOnDocumentClick={!isDeletingAccount}
+        onClose={() => {
+          if (!isDeletingAccount) setShowDeleteModal(false);
+        }}
+        contentStyle={{
+          borderRadius: "12px",
+          maxWidth: "460px",
+          width: "92%",
+          padding: 0,
+          border: "none",
+        }}
+        overlayStyle={{
+          backgroundColor: "rgba(0,0,0,0.6)",
+          backdropFilter: "blur(4px)",
+        }}
+      >
+        <div className="delete-account-modal">
+          <div className="delete-account-modal__header">
+            <h2>Delete your account?</h2>
+            <button
+              className="delete-account-modal__close"
+              onClick={() => setShowDeleteModal(false)}
+              disabled={isDeletingAccount}
+              aria-label="Close"
+            >
+              ×
+            </button>
+          </div>
+          <div className="delete-account-modal__body">
+            <p>
+              This will schedule your account ({userDetails?.email}) for
+              permanent deletion after a 30-day grace period. Your personal data
+              will be anonymized. Order history is kept for legal and accounting
+              purposes, but stripped of your identity.
+            </p>
+            <p>
+              You can reactivate your account at any time during the grace
+              period simply by logging in again
+              {isGoogleRegisteredUser()
+                ? " with Google"
+                : " with your email and password"}
+              .
+            </p>
+
+            {!isGoogleRegisteredUser() && (
+              <label className="delete-account-modal__field">
+                <span>Enter your password to confirm</span>
+                <input
+                  type="password"
+                  className="profile-form__input"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  autoComplete="current-password"
+                  disabled={isDeletingAccount}
+                />
+              </label>
+            )}
+
+            <label className="delete-account-modal__field">
+              <span>
+                Type <strong>DELETE</strong> to confirm
+              </span>
+              <input
+                type="text"
+                className="profile-form__input"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="DELETE"
+                disabled={isDeletingAccount}
+              />
+            </label>
+          </div>
+          <div className="delete-account-modal__actions">
+            <button
+              className="btn-edit--secondary"
+              onClick={() => setShowDeleteModal(false)}
+              disabled={isDeletingAccount}
+            >
+              Cancel
+            </button>
+            <button
+              className="danger-zone__button"
+              onClick={handleRequestAccountDeletion}
+              disabled={
+                isDeletingAccount ||
+                deleteConfirmText !== "DELETE" ||
+                (!isGoogleRegisteredUser() && !deletePassword)
+              }
+            >
+              {isDeletingAccount ? "Deleting..." : "Delete My Account"}
+            </button>
+          </div>
+        </div>
+      </Popup>
       <Popup
         open={!!popup}
         closeOnDocumentClick
@@ -1322,7 +1513,10 @@ const UserProfile: React.FC = () => {
                   >
                     {userDetails?.profilePicture ? (
                       <img
-                        src={userDetails.profilePicture}
+                        src={cloudinaryUrl(
+                          userDetails.profilePicture,
+                          "avatar",
+                        )}
                         alt={userDetails.username || "User"}
                         style={{
                           width: "100%",

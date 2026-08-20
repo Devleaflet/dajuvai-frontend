@@ -9,6 +9,7 @@ import {
   FaExclamationCircle,
 } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { cloudinaryUrl } from "../utils/cloudinaryImage";
 import { useCart } from "../context/CartContext";
 import { useUI } from "../context/UIContext";
 import Portal from "./Portal";
@@ -384,9 +385,11 @@ const CartItemRow = React.memo(
 
         <div className="cart__item-image-container">
           <img
-            src={item.image || defaultProductImage}
+            src={cloudinaryUrl(item.image, "thumbnail") || defaultProductImage}
             alt={item.name}
             className="cart__item-image"
+            loading="lazy"
+            decoding="async"
             onError={(e) => {
               (e.target as HTMLImageElement).src = defaultProductImage;
             }}

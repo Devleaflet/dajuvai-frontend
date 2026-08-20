@@ -15,6 +15,7 @@ import { mapToNavCategories } from "../context/Category";
 import { fetchPlacementCategories, PLACEMENTS } from "../api/placements";
 import { useQuery } from "@tanstack/react-query";
 import type { Category } from "../context/Category";
+import { cloudinaryUrl } from "../utils/cloudinaryImage";
 
 const SKELETON_COUNT = 10;
 const CLICK_THRESHOLD = 4;
@@ -43,7 +44,7 @@ const CategoryImage: React.FC<{ src?: string; name: string }> = React.memo(
     }
     return (
       <img
-        src={src}
+        src={cloudinaryUrl(src, "thumbnail")}
         alt={name}
         className="cs-image"
         loading="lazy"

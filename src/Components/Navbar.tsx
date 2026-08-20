@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { cloudinaryUrl } from '../utils/cloudinaryImage';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import {
@@ -230,7 +231,7 @@ const Navbar: React.FC = () => {
 			if (resolvedProfilePicture) {
 				return (
 					<img
-						src={resolvedProfilePicture}
+						src={cloudinaryUrl(resolvedProfilePicture, 'avatarSm')}
 						alt={user.username || user.email || 'User'}
 						className="navbar__avatar-image"
 					/>

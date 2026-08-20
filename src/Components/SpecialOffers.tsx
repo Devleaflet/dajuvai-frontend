@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Sparkles } from "lucide-react";
+import { cloudinaryUrl } from "../utils/cloudinaryImage";
 import "../Styles/SpecialOffers.css";
 import OffersSkeleton from "../skeleton/OffersSkeleton";
 import { API_BASE_URL } from "../config";
@@ -147,7 +148,7 @@ const SpecialOffers = () => {
               aria-label={`View ${offer.name}`}
             >
               <img
-                src={offer.desktopImage}
+                src={cloudinaryUrl(offer.desktopImage, "banner")}
                 alt={offer.name}
                 className="special-offer-image"
                 loading="lazy"

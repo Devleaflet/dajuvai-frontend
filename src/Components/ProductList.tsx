@@ -2,6 +2,7 @@ import React from "react";
 import { Product } from "../Components/Types/Product";
 import defaultProductImage from "../assets/logo.webp";
 import { API_BASE_URL } from "../config";
+import { cloudinaryUrl } from "../utils/cloudinaryImage";
 
 interface ProductListProps {
     products: Product[];
@@ -18,23 +19,24 @@ const ProductList: React.FC<ProductListProps> = ({
     isMobile,
     showVendor,
 }) => {
-    // Normalize/complete image URLs similar to Shop page
+    // Normalize/complete image URLs similar to Shop page, with Cloudinary
+    // delivery transforms so list rows fetch right-sized images.
     const processImageUrl = (imgUrl: string): string => {
         if (!imgUrl) return "";
         const trimmed = imgUrl.trim();
         if (!trimmed) return "";
-        if (trimmed.startsWith("//")) return `https:${trimmed}`;
+        if (trimmed.startsWith("//")) return cloudinaryUrl(`https:${trimmed}`, "card");
         if (
             trimmed.startsWith("http://") ||
             trimmed.startsWith("https://") ||
             trimmed.startsWith("/")
         ) {
-            return trimmed;
+            return cloudinaryUrl(trimmed, "card");
         }
         const base = API_BASE_URL.replace(/\/?api\/?$/, "");
         const needsSlash = !trimmed.startsWith("/");
         const url = `${base}${needsSlash ? "/" : ""}${trimmed}`;
-        return url.replace(/([^:]\/)\/+/, "$1/");
+        return cloudinaryUrl(url.replace(/([^:]\/)\/+/, "$1/"), "card");
     };
 
     // Get display image for product
