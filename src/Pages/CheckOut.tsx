@@ -667,7 +667,7 @@ const Checkout: React.FC = () => {
 				setShowAlert(true);
 				setAppliedPromoCode(result.data);
 			} else {
-				setPromoError(result.msg || 'Invalid promo code');
+				setPromoError(result.message || result.msg || 'Invalid promo code');
 				setAppliedPromoCode(null);
 			}
 		} catch (error) {

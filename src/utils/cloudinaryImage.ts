@@ -17,7 +17,9 @@ const PRESETS: Record<string, ImageSize> = {
 	thumbnail: { width: 200, height: 200, crop: "fill", quality: "auto" },
 	card: { width: 400, height: 400, crop: "fill", quality: "auto" },
 	detail: { width: 800, crop: "limit", quality: "auto" },
-	banner: { width: 1200, crop: "limit", quality: "auto" },
+	banner: { width: 1920, crop: "limit", quality: "auto:best" },
+	bannerMobile: { width: 1200, crop: "limit", quality: "auto:best" },
+	bannerCard: { width: 1000, crop: "limit", quality: "auto:best" },
 	avatar: {
 		width: 160,
 		height: 160,

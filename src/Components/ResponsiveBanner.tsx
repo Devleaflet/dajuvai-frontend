@@ -28,7 +28,7 @@ const ResponsiveBanner: React.FC<ResponsiveBannerProps> = ({
       {mobileImageUrl && (
         <source
           media="(max-width: 767px)"
-          srcSet={cloudinaryUrl(mobileImageUrl, "detail")}
+          srcSet={cloudinaryUrl(mobileImageUrl, "bannerMobile")}
         />
       )}
       <img

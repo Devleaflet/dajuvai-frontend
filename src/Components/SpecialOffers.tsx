@@ -148,7 +148,7 @@ const SpecialOffers = () => {
               aria-label={`View ${offer.name}`}
             >
               <img
-                src={cloudinaryUrl(offer.desktopImage, "banner")}
+                src={cloudinaryUrl(offer.desktopImage, "bannerCard")}
                 alt={offer.name}
                 className="special-offer-image"
                 loading="lazy"
